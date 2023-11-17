@@ -22,7 +22,9 @@ kotlin {
             implementation(compose.material)
             @OptIn(ExperimentalComposeLibrary::class)
             implementation(compose.components.resources)
-            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
+            implementation("net.java.dev.jna:jna:5.13.0")
+            implementation("net.java.dev.jna:jna-platform:5.13.0")
+
         }
     }
 }
