@@ -1,4 +1,10 @@
 package com.clipevery.clip
- interface AbstractClipboard: Runnable, ClipboardMonitor {
+
+import java.awt.datatransfer.Transferable
+import java.util.function.Consumer
+
+interface AbstractClipboard: Runnable, ClipboardMonitor {
+
+  val clipConsumer: Consumer<Transferable>
 
 }
