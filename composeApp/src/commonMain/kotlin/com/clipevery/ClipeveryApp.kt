@@ -1,6 +1,5 @@
 package com.clipevery
 
-import Greeting
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
@@ -24,12 +23,10 @@ import org.jetbrains.compose.resources.painterResource
 @Composable
 fun ClipeveryApp(clipboard: AbstractClipboard, copyText: MutableState<String>) {
     MaterialTheme {
-        var greetingText by remember { mutableStateOf("Hello World!") }
         var showImage by remember { mutableStateOf(false) }
         var start  by remember { mutableStateOf(true) }
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             Button(onClick = {
-                greetingText = "Compose: ${Greeting().greet()}"
                 showImage = !showImage
             }) {
                 Text(copyText.value)
