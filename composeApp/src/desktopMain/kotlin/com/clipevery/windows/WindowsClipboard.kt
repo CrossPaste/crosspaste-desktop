@@ -65,22 +65,19 @@ class WindowsClipboard
     }
 
     override fun start() {
-        if (executor == null || executor!!.isShutdown) {
+        if (executor?.isShutdown != false) {
             executor = Executors.newSingleThreadExecutor { r -> Thread(r, "Clipboard Monitor") }
-            executor!!.execute(this)
         }
+        executor?.execute(this)
     }
 
     override fun stop() {
         executor?.let {
             Kernel32.INSTANCE.SetEvent(event)
-            // 禁止提交新任务
             it.shutdown()
 
             try {
-                // 等待现有任务完成
                 if (!it.awaitTermination(60, TimeUnit.SECONDS)) {
-                    // 超时后强制关闭
                     it.shutdownNow()
 
                     if (!it.awaitTermination(60, TimeUnit.SECONDS)) {
