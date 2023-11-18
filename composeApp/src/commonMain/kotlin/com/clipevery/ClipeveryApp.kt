@@ -23,6 +23,7 @@ import org.jetbrains.compose.resources.painterResource
 @Composable
 fun ClipeveryApp(clipboard: AbstractClipboard, copyText: MutableState<String>) {
     MaterialTheme {
+        val pid: Long = ProcessHandle.current().pid()
         var showImage by remember { mutableStateOf(false) }
         var start  by remember { mutableStateOf(true) }
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -39,7 +40,7 @@ fun ClipeveryApp(clipboard: AbstractClipboard, copyText: MutableState<String>) {
                 }
                 start = !start
             }) {
-                Text(start.toString())
+                Text(start.toString() + " " + pid)
             }
             AnimatedVisibility(showImage) {
                 Image(

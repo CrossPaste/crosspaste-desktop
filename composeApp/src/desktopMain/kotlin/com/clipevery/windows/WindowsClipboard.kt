@@ -1,8 +1,6 @@
 package com.clipevery.windows
 
-import androidx.compose.runtime.MutableState
 import com.clipevery.clip.AbstractClipboard
-import com.clipevery.clip.ClipboardEvent
 import com.clipevery.windows.api.User32
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.Kernel32
@@ -12,17 +10,17 @@ import com.sun.jna.platform.win32.WinDef.WPARAM
 import com.sun.jna.platform.win32.WinUser.MSG
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
-import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.function.Consumer
 
 
 class WindowsClipboard
-    (private val copyText: MutableState<String>) : AbstractClipboard, User32.WNDPROC {
+    (override val clipConsumer: Consumer<Transferable>) : AbstractClipboard, User32.WNDPROC {
 
-    private var systemClipboard: Clipboard = Toolkit.getDefaultToolkit().getSystemClipboard()
+    private var systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
 
     private var executor: ExecutorService? = null
     private var viewer: HWND? = null
@@ -91,17 +89,10 @@ class WindowsClipboard
         }
     }
 
-    override fun onChange(event: ClipboardEvent?) {
+    private fun onChange() {
         val contents: Transferable? = systemClipboard.getContents(null)
         contents?.let {
-            if (it.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-                try {
-                    copyText.value = contents.getTransferData(DataFlavor.stringFlavor).toString()
-                    println(contents.getTransferData(DataFlavor.stringFlavor))
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
+            clipConsumer.accept(it)
         }
     }
 
@@ -122,7 +113,7 @@ class WindowsClipboard
 
             User32.WM_DRAWCLIPBOARD -> {
                 try {
-                    onChange(ClipboardEvent(this))
+                    onChange()
                 } finally {
                     User32.INSTANCE.SendMessage(nextViewer, uMsg, uParam, lParam)
                 }
