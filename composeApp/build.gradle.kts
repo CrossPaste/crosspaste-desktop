@@ -15,6 +15,8 @@ kotlin {
         
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
+            implementation("net.java.dev.jna:jna:5.13.0")
+            implementation("net.java.dev.jna:jna-platform:5.13.0")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -22,7 +24,7 @@ kotlin {
             implementation(compose.material)
             @OptIn(ExperimentalComposeLibrary::class)
             implementation(compose.components.resources)
-            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
+
         }
     }
 }
