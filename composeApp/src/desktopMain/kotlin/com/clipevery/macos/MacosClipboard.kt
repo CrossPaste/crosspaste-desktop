@@ -1,9 +1,9 @@
 package com.clipevery.macos
 
 import com.clipevery.clip.AbstractClipboard
+import com.clipevery.macos.api.MacClipboard
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
-import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -16,32 +16,20 @@ class MacosClipboard
 
     private var executor: ScheduledExecutorService? = null
 
-    private var lastTransferable: Transferable? = null
+    private var changeCount = 0
 
     private var systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
 
     override fun run() {
         try {
-            val contents: Transferable? = systemClipboard.getContents(null)
-            contents?.let {
-                if (lastTransferable == null) {
+            MacClipboard.INSTANCE.clipboardChangeCount.let { currentChangeCount ->
+                if (changeCount == currentChangeCount) {
+                    return
+                }
+                changeCount = currentChangeCount
+                val contents: Transferable? = systemClipboard.getContents(null)
+                contents?.let {
                     clipConsumer.accept(it)
-                    lastTransferable = contents
-                    return
-                }
-
-                if (contents == lastTransferable) {
-                    println("equals")
-                    return
-                }
-                println("not equals")
-                if (it.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-                    val currentContent = contents.getTransferData(DataFlavor.stringFlavor) as String
-                    val lastContent = lastTransferable?.getTransferData(DataFlavor.stringFlavor) as String?
-                    if (currentContent != lastContent) {
-                        clipConsumer.accept(it)
-                        lastTransferable = contents
-                    }
                 }
             }
         } catch (e: java.lang.Exception) {
