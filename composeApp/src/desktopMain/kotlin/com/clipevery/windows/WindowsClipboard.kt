@@ -77,18 +77,15 @@ class WindowsClipboard
             it.shutdown()
 
             try {
-                if (!it.awaitTermination(60, TimeUnit.SECONDS)) {
+                if (!it.awaitTermination(600, TimeUnit.MICROSECONDS)) {
                     it.shutdownNow()
-
-                    if (!it.awaitTermination(60, TimeUnit.SECONDS)) {
+                    if (!it.awaitTermination(600, TimeUnit.MICROSECONDS)) {
                         println("task did not terminate")
                     }
                 }
                 println("stop ")
             } catch (ie: InterruptedException) {
-                // 异常处理
                 Thread.currentThread().interrupt()
-                // 强制关闭
                 it.shutdownNow()
             }
         }
