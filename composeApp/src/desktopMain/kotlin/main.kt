@@ -35,8 +35,7 @@ fun main() = application {
     val imageBitmap = loadIconFromResources("clipevery_icon.png")
 
 
-    Tray(
-        icon = imageBitmap,
+    Tray(icon = imageBitmap,
         menu = {
             Item(
                 "Exit",
@@ -45,7 +44,11 @@ fun main() = application {
         }
     )
 
-    Window(onCloseRequest = ::exitApplication) {
+    Window(onCloseRequest = ::exitApplication,
+        title = "Clipevery",
+        icon = imageBitmap,
+        undecorated = true,
+        resizable = false) {
         ClipeveryApp(clipboard, copyText)
     }
 }

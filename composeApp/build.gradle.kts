@@ -43,6 +43,15 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "com.clipevery"
             packageVersion = "1.0.0"
+            macOS {
+                bundleID = "com.clipevery.desktop"
+                infoPlist {
+                    extraKeysRawXml = """
+                        <key>LSUIElement</key>
+                        <string>true</string>
+                    """.trimIndent()
+                }
+            }
         }
     }
 }
