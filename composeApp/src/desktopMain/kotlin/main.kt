@@ -9,9 +9,11 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.clipevery.ClipeveryApp
 import com.clipevery.getClipboard
+import com.clipevery.utils.generateQRCode
 import org.jetbrains.skia.Image
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
+import java.awt.image.BufferedImage
 import java.io.InputStream
 import java.util.function.Consumer
 import kotlin.system.exitProcess
@@ -44,12 +46,14 @@ fun main() = application {
         }
     )
 
+    val generateQRCode: BufferedImage = generateQRCode("Hello World!", 200, 200)
+
     Window(onCloseRequest = ::exitApplication,
         title = "Clipevery",
         icon = imageBitmap,
         undecorated = true,
         resizable = false) {
-        ClipeveryApp(clipboard, copyText)
+        ClipeveryApp(clipboard, copyText, generateQRCode)
     }
 }
 
@@ -77,5 +81,7 @@ fun AppDesktopPreview() {
         }
     }
     val clipboard = getClipboard(consumer)
-    ClipeveryApp(clipboard, copyText)
+    val generateQRCode: BufferedImage = generateQRCode("Hello World!", 200, 200)
+
+    ClipeveryApp(clipboard, copyText, generateQRCode)
 }

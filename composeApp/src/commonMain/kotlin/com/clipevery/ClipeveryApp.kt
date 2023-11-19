@@ -15,13 +15,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.clipevery.clip.AbstractClipboard
 import org.jetbrains.compose.resources.ExperimentalResourceApi
-import org.jetbrains.compose.resources.painterResource
+import java.awt.image.BufferedImage
 
 @OptIn(ExperimentalResourceApi::class)
 @Composable
-fun ClipeveryApp(clipboard: AbstractClipboard, copyText: MutableState<String>) {
+fun ClipeveryApp(clipboard: AbstractClipboard, copyText: MutableState<String>, generateQRCode: BufferedImage) {
     MaterialTheme {
         val pid: Long = ProcessHandle.current().pid()
         var showImage by remember { mutableStateOf(false) }
@@ -44,7 +45,8 @@ fun ClipeveryApp(clipboard: AbstractClipboard, copyText: MutableState<String>) {
             }
             AnimatedVisibility(showImage) {
                 Image(
-                    painterResource("compose-multiplatform.xml"),
+                    generateQRCode.toComposeImageBitmap(),
+//                    painterResource("compose-multiplatform.xml"),
                     null
                 )
             }
