@@ -1,17 +1,20 @@
 package com.clipevery.path
 
-import com.clipevery.config.ConfigType
+import com.clipevery.config.FileType
 import java.nio.file.Path
 
 interface PathProvider {
-    fun resolve(configName: String, configType: ConfigType): Path {
-        return when (configType) {
-            ConfigType.USER -> resolveUser(configName)
-            ConfigType.SYSTEM -> resolveApp(configName)
+    fun resolve(fileName: String, fileType: FileType): Path {
+        return when (fileType) {
+            FileType.USER -> resolveUser(fileName)
+            FileType.APP -> resolveApp(fileName)
+            FileType.LOG -> resolveLog(fileName)
         }
     }
 
-    fun resolveUser(configName: String): Path
+    fun resolveUser(fileName: String?): Path
 
-    fun resolveApp(configName: String): Path
+    fun resolveApp(fileName: String?): Path
+
+    fun resolveLog(fileName: String?): Path
 }

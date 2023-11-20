@@ -23,12 +23,22 @@ class WindowsPathProvider: PathProvider {
 
     private val userDir = System.getProperty("user.dir")
 
-    override fun resolveUser(configName: String): Path {
-        return Paths.get(userHomePath).resolve(".clipevery").resolve(configName)
+    override fun resolveUser(fileName: String?): Path {
+        return fileName?.let {
+            Paths.get(userHomePath).resolve(".clipevery").resolve(fileName)
+        } ?: Paths.get(userHomePath).resolve(".clipevery")
     }
 
-    override fun resolveApp(configName: String): Path {
-        return Paths.get(userDir).resolve(configName)
+    override fun resolveApp(fileName: String?): Path {
+        return fileName?.let {
+            Paths.get(userDir).resolve(fileName)
+        } ?: Paths.get(userDir)
+    }
+
+    override fun resolveLog(fileName: String?): Path {
+        return fileName?.let {
+            Paths.get(userDir).resolve("logs").resolve(fileName)
+        } ?: Paths.get(userDir).resolve("logs")
     }
 }
 
@@ -39,22 +49,36 @@ class MacosPathProvider: PathProvider {
 
     private val userDir = System.getProperty("user.dir")
 
-    override fun resolveUser(configName: String): Path {
-        return Paths.get(userHomePath).resolve(".clipevery").resolve(configName)
+    override fun resolveUser(fileName: String?): Path {
+        return fileName?.let {
+            Paths.get(userHomePath).resolve(".clipevery").resolve(fileName)
+        } ?: Paths.get(userHomePath).resolve(".clipevery")
     }
 
-    override fun resolveApp(configName: String): Path {
-        return Paths.get(userDir).resolve(configName)
+    override fun resolveApp(fileName: String?): Path {
+        return fileName?.let {
+            Paths.get(userDir).resolve(fileName)
+        } ?: Paths.get(userDir)
+    }
+
+    override fun resolveLog(fileName: String?): Path {
+        return fileName?.let {
+            Paths.get(userDir).resolve("logs").resolve(fileName)
+        } ?: Paths.get(userDir).resolve("logs")
     }
 }
 
 class LinuxPathProvider: PathProvider {
 
-    override fun resolveUser(configName: String): Path {
+    override fun resolveUser(fileName: String?): Path {
         TODO("Not yet implemented")
     }
 
-    override fun resolveApp(configName: String): Path {
+    override fun resolveApp(fileName: String?): Path {
+        TODO("Not yet implemented")
+    }
+
+    override fun resolveLog(fileName: String?): Path {
         TODO("Not yet implemented")
     }
 }

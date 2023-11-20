@@ -19,6 +19,7 @@ kotlin {
             implementation("net.java.dev.jna:jna-platform:5.13.0")
             implementation("com.google.zxing:core:3.5.2")
             implementation("com.google.zxing:javase:3.5.2")
+            implementation("ch.qos.logback:logback-classic:1.4.11")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -27,6 +28,7 @@ kotlin {
             @OptIn(ExperimentalComposeLibrary::class)
             implementation(compose.components.resources)
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.1")
+            implementation("io.github.oshai:kotlin-logging-jvm:5.1.0")
         }
 
         val commonTest by getting {

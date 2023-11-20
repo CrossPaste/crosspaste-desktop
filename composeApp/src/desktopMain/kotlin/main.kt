@@ -8,7 +8,8 @@ import com.clipevery.AppConfig
 import com.clipevery.ClipeveryApp
 import com.clipevery.Dependencies
 import com.clipevery.config.ConfigManager
-import com.clipevery.config.ConfigType
+import com.clipevery.config.FileType
+import com.clipevery.log.initLogger
 import com.clipevery.net.ClipServer
 import com.clipevery.path.PathProvider
 import com.clipevery.path.getPathProvider
@@ -16,12 +17,20 @@ import com.clipevery.presist.DesktopOneFilePersist
 import com.clipevery.presist.FilePersist
 import com.clipevery.presist.OneFilePersist
 import com.clipevery.utils.ioDispatcher
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import java.nio.file.Path
+import kotlin.io.path.pathString
 import kotlin.system.exitProcess
 
 
 fun main() = application {
+    val pathProvider = getPathProvider()
+    initLogger(pathProvider.resolveLog("clipevery.log").pathString)
+    val logger = KotlinLogging.logger {}
+
+    logger.info { "Starting Clipevery" }
+
     val ioScope = rememberCoroutineScope { ioDispatcher }
 
     val dependencies = remember {
@@ -49,11 +58,20 @@ fun main() = application {
 private fun getDependencies(
     ioScope: CoroutineScope
 ) = object : Dependencies() {
+
+    val logger = KotlinLogging.logger {}
+
     override val clipServer: ClipServer = object : ClipServer {
     }
 
     override val filePersist: FilePersist = object : FilePersist {
-        override val pathProvider: PathProvider = getPathProvider()
+        override val pathProvider: PathProvider = run {
+            val innerPathProvider = getPathProvider()
+            logger.info { "userPath ${innerPathProvider.resolveUser(null)}" }
+            logger.info { "appPath ${innerPathProvider.resolveApp(null)}" }
+            logger.info { "logPath ${innerPathProvider.resolveLog(null)}" }
+            getPathProvider()
+        }
 
         override fun createOneFilePersist(path: Path): OneFilePersist {
             return DesktopOneFilePersist(path)
@@ -62,7 +80,7 @@ private fun getDependencies(
 
     override val configManager: ConfigManager = object : ConfigManager(ioScope) {
 
-        val configFilePersist = filePersist.getPersist("appConfig.json", ConfigType.USER)
+        val configFilePersist = filePersist.getPersist("appConfig.json", FileType.USER)
 
         override fun loadConfig(): AppConfig? {
             return configFilePersist.readAs(AppConfig::class)
