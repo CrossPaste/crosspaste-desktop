@@ -1,6 +1,6 @@
 package com.clipevery.windows
 
-import com.clipevery.clip.AbstractClipboard
+import com.clipevery.clip.ClipboardService
 import com.clipevery.windows.api.User32
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.Kernel32
@@ -17,8 +17,8 @@ import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 
 
-class WindowsClipboard
-    (override val clipConsumer: Consumer<Transferable>) : AbstractClipboard, User32.WNDPROC {
+class WindowsClipboardService
+    (override val clipConsumer: Consumer<Transferable>) : ClipboardService, User32.WNDPROC {
 
     private var systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
 

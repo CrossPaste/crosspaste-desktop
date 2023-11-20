@@ -1,43 +1,30 @@
-import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.graphics.toComposeImageBitmap
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import com.clipevery.AppConfig
 import com.clipevery.ClipeveryApp
-import com.clipevery.getClipboard
-import com.clipevery.utils.generateQRCode
-import org.jetbrains.skia.Image
-import java.awt.datatransfer.DataFlavor
-import java.awt.datatransfer.Transferable
-import java.awt.image.BufferedImage
-import java.io.InputStream
-import java.util.function.Consumer
+import com.clipevery.Dependencies
+import com.clipevery.net.ClipServer
+import com.clipevery.net.ConfigManager
+import com.clipevery.utils.ioDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlin.system.exitProcess
 
 
 fun main() = application {
-    val copyText = remember { mutableStateOf("Hello World!") }
-    val consumer = Consumer<Transferable> {
-        if (it.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-            try {
-                copyText.value = it.getTransferData(DataFlavor.stringFlavor).toString()
-                println(it.getTransferData(DataFlavor.stringFlavor))
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
+    val ioScope = rememberCoroutineScope { ioDispatcher }
+    val bingingState = remember { mutableStateOf(false) }
+
+    val dependencies = remember {
+        getDependencies(ioScope, bingingState)
     }
-    val clipboard = getClipboard(consumer)
-    clipboard.start()
 
-    val imageBitmap = loadIconFromResources("clipevery_icon.png")
-
-
-    Tray(icon = imageBitmap,
+    Tray(icon = painterResource("clipevery_icon.png"),
         menu = {
             Item(
                 "Exit",
@@ -46,42 +33,29 @@ fun main() = application {
         }
     )
 
-    val generateQRCode: BufferedImage = generateQRCode("Hello World!", 200, 200)
-
     Window(onCloseRequest = ::exitApplication,
         title = "Clipevery",
-        icon = imageBitmap,
+        icon = painterResource("clipevery_icon.png"),
         undecorated = true,
-        resizable = false) {
-        ClipeveryApp(clipboard, copyText, generateQRCode)
+        resizable = true) {
+        ClipeveryApp(dependencies)
     }
 }
 
-fun loadIconFromResources(resourceName: String): BitmapPainter {
-    val resourceStream: InputStream? = Thread.currentThread().contextClassLoader.getResourceAsStream(resourceName)
-    resourceStream?.let {
-        val image = Image.makeFromEncoded(it.readAllBytes())
-        return BitmapPainter(image.toComposeImageBitmap())
+private fun getDependencies(
+    ioScope: CoroutineScope,
+    bingingState: MutableState<Boolean>
+) = object : Dependencies() {
+    override val clipServer: ClipServer = object : ClipServer {
     }
-    throw IllegalArgumentException("Resource not found: $resourceName")
+
+    override val configManager: ConfigManager = object : ConfigManager {
+        override val config: AppConfig = AppConfig(false) // todo: read from disk config file
+    }
 }
 
-@Preview
-@Composable
-fun AppDesktopPreview() {
-    val copyText = remember { mutableStateOf("Hello World!") }
-    val consumer = Consumer<Transferable> {
-        if (it.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-            try {
-                copyText.value = it.getTransferData(DataFlavor.stringFlavor).toString()
-                println(it.getTransferData(DataFlavor.stringFlavor))
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
-    val clipboard = getClipboard(consumer)
-    val generateQRCode: BufferedImage = generateQRCode("Hello World!", 200, 200)
-
-    ClipeveryApp(clipboard, copyText, generateQRCode)
-}
+//@Preview
+//@Composable
+//fun AppDesktopPreview() {
+//    ClipeveryApp(clipeveryAppState)
+//}
