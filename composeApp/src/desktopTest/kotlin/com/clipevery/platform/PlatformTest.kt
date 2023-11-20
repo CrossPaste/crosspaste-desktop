@@ -1,6 +1,5 @@
-package com.clipevery
+package com.clipevery.platform
 
-import com.clipevery.platform.currentPlatform
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
