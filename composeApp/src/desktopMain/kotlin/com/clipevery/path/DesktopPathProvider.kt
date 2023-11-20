@@ -24,12 +24,10 @@ class WindowsPathProvider: PathProvider {
     private val userDir = System.getProperty("user.dir")
 
     override fun resolveUser(configName: String): Path {
-        println(Paths.get(userHomePath).resolve(configName))
-        return Paths.get(userHomePath).resolve(configName)
+        return Paths.get(userHomePath).resolve(".clipevery").resolve(configName)
     }
 
     override fun resolveApp(configName: String): Path {
-        println(Paths.get(userDir).resolve(configName))
         return Paths.get(userDir).resolve(configName)
     }
 }
@@ -42,13 +40,10 @@ class MacosPathProvider: PathProvider {
     private val userDir = System.getProperty("user.dir")
 
     override fun resolveUser(configName: String): Path {
-        println("user " + Paths.get(userHomePath).resolve(".clipevery").resolve(configName))
-        println("app " + Paths.get(userDir).resolve(".clipevery").resolve(configName))
         return Paths.get(userHomePath).resolve(".clipevery").resolve(configName)
     }
 
     override fun resolveApp(configName: String): Path {
-        println(Paths.get(userDir).resolve(configName))
         return Paths.get(userDir).resolve(configName)
     }
 }
