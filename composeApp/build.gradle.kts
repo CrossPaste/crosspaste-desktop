@@ -20,6 +20,7 @@ kotlin {
             implementation("com.google.zxing:core:3.5.2")
             implementation("com.google.zxing:javase:3.5.2")
             implementation("ch.qos.logback:logback-classic:1.4.11")
+            implementation("io.javalin:javalin:5.6.3")
         }
         commonMain.dependencies {
             implementation(compose.runtime)

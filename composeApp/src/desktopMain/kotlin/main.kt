@@ -11,6 +11,7 @@ import com.clipevery.config.ConfigManager
 import com.clipevery.config.FileType
 import com.clipevery.log.initLogger
 import com.clipevery.net.ClipServer
+import com.clipevery.net.DesktopClipServer
 import com.clipevery.path.PathProvider
 import com.clipevery.path.getPathProvider
 import com.clipevery.presist.DesktopOneFilePersist
@@ -59,19 +60,10 @@ private fun getDependencies(
     ioScope: CoroutineScope
 ) = object : Dependencies() {
 
-    val logger = KotlinLogging.logger {}
-
-    override val clipServer: ClipServer = object : ClipServer {
-    }
+    override val clipServer: ClipServer = DesktopClipServer().start()
 
     override val filePersist: FilePersist = object : FilePersist {
-        override val pathProvider: PathProvider = run {
-            val innerPathProvider = getPathProvider()
-            logger.info { "userPath ${innerPathProvider.resolveUser(null)}" }
-            logger.info { "appPath ${innerPathProvider.resolveApp(null)}" }
-            logger.info { "logPath ${innerPathProvider.resolveLog(null)}" }
-            getPathProvider()
-        }
+        override val pathProvider: PathProvider = getPathProvider()
 
         override fun createOneFilePersist(path: Path): OneFilePersist {
             return DesktopOneFilePersist(path)
