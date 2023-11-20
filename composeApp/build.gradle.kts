@@ -46,15 +46,18 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "com.clipevery"
+
+            packageName = "Clipevery"
             packageVersion = "1.0.0"
             macOS {
-                bundleID = "com.clipevery.desktop"
+                bundleID = "com.clipevery"
+                appCategory = "public.app-category.utilities"
                 infoPlist {
+                    dockName = "Clipevery"
                     extraKeysRawXml = """
                         <key>LSUIElement</key>
                         <string>true</string>
-                    """.trimIndent()
+                    """
                 }
             }
         }
