@@ -1,55 +1,56 @@
 package com.clipevery
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.toComposeImageBitmap
-import com.clipevery.clip.AbstractClipboard
-import org.jetbrains.compose.resources.ExperimentalResourceApi
-import java.awt.image.BufferedImage
 
-@OptIn(ExperimentalResourceApi::class)
 @Composable
-fun ClipeveryApp(clipboard: AbstractClipboard, copyText: MutableState<String>, generateQRCode: BufferedImage) {
+fun ClipeveryApp(dependencies: Dependencies) {
     MaterialTheme {
-        val pid: Long = ProcessHandle.current().pid()
-        var showImage by remember { mutableStateOf(false) }
-        var start  by remember { mutableStateOf(true) }
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Button(onClick = {
-                showImage = !showImage
-            }) {
-                Text(copyText.value)
-            }
-            Button(onClick = {
-                if (start) {
-                    clipboard.stop()
-                } else {
-                    clipboard.start()
-                }
-                start = !start
-            }) {
-                Text(start.toString() + " " + pid)
-            }
-            AnimatedVisibility(showImage) {
-                Image(
-                    generateQRCode.toComposeImageBitmap(),
-//                    painterResource("compose-multiplatform.xml"),
-                    null
-                )
-            }
+            ClipeveryCommon(dependencies)
         }
     }
+}
+
+
+@Composable
+fun ClipeveryCommon(dependencies: Dependencies) {
+    CompositionLocalProvider(
+        LocalClipeveryServer provides dependencies.clipServer,
+        LocalConfigManager provides dependencies.configManager
+    ) {
+        ClipeveryWithProvidedDependencies()
+    }
+}
+
+@Composable
+fun ClipeveryWithProvidedDependencies() {
+    val configManager = LocalConfigManager.current
+
+    val config = remember { mutableStateOf(configManager.config) }
+
+    if (!config.value.bindingState) {
+        bindingQRCode()
+    } else {
+        mainUI()
+    }
+}
+
+
+@Composable
+fun bindingQRCode() {
+    Text("bindingQRCode")
+}
+
+@Composable
+fun mainUI() {
+    Text("mainUI")
 }

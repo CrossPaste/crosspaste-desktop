@@ -1,6 +1,6 @@
 package com.clipevery.macos
 
-import com.clipevery.clip.AbstractClipboard
+import com.clipevery.clip.ClipboardService
 import com.clipevery.macos.api.MacClipboard
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
@@ -11,8 +11,8 @@ import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 
 
-class MacosClipboard
-    (override val clipConsumer: Consumer<Transferable>) : AbstractClipboard {
+class MacosClipboardService
+    (override val clipConsumer: Consumer<Transferable>) : ClipboardService {
 
     private var executor: ScheduledExecutorService? = null
 

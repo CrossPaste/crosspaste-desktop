@@ -1,19 +1,23 @@
 package com.clipevery
 
-import com.clipevery.clip.AbstractClipboard
-import com.clipevery.macos.MacosClipboard
+import com.clipevery.clip.ClipboardService
+import com.clipevery.macos.MacosClipboardService
 import com.clipevery.platform.currentPlatform
-import com.clipevery.windows.WindowsClipboard
+import com.clipevery.windows.WindowsClipboardService
 import java.awt.datatransfer.Transferable
 import java.util.function.Consumer
 
-fun getClipboard(clipConsumer: Consumer<Transferable>): AbstractClipboard {
+fun getClipboard(clipConsumer: Consumer<Transferable>): ClipboardService {
     val platform = currentPlatform()
-    return if (platform.name == "Macos") {
-        MacosClipboard(clipConsumer)
-    } else if (platform.name == "Windows") {
-        WindowsClipboard(clipConsumer)
-    } else {
-        throw Exception("Unknown platform: ${platform.name}")
+    return when (platform.name) {
+        "Macos" -> {
+            MacosClipboardService(clipConsumer)
+        }
+        "Windows" -> {
+            WindowsClipboardService(clipConsumer)
+        }
+        else -> {
+            throw Exception("Unknown platform: ${platform.name}")
+        }
     }
 }
