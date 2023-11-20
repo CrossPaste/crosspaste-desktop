@@ -1,6 +1,7 @@
 package com.clipevery.config
 
-enum class ConfigType {
+enum class FileType {
     USER,
-    SYSTEM
+    APP,
+    LOG
 }
