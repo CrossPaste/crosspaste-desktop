@@ -25,7 +25,8 @@ fun ClipeveryApp(dependencies: Dependencies) {
 fun ClipeveryCommon(dependencies: Dependencies) {
     CompositionLocalProvider(
         LocalClipeveryServer provides dependencies.clipServer,
-        LocalConfigManager provides dependencies.configManager
+        LocalConfigManager provides dependencies.configManager,
+        LocalFilePersist provides dependencies.filePersist
     ) {
         ClipeveryWithProvidedDependencies()
     }

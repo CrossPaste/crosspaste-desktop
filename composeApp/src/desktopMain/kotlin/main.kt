@@ -1,5 +1,3 @@
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.res.painterResource
@@ -9,19 +7,25 @@ import androidx.compose.ui.window.application
 import com.clipevery.AppConfig
 import com.clipevery.ClipeveryApp
 import com.clipevery.Dependencies
+import com.clipevery.config.ConfigManager
+import com.clipevery.config.ConfigType
 import com.clipevery.net.ClipServer
-import com.clipevery.net.ConfigManager
+import com.clipevery.path.PathProvider
+import com.clipevery.path.getPathProvider
+import com.clipevery.presist.DesktopOneFilePersist
+import com.clipevery.presist.FilePersist
+import com.clipevery.presist.OneFilePersist
 import com.clipevery.utils.ioDispatcher
 import kotlinx.coroutines.CoroutineScope
+import java.nio.file.Path
 import kotlin.system.exitProcess
 
 
 fun main() = application {
     val ioScope = rememberCoroutineScope { ioDispatcher }
-    val bingingState = remember { mutableStateOf(false) }
 
     val dependencies = remember {
-        getDependencies(ioScope, bingingState)
+        getDependencies(ioScope)
     }
 
     Tray(icon = painterResource("clipevery_icon.png"),
@@ -43,15 +47,31 @@ fun main() = application {
 }
 
 private fun getDependencies(
-    ioScope: CoroutineScope,
-    bingingState: MutableState<Boolean>
+    ioScope: CoroutineScope
 ) = object : Dependencies() {
     override val clipServer: ClipServer = object : ClipServer {
     }
 
-    override val configManager: ConfigManager = object : ConfigManager {
-        override val config: AppConfig = AppConfig(false) // todo: read from disk config file
+    override val filePersist: FilePersist = object : FilePersist {
+        override val pathProvider: PathProvider = getPathProvider()
+
+        override fun createOneFilePersist(path: Path): OneFilePersist {
+            return DesktopOneFilePersist(path)
+        }
     }
+
+    override val configManager: ConfigManager = object : ConfigManager(ioScope) {
+
+        val configFilePersist = filePersist.getPersist("appConfig.json", ConfigType.USER)
+
+        override fun loadConfig(): AppConfig? {
+            return configFilePersist.readAs(AppConfig::class)
+        }
+
+        override fun saveConfigImpl(config: AppConfig) {
+            configFilePersist.save(config)
+        }
+    }.initConfig()
 }
 
 //@Preview
