@@ -1,7 +1,7 @@
 package com.clipevery.macos
 
 import com.clipevery.clip.ClipboardService
-import com.clipevery.macos.api.MacClipboard
+import com.clipevery.macos.api.MacosApi
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.Transferable
@@ -22,7 +22,7 @@ class MacosClipboardService
 
     override fun run() {
         try {
-            MacClipboard.INSTANCE.clipboardChangeCount.let { currentChangeCount ->
+            MacosApi.INSTANCE.getClipboardChangeCount().let { currentChangeCount ->
                 if (changeCount == currentChangeCount) {
                     return
                 }
