@@ -98,8 +98,6 @@ private fun getDependencies(
         val state = createSignalProtocol.state
         if (state != CreateSignalProtocolState.EXISTING && configManager.config.bindingState) {
             configManager.updateBindingState(false)
-        } else if (state == CreateSignalProtocolState.EXISTING && !configManager.config.bindingState) {
-            configManager.updateBindingState(true)
         }
 
         createSignalProtocol.signalProtocol

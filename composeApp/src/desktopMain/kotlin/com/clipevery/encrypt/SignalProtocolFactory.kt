@@ -66,7 +66,9 @@ class MacosSignalProtocolFactory(private val appInfo: AppInfo): SignalProtocolFa
             stringToSecretKey(it)
         } ?: run {
             logger.info { "Generating new password in keychain by ${appInfo.appName} ${appInfo.userName}" }
-            generateAESKey()
+            val secretKey = generateAESKey()
+            MacosKeychainHelper.setPassword(appInfo.appName, appInfo.userName, secretKeyToString(secretKey))
+            secretKey
         }
 
         val encryptData = encryptData(secretKey, data)
