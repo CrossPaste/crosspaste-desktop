@@ -5,11 +5,11 @@ import com.sun.jna.platform.win32.Crypt32Util.cryptUnprotectData
 
 object WindowDapiHelper {
 
-    fun encryptString(data: ByteArray): ByteArray? {
+    fun encryptData(data: ByteArray): ByteArray? {
         return cryptProtectData(data)
     }
 
-    fun decryptString(encryptedData: ByteArray): ByteArray? {
+    fun decryptData(encryptedData: ByteArray): ByteArray? {
         return cryptUnprotectData(encryptedData)
     }
 }

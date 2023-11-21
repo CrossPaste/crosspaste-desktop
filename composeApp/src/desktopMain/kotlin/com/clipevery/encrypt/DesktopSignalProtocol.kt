@@ -1,10 +1,11 @@
 package com.clipevery.encrypt
 
-import com.clipevery.utils.readJson
 import org.whispersystems.libsignal.IdentityKeyPair
 import org.whispersystems.libsignal.state.PreKeyRecord
 import org.whispersystems.libsignal.state.SignedPreKeyRecord
 import org.whispersystems.libsignal.util.KeyHelper
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 
 class DesktopSignalProtocol(override val identityKeyPair: IdentityKeyPair,
                             override val registrationId: Int,
@@ -18,43 +19,47 @@ class DesktopSignalProtocol(override val identityKeyPair: IdentityKeyPair,
         KeyHelper.generateSignedPreKey(KeyHelper.generateIdentityKeyPair(), 5))
 }
 
-
-data class StringEncodeSignalProtocol(val identityKeyPairStr: String,
-                                      val registrationIdStr: Int,
-                                      val preKeysStr: List<String>,
-                                      val signedPreKeyStr: String)
-
-
-fun readSignalProtocol(data: String): SignalProtocol {
-    val stringEncodeSignalProtocol = readJson<StringEncodeSignalProtocol>(data)
-
-    val identityKeyPair = IdentityKeyPair(asciiStringToBytes(stringEncodeSignalProtocol.identityKeyPairStr))
-
-    val registrationId = stringEncodeSignalProtocol.registrationIdStr
-
-    val preKeys = stringEncodeSignalProtocol.preKeysStr.map { PreKeyRecord(asciiStringToBytes(it)) }
-
-    val signedPreKey = SignedPreKeyRecord(asciiStringToBytes(stringEncodeSignalProtocol.signedPreKeyStr))
-
-    return DesktopSignalProtocol(identityKeyPair, registrationId, preKeys, signedPreKey)
+fun readSignalProtocol(data: ByteArray): SignalProtocol {
+    val inputStream = ByteArrayInputStream(data)
+    val identityKeyPairSize = inputStream.read()
+    val identityKeyPairBytes = ByteArray(identityKeyPairSize)
+    inputStream.read(identityKeyPairBytes)
+    val identityKeyPair = IdentityKeyPair(identityKeyPairBytes)
+    val registrationId = inputStream.read()
+    val preKeysSize = inputStream.read()
+    val preKeys = buildList {
+        for (i in 0 until preKeysSize) {
+            val preKeySize = inputStream.read()
+            val preKeyBytes = ByteArray(preKeySize)
+            inputStream.read(preKeyBytes)
+            add(PreKeyRecord(preKeyBytes))
+        }
+    }
+    val signedPreKeySize = inputStream.read()
+    val signedPreKeyBytes = ByteArray(signedPreKeySize)
+    val signedPreKeyRecord = SignedPreKeyRecord(signedPreKeyBytes)
+    return DesktopSignalProtocol(identityKeyPair, registrationId, preKeys, signedPreKeyRecord)
 }
 
-fun writeSignalProtocol(signalProtocol: SignalProtocol): StringEncodeSignalProtocol  {
-    val identityKeyPairStr = bytesToAsciiString(signalProtocol.identityKeyPair.serialize())
+fun writeSignalProtocol(signalProtocol: SignalProtocol): ByteArray  {
+    val byteStream = ByteArrayOutputStream()
+    val identityKeyPairBytes = signalProtocol.identityKeyPair.serialize()
+    val identityKeyPairSize = identityKeyPairBytes.size
+    byteStream.write(identityKeyPairSize)
+    byteStream.write(identityKeyPairSize)
+    byteStream.write(signalProtocol.registrationId)
+    val preKeys = signalProtocol.preKeys
+    byteStream.write(preKeys.size)
+    preKeys.forEach {
+        val preKeyBytes = it.serialize()
+        val preKeySize = preKeyBytes.size
+        byteStream.write(preKeySize)
+        byteStream.write(preKeyBytes)
+    }
+    val signedPreKeyBytes = signalProtocol.signedPreKey.serialize()
+    val signedPreKeySize = signedPreKeyBytes.size
+    byteStream.write(signedPreKeySize)
+    byteStream.write(signedPreKeyBytes)
 
-    val registrationIdStr = signalProtocol.registrationId
-
-    val preKeysStr = signalProtocol.preKeys.map { bytesToAsciiString(it.serialize()) }
-
-    val signedPreKeyStr = bytesToAsciiString(signalProtocol.signedPreKey.serialize())
-
-    return StringEncodeSignalProtocol(identityKeyPairStr, registrationIdStr, preKeysStr, signedPreKeyStr)
-}
-
-fun bytesToAsciiString(bytes: ByteArray): String {
-    return bytes.joinToString(separator = "") { it.toInt().toChar().toString() }
-}
-
-fun asciiStringToBytes(str: String): ByteArray {
-    return str.map { it.code.toByte() }.toByteArray()
+    return byteStream.toByteArray()
 }

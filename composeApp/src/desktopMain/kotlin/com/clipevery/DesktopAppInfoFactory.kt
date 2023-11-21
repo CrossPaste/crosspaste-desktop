@@ -9,7 +9,7 @@ import java.util.Properties
 
 val logger = KotlinLogging.logger {}
 
-fun getFactory(): AppInfoFactory {
+fun getAppInfoFactory(): AppInfoFactory {
     val platform = currentPlatform()
     return if (platform.isMacos()) {
         MacosAppInfoFactory()

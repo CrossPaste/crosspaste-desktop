@@ -5,11 +5,15 @@ import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.clipevery.AppConfig
+import com.clipevery.AppInfo
 import com.clipevery.ClipeveryApp
 import com.clipevery.Dependencies
 import com.clipevery.config.ConfigManager
 import com.clipevery.config.FileType
+import com.clipevery.encrypt.CreateSignalProtocolState
 import com.clipevery.encrypt.SignalProtocol
+import com.clipevery.encrypt.getSignalProtocolFactory
+import com.clipevery.getAppInfoFactory
 import com.clipevery.log.initLogger
 import com.clipevery.net.ClipServer
 import com.clipevery.net.DesktopClipServer
@@ -35,8 +39,10 @@ fun main() = application {
 
     val ioScope = rememberCoroutineScope { ioDispatcher }
 
+    val appInfo = getAppInfoFactory().createAppInfo()
+
     val dependencies = remember {
-        getDependencies(ioScope)
+        getDependencies(appInfo, ioScope)
     }
 
     Tray(icon = painterResource("clipevery_icon.png"),
@@ -58,6 +64,7 @@ fun main() = application {
 }
 
 private fun getDependencies(
+    appInfo: AppInfo,
     ioScope: CoroutineScope
 ) = object : Dependencies() {
 
@@ -70,21 +77,35 @@ private fun getDependencies(
             return DesktopOneFilePersist(path)
         }
     }
-    override val signalProtocol: SignalProtocol
-        get() = TODO("Not yet implemented")
 
     override val configManager: ConfigManager = object : ConfigManager(ioScope) {
 
         val configFilePersist = filePersist.getPersist("appConfig.json", FileType.USER)
 
         override fun loadConfig(): AppConfig? {
-            return configFilePersist.readAs(AppConfig::class)
+            return configFilePersist.read(AppConfig::class)
         }
 
         override fun saveConfigImpl(config: AppConfig) {
             configFilePersist.save(config)
         }
     }.initConfig()
+
+    override val signalProtocol: SignalProtocol = run {
+        val signalProtocolFactory = getSignalProtocolFactory(appInfo)
+        val createSignalProtocol = signalProtocolFactory.createSignalProtocol()
+
+        val state = createSignalProtocol.state
+        if (state != CreateSignalProtocolState.EXISTING && configManager.config.bindingState) {
+            configManager.updateBindingState(false)
+        } else if (state == CreateSignalProtocolState.EXISTING && !configManager.config.bindingState) {
+            configManager.updateBindingState(true)
+        }
+
+        createSignalProtocol.signalProtocol
+    }
+
+
 }
 
 //@Preview
