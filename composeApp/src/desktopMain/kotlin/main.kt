@@ -9,6 +9,7 @@ import com.clipevery.ClipeveryApp
 import com.clipevery.Dependencies
 import com.clipevery.config.ConfigManager
 import com.clipevery.config.FileType
+import com.clipevery.encrypt.SignalProtocol
 import com.clipevery.log.initLogger
 import com.clipevery.net.ClipServer
 import com.clipevery.net.DesktopClipServer
@@ -69,6 +70,8 @@ private fun getDependencies(
             return DesktopOneFilePersist(path)
         }
     }
+    override val signalProtocol: SignalProtocol
+        get() = TODO("Not yet implemented")
 
     override val configManager: ConfigManager = object : ConfigManager(ioScope) {
 
