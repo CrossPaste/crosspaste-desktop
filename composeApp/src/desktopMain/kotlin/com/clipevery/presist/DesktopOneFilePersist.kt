@@ -6,12 +6,21 @@ import java.nio.file.Path
 import kotlin.reflect.KClass
 
 @Suppress("UNCHECKED_CAST")
-class DesktopOneFilePersist(private val path: Path) : OneFilePersist {
-    override fun <T: Any> readAs(clazz: KClass<T>): T? {
+class DesktopOneFilePersist(val path: Path) : OneFilePersist {
+    override fun <T: Any> read(clazz: KClass<T>): T? {
         val file = path.toFile()
         return if (file.exists()) {
             val serializer = Json.serializersModule.serializer(clazz.java)
             Json.decodeFromString(serializer, file.readText()) as T
+        } else {
+            null
+        }
+    }
+
+    override fun readBytes(): ByteArray? {
+        val file = path.toFile()
+        return if (file.exists()) {
+            file.readBytes()
         } else {
             null
         }
@@ -24,5 +33,11 @@ class DesktopOneFilePersist(private val path: Path) : OneFilePersist {
         val file = path.toFile()
         file.parentFile?.mkdirs()
         file.writeText(json)
+    }
+
+    override fun saveBytes(bytes: ByteArray) {
+        val file = path.toFile()
+        file.parentFile?.mkdirs()
+        file.writeBytes(bytes)
     }
 }
