@@ -1,7 +1,7 @@
 package com.clipevery.model
 
 import com.clipevery.encrypt.base64Encode
-import org.whispersystems.libsignal.IdentityKey
+import org.signal.libsignal.protocol.IdentityKey
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 

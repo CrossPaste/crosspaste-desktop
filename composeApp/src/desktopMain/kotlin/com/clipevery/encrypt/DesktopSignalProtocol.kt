@@ -1,12 +1,39 @@
 package com.clipevery.encrypt
 
-import org.whispersystems.libsignal.IdentityKeyPair
-import org.whispersystems.libsignal.state.PreKeyRecord
-import org.whispersystems.libsignal.state.SignedPreKeyRecord
-import org.whispersystems.libsignal.util.KeyHelper
+import org.signal.libsignal.protocol.IdentityKeyPair
+import org.signal.libsignal.protocol.InvalidKeyException
+import org.signal.libsignal.protocol.ecc.Curve
+import org.signal.libsignal.protocol.ecc.ECKeyPair
+import org.signal.libsignal.protocol.state.PreKeyRecord
+import org.signal.libsignal.protocol.state.SignedPreKeyRecord
+import org.signal.libsignal.protocol.util.KeyHelper
+import org.signal.libsignal.protocol.util.Medium
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
+import java.util.LinkedList
+
+
+fun generatePreKeys(start: Int, count: Int): List<PreKeyRecord> {
+    var newStart = start
+    val results: MutableList<PreKeyRecord> = LinkedList()
+    newStart--
+    for (i in 0 until count) {
+        results.add(PreKeyRecord((newStart + i) % (Medium.MAX_VALUE - 1) + 1, Curve.generateKeyPair()))
+    }
+    return results
+}
+
+@Throws(InvalidKeyException::class)
+fun generateSignedPreKey(
+    identityKeyPair: IdentityKeyPair,
+    signedPreKeyId: Int
+): SignedPreKeyRecord {
+    val keyPair: ECKeyPair = Curve.generateKeyPair()
+    val signature =
+        Curve.calculateSignature(identityKeyPair.privateKey, keyPair.getPublicKey().serialize())
+    return SignedPreKeyRecord(signedPreKeyId, System.currentTimeMillis(), keyPair, signature)
+}
 
 class DesktopSignalProtocol(override val identityKeyPair: IdentityKeyPair,
                             override val registrationId: Int,
@@ -14,10 +41,16 @@ class DesktopSignalProtocol(override val identityKeyPair: IdentityKeyPair,
                             override val signedPreKey: SignedPreKeyRecord
     ): SignalProtocol {
 
-    constructor(): this(KeyHelper.generateIdentityKeyPair(),
+    constructor(): this(
+        IdentityKeyPair.generate(),
         KeyHelper.generateRegistrationId(false),
-        KeyHelper.generatePreKeys(0, 5),
-        KeyHelper.generateSignedPreKey(KeyHelper.generateIdentityKeyPair(), 5))
+        generatePreKeys(0, 5))
+
+    constructor(identityKeyPair:  IdentityKeyPair, registrationId: Int, preKeys: List<PreKeyRecord>):
+            this(identityKeyPair,
+                registrationId,
+                preKeys,
+                generateSignedPreKey(identityKeyPair, 5))
 }
 
 fun readSignalProtocol(data: ByteArray): SignalProtocol {
