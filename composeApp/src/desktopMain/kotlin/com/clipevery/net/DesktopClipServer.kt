@@ -3,6 +3,7 @@ package com.clipevery.net
 import com.clipevery.encrypt.SignalProtocol
 import com.clipevery.model.AppHostInfo
 import com.clipevery.model.AppRequestBindInfo
+import com.clipevery.platform.currentPlatform
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.javalin.Javalin
 import io.javalin.apibuilder.EndpointGroup
@@ -68,7 +69,7 @@ class DesktopClipServer(private val signalProtocol: SignalProtocol): ClipServer 
                 val inetAddresses = netInterface.inetAddresses
                 for (inetAddress in Collections.list(inetAddresses)) {
                     if (inetAddress.isSiteLocalAddress) {
-                        add(AppHostInfo(hostName = netInterface.displayName,
+                        add(AppHostInfo(displayName = netInterface.displayName,
                             hostAddress = inetAddress.hostAddress))
                     }
                 }
@@ -77,7 +78,9 @@ class DesktopClipServer(private val signalProtocol: SignalProtocol): ClipServer 
     }
 
     override fun appRequestBindInfo(): AppRequestBindInfo {
-        return AppRequestBindInfo(publicKey = signalProtocol.identityKeyPair.publicKey,
+        return AppRequestBindInfo(
+            platform = currentPlatform().name,
+            publicKey = signalProtocol.identityKeyPair.publicKey,
             port = port(),
             hostInfoList = getHostInfoList())
     }
