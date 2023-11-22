@@ -1,16 +1,16 @@
 package com.clipevery.encrypt
 
-import org.whispersystems.libsignal.IdentityKeyPair
-import org.whispersystems.libsignal.state.IdentityKeyStore
-import org.whispersystems.libsignal.state.PreKeyRecord
-import org.whispersystems.libsignal.state.PreKeyStore
-import org.whispersystems.libsignal.state.SessionStore
-import org.whispersystems.libsignal.state.SignedPreKeyRecord
-import org.whispersystems.libsignal.state.SignedPreKeyStore
-import org.whispersystems.libsignal.state.impl.InMemoryIdentityKeyStore
-import org.whispersystems.libsignal.state.impl.InMemoryPreKeyStore
-import org.whispersystems.libsignal.state.impl.InMemorySessionStore
-import org.whispersystems.libsignal.state.impl.InMemorySignedPreKeyStore
+import org.signal.libsignal.protocol.IdentityKeyPair
+import org.signal.libsignal.protocol.state.IdentityKeyStore
+import org.signal.libsignal.protocol.state.PreKeyRecord
+import org.signal.libsignal.protocol.state.PreKeyStore
+import org.signal.libsignal.protocol.state.SessionStore
+import org.signal.libsignal.protocol.state.SignedPreKeyRecord
+import org.signal.libsignal.protocol.state.SignedPreKeyStore
+import org.signal.libsignal.protocol.state.impl.InMemoryIdentityKeyStore
+import org.signal.libsignal.protocol.state.impl.InMemoryPreKeyStore
+import org.signal.libsignal.protocol.state.impl.InMemorySessionStore
+import org.signal.libsignal.protocol.state.impl.InMemorySignedPreKeyStore
 
 interface SignalProtocol {
     val identityKeyPair: IdentityKeyPair
