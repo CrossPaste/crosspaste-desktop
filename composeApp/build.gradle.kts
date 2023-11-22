@@ -48,6 +48,7 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            modules("jdk.charsets")
 
             packageName = "Clipevery"
             packageVersion = "1.0.0"
