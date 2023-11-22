@@ -1,4 +1,4 @@
-package com.clipevery
+package com.clipevery.model
 
 data class AppInfo(
     val appName: String = "Clipevery",

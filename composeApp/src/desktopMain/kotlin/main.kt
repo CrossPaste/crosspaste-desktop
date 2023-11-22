@@ -4,8 +4,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import com.clipevery.AppConfig
-import com.clipevery.AppInfo
+import com.clipevery.model.AppConfig
+import com.clipevery.model.AppInfo
 import com.clipevery.ClipeveryApp
 import com.clipevery.Dependencies
 import com.clipevery.config.ConfigManager
@@ -22,6 +22,8 @@ import com.clipevery.path.getPathProvider
 import com.clipevery.presist.DesktopOneFilePersist
 import com.clipevery.presist.FilePersist
 import com.clipevery.presist.OneFilePersist
+import com.clipevery.utils.DesktopQRCodeGenerator
+import com.clipevery.utils.QRCodeGenerator
 import com.clipevery.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
@@ -68,7 +70,6 @@ private fun getDependencies(
     ioScope: CoroutineScope
 ) = object : Dependencies() {
 
-    override val clipServer: ClipServer = DesktopClipServer().start()
 
     override val filePersist: FilePersist = object : FilePersist {
         override val pathProvider: PathProvider = getPathProvider()
@@ -102,6 +103,10 @@ private fun getDependencies(
 
         createSignalProtocol.signalProtocol
     }
+
+    override val clipServer: ClipServer = DesktopClipServer(signalProtocol).start()
+
+    override val qrCodeGenerator: QRCodeGenerator = DesktopQRCodeGenerator(clipServer)
 
 
 }

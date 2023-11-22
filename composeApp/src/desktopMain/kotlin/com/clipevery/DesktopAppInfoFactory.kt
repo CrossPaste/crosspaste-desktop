@@ -1,5 +1,6 @@
 package com.clipevery
 
+import com.clipevery.model.AppInfo
 import com.clipevery.platform.currentPlatform
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.IOException
