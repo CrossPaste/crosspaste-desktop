@@ -19,6 +19,7 @@ import com.clipevery.net.ClipServer
 import com.clipevery.net.DesktopClipServer
 import com.clipevery.path.PathProvider
 import com.clipevery.path.getPathProvider
+import com.clipevery.platform.currentPlatform
 import com.clipevery.presist.DesktopOneFilePersist
 import com.clipevery.presist.FilePersist
 import com.clipevery.presist.OneFilePersist
@@ -47,7 +48,13 @@ fun main() = application {
         getDependencies(appInfo, ioScope)
     }
 
-    Tray(icon = painterResource("clipevery_icon.png"),
+    val trayIcon = if(currentPlatform().isMacos()) {
+        painterResource("clipevery_mac_tray.png")
+    } else {
+        painterResource("clipevery_icon.png")
+    }
+
+    Tray(icon = trayIcon,
         menu = {
             Item(
                 "Exit",
