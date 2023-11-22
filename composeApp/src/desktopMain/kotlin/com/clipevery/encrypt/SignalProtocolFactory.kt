@@ -72,7 +72,7 @@ class MacosSignalProtocolFactory(private val appInfo: AppInfo): SignalProtocolFa
         }
 
         val encryptData = encryptData(secretKey, data)
-        filePersist.save(encryptData)
+        filePersist.saveBytes(encryptData)
         return SignalProtocolWithState(signalProtocol,
             if (deleteOldSignalProtocol) CreateSignalProtocolState.DELETE_GENERATE
             else CreateSignalProtocolState.NEW_GENERATE)
