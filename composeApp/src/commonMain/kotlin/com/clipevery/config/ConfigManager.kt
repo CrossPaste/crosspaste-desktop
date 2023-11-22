@@ -1,6 +1,6 @@
 package com.clipevery.config
 
-import com.clipevery.AppConfig
+import com.clipevery.model.AppConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 

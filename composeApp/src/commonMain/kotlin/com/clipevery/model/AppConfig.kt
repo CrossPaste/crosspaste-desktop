@@ -1,4 +1,4 @@
-package com.clipevery
+package com.clipevery.model
 
 import kotlinx.serialization.Serializable
 

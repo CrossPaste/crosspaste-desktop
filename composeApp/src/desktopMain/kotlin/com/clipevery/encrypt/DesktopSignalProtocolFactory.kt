@@ -1,6 +1,6 @@
 package com.clipevery.encrypt
 
-import com.clipevery.AppInfo
+import com.clipevery.model.AppInfo
 import com.clipevery.macos.MacosKeychainHelper
 import com.clipevery.path.getPathProvider
 import com.clipevery.platform.currentPlatform
