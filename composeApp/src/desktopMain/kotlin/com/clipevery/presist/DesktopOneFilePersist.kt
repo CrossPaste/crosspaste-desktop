@@ -17,7 +17,7 @@ class DesktopOneFilePersist(val path: Path) : OneFilePersist {
         }
     }
 
-    override fun read(): ByteArray? {
+    override fun readBytes(): ByteArray? {
         val file = path.toFile()
         return if (file.exists()) {
             file.readBytes()
@@ -35,7 +35,7 @@ class DesktopOneFilePersist(val path: Path) : OneFilePersist {
         file.writeText(json)
     }
 
-    override fun save(bytes: ByteArray) {
+    override fun saveBytes(bytes: ByteArray) {
         val file = path.toFile()
         file.parentFile?.mkdirs()
         file.writeBytes(bytes)

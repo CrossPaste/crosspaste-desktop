@@ -4,8 +4,9 @@ import org.whispersystems.libsignal.IdentityKeyPair
 import org.whispersystems.libsignal.state.PreKeyRecord
 import org.whispersystems.libsignal.state.SignedPreKeyRecord
 import org.whispersystems.libsignal.util.KeyHelper
-import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.DataInputStream
+import java.io.DataOutputStream
 
 class DesktopSignalProtocol(override val identityKeyPair: IdentityKeyPair,
                             override val registrationId: Int,
@@ -20,20 +21,20 @@ class DesktopSignalProtocol(override val identityKeyPair: IdentityKeyPair,
 }
 
 fun readSignalProtocol(data: ByteArray): SignalProtocol {
-    val inputStream = ByteArrayInputStream(data)
-    val identityKeyPairSize = inputStream.read()
+    val inputStream = DataInputStream(data.inputStream())
+    val identityKeyPairSize = inputStream.readInt()
     val identityKeyPairBytes = inputStream.readNBytes(identityKeyPairSize)
     val identityKeyPair = IdentityKeyPair(identityKeyPairBytes)
-    val registrationId = inputStream.read()
-    val preKeysSize = inputStream.read()
+    val registrationId = inputStream.readInt()
+    val preKeysSize = inputStream.readInt()
     val preKeys = buildList {
         for (i in 0 until preKeysSize) {
-            val preKeySize = inputStream.read()
+            val preKeySize = inputStream.readInt()
             val preKeyBytes = inputStream.readNBytes(preKeySize)
             add(PreKeyRecord(preKeyBytes))
         }
     }
-    val signedPreKeySize = inputStream.read()
+    val signedPreKeySize = inputStream.readInt()
     val signedPreKeyBytes = inputStream.readNBytes(signedPreKeySize)
     val signedPreKeyRecord = SignedPreKeyRecord(signedPreKeyBytes)
     return DesktopSignalProtocol(identityKeyPair, registrationId, preKeys, signedPreKeyRecord)
@@ -41,23 +42,24 @@ fun readSignalProtocol(data: ByteArray): SignalProtocol {
 
 fun writeSignalProtocol(signalProtocol: SignalProtocol): ByteArray  {
     val byteStream = ByteArrayOutputStream()
+    val dataStream = DataOutputStream(byteStream)
     val identityKeyPairBytes = signalProtocol.identityKeyPair.serialize()
     val identityKeyPairSize = identityKeyPairBytes.size
-    byteStream.write(identityKeyPairSize)
-    byteStream.write(identityKeyPairBytes)
-    byteStream.write(signalProtocol.registrationId)
+    dataStream.writeInt(identityKeyPairSize)
+    dataStream.write(identityKeyPairBytes)
+    dataStream.writeInt(signalProtocol.registrationId)
     val preKeys = signalProtocol.preKeys
-    byteStream.write(preKeys.size)
+    dataStream.writeInt(preKeys.size)
     preKeys.forEach {
         val preKeyBytes = it.serialize()
         val preKeySize = preKeyBytes.size
-        byteStream.write(preKeySize)
-        byteStream.write(preKeyBytes)
+        dataStream.writeInt(preKeySize)
+        dataStream.write(preKeyBytes)
     }
     val signedPreKeyBytes = signalProtocol.signedPreKey.serialize()
     val signedPreKeySize = signedPreKeyBytes.size
-    byteStream.write(signedPreKeySize)
-    byteStream.write(signedPreKeyBytes)
+    dataStream.writeInt(signedPreKeySize)
+    dataStream.write(signedPreKeyBytes)
 
     return byteStream.toByteArray()
 }

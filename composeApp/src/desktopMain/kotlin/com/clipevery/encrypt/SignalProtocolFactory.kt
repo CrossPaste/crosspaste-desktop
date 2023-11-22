@@ -89,7 +89,7 @@ class WindowsSignalProtocolFactory : SignalProtocolFactory {
         var deleteOldSignalProtocol = false
         if (file.exists()) {
             logger.info { "Found signalProtocol encrypt file" }
-            filePersist.read()?.let {
+            filePersist.readBytes()?.let {
                 try {
                     val decryptData = WindowDapiHelper.decryptData(it)
                     decryptData?.let { byteArray ->
@@ -114,7 +114,7 @@ class WindowsSignalProtocolFactory : SignalProtocolFactory {
         val signalProtocol = DesktopSignalProtocol()
         val data = writeSignalProtocol(signalProtocol)
         val encryptData = WindowDapiHelper.encryptData(data)
-        filePersist.save(encryptData)
+        filePersist.saveBytes(encryptData!!)
         return SignalProtocolWithState(signalProtocol,
             if (deleteOldSignalProtocol) CreateSignalProtocolState.DELETE_GENERATE
             else CreateSignalProtocolState.NEW_GENERATE)
