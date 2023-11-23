@@ -8,9 +8,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
@@ -36,19 +33,17 @@ import com.clipevery.presist.OneFilePersist
 import com.clipevery.ui.getTrayMouseAdapter
 import com.clipevery.utils.DesktopQRCodeGenerator
 import com.clipevery.utils.QRCodeGenerator
+import com.clipevery.utils.getPreferredWindowSize
+import com.clipevery.utils.initAppUI
 import com.clipevery.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import java.awt.Dimension
-import java.awt.Toolkit
 import java.awt.geom.RoundRectangle2D
 import java.nio.file.Path
 import kotlin.io.path.pathString
 
 
-val height = 720.dp
-val width = 440.dp
-
+val appUI = initAppUI()
 
 fun main() = application {
     val pathProvider = getPathProvider()
@@ -76,7 +71,7 @@ fun main() = application {
     val windowState = rememberWindowState(
         placement = WindowPlacement.Floating,
         position = WindowPosition.PlatformDefault,
-        size = getPreferredWindowSize(width, height)
+        size = getPreferredWindowSize(appUI)
     )
 
     Tray(icon = trayIcon,
@@ -121,14 +116,7 @@ fun applyRoundedCorners(window: ComposeWindow) {
     window.shape = shape
 }
 
-private fun getPreferredWindowSize(desiredWidth: Dp, desiredHeight: Dp): DpSize {
-    val screenSize: Dimension = Toolkit.getDefaultToolkit().screenSize
-    val preferredWidth: Dp = (screenSize.width.dp * 0.8f)
-    val preferredHeight: Dp = (screenSize.height.dp * 0.8f)
-    val width: Dp = if (desiredWidth < preferredWidth) desiredWidth else preferredWidth
-    val height: Dp = if (desiredHeight < preferredHeight) desiredHeight else preferredHeight
-    return DpSize(width, height)
-}
+
 
 private fun getDependencies(
     appInfo: AppInfo,
