@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
@@ -42,7 +43,6 @@ import java.awt.Toolkit
 import java.awt.geom.RoundRectangle2D
 import java.nio.file.Path
 import kotlin.io.path.pathString
-import kotlin.system.exitProcess
 
 
 val height = 720.dp
@@ -78,53 +78,40 @@ fun main() = application {
         size = getPreferredWindowSize(width, height)
     )
 
-
     Tray(icon = trayIcon,
         mouseListener = getTrayMouseAdapter(windowState),
-        menu = {
-            Item(
-                "Exit",
-                onClick = { exitProcess(1) }
-            )
-        },
         onAction = {
-            logger.info { "start onAction showWindow=$showWindow" }
             showWindow = !showWindow
-            logger.info { "end onAction showWindow=$showWindow" }
         }
     )
 
-    if (showWindow) {
+    Window(
+        onCloseRequest = ::exitApplication,
+        visible = showWindow,
+        state = windowState,
+        title = "Clipevery",
+        icon = painterResource("clipevery_icon.png"),
+        alwaysOnTop = true,
+        undecorated = true,
+        resizable = false
+    ) {
 
-        Window(
-            onCloseRequest = ::exitApplication,
-            state = windowState,
-            title = "Clipevery",
-            icon = painterResource("clipevery_icon.png"),
-            alwaysOnTop = false,
-            undecorated = true,
-            resizable = false
-        ) {
-            if (window.componentListeners.isEmpty()) {
-                window.addComponentListener(object : java.awt.event.ComponentAdapter() {
-                    override fun componentResized(e: java.awt.event.ComponentEvent?) {
-                        window.shape = RoundRectangle2D.Double(
-                            0.0,
-                            0.0,
-                            window.width.toDouble(),
-                            window.height.toDouble(),
-                            30.0,
-                            30.0
-                        )
-
-                    }
-                })
+        applyRoundedCorners(window)
+        logger.info { "window.componentListeners = ${window.componentListeners.size}" }
+        window.addComponentListener(object : java.awt.event.ComponentAdapter() {
+            override fun componentResized(e: java.awt.event.ComponentEvent?) {
+                applyRoundedCorners(window)
             }
+        })
 
-            ClipeveryApp(dependencies)
-        }
+        ClipeveryApp(dependencies)
     }
+}
 
+fun applyRoundedCorners(window: ComposeWindow) {
+    val radius = 15.0
+    val shape = RoundRectangle2D.Double(0.0, 0.0, window.width.toDouble(), window.height.toDouble(), radius, radius)
+    window.shape = shape
 }
 
 private fun getPreferredWindowSize(desiredWidth: Dp, desiredHeight: Dp): DpSize {
