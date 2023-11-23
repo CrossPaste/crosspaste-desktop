@@ -1,20 +1,28 @@
+package com.clipevery
+
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
-import com.clipevery.model.AppConfig
-import com.clipevery.model.AppInfo
-import com.clipevery.ClipeveryApp
-import com.clipevery.Dependencies
+import androidx.compose.ui.window.rememberWindowState
 import com.clipevery.config.ConfigManager
 import com.clipevery.config.FileType
 import com.clipevery.encrypt.CreateSignalProtocolState
 import com.clipevery.encrypt.SignalProtocol
 import com.clipevery.encrypt.getSignalProtocolFactory
-import com.clipevery.getAppInfoFactory
 import com.clipevery.log.initLogger
+import com.clipevery.model.AppConfig
+import com.clipevery.model.AppInfo
 import com.clipevery.net.ClipServer
 import com.clipevery.net.DesktopClipServer
 import com.clipevery.path.PathProvider
@@ -23,14 +31,22 @@ import com.clipevery.platform.currentPlatform
 import com.clipevery.presist.DesktopOneFilePersist
 import com.clipevery.presist.FilePersist
 import com.clipevery.presist.OneFilePersist
+import com.clipevery.ui.getTrayMouseAdapter
 import com.clipevery.utils.DesktopQRCodeGenerator
 import com.clipevery.utils.QRCodeGenerator
 import com.clipevery.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
+import java.awt.Dimension
+import java.awt.Toolkit
+import java.awt.geom.RoundRectangle2D
 import java.nio.file.Path
 import kotlin.io.path.pathString
 import kotlin.system.exitProcess
+
+
+val height = 720.dp
+val width = 440.dp
 
 
 fun main() = application {
@@ -41,6 +57,8 @@ fun main() = application {
     logger.info { "Starting Clipevery" }
 
     val ioScope = rememberCoroutineScope { ioDispatcher }
+
+    var showWindow by remember { mutableStateOf(false) }
 
     val appInfo = getAppInfoFactory().createAppInfo()
 
@@ -54,22 +72,68 @@ fun main() = application {
         painterResource("clipevery_icon.png")
     }
 
+    val windowState = rememberWindowState(
+        placement = WindowPlacement.Floating,
+        position = WindowPosition.PlatformDefault,
+        size = getPreferredWindowSize(width, height)
+    )
+
+
     Tray(icon = trayIcon,
+        mouseListener = getTrayMouseAdapter(windowState),
         menu = {
             Item(
                 "Exit",
                 onClick = { exitProcess(1) }
             )
+        },
+        onAction = {
+            logger.info { "start onAction showWindow=$showWindow" }
+            showWindow = !showWindow
+            logger.info { "end onAction showWindow=$showWindow" }
         }
     )
 
-    Window(onCloseRequest = ::exitApplication,
-        title = "Clipevery",
-        icon = painterResource("clipevery_icon.png"),
-        undecorated = true,
-        resizable = true) {
-        ClipeveryApp(dependencies)
+    if (showWindow) {
+
+        Window(
+            onCloseRequest = ::exitApplication,
+            state = windowState,
+            title = "Clipevery",
+            icon = painterResource("clipevery_icon.png"),
+            alwaysOnTop = false,
+            undecorated = true,
+            resizable = false
+        ) {
+            if (window.componentListeners.isEmpty()) {
+                window.addComponentListener(object : java.awt.event.ComponentAdapter() {
+                    override fun componentResized(e: java.awt.event.ComponentEvent?) {
+                        window.shape = RoundRectangle2D.Double(
+                            0.0,
+                            0.0,
+                            window.width.toDouble(),
+                            window.height.toDouble(),
+                            30.0,
+                            30.0
+                        )
+
+                    }
+                })
+            }
+
+            ClipeveryApp(dependencies)
+        }
     }
+
+}
+
+private fun getPreferredWindowSize(desiredWidth: Dp, desiredHeight: Dp): DpSize {
+    val screenSize: Dimension = Toolkit.getDefaultToolkit().screenSize
+    val preferredWidth: Dp = (screenSize.width.dp * 0.8f)
+    val preferredHeight: Dp = (screenSize.height.dp * 0.8f)
+    val width: Dp = if (desiredWidth < preferredWidth) desiredWidth else preferredWidth
+    val height: Dp = if (desiredHeight < preferredHeight) desiredHeight else preferredHeight
+    return DpSize(width, height)
 }
 
 private fun getDependencies(
