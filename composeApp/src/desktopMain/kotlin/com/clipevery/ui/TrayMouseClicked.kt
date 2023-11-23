@@ -9,17 +9,18 @@ import com.clipevery.platform.currentPlatform
 import java.awt.event.MouseAdapter
 
 
-fun getTrayMouseAdapter(windowState: WindowState): MouseAdapter {
+fun getTrayMouseAdapter(windowState: WindowState, mouseClickedAction: () -> Unit): MouseAdapter {
     return if(currentPlatform().isMacos()) {
-        MacTrayMouseClicked(windowState)
+        MacTrayMouseClicked(windowState, mouseClickedAction)
     } else {
         WindowsTrayMouseClicked()
     }
 }
 
-class MacTrayMouseClicked(private val windowState: WindowState): MouseAdapter() {
+class MacTrayMouseClicked(private val windowState: WindowState, private val mouseClickedAction: () -> Unit): MouseAdapter() {
 
     override fun mouseClicked(e: java.awt.event.MouseEvent) {
+        mouseClickedAction()
         windowState.position = WindowPosition.Absolute(
             x = calculatePosition(e.x.dp, windowState.size.width),
             y = 32.dp

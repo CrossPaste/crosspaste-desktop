@@ -1,5 +1,6 @@
 package com.clipevery
 
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -79,10 +80,7 @@ fun main() = application {
     )
 
     Tray(icon = trayIcon,
-        mouseListener = getTrayMouseAdapter(windowState),
-        onAction = {
-            showWindow = !showWindow
-        }
+        mouseListener = getTrayMouseAdapter(windowState) { showWindow = !showWindow },
     )
 
     Window(
@@ -96,13 +94,22 @@ fun main() = application {
         resizable = false
     ) {
 
-        applyRoundedCorners(window)
-        logger.info { "window.componentListeners = ${window.componentListeners.size}" }
-        window.addComponentListener(object : java.awt.event.ComponentAdapter() {
-            override fun componentResized(e: java.awt.event.ComponentEvent?) {
-                applyRoundedCorners(window)
-            }
-        })
+        LaunchedEffect(Unit) {
+            window.addComponentListener(object : java.awt.event.ComponentAdapter() {
+                override fun componentResized(e: java.awt.event.ComponentEvent?) {
+                    applyRoundedCorners(window)
+                }
+            })
+            window.addWindowFocusListener(object : java.awt.event.WindowFocusListener {
+                override fun windowGainedFocus(e: java.awt.event.WindowEvent?) {
+                    showWindow = true
+                }
+
+                override fun windowLostFocus(e: java.awt.event.WindowEvent?) {
+                    showWindow = false
+                }
+            })
+        }
 
         ClipeveryApp(dependencies)
     }
