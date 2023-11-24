@@ -49,7 +49,7 @@ fun ClipeveryApp(dependencies: Dependencies) {
     MaterialTheme {
         Column(Modifier.fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
-            .background(Color.White),
+            .background(Color(238, 238, 238)),
             horizontalAlignment = Alignment.CenterHorizontally) {
             ClipeveryCommon(dependencies)
         }

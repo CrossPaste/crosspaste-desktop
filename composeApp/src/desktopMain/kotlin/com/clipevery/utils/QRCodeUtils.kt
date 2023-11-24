@@ -4,7 +4,6 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.clipevery.net.ClipServer
 import com.clipevery.platform.currentPlatform
-import com.clipevery.windows.api.User32
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import java.awt.Color
@@ -23,9 +22,8 @@ class DesktopQRCodeGenerator(private val clipServer: ClipServer) : QRCodeGenerat
         val imageWidth: Int
         val imageHeight: Int
         if (currentPlatform().isWindows()) {
-            val dpiSystem = User32.INSTANCE.GetDpiForSystem()
-            imageWidth = width * 96 / dpiSystem
-            imageHeight = height * 96 / dpiSystem
+            imageWidth = width * 3 / 4
+            imageHeight = height * 3 / 4
         } else{
             imageWidth = width
             imageHeight = height
