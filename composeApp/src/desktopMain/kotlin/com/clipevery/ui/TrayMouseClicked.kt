@@ -25,7 +25,7 @@ class MacTrayMouseClicked(private val windowState: WindowState, private val mous
         mouseClickedAction()
         windowState.position = WindowPosition.Absolute(
             x = calculatePosition(e.x.dp, windowState.size.width),
-            y = 32.dp
+            y = 30.dp
         )
     }
 

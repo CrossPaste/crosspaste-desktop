@@ -1,13 +1,25 @@
 package com.clipevery
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
@@ -105,13 +117,46 @@ fun main() = application {
                 }
             })
         }
-
+        CustomWindowDecoration()
         ClipeveryApp(dependencies)
     }
 }
 
+
+@Composable
+fun CustomWindowDecoration() {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(62.dp),
+        color = MaterialTheme.colors.background,
+        shape = RoundedCornerShape(
+            topStart = 10.dp,
+            topEnd = 10.dp,
+            bottomEnd = 0.dp,
+            bottomStart = 0.dp
+        )
+    ) {
+        Box(
+            modifier = Modifier.background(Color.Black)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.6f),
+                            Color.Transparent
+                        ),
+                        startY = 0.0f,
+                        endY = 3.0f
+                    )
+                ),
+        ) {
+            // Custom title bar content
+        }
+    }
+}
+
 fun applyRoundedCorners(window: ComposeWindow) {
-    val radius = 15.0
+    val radius = 20.0
     val shape = RoundRectangle2D.Double(0.0, 0.0, window.width.toDouble(), window.height.toDouble(), radius, radius)
     window.shape = shape
 }

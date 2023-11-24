@@ -22,6 +22,7 @@ kotlin {
             implementation("ch.qos.logback:logback-classic:1.4.11")
             implementation("io.javalin:javalin:5.6.3")
             implementation("org.signal:libsignal-client:0.35.0")
+            implementation("br.com.devsrsouza.compose.icons:tabler-icons-desktop:1.1.0")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
