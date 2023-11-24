@@ -1,25 +1,13 @@
 package com.clipevery
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
@@ -50,7 +38,8 @@ import com.clipevery.utils.initAppUI
 import com.clipevery.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import java.awt.geom.RoundRectangle2D
+import java.awt.Rectangle
+import java.awt.geom.Area
 import java.nio.file.Path
 import kotlin.io.path.pathString
 
@@ -86,7 +75,8 @@ fun main() = application {
         size = getPreferredWindowSize(appUI)
     )
 
-    Tray(icon = trayIcon,
+    Tray(
+        icon = trayIcon,
         mouseListener = getTrayMouseAdapter(windowState) { showWindow = !showWindow },
     )
 
@@ -104,7 +94,7 @@ fun main() = application {
         LaunchedEffect(Unit) {
             window.addComponentListener(object : java.awt.event.ComponentAdapter() {
                 override fun componentResized(e: java.awt.event.ComponentEvent?) {
-                    applyRoundedCorners(window)
+                    setWindowShapeWithTransparentEdges(window, 10)
                 }
             })
             window.addWindowFocusListener(object : java.awt.event.WindowFocusListener {
@@ -117,48 +107,21 @@ fun main() = application {
                 }
             })
         }
-        CustomWindowDecoration()
         ClipeveryApp(dependencies)
     }
 }
 
 
-@Composable
-fun CustomWindowDecoration() {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(62.dp),
-        color = MaterialTheme.colors.background,
-        shape = RoundedCornerShape(
-            topStart = 10.dp,
-            topEnd = 10.dp,
-            bottomEnd = 0.dp,
-            bottomStart = 0.dp
-        )
-    ) {
-        Box(
-            modifier = Modifier.background(Color.Black)
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.6f),
-                            Color.Transparent
-                        ),
-                        startY = 0.0f,
-                        endY = 3.0f
-                    )
-                ),
-        ) {
-            // Custom title bar content
-        }
-    }
-}
 
-fun applyRoundedCorners(window: ComposeWindow) {
-    val radius = 20.0
-    val shape = RoundRectangle2D.Double(0.0, 0.0, window.width.toDouble(), window.height.toDouble(), radius, radius)
-    window.shape = shape
+
+fun setWindowShapeWithTransparentEdges(window: ComposeWindow, transparentHeight: Int) {
+    val originalRect = Rectangle(0, 0, window.width, window.height)
+    val area = Area(originalRect)
+    val topRect = Rectangle(0, 0, window.width, transparentHeight)
+    val bottomRect = Rectangle(0, window.height - transparentHeight, window.width, transparentHeight)
+    area.subtract(Area(topRect))
+    area.subtract(Area(bottomRect))
+    window.shape = area
 }
 
 
