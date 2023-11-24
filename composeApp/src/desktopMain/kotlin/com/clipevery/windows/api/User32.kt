@@ -1,6 +1,7 @@
 package com.clipevery.windows.api
 
 import com.sun.jna.Native
+import com.sun.jna.platform.win32.WinDef.HRGN
 import com.sun.jna.platform.win32.WinDef.HWND
 import com.sun.jna.platform.win32.WinDef.LPARAM
 import com.sun.jna.platform.win32.WinDef.WPARAM
@@ -41,6 +42,10 @@ interface User32 : StdCallLibrary {
 
     fun SendMessage(hWnd: HWND?, message: Int, wParam: WPARAM?, lParam: LPARAM?)
     fun DefWindowProc(hWnd: HWND?, msg: Int, wParam: WPARAM?, lParam: LPARAM?): Int
+
+    fun SetWindowRgn(hWnd: HWND?, hRgn: HRGN?, bRedraw: Boolean): Boolean
+
+    fun GetDpiForSystem(): Int
 
     companion object {
         val INSTANCE = Native.load("user32", User32::class.java, DEFAULT_OPTIONS

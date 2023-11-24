@@ -36,6 +36,11 @@ import com.clipevery.utils.QRCodeGenerator
 import com.clipevery.utils.getPreferredWindowSize
 import com.clipevery.utils.initAppUI
 import com.clipevery.utils.ioDispatcher
+import com.clipevery.windows.api.GDI32
+import com.clipevery.windows.api.User32
+import com.sun.jna.Native
+import com.sun.jna.platform.win32.WinDef.HRGN
+import com.sun.jna.platform.win32.WinDef.HWND
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import java.awt.Rectangle
@@ -94,7 +99,12 @@ fun main() = application {
         LaunchedEffect(Unit) {
             window.addComponentListener(object : java.awt.event.ComponentAdapter() {
                 override fun componentResized(e: java.awt.event.ComponentEvent?) {
-                    setWindowShapeWithTransparentEdges(window, 10)
+                    val currentPlatform = currentPlatform()
+                    if (currentPlatform.isMacos()) {
+                        setWindowShapeWithTransparentEdges(window, 10)
+                    } else if (currentPlatform.isWindows()) {
+                        applyRoundedCorners(window)
+                    }
                 }
             })
             window.addWindowFocusListener(object : java.awt.event.WindowFocusListener {
@@ -124,6 +134,22 @@ fun setWindowShapeWithTransparentEdges(window: ComposeWindow, transparentHeight:
     window.shape = area
 }
 
+fun applyRoundedCorners(window: ComposeWindow) {
+    val hwnd = HWND()
+    hwnd.setPointer(Native.getComponentPointer(window))
+    val dpiSystem = User32.INSTANCE.GetDpiForSystem()
+
+    val width = (dpiSystem * window.width) / 96
+    val height = (dpiSystem * window.height) / 96
+
+    val radius = (dpiSystem * 20) / 96
+
+
+    val hRgn: HRGN? =
+        GDI32.INSTANCE.CreateRoundRectRgn(0, 0, width, height, radius, radius)
+
+    User32.INSTANCE.SetWindowRgn(hwnd, hRgn, true)
+}
 
 
 private fun getDependencies(
