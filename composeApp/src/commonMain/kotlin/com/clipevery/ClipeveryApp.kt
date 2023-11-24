@@ -32,12 +32,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.clipevery.ui.TitleUI
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Scan
 import kotlinx.coroutines.Job
@@ -96,21 +96,7 @@ fun CustomWindowDecoration() {
             bottomStart = 0.dp
         )
     ) {
-        Box(
-            modifier = Modifier.background(Color.Black)
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.6f),
-                            Color.Transparent
-                        ),
-                        startY = 0.0f,
-                        endY = 3.0f
-                    )
-                ),
-        ) {
-            // Custom title bar content
-        }
+        TitleUI()
     }
 }
 
