@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -85,12 +87,22 @@ fun TitleUI() {
                 .align(Alignment.CenterVertically)
                 .offset(y = 2.dp),
                 horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(modifier = Modifier.padding(13.dp)
-                    .align(Alignment.End)
-                    .size(30.dp),
-                    imageVector = TablerIcons.Settings,
-                    contentDescription = "Settings",
-                    tint = Color.White)
+
+
+                IconButton(
+                    onClick = { /* Do something */ },
+                    modifier = Modifier.padding(13.dp)
+                        .align(Alignment.End)
+                        .size(36.dp) // Set the size of the button
+                        .background(Color.Black, CircleShape) // Set the background to blue and shape to circle
+                ) {
+                    // Icon inside the IconButton
+                    Icon(modifier = Modifier.padding(3.dp)
+                        .size(30.dp),
+                        imageVector = TablerIcons.Settings,
+                        contentDescription = "Settings",
+                        tint = Color.White)
+                }
             }
         }
 
