@@ -57,6 +57,7 @@ fun ClipeveryCommon(dependencies: Dependencies) {
         LocalFilePersist provides dependencies.filePersist,
         LocalSignalProtocol provides dependencies.signalProtocol,
         LocalQRCodeGenerator provides dependencies.qrCodeGenerator,
+        LocalGlobalCopywriter provides dependencies.globalCopywriter
     ) {
         ClipeveryWithProvidedDependencies()
     }

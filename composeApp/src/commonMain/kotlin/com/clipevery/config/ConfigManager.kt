@@ -20,8 +20,8 @@ abstract class ConfigManager(private val ioScope: CoroutineScope) {
     abstract fun loadConfig(): AppConfig?
 
     @Synchronized
-    fun updateBindingState(bindingState: Boolean) {
-        config = config.copy(bindingState = bindingState)
+    fun updateConfig(updateAction: (AppConfig) -> AppConfig) {
+        config = updateAction(config)
         ioScope.launch {
             saveConfig(config)
         }
