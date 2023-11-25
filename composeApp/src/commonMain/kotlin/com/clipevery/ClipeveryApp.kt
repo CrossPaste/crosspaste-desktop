@@ -35,29 +35,25 @@ import com.clipevery.ui.TabsUI
 import com.clipevery.ui.TitleUI
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Scan
+import org.koin.core.KoinApplication
 
 @Composable
-fun ClipeveryApp(dependencies: Dependencies) {
+fun ClipeveryApp(koinApplication: KoinApplication) {
     MaterialTheme {
         Column(Modifier.fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
             .background(Color(238, 238, 238)),
             horizontalAlignment = Alignment.CenterHorizontally) {
-            ClipeveryCommon(dependencies)
+            ClipeveryCommon(koinApplication)
         }
     }
 }
 
 
 @Composable
-fun ClipeveryCommon(dependencies: Dependencies) {
+fun ClipeveryCommon(koinApplication: KoinApplication) {
     CompositionLocalProvider(
-        LocalClipeveryServer provides dependencies.clipServer,
-        LocalConfigManager provides dependencies.configManager,
-        LocalFilePersist provides dependencies.filePersist,
-        LocalSignalProtocol provides dependencies.signalProtocol,
-        LocalQRCodeGenerator provides dependencies.qrCodeGenerator,
-        LocalGlobalCopywriter provides dependencies.globalCopywriter
+        LocalKoinApplication provides koinApplication
     ) {
         ClipeveryWithProvidedDependencies()
     }

@@ -15,23 +15,20 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.clipevery.config.ConfigManager
-import com.clipevery.config.FileType
-import com.clipevery.encrypt.CreateSignalProtocolState
+import com.clipevery.config.DefaultConfigManager
 import com.clipevery.encrypt.SignalProtocol
+import com.clipevery.encrypt.SignalProtocolWithState
 import com.clipevery.encrypt.getSignalProtocolFactory
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.i18n.GlobalCopywriterImpl
 import com.clipevery.log.initLogger
-import com.clipevery.model.AppConfig
 import com.clipevery.model.AppInfo
 import com.clipevery.net.ClipServer
 import com.clipevery.net.DesktopClipServer
-import com.clipevery.path.PathProvider
 import com.clipevery.path.getPathProvider
 import com.clipevery.platform.currentPlatform
-import com.clipevery.presist.DesktopOneFilePersist
+import com.clipevery.presist.DesktopFilePersist
 import com.clipevery.presist.FilePersist
-import com.clipevery.presist.OneFilePersist
 import com.clipevery.ui.getTrayMouseAdapter
 import com.clipevery.utils.DesktopQRCodeGenerator
 import com.clipevery.utils.QRCodeGenerator
@@ -45,13 +42,32 @@ import com.sun.jna.platform.win32.WinDef.HRGN
 import com.sun.jna.platform.win32.WinDef.HWND
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
+import org.koin.core.KoinApplication
+import org.koin.core.context.GlobalContext.startKoin
+import org.koin.dsl.module
 import java.awt.Rectangle
 import java.awt.geom.Area
-import java.nio.file.Path
 import kotlin.io.path.pathString
 
 
 val appUI = initAppUI()
+
+fun initKoinApplication(ioScope: CoroutineScope): KoinApplication {
+    val appModule = module {
+        single<CoroutineScope> { ioScope }
+        single<AppInfo> { getAppInfoFactory().createAppInfo() }
+        single<FilePersist> { DesktopFilePersist() }
+        single<ConfigManager> { DefaultConfigManager(get()).initConfig() }
+        single<SignalProtocolWithState> { getSignalProtocolFactory(get()).createSignalProtocol() }
+        single<SignalProtocol> { get<SignalProtocolWithState>().signalProtocol }
+        single<ClipServer> { DesktopClipServer(get()).start() }
+        single<QRCodeGenerator> { DesktopQRCodeGenerator(get()) }
+        single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
+    }
+    return startKoin {
+        modules(appModule)
+    }
+}
 
 fun main() = application {
     val pathProvider = getPathProvider()
@@ -64,11 +80,7 @@ fun main() = application {
 
     var showWindow by remember { mutableStateOf(false) }
 
-    val appInfo = getAppInfoFactory().createAppInfo()
-
-    val dependencies = remember {
-        getDependencies(appInfo, ioScope)
-    }
+    val koinApplication by remember { mutableStateOf(initKoinApplication(ioScope)) }
 
     val trayIcon = if(currentPlatform().isMacos()) {
         painterResource("clipevery_mac_tray.png")
@@ -119,7 +131,7 @@ fun main() = application {
                 }
             })
         }
-        ClipeveryApp(dependencies)
+        ClipeveryApp(koinApplication)
     }
 }
 
@@ -152,63 +164,3 @@ fun applyRoundedCorners(window: ComposeWindow) {
 
     User32.INSTANCE.SetWindowRgn(hwnd, hRgn, true)
 }
-
-
-private fun getDependencies(
-    appInfo: AppInfo,
-    ioScope: CoroutineScope
-) = object : Dependencies() {
-
-
-    override val filePersist: FilePersist = object : FilePersist {
-        override val pathProvider: PathProvider = getPathProvider()
-
-        override fun createOneFilePersist(path: Path): OneFilePersist {
-            return DesktopOneFilePersist(path)
-        }
-    }
-
-    override val configManager: ConfigManager = object : ConfigManager(ioScope) {
-
-        val configFilePersist = filePersist.getPersist("appConfig.json", FileType.USER)
-
-        override fun loadConfig(): AppConfig? {
-            return configFilePersist.read(AppConfig::class)
-        }
-
-        override fun saveConfigImpl(config: AppConfig) {
-            configFilePersist.save(config)
-        }
-    }.initConfig()
-
-    override val signalProtocol: SignalProtocol = run {
-        val signalProtocolFactory = getSignalProtocolFactory(appInfo)
-        val createSignalProtocol = signalProtocolFactory.createSignalProtocol()
-
-        val state = createSignalProtocol.state
-        if (state != CreateSignalProtocolState.EXISTING && configManager.config.bindingState) {
-            configManager.updateConfig { it.copy(bindingState = false) }
-        }
-
-        createSignalProtocol.signalProtocol
-    }
-
-    override val clipServer: ClipServer = DesktopClipServer(signalProtocol).start()
-
-    override val qrCodeGenerator: QRCodeGenerator = DesktopQRCodeGenerator(clipServer)
-
-    override val globalCopywriter: GlobalCopywriter = object: GlobalCopywriterImpl(configManager.config) {
-
-        override fun switchLanguage(language: String) {
-            super.switchLanguage(language)
-            configManager.updateConfig { it.copy(language = language) }
-        }
-
-    }
-}
-
-//@Preview
-//@Composable
-//fun AppDesktopPreview() {
-//    ClipeveryApp(clipeveryAppState)
-//}

@@ -27,8 +27,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.clipevery.LocalGlobalCopywriter
-import com.clipevery.LocalQRCodeGenerator
+import com.clipevery.LocalKoinApplication
+import com.clipevery.i18n.GlobalCopywriter
+import com.clipevery.utils.QRCodeGenerator
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Scan
 import kotlinx.coroutines.Job
@@ -37,8 +38,9 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun bindingQRCode() {
-    val copywriter = LocalGlobalCopywriter.current
-    val qrCodeGenerator = LocalQRCodeGenerator.current
+    val current = LocalKoinApplication.current
+    val copywriter = current.koin.get<GlobalCopywriter>()
+    val qrCodeGenerator = current.koin.get<QRCodeGenerator>()
     val coroutineScope = rememberCoroutineScope()
     var refreshJob: Job? by remember { mutableStateOf(null) }
 

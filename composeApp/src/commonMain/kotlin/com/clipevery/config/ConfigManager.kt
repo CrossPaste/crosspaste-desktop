@@ -17,7 +17,7 @@ abstract class ConfigManager(private val ioScope: CoroutineScope) {
         return this
     }
 
-    abstract fun loadConfig(): AppConfig?
+    protected abstract fun loadConfig(): AppConfig?
 
     @Synchronized
     fun updateConfig(updateAction: (AppConfig) -> AppConfig) {

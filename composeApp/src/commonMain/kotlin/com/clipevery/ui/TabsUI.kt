@@ -31,15 +31,17 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.clipevery.LocalConfigManager
-import com.clipevery.LocalGlobalCopywriter
+import com.clipevery.LocalKoinApplication
+import com.clipevery.config.ConfigManager
+import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.mainUI
 
 
 @Composable
 fun TabsUI() {
-    val copywriter = LocalGlobalCopywriter.current
-    val configManager = LocalConfigManager.current
+    val current = LocalKoinApplication.current
+    val copywriter = current.koin.get<GlobalCopywriter>()
+    val configManager = current.koin.get<ConfigManager>()
     val config = remember { mutableStateOf(configManager.config) }
     var selectedTabIndex by remember { mutableStateOf(0) }
 
