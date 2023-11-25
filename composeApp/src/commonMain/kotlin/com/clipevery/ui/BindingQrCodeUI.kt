@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.clipevery.LocalGlobalCopywriter
 import com.clipevery.LocalQRCodeGenerator
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Scan
@@ -36,6 +37,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun bindingQRCode() {
+    val copywriter = LocalGlobalCopywriter.current
     val qrCodeGenerator = LocalQRCodeGenerator.current
     val coroutineScope = rememberCoroutineScope()
     var refreshJob: Job? by remember { mutableStateOf(null) }
@@ -76,7 +78,7 @@ fun bindingQRCode() {
                     verticalAlignment = Alignment.CenterVertically, // 垂直居中对齐所有子组件
                     horizontalArrangement = Arrangement.Center // 水平居中排列
                 ) {
-                    Text("请扫描绑定设备",
+                    Text(copywriter.getText("Please_scan_the_binding_device"),
                         modifier = Modifier.wrapContentWidth(),
                         fontSize = 24.sp,
                         softWrap = false,
