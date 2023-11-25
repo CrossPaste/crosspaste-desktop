@@ -1,6 +1,6 @@
 package com.clipevery.i18n
 
-import com.clipevery.model.AppConfig
+import com.clipevery.config.ConfigManager
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.FileNotFoundException
 import java.io.InputStreamReader
@@ -18,14 +18,16 @@ fun getText(id: String): String {
     return languageMap.computeIfAbsent(en) { CopywriterImpl(en) }.getText(id)
 }
 
-open class GlobalCopywriterImpl(appConfig: AppConfig): GlobalCopywriter {
+open class GlobalCopywriterImpl(val configManager: ConfigManager): GlobalCopywriter {
 
-    private var copywriter: Copywriter = languageMap.computeIfAbsent(appConfig.language) {
-        CopywriterImpl(appConfig.language)
+    private var copywriter: Copywriter = languageMap
+        .computeIfAbsent(configManager.config.language) {
+        CopywriterImpl(configManager.config.language)
     }
 
     override fun switchLanguage(language: String) {
         copywriter = languageMap.computeIfAbsent(language) { CopywriterImpl(language) }
+        configManager.updateConfig { it.copy(language = language) }
     }
 
     override fun getText(id: String): String {
