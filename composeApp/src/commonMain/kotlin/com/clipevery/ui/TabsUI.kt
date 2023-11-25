@@ -32,11 +32,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalConfigManager
+import com.clipevery.LocalGlobalCopywriter
 import com.clipevery.mainUI
 
 
 @Composable
 fun TabsUI() {
+    val copywriter = LocalGlobalCopywriter.current
     val configManager = LocalConfigManager.current
     val config = remember { mutableStateOf(configManager.config) }
     var selectedTabIndex by remember { mutableStateOf(0) }
@@ -58,7 +60,7 @@ fun TabsUI() {
 
 
                 Text(
-                    text = title,
+                    text = copywriter.getText(title),
                     fontSize = 12.sp,
                     style = style,
                     modifier = Modifier

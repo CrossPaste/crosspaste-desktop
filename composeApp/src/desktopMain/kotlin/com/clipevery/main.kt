@@ -19,6 +19,8 @@ import com.clipevery.config.FileType
 import com.clipevery.encrypt.CreateSignalProtocolState
 import com.clipevery.encrypt.SignalProtocol
 import com.clipevery.encrypt.getSignalProtocolFactory
+import com.clipevery.i18n.GlobalCopywriter
+import com.clipevery.i18n.GlobalCopywriterImpl
 import com.clipevery.log.initLogger
 import com.clipevery.model.AppConfig
 import com.clipevery.model.AppInfo
@@ -185,7 +187,7 @@ private fun getDependencies(
 
         val state = createSignalProtocol.state
         if (state != CreateSignalProtocolState.EXISTING && configManager.config.bindingState) {
-            configManager.updateBindingState(false)
+            configManager.updateConfig { it.copy(bindingState = false) }
         }
 
         createSignalProtocol.signalProtocol
@@ -195,7 +197,14 @@ private fun getDependencies(
 
     override val qrCodeGenerator: QRCodeGenerator = DesktopQRCodeGenerator(clipServer)
 
+    override val globalCopywriter: GlobalCopywriter = object: GlobalCopywriterImpl(configManager.config) {
 
+        override fun switchLanguage(language: String) {
+            super.switchLanguage(language)
+            configManager.updateConfig { it.copy(language = language) }
+        }
+
+    }
 }
 
 //@Preview
