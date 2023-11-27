@@ -5,6 +5,15 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.kotlinSerialization)
+    id("app.cash.sqldelight") version "2.0.0"
+}
+
+sqldelight {
+    databases {
+        create("Database") {
+            packageName.set("com.clipevery")
+        }
+    }
 }
 
 kotlin {
@@ -28,6 +37,7 @@ kotlin {
             implementation("br.com.devsrsouza.compose.icons:tabler-icons-desktop:1.1.0")
             implementation("io.insert-koin:koin-core:3.5.0")
             implementation("com.github.kwhat:jnativehook:2.2.2")
+            implementation("app.cash.sqldelight:sqlite-driver:2.0.0")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
