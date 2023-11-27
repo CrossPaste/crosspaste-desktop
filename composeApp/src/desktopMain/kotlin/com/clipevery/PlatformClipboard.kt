@@ -1,13 +1,12 @@
 package com.clipevery
 
 import com.clipevery.clip.ClipboardService
+import com.clipevery.clip.TransferableConsumer
 import com.clipevery.macos.MacosClipboardService
 import com.clipevery.platform.currentPlatform
 import com.clipevery.windows.WindowsClipboardService
-import java.awt.datatransfer.Transferable
-import java.util.function.Consumer
 
-fun getClipboard(clipConsumer: Consumer<Transferable>): ClipboardService {
+fun getClipboard(clipConsumer: TransferableConsumer): ClipboardService {
     val platform = currentPlatform()
     return when (platform.name) {
         "Macos" -> {

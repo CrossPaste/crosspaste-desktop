@@ -1,6 +1,7 @@
 package com.clipevery.windows
 
 import com.clipevery.clip.ClipboardService
+import com.clipevery.clip.TransferableConsumer
 import com.clipevery.windows.api.User32
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.Kernel32
@@ -14,11 +15,10 @@ import java.awt.datatransfer.Transferable
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import java.util.function.Consumer
 
 
 class WindowsClipboardService
-    (override val clipConsumer: Consumer<Transferable>) : ClipboardService, User32.WNDPROC {
+    (override val clipConsumer: TransferableConsumer) : ClipboardService, User32.WNDPROC {
 
     private var systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
 
@@ -92,7 +92,7 @@ class WindowsClipboardService
     private fun onChange() {
         val contents: Transferable? = systemClipboard.getContents(null)
         contents?.let {
-            clipConsumer.accept(it)
+            clipConsumer.consume(it)
         }
     }
 

@@ -14,6 +14,10 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import com.clipevery.clip.ClipboardService
+import com.clipevery.clip.DesktopTransferableConsumer
+import com.clipevery.clip.TransferableConsumer
+import com.clipevery.clip.getDesktopClipboardService
 import com.clipevery.config.ConfigManager
 import com.clipevery.config.DefaultConfigManager
 import com.clipevery.encrypt.SignalProtocol
@@ -63,6 +67,8 @@ fun initKoinApplication(ioScope: CoroutineScope): KoinApplication {
         single<ClipServer> { DesktopClipServer(get()).start() }
         single<QRCodeGenerator> { DesktopQRCodeGenerator(get()) }
         single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
+        single<ClipboardService> { getDesktopClipboardService(get()) }
+        single<TransferableConsumer> { DesktopTransferableConsumer() }
     }
     return startKoin {
         modules(appModule)

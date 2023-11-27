@@ -34,8 +34,6 @@ import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.config.ConfigManager
 import com.clipevery.i18n.GlobalCopywriter
-import com.clipevery.mainUI
-
 
 @Composable
 fun TabsUI() {
@@ -76,19 +74,21 @@ fun TabsUI() {
         Spacer(modifier = Modifier.fillMaxWidth())
     }
 
-    Column() {
-        when (selectedTabIndex) {
-            0 -> TabContent("Content for Tab 1")
-            1 -> TabContent("Content for Tab 2")
-            2 -> {
-                if (!config.value.bindingState) {
-                    bindingQRCode()
-                } else {
-                    mainUI()
-                }
-            }
-        }
-    }
+    ClipPreview()
+
+//    Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
+//        when (selectedTabIndex) {
+//            0 -> ClipPreview()
+//            1 -> TabContent("Content for Tab 2")
+//            2 -> {
+//                if (!config.value.bindingState) {
+//                    bindingQRCode()
+//                } else {
+//                    mainUI()
+//                }
+//            }
+//        }
+//    }
 }
 
 
@@ -140,4 +140,9 @@ fun PreviewTabsUI() {
 @Composable
 fun TabContent(text: String) {
     Text(text = text)
+}
+
+@Composable
+fun mainUI() {
+    Text("mainUI")
 }
