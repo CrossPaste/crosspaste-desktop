@@ -5,16 +5,15 @@ import com.clipevery.model.AppHostInfo
 import com.clipevery.model.AppRequestBindInfo
 import com.clipevery.platform.currentPlatform
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.javalin.Javalin
-import io.javalin.apibuilder.EndpointGroup
-import io.javalin.compression.CompressionStrategy
-import io.javalin.config.JavalinConfig
-import io.javalin.http.ExceptionHandler
-import org.eclipse.jetty.server.Server
-import org.eclipse.jetty.util.thread.QueuedThreadPool
+import io.ktor.server.application.call
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
+import io.ktor.server.netty.NettyApplicationEngine
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.get
+import io.ktor.server.routing.routing
 import java.net.NetworkInterface
 import java.util.Collections
-import java.util.function.Consumer
 
 
 class DesktopClipServer(private val signalProtocol: SignalProtocol): ClipServer {
@@ -22,42 +21,26 @@ class DesktopClipServer(private val signalProtocol: SignalProtocol): ClipServer 
     private val logger = KotlinLogging.logger {}
 
 
-    private var server: Javalin? = null
-
-    private fun config(): Consumer<JavalinConfig> {
-        return Consumer<JavalinConfig> {
-            it.jetty.server { Server(QueuedThreadPool(10)) }
-            it.http.maxRequestSize = Long.MAX_VALUE
-            it.http.defaultContentType = "application/json"
-            it.http.generateEtags = true
-            it.compression.custom(CompressionStrategy.GZIP)
+    private var server: NettyApplicationEngine = embeddedServer(Netty, port = 0) {
+        routing {
+            get("/") {
+                call.respondText("Hello, world!")
+            }
         }
-    }
-
-    private fun endpoints(): EndpointGroup {
-        return EndpointGroup {
-        }
-    }
-
-    private fun exceptionHandler(): ExceptionHandler<in java.lang.Exception?> {
-        return ExceptionHandler<java.lang.Exception?> { e, ctx -> logger.error(e) { "${ctx.path()} exception" } }
     }
 
     override fun start(): ClipServer {
-        server = Javalin.create(config())
-            .routes(endpoints())
-            .exception(Exception::class.java, exceptionHandler())
-            .start("0.0.0.0", 0)
+        server.start(wait = false)
         logger.info { "start server ${port()}" }
         return this
     }
 
     override fun stop() {
-        server?.stop()
+        server.stop()
     }
 
     override fun port(): Int {
-        return server?.port() ?: 0
+        return server.environment.connectors.first().port
     }
 
 
