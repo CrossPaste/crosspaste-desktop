@@ -28,6 +28,7 @@ import com.clipevery.i18n.GlobalCopywriterImpl
 import com.clipevery.listen.GlobalListener
 import com.clipevery.log.initLogger
 import com.clipevery.model.AppInfo
+import com.clipevery.model.getAppInfoFactory
 import com.clipevery.net.ClipClient
 import com.clipevery.net.ClipServer
 import com.clipevery.net.DesktopClipClient

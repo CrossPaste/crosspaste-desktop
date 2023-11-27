@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,7 +30,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun ClipPreview() {
     val listState = rememberLazyListState()
-    val scrollState = rememberScrollState()
     val clipItems = remember { mutableStateListOf<ClipItem>() }
 
     LaunchedEffect(Unit) {
@@ -57,7 +55,7 @@ fun ClipPreview() {
             modifier = Modifier.wrapContentHeight()
         ) {
             items(clipItems) { clipItem ->
-                ClipPreviewItemUI(clipItem)
+                ClipPreviewItem(clipItem)
             }
         }
 
