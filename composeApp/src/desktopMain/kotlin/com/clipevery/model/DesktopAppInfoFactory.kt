@@ -1,6 +1,6 @@
-package com.clipevery
+package com.clipevery.model
 
-import com.clipevery.model.AppInfo
+import com.clipevery.AppInfoFactory
 import com.clipevery.platform.currentPlatform
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.IOException

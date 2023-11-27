@@ -24,7 +24,7 @@ import compose.icons.tablericons.FileText
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun ClipPreviewItemUI(clipItem: ClipItem) {
+fun ClipPreviewItem(clipItem: ClipItem) {
 
     var hover by remember { mutableStateOf(false) }
     val backgroundColor = if (hover) Color(138, 238, 238) else Color(238, 238, 238)
@@ -46,19 +46,19 @@ fun ClipPreviewItemUI(clipItem: ClipItem) {
         )
         .background(backgroundColor)) {
 
-        ClipPreviewItemDetailUI(clipItem)
+        ClipPreviewItemDetail(clipItem)
     }
 }
 
 @Composable
-fun ClipPreviewItemDetailUI(clipItem: ClipItem) {
+fun ClipPreviewItemDetail(clipItem: ClipItem) {
     if (clipItem is TextClipItem) {
-        TextClipItemUI(clipItem)
+        TextClipItem(clipItem)
     }
 }
 
 @Composable
-fun TextClipItemUI(textClipItem: TextClipItem) {
+fun TextClipItem(textClipItem: TextClipItem) {
     Icon(
         imageVector = TablerIcons.FileText,
         contentDescription = "clip text",
