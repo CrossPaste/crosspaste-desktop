@@ -13,6 +13,8 @@ open class FileClipItem(override val file: File, override val text: String):
     override fun toTransferable(): Transferable {
         return ClipFileTransferable(this)
     }
+
+    override val extension: String = text.substringAfterLast('.', "").lowercase()
 }
 
 open class ClipFileTransferable(private val clipItem: FileClipItem): Transferable {

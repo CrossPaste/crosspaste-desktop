@@ -6,19 +6,52 @@ import com.clipevery.clip.item.FilesClipItem
 import com.clipevery.clip.item.HtmlTextClipItem
 import com.clipevery.clip.item.ImageClipItem
 import com.clipevery.clip.item.ImageFileClipItem
+import com.clipevery.clip.item.SUPPORT_VIDEO_EXTENSIONS
 import com.clipevery.clip.item.TextClipItem
+import com.clipevery.clip.item.UrlClipItem
+import com.clipevery.clip.item.VideoFileClipItem
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.awt.Image
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import java.io.File
+import java.net.MalformedURLException
+import java.net.URL
 
-class DesktopTransferableConsumer: TransferableConsumer {
+open class DesktopTransferableConsumer: TransferableConsumer {
 
     private val logger = KotlinLogging.logger {}
 
     override fun consume(transferable: Transferable) {
     }
+
+    protected fun toFinelyClipItem(clipItem: ClipItem?): ClipItem? {
+        return clipItem?.let {
+            return when (it.clipItemType) {
+                ClipItemType.Text -> {
+                    val textClipItem = it as TextClipItem
+                    return try {
+                        val url = URL(textClipItem.text)
+                        UrlClipItem(url)
+                    } catch (e: MalformedURLException) {
+                        textClipItem
+                    }
+                }
+                ClipItemType.File -> {
+                    val fileClipItem = it as FileClipItem
+                    val extension = fileClipItem.extension
+                    if (SUPPORT_VIDEO_EXTENSIONS.contains(extension)) {
+                        return VideoFileClipItem(fileClipItem.file, fileClipItem.text)
+                    }
+                    return fileClipItem
+                }
+                else -> {
+                    it
+                }
+            }
+        }
+    }
+
     private fun createClipItem(transferable: Transferable): ClipItem? {
         val text: String? = getText(transferable)
         val image: Image? = getImage(transferable)

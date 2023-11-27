@@ -7,5 +7,6 @@ enum class ClipItemType {
     HtmlText,
     Image,
     ImageFile,
+    VideoFile,
     Files
 }

@@ -5,4 +5,6 @@ import java.io.File
 interface ClipFile {
 
     val file: File
+
+    val extension: String
 }
