@@ -28,7 +28,9 @@ import com.clipevery.i18n.GlobalCopywriterImpl
 import com.clipevery.listen.GlobalListener
 import com.clipevery.log.initLogger
 import com.clipevery.model.AppInfo
+import com.clipevery.net.ClipClient
 import com.clipevery.net.ClipServer
+import com.clipevery.net.DesktopClipClient
 import com.clipevery.net.DesktopClipServer
 import com.clipevery.path.getPathProvider
 import com.clipevery.platform.currentPlatform
@@ -66,6 +68,7 @@ fun initKoinApplication(ioScope: CoroutineScope): KoinApplication {
         single<SignalProtocolWithState> { getSignalProtocolFactory(get()).createSignalProtocol() }
         single<SignalProtocol> { get<SignalProtocolWithState>().signalProtocol }
         single<ClipServer> { DesktopClipServer(get()).start() }
+        single<ClipClient> { DesktopClipClient() }
         single<QRCodeGenerator> { DesktopQRCodeGenerator(get()) }
         single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
         single<ClipboardService> { getDesktopClipboardService(get()) }
