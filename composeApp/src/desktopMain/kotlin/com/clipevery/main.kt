@@ -25,6 +25,7 @@ import com.clipevery.encrypt.SignalProtocolWithState
 import com.clipevery.encrypt.getSignalProtocolFactory
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.i18n.GlobalCopywriterImpl
+import com.clipevery.listen.GlobalListener
 import com.clipevery.log.initLogger
 import com.clipevery.model.AppInfo
 import com.clipevery.net.ClipServer
@@ -69,6 +70,7 @@ fun initKoinApplication(ioScope: CoroutineScope): KoinApplication {
         single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
         single<ClipboardService> { getDesktopClipboardService(get()) }
         single<TransferableConsumer> { DesktopTransferableConsumer() }
+        single<GlobalListener> { GlobalListener() }
     }
     return startKoin {
         modules(appModule)
@@ -87,6 +89,8 @@ fun main() = application {
     var showWindow by remember { mutableStateOf(false) }
 
     val koinApplication by remember { mutableStateOf(initKoinApplication(ioScope)) }
+
+    koinApplication.koin.get<GlobalListener>()
 
     val trayIcon = if(currentPlatform().isMacos()) {
         painterResource("clipevery_mac_tray.png")
