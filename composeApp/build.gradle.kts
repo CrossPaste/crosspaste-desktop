@@ -24,6 +24,7 @@ kotlin {
             implementation("org.signal:libsignal-client:0.35.0")
             implementation("br.com.devsrsouza.compose.icons:tabler-icons-desktop:1.1.0")
             implementation("io.insert-koin:koin-core:3.5.0")
+            implementation("com.github.kwhat:jnativehook:2.2.2")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
