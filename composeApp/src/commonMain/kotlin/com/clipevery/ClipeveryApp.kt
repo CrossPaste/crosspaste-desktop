@@ -84,11 +84,6 @@ fun CustomWindowDecoration() {
     }
 }
 
-@Composable
-fun mainUI() {
-    Text("mainUI")
-}
-
 
 @Preview
 @Composable

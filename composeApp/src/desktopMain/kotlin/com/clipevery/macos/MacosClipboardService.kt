@@ -1,6 +1,7 @@
 package com.clipevery.macos
 
 import com.clipevery.clip.ClipboardService
+import com.clipevery.clip.TransferableConsumer
 import com.clipevery.macos.api.MacosApi
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
@@ -8,11 +9,9 @@ import java.awt.datatransfer.Transferable
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
-import java.util.function.Consumer
-
 
 class MacosClipboardService
-    (override val clipConsumer: Consumer<Transferable>) : ClipboardService {
+    (override val clipConsumer: TransferableConsumer) : ClipboardService {
 
     private var executor: ScheduledExecutorService? = null
 
@@ -29,7 +28,7 @@ class MacosClipboardService
                 changeCount = currentChangeCount
                 val contents: Transferable? = systemClipboard.getContents(null)
                 contents?.let {
-                    clipConsumer.accept(it)
+                    clipConsumer.consume(it)
                 }
             }
         } catch (e: java.lang.Exception) {
