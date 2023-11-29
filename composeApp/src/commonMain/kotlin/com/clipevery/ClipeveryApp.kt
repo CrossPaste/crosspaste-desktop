@@ -44,7 +44,7 @@ fun ClipeveryApp(koinApplication: KoinApplication) {
     MaterialTheme {
         Column(Modifier.fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
-            .background(Color(238, 238, 238)),
+            .background(Color.White),
             horizontalAlignment = Alignment.CenterHorizontally) {
             ClipeveryCommon(koinApplication)
         }
