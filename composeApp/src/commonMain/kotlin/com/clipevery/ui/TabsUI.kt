@@ -1,6 +1,7 @@
 package com.clipevery.ui
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,11 +9,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.Icon
 import androidx.compose.material.Tab
@@ -29,7 +32,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
@@ -49,26 +54,8 @@ fun TabsUI() {
         .wrapContentWidth()) {
 
         tabTitles.forEachIndexed { index, title ->
-            Box(modifier = Modifier.padding(3.dp)
-                .wrapContentSize(Alignment.BottomStart)
-            )  {
-
-                val style = if (index == selectedTabIndex) {
-                    TextStyle(fontWeight = FontWeight.Bold)
-                } else {
-                    TextStyle(fontWeight = FontWeight.Normal)
-                }
-
-
-                Text(
-                    text = copywriter.getText(title),
-                    fontSize = 12.sp,
-                    style = style,
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .align(Alignment.BottomStart)
-                        .clickable { selectedTabIndex = index }
-                )
+            TabUI(index == selectedTabIndex, copywriter.getText(title)) {
+                selectedTabIndex = index
             }
         }
 
@@ -87,6 +74,45 @@ fun TabsUI() {
                 }
             }
         }
+    }
+}
+
+val bottomBorderShape = GenericShape { size, _ ->
+    moveTo(0f, size.height)
+    lineTo(size.width, size.height)
+    lineTo(size.width, size.height - 6)
+    lineTo(0f, size.height - 6)
+    close()
+}
+
+@Composable
+fun TabUI(isSelect: Boolean, title: String, clickable: () -> Unit) {
+    val textStyle: TextStyle
+    val textUnit: TextUnit
+    var modifier: Modifier = Modifier.padding(2.dp)
+        .height(30.dp)
+        .wrapContentSize(Alignment.CenterStart)
+
+    if (isSelect) {
+        textStyle = TextStyle(fontWeight = FontWeight.Bold)
+        modifier = modifier.border(5.dp, Color(0xFF70b0f3), bottomBorderShape)
+        textUnit = 16.sp
+    } else {
+        textStyle = TextStyle(fontWeight = FontWeight.Normal)
+        textUnit = 12.sp
+    }
+
+    Box(modifier = modifier)  {
+        Text(
+            text = title,
+            fontSize = textUnit,
+            style = textStyle,
+            fontFamily = FontFamily.SansSerif,
+            modifier = Modifier
+                .padding(8.dp, 0.dp, 8.dp, 8.dp)
+                .align(Alignment.BottomStart)
+                .clickable { clickable.invoke() }
+        )
     }
 }
 
