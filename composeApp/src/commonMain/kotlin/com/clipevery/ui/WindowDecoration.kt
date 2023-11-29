@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
@@ -78,14 +79,18 @@ fun DecorationUI(currentPage: MutableState<PageType>, title: String) {
                 .align(Alignment.CenterVertically)
                 .offset(y = 2.dp),
                 horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    modifier = Modifier.padding(16.dp)
-                        .align(Alignment.Start)
-                        .clickable { currentPage.value = PageType.HOME },
-                    text = "‹ ${copywriter.getText("Return")}",
-                    color = Color(0xFF70b0f3),
-                    fontWeight = FontWeight.Light
-                )
+                Row(modifier = Modifier.padding(16.dp)
+                    .align(Alignment.Start)
+                    .clickable { currentPage.value = PageType.HOME }) {
+                    Icon(imageVector = arrowLeft(),
+                        contentDescription = null,
+                        tint = Color(0xFF70b0f3))
+                    Text(
+                        text = copywriter.getText("Return"),
+                        color = Color(0xFF70b0f3),
+                        fontWeight = FontWeight.Light
+                    )
+                }
             }
             Column(Modifier.weight(0.5f)
                 .align(Alignment.CenterVertically),

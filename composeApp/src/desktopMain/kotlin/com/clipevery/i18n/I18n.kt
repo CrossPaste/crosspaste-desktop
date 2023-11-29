@@ -12,6 +12,8 @@ val logger = KotlinLogging.logger {}
 
 const val en = "en"
 
+val languageList = listOf(en, "es", "jp", "zh")
+
 val languageMap = ConcurrentHashMap<String, Copywriter>()
 
 fun getText(id: String): String {
@@ -30,8 +32,22 @@ open class GlobalCopywriterImpl(val configManager: ConfigManager): GlobalCopywri
         configManager.updateConfig { it.copy(language = language) }
     }
 
+    override fun getAllLanguages(): List<Language> {
+        return languageList
+            .map { it ->
+                val copywriter = languageMap.computeIfAbsent(it) { CopywriterImpl(it) }
+                val abridge = copywriter.getAbridge()
+                val name = copywriter.getText("CurrentLanguage")
+                Language(abridge, name)
+            }
+    }
+
     override fun getText(id: String): String {
         return copywriter.getText(id)
+    }
+
+    override fun getAbridge(): String {
+        return copywriter.getAbridge()
     }
 }
 
@@ -74,6 +90,10 @@ class CopywriterImpl(private val language: String) : Copywriter {
         } else {
             value
         }
+    }
+
+    override fun getAbridge(): String {
+        return language
     }
 
 
