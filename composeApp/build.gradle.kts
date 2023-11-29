@@ -69,6 +69,7 @@ compose.desktop {
             packageName = "Clipevery"
             packageVersion = "1.0.0"
             macOS {
+                iconFile = file("src/desktopMain/resources/icons/clipevery.icns")
                 bundleID = "com.clipevery"
                 appCategory = "public.app-category.utilities"
                 infoPlist {
@@ -78,6 +79,9 @@ compose.desktop {
                         <string>true</string>
                     """
                 }
+            }
+            windows {
+                iconFile = file("src/desktopMain/resources/icons/clipevery.ico")
             }
         }
     }
