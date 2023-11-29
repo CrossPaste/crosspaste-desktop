@@ -19,10 +19,11 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,8 +32,9 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.clipevery.ui.TabsUI
-import com.clipevery.ui.TitleUI
+import com.clipevery.ui.AboutUI
+import com.clipevery.ui.HomeUI
+import com.clipevery.ui.SettingsUI
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Scan
 import org.koin.core.KoinApplication
@@ -61,28 +63,21 @@ fun ClipeveryCommon(koinApplication: KoinApplication) {
 
 @Composable
 fun ClipeveryWithProvidedDependencies() {
-    CustomWindowDecoration()
-    TabsUI()
-
-}
-
-@Composable
-fun CustomWindowDecoration() {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(62.dp),
-        color = MaterialTheme.colors.background,
-        shape = RoundedCornerShape(
-            topStart = 10.dp,
-            topEnd = 10.dp,
-            bottomEnd = 0.dp,
-            bottomStart = 0.dp
-        )
-    ) {
-        TitleUI()
+    val currentPage = remember { mutableStateOf(PageType.HOME) }
+    when (currentPage.value) {
+        PageType.HOME -> {
+            HomeUI(currentPage)
+        }
+        PageType.SETTINGS -> {
+            SettingsUI(currentPage)
+        }
+        PageType.ABOUT -> {
+            AboutUI(currentPage)
+        }
     }
 }
+
+
 
 
 @Preview
@@ -138,4 +133,8 @@ fun loadImageBitmap(resourcePath: String): ImageBitmap {
         Thread.currentThread().contextClassLoader.getResourceAsStream(resourcePath)
         ?.readBytes()!!)
     return image.toComposeImageBitmap()
+}
+
+enum class PageType {
+    HOME, SETTINGS, ABOUT
 }

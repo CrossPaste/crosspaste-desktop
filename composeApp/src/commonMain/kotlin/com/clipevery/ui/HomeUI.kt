@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -24,8 +25,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,17 +52,44 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Popup
 import com.clipevery.LocalKoinApplication
+import com.clipevery.PageType
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.loadImageBitmap
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Settings
+import java.awt.Desktop
+import java.net.URI
 import kotlin.math.roundToInt
 import kotlin.system.exitProcess
+
+@Composable
+fun HomeUI(currentPage: MutableState<PageType>) {
+    HomeWindowDecoration(currentPage)
+    TabsUI()
+}
+
+@Composable
+fun HomeWindowDecoration(currentPage: MutableState<PageType>) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(62.dp),
+        color = MaterialTheme.colors.background,
+        shape = RoundedCornerShape(
+            topStart = 10.dp,
+            topEnd = 10.dp,
+            bottomEnd = 0.dp,
+            bottomStart = 0.dp
+        )
+    ) {
+        TitleUI(currentPage)
+    }
+}
 
 
 @Preview
 @Composable
-fun TitleUI() {
+fun TitleUI(currentPage: MutableState<PageType>) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     var showPopup by remember { mutableStateOf(false) }
@@ -94,7 +125,7 @@ fun TitleUI() {
                     .clip(RoundedCornerShape(3.dp))
                     .size(36.dp),
                 bitmap = loadImageBitmap("clipevery_icon.png"),
-                contentDescription = "QR Code",
+                contentDescription = "clipevery icon",
             )
             Column(Modifier.wrapContentWidth()
                 .align(Alignment.CenterVertically)
@@ -169,27 +200,23 @@ fun TitleUI() {
                                     .clip(RoundedCornerShape(5.dp))
                                     .background(Color.White)
                             ) {
-                                // 菜单项1
                                 MenuItem(copywriter.getText("Check_for_updates")) {
-                                    println("菜单项1 被点击")
+                                    // TODO: check for updates
                                     showPopup = false
                                 }
-                                // 菜单项2
                                 MenuItem(copywriter.getText("Settings")) {
-                                    println("菜单项2 被点击")
+                                    currentPage.value = PageType.SETTINGS
                                     showPopup = false
                                 }
-                                // 菜单项3
                                 MenuItem(copywriter.getText("About")) {
-                                    println("菜单项3 被点击")
+                                    currentPage.value = PageType.ABOUT
                                     showPopup = false
                                 }
                                 MenuItem(copywriter.getText("FQA")) {
-                                    println("菜单项3 被点击")
+                                    Desktop.getDesktop().browse(URI("https://www.clipevery.com/FQA"))
                                     showPopup = false
                                 }
                                 Divider()
-                                // 菜单项4
                                 MenuItem(copywriter.getText("Quit")) {
                                     showPopup = false
                                     exitProcess(0)
