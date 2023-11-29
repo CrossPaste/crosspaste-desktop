@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
+import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -57,7 +58,7 @@ fun SettingsUI(currentPage: MutableState<PageType>) {
 @Composable
 fun SettingsContentUI(currentPage: MutableState<PageType>) {
     val current = LocalKoinApplication.current
-    val copywriter by remember { mutableStateOf(current.koin.get<GlobalCopywriter>()) }
+    val copywriter = current.koin.get<GlobalCopywriter>()
     var hasBeenClicked by remember { mutableStateOf(false) }
     var showMoreLanguage by remember { mutableStateOf(false) }
 
@@ -88,7 +89,7 @@ fun SettingsContentUI(currentPage: MutableState<PageType>) {
 
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Row(modifier = Modifier.fillMaxWidth().padding(25.dp, 10.dp, 0.dp, 10.dp),
+        Row(modifier = Modifier.fillMaxWidth().padding(25.dp, 5.dp, 0.dp, 5.dp),
             verticalAlignment = Alignment.CenterVertically) {
             Text(text = "${copywriter.getText("Language")}:",
                 fontSize = 14.sp,
@@ -162,6 +163,50 @@ fun SettingsContentUI(currentPage: MutableState<PageType>) {
                 }
             }
         }
+
+        Row(modifier = Modifier.fillMaxWidth().padding(25.dp, 5.dp, 0.dp, 5.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            Text(text = "${copywriter.getText("Theme")}:",
+                fontSize = 14.sp,
+                fontFamily = FontFamily.SansSerif,
+                style = TextStyle(fontWeight = FontWeight.Light))
+            Row(Modifier.padding(5.dp, 0.dp, 0.dp, 0.dp)) {
+                ThemeSegmentedControl()
+            }
+        }
+
+        Row(modifier = Modifier.fillMaxWidth().height(40.dp).padding(20.dp, 5.dp, 0.dp, 5.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            var isChecked by remember { mutableStateOf(false) }
+            // TODO: Boot_start_up
+            Switch(
+                checked = isChecked,
+                onCheckedChange = { isChecked = it }
+            )
+
+            Text(text = copywriter.getText("Boot_start_up"),
+                fontSize = 14.sp,
+                fontFamily = FontFamily.SansSerif,
+                style = TextStyle(fontWeight = FontWeight.Light))
+        }
+
+        Row(modifier = Modifier.fillMaxWidth().height(40.dp).padding(20.dp, 5.dp, 0.dp, 5.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            var isChecked by remember { mutableStateOf(false) }
+            // TODO: AutomaticUpdate
+            Switch(
+                checked = isChecked,
+                onCheckedChange = { isChecked = it }
+            )
+
+            Text(text = copywriter.getText("AutomaticUpdate"),
+                fontSize = 14.sp,
+                fontFamily = FontFamily.SansSerif,
+                style = TextStyle(fontWeight = FontWeight.Light))
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
         SettingsItemUI("Network") {
             Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                 Text(
