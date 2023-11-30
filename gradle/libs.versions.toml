@@ -2,7 +2,7 @@
 compose = "1.5.4"
 compose-plugin = "1.5.10"
 compose-compiler = "1.5.4"
-kotlin = "1.9.20"
+kotlin = "1.9.21"
 junit = "4.13.2"
 
 [libraries]
