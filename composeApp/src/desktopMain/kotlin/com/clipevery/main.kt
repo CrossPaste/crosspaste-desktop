@@ -95,6 +95,8 @@ fun main() = application {
     val koinApplication by remember { mutableStateOf(initKoinApplication(ioScope)) }
 
     koinApplication.koin.get<GlobalListener>()
+    koinApplication.koin.get<ClipServer>()
+    koinApplication.koin.get<ClipClient>()
 
     val trayIcon = if(currentPlatform().isMacos()) {
         painterResource("clipevery_mac_tray.png")
