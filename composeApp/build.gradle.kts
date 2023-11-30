@@ -46,7 +46,7 @@ kotlin {
             @OptIn(ExperimentalComposeLibrary::class)
             implementation(compose.components.resources)
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.1")
-            implementation("io.github.oshai:kotlin-logging-jvm:5.1.0")
+            implementation("io.github.oshai:kotlin-logging-jvm:5.1.1")
         }
 
         val commonTest by getting {
