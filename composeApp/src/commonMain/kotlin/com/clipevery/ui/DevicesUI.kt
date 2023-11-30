@@ -43,6 +43,7 @@ fun Devices() {
         platform = object: Platform {
             override val name: String
                 get() = "Windows"
+            override val bitMode: Int = 64
             override val version: String = "11"
         },
         state = DeviceState.OFFLINE)
@@ -59,8 +60,8 @@ fun Devices() {
             hostAddress = "192.168.31.3"
         ),
         platform = object: Platform {
-            override val name: String
-                get() = "Linux"
+            override val name: String = "Linux"
+            override val bitMode: Int = 32
             override val version: String = "20.23"
         },
         state = DeviceState.UNVERIFIED)
