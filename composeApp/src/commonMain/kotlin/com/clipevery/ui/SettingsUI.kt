@@ -36,6 +36,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -76,6 +77,8 @@ fun SettingsContentUI(currentPage: MutableState<PageType>) {
         3 -> arrowRight()
         else -> arrowDown()
     }
+
+    val density = LocalDensity.current
 
     LaunchedEffect(showMoreLanguage, hasBeenClicked) {
         if (hasBeenClicked) {
@@ -129,8 +132,8 @@ fun SettingsContentUI(currentPage: MutableState<PageType>) {
             if (showMoreLanguage) {
                 Popup(
                     offset = IntOffset(
-                        20,
-                        70
+                        with(density) { ((20).dp).roundToPx() },
+                        with(density) { (30.dp).roundToPx() },
                     ),
                     onDismissRequest = {
                         if (showMoreLanguage) {

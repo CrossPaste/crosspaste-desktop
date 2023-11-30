@@ -40,6 +40,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -57,7 +58,6 @@ import compose.icons.TablerIcons
 import compose.icons.tablericons.Settings
 import java.awt.Desktop
 import java.net.URI
-import kotlin.math.roundToInt
 import kotlin.system.exitProcess
 
 @Composable
@@ -83,6 +83,7 @@ fun TitleUI(currentPage: MutableState<PageType>) {
     var buttonPosition by remember { mutableStateOf(Offset.Zero) }
     var buttonSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size(0.0f, 0.0f)) }
 
+    val density = LocalDensity.current
 
     val customFontFamily = FontFamily(
         Font(resource = "font/BebasNeue.otf", FontWeight.Normal)
@@ -165,9 +166,10 @@ fun TitleUI(currentPage: MutableState<PageType>) {
 
                 if (showPopup) {
                     Popup(
+                        alignment = Alignment.TopEnd,
                         offset = IntOffset(
-                            220.dp.value.toInt(),
-                            (buttonPosition.y.dp + buttonSize.height.dp - 10.dp).value.roundToInt()
+                            with(density) { ((-14).dp).roundToPx() },
+                            with(density) { (50.dp).roundToPx() },
                         ),
                         onDismissRequest = {
                             if (showPopup) {
