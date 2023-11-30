@@ -28,7 +28,7 @@ kotlin {
             implementation("net.java.dev.jna:jna-platform:5.13.0")
             implementation("com.google.zxing:core:3.5.2")
             implementation("com.google.zxing:javase:3.5.2")
-            implementation("ch.qos.logback:logback-classic:1.4.11")
+            implementation("ch.qos.logback:logback-classic:1.4.13")
             implementation("io.ktor:ktor-server-core:2.3.6")
             implementation("io.ktor:ktor-server-netty:2.3.6")
             implementation("io.ktor:ktor-client-core:2.3.6")
