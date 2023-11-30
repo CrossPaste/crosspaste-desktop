@@ -43,13 +43,6 @@ import com.clipevery.utils.QRCodeGenerator
 import com.clipevery.utils.getPreferredWindowSize
 import com.clipevery.utils.initAppUI
 import com.clipevery.utils.ioDispatcher
-import com.clipevery.windows.api.Dwmapi
-import com.clipevery.windows.api.GDI32
-import com.clipevery.windows.api.MARGINS
-import com.clipevery.windows.api.User32
-import com.sun.jna.Native
-import com.sun.jna.platform.win32.WinDef.HRGN
-import com.sun.jna.platform.win32.WinDef.HWND
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import org.koin.core.KoinApplication
@@ -125,6 +118,7 @@ fun main() = application {
         icon = painterResource("clipevery_icon.png"),
         alwaysOnTop = true,
         undecorated = true,
+        transparent = true,
         resizable = false
     ) {
 
@@ -134,8 +128,6 @@ fun main() = application {
                     val currentPlatform = currentPlatform()
                     if (currentPlatform.isMacos()) {
                         setWindowShapeWithTransparentEdges(window, 10)
-                    } else if (currentPlatform.isWindows()) {
-                        applyRoundedCorners(window)
                     }
                 }
             })
@@ -153,9 +145,6 @@ fun main() = application {
     }
 }
 
-
-
-
 fun setWindowShapeWithTransparentEdges(window: ComposeWindow, transparentHeight: Int) {
     val originalRect = Rectangle(0, 0, window.width, window.height)
     val area = Area(originalRect)
@@ -164,33 +153,4 @@ fun setWindowShapeWithTransparentEdges(window: ComposeWindow, transparentHeight:
     area.subtract(Area(topRect))
     area.subtract(Area(bottomRect))
     window.shape = area
-}
-
-fun applyRoundedCorners(window: ComposeWindow) {
-    val hwnd = HWND()
-    hwnd.setPointer(Native.getComponentPointer(window))
-    val dpiSystem = User32.INSTANCE.GetDpiForSystem()
-
-    val width = (dpiSystem * window.width) / 96
-    val height = (dpiSystem * window.height) / 96
-
-    val radius = (dpiSystem * 20) / 96
-
-
-    val hRgn: HRGN? =
-        GDI32.INSTANCE.CreateRoundRectRgn(0, 0, width, height, radius, radius)
-
-    User32.INSTANCE.SetWindowRgn(hwnd, hRgn, true)
-
-    val margins = MARGINS()
-    margins.cxLeftWidth = 1 // 这些值可以调整来尝试不同的效果
-
-    margins.cxRightWidth = 1
-    margins.cyTopHeight = 1
-    margins.cyBottomHeight = 1
-
-    // 调用 DwmExtendFrameIntoClientArea
-
-    // 调用 DwmExtendFrameIntoClientArea
-    Dwmapi.INSTANCE.DwmExtendFrameIntoClientArea(hwnd, margins)
 }
