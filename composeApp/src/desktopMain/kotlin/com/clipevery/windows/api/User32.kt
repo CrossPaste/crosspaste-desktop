@@ -18,6 +18,9 @@ interface User32 : StdCallLibrary {
     }
 
     fun SetWindowLongPtr(hWnd: HWND?, nIndex: Int, proc: WNDPROC?): Int
+
+    fun SetWindowLong(hWnd: HWND?, nIndex: Int, proc: WNDPROC?): Int
+
     fun CreateWindowEx(
         styleEx: Int, className: String?, windowName: String?,
         style: Int, x: Int, y: Int, width: Int, height: Int, hndParent: HWND?,

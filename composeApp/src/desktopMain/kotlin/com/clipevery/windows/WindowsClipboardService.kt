@@ -2,6 +2,7 @@ package com.clipevery.windows
 
 import com.clipevery.clip.ClipboardService
 import com.clipevery.clip.TransferableConsumer
+import com.clipevery.platform.currentPlatform
 import com.clipevery.windows.api.User32
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.Kernel32
@@ -36,7 +37,12 @@ class WindowsClipboardService
             null, 0, 0, null
         )
         nextViewer = User32.INSTANCE.SetClipboardViewer(viewer)
-        User32.INSTANCE.SetWindowLongPtr(viewer, User32.GWL_WNDPROC, this)
+        val currentPlatform = currentPlatform()
+        if (currentPlatform.is64bit()) {
+            User32.INSTANCE.SetWindowLongPtr(viewer, User32.GWL_WNDPROC, this)
+        } else {
+            User32.INSTANCE.SetWindowLong(viewer, User32.GWL_WNDPROC, this)
+        }
         val msg = MSG()
         val handles = arrayOf(event)
         while (true) {
