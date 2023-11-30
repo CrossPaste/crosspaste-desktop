@@ -43,7 +43,9 @@ import com.clipevery.utils.QRCodeGenerator
 import com.clipevery.utils.getPreferredWindowSize
 import com.clipevery.utils.initAppUI
 import com.clipevery.utils.ioDispatcher
+import com.clipevery.windows.api.Dwmapi
 import com.clipevery.windows.api.GDI32
+import com.clipevery.windows.api.MARGINS
 import com.clipevery.windows.api.User32
 import com.sun.jna.Native
 import com.sun.jna.platform.win32.WinDef.HRGN
@@ -179,4 +181,16 @@ fun applyRoundedCorners(window: ComposeWindow) {
         GDI32.INSTANCE.CreateRoundRectRgn(0, 0, width, height, radius, radius)
 
     User32.INSTANCE.SetWindowRgn(hwnd, hRgn, true)
+
+    val margins = MARGINS()
+    margins.cxLeftWidth = 1 // 这些值可以调整来尝试不同的效果
+
+    margins.cxRightWidth = 1
+    margins.cyTopHeight = 1
+    margins.cyBottomHeight = 1
+
+    // 调用 DwmExtendFrameIntoClientArea
+
+    // 调用 DwmExtendFrameIntoClientArea
+    Dwmapi.INSTANCE.DwmExtendFrameIntoClientArea(hwnd, margins)
 }
