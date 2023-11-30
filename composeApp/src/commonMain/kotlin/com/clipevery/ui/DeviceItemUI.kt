@@ -37,6 +37,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.clipevery.LocalKoinApplication
+import com.clipevery.i18n.Copywriter
+import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.model.DeviceInfo
 import com.clipevery.model.DeviceState
 import compose.icons.TablerIcons
@@ -45,6 +48,8 @@ import compose.icons.tablericons.Ghost
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DeviceItem(deviceInfo: DeviceInfo) {
+    val current = LocalKoinApplication.current
+    val copywriter = current.koin.get<GlobalCopywriter>()
 
     val backgroundColor = when (deviceInfo.state) {
         DeviceState.ONLINE -> {
@@ -138,7 +143,7 @@ fun DeviceItem(deviceInfo: DeviceInfo) {
             )
         }
 
-        val detailInfo by remember { mutableStateOf(deviceDetailInfo(deviceInfo)) }
+        val detailInfo by remember { mutableStateOf(deviceDetailInfo(copywriter, deviceInfo)) }
 
         TooltipArea(
             tooltip = {
@@ -164,14 +169,14 @@ fun DeviceItem(deviceInfo: DeviceInfo) {
     }
 }
 
-fun deviceDetailInfo(deviceInfo: DeviceInfo): String {
+fun deviceDetailInfo(copywriter: Copywriter, deviceInfo: DeviceInfo): String {
     return """
-        |Device ID: ${deviceInfo.deviceId}
-        |App Version: ${deviceInfo.appInfo.appVersion}
-        |User Name: ${deviceInfo.appInfo.userName}
-        |Host Name: ${deviceInfo.appHostInfo.displayName}
-        |Host Address: ${deviceInfo.appHostInfo.hostAddress}
-        |Platform: ${deviceInfo.platform.name} ${deviceInfo.platform.version}
-        |State: ${deviceInfo.state}
+        |${copywriter.getText("Device_ID")}: ${deviceInfo.deviceId}
+        |${copywriter.getText("App_Version")}: ${deviceInfo.appInfo.appVersion}
+        |${copywriter.getText("User_Name")}: ${deviceInfo.appInfo.userName}
+        |${copywriter.getText("Host_Name")}: ${deviceInfo.appHostInfo.displayName}
+        |${copywriter.getText("Host_Address")}: ${deviceInfo.appHostInfo.hostAddress}
+        |${copywriter.getText("Platform")}: ${deviceInfo.platform.name} ${deviceInfo.platform.version}
+        |${copywriter.getText("State")}: ${deviceInfo.state}
     """.trimMargin()
 }
