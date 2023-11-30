@@ -6,7 +6,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
@@ -48,8 +47,6 @@ import kotlinx.coroutines.CoroutineScope
 import org.koin.core.KoinApplication
 import org.koin.core.context.GlobalContext.startKoin
 import org.koin.dsl.module
-import java.awt.Rectangle
-import java.awt.geom.Area
 import kotlin.io.path.pathString
 
 
@@ -123,14 +120,6 @@ fun main() = application {
     ) {
 
         LaunchedEffect(Unit) {
-            window.addComponentListener(object : java.awt.event.ComponentAdapter() {
-                override fun componentResized(e: java.awt.event.ComponentEvent?) {
-                    val currentPlatform = currentPlatform()
-                    if (currentPlatform.isMacos()) {
-                        setWindowShapeWithTransparentEdges(window, 10)
-                    }
-                }
-            })
             window.addWindowFocusListener(object : java.awt.event.WindowFocusListener {
                 override fun windowGainedFocus(e: java.awt.event.WindowEvent?) {
                     showWindow = true
@@ -141,16 +130,6 @@ fun main() = application {
                 }
             })
         }
-        ClipeveryApp(koinApplication)
+        ClipeveryApp(koinApplication) { showWindow = false }
     }
-}
-
-fun setWindowShapeWithTransparentEdges(window: ComposeWindow, transparentHeight: Int) {
-    val originalRect = Rectangle(0, 0, window.width, window.height)
-    val area = Area(originalRect)
-    val topRect = Rectangle(0, 0, window.width, transparentHeight)
-    val bottomRect = Rectangle(0, window.height - transparentHeight, window.width, transparentHeight)
-    area.subtract(Area(topRect))
-    area.subtract(Area(bottomRect))
-    window.shape = area
 }

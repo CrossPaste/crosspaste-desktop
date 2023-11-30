@@ -9,8 +9,8 @@ import java.awt.Toolkit
 
 fun initAppUI(): AppUI {
     return AppUI(
-        width = 440.dp,
-        height = 700.dp
+        width = 460.dp,
+        height = 710.dp
     )
 }
  fun getPreferredWindowSize(appUI: AppUI): DpSize {
