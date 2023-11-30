@@ -1,0 +1,25 @@
+CREATE TABLE deviceInfo (
+    device_id TEXT NOT NULL,
+    user_name TEXT NOT NULL,
+    device_state TEXT NOT NULL,
+    app_version TEXT NOT NULL,
+    host_name TEXT NOT NULL,
+    host_address TEXT NOT NULL,
+    platform_name TEXT NOT NULL,
+    platform_version TEXT NOT NULL,
+    platform_arch TEXT NOT NULL,
+    platform_bit_mode INTEGER NOT NULL,
+    PRIMARY KEY (device_id, user_name)
+);
+
+
+CREATE INDEX deviceInfo_device_state_index ON deviceInfo (device_state);
+
+
+selectAll:
+SELECT *
+FROM deviceInfo;
+
+insert:
+INSERT INTO deviceInfo(device_id, user_name, device_state, app_version, host_name, host_address, platform_name, platform_version, platform_arch, platform_bit_mode)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,  ?);
