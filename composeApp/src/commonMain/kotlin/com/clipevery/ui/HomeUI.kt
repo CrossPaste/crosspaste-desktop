@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -187,7 +188,7 @@ fun TitleUI(currentPage: MutableState<PageType>) {
                                     .width(180.dp)
                                     .wrapContentHeight()
                                     .clip(RoundedCornerShape(5.dp))
-                                    .background(Color.White)
+                                    .background(MaterialTheme.colors.surface)
                             ) {
                                 MenuItem(copywriter.getText("Check_for_updates")) {
                                     // TODO: check for updates
@@ -223,10 +224,11 @@ fun TitleUI(currentPage: MutableState<PageType>) {
 fun MenuItem(text: String, onClick: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
-    val backgroundColor = if (isHovered) Color(0xFFE8F5FF) else Color.Transparent
+    val backgroundColor = if (isHovered) MaterialTheme.colors.secondaryVariant else Color.Transparent
 
     Text(
         text = text,
+        color = MaterialTheme.colors.onBackground,
         fontSize = 12.sp,
         fontFamily = FontFamily.SansSerif,
         style = TextStyle(fontWeight = FontWeight.Light),

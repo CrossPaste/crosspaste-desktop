@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -95,6 +96,7 @@ fun SettingsContentUI(currentPage: MutableState<PageType>) {
         Row(modifier = Modifier.fillMaxWidth().padding(25.dp, 5.dp, 0.dp, 5.dp),
             verticalAlignment = Alignment.CenterVertically) {
             Text(text = "${copywriter.getText("Language")}:",
+                color = MaterialTheme.colors.onBackground,
                 fontSize = 14.sp,
                 fontFamily = FontFamily.SansSerif,
                 style = TextStyle(fontWeight = FontWeight.Light))
@@ -113,8 +115,8 @@ fun SettingsContentUI(currentPage: MutableState<PageType>) {
                     languageSize = coordinates.size.toSize()
                 },
                 verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = copywriter.getText("CurrentLanguage"),
+                Text(text = copywriter.getText("CurrentLanguage"),
+                    color = MaterialTheme.colors.onBackground,
                     fontSize = 14.sp,
                     fontFamily = FontFamily.SansSerif,
                     style = TextStyle(fontWeight = FontWeight.Light)
@@ -125,7 +127,7 @@ fun SettingsContentUI(currentPage: MutableState<PageType>) {
                         .size(15.dp),
                     imageVector = languageArrow,
                     contentDescription = null,
-                    tint = Color.Black
+                    tint = MaterialTheme.colors.onBackground
                 )
             }
 
@@ -151,7 +153,7 @@ fun SettingsContentUI(currentPage: MutableState<PageType>) {
                                 .width(180.dp)
                                 .wrapContentHeight()
                                 .clip(RoundedCornerShape(5.dp))
-                                .background(Color.White)
+                                .background(MaterialTheme.colors.surface)
                         ) {
                             val allLanguages = copywriter.getAllLanguages()
                             allLanguages.forEachIndexed { _, language ->
@@ -169,6 +171,7 @@ fun SettingsContentUI(currentPage: MutableState<PageType>) {
         Row(modifier = Modifier.fillMaxWidth().padding(25.dp, 5.dp, 0.dp, 5.dp),
             verticalAlignment = Alignment.CenterVertically) {
             Text(text = "${copywriter.getText("Theme")}:",
+                color = MaterialTheme.colors.onBackground,
                 fontSize = 14.sp,
                 fontFamily = FontFamily.SansSerif,
                 style = TextStyle(fontWeight = FontWeight.Light))
@@ -187,6 +190,7 @@ fun SettingsContentUI(currentPage: MutableState<PageType>) {
             )
 
             Text(text = copywriter.getText("Boot_start_up"),
+                color = MaterialTheme.colors.onBackground,
                 fontSize = 14.sp,
                 fontFamily = FontFamily.SansSerif,
                 style = TextStyle(fontWeight = FontWeight.Light))
@@ -202,6 +206,7 @@ fun SettingsContentUI(currentPage: MutableState<PageType>) {
             )
 
             Text(text = copywriter.getText("AutomaticUpdate"),
+                color = MaterialTheme.colors.onBackground,
                 fontSize = 14.sp,
                 fontFamily = FontFamily.SansSerif,
                 style = TextStyle(fontWeight = FontWeight.Light))
@@ -211,8 +216,8 @@ fun SettingsContentUI(currentPage: MutableState<PageType>) {
 
         SettingsItemUI("Network") {
             Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                Text(
-                    text = copywriter.getText("Network"),
+                Text(text = copywriter.getText("Network"),
+                    color = MaterialTheme.colors.onBackground,
                     fontSize = 14.sp,
                     fontFamily = FontFamily.SansSerif,
                     style = TextStyle(fontWeight = FontWeight.Light)
@@ -222,8 +227,8 @@ fun SettingsContentUI(currentPage: MutableState<PageType>) {
         Spacer(modifier = Modifier.height(10.dp))
         SettingsItemUI("Store") {
             Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                Text(
-                    text = copywriter.getText("Store"),
+                Text(text = copywriter.getText("Store"),
+                    color = MaterialTheme.colors.onBackground,
                     fontSize = 14.sp,
                     fontFamily = FontFamily.SansSerif,
                     style = TextStyle(fontWeight = FontWeight.Light)

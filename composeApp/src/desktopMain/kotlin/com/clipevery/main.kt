@@ -38,6 +38,8 @@ import com.clipevery.path.getPathProvider
 import com.clipevery.platform.currentPlatform
 import com.clipevery.presist.DesktopFilePersist
 import com.clipevery.presist.FilePersist
+import com.clipevery.ui.DesktopThemeDetector
+import com.clipevery.ui.ThemeDetector
 import com.clipevery.ui.getTrayMouseAdapter
 import com.clipevery.utils.DesktopQRCodeGenerator
 import com.clipevery.utils.QRCodeGenerator
@@ -70,6 +72,7 @@ fun initKoinApplication(ioScope: CoroutineScope): KoinApplication {
         single<TransferableConsumer> { DesktopTransferableConsumer() }
         single<GlobalListener> { GlobalListener() }
         single<DriverFactory> { DriverFactory() }
+        single<ThemeDetector> { DesktopThemeDetector(get()) }
     }
     return startKoin {
         modules(appModule)

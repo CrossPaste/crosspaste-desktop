@@ -1,5 +1,11 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.compose.ExperimentalComposeLibrary
+import java.net.URI
+
+repositories {
+    mavenCentral()
+    maven { url = URI("https://jitpack.io") }
+}
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -38,6 +44,7 @@ kotlin {
             implementation("io.insert-koin:koin-core:3.5.0")
             implementation("com.github.kwhat:jnativehook:2.2.2")
             implementation("app.cash.sqldelight:sqlite-driver:2.0.0")
+            implementation("com.github.Dansoftowner:jSystemThemeDetector:3.8")
         }
         commonMain.dependencies {
             implementation(compose.runtime)

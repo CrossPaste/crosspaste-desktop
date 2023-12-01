@@ -23,6 +23,8 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.clipevery.ui.AboutUI
+import com.clipevery.ui.ClipeveryTheme
+import com.clipevery.ui.ClipeveryTheme
 import com.clipevery.ui.HomeUI
 import com.clipevery.ui.SettingsUI
 import org.koin.core.KoinApplication
@@ -38,7 +40,7 @@ fun ClipeveryApp(koinApplication: KoinApplication, hideWindow: () -> Unit) {
 
 @Composable
 fun ClipeveryWindow(hideWindow: () -> Unit) {
-    MaterialTheme {
+    ClipeveryTheme {
         Box(modifier = Modifier
             .background(Color.Transparent)
             .pointerInput(Unit) {
@@ -77,7 +79,7 @@ fun ClipeveryWindow(hideWindow: () -> Unit) {
             ) {
                 Column(Modifier
                     .clip(RoundedCornerShape(10.dp))
-                    .background(Color.White)
+                    .background(MaterialTheme.colors.background)
                     .fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally) {
                     ClipeveryContent()
