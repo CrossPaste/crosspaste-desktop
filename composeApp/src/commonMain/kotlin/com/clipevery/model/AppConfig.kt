@@ -6,4 +6,7 @@ import java.util.Locale
 @Serializable
 data class AppConfig(
     val bindingState: Boolean = false,
-    val language: String = Locale.getDefault().language,)
+    val language: String = Locale.getDefault().language,
+    val isFollowSystem: Boolean = true,
+    val isDark: Boolean = false
+)

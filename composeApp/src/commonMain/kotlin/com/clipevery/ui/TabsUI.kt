@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.Icon
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Tab
 import androidx.compose.material.TabRow
 import androidx.compose.material.Text
@@ -95,7 +96,7 @@ fun TabUI(isSelect: Boolean, title: String, clickable: () -> Unit) {
 
     if (isSelect) {
         textStyle = TextStyle(fontWeight = FontWeight.Bold)
-        modifier = modifier.border(5.dp, Color(0xFF70b0f3), bottomBorderShape)
+        modifier = modifier.border(5.dp, MaterialTheme.colors.primary, bottomBorderShape)
         textUnit = 16.sp
     } else {
         textStyle = TextStyle(fontWeight = FontWeight.Normal)
@@ -105,6 +106,7 @@ fun TabUI(isSelect: Boolean, title: String, clickable: () -> Unit) {
     Box(modifier = modifier)  {
         Text(
             text = title,
+            color = MaterialTheme.colors.onBackground,
             fontSize = textUnit,
             style = textStyle,
             fontFamily = FontFamily.SansSerif,

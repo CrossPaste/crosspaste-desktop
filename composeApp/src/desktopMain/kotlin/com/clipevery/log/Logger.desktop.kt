@@ -35,4 +35,7 @@ actual fun initLogger(logPath: String) {
     val rootLogger = context.getLogger(Logger.ROOT_LOGGER_NAME) as ch.qos.logback.classic.Logger
     rootLogger.level = Level.DEBUG
     rootLogger.addAppender(rollingFileAppender)
+
+    val jThemeLogger = context.getLogger("com.jthemedetecor") as ch.qos.logback.classic.Logger
+    jThemeLogger.level = Level.OFF
 }

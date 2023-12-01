@@ -84,10 +84,10 @@ fun DecorationUI(currentPage: MutableState<PageType>, title: String) {
                     .clickable { currentPage.value = PageType.HOME }) {
                     Icon(imageVector = arrowLeft(),
                         contentDescription = null,
-                        tint = Color(0xFF70b0f3))
+                        tint = Color(0xFF1672FF))
                     Text(
                         text = copywriter.getText("Return"),
-                        color = Color(0xFF70b0f3),
+                        color = Color(0xFF1672FF),
                         fontWeight = FontWeight.Light
                     )
                 }
