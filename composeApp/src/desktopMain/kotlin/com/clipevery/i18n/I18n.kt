@@ -1,5 +1,8 @@
 package com.clipevery.i18n
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.clipevery.config.ConfigManager
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.FileNotFoundException
@@ -20,12 +23,12 @@ fun getText(id: String): String {
     return languageMap.computeIfAbsent(en) { CopywriterImpl(en) }.getText(id)
 }
 
-open class GlobalCopywriterImpl(val configManager: ConfigManager): GlobalCopywriter {
+open class GlobalCopywriterImpl(private val configManager: ConfigManager): GlobalCopywriter {
 
-    private var copywriter: Copywriter = languageMap
+    private var copywriter: Copywriter by mutableStateOf(languageMap
         .computeIfAbsent(configManager.config.language) {
         CopywriterImpl(configManager.config.language)
-    }
+    })
 
     override fun switchLanguage(language: String) {
         copywriter = languageMap.computeIfAbsent(language) { CopywriterImpl(language) }
