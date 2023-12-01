@@ -19,6 +19,8 @@ import com.clipevery.clip.TransferableConsumer
 import com.clipevery.clip.getDesktopClipboardService
 import com.clipevery.config.ConfigManager
 import com.clipevery.config.DefaultConfigManager
+import com.clipevery.config.FileType
+import com.clipevery.data.DriverFactory
 import com.clipevery.encrypt.SignalProtocol
 import com.clipevery.encrypt.SignalProtocolWithState
 import com.clipevery.encrypt.getSignalProtocolFactory
@@ -67,6 +69,7 @@ fun initKoinApplication(ioScope: CoroutineScope): KoinApplication {
         single<ClipboardService> { getDesktopClipboardService(get()) }
         single<TransferableConsumer> { DesktopTransferableConsumer() }
         single<GlobalListener> { GlobalListener() }
+        single<DriverFactory> { DriverFactory() }
     }
     return startKoin {
         modules(appModule)
@@ -75,7 +78,7 @@ fun initKoinApplication(ioScope: CoroutineScope): KoinApplication {
 
 fun main() = application {
     val pathProvider = getPathProvider()
-    initLogger(pathProvider.resolveLog("clipevery.log").pathString)
+    initLogger(pathProvider.resolve("clipevery.log", FileType.LOG).pathString)
     val logger = KotlinLogging.logger {}
 
     logger.info { "Starting Clipevery" }

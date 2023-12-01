@@ -1,5 +1,6 @@
 package com.clipevery.encrypt
 
+import com.clipevery.config.FileType
 import com.clipevery.model.AppInfo
 import com.clipevery.macos.MacosKeychainHelper
 import com.clipevery.path.getPathProvider
@@ -23,7 +24,8 @@ fun getSignalProtocolFactory(appInfo: AppInfo): SignalProtocolFactory {
 
 class MacosSignalProtocolFactory(private val appInfo: AppInfo): SignalProtocolFactory {
 
-    private val filePersist = DesktopOneFilePersist(getPathProvider().resolveUser("signal.data"))
+    private val filePersist = DesktopOneFilePersist(getPathProvider()
+        .resolve("signal.data", FileType.ENCRYPT))
 
     override fun createSignalProtocol(): SignalProtocolWithState {
         val file = filePersist.path.toFile()
@@ -82,7 +84,8 @@ class MacosSignalProtocolFactory(private val appInfo: AppInfo): SignalProtocolFa
 
 class WindowsSignalProtocolFactory : SignalProtocolFactory {
 
-    private val filePersist = DesktopOneFilePersist(getPathProvider().resolveUser("signal.data"))
+    private val filePersist = DesktopOneFilePersist(getPathProvider()
+        .resolve("signal.data", FileType.ENCRYPT))
 
     override fun createSignalProtocol(): SignalProtocolWithState {
         val file = filePersist.path.toFile()
