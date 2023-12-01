@@ -11,8 +11,7 @@ import com.clipevery.LocalKoinApplication
 private val LightColorPalette = lightColors(
     primary = Color(0xFF1672FF),
     primaryVariant = Color(0xFF247CFF),
-    secondary = Color(0xFFFF9DC0),
-    secondaryVariant = Color(0xFFFFACB5),
+    secondaryVariant = Color(0xFFE8F5FF),
 )
 
 private val DarkColorPalette = darkColors(
