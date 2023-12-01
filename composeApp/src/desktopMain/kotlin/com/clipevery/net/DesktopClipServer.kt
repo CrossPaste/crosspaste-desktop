@@ -5,6 +5,7 @@ import com.clipevery.model.AppHostInfo
 import com.clipevery.model.AppRequestBindInfo
 import com.clipevery.platform.currentPlatform
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.server.application.ApplicationStarted
 import io.ktor.server.application.call
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
@@ -12,6 +13,7 @@ import io.ktor.server.netty.NettyApplicationEngine
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
+import kotlinx.coroutines.runBlocking
 import java.net.NetworkInterface
 import java.util.Collections
 
@@ -31,7 +33,12 @@ class DesktopClipServer(private val signalProtocol: SignalProtocol): ClipServer 
 
     override fun start(): ClipServer {
         server.start(wait = false)
-        logger.info { "start server ${port()}" }
+        runBlocking {
+            server.environment.monitor.subscribe(ApplicationStarted) {
+                val actualPort = server.environment.connectors.map { it.port }.first()
+                logger.info { "Server started on port: $actualPort" }
+            }
+        }
         return this
     }
 

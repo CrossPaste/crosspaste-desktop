@@ -22,31 +22,13 @@ class WindowsPathProvider: PathProvider {
 
     private val userHomePath = System.getProperty("user.home")
 
-    private val userDir = System.getProperty("user.dir")
-
-    override fun resolveUser(fileName: String?): Path {
-        return fileName?.let {
-            Paths.get(userHomePath).resolve(".clipevery").resolve(fileName)
-        } ?: Paths.get(userHomePath).resolve(".clipevery")
-    }
-
-    override fun resolveApp(fileName: String?): Path {
-        return fileName?.let {
-            Paths.get(userDir).resolve(fileName)
-        } ?: Paths.get(userDir)
-    }
-
-    override fun resolveLog(fileName: String?): Path {
-        return fileName?.let {
-            Paths.get(userDir).resolve("logs").resolve(fileName)
-        } ?: Paths.get(userDir).resolve("logs")
-    }
+    override val clipUserPath: Path = Paths.get(userHomePath).resolve(".clipevery")
 }
 
 
 class MacosPathProvider: PathProvider {
 
-    private val appPath = System.getProperty("jpackage.app-path")
+    override val clipUserPath: Path = getAppSupportPath()
 
     private fun getAppSupportPath(): Path {
         val userHome = System.getProperty("user.home")
@@ -59,38 +41,9 @@ class MacosPathProvider: PathProvider {
         return appSupportPath
     }
 
-    override fun resolveUser(fileName: String?): Path {
-        return fileName?.let {
-            getAppSupportPath().resolve(fileName)
-        } ?: getAppSupportPath()
-    }
-
-    override fun resolveApp(fileName: String?): Path {
-        val appPath = Paths.get(appPath).parent.parent
-
-        return fileName?.let {
-            appPath.resolve(fileName)
-        } ?: appPath
-    }
-
-    override fun resolveLog(fileName: String?): Path {
-        return fileName?.let {
-            getAppSupportPath().resolve("logs").resolve(fileName)
-        } ?: getAppSupportPath().resolve("logs")
-    }
 }
 
 class LinuxPathProvider: PathProvider {
-
-    override fun resolveUser(fileName: String?): Path {
-        TODO("Not yet implemented")
-    }
-
-    override fun resolveApp(fileName: String?): Path {
-        TODO("Not yet implemented")
-    }
-
-    override fun resolveLog(fileName: String?): Path {
-        TODO("Not yet implemented")
-    }
+    override val clipUserPath: Path
+        get() = TODO("Not yet implemented")
 }
