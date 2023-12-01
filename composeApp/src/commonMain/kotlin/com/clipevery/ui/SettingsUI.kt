@@ -158,7 +158,6 @@ fun SettingsContentUI(currentPage: MutableState<PageType>) {
                                 MenuItem(language.name) {
                                     copywriter.switchLanguage(language.abridge)
                                     showMoreLanguage = false
-                                    currentPage.value = PageType.HOME
                                 }
                             }
                         }

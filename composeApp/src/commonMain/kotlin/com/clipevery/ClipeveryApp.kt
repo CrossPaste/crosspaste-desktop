@@ -29,6 +29,15 @@ import org.koin.core.KoinApplication
 
 @Composable
 fun ClipeveryApp(koinApplication: KoinApplication, hideWindow: () -> Unit) {
+    CompositionLocalProvider(
+        LocalKoinApplication provides koinApplication
+    ) {
+        ClipeveryWindow(hideWindow)
+    }
+}
+
+@Composable
+fun ClipeveryWindow(hideWindow: () -> Unit) {
     MaterialTheme {
         Box(modifier = Modifier
             .background(Color.Transparent)
@@ -71,25 +80,15 @@ fun ClipeveryApp(koinApplication: KoinApplication, hideWindow: () -> Unit) {
                     .background(Color.White)
                     .fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally) {
-                    ClipeveryCommon(koinApplication)
+                    ClipeveryContent()
                 }
             }
         }
     }
 }
 
-
 @Composable
-fun ClipeveryCommon(koinApplication: KoinApplication) {
-    CompositionLocalProvider(
-        LocalKoinApplication provides koinApplication
-    ) {
-        ClipeveryWithProvidedDependencies()
-    }
-}
-
-@Composable
-fun ClipeveryWithProvidedDependencies() {
+fun ClipeveryContent() {
     val currentPage = remember { mutableStateOf(PageType.HOME) }
     when (currentPage.value) {
         PageType.HOME -> {
