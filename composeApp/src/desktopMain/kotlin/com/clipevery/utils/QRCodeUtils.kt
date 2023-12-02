@@ -2,6 +2,9 @@ package com.clipevery.utils
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
+import com.clipevery.device.DeviceInfoFactory
+import com.clipevery.encrypt.SignalProtocol
+import com.clipevery.model.RequestEndpointInfo
 import com.clipevery.net.ClipServer
 import com.clipevery.platform.currentPlatform
 import com.google.zxing.BarcodeFormat
@@ -9,13 +12,18 @@ import com.google.zxing.qrcode.QRCodeWriter
 import java.awt.Color
 import java.awt.image.BufferedImage
 
-class DesktopQRCodeGenerator(private val clipServer: ClipServer) : QRCodeGenerator {
+class DesktopQRCodeGenerator(private val clipServer: ClipServer,
+                             private val deviceInfoFactory: DeviceInfoFactory,
+                             private val signalProtocol: SignalProtocol): QRCodeGenerator {
 
     private var salt: Int = 0
 
     private fun bindInfo(): String {
         salt = (0..Int.MAX_VALUE).random()
-        return clipServer.appRequestBindInfo().getBase64Encode(salt)
+        val deviceInfo = deviceInfoFactory.createDeviceInfo()
+        val port = clipServer.port()
+        val publicKey = signalProtocol.identityKeyPair.publicKey
+        return RequestEndpointInfo(deviceInfo, port, publicKey).getBase64Encode(salt)
     }
 
     override fun generateQRCode(width: Int, height: Int): ImageBitmap {

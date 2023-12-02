@@ -15,6 +15,10 @@ interface MacosApi : Library {
 
     fun deletePassword(service: String, account: String): Boolean
 
+    fun getComputerName(): String?
+
+    fun getHardwareUUID(): String?
+
     companion object {
         val INSTANCE: MacosApi = Native.load("MacosApi", MacosApi::class.java)
     }

@@ -1,5 +1,5 @@
 package com.clipevery.model
 
-data class AppHostInfo(
+data class HostInfo(
     val displayName: String,
     val hostAddress: String)

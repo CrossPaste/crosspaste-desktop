@@ -21,6 +21,8 @@ import com.clipevery.config.ConfigManager
 import com.clipevery.config.DefaultConfigManager
 import com.clipevery.config.FileType
 import com.clipevery.data.DriverFactory
+import com.clipevery.device.DesktopDeviceInfoFactory
+import com.clipevery.device.DeviceInfoFactory
 import com.clipevery.encrypt.SignalProtocol
 import com.clipevery.encrypt.SignalProtocolWithState
 import com.clipevery.encrypt.getSignalProtocolFactory
@@ -64,9 +66,10 @@ fun initKoinApplication(ioScope: CoroutineScope): KoinApplication {
         single<ConfigManager> { DefaultConfigManager(get()).initConfig() }
         single<SignalProtocolWithState> { getSignalProtocolFactory(get()).createSignalProtocol() }
         single<SignalProtocol> { get<SignalProtocolWithState>().signalProtocol }
-        single<ClipServer> { DesktopClipServer(get()).start() }
+        single<ClipServer> { DesktopClipServer().start() }
         single<ClipClient> { DesktopClipClient() }
-        single<QRCodeGenerator> { DesktopQRCodeGenerator(get()) }
+        single<DeviceInfoFactory> { DesktopDeviceInfoFactory() }
+        single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get(), get()) }
         single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
         single<ClipboardService> { getDesktopClipboardService(get()) }
         single<TransferableConsumer> { DesktopTransferableConsumer() }
@@ -77,6 +80,14 @@ fun initKoinApplication(ioScope: CoroutineScope): KoinApplication {
     return startKoin {
         modules(appModule)
     }
+}
+
+fun initInject(koinApplication: KoinApplication) {
+    koinApplication.koin.get<GlobalListener>()
+    koinApplication.koin.get<QRCodeGenerator>()
+    koinApplication.koin.get<ClipServer>()
+    koinApplication.koin.get<ClipClient>()
+    koinApplication.koin.get<ClipboardService>()
 }
 
 fun main() = application {
@@ -92,9 +103,7 @@ fun main() = application {
 
     val koinApplication by remember { mutableStateOf(initKoinApplication(ioScope)) }
 
-    koinApplication.koin.get<GlobalListener>()
-    koinApplication.koin.get<ClipServer>()
-    koinApplication.koin.get<ClipClient>()
+    initInject(koinApplication)
 
     val trayIcon = if(currentPlatform().isMacos()) {
         painterResource("clipevery_mac_tray.png")

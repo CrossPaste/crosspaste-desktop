@@ -91,3 +91,32 @@ public func deletePassword(service: UnsafePointer<CChar>, account: UnsafePointer
 
     return status == errSecSuccess
 }
+
+@_cdecl("getComputerName")
+public func getComputerName() -> UnsafePointer<CChar>? {
+    if let computerName = Host.current().localizedName {
+        return UnsafePointer<CChar>(strdup(computerName))
+    }
+    return nil
+}
+
+@_cdecl("getHardwareUUID")
+public func getHardwareUUID() -> UnsafePointer<CChar>? {
+    if let uuid = IOPlatformUUID() {
+        return UnsafePointer<CChar>(strdup(uuid))
+    }
+    return nil
+}
+
+private func IOPlatformUUID() -> String? {
+    let platformExpert = IOServiceGetMatchingService(kIOMainPortDefault,
+                                                     IOServiceMatching("IOPlatformExpertDevice"))
+    defer { IOObjectRelease(platformExpert) }
+
+    guard platformExpert != 0 else { return nil }
+    guard let serialNumberAsCFString = IORegistryEntryCreateCFProperty(platformExpert,
+                                                                       "IOPlatformUUID" as CFString,
+                                                                       kCFAllocatorDefault,
+                                                                       0).takeRetainedValue() as? String else { return nil }
+    return serialNumberAsCFString
+}
