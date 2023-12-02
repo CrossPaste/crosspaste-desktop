@@ -16,7 +16,9 @@ data class AppRequestBindInfo(
         val dataStream = DataOutputStream(byteStream)
         dataStream.writeInt(salt)
         dataStream.writeUTF(platform)
-        dataStream.write(publicKey.serialize())
+        val serialize = publicKey.serialize()
+        dataStream.writeInt(serialize.size)
+        dataStream.write(serialize)
         dataStream.writeInt(hostInfoList.size)
         hostInfoList.forEach {
             dataStream.writeUTF(it.displayName)
