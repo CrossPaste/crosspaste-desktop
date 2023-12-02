@@ -40,19 +40,19 @@ import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.i18n.Copywriter
 import com.clipevery.i18n.GlobalCopywriter
-import com.clipevery.model.DeviceInfo
-import com.clipevery.model.DeviceState
+import com.clipevery.model.SyncInfo
+import com.clipevery.model.SyncState
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Ghost
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun DeviceItem(deviceInfo: DeviceInfo) {
+fun SyncItem(syncInfo: SyncInfo) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
 
-    val backgroundColor = when (deviceInfo.state) {
-        DeviceState.ONLINE -> {
+    val backgroundColor = when (syncInfo.state) {
+        SyncState.ONLINE -> {
             val color = Color(154, 222, 123)
             val lightColor = Color(203, 255, 169)
             val infiniteTransition = rememberInfiniteTransition()
@@ -68,7 +68,7 @@ fun DeviceItem(deviceInfo: DeviceInfo) {
             )
             animatedColor
         }
-        DeviceState.OFFLINE -> {
+        SyncState.OFFLINE -> {
             Color(238, 245, 255)
         }
         else -> {
@@ -76,15 +76,17 @@ fun DeviceItem(deviceInfo: DeviceInfo) {
         }
     }
 
-    val showHostAddress = deviceInfo.state != DeviceState.UNVERIFIED
+    val showHostAddress = syncInfo.state != SyncState.UNVERIFIED
 
-    val showWarning = deviceInfo.state != DeviceState.ONLINE
+    val showWarning = syncInfo.state != SyncState.ONLINE
 
-    val imageVector = if (deviceInfo.platform.isMacos()) {
+    val platform = syncInfo.endpointInfo.platform
+
+    val imageVector = if (platform.isMacos()) {
         macos()
-    } else if (deviceInfo.platform.isWindows()) {
+    } else if (platform.isWindows()) {
         windows()
-    } else if (deviceInfo.platform.isLinux()) {
+    } else if (platform.isLinux()) {
         linux()
     } else {
         TablerIcons.Ghost
@@ -107,17 +109,17 @@ fun DeviceItem(deviceInfo: DeviceInfo) {
         Column(modifier = Modifier.align(Alignment.CenterVertically)) {
             Row(modifier = Modifier.wrapContentWidth(),
                 verticalAlignment = Alignment.CenterVertically) {
-                Text(text = deviceInfo.platform.name,
+                Text(text = platform.name,
                     style = TextStyle(fontWeight = FontWeight.Bold),
                     fontSize = 25.sp)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = deviceInfo.platform.version,
+                Text(text = platform.version,
                     style = TextStyle(fontWeight = FontWeight.Light),
                     fontSize = 15.sp)
             }
 
             Text(modifier = Modifier.width(150.dp),
-                text = deviceInfo.deviceId,
+                text = syncInfo.endpointInfo.deviceId,
                 fontSize = 15.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -136,14 +138,14 @@ fun DeviceItem(deviceInfo: DeviceInfo) {
 
         if (showHostAddress) {
             Text(
-                text = deviceInfo.appHostInfo.hostAddress,
+                text = syncInfo.endpointInfo.hostInfo.hostAddress,
                 style = TextStyle(fontWeight = FontWeight.Light),
                 fontFamily = FontFamily.SansSerif,
                 fontSize = 17.sp
             )
         }
 
-        val detailInfo by remember { mutableStateOf(deviceDetailInfo(copywriter, deviceInfo)) }
+        val detailInfo by remember { mutableStateOf(deviceDetailInfo(copywriter, syncInfo)) }
 
         TooltipArea(
             tooltip = {
@@ -169,14 +171,14 @@ fun DeviceItem(deviceInfo: DeviceInfo) {
     }
 }
 
-fun deviceDetailInfo(copywriter: Copywriter, deviceInfo: DeviceInfo): String {
+fun deviceDetailInfo(copywriter: Copywriter, syncInfo: SyncInfo): String {
     return """
-        |${copywriter.getText("Device_ID")}: ${deviceInfo.deviceId}
-        |${copywriter.getText("App_Version")}: ${deviceInfo.appInfo.appVersion}
-        |${copywriter.getText("User_Name")}: ${deviceInfo.appInfo.userName}
-        |${copywriter.getText("Host_Name")}: ${deviceInfo.appHostInfo.displayName}
-        |${copywriter.getText("Host_Address")}: ${deviceInfo.appHostInfo.hostAddress}
-        |${copywriter.getText("Platform")}: ${deviceInfo.platform.name} ${deviceInfo.platform.version}
-        |${copywriter.getText("State")}: ${deviceInfo.state}
+        |${copywriter.getText("Device_ID")}: ${syncInfo.endpointInfo.deviceId}
+        |${copywriter.getText("App_Version")}: ${syncInfo.appInfo.appVersion}
+        |${copywriter.getText("User_Name")}: ${syncInfo.appInfo.userName}
+        |${copywriter.getText("Host_Name")}: ${syncInfo.endpointInfo.hostInfo.displayName}
+        |${copywriter.getText("Host_Address")}: ${syncInfo.endpointInfo.hostInfo.hostAddress}
+        |${copywriter.getText("Platform")}: ${syncInfo.endpointInfo.platform.name} ${syncInfo.endpointInfo.platform.version}
+        |${copywriter.getText("State")}: ${syncInfo.state}
     """.trimMargin()
 }

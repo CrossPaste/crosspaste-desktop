@@ -1,6 +1,6 @@
 package com.clipevery.model
 
-enum class DeviceState {
+enum class SyncState {
     ONLINE,
     OFFLINE,
     UNVERIFIED
