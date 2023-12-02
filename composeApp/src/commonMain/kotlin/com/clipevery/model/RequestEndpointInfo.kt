@@ -23,11 +23,18 @@ data class RequestEndpointInfo(val deviceInfo: DeviceInfo,
     private fun encodeDeviceInfo(dataOutputStream: DataOutputStream) {
         dataOutputStream.writeUTF(deviceInfo.deviceId)
         dataOutputStream.writeUTF(deviceInfo.deviceName)
-        dataOutputStream.writeUTF(deviceInfo.platform.name)
+        encodePlatform(dataOutputStream)
         dataOutputStream.writeInt(deviceInfo.hostInfoList.size)
         deviceInfo.hostInfoList.forEach {
             dataOutputStream.writeUTF(it.displayName)
             dataOutputStream.writeUTF(it.hostAddress)
         }
+    }
+
+    private fun encodePlatform(dataOutputStream: DataOutputStream) {
+        dataOutputStream.writeUTF(deviceInfo.platform.name)
+        dataOutputStream.writeUTF(deviceInfo.platform.arch)
+        dataOutputStream.writeInt(deviceInfo.platform.bitMode)
+        dataOutputStream.writeUTF(deviceInfo.platform.version)
     }
 }

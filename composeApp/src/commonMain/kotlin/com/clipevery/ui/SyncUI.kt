@@ -48,6 +48,7 @@ fun Devices() {
             platform = object: Platform {
                 override val name: String
                     get() = "Windows"
+                override val arch: String = "amd64"
                 override val bitMode: Int = 64
                 override val version: String = "11"
             },
@@ -74,6 +75,7 @@ fun Devices() {
             ),
             platform = object: Platform {
                 override val name: String = "Linux"
+                override val arch: String = "amd64"
                 override val bitMode: Int = 32
                 override val version: String = "20.23"
             },

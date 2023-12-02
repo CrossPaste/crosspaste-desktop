@@ -4,6 +4,7 @@ expect fun currentPlatform(): Platform
 
 interface Platform {
     val name: String
+    val arch: String
     val bitMode: Int
     val version: String
 
