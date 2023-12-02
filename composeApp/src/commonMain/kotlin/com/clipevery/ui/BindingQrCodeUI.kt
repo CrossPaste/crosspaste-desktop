@@ -25,6 +25,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
@@ -36,6 +38,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+
+val qrSize: DpSize = DpSize(275.dp, 275.dp)
+
 @Composable
 fun bindingQRCode() {
     val current = LocalKoinApplication.current
@@ -44,12 +49,17 @@ fun bindingQRCode() {
     val coroutineScope = rememberCoroutineScope()
     var refreshJob: Job? by remember { mutableStateOf(null) }
 
-    var qrImage by remember { mutableStateOf(qrCodeGenerator.generateQRCode(600, 600)) }
+    val density = LocalDensity.current
+
+    val width = with(density) { qrSize.width.roundToPx() }
+    val height = with(density) { qrSize.width.roundToPx() }
+
+    var qrImage by remember { mutableStateOf(qrCodeGenerator.generateQRCode(width, height)) }
 
     DisposableEffect(Unit) {
         refreshJob = coroutineScope.launch {
             while (true) {
-                qrImage = qrCodeGenerator.generateQRCode( 600, 600)
+                qrImage = qrCodeGenerator.generateQRCode(width, height)
                 delay(5000)
             }
         }
