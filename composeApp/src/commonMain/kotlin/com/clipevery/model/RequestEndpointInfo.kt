@@ -15,8 +15,9 @@ data class RequestEndpointInfo(val deviceInfo: DeviceInfo,
         dataStream.writeInt(salt)
         encodeDeviceInfo(dataStream)
         dataStream.writeInt(port)
-        val serialize = publicKey.serialize()
+        val serialize: ByteArray = publicKey.serialize()
         dataStream.writeInt(serialize.size)
+        dataStream.write(serialize)
         return base64Encode(byteStream.toByteArray())
     }
 
