@@ -1,6 +1,7 @@
 package com.clipevery.model
 
 import com.clipevery.AppInfoFactory
+import com.clipevery.config.ConfigManager
 import com.clipevery.platform.currentPlatform
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.IOException
@@ -10,26 +11,33 @@ import java.util.Properties
 
 val logger = KotlinLogging.logger {}
 
-fun getAppInfoFactory(): AppInfoFactory {
+class DesktopAppInfoFactory(private val configManager: ConfigManager): AppInfoFactory {
+    override fun createAppInfo(): AppInfo {
+        val appInstanceId = configManager.config.appInstanceId
+        return getAppInfoFactory(appInstanceId).createAppInfo()
+    }
+}
+
+fun getAppInfoFactory(appInstanceId: String): AppInfoFactory {
     val platform = currentPlatform()
     return if (platform.isMacos()) {
-        MacosAppInfoFactory()
+        MacosAppInfoFactory(appInstanceId)
     } else if (platform.isWindows()) {
-        WindowsAppInfoFactory()
+        WindowsAppInfoFactory(appInstanceId)
     } else {
         throw IllegalStateException("Unknown platform: ${platform.name}")
     }
 }
 
-class MacosAppInfoFactory: AppInfoFactory {
+class MacosAppInfoFactory(private val appInstanceId: String): AppInfoFactory {
     override fun createAppInfo(): AppInfo {
-        return AppInfo(appVersion = getVersion(), userName = getUserName())
+        return AppInfo(appInstanceId = appInstanceId, appVersion = getVersion(), userName = getUserName())
     }
 }
 
-class WindowsAppInfoFactory: AppInfoFactory {
+class WindowsAppInfoFactory(private val appInstanceId: String): AppInfoFactory {
     override fun createAppInfo(): AppInfo {
-        return AppInfo(appVersion = getVersion(), userName = getUserName())
+        return AppInfo(appInstanceId = appInstanceId, appVersion = getVersion(), userName = getUserName())
     }
 }
 

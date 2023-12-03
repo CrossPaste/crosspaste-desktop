@@ -1,5 +1,6 @@
-package com.clipevery.presist
+package com.clipevery.presist.file
 
+import com.clipevery.presist.OneFilePersist
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import java.nio.file.Path

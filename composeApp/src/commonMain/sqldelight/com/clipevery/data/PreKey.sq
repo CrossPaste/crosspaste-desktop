@@ -1,0 +1,16 @@
+CREATE TABLE preKey (
+    id INTEGER PRIMARY KEY,
+    serialized BLOB NOT NULL
+);
+
+selectById:
+SELECT * FROM preKey WHERE id = ?;
+
+insert:
+INSERT OR REPLACE INTO preKey (id, serialized) VALUES (?, ?);
+
+count:
+SELECT count(1) FROM preKey WHERE id = ?;
+
+delete:
+DELETE FROM preKey WHERE id = ?;

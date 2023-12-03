@@ -1,0 +1,15 @@
+CREATE TABLE identityKey (
+    app_instance_id TEXT NOT NULL PRIMARY KEY,
+    registrationId INTEGER NOT NULL,
+    serialized BLOB NOT NULL
+);
+
+select:
+SELECT * FROM identityKey WHERE app_instance_id = ?;
+
+tryInit:
+INSERT OR FAIL INTO identityKey (app_instance_id, registrationId, serialized) VALUES (?, ?, ?);
+
+update:
+UPDATE identityKey SET serialized = ? WHERE app_instance_id = ? AND registrationId = ?;
+

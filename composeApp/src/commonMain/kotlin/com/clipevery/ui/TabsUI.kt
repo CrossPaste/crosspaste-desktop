@@ -66,7 +66,7 @@ fun TabsUI() {
     Column(modifier = Modifier.fillMaxSize()) {
         when (selectedTabIndex) {
             0 -> ClipPreview()
-            1 -> Devices()
+            1 -> Syncs()
             2 -> {
                 if (!config.value.bindingState) {
                     bindingQRCode()

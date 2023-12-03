@@ -18,12 +18,13 @@ import com.clipevery.platform.Platform
 import com.clipevery.platform.currentPlatform
 
 @Composable
-fun Devices() {
+fun Syncs() {
     val current = LocalKoinApplication.current
     val deviceFactory = current.koin.get<DeviceInfoFactory>()
     val deviceInfo = deviceFactory.createDeviceInfo()
     SyncItem(SyncInfo(
         appInfo = AppInfo(
+            appInstanceId = "1234567890",
             appVersion = "1.0.0",
             userName = "John Doe"
         ),
@@ -39,6 +40,7 @@ fun Devices() {
     Divider(modifier = Modifier.fillMaxWidth())
     SyncItem(SyncInfo(
         appInfo = AppInfo(
+            appInstanceId = "1234567890",
             appVersion = "1.0.0",
             userName = "John Doe"
         ),
@@ -63,6 +65,7 @@ fun Devices() {
     Divider(modifier = Modifier.fillMaxWidth())
     SyncItem(SyncInfo(
         appInfo = AppInfo(
+            appInstanceId = "1234567890",
             appVersion = "1.0.0",
             userName = "John Doe"
         ),
@@ -89,7 +92,7 @@ fun Devices() {
 @Composable
 fun test() {
     Column(modifier = Modifier.fillMaxSize()) {
-        Devices()
+        Syncs()
     }
 }
 
