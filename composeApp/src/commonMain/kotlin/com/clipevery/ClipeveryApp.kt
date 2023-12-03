@@ -24,15 +24,17 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.clipevery.ui.AboutUI
 import com.clipevery.ui.ClipeveryTheme
-import com.clipevery.ui.ClipeveryTheme
 import com.clipevery.ui.HomeUI
 import com.clipevery.ui.SettingsUI
 import org.koin.core.KoinApplication
 
 @Composable
-fun ClipeveryApp(koinApplication: KoinApplication, hideWindow: () -> Unit) {
+fun ClipeveryApp(koinApplication: KoinApplication,
+                 hideWindow: () -> Unit,
+                 exitApplication: () -> Unit) {
     CompositionLocalProvider(
-        LocalKoinApplication provides koinApplication
+        LocalKoinApplication provides koinApplication,
+        LocalExitApplication provides exitApplication
     ) {
         ClipeveryWindow(hideWindow)
     }
