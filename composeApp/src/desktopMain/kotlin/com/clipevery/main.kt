@@ -20,26 +20,28 @@ import com.clipevery.clip.getDesktopClipboardService
 import com.clipevery.config.ConfigManager
 import com.clipevery.config.DefaultConfigManager
 import com.clipevery.config.FileType
-import com.clipevery.data.DriverFactory
 import com.clipevery.device.DesktopDeviceInfoFactory
 import com.clipevery.device.DeviceInfoFactory
-import com.clipevery.encrypt.SignalProtocol
-import com.clipevery.encrypt.SignalProtocolWithState
-import com.clipevery.encrypt.getSignalProtocolFactory
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.i18n.GlobalCopywriterImpl
 import com.clipevery.listen.GlobalListener
 import com.clipevery.log.initLogger
 import com.clipevery.model.AppInfo
-import com.clipevery.model.getAppInfoFactory
+import com.clipevery.model.DesktopAppInfoFactory
 import com.clipevery.net.ClipClient
 import com.clipevery.net.ClipServer
 import com.clipevery.net.DesktopClipClient
 import com.clipevery.net.DesktopClipServer
 import com.clipevery.path.getPathProvider
 import com.clipevery.platform.currentPlatform
-import com.clipevery.presist.DesktopFilePersist
 import com.clipevery.presist.FilePersist
+import com.clipevery.presist.data.DesktopIdentityKeyStore
+import com.clipevery.presist.data.DesktopPreKeyStore
+import com.clipevery.presist.data.DesktopSessionStore
+import com.clipevery.presist.data.DesktopSignedPreKeyStore
+import com.clipevery.presist.data.DriverFactory
+import com.clipevery.presist.data.createDatabase
+import com.clipevery.presist.file.DesktopFilePersist
 import com.clipevery.ui.DesktopThemeDetector
 import com.clipevery.ui.ThemeDetector
 import com.clipevery.ui.getTrayMouseAdapter
@@ -53,6 +55,10 @@ import kotlinx.coroutines.CoroutineScope
 import org.koin.core.KoinApplication
 import org.koin.core.context.GlobalContext.startKoin
 import org.koin.dsl.module
+import org.signal.libsignal.protocol.state.IdentityKeyStore
+import org.signal.libsignal.protocol.state.PreKeyStore
+import org.signal.libsignal.protocol.state.SessionStore
+import org.signal.libsignal.protocol.state.SignedPreKeyStore
 import kotlin.io.path.pathString
 
 
@@ -61,11 +67,9 @@ val appUI = initAppUI()
 fun initKoinApplication(ioScope: CoroutineScope): KoinApplication {
     val appModule = module {
         single<CoroutineScope> { ioScope }
-        single<AppInfo> { getAppInfoFactory().createAppInfo() }
+        single<AppInfo> { DesktopAppInfoFactory(get()).createAppInfo() }
         single<FilePersist> { DesktopFilePersist() }
         single<ConfigManager> { DefaultConfigManager(get()).initConfig() }
-        single<SignalProtocolWithState> { getSignalProtocolFactory(get()).createSignalProtocol() }
-        single<SignalProtocol> { get<SignalProtocolWithState>().signalProtocol }
         single<ClipServer> { DesktopClipServer().start() }
         single<ClipClient> { DesktopClipClient() }
         single<DeviceInfoFactory> { DesktopDeviceInfoFactory() }
@@ -76,6 +80,11 @@ fun initKoinApplication(ioScope: CoroutineScope): KoinApplication {
         single<GlobalListener> { GlobalListener() }
         single<DriverFactory> { DriverFactory() }
         single<ThemeDetector> { DesktopThemeDetector(get()) }
+        single<IdentityKeyStore> { DesktopIdentityKeyStore(get(), get()) }
+        single<PreKeyStore> { DesktopPreKeyStore(get()) }
+        single<SessionStore> { DesktopSessionStore(get()) }
+        single<SignedPreKeyStore> { DesktopSignedPreKeyStore(get()) }
+        single<Database> { createDatabase(DriverFactory()) }
     }
     return startKoin {
         modules(appModule)

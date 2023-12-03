@@ -1,0 +1,19 @@
+CREATE TABLE signedPreKey (
+    id INTEGER PRIMARY KEY,
+    serialized BLOB NOT NULL
+);
+
+selectById:
+SELECT * FROM signedPreKey WHERE id = ?;
+
+selectAll:
+SELECT * FROM signedPreKey;
+
+insert:
+INSERT OR REPLACE INTO signedPreKey (id, serialized) VALUES (?, ?);
+
+count:
+SELECT COUNT(*) FROM signedPreKey WHERE id = ?;
+
+delete:
+DELETE FROM signedPreKey WHERE id = ?;

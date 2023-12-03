@@ -1,4 +1,4 @@
-package com.clipevery.data
+package com.clipevery.presist.data
 
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
