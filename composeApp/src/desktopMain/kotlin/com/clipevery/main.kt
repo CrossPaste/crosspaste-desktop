@@ -145,6 +145,8 @@ fun main() = application {
                 }
             })
         }
-        ClipeveryApp(koinApplication) { showWindow = false }
+        ClipeveryApp(koinApplication,
+            hideWindow = { showWindow = false },
+            exitApplication = ::exitApplication)
     }
 }

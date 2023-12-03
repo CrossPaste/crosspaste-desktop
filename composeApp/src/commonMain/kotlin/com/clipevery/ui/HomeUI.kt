@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Popup
+import com.clipevery.LocalExitApplication
 import com.clipevery.LocalKoinApplication
 import com.clipevery.PageType
 import com.clipevery.i18n.GlobalCopywriter
@@ -59,7 +60,6 @@ import compose.icons.TablerIcons
 import compose.icons.tablericons.Settings
 import java.awt.Desktop
 import java.net.URI
-import kotlin.system.exitProcess
 
 @Composable
 fun HomeUI(currentPage: MutableState<PageType>) {
@@ -77,6 +77,7 @@ fun HomeWindowDecoration(currentPage: MutableState<PageType>) {
 @Composable
 fun TitleUI(currentPage: MutableState<PageType>) {
     val current = LocalKoinApplication.current
+    val applicationExit = LocalExitApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     var showPopup by remember { mutableStateOf(false) }
     var onDismissTime by remember { mutableStateOf(0L) }
@@ -209,7 +210,7 @@ fun TitleUI(currentPage: MutableState<PageType>) {
                                 Divider()
                                 MenuItem(copywriter.getText("Quit")) {
                                     showPopup = false
-                                    exitProcess(0)
+                                    applicationExit()
                                 }
                             }
                         }
