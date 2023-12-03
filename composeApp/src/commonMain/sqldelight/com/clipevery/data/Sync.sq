@@ -1,0 +1,25 @@
+CREATE TABLE syncInfo (
+    app_instance_name TEXT NOT NULL PRIMARY KEY AUTOINCREMENT,
+    app_version TEXT NOT NULL,
+    app_user_name TEXT NOT NULL,
+    device_id TEXT NOT NULL,
+    device_state TEXT NOT NULL,
+    device_name TEXT NOT NULL,
+    host_address TEXT NOT NULL,
+    port INTEGER NOT NULL,
+    platform_name TEXT NOT NULL,
+    platform_arch TEXT NOT NULL,
+    platform_bit_mode INTEGER NOT NULL,
+    platform_version TEXT NOT NULL
+);
+
+
+CREATE INDEX device_state_index ON syncInfo (device_state);
+
+selectAll:
+SELECT *
+FROM syncInfo;
+
+insert:
+INSERT INTO syncInfo(app_instance_name, app_version, app_user_name, device_id, device_state, device_name, host_address, port, platform_name, platform_arch, platform_bit_mode, platform_version)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,  ?, ?, ?);
