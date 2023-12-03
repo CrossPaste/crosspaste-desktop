@@ -7,22 +7,19 @@ import com.clipevery.model.RequestEndpointInfo
 import com.clipevery.net.ClipServer
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
-import org.signal.libsignal.protocol.state.IdentityKeyStore
 import java.awt.Color
 import java.awt.image.BufferedImage
 
 class DesktopQRCodeGenerator(private val clipServer: ClipServer,
-                             private val deviceInfoFactory: DeviceInfoFactory,
-                             private val identityKeyStore: IdentityKeyStore): QRCodeGenerator {
+                             private val deviceInfoFactory: DeviceInfoFactory): QRCodeGenerator {
 
     private var salt: Int = 0
 
     private fun bindInfo(): String {
-        salt = (0..Int.MAX_VALUE).random()
+        salt = (0..999999).random()
         val deviceInfo = deviceInfoFactory.createDeviceInfo()
         val port = clipServer.port()
-        val publicKey = identityKeyStore.identityKeyPair.publicKey
-        return RequestEndpointInfo(deviceInfo, port, publicKey).getBase64Encode(salt)
+        return RequestEndpointInfo(deviceInfo, port).getBase64Encode(salt)
     }
 
     override fun generateQRCode(width: Int, height: Int): ImageBitmap {

@@ -73,7 +73,7 @@ fun initKoinApplication(ioScope: CoroutineScope): KoinApplication {
         single<ClipServer> { DesktopClipServer().start() }
         single<ClipClient> { DesktopClipClient() }
         single<DeviceInfoFactory> { DesktopDeviceInfoFactory() }
-        single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get(), get()) }
+        single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
         single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
         single<ClipboardService> { getDesktopClipboardService(get()) }
         single<TransferableConsumer> { DesktopTransferableConsumer() }

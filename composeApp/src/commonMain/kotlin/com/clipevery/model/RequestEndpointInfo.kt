@@ -1,24 +1,26 @@
 package com.clipevery.model
 
 import com.clipevery.encrypt.base64Encode
-import org.signal.libsignal.protocol.IdentityKey
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 
 data class RequestEndpointInfo(val deviceInfo: DeviceInfo,
-                               val port: Int,
-                               val publicKey: IdentityKey) {
+                               val port: Int) {
 
     fun getBase64Encode(salt: Int): String {
         val byteStream = ByteArrayOutputStream()
         val dataStream = DataOutputStream(byteStream)
-        dataStream.writeInt(salt)
         encodeDeviceInfo(dataStream)
         dataStream.writeInt(port)
-        val serialize: ByteArray = publicKey.serialize()
-        dataStream.writeInt(serialize.size)
-        dataStream.write(serialize)
-        return base64Encode(byteStream.toByteArray())
+        val byteArray = byteStream.toByteArray()
+        val size = byteArray.size
+        val offset = salt % size
+        val byteArrayRotate = byteArray.rotate(offset)
+        val saltByteStream = ByteArrayOutputStream()
+        val saltDataStream = DataOutputStream(saltByteStream)
+        saltDataStream.write(byteArrayRotate)
+        saltDataStream.writeInt(salt)
+        return base64Encode(saltByteStream.toByteArray())
     }
 
     private fun encodeDeviceInfo(dataOutputStream: DataOutputStream) {
@@ -37,5 +39,19 @@ data class RequestEndpointInfo(val deviceInfo: DeviceInfo,
         dataOutputStream.writeUTF(deviceInfo.platform.arch)
         dataOutputStream.writeInt(deviceInfo.platform.bitMode)
         dataOutputStream.writeUTF(deviceInfo.platform.version)
+    }
+
+    private fun ByteArray.rotate(offset: Int): ByteArray {
+        val effectiveOffset = offset % size
+        if (effectiveOffset == 0 || this.isEmpty()) {
+            return this.copyOf() // 如果偏移量为0或数组为空，则直接返回原数组的副本
+        }
+
+        val result = ByteArray(this.size)
+        for (i in this.indices) {
+            val newPosition = (i + effectiveOffset + this.size) % this.size
+            result[newPosition] = this[i]
+        }
+        return result
     }
 }
