@@ -43,7 +43,7 @@ kotlin {
             implementation("br.com.devsrsouza.compose.icons:tabler-icons-desktop:1.1.0")
             implementation("io.insert-koin:koin-core:3.5.0")
             implementation("com.github.kwhat:jnativehook:2.2.2")
-            implementation("app.cash.sqldelight:sqlite-driver:2.0.0")
+            implementation("app.cash.sqldelight:sqlite-driver:2.0.1")
             implementation("com.github.Dansoftowner:jSystemThemeDetector:3.8")
         }
         commonMain.dependencies {
