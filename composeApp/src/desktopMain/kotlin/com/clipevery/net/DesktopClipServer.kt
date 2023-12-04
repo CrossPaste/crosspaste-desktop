@@ -1,5 +1,6 @@
 package com.clipevery.net
 
+import com.clipevery.controller.SyncController
 import com.clipevery.model.sync.RequestSyncInfo
 import com.papsign.ktor.openapigen.OpenAPIGen
 import com.papsign.ktor.openapigen.route.apiRouting
@@ -15,7 +16,7 @@ import io.ktor.server.netty.NettyApplicationEngine
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import kotlinx.coroutines.runBlocking
 
-class DesktopClipServer: ClipServer {
+class DesktopClipServer(private val syncController: SyncController): ClipServer {
 
     private val logger = KotlinLogging.logger {}
 
@@ -37,7 +38,7 @@ class DesktopClipServer: ClipServer {
         apiRouting {
             route("/sync") {
                 post<String, RequestSyncInfo, RequestSyncInfo> { _, requestSyncInfo ->
-                    respond(requestSyncInfo)
+                    respond(syncController.receiveEndpoint(requestSyncInfo))
                 }
             }
         }

@@ -1,4 +1,4 @@
-package com.clipevery.presist.data
+package com.clipevery.dao
 
 import com.clipevery.Database
 import com.clipevery.data.PreKey
