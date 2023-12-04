@@ -1,15 +1,19 @@
 package com.clipevery.net
 
+import com.clipevery.model.sync.RequestSyncInfo
+import com.papsign.ktor.openapigen.OpenAPIGen
+import com.papsign.ktor.openapigen.route.apiRouting
+import com.papsign.ktor.openapigen.route.path.normal.post
+import com.papsign.ktor.openapigen.route.response.respond
+import com.papsign.ktor.openapigen.route.route
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.server.application.call
+import io.ktor.serialization.jackson.jackson
+import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.netty.NettyApplicationEngine
-import io.ktor.server.response.respondText
-import io.ktor.server.routing.get
-import io.ktor.server.routing.routing
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import kotlinx.coroutines.runBlocking
-
 
 class DesktopClipServer: ClipServer {
 
@@ -17,11 +21,24 @@ class DesktopClipServer: ClipServer {
 
     private var port = 0
 
-
     private var server: NettyApplicationEngine = embeddedServer(Netty, port = 0) {
-        routing {
-            get("/") {
-                call.respondText("Hello, world!")
+        install(OpenAPIGen) {
+            // this servers OpenAPI definition on /openapi.json
+            serveOpenApiJson = true
+            // this servers Swagger UI on /swagger-ui/index.html
+            serveSwaggerUi = true
+            info {
+                title = "Clipevery API"
+            }
+        }
+        install(ContentNegotiation) {
+            jackson()
+        }
+        apiRouting {
+            route("/sync") {
+                post<String, RequestSyncInfo, RequestSyncInfo> { _, requestSyncInfo ->
+                    respond(requestSyncInfo)
+                }
             }
         }
     }

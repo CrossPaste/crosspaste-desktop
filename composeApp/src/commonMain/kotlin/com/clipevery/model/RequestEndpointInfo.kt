@@ -1,9 +1,11 @@
 package com.clipevery.model
 
 import com.clipevery.encrypt.base64Encode
+import kotlinx.serialization.Serializable
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 
+@Serializable
 data class RequestEndpointInfo(val deviceInfo: DeviceInfo,
                                val port: Int) {
 

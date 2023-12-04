@@ -37,6 +37,8 @@ kotlin {
             implementation("ch.qos.logback:logback-classic:1.4.14")
             implementation("io.ktor:ktor-server-core:2.3.6")
             implementation("io.ktor:ktor-server-netty:2.3.6")
+            implementation("io.ktor:ktor-server-content-negotiation:2.3.6")
+            implementation("io.ktor:ktor-serialization-jackson:2.3.6")
             implementation("io.ktor:ktor-client-core:2.3.6")
             implementation("io.ktor:ktor-client-cio:2.3.6")
             implementation("org.signal:libsignal-client:0.35.0")
@@ -45,6 +47,7 @@ kotlin {
             implementation("com.github.kwhat:jnativehook:2.2.2")
             implementation("app.cash.sqldelight:sqlite-driver:2.0.1")
             implementation("com.github.Dansoftowner:jSystemThemeDetector:3.8")
+            implementation("dev.forst:ktor-openapi-generator:0.6.1")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
