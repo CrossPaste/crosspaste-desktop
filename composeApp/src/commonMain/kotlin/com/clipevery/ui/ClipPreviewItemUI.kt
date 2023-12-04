@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.Icon
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,7 +28,7 @@ import compose.icons.tablericons.FileText
 fun ClipPreviewItem(clipItem: ClipItem) {
 
     var hover by remember { mutableStateOf(false) }
-    val backgroundColor = if (hover) Color(138, 238, 238) else Color(238, 238, 238)
+    val backgroundColor = if (hover) MaterialTheme.colors.secondaryVariant else MaterialTheme.colors.background
 
     Row(modifier = Modifier
         .fillMaxWidth()
