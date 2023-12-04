@@ -1,5 +1,6 @@
 package com.clipevery.ui
 
+import androidx.compose.foundation.ScrollbarStyle
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
@@ -14,22 +15,33 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.clipevery.clip.item.ClipItem
 import com.clipevery.clip.item.TextClipItem
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
 fun ClipPreview() {
     val listState = rememberLazyListState()
+    var isScrolling by remember { mutableStateOf(false) }
+    var scrollJob: Job? by remember { mutableStateOf(null) }
+    val coroutineScope = rememberCoroutineScope()
     val clipItems = remember { mutableStateListOf<ClipItem>() }
 
     LaunchedEffect(Unit) {
@@ -43,10 +55,15 @@ fun ClipPreview() {
                     // 当滚动到列表底部时加载更多数据
                     loadMoreItems(clipItems)
                 }
+                isScrolling = true
+                scrollJob?.cancel()
+                scrollJob = coroutineScope.launch {
+                    delay(1000)
+                    isScrolling = false
+                }
             }
     }
 
-    val coroutineScope = rememberCoroutineScope()
     Box(modifier = Modifier.fillMaxWidth()) {
 
 
@@ -60,7 +77,7 @@ fun ClipPreview() {
         }
 
         VerticalScrollbar(
-            modifier = Modifier.background(color = Color.White)
+            modifier = Modifier.background(color = Color.Transparent)
                 .fillMaxHeight().align(Alignment.CenterEnd)
                 .draggable(
                 orientation = Orientation.Vertical,
@@ -71,7 +88,14 @@ fun ClipPreview() {
                 },
             ),
             adapter = rememberScrollbarAdapter(scrollState = listState),
-
+            style = ScrollbarStyle(
+                minimalHeight = 16.dp,
+                thickness = 8.dp,
+                shape = RoundedCornerShape(4.dp),
+                hoverDurationMillis = 300,
+                unhoverColor = if (isScrolling) MaterialTheme.colors.onBackground.copy(alpha = 0.48f) else Color.Transparent,
+                hoverColor = MaterialTheme.colors.onBackground
+            )
         )
     }
 }
