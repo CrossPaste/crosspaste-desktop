@@ -28,7 +28,7 @@ class DesktopClipServer: ClipServer {
             // this servers Swagger UI on /swagger-ui/index.html
             serveSwaggerUi = true
             info {
-                title = "Minimal Example API"
+                title = "Clipevery API"
             }
         }
         install(ContentNegotiation) {
