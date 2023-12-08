@@ -2,7 +2,7 @@ CREATE TABLE syncInfo (
     app_instance_id TEXT NOT NULL PRIMARY KEY,
     app_version TEXT NOT NULL,
     app_user_name TEXT NOT NULL,
-    device_id TEXT NOT NULL,
+    device_id TEXT NOT NULL,      
     device_name TEXT NOT NULL,
     sync_state TEXT NOT NULL,
     host_address TEXT NOT NULL,

@@ -1,19 +1,24 @@
 CREATE TABLE signedPreKey (
-    id INTEGER PRIMARY KEY,
-    serialized BLOB NOT NULL
+    app_instance_id TEXT NOT NULL,
+    id INTEGER NOT NULL,
+    serialized BLOB NOT NULL,
+    PRIMARY KEY  (app_instance_id, id)
 );
 
 selectById:
-SELECT * FROM signedPreKey WHERE id = ?;
+SELECT * FROM signedPreKey WHERE app_instance_id = ? AND id = ?;
 
 selectAll:
 SELECT * FROM signedPreKey;
 
+selectDistinctAppInstanceIds:
+SELECT DISTINCT app_instance_id FROM signedPreKey;
+
 insert:
-INSERT OR REPLACE INTO signedPreKey (id, serialized) VALUES (?, ?);
+INSERT OR REPLACE INTO signedPreKey (app_instance_id, id, serialized) VALUES (?, ?, ?);
 
 count:
-SELECT COUNT(*) FROM signedPreKey WHERE id = ?;
+SELECT COUNT(*) FROM signedPreKey WHERE app_instance_id = ? AND id = ?;
 
 delete:
-DELETE FROM signedPreKey WHERE id = ?;
+DELETE FROM signedPreKey WHERE app_instance_id = ? AND id = ?;

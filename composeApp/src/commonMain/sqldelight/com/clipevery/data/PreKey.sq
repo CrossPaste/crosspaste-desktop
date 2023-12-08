@@ -1,16 +1,21 @@
 CREATE TABLE preKey (
-    id INTEGER PRIMARY KEY,
-    serialized BLOB NOT NULL
+    app_instance_id TEXT NOT NULL,
+    id INTEGER,
+    serialized BLOB NOT NULL,
+    PRIMARY KEY  (app_instance_id, id)
 );
 
 selectById:
-SELECT * FROM preKey WHERE id = ?;
+SELECT * FROM preKey WHERE app_instance_id = ? AND id = ?;
+
+selectDistinctAppInstanceIds:
+SELECT DISTINCT app_instance_id FROM preKey;
 
 insert:
-INSERT OR REPLACE INTO preKey (id, serialized) VALUES (?, ?);
+INSERT OR REPLACE INTO preKey (app_instance_id, id, serialized) VALUES (?, ?, ?);
 
 count:
-SELECT count(1) FROM preKey WHERE id = ?;
+SELECT count(1) FROM preKey WHERE app_instance_id = ? AND id = ?;
 
 delete:
-DELETE FROM preKey WHERE id = ?;
+DELETE FROM preKey WHERE app_instance_id = ? AND id = ?;

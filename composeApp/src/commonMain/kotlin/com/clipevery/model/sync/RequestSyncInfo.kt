@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 data class RequestSyncInfo(val appInfo: AppInfo,
                            val requestEndpointInfo: RequestEndpointInfo,
                            val preKeyBundle: ByteArray,
-                           val salt: Int) {
+                           val token: Int) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -18,7 +18,7 @@ data class RequestSyncInfo(val appInfo: AppInfo,
         if (appInfo != other.appInfo) return false
         if (requestEndpointInfo != other.requestEndpointInfo) return false
         if (!preKeyBundle.contentEquals(other.preKeyBundle)) return false
-        if (salt != other.salt) return false
+        if (token != other.token) return false
 
         return true
     }
@@ -27,7 +27,7 @@ data class RequestSyncInfo(val appInfo: AppInfo,
         var result = appInfo.hashCode()
         result = 31 * result + requestEndpointInfo.hashCode()
         result = 31 * result + preKeyBundle.contentHashCode()
-        result = 31 * result + salt
+        result = 31 * result + token
         return result
     }
 

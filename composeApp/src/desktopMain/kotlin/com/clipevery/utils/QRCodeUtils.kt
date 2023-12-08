@@ -2,10 +2,10 @@ package com.clipevery.utils
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
-import com.clipevery.controller.SyncValidator
 import com.clipevery.device.DeviceInfoFactory
 import com.clipevery.model.RequestEndpointInfo
 import com.clipevery.net.ClipServer
+import com.clipevery.net.SyncValidator
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import java.awt.Color
@@ -16,10 +16,10 @@ class DesktopQRCodeGenerator(private val syncValidator: SyncValidator,
                              private val deviceInfoFactory: DeviceInfoFactory): QRCodeGenerator {
 
     private fun endpointInfo(): String {
-        val salt = syncValidator.getSalt()
+        val token = syncValidator.createToken()
         val deviceInfo = deviceInfoFactory.createDeviceInfo()
         val port = clipServer.port()
-        return RequestEndpointInfo(deviceInfo, port).getBase64Encode(salt)
+        return RequestEndpointInfo(deviceInfo, port).getBase64Encode(token)
     }
 
     override fun generateQRCode(width: Int, height: Int): ImageBitmap {

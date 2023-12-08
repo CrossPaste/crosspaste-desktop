@@ -9,19 +9,19 @@ import java.io.DataOutputStream
 data class RequestEndpointInfo(val deviceInfo: DeviceInfo,
                                val port: Int) {
 
-    fun getBase64Encode(salt: Int): String {
+    fun getBase64Encode(token: Int): String {
         val byteStream = ByteArrayOutputStream()
         val dataStream = DataOutputStream(byteStream)
         encodeDeviceInfo(dataStream)
         dataStream.writeInt(port)
         val byteArray = byteStream.toByteArray()
         val size = byteArray.size
-        val offset = salt % size
+        val offset = token % size
         val byteArrayRotate = byteArray.rotate(offset)
         val saltByteStream = ByteArrayOutputStream()
         val saltDataStream = DataOutputStream(saltByteStream)
         saltDataStream.write(byteArrayRotate)
-        saltDataStream.writeInt(salt)
+        saltDataStream.writeInt(token)
         return base64Encode(saltByteStream.toByteArray())
     }
 
