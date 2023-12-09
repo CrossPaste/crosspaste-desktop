@@ -5,26 +5,26 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.clipevery.device.DeviceInfoFactory
 import com.clipevery.model.RequestEndpointInfo
 import com.clipevery.net.ClipServer
+import com.clipevery.net.SyncValidator
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import java.awt.Color
 import java.awt.image.BufferedImage
 
-class DesktopQRCodeGenerator(private val clipServer: ClipServer,
+class DesktopQRCodeGenerator(private val syncValidator: SyncValidator,
+                             private val clipServer: ClipServer,
                              private val deviceInfoFactory: DeviceInfoFactory): QRCodeGenerator {
 
-    private var salt: Int = 0
-
-    private fun bindInfo(): String {
-        salt = (0..999999).random()
+    private fun endpointInfo(): String {
+        val token = syncValidator.createToken()
         val deviceInfo = deviceInfoFactory.createDeviceInfo()
         val port = clipServer.port()
-        return RequestEndpointInfo(deviceInfo, port).getBase64Encode(salt)
+        return RequestEndpointInfo(deviceInfo, port).getBase64Encode(token)
     }
 
     override fun generateQRCode(width: Int, height: Int): ImageBitmap {
         val writer = QRCodeWriter()
-        val bitMatrix = writer.encode(bindInfo(), BarcodeFormat.QR_CODE, width, height)
+        val bitMatrix = writer.encode(endpointInfo(), BarcodeFormat.QR_CODE, width, height)
         val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
         for (x in 0 until width) {
             for (y in 0 until height) {
@@ -34,7 +34,7 @@ class DesktopQRCodeGenerator(private val clipServer: ClipServer,
         return image.toComposeImageBitmap()
     }
 
-    fun getSalt(): Int {
-        return salt
+    fun getRefreshTime(): Long {
+        return syncValidator.getRefreshTime()
     }
 }

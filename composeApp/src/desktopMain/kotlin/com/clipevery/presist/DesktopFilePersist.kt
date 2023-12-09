@@ -1,9 +1,7 @@
-package com.clipevery.presist.file
+package com.clipevery.presist
 
 import com.clipevery.path.PathProvider
 import com.clipevery.path.getPathProvider
-import com.clipevery.presist.FilePersist
-import com.clipevery.presist.OneFilePersist
 import java.nio.file.Path
 
 class DesktopFilePersist: FilePersist {

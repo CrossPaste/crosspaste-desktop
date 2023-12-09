@@ -1,4 +1,4 @@
-package com.clipevery.presist.data
+package com.clipevery.dao.store
 
 import com.clipevery.Database
 import com.clipevery.data.SignedPreKey

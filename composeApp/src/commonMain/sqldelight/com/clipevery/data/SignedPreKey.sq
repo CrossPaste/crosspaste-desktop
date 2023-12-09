@@ -1,5 +1,5 @@
 CREATE TABLE signedPreKey (
-    id INTEGER PRIMARY KEY,
+    id INTEGER NOT NULL PRIMARY KEY ,
     serialized BLOB NOT NULL
 );
 

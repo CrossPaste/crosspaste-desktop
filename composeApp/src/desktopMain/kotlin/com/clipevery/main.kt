@@ -20,6 +20,14 @@ import com.clipevery.clip.getDesktopClipboardService
 import com.clipevery.config.ConfigManager
 import com.clipevery.config.DefaultConfigManager
 import com.clipevery.config.FileType
+import com.clipevery.controller.SyncController
+import com.clipevery.dao.DriverFactory
+import com.clipevery.dao.SyncDao
+import com.clipevery.dao.createDatabase
+import com.clipevery.dao.store.DesktopPreKeyStore
+import com.clipevery.dao.store.DesktopSessionStore
+import com.clipevery.dao.store.DesktopSignedPreKeyStore
+import com.clipevery.dao.store.getIdentityKeyStoreFactory
 import com.clipevery.device.DesktopDeviceInfoFactory
 import com.clipevery.device.DeviceInfoFactory
 import com.clipevery.i18n.GlobalCopywriter
@@ -32,16 +40,11 @@ import com.clipevery.net.ClipClient
 import com.clipevery.net.ClipServer
 import com.clipevery.net.DesktopClipClient
 import com.clipevery.net.DesktopClipServer
+import com.clipevery.net.SyncValidator
 import com.clipevery.path.getPathProvider
 import com.clipevery.platform.currentPlatform
+import com.clipevery.presist.DesktopFilePersist
 import com.clipevery.presist.FilePersist
-import com.clipevery.presist.data.DesktopIdentityKeyStore
-import com.clipevery.presist.data.DesktopPreKeyStore
-import com.clipevery.presist.data.DesktopSessionStore
-import com.clipevery.presist.data.DesktopSignedPreKeyStore
-import com.clipevery.presist.data.DriverFactory
-import com.clipevery.presist.data.createDatabase
-import com.clipevery.presist.file.DesktopFilePersist
 import com.clipevery.ui.DesktopThemeDetector
 import com.clipevery.ui.ThemeDetector
 import com.clipevery.ui.getTrayMouseAdapter
@@ -70,21 +73,25 @@ fun initKoinApplication(ioScope: CoroutineScope): KoinApplication {
         single<AppInfo> { DesktopAppInfoFactory(get()).createAppInfo() }
         single<FilePersist> { DesktopFilePersist() }
         single<ConfigManager> { DefaultConfigManager(get()).initConfig() }
-        single<ClipServer> { DesktopClipServer().start() }
+        single<ClipServer> { DesktopClipServer(get()).start() }
+        single<Lazy<ClipServer>> { lazy { get<ClipServer>() } }
         single<ClipClient> { DesktopClipClient() }
         single<DeviceInfoFactory> { DesktopDeviceInfoFactory() }
-        single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
+        single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get(), get()) }
         single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
         single<ClipboardService> { getDesktopClipboardService(get()) }
         single<TransferableConsumer> { DesktopTransferableConsumer() }
         single<GlobalListener> { GlobalListener() }
         single<DriverFactory> { DriverFactory() }
         single<ThemeDetector> { DesktopThemeDetector(get()) }
-        single<IdentityKeyStore> { DesktopIdentityKeyStore(get(), get()) }
-        single<PreKeyStore> { DesktopPreKeyStore(get()) }
+        single<IdentityKeyStore> { getIdentityKeyStoreFactory(get(), get()).createIdentityKeyStore() }
         single<SessionStore> { DesktopSessionStore(get()) }
+        single<PreKeyStore> { DesktopPreKeyStore(get())  }
         single<SignedPreKeyStore> { DesktopSignedPreKeyStore(get()) }
         single<Database> { createDatabase(DriverFactory()) }
+        single<SyncController> { SyncController(get(), get(), get(), get(), get(), get(), get(), get()) }
+        single<SyncValidator> { get<SyncController>() }
+        single<SyncDao> { SyncDao(get()) }
     }
     return startKoin {
         modules(appModule)

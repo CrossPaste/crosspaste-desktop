@@ -1,4 +1,4 @@
-package com.clipevery.presist.data
+package com.clipevery.dao
 
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
@@ -13,7 +13,9 @@ actual class DriverFactory {
 
     actual fun createDriver(): SqlDriver {
         val driver: SqlDriver = JdbcSqliteDriver("jdbc:sqlite:${dbFilePath.toAbsolutePath()}")
-        Database.Schema.create(driver)
+        if (!dbFilePath.toFile().exists()) {
+            Database.Schema.create(driver)
+        }
         return driver
     }
 }
