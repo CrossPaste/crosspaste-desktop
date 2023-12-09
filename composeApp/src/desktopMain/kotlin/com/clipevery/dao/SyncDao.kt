@@ -3,7 +3,7 @@ package com.clipevery.dao
 import com.clipevery.Database
 import com.clipevery.model.SyncInfo
 
-class SyncDao(private val database: Database) {
+class SyncDao(val database: Database) {
 
     fun saveSyncEndpoint(syncInfo: SyncInfo) {
         val appInstanceId = syncInfo.appInfo.appInstanceId

@@ -1,0 +1,22 @@
+CREATE TABLE session (
+    app_instance_id TEXT NOT NULL PRIMARY KEY,
+    sessionRecord BLOB NOT NULL
+);
+
+selectSessionRecord:
+SELECT sessionRecord FROM session WHERE app_instance_id = ?;
+
+selectSessionRecords:
+SELECT sessionRecord FROM session WHERE app_instance_id IN ?;
+
+selectSubDevice:
+SELECT app_instance_id FROM session WHERE app_instance_id = ?;
+
+updateSessionRecord:
+UPDATE session SET sessionRecord = ? WHERE app_instance_id = ?;
+
+count:
+SELECT COUNT(1) FROM session WHERE app_instance_id = ?;
+
+delete:
+DELETE FROM session WHERE app_instance_id = ?;

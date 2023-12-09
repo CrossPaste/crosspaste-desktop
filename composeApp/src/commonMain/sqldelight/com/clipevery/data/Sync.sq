@@ -10,29 +10,11 @@ CREATE TABLE syncInfo (
     platform_name TEXT NOT NULL,
     platform_arch TEXT NOT NULL,
     platform_bit_mode INTEGER NOT NULL,
-    platform_version TEXT NOT NULL,
-    public_key BLOB,
-    sessionRecord BLOB
+    platform_version TEXT NOT NULL
 );
 
 
 CREATE INDEX sync_state_index ON syncInfo (sync_state);
-
-selectAll:
-SELECT *
-FROM syncInfo;
-
-selectSessionRecord:
-SELECT sessionRecord FROM syncInfo WHERE app_instance_id = ?;
-
-selectSessionRecords:
-SELECT sessionRecord FROM syncInfo WHERE app_instance_id IN ?;
-
-selectPublicKey:
-SELECT public_key FROM syncInfo WHERE app_instance_id = ?;
-
-selectSubDevice:
-SELECT app_instance_id FROM syncInfo WHERE app_instance_id = ?;
 
 insert:
 INSERT INTO syncInfo(app_instance_id, app_version, app_user_name,
@@ -40,14 +22,5 @@ device_id, device_name, sync_state, host_address, port, platform_name,
 platform_arch, platform_bit_mode, platform_version)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
-updatePublicKey:
-UPDATE syncInfo SET public_key = ? WHERE app_instance_id = ?;
-
-updateSessionRecord:
-UPDATE syncInfo SET sessionRecord = ? WHERE app_instance_id = ?;
-
 count:
 SELECT COUNT(1) FROM syncInfo WHERE app_instance_id = ?;
-
-delete:
-DELETE FROM syncInfo WHERE app_instance_id = ?;

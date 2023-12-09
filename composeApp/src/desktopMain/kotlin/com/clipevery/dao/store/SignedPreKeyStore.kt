@@ -1,4 +1,4 @@
-package com.clipevery.dao
+package com.clipevery.dao.store
 
 import com.clipevery.Database
 import com.clipevery.data.SignedPreKey
@@ -6,10 +6,9 @@ import org.signal.libsignal.protocol.InvalidKeyIdException
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord
 import org.signal.libsignal.protocol.state.SignedPreKeyStore
 
-class DesktopSignedPreKeyStore(private val appInstanceId: String,
-                               private val database: Database): SignedPreKeyStore {
+class DesktopSignedPreKeyStore(private val database: Database): SignedPreKeyStore {
     override fun loadSignedPreKey(signedPreKeyId: Int): SignedPreKeyRecord {
-        val signedPreKey: SignedPreKey = database.signedPreKeyQueries.selectById(appInstanceId, signedPreKeyId.toLong())
+        val signedPreKey: SignedPreKey = database.signedPreKeyQueries.selectById(signedPreKeyId.toLong())
             .executeAsOneOrNull()?.let {
                 return SignedPreKeyRecord(it.serialized)
             } ?: throw InvalidKeyIdException("No such signedPreKeyId: $signedPreKeyId")
@@ -23,16 +22,16 @@ class DesktopSignedPreKeyStore(private val appInstanceId: String,
     }
 
     override fun storeSignedPreKey(signedPreKeyId: Int, record: SignedPreKeyRecord) {
-        database.signedPreKeyQueries.insert(appInstanceId, signedPreKeyId.toLong(), record.serialize())
+        database.signedPreKeyQueries.insert(signedPreKeyId.toLong(), record.serialize())
     }
 
     override fun containsSignedPreKey(signedPreKeyId: Int): Boolean {
-        return database.signedPreKeyQueries.count(appInstanceId, signedPreKeyId.toLong()).executeAsOneOrNull()?.let {
+        return database.signedPreKeyQueries.count(signedPreKeyId.toLong()).executeAsOneOrNull()?.let {
             return it > 0
         } ?: false
     }
 
     override fun removeSignedPreKey(signedPreKeyId: Int) {
-        database.signedPreKeyQueries.delete(appInstanceId, signedPreKeyId.toLong())
+        database.signedPreKeyQueries.delete(signedPreKeyId.toLong())
     }
 }

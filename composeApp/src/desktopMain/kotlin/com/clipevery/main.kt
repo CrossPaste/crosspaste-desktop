@@ -21,15 +21,13 @@ import com.clipevery.config.ConfigManager
 import com.clipevery.config.DefaultConfigManager
 import com.clipevery.config.FileType
 import com.clipevery.controller.SyncController
-import com.clipevery.dao.DesktopGlobalPreKeyStore
-import com.clipevery.dao.DesktopGlobalSignedPreKeyStore
-import com.clipevery.dao.DesktopIdentityKeyStore
-import com.clipevery.dao.DesktopSessionStore
 import com.clipevery.dao.DriverFactory
-import com.clipevery.dao.GlobalPreKeyStore
-import com.clipevery.dao.GlobalSignedPreKeyStore
 import com.clipevery.dao.SyncDao
 import com.clipevery.dao.createDatabase
+import com.clipevery.dao.store.DesktopPreKeyStore
+import com.clipevery.dao.store.DesktopSessionStore
+import com.clipevery.dao.store.DesktopSignedPreKeyStore
+import com.clipevery.dao.store.getIdentityKeyStoreFactory
 import com.clipevery.device.DesktopDeviceInfoFactory
 import com.clipevery.device.DeviceInfoFactory
 import com.clipevery.i18n.GlobalCopywriter
@@ -61,7 +59,9 @@ import org.koin.core.KoinApplication
 import org.koin.core.context.GlobalContext.startKoin
 import org.koin.dsl.module
 import org.signal.libsignal.protocol.state.IdentityKeyStore
+import org.signal.libsignal.protocol.state.PreKeyStore
 import org.signal.libsignal.protocol.state.SessionStore
+import org.signal.libsignal.protocol.state.SignedPreKeyStore
 import kotlin.io.path.pathString
 
 
@@ -74,6 +74,7 @@ fun initKoinApplication(ioScope: CoroutineScope): KoinApplication {
         single<FilePersist> { DesktopFilePersist() }
         single<ConfigManager> { DefaultConfigManager(get()).initConfig() }
         single<ClipServer> { DesktopClipServer(get()).start() }
+        single<Lazy<ClipServer>> { lazy { get<ClipServer>() } }
         single<ClipClient> { DesktopClipClient() }
         single<DeviceInfoFactory> { DesktopDeviceInfoFactory() }
         single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get(), get()) }
@@ -83,14 +84,14 @@ fun initKoinApplication(ioScope: CoroutineScope): KoinApplication {
         single<GlobalListener> { GlobalListener() }
         single<DriverFactory> { DriverFactory() }
         single<ThemeDetector> { DesktopThemeDetector(get()) }
-        single<IdentityKeyStore> { DesktopIdentityKeyStore(get(), get()) }
+        single<IdentityKeyStore> { getIdentityKeyStoreFactory(get(), get()).createIdentityKeyStore() }
         single<SessionStore> { DesktopSessionStore(get()) }
+        single<PreKeyStore> { DesktopPreKeyStore(get())  }
+        single<SignedPreKeyStore> { DesktopSignedPreKeyStore(get()) }
         single<Database> { createDatabase(DriverFactory()) }
-        single<SyncController> { SyncController(get())}
+        single<SyncController> { SyncController(get(), get(), get(), get(), get(), get(), get(), get()) }
         single<SyncValidator> { get<SyncController>() }
         single<SyncDao> { SyncDao(get()) }
-        single<GlobalPreKeyStore> { DesktopGlobalPreKeyStore(get()) }
-        single<GlobalSignedPreKeyStore> { DesktopGlobalSignedPreKeyStore(get()) }
     }
     return startKoin {
         modules(appModule)

@@ -1,27 +1,50 @@
 package com.clipevery.controller
 
 import com.clipevery.dao.SyncDao
+import com.clipevery.device.DeviceInfoFactory
 import com.clipevery.encrypt.decodePreKeyBundle
 import com.clipevery.exception.ClipException
 import com.clipevery.exception.StandardErrorCode
+import com.clipevery.model.AppInfo
 import com.clipevery.model.EndpointInfo
+import com.clipevery.model.RequestEndpointInfo
 import com.clipevery.model.SyncInfo
 import com.clipevery.model.SyncState
 import com.clipevery.model.sync.RequestSyncInfo
+import com.clipevery.model.sync.ResponseSyncInfo
+import com.clipevery.net.ClipServer
 import com.clipevery.net.SyncInfoWithPreKeyBundle
 import com.clipevery.net.SyncValidator
 import com.clipevery.utils.telnet
 import kotlinx.coroutines.runBlocking
 import org.signal.libsignal.protocol.InvalidKeyException
+import org.signal.libsignal.protocol.SessionBuilder
+import org.signal.libsignal.protocol.SignalProtocolAddress
+import org.signal.libsignal.protocol.state.IdentityKeyStore
 import org.signal.libsignal.protocol.state.PreKeyBundle
+import org.signal.libsignal.protocol.state.PreKeyStore
+import org.signal.libsignal.protocol.state.SessionStore
+import org.signal.libsignal.protocol.state.SignedPreKeyStore
 import java.io.IOException
 
-class SyncController(private val syncDao: SyncDao): SyncValidator {
+class SyncController(private val appInfo: AppInfo,
+                     private val syncDao: SyncDao,
+                     private val sessionStore: SessionStore,
+                     private val preKeyStore: PreKeyStore,
+                     private val signedPreKeyStore: SignedPreKeyStore,
+                     private val identityKeyStore: IdentityKeyStore,
+                     private val clipServer: Lazy<ClipServer>,
+                     private val deviceInfoFactory: DeviceInfoFactory): SyncValidator {
 
-    fun receiveEndpoint(requestSyncInfo: RequestSyncInfo): RequestSyncInfo {
+    fun receiveEndpointSyncInfo(requestSyncInfo: RequestSyncInfo): ResponseSyncInfo {
         val (syncInfo, preKeyBundle) = runBlocking { validate(requestSyncInfo) }
-        syncDao.saveSyncEndpoint(syncInfo)
-        return requestSyncInfo
+        val signalProtocolAddress = SignalProtocolAddress(syncInfo.appInfo.appInstanceId, 1)
+        val sessionBuilder = SessionBuilder(sessionStore, preKeyStore, signedPreKeyStore, identityKeyStore, signalProtocolAddress)
+        syncDao.database.transaction {
+            syncDao.saveSyncEndpoint(syncInfo)
+            sessionBuilder.process(preKeyBundle)
+        }
+        return ResponseSyncInfo(appInfo, RequestEndpointInfo(deviceInfoFactory.createDeviceInfo(), clipServer.value.port()))
     }
 
     private var token: Int? = null
