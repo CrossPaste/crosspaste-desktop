@@ -28,10 +28,11 @@ class WindowsPathProvider: PathProvider {
 
 class MacosPathProvider: PathProvider {
 
+    private val userHome = System.getProperty("user.home")
+
     override val clipUserPath: Path = getAppSupportPath()
 
     private fun getAppSupportPath(): Path {
-        val userHome = System.getProperty("user.home")
         val appSupportPath = Paths.get(userHome, "Library", "Application Support", "Clipevery")
 
         if (Files.notExists(appSupportPath)) {
@@ -41,6 +42,16 @@ class MacosPathProvider: PathProvider {
         return appSupportPath
     }
 
+    override val clipLogPath: Path
+        get() = run {
+            val appLogsPath = Paths.get(userHome, "Library", "Logs", "Clipevery")
+
+            if (Files.notExists(appLogsPath)) {
+                Files.createDirectories(appLogsPath)
+            }
+
+            return appLogsPath
+        }
 }
 
 class LinuxPathProvider: PathProvider {

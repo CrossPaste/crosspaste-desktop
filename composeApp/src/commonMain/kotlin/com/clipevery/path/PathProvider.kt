@@ -7,9 +7,9 @@ interface PathProvider {
     fun resolve(fileName: String?, fileType: FileType): Path {
         val path = when (fileType) {
             FileType.USER -> clipUserPath
-            FileType.LOG -> clipUserPath.resolve("logs")
-            FileType.ENCRYPT -> clipUserPath.resolve("encrypt")
-            FileType.DATA -> clipUserPath.resolve("data")
+            FileType.LOG -> clipLogPath.resolve("logs")
+            FileType.ENCRYPT -> clipEncryptPath.resolve("encrypt")
+            FileType.DATA -> clipDataPath.resolve("data")
         }
 
         if (!path.toFile().exists()) {
@@ -23,4 +23,9 @@ interface PathProvider {
 
     val clipUserPath: Path
 
+    val clipLogPath: Path get() = clipUserPath
+
+    val clipEncryptPath get() = clipUserPath
+
+    val clipDataPath get() = clipUserPath
 }
