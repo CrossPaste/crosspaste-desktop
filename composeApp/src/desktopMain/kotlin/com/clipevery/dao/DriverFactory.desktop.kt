@@ -13,7 +13,9 @@ actual class DriverFactory {
 
     actual fun createDriver(): SqlDriver {
         val driver: SqlDriver = JdbcSqliteDriver("jdbc:sqlite:${dbFilePath.toAbsolutePath()}")
-        Database.Schema.create(driver)
+        if (!dbFilePath.toFile().exists()) {
+            Database.Schema.create(driver)
+        }
         return driver
     }
 }
