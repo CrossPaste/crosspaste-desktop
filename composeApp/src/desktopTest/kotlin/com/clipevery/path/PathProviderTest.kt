@@ -1,6 +1,6 @@
 package com.clipevery.path
 
-import com.clipevery.config.FileType
+import com.clipevery.app.AppFileType
 import com.clipevery.platform.currentPlatform
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -11,7 +11,7 @@ class PathProviderTest {
     fun testPathProvider() {
         val pathProvider = getPathProvider()
 
-        val configPath = pathProvider.resolve("test.config", FileType.USER)
+        val configPath = pathProvider.resolve("test.config", AppFileType.USER)
 
         assertEquals("test.config", configPath.fileName.toString())
         val currentPlatform = currentPlatform()

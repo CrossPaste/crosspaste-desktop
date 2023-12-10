@@ -1,5 +1,6 @@
 package com.clipevery.macos
 
+import com.clipevery.os.macos.MacosKeychainHelper
 import com.clipevery.platform.currentPlatform
 import org.junit.Test
 import kotlin.test.assertEquals

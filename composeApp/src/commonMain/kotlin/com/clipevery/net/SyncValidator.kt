@@ -1,7 +1,7 @@
 package com.clipevery.net
 
 import com.clipevery.exception.ClipException
-import com.clipevery.model.SyncInfo
+import com.clipevery.model.sync.SyncInfo
 import com.clipevery.model.sync.RequestSyncInfo
 import org.signal.libsignal.protocol.state.PreKeyBundle
 

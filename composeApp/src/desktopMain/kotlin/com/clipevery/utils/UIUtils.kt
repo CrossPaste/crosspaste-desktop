@@ -3,7 +3,7 @@ package com.clipevery.utils
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import com.clipevery.model.AppUI
+import com.clipevery.app.AppUI
 import java.awt.GraphicsEnvironment
 import java.awt.Toolkit
 

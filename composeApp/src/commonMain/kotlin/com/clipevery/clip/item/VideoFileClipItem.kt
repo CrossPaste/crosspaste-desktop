@@ -1,6 +1,5 @@
 package com.clipevery.clip.item
 
-import com.clipevery.clip.ClipItemType
 import java.io.File
 
 val SUPPORT_VIDEO_EXTENSIONS = setOf("mp4", "avi", "mov", "mkv", "flv", "wmv")

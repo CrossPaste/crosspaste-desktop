@@ -1,15 +1,15 @@
 package com.clipevery.path
 
-import com.clipevery.config.FileType
+import com.clipevery.app.AppFileType
 import java.nio.file.Path
 
 interface PathProvider {
-    fun resolve(fileName: String?, fileType: FileType): Path {
-        val path = when (fileType) {
-            FileType.USER -> clipUserPath
-            FileType.LOG -> clipLogPath.resolve("logs")
-            FileType.ENCRYPT -> clipEncryptPath.resolve("encrypt")
-            FileType.DATA -> clipDataPath.resolve("data")
+    fun resolve(fileName: String?, appFileType: AppFileType): Path {
+        val path = when (appFileType) {
+            AppFileType.USER -> clipUserPath
+            AppFileType.LOG -> clipLogPath.resolve("logs")
+            AppFileType.ENCRYPT -> clipEncryptPath.resolve("encrypt")
+            AppFileType.DATA -> clipDataPath.resolve("data")
         }
 
         if (!path.toFile().exists()) {

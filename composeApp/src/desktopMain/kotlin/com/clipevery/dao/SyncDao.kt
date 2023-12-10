@@ -1,7 +1,7 @@
 package com.clipevery.dao
 
 import com.clipevery.Database
-import com.clipevery.model.SyncInfo
+import com.clipevery.model.sync.SyncInfo
 
 class SyncDao(val database: Database) {
 

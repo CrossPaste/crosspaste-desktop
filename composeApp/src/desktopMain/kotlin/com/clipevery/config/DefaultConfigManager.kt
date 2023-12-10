@@ -1,6 +1,6 @@
 package com.clipevery.config
 
-import com.clipevery.model.AppConfig
+import com.clipevery.app.AppFileType
 import com.clipevery.presist.FilePersist
 import kotlinx.coroutines.CoroutineScope
 import org.koin.core.component.KoinComponent
@@ -10,7 +10,7 @@ class DefaultConfigManager(ioScope: CoroutineScope) : ConfigManager(ioScope), Ko
 
     private val filePersist: FilePersist by inject()
 
-    private val configFilePersist = filePersist.getPersist("appConfig.json", FileType.USER)
+    private val configFilePersist = filePersist.getPersist("appConfig.json", AppFileType.USER)
 
     override fun loadConfig(): AppConfig? {
         return configFilePersist.read(AppConfig::class)
