@@ -1,6 +1,7 @@
 package com.clipevery.clip
 
 import com.clipevery.clip.item.ClipItem
+import com.clipevery.clip.item.ClipItemType
 import com.clipevery.clip.item.FileClipItem
 import com.clipevery.clip.item.FilesClipItem
 import com.clipevery.clip.item.HtmlTextClipItem

@@ -1,8 +1,8 @@
 package com.clipevery.clip
 
-import com.clipevery.macos.MacosClipboardService
+import com.clipevery.os.macos.MacosClipboardService
 import com.clipevery.platform.currentPlatform
-import com.clipevery.windows.WindowsClipboardService
+import com.clipevery.os.windows.WindowsClipboardService
 
 fun getDesktopClipboardService(clipConsumer: TransferableConsumer): ClipboardService {
     val currentPlatform = currentPlatform()

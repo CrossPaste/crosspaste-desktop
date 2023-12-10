@@ -19,23 +19,23 @@ import com.clipevery.clip.TransferableConsumer
 import com.clipevery.clip.getDesktopClipboardService
 import com.clipevery.config.ConfigManager
 import com.clipevery.config.DefaultConfigManager
-import com.clipevery.config.FileType
+import com.clipevery.app.AppFileType
 import com.clipevery.controller.SyncController
 import com.clipevery.dao.DriverFactory
 import com.clipevery.dao.SyncDao
 import com.clipevery.dao.createDatabase
-import com.clipevery.dao.store.DesktopPreKeyStore
-import com.clipevery.dao.store.DesktopSessionStore
-import com.clipevery.dao.store.DesktopSignedPreKeyStore
-import com.clipevery.dao.store.getIdentityKeyStoreFactory
-import com.clipevery.device.DesktopDeviceInfoFactory
-import com.clipevery.device.DeviceInfoFactory
+import com.clipevery.signal.DesktopPreKeyStore
+import com.clipevery.signal.DesktopSessionStore
+import com.clipevery.signal.DesktopSignedPreKeyStore
+import com.clipevery.signal.getIdentityKeyStoreFactory
+import com.clipevery.endpoint.DesktopEndpointInfoFactory
+import com.clipevery.endpoint.EndpointInfoFactory
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.i18n.GlobalCopywriterImpl
 import com.clipevery.listen.GlobalListener
 import com.clipevery.log.initLogger
-import com.clipevery.model.AppInfo
-import com.clipevery.model.DesktopAppInfoFactory
+import com.clipevery.app.AppInfo
+import com.clipevery.app.DesktopAppInfoFactory
 import com.clipevery.net.ClipClient
 import com.clipevery.net.ClipServer
 import com.clipevery.net.DesktopClipClient
@@ -76,8 +76,8 @@ fun initKoinApplication(ioScope: CoroutineScope): KoinApplication {
         single<ClipServer> { DesktopClipServer(get()).start() }
         single<Lazy<ClipServer>> { lazy { get<ClipServer>() } }
         single<ClipClient> { DesktopClipClient() }
-        single<DeviceInfoFactory> { DesktopDeviceInfoFactory() }
-        single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get(), get()) }
+        single<EndpointInfoFactory> { DesktopEndpointInfoFactory( lazy { get<ClipServer>() }) }
+        single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
         single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
         single<ClipboardService> { getDesktopClipboardService(get()) }
         single<TransferableConsumer> { DesktopTransferableConsumer() }
@@ -89,7 +89,7 @@ fun initKoinApplication(ioScope: CoroutineScope): KoinApplication {
         single<PreKeyStore> { DesktopPreKeyStore(get())  }
         single<SignedPreKeyStore> { DesktopSignedPreKeyStore(get()) }
         single<Database> { createDatabase(DriverFactory()) }
-        single<SyncController> { SyncController(get(), get(), get(), get(), get(), get(), get(), get()) }
+        single<SyncController> { SyncController(get(), get(), get(), get(), get(), get(), get()) }
         single<SyncValidator> { get<SyncController>() }
         single<SyncDao> { SyncDao(get()) }
     }
@@ -108,7 +108,7 @@ fun initInject(koinApplication: KoinApplication) {
 
 fun main() = application {
     val pathProvider = getPathProvider()
-    initLogger(pathProvider.resolve("clipevery.log", FileType.LOG).pathString)
+    initLogger(pathProvider.resolve("clipevery.log", AppFileType.LOG).pathString)
     val logger = KotlinLogging.logger {}
 
     logger.info { "Starting Clipevery" }

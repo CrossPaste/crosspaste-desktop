@@ -1,6 +1,5 @@
 package com.clipevery.clip.item
 
-import com.clipevery.clip.ClipItemType
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 

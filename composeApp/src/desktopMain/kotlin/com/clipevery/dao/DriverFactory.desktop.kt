@@ -3,13 +3,13 @@ package com.clipevery.dao
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.clipevery.Database
-import com.clipevery.config.FileType
+import com.clipevery.app.AppFileType
 import com.clipevery.path.getPathProvider
 import java.nio.file.Path
 
 actual class DriverFactory {
 
-    private val dbFilePath: Path = getPathProvider().resolve("clipevery.db", FileType.DATA)
+    private val dbFilePath: Path = getPathProvider().resolve("clipevery.db", AppFileType.DATA)
 
     actual fun createDriver(): SqlDriver {
         val driver: SqlDriver = JdbcSqliteDriver("jdbc:sqlite:${dbFilePath.toAbsolutePath()}")

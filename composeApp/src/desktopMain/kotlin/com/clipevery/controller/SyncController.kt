@@ -1,18 +1,16 @@
 package com.clipevery.controller
 
+import com.clipevery.app.AppInfo
 import com.clipevery.dao.SyncDao
-import com.clipevery.device.DeviceInfoFactory
-import com.clipevery.encrypt.decodePreKeyBundle
+import com.clipevery.utils.decodePreKeyBundle
+import com.clipevery.endpoint.EndpointInfoFactory
+import com.clipevery.endpoint.ExplicitEndpointInfo
 import com.clipevery.exception.ClipException
 import com.clipevery.exception.StandardErrorCode
-import com.clipevery.model.AppInfo
-import com.clipevery.model.EndpointInfo
-import com.clipevery.model.RequestEndpointInfo
-import com.clipevery.model.SyncInfo
-import com.clipevery.model.SyncState
+import com.clipevery.model.sync.SyncInfo
 import com.clipevery.model.sync.RequestSyncInfo
 import com.clipevery.model.sync.ResponseSyncInfo
-import com.clipevery.net.ClipServer
+import com.clipevery.model.sync.SyncState
 import com.clipevery.net.SyncInfoWithPreKeyBundle
 import com.clipevery.net.SyncValidator
 import com.clipevery.utils.telnet
@@ -33,8 +31,7 @@ class SyncController(private val appInfo: AppInfo,
                      private val preKeyStore: PreKeyStore,
                      private val signedPreKeyStore: SignedPreKeyStore,
                      private val identityKeyStore: IdentityKeyStore,
-                     private val clipServer: Lazy<ClipServer>,
-                     private val deviceInfoFactory: DeviceInfoFactory): SyncValidator {
+                     private val endpointInfoFactory: EndpointInfoFactory): SyncValidator {
 
     fun receiveEndpointSyncInfo(requestSyncInfo: RequestSyncInfo): ResponseSyncInfo {
         val (syncInfo, preKeyBundle) = runBlocking { validate(requestSyncInfo) }
@@ -44,7 +41,7 @@ class SyncController(private val appInfo: AppInfo,
             syncDao.saveSyncEndpoint(syncInfo)
             sessionBuilder.process(preKeyBundle)
         }
-        return ResponseSyncInfo(appInfo, RequestEndpointInfo(deviceInfoFactory.createDeviceInfo(), clipServer.value.port()))
+        return ResponseSyncInfo(appInfo, endpointInfoFactory.createEndpointInfo())
     }
 
     private var token: Int? = null
@@ -72,13 +69,13 @@ class SyncController(private val appInfo: AppInfo,
         } else if (requestSyncInfo.token != this.token) {
             throw ClipException(StandardErrorCode.SYNC_INVALID.toErrorCode(), "token invalid")
         }
-        val hostInfoList = requestSyncInfo.requestEndpointInfo.deviceInfo.hostInfoList
+        val hostInfoList = requestSyncInfo.endpointInfo.hostInfoList
         if (hostInfoList.isEmpty()) {
             throw ClipException(StandardErrorCode.SYNC_INVALID.toErrorCode(), "cant find host info")
         }
         val host: String = telnet(
-            requestSyncInfo.requestEndpointInfo.deviceInfo.hostInfoList.map { hostInfo -> hostInfo.hostAddress },
-            requestSyncInfo.requestEndpointInfo.port, 1000
+            requestSyncInfo.endpointInfo.hostInfoList.map { hostInfo -> hostInfo.hostAddress },
+            requestSyncInfo.endpointInfo.port, 1000
         ) ?: throw ClipException(StandardErrorCode.SYNC_INVALID.toErrorCode(), "cant find telnet success host")
         val hostInfo = hostInfoList.find { hostInfo -> hostInfo.hostAddress == host }!!
 
@@ -94,11 +91,11 @@ class SyncController(private val appInfo: AppInfo,
 
         val appInfo = requestSyncInfo.appInfo
 
-        val endpointInfo = EndpointInfo(
-            requestSyncInfo.requestEndpointInfo.deviceInfo.deviceId,
-            requestSyncInfo.requestEndpointInfo.deviceInfo.deviceName,
-            requestSyncInfo.requestEndpointInfo.deviceInfo.platform,
-            hostInfo, requestSyncInfo.requestEndpointInfo.port
+        val endpointInfo = ExplicitEndpointInfo(
+            requestSyncInfo.endpointInfo.deviceId,
+            requestSyncInfo.endpointInfo.deviceName,
+            requestSyncInfo.endpointInfo.platform,
+            hostInfo, requestSyncInfo.endpointInfo.port
         )
 
         return SyncInfoWithPreKeyBundle(SyncInfo(appInfo, endpointInfo, SyncState.ONLINE), preKeyBundle)

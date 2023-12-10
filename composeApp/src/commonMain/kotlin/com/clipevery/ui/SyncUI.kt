@@ -8,27 +8,28 @@ import androidx.compose.material.Divider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.clipevery.LocalKoinApplication
-import com.clipevery.device.DeviceInfoFactory
-import com.clipevery.model.HostInfo
-import com.clipevery.model.AppInfo
-import com.clipevery.model.EndpointInfo
-import com.clipevery.model.SyncInfo
-import com.clipevery.model.SyncState
+import com.clipevery.endpoint.EndpointInfoFactory
+import com.clipevery.net.HostInfo
+import com.clipevery.app.AppInfo
+import com.clipevery.endpoint.ExplicitEndpointInfo
+import com.clipevery.model.sync.SyncInfo
+import com.clipevery.model.sync.SyncState
 import com.clipevery.platform.Platform
 import com.clipevery.platform.currentPlatform
 
 @Composable
 fun Syncs() {
     val current = LocalKoinApplication.current
-    val deviceFactory = current.koin.get<DeviceInfoFactory>()
-    val deviceInfo = deviceFactory.createDeviceInfo()
-    SyncItem(SyncInfo(
+    val deviceFactory = current.koin.get<EndpointInfoFactory>()
+    val deviceInfo = deviceFactory.createEndpointInfo()
+    SyncItem(
+        SyncInfo(
         appInfo = AppInfo(
             appInstanceId = "1234567890",
             appVersion = "1.0.0",
             userName = "John Doe"
         ),
-        endpointInfo = EndpointInfo(
+        endpointInfo = ExplicitEndpointInfo(
             deviceId = deviceInfo.deviceId,
             deviceName = deviceInfo.deviceName,
             platform = currentPlatform(),
@@ -38,13 +39,14 @@ fun Syncs() {
         state = SyncState.ONLINE)
     )
     Divider(modifier = Modifier.fillMaxWidth())
-    SyncItem(SyncInfo(
+    SyncItem(
+        SyncInfo(
         appInfo = AppInfo(
             appInstanceId = "1234567890",
             appVersion = "1.0.0",
             userName = "John Doe"
         ),
-        endpointInfo = EndpointInfo(
+        endpointInfo = ExplicitEndpointInfo(
             deviceId = "abdcs-adasda-sdasdasd",
             deviceName = "John Doe's Windows",
             platform = object: Platform {
@@ -63,13 +65,14 @@ fun Syncs() {
         state = SyncState.OFFLINE)
     )
     Divider(modifier = Modifier.fillMaxWidth())
-    SyncItem(SyncInfo(
+    SyncItem(
+        SyncInfo(
         appInfo = AppInfo(
             appInstanceId = "1234567890",
             appVersion = "1.0.0",
             userName = "John Doe"
         ),
-        endpointInfo = EndpointInfo(
+        endpointInfo = ExplicitEndpointInfo(
             deviceId = "abdcs-adasda-sdasdasd",
             deviceName = "John Doe's Windows",
             hostInfo = HostInfo(

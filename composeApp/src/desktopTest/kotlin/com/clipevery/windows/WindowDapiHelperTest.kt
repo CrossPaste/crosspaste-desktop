@@ -1,5 +1,6 @@
 package com.clipevery.windows
 
+import com.clipevery.os.windows.WindowDapiHelper
 import com.clipevery.platform.currentPlatform
 import kotlin.test.Test
 import kotlin.test.assertEquals
