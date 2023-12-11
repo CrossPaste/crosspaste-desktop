@@ -10,11 +10,11 @@ class DesktopThemeDetector(private val configManager: ConfigManager): ThemeDetec
 
     private val detector = OsThemeDetector.getDetector()
 
-    private var _isFollowSystem: Boolean by mutableStateOf(configManager.config.isFollowSystem)
+    private var _isFollowSystem: Boolean by mutableStateOf(configManager.config.isFollowSystemTheme)
 
     private var _isSystemInDark: Boolean by mutableStateOf(detector.isDark)
 
-    private var _isUserInDark: Boolean by mutableStateOf(configManager.config.isDark)
+    private var _isUserInDark: Boolean by mutableStateOf(configManager.config.isDarkTheme)
 
     init {
         detector.registerListener { isDark: Boolean ->
@@ -37,6 +37,6 @@ class DesktopThemeDetector(private val configManager: ConfigManager): ThemeDetec
     override fun setThemeConfig(isFollowSystem: Boolean, isUserInDark: Boolean) {
         _isFollowSystem = isFollowSystem
         _isUserInDark = isUserInDark
-        configManager.updateConfig { it.copy(isFollowSystem = isFollowSystem, isDark = isUserInDark) }
+        configManager.updateConfig { it.copy(isFollowSystemTheme = isFollowSystem, isDarkTheme = isUserInDark) }
     }
 }

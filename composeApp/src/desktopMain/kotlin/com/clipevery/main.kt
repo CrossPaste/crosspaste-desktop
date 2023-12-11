@@ -72,7 +72,7 @@ fun initKoinApplication(ioScope: CoroutineScope): KoinApplication {
         single<CoroutineScope> { ioScope }
         single<AppInfo> { DesktopAppInfoFactory(get()).createAppInfo() }
         single<FilePersist> { DesktopFilePersist() }
-        single<ConfigManager> { DefaultConfigManager(get()).initConfig() }
+        single<ConfigManager> { DefaultConfigManager(get()) }
         single<ClipServer> { DesktopClipServer(get()).start() }
         single<Lazy<ClipServer>> { lazy { get<ClipServer>() } }
         single<ClipClient> { DesktopClipClient() }
