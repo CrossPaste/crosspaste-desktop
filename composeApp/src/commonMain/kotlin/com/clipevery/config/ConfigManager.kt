@@ -3,17 +3,17 @@ package com.clipevery.config
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
+@Suppress("LeakingThis")
 abstract class ConfigManager(private val ioScope: CoroutineScope) {
 
-    lateinit var config: AppConfig
+    var config: AppConfig
 
-    fun initConfig(): ConfigManager {
+    init {
         config = try {
             loadConfig() ?: AppConfig()
         } catch (e: Exception) {
             AppConfig()
         }
-        return this
     }
 
     protected abstract fun loadConfig(): AppConfig?
