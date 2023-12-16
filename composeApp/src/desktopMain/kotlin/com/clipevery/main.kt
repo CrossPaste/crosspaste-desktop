@@ -110,6 +110,12 @@ fun initInject(koinApplication: KoinApplication) {
     koinApplication.koin.get<ClipBonjourService>()
 }
 
+fun exitClipEveryApplication(koinApplication: KoinApplication, exitApplication: () -> Unit) {
+    koinApplication.koin.get<ClipBonjourService>().unregisterService()
+    koinApplication.koin.get<ClipServer>().stop()
+    exitApplication()
+}
+
 fun main() = application {
     val pathProvider = getPathProvider()
     initLogger(pathProvider.resolve("clipevery.log", AppFileType.LOG).pathString)
@@ -142,8 +148,10 @@ fun main() = application {
         mouseListener = getTrayMouseAdapter(windowState) { showWindow = !showWindow },
     )
 
+    val exitApplication = { exitClipEveryApplication(koinApplication) { exitApplication() } }
+
     Window(
-        onCloseRequest = ::exitApplication,
+        onCloseRequest = exitApplication,
         visible = showWindow,
         state = windowState,
         title = "Clipevery",
@@ -167,6 +175,6 @@ fun main() = application {
         }
         ClipeveryApp(koinApplication,
             hideWindow = { showWindow = false },
-            exitApplication = ::exitApplication)
+            exitApplication = exitApplication)
     }
 }
