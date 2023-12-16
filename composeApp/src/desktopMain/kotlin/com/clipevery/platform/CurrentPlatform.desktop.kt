@@ -16,29 +16,9 @@ private fun getCurrentPlatform(): Platform {
         32
     }
     return when {
-        "win" in osName -> object : Platform {
-            override val name = "Windows"
-            override val bitMode: Int = bitMode
-            override val arch: String = architecture
-            override val version = version
-        }
-        "mac" in osName -> object : Platform {
-            override val name = "Macos"
-            override val arch: String = architecture
-            override val bitMode: Int = bitMode
-            override val version = version
-        }
-        "nix" in osName || "nux" in osName || "aix" in osName -> object : Platform {
-            override val name = "Linux"
-            override val arch: String = architecture
-            override val bitMode: Int = bitMode
-            override val version = version
-        }
-        else -> object : Platform {
-            override val name = "Unknown"
-            override val arch: String = architecture
-            override val bitMode: Int = bitMode
-            override val version = version
-        }
+        "win" in osName -> Platform(name = "Windows", arch = architecture, bitMode = bitMode, version = version)
+        "mac" in osName -> Platform(name = "Macos", arch = architecture, bitMode = bitMode, version = version)
+        "nix" in osName || "nux" in osName || "aix" in osName -> Platform(name = "Linux", arch = architecture, bitMode = bitMode, version = version)
+        else -> Platform(name = "Unknown", arch = architecture, bitMode = bitMode, version = version)
     }
 }

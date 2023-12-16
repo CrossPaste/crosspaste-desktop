@@ -36,8 +36,10 @@ import com.clipevery.listen.GlobalListener
 import com.clipevery.log.initLogger
 import com.clipevery.app.AppInfo
 import com.clipevery.app.DesktopAppInfoFactory
+import com.clipevery.net.ClipBonjourService
 import com.clipevery.net.ClipClient
 import com.clipevery.net.ClipServer
+import com.clipevery.net.DesktopClipBonjourService
 import com.clipevery.net.DesktopClipClient
 import com.clipevery.net.DesktopClipServer
 import com.clipevery.net.SyncValidator
@@ -55,6 +57,7 @@ import com.clipevery.utils.initAppUI
 import com.clipevery.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.koin.core.KoinApplication
 import org.koin.core.context.GlobalContext.startKoin
 import org.koin.dsl.module
@@ -78,6 +81,7 @@ fun initKoinApplication(ioScope: CoroutineScope): KoinApplication {
         single<ClipClient> { DesktopClipClient() }
         single<EndpointInfoFactory> { DesktopEndpointInfoFactory( lazy { get<ClipServer>() }) }
         single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
+        single<ClipBonjourService> { DesktopClipBonjourService(get(), get()).registerService() }
         single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
         single<ClipboardService> { getDesktopClipboardService(get()) }
         single<TransferableConsumer> { DesktopTransferableConsumer() }
@@ -104,6 +108,13 @@ fun initInject(koinApplication: KoinApplication) {
     koinApplication.koin.get<ClipServer>()
     koinApplication.koin.get<ClipClient>()
     koinApplication.koin.get<ClipboardService>()
+    koinApplication.koin.get<ClipBonjourService>()
+}
+
+fun exitClipEveryApplication(koinApplication: KoinApplication, exitApplication: () -> Unit) {
+    koinApplication.koin.get<ClipBonjourService>().unregisterService()
+    koinApplication.koin.get<ClipServer>().stop()
+    exitApplication()
 }
 
 fun main() = application {
@@ -138,8 +149,16 @@ fun main() = application {
         mouseListener = getTrayMouseAdapter(windowState) { showWindow = !showWindow },
     )
 
+    val exitApplication: () -> Unit = {
+        showWindow = false
+        ioScope.launch {
+            exitClipEveryApplication(koinApplication) { exitApplication() }
+
+        }
+    }
+
     Window(
-        onCloseRequest = ::exitApplication,
+        onCloseRequest = exitApplication,
         visible = showWindow,
         state = windowState,
         title = "Clipevery",
@@ -163,6 +182,6 @@ fun main() = application {
         }
         ClipeveryApp(koinApplication,
             hideWindow = { showWindow = false },
-            exitApplication = ::exitApplication)
+            exitApplication = exitApplication)
     }
 }

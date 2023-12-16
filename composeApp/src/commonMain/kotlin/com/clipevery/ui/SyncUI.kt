@@ -49,13 +49,7 @@ fun Syncs() {
         endpointInfo = ExplicitEndpointInfo(
             deviceId = "abdcs-adasda-sdasdasd",
             deviceName = "John Doe's Windows",
-            platform = object: Platform {
-                override val name: String
-                    get() = "Windows"
-                override val arch: String = "amd64"
-                override val bitMode: Int = 64
-                override val version: String = "11"
-            },
+            platform = Platform(name = "Windows", arch = "amd64", bitMode = 64, version = "11"),
             hostInfo = HostInfo(
                 displayName = "wifi",
                 hostAddress = "192.168.31.2"
@@ -79,12 +73,7 @@ fun Syncs() {
                 displayName = "wifi",
                 hostAddress = "192.168.31.3"
             ),
-            platform = object: Platform {
-                override val name: String = "Linux"
-                override val arch: String = "amd64"
-                override val bitMode: Int = 32
-                override val version: String = "20.23"
-            },
+            platform = Platform(name = "Linux", arch = "amd64", bitMode = 32, version = "20.23"),
             port = 8080
         ),
         state = SyncState.UNVERIFIED)
