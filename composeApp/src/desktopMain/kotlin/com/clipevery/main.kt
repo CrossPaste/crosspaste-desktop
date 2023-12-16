@@ -36,8 +36,10 @@ import com.clipevery.listen.GlobalListener
 import com.clipevery.log.initLogger
 import com.clipevery.app.AppInfo
 import com.clipevery.app.DesktopAppInfoFactory
+import com.clipevery.net.ClipBonjourService
 import com.clipevery.net.ClipClient
 import com.clipevery.net.ClipServer
+import com.clipevery.net.DesktopClipBonjourService
 import com.clipevery.net.DesktopClipClient
 import com.clipevery.net.DesktopClipServer
 import com.clipevery.net.SyncValidator
@@ -78,6 +80,7 @@ fun initKoinApplication(ioScope: CoroutineScope): KoinApplication {
         single<ClipClient> { DesktopClipClient() }
         single<EndpointInfoFactory> { DesktopEndpointInfoFactory( lazy { get<ClipServer>() }) }
         single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
+        single<ClipBonjourService> { DesktopClipBonjourService(get()).registerService() }
         single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
         single<ClipboardService> { getDesktopClipboardService(get()) }
         single<TransferableConsumer> { DesktopTransferableConsumer() }
@@ -104,6 +107,7 @@ fun initInject(koinApplication: KoinApplication) {
     koinApplication.koin.get<ClipServer>()
     koinApplication.koin.get<ClipClient>()
     koinApplication.koin.get<ClipboardService>()
+    koinApplication.koin.get<ClipBonjourService>()
 }
 
 fun main() = application {

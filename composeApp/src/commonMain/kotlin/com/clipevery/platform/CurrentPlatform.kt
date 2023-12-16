@@ -1,12 +1,14 @@
 package com.clipevery.platform
 
+import kotlinx.serialization.Serializable
+
 expect fun currentPlatform(): Platform
 
-interface Platform {
-    val name: String
-    val arch: String
-    val bitMode: Int
-    val version: String
+@Serializable
+data class Platform(val name: String,
+                    val arch: String,
+                    val bitMode: Int,
+                    val version: String) {
 
     fun isWindows(): Boolean {
         return name == "Windows"
