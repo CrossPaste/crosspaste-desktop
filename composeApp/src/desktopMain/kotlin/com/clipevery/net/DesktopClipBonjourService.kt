@@ -1,5 +1,6 @@
 package com.clipevery.net
 
+import com.clipevery.app.logger
 import com.clipevery.endpoint.EndpointInfoFactory
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -21,8 +22,9 @@ class DesktopClipBonjourService(private val endpointInfoFactory: EndpointInfoFac
             endpointInfo.port,
             0,
             0,
-            endpointInfoJson
+            endpointInfoJson.encodeToByteArray()
         )
+        logger.info { "Registering service: $endpointInfoJson" }
         jmdns.registerService(serviceInfo)
         return this
     }
