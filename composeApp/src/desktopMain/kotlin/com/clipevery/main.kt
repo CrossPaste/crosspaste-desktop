@@ -57,6 +57,7 @@ import com.clipevery.utils.initAppUI
 import com.clipevery.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.koin.core.KoinApplication
 import org.koin.core.context.GlobalContext.startKoin
 import org.koin.dsl.module
@@ -80,7 +81,7 @@ fun initKoinApplication(ioScope: CoroutineScope): KoinApplication {
         single<ClipClient> { DesktopClipClient() }
         single<EndpointInfoFactory> { DesktopEndpointInfoFactory( lazy { get<ClipServer>() }) }
         single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
-        single<ClipBonjourService> { DesktopClipBonjourService(get()).registerService() }
+        single<ClipBonjourService> { DesktopClipBonjourService(get(), get()).registerService() }
         single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
         single<ClipboardService> { getDesktopClipboardService(get()) }
         single<TransferableConsumer> { DesktopTransferableConsumer() }
@@ -148,7 +149,13 @@ fun main() = application {
         mouseListener = getTrayMouseAdapter(windowState) { showWindow = !showWindow },
     )
 
-    val exitApplication = { exitClipEveryApplication(koinApplication) { exitApplication() } }
+    val exitApplication: () -> Unit = {
+        showWindow = false
+        ioScope.launch {
+            exitClipEveryApplication(koinApplication) { exitApplication() }
+
+        }
+    }
 
     Window(
         onCloseRequest = exitApplication,
