@@ -3,6 +3,7 @@ package com.clipevery.net
 import com.clipevery.app.AppInfo
 import com.clipevery.app.logger
 import com.clipevery.endpoint.EndpointInfoFactory
+import com.clipevery.model.sync.ResponseSyncInfo
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.net.InetAddress
@@ -17,16 +18,17 @@ class DesktopClipBonjourService(private val endpointInfoFactory: EndpointInfoFac
 
     override fun registerService(): ClipBonjourService {
         val endpointInfo = endpointInfoFactory.createEndpointInfo()
-        val endpointInfoJson = Json.encodeToString(endpointInfo)
+        val responseSyncInfo = ResponseSyncInfo(appInfo, endpointInfo)
+        val responseSyncInfoJson = Json.encodeToString(responseSyncInfo)
         val serviceInfo = ServiceInfo.create(
             "_clipeveryService._tcp.local.",
             "clipevery_" + appInfo.appInstanceId,
             endpointInfo.port,
             0,
             0,
-            endpointInfoJson.encodeToByteArray()
+            responseSyncInfoJson.encodeToByteArray()
         )
-        logger.info { "Registering service: $endpointInfoJson" }
+        logger.info { "Registering service: $responseSyncInfoJson" }
         jmdns.registerService(serviceInfo)
         return this
     }
