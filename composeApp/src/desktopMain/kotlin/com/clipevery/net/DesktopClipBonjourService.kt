@@ -14,27 +14,39 @@ import javax.jmdns.ServiceInfo
 class DesktopClipBonjourService(private val endpointInfoFactory: EndpointInfoFactory,
                                 private val appInfo: AppInfo): ClipBonjourService {
 
-    private val jmdns: JmDNS = JmDNS.create(InetAddress.getLocalHost())
+    private val jmdnsMap: MutableMap<String, JmDNS> = mutableMapOf()
 
     override fun registerService(): ClipBonjourService {
         val endpointInfo = endpointInfoFactory.createEndpointInfo()
         val responseSyncInfo = ResponseSyncInfo(appInfo, endpointInfo)
         val responseSyncInfoJson = Json.encodeToString(responseSyncInfo)
-        val serviceInfo = ServiceInfo.create(
-            "_clipeveryService._tcp.local.",
-            "clipevery_" + appInfo.appInstanceId,
-            endpointInfo.port,
-            0,
-            0,
-            responseSyncInfoJson.encodeToByteArray()
-        )
+        val responseSyncInfoJsonBytes = responseSyncInfoJson.encodeToByteArray()
+        for (hostInfo in endpointInfo.hostInfoList) {
+            val jmDNS: JmDNS = JmDNS.create(InetAddress.getByName(hostInfo.hostAddress))
+            jmdnsMap.putIfAbsent(hostInfo.hostAddress, jmDNS)
+            val serviceInfo = ServiceInfo.create(
+                "_clipeveryService._tcp.local.",
+                "clipevery_" + appInfo.appInstanceId,
+                endpointInfo.port,
+                0,
+                0,
+                responseSyncInfoJsonBytes
+            )
+            jmDNS.registerService(serviceInfo)
+        }
         logger.info { "Registering service: $responseSyncInfoJson" }
-        jmdns.registerService(serviceInfo)
         return this
     }
 
     override fun unregisterService(): ClipBonjourService {
-        jmdns.unregisterAllServices()
+        val iterator = jmdnsMap.iterator()
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
+            val jmDNS = entry.value
+            jmDNS.unregisterAllServices()
+            jmDNS.close()
+            iterator.remove()
+        }
         return this
     }
 }
