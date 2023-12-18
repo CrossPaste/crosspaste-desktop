@@ -4,5 +4,5 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class HostInfo(
-    val displayName: String,
+    val hostName: String,
     val hostAddress: String)

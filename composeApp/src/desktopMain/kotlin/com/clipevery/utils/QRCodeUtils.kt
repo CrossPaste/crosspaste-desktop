@@ -61,7 +61,7 @@ class DesktopQRCodeGenerator(private val syncValidator: SyncValidator,
         encodePlatform(endpointInfo.platform, dataOutputStream)
         dataOutputStream.writeInt(endpointInfo.hostInfoList.size)
         endpointInfo.hostInfoList.forEach {
-            dataOutputStream.writeUTF(it.displayName)
+            dataOutputStream.writeUTF(it.hostName)
             dataOutputStream.writeUTF(it.hostAddress)
         }
         dataOutputStream.writeInt(endpointInfo.port)

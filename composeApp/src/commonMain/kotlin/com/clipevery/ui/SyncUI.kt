@@ -51,7 +51,7 @@ fun Syncs() {
             deviceName = "John Doe's Windows",
             platform = Platform(name = "Windows", arch = "amd64", bitMode = 64, version = "11"),
             hostInfo = HostInfo(
-                displayName = "wifi",
+                hostName = "wifi",
                 hostAddress = "192.168.31.2"
             ),
             port = 8080
@@ -70,7 +70,7 @@ fun Syncs() {
             deviceId = "abdcs-adasda-sdasdasd",
             deviceName = "John Doe's Windows",
             hostInfo = HostInfo(
-                displayName = "wifi",
+                hostName = "wifi",
                 hostAddress = "192.168.31.3"
             ),
             platform = Platform(name = "Linux", arch = "amd64", bitMode = 32, version = "20.23"),

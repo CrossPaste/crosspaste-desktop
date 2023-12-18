@@ -77,7 +77,7 @@ private fun getHostInfoList(): List<HostInfo> {
             for (inetAddress in Collections.list(inetAddresses)) {
                 if (inetAddress.isSiteLocalAddress) {
                     add(
-                        HostInfo(displayName = netInterface.displayName,
+                        HostInfo(hostName = inetAddress.hostName,
                             hostAddress = inetAddress.hostAddress)
                     )
                 }

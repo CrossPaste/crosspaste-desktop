@@ -176,7 +176,7 @@ fun deviceDetailInfo(copywriter: Copywriter, syncInfo: SyncInfo): String {
         |${copywriter.getText("Device_ID")}: ${syncInfo.endpointInfo.deviceId}
         |${copywriter.getText("App_Version")}: ${syncInfo.appInfo.appVersion}
         |${copywriter.getText("User_Name")}: ${syncInfo.appInfo.userName}
-        |${copywriter.getText("Host_Name")}: ${syncInfo.endpointInfo.hostInfo.displayName}
+        |${copywriter.getText("Host_Name")}: ${syncInfo.endpointInfo.hostInfo.hostName}
         |${copywriter.getText("Host_Address")}: ${syncInfo.endpointInfo.hostInfo.hostAddress}
         |${copywriter.getText("Platform")}: ${syncInfo.endpointInfo.platform.name} ${syncInfo.endpointInfo.platform.version}
         |${copywriter.getText("State")}: ${syncInfo.state}
