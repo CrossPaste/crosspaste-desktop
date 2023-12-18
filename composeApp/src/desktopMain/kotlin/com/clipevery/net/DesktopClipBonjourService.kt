@@ -26,7 +26,7 @@ class DesktopClipBonjourService(private val endpointInfoFactory: EndpointInfoFac
             jmdnsMap.putIfAbsent(hostInfo.hostAddress, jmDNS)
             val serviceInfo = ServiceInfo.create(
                 "_clipeveryService._tcp.local.",
-                "clipevery_" + appInfo.appInstanceId,
+                "clipevery_@" + appInfo.appInstanceId + "@" + hostInfo.hostName,
                 endpointInfo.port,
                 0,
                 0,
