@@ -12,8 +12,8 @@ SELECT sessionRecord FROM session WHERE app_instance_id IN ?;
 selectSubDevice:
 SELECT app_instance_id FROM session WHERE app_instance_id = ?;
 
-updateSessionRecord:
-UPDATE session SET sessionRecord = ? WHERE app_instance_id = ?;
+insert:
+INSERT OR REPLACE INTO session (app_instance_id, sessionRecord) VALUES (?, ?);
 
 count:
 SELECT COUNT(1) FROM session WHERE app_instance_id = ?;
