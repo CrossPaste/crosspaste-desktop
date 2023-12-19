@@ -29,7 +29,7 @@ class DesktopSessionStore(private val database: Database): SessionStore {
     }
 
     override fun storeSession(address: SignalProtocolAddress, record: SessionRecord) {
-        database.sessionQueries.updateSessionRecord(record.serialize(), address.name)
+        database.sessionQueries.insert(address.name, record.serialize())
     }
 
     override fun containsSession(address: SignalProtocolAddress): Boolean {
