@@ -38,11 +38,12 @@ class DesktopIdentityKeyStore(private val database: Database,
     }
 
     override fun saveIdentity(address: SignalProtocolAddress, identityKey: IdentityKey): Boolean {
-        return try {
+        database.identityKeyQueries.selectIndentity(appInstanceId).executeAsOneOrNull()?.let {
             database.identityKeyQueries.update(identityKey.serialize(), appInstanceId)
-            true
-        } catch (e: Exception) {
-            false
+            return true
+        } ?: let {
+            database.identityKeyQueries.insert(appInstanceId, identityKey.serialize())
+            return false
         }
     }
 
