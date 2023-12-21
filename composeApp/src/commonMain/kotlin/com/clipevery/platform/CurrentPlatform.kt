@@ -22,6 +22,18 @@ data class Platform(val name: String,
         return name == "Linux"
     }
 
+    fun isIphone(): Boolean {
+        return name == "iPhone"
+    }
+
+    fun isIpad(): Boolean {
+        return name == "iPad"
+    }
+
+    fun isAndroid(): Boolean {
+        return name == "Android"
+    }
+
     fun is64bit(): Boolean {
         return bitMode == 64
     }

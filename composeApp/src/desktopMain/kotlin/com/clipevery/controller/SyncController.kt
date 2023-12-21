@@ -38,7 +38,7 @@ class SyncController(private val appInfo: AppInfo,
         val signalProtocolAddress = SignalProtocolAddress(syncInfo.appInfo.appInstanceId, 1)
         val sessionBuilder = SessionBuilder(sessionStore, preKeyStore, signedPreKeyStore, identityKeyStore, signalProtocolAddress)
         syncDao.database.transaction {
-            syncDao.saveSyncEndpoint(syncInfo)
+            syncDao.saveSyncInfo(syncInfo)
             sessionBuilder.process(preKeyBundle)
         }
         return ResponseSyncInfo(appInfo, endpointInfoFactory.createEndpointInfo())

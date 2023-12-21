@@ -42,8 +42,6 @@ import com.clipevery.i18n.Copywriter
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.model.sync.SyncInfo
 import com.clipevery.model.sync.SyncState
-import compose.icons.TablerIcons
-import compose.icons.tablericons.Ghost
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -88,8 +86,14 @@ fun SyncItem(syncInfo: SyncInfo) {
         windows()
     } else if (platform.isLinux()) {
         linux()
+    } else if (platform.isIphone()) {
+        iphone()
+    } else if (platform.isIpad()) {
+        ipad()
+    } else if (platform.isAndroid()) {
+        android()
     } else {
-        TablerIcons.Ghost
+        questionOS()
     }
 
     Row(modifier = Modifier
