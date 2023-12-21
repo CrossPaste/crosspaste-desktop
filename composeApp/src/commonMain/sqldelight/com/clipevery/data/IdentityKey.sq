@@ -9,3 +9,6 @@ SELECT serialized FROM identityKey WHERE app_instance_id = ?;
 update:
 UPDATE identityKey SET serialized = ? WHERE app_instance_id = ?;
 
+insert:
+INSERT INTO identityKey (app_instance_id, serialized) VALUES (?, ?);
+
