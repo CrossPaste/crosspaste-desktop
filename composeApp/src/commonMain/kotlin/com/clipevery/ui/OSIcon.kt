@@ -293,6 +293,93 @@ fun linux(): ImageVector {
     }
 }
 
+@Composable
+fun iphone(): ImageVector {
+    return remember {
+        ImageVector.Builder(
+            name = "MobileSolid",
+            defaultWidth = 12.dp,
+            defaultHeight = 16.dp,
+            viewportWidth = 384f,
+            viewportHeight = 512f
+        ).apply {
+            path(
+                fill = SolidColor(Color.Black),
+                fillAlpha = 1.0f,
+                stroke = null,
+                strokeAlpha = 1.0f,
+                strokeLineWidth = 1.0f,
+                strokeLineCap = StrokeCap.Butt,
+                strokeLineJoin = StrokeJoin.Miter,
+                strokeLineMiter = 1.0f,
+                pathFillType = PathFillType.NonZero
+            ) {
+                moveTo(80f, 0f)
+                curveTo(44.7f, 0f, 16f, 28.7f, 16f, 64f)
+                verticalLineTo(448f)
+                curveToRelative(0f, 35.3f, 28.7f, 64f, 64f, 64f)
+                horizontalLineTo(304f)
+                curveToRelative(35.3f, 0f, 64f, -28.7f, 64f, -64f)
+                verticalLineTo(64f)
+                curveToRelative(0f, -35.3f, -28.7f, -64f, -64f, -64f)
+                horizontalLineTo(80f)
+                close()
+                moveToRelative(80f, 432f)
+                horizontalLineToRelative(64f)
+                curveToRelative(8.8f, 0f, 16f, 7.2f, 16f, 16f)
+                reflectiveCurveToRelative(-7.2f, 16f, -16f, 16f)
+                horizontalLineTo(160f)
+                curveToRelative(-8.8f, 0f, -16f, -7.2f, -16f, -16f)
+                reflectiveCurveToRelative(7.2f, -16f, 16f, -16f)
+                close()
+            }
+        }.build()
+    }
+}
+
+@Composable
+fun ipad(): ImageVector {
+    return remember {
+        ImageVector.Builder(
+            name = "TabletSolid",
+            defaultWidth = 14.dp,
+            defaultHeight = 16.dp,
+            viewportWidth = 448f,
+            viewportHeight = 512f
+        ).apply {
+            path(
+                fill = SolidColor(Color.Black),
+                fillAlpha = 1.0f,
+                stroke = null,
+                strokeAlpha = 1.0f,
+                strokeLineWidth = 1.0f,
+                strokeLineCap = StrokeCap.Butt,
+                strokeLineJoin = StrokeJoin.Miter,
+                strokeLineMiter = 1.0f,
+                pathFillType = PathFillType.NonZero
+            ) {
+                moveTo(64f, 0f)
+                curveTo(28.7f, 0f, 0f, 28.7f, 0f, 64f)
+                verticalLineTo(448f)
+                curveToRelative(0f, 35.3f, 28.7f, 64f, 64f, 64f)
+                horizontalLineTo(384f)
+                curveToRelative(35.3f, 0f, 64f, -28.7f, 64f, -64f)
+                verticalLineTo(64f)
+                curveToRelative(0f, -35.3f, -28.7f, -64f, -64f, -64f)
+                horizontalLineTo(64f)
+                close()
+                moveTo(176f, 432f)
+                horizontalLineToRelative(96f)
+                curveToRelative(8.8f, 0f, 16f, 7.2f, 16f, 16f)
+                reflectiveCurveToRelative(-7.2f, 16f, -16f, 16f)
+                horizontalLineTo(176f)
+                curveToRelative(-8.8f, 0f, -16f, -7.2f, -16f, -16f)
+                reflectiveCurveToRelative(7.2f, -16f, 16f, -16f)
+                close()
+            }
+        }.build()
+    }
+}
 
 @Composable
 fun android(): ImageVector {
@@ -339,3 +426,54 @@ fun android(): ImageVector {
     }
 }
 
+@Composable
+fun questionOS(): ImageVector {
+    return remember {
+        ImageVector.Builder(
+            name = "QuestionSolid",
+            defaultWidth = 10.dp,
+            defaultHeight = 16.dp,
+            viewportWidth = 320f,
+            viewportHeight = 512f
+        ).apply {
+            path(
+                fill = SolidColor(Color.Black),
+                fillAlpha = 1.0f,
+                stroke = null,
+                strokeAlpha = 1.0f,
+                strokeLineWidth = 1.0f,
+                strokeLineCap = StrokeCap.Butt,
+                strokeLineJoin = StrokeJoin.Miter,
+                strokeLineMiter = 1.0f,
+                pathFillType = PathFillType.NonZero
+            ) {
+                moveTo(80f, 160f)
+                curveToRelative(0f, -35.3f, 28.7f, -64f, 64f, -64f)
+                horizontalLineToRelative(32f)
+                curveToRelative(35.3f, 0f, 64f, 28.7f, 64f, 64f)
+                verticalLineToRelative(3.6f)
+                curveToRelative(0f, 21.8f, -11.1f, 42.1f, -29.4f, 53.8f)
+                lineToRelative(-42.2f, 27.1f)
+                curveToRelative(-25.2f, 16.2f, -40.4f, 44.1f, -40.4f, 74f)
+                verticalLineTo(320f)
+                curveToRelative(0f, 17.7f, 14.3f, 32f, 32f, 32f)
+                reflectiveCurveToRelative(32f, -14.3f, 32f, -32f)
+                verticalLineToRelative(-1.4f)
+                curveToRelative(0f, -8.2f, 4.2f, -15.8f, 11f, -20.2f)
+                lineToRelative(42.2f, -27.1f)
+                curveToRelative(36.6f, -23.6f, 58.8f, -64.1f, 58.8f, -107.7f)
+                verticalLineTo(160f)
+                curveToRelative(0f, -70.7f, -57.3f, -128f, -128f, -128f)
+                horizontalLineTo(144f)
+                curveTo(73.3f, 32f, 16f, 89.3f, 16f, 160f)
+                curveToRelative(0f, 17.7f, 14.3f, 32f, 32f, 32f)
+                reflectiveCurveToRelative(32f, -14.3f, 32f, -32f)
+                close()
+                moveToRelative(80f, 320f)
+                arcToRelative(40f, 40f, 0f, isMoreThanHalf = true, isPositiveArc = false, 0f, -80f)
+                arcToRelative(40f, 40f, 0f, isMoreThanHalf = true, isPositiveArc = false, 0f, 80f)
+                close()
+            }
+        }.build()
+    }
+}

@@ -22,7 +22,7 @@ import com.clipevery.config.DefaultConfigManager
 import com.clipevery.app.AppFileType
 import com.clipevery.controller.SyncController
 import com.clipevery.dao.DriverFactory
-import com.clipevery.dao.SyncDao
+import com.clipevery.dao.SyncDaoImpl
 import com.clipevery.dao.createDatabase
 import com.clipevery.signal.DesktopPreKeyStore
 import com.clipevery.signal.DesktopSessionStore
@@ -36,6 +36,7 @@ import com.clipevery.listen.GlobalListener
 import com.clipevery.log.initLogger
 import com.clipevery.app.AppInfo
 import com.clipevery.app.DesktopAppInfoFactory
+import com.clipevery.dao.SyncDao
 import com.clipevery.net.ClipBonjourService
 import com.clipevery.net.ClipClient
 import com.clipevery.net.ClipServer
@@ -95,7 +96,7 @@ fun initKoinApplication(ioScope: CoroutineScope): KoinApplication {
         single<Database> { createDatabase(DriverFactory()) }
         single<SyncController> { SyncController(get(), get(), get(), get(), get(), get(), get()) }
         single<SyncValidator> { get<SyncController>() }
-        single<SyncDao> { SyncDao(get()) }
+        single<SyncDao> { SyncDaoImpl(get()) }
     }
     return startKoin {
         modules(appModule)
