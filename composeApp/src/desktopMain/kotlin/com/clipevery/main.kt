@@ -27,7 +27,7 @@ import com.clipevery.dao.createDatabase
 import com.clipevery.signal.DesktopPreKeyStore
 import com.clipevery.signal.DesktopSessionStore
 import com.clipevery.signal.DesktopSignedPreKeyStore
-import com.clipevery.signal.getIdentityKeyStoreFactory
+import com.clipevery.signal.getClipIdentityKeyStoreFactory
 import com.clipevery.endpoint.DesktopEndpointInfoFactory
 import com.clipevery.endpoint.EndpointInfoFactory
 import com.clipevery.i18n.GlobalCopywriter
@@ -48,6 +48,7 @@ import com.clipevery.path.getPathProvider
 import com.clipevery.platform.currentPlatform
 import com.clipevery.presist.DesktopFilePersist
 import com.clipevery.presist.FilePersist
+import com.clipevery.signal.ClipIdentityKeyStore
 import com.clipevery.ui.DesktopThemeDetector
 import com.clipevery.ui.ThemeDetector
 import com.clipevery.ui.getTrayMouseAdapter
@@ -62,7 +63,6 @@ import kotlinx.coroutines.launch
 import org.koin.core.KoinApplication
 import org.koin.core.context.GlobalContext.startKoin
 import org.koin.dsl.module
-import org.signal.libsignal.protocol.state.IdentityKeyStore
 import org.signal.libsignal.protocol.state.PreKeyStore
 import org.signal.libsignal.protocol.state.SessionStore
 import org.signal.libsignal.protocol.state.SignedPreKeyStore
@@ -82,14 +82,14 @@ fun initKoinApplication(ioScope: CoroutineScope): KoinApplication {
         single<ClipClient> { DesktopClipClient() }
         single<EndpointInfoFactory> { DesktopEndpointInfoFactory( lazy { get<ClipServer>() }) }
         single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
-        single<ClipBonjourService> { DesktopClipBonjourService(get(), get(), get()).registerService() }
+        single<ClipBonjourService> { DesktopClipBonjourService(get(), get(), get(), get(), get()).registerService() }
         single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
         single<ClipboardService> { getDesktopClipboardService(get()) }
         single<TransferableConsumer> { DesktopTransferableConsumer() }
         single<GlobalListener> { GlobalListener() }
         single<DriverFactory> { DriverFactory() }
         single<ThemeDetector> { DesktopThemeDetector(get()) }
-        single<IdentityKeyStore> { getIdentityKeyStoreFactory(get(), get()).createIdentityKeyStore() }
+        single<ClipIdentityKeyStore> { getClipIdentityKeyStoreFactory(get(), get(), get(), get()).createClipIdentityKeyStore() }
         single<SessionStore> { DesktopSessionStore(get()) }
         single<PreKeyStore> { DesktopPreKeyStore(get())  }
         single<SignedPreKeyStore> { DesktopSignedPreKeyStore(get()) }
