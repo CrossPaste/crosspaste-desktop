@@ -5,7 +5,9 @@ import org.signal.libsignal.protocol.InvalidKeyException
 import org.signal.libsignal.protocol.ecc.ECPublicKey
 import org.signal.libsignal.protocol.state.PreKeyBundle
 import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
+import java.io.DataOutputStream
 import java.io.IOException
 
 @Throws(IOException::class, InvalidKeyException::class)
@@ -37,4 +39,25 @@ fun decodePreKeyBundle(encoded: ByteArray): PreKeyBundle {
 
     return PreKeyBundle(registrationId, deviceId, preKeyId, preKeyPublic, signedPreKeyId,
         signedPreKeyPublic, signedPreKeySignatureBytes, identityKey)
+}
+
+fun encodePreKeyBundle(preKeyBundle: PreKeyBundle): ByteArray {
+    val byteStream = ByteArrayOutputStream()
+    val dataStream = DataOutputStream(byteStream)
+    dataStream.writeInt(preKeyBundle.registrationId)
+    dataStream.writeInt(preKeyBundle.deviceId)
+    dataStream.writeInt(preKeyBundle.preKeyId)
+    val preKeyPublicBytes = preKeyBundle.preKey.serialize()
+    dataStream.writeInt(preKeyPublicBytes.size)
+    dataStream.write(preKeyPublicBytes)
+    dataStream.writeInt(preKeyBundle.signedPreKeyId)
+    val signedPreKeySignatureBytes = preKeyBundle.signedPreKey.serialize()
+    dataStream.writeInt(signedPreKeySignatureBytes.size)
+    dataStream.write(signedPreKeySignatureBytes)
+    dataStream.writeInt(preKeyBundle.signedPreKeySignature.size)
+    dataStream.write(preKeyBundle.signedPreKeySignature)
+    val identityKeyBytes = preKeyBundle.identityKey.serialize()
+    dataStream.writeInt(identityKeyBytes.size)
+    dataStream.write(identityKeyBytes)
+    return byteStream.toByteArray()
 }

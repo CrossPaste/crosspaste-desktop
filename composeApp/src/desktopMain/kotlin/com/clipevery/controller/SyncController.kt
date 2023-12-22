@@ -13,12 +13,12 @@ import com.clipevery.model.sync.ResponseSyncInfo
 import com.clipevery.model.sync.SyncState
 import com.clipevery.net.SyncInfoWithPreKeyBundle
 import com.clipevery.net.SyncValidator
+import com.clipevery.signal.ClipIdentityKeyStore
 import com.clipevery.utils.telnet
 import kotlinx.coroutines.runBlocking
 import org.signal.libsignal.protocol.InvalidKeyException
 import org.signal.libsignal.protocol.SessionBuilder
 import org.signal.libsignal.protocol.SignalProtocolAddress
-import org.signal.libsignal.protocol.state.IdentityKeyStore
 import org.signal.libsignal.protocol.state.PreKeyBundle
 import org.signal.libsignal.protocol.state.PreKeyStore
 import org.signal.libsignal.protocol.state.SessionStore
@@ -30,7 +30,7 @@ class SyncController(private val appInfo: AppInfo,
                      private val sessionStore: SessionStore,
                      private val preKeyStore: PreKeyStore,
                      private val signedPreKeyStore: SignedPreKeyStore,
-                     private val identityKeyStore: IdentityKeyStore,
+                     private val identityKeyStore: ClipIdentityKeyStore,
                      private val endpointInfoFactory: EndpointInfoFactory): SyncValidator {
 
     fun receiveEndpointSyncInfo(requestSyncInfo: RequestSyncInfo): ResponseSyncInfo {
