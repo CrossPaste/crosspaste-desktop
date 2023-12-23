@@ -4,6 +4,7 @@ import com.clipevery.controller.SyncController
 import com.clipevery.model.sync.RequestSyncInfo
 import com.clipevery.model.sync.ResponseSyncInfo
 import com.papsign.ktor.openapigen.OpenAPIGen
+import com.papsign.ktor.openapigen.annotations.parameters.PathParam
 import com.papsign.ktor.openapigen.route.apiRouting
 import com.papsign.ktor.openapigen.route.path.normal.post
 import com.papsign.ktor.openapigen.route.response.respond
@@ -38,7 +39,7 @@ class DesktopClipServer(private val syncController: SyncController): ClipServer 
         }
         apiRouting {
             route("/sync") {
-                post<String, ResponseSyncInfo, RequestSyncInfo> { _, requestSyncInfo ->
+                post<Path, ResponseSyncInfo, RequestSyncInfo> { _, requestSyncInfo ->
                     respond(syncController.receiveEndpointSyncInfo(requestSyncInfo))
                 }
             }
@@ -64,3 +65,6 @@ class DesktopClipServer(private val syncController: SyncController): ClipServer 
         return port
     }
 }
+
+data class Path(@PathParam(description = "Path")
+                val pathString: String)
