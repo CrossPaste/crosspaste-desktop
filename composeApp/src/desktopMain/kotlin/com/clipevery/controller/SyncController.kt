@@ -7,10 +7,10 @@ import com.clipevery.endpoint.EndpointInfoFactory
 import com.clipevery.endpoint.ExplicitEndpointInfo
 import com.clipevery.exception.ClipException
 import com.clipevery.exception.StandardErrorCode
-import com.clipevery.model.sync.SyncInfo
-import com.clipevery.model.sync.RequestSyncInfo
-import com.clipevery.model.sync.ResponseSyncInfo
-import com.clipevery.model.sync.SyncState
+import com.clipevery.dto.model.SyncInfo
+import com.clipevery.dto.model.RequestSyncInfo
+import com.clipevery.dto.model.ResponseSyncInfo
+import com.clipevery.dto.model.SyncState
 import com.clipevery.net.SyncInfoWithPreKeyBundle
 import com.clipevery.net.SyncValidator
 import com.clipevery.signal.ClipIdentityKeyStore

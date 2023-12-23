@@ -40,8 +40,8 @@ import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.i18n.Copywriter
 import com.clipevery.i18n.GlobalCopywriter
-import com.clipevery.model.sync.SyncInfo
-import com.clipevery.model.sync.SyncState
+import com.clipevery.dto.model.SyncInfo
+import com.clipevery.dto.model.SyncState
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

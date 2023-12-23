@@ -1,4 +1,4 @@
-package com.clipevery.model.sync
+package com.clipevery.dto.model
 
 enum class SyncState {
     ONLINE,

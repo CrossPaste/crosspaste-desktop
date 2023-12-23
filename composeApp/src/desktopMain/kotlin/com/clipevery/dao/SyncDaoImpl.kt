@@ -3,8 +3,8 @@ package com.clipevery.dao
 import com.clipevery.Database
 import com.clipevery.app.AppInfo
 import com.clipevery.endpoint.ExplicitEndpointInfo
-import com.clipevery.model.sync.SyncInfo
-import com.clipevery.model.sync.SyncState
+import com.clipevery.dto.model.SyncInfo
+import com.clipevery.dto.model.SyncState
 import com.clipevery.net.HostInfo
 import com.clipevery.platform.Platform
 
