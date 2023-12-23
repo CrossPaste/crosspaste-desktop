@@ -1,8 +1,8 @@
 package com.clipevery.net
 
 import com.clipevery.controller.SyncController
-import com.clipevery.model.sync.RequestSyncInfo
-import com.clipevery.model.sync.ResponseSyncInfo
+import com.clipevery.dto.model.RequestSyncInfo
+import com.clipevery.dto.model.ResponseSyncInfo
 import com.papsign.ktor.openapigen.OpenAPIGen
 import com.papsign.ktor.openapigen.annotations.parameters.PathParam
 import com.papsign.ktor.openapigen.route.apiRouting

@@ -4,7 +4,7 @@ import com.clipevery.app.AppInfo
 import com.clipevery.app.logger
 import com.clipevery.endpoint.EndpointInfo
 import com.clipevery.endpoint.EndpointInfoFactory
-import com.clipevery.model.sync.ResponseSyncInfo
+import com.clipevery.dto.model.ResponseSyncInfo
 import com.clipevery.signal.ClipIdentityKeyStore
 import com.clipevery.utils.base64Encode
 import com.clipevery.utils.encodePreKeyBundle

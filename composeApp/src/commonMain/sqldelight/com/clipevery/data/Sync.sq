@@ -18,7 +18,7 @@ CREATE TABLE syncInfo (
 CREATE INDEX sync_state_index ON syncInfo (sync_state);
 
 insert:
-INSERT INTO syncInfo(app_instance_id, app_version, app_user_name,
+INSERT OR REPLACE INTO syncInfo(app_instance_id, app_version, app_user_name,
 device_id, device_name, sync_state, host_name, host_address, port, platform_name,
 platform_arch, platform_bit_mode, platform_version)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);

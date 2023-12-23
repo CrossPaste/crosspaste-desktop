@@ -1,8 +1,8 @@
 package com.clipevery.net
 
 import com.clipevery.exception.ClipException
-import com.clipevery.model.sync.SyncInfo
-import com.clipevery.model.sync.RequestSyncInfo
+import com.clipevery.dto.model.SyncInfo
+import com.clipevery.dto.model.RequestSyncInfo
 import org.signal.libsignal.protocol.state.PreKeyBundle
 
 interface SyncValidator {
