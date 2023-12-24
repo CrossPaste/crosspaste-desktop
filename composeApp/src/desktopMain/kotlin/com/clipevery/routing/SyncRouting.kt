@@ -1,4 +1,4 @@
-package com.clipevery.controller
+package com.clipevery.routing
 
 import com.clipevery.Dependencies
 import com.clipevery.dao.SyncInfoDao
@@ -6,10 +6,9 @@ import com.clipevery.dto.sync.RequestSyncInfo
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.signal.ClipIdentityKeyStore
 import com.clipevery.utils.decodePreKeyBundle
-import io.ktor.http.HttpStatusCode
+import com.clipevery.utils.successResponse
 import io.ktor.server.application.call
 import io.ktor.server.request.receive
-import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import org.signal.libsignal.protocol.SessionBuilder
@@ -29,8 +28,7 @@ fun Routing.syncRouting() {
     val signedPreKeyStore = koinApplication.koin.get<SignedPreKeyStore>()
     val identityKeyStore = koinApplication.koin.get<ClipIdentityKeyStore>()
 
-
-    get("/sync") {
+    get("/receive") {
         val requestSyncInfos = call.receive<List<RequestSyncInfo>>()
         syncInfoDao.database.transaction {
             for (requestSyncInfo in requestSyncInfos) {
@@ -42,6 +40,6 @@ fun Routing.syncRouting() {
 
             }
         }
-        call.respond(status = HttpStatusCode.OK, message = "success")
+        successResponse(call)
     }
 }

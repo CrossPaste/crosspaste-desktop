@@ -1,6 +1,6 @@
 package com.clipevery.net
 
-import com.clipevery.controller.syncRouting
+import com.clipevery.routing.syncRouting
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.serialization.jackson.jackson
 import io.ktor.server.application.install
