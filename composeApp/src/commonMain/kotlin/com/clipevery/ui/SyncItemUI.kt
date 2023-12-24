@@ -40,16 +40,16 @@ import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.i18n.Copywriter
 import com.clipevery.i18n.GlobalCopywriter
-import com.clipevery.dto.model.SyncInfo
-import com.clipevery.dto.model.SyncState
+import com.clipevery.dto.sync.SyncInfoUI
+import com.clipevery.dto.sync.SyncState
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SyncItem(syncInfo: SyncInfo) {
+fun SyncItem(syncInfoUI: SyncInfoUI) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
 
-    val backgroundColor = when (syncInfo.state) {
+    val backgroundColor = when (syncInfoUI.syncState) {
         SyncState.ONLINE -> {
             val color = Color(154, 222, 123)
             val lightColor = Color(203, 255, 169)
@@ -69,16 +69,19 @@ fun SyncItem(syncInfo: SyncInfo) {
         SyncState.OFFLINE -> {
             Color(238, 245, 255)
         }
-        else -> {
+        SyncState.UNVERIFIED -> {
             Color(250, 112, 112)
+        }
+        else -> {
+            Color.White
         }
     }
 
-    val showHostAddress = syncInfo.state != SyncState.UNVERIFIED
+    val showHostAddress = syncInfoUI.connectHostInfo != null
 
-    val showWarning = syncInfo.state != SyncState.ONLINE
+    val showWarning = syncInfoUI.syncState != SyncState.ONLINE
 
-    val platform = syncInfo.endpointInfo.platform
+    val platform = syncInfoUI.endpointInfo.platform
 
     val imageVector = if (platform.isMacos()) {
         macos()
@@ -123,7 +126,7 @@ fun SyncItem(syncInfo: SyncInfo) {
             }
 
             Text(modifier = Modifier.width(150.dp),
-                text = syncInfo.endpointInfo.deviceId,
+                text = syncInfoUI.endpointInfo.deviceId,
                 fontSize = 15.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -142,14 +145,14 @@ fun SyncItem(syncInfo: SyncInfo) {
 
         if (showHostAddress) {
             Text(
-                text = syncInfo.endpointInfo.hostInfo.hostAddress,
+                text = syncInfoUI.connectHostInfo!!.hostAddress,
                 style = TextStyle(fontWeight = FontWeight.Light),
                 fontFamily = FontFamily.SansSerif,
                 fontSize = 17.sp
             )
         }
 
-        val detailInfo by remember { mutableStateOf(deviceDetailInfo(copywriter, syncInfo)) }
+        val detailInfo by remember { mutableStateOf(deviceDetailInfo(copywriter, syncInfoUI)) }
 
         TooltipArea(
             tooltip = {
@@ -175,14 +178,12 @@ fun SyncItem(syncInfo: SyncInfo) {
     }
 }
 
-fun deviceDetailInfo(copywriter: Copywriter, syncInfo: SyncInfo): String {
+fun deviceDetailInfo(copywriter: Copywriter, syncInfoUI: SyncInfoUI): String {
     return """
-        |${copywriter.getText("Device_ID")}: ${syncInfo.endpointInfo.deviceId}
-        |${copywriter.getText("App_Version")}: ${syncInfo.appInfo.appVersion}
-        |${copywriter.getText("User_Name")}: ${syncInfo.appInfo.userName}
-        |${copywriter.getText("Host_Name")}: ${syncInfo.endpointInfo.hostInfo.hostName}
-        |${copywriter.getText("Host_Address")}: ${syncInfo.endpointInfo.hostInfo.hostAddress}
-        |${copywriter.getText("Platform")}: ${syncInfo.endpointInfo.platform.name} ${syncInfo.endpointInfo.platform.version}
-        |${copywriter.getText("State")}: ${syncInfo.state}
+        |${copywriter.getText("Device_ID")}: ${syncInfoUI.endpointInfo.deviceId}
+        |${copywriter.getText("App_Version")}: ${syncInfoUI.appInfo.appVersion}
+        |${copywriter.getText("User_Name")}: ${syncInfoUI.appInfo.userName}
+        |${copywriter.getText("Platform")}: ${syncInfoUI.endpointInfo.platform.name} ${syncInfoUI.endpointInfo.platform.version}
+        |${copywriter.getText("State")}: ${syncInfoUI.syncState}
     """.trimMargin()
 }

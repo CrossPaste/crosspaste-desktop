@@ -1,7 +1,7 @@
 package com.clipevery.signal
 
 import com.clipevery.Database
-import com.clipevery.data.PreKey
+import com.clipevery.sql.PreKey
 import org.signal.libsignal.protocol.InvalidKeyIdException
 import org.signal.libsignal.protocol.state.PreKeyRecord
 import org.signal.libsignal.protocol.state.PreKeyStore

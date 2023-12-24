@@ -4,7 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @Suppress("LeakingThis")
-abstract class ConfigManager(private val ioScope: CoroutineScope) {
+abstract class ConfigManager {
 
     var config: AppConfig
 
@@ -18,10 +18,12 @@ abstract class ConfigManager(private val ioScope: CoroutineScope) {
 
     protected abstract fun loadConfig(): AppConfig?
 
+    protected abstract fun ioScope(): CoroutineScope
+
     @Synchronized
     fun updateConfig(updateAction: (AppConfig) -> AppConfig) {
         config = updateAction(config)
-        ioScope.launch {
+        ioScope().launch {
             saveConfig(config)
         }
     }

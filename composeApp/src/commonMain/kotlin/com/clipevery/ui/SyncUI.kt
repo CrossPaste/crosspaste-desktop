@@ -8,16 +8,17 @@ import androidx.compose.material.Divider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.clipevery.LocalKoinApplication
-import com.clipevery.dao.SyncDao
+import com.clipevery.dao.SyncInfoDao
+import com.clipevery.dto.sync.toSyncInfoUI
 
 @Composable
 fun Syncs() {
     val current = LocalKoinApplication.current
-    val syncDao = current.koin.get<SyncDao>()
-    val syncInfos = syncDao.getAllSyncInfos()
+    val syncInfoDao = current.koin.get<SyncInfoDao>()
+    val syncInfos = syncInfoDao.getAllSyncInfos()
 
     for ((index, syncInfo) in syncInfos.withIndex()) {
-        SyncItem(syncInfo)
+        SyncItem(syncInfo.toSyncInfoUI())
         if (index != syncInfos.size - 1) {
             Divider(modifier = Modifier.fillMaxWidth())
         }
