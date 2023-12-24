@@ -2,12 +2,14 @@ package com.clipevery.dto.sync
 
 import com.clipevery.app.AppInfo
 import com.clipevery.endpoint.EndpointInfo
+import com.clipevery.serializer.PreKeyBundleSerializer
 import kotlinx.serialization.Serializable
+import org.signal.libsignal.protocol.state.PreKeyBundle
 
 @Serializable
 data class RequestSyncInfo(val appInfo: AppInfo,
                            val endpointInfo: EndpointInfo,
-                           val preKeyBundle: ByteArray) {
+                           @Serializable(with = PreKeyBundleSerializer::class) val preKeyBundle: PreKeyBundle) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -16,7 +18,7 @@ data class RequestSyncInfo(val appInfo: AppInfo,
 
         if (appInfo != other.appInfo) return false
         if (endpointInfo != other.endpointInfo) return false
-        if (!preKeyBundle.contentEquals(other.preKeyBundle)) return false
+        if (preKeyBundle != other.preKeyBundle) return false
 
         return true
     }
@@ -24,7 +26,7 @@ data class RequestSyncInfo(val appInfo: AppInfo,
     override fun hashCode(): Int {
         var result = appInfo.hashCode()
         result = 31 * result + endpointInfo.hashCode()
-        result = 31 * result + preKeyBundle.contentHashCode()
+        result = 31 * result + preKeyBundle.hashCode()
         return result
     }
 }
