@@ -2,13 +2,13 @@ package com.clipevery.dao
 
 import com.clipevery.Database
 import com.clipevery.app.AppInfo
-import com.clipevery.endpoint.ExplicitEndpointInfo
-import com.clipevery.dto.model.SyncInfo
-import com.clipevery.dto.model.SyncState
-import com.clipevery.net.HostInfo
+import com.clipevery.dto.sync.SyncInfo
+import com.clipevery.endpoint.EndpointInfo
 import com.clipevery.platform.Platform
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
-class SyncDaoImpl(override val database: Database): SyncDao {
+class SyncInfoDaoImpl(override val database: Database): SyncInfoDao {
 
     override fun saveSyncInfo(syncInfo: SyncInfo) {
         val appInstanceId = syncInfo.appInfo.appInstanceId
@@ -16,9 +16,7 @@ class SyncDaoImpl(override val database: Database): SyncDao {
         val userName = syncInfo.appInfo.userName
         val deviceId = syncInfo.endpointInfo.deviceId
         val deviceName = syncInfo.endpointInfo.deviceName
-        val syncState = syncInfo.state
-        val hostName = syncInfo.endpointInfo.hostInfo.hostName
-        val hostAddress = syncInfo.endpointInfo.hostInfo.hostAddress
+        val hostDetails = Json.encodeToString(syncInfo.endpointInfo.hostInfoList)
         val port = syncInfo.endpointInfo.port
         val platformName = syncInfo.endpointInfo.platform.name
         val platformArch = syncInfo.endpointInfo.platform.arch
@@ -31,9 +29,7 @@ class SyncDaoImpl(override val database: Database): SyncDao {
             userName,
             deviceId,
             deviceName,
-            syncState.name,
-            hostName,
-            hostAddress,
+            hostDetails,
             port.toLong(),
             platformName,
             platformArch,
@@ -50,7 +46,7 @@ class SyncDaoImpl(override val database: Database): SyncDao {
                     appVersion = it.app_version,
                     userName = it.app_user_name
                 ),
-                endpointInfo = ExplicitEndpointInfo(
+                endpointInfo = EndpointInfo(
                     deviceId = it.device_id,
                     deviceName = it.device_name,
                     platform = Platform(
@@ -59,13 +55,9 @@ class SyncDaoImpl(override val database: Database): SyncDao {
                         bitMode = it.platform_bit_mode.toInt(),
                         version = it.platform_version
                     ),
-                    hostInfo = HostInfo(
-                        hostName = it.host_name,
-                        hostAddress = it.host_address
-                    ),
+                    hostInfoList = Json.decodeFromString(it.host_details),
                     port = it.port.toInt()
-                ),
-                state = SyncState.valueOf(it.sync_state)
+                )
             )
         }
     }

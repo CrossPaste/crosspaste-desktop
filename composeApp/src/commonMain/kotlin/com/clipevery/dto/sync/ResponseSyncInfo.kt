@@ -1,4 +1,4 @@
-package com.clipevery.dto.model
+package com.clipevery.dto.sync
 
 import com.clipevery.app.AppInfo
 import com.clipevery.endpoint.EndpointInfo

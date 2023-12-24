@@ -1,14 +1,6 @@
 package com.clipevery.net
 
-import com.clipevery.controller.SyncController
-import com.clipevery.dto.model.RequestSyncInfo
-import com.clipevery.dto.model.ResponseSyncInfo
-import com.papsign.ktor.openapigen.OpenAPIGen
-import com.papsign.ktor.openapigen.annotations.parameters.PathParam
-import com.papsign.ktor.openapigen.route.apiRouting
-import com.papsign.ktor.openapigen.route.path.normal.post
-import com.papsign.ktor.openapigen.route.response.respond
-import com.papsign.ktor.openapigen.route.route
+import com.clipevery.controller.syncRouting
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.serialization.jackson.jackson
 import io.ktor.server.application.install
@@ -16,33 +8,21 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.netty.NettyApplicationEngine
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.routing.routing
 import kotlinx.coroutines.runBlocking
 
-class DesktopClipServer(private val syncController: SyncController): ClipServer {
+class DesktopClipServer: ClipServer {
 
     private val logger = KotlinLogging.logger {}
 
     private var port = 0
 
     private var server: NettyApplicationEngine = embeddedServer(Netty, port = 0) {
-        install(OpenAPIGen) {
-            // this servers OpenAPI definition on /openapi.json
-            serveOpenApiJson = true
-            // this servers Swagger UI on /swagger-ui/index.html
-            serveSwaggerUi = true
-            info {
-                title = "Clipevery API"
-            }
-        }
         install(ContentNegotiation) {
             jackson()
         }
-        apiRouting {
-            route("/sync") {
-                post<Path, ResponseSyncInfo, RequestSyncInfo> { _, requestSyncInfo ->
-                    respond(syncController.receiveEndpointSyncInfo(requestSyncInfo))
-                }
-            }
+        routing {
+            syncRouting()
         }
     }
 
@@ -65,6 +45,3 @@ class DesktopClipServer(private val syncController: SyncController): ClipServer 
         return port
     }
 }
-
-data class Path(@PathParam(description = "Path")
-                val pathString: String)

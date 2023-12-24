@@ -1,9 +1,9 @@
 package com.clipevery.dao
 
 import com.clipevery.Database
-import com.clipevery.dto.model.SyncInfo
+import com.clipevery.dto.sync.SyncInfo
 
-interface SyncDao {
+interface SyncInfoDao {
 
     val database: Database
 

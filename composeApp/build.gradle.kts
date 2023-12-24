@@ -47,7 +47,6 @@ kotlin {
             implementation("com.github.kwhat:jnativehook:2.2.2")
             implementation("app.cash.sqldelight:sqlite-driver:2.0.1")
             implementation("com.github.Dansoftowner:jSystemThemeDetector:3.8")
-            implementation("dev.forst:ktor-openapi-generator:0.6.1")
             implementation("org.jmdns:jmdns:3.5.9")
         }
         commonMain.dependencies {

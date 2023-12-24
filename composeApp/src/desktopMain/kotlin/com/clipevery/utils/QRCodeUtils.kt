@@ -4,7 +4,6 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.clipevery.endpoint.EndpointInfo
 import com.clipevery.endpoint.EndpointInfoFactory
-import com.clipevery.net.SyncValidator
 import com.clipevery.platform.Platform
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
@@ -13,13 +12,16 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 
-class DesktopQRCodeGenerator(private val syncValidator: SyncValidator,
-                             private val endpointInfoFactory: EndpointInfoFactory): QRCodeGenerator {
+class DesktopQRCodeGenerator(private val endpointInfoFactory: EndpointInfoFactory): QRCodeGenerator {
 
     private fun endpointInfo(): String {
-        val token = syncValidator.createToken()
+        val token = createToken()
         val endpointInfo = endpointInfoFactory.createEndpointInfo()
         return encodeEndpointInfo(endpointInfo, token)
+    }
+
+    private fun createToken(): Int {
+        return (0..999999).random()
     }
 
     override fun generateQRCode(width: Int, height: Int): ImageBitmap {
@@ -32,10 +34,6 @@ class DesktopQRCodeGenerator(private val syncValidator: SyncValidator,
             }
         }
         return image.toComposeImageBitmap()
-    }
-
-    fun getRefreshTime(): Long {
-        return syncValidator.getRefreshTime()
     }
 
     private fun encodeEndpointInfo(endpointInfo: EndpointInfo, token: Int): String {
