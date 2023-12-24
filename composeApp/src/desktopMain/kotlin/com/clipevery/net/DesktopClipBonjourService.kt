@@ -2,19 +2,15 @@ package com.clipevery.net
 
 import com.clipevery.app.AppInfo
 import com.clipevery.app.logger
+import com.clipevery.dto.sync.RequestSyncInfo
 import com.clipevery.endpoint.EndpointInfo
 import com.clipevery.endpoint.EndpointInfoFactory
-import com.clipevery.dto.sync.ResponseSyncInfo
 import com.clipevery.signal.ClipIdentityKeyStore
-import com.clipevery.utils.base64Encode
-import com.clipevery.utils.encodePreKeyBundle
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.signal.libsignal.protocol.state.PreKeyBundle
 import org.signal.libsignal.protocol.state.PreKeyStore
 import org.signal.libsignal.protocol.state.SignedPreKeyStore
-import java.io.ByteArrayOutputStream
-import java.io.DataOutputStream
 import java.net.InetAddress
 import javax.jmdns.JmDNS
 import javax.jmdns.ServiceInfo
@@ -30,7 +26,8 @@ class DesktopClipBonjourService(private val appInfo: AppInfo,
 
     override fun registerService(): ClipBonjourService {
         val endpointInfo = endpointInfoFactory.createEndpointInfo()
-        val serviceInfoBytes = buildServiceInfo(endpointInfo)
+        val requestSyncInfoJson = buildRequestSyncInfoJson(endpointInfo)
+        logger.debug { "Registering service: $requestSyncInfoJson" }
 
         for (hostInfo in endpointInfo.hostInfoList) {
             val jmDNS: JmDNS = JmDNS.create(InetAddress.getByName(hostInfo.hostAddress))
@@ -41,7 +38,7 @@ class DesktopClipBonjourService(private val appInfo: AppInfo,
                 endpointInfo.port,
                 0,
                 0,
-                serviceInfoBytes
+                requestSyncInfoJson.toByteArray()
             )
             jmDNS.registerService(serviceInfo)
         }
@@ -60,12 +57,7 @@ class DesktopClipBonjourService(private val appInfo: AppInfo,
         return this
     }
 
-    private fun buildServiceInfo(endpointInfo: EndpointInfo): ByteArray {
-        val responseSyncInfo = ResponseSyncInfo(appInfo, endpointInfo)
-        val responseSyncInfoJson = Json.encodeToString(responseSyncInfo)
-        val responseSyncInfoJsonBytes = responseSyncInfoJson.encodeToByteArray()
-        logger.debug { "Registering service: $responseSyncInfoJson" }
-
+    private fun buildRequestSyncInfoJson(endpointInfo: EndpointInfo): String {
         val registrationId = identityKeyStore.localRegistrationId
         val deviceId = 1
         val preKeyId = identityKeyStore.getPreKeyId()
@@ -84,14 +76,8 @@ class DesktopClipBonjourService(private val appInfo: AppInfo,
             identityKeyStore.identityKeyPair.publicKey
         )
 
-        val encodePreKeyBundle = encodePreKeyBundle(preKeyBundle)
+        val requestSyncInfo = RequestSyncInfo(appInfo, endpointInfo, preKeyBundle)
 
-        val byteStream = ByteArrayOutputStream()
-        val dataStream = DataOutputStream(byteStream)
-        dataStream.writeInt(responseSyncInfoJsonBytes.size)
-        dataStream.write(responseSyncInfoJsonBytes)
-        dataStream.writeInt(encodePreKeyBundle.size)
-        dataStream.write(encodePreKeyBundle)
-        return base64Encode(byteStream.toByteArray()).toByteArray()
+        return Json.encodeToString(requestSyncInfo)
     }
 }
