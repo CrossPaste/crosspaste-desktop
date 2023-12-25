@@ -27,7 +27,7 @@ fun Routing.syncRouting() {
     val signedPreKeyStore = koinApplication.koin.get<SignedPreKeyStore>()
     val identityKeyStore = koinApplication.koin.get<ClipIdentityKeyStore>()
 
-    get("/receive") {
+    get("/sync/receive") {
         val requestSyncInfos = call.receive<List<RequestSyncInfo>>()
         syncInfoDao.database.transaction {
             for (requestSyncInfo in requestSyncInfos) {
@@ -38,6 +38,10 @@ fun Routing.syncRouting() {
                 sessionBuilder.process(preKeyBundle)
             }
         }
+        successResponse(call)
+    }
+
+    get("/sync/telnet") {
         successResponse(call)
     }
 }
