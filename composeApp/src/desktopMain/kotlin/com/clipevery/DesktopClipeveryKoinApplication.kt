@@ -28,6 +28,7 @@ import com.clipevery.presist.FilePersist
 import com.clipevery.signal.ClipIdentityKeyStore
 import com.clipevery.signal.DesktopPreKeyStore
 import com.clipevery.signal.DesktopSessionStore
+import com.clipevery.signal.DesktopSignalProtocolStore
 import com.clipevery.signal.DesktopSignedPreKeyStore
 import com.clipevery.signal.getClipIdentityKeyStoreFactory
 import com.clipevery.ui.DesktopThemeDetector
@@ -39,6 +40,7 @@ import org.koin.core.context.GlobalContext
 import org.koin.dsl.module
 import org.signal.libsignal.protocol.state.PreKeyStore
 import org.signal.libsignal.protocol.state.SessionStore
+import org.signal.libsignal.protocol.state.SignalProtocolStore
 import org.signal.libsignal.protocol.state.SignedPreKeyStore
 
 object Dependencies {
@@ -66,6 +68,7 @@ object Dependencies {
             single<SessionStore> { DesktopSessionStore(get()) }
             single<PreKeyStore> { DesktopPreKeyStore(get())  }
             single<SignedPreKeyStore> { DesktopSignedPreKeyStore(get()) }
+            single<SignalProtocolStore> { DesktopSignalProtocolStore(get(), get(), get(), get()) }
             single<Database> { createDatabase(DriverFactory()) }
             single<SyncInfoDao> { SyncInfoDaoImpl(get()) }
         }

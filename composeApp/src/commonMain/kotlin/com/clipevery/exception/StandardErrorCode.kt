@@ -5,7 +5,9 @@ enum class StandardErrorCode(code: Int, errorType: ErrorType): ErrorCodeSupplier
     BOOTSTRAP_ERROR(1, ErrorType.INTERNAL_ERROR),
 
     SYNC_TIMEOUT(1000, ErrorType.USER_ERROR),
-    SYNC_INVALID(1001, ErrorType.USER_ERROR);
+    SYNC_INVALID(1001, ErrorType.USER_ERROR),
+    NOT_FOUND_APP_INSTANCE_ID(1002, ErrorType.INTERNAL_ERROR)
+    ;
 
     private val errorCode: ErrorCode
 
