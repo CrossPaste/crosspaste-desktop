@@ -1,15 +1,12 @@
 package com.clipevery.config
 
-import com.clipevery.app.AppFileType
-import com.clipevery.presist.FilePersist
+import com.clipevery.presist.OneFilePersist
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 
-class DefaultConfigManager(filePersist: FilePersist) : ConfigManager() {
+class DefaultConfigManager(private val configFilePersist: OneFilePersist) : ConfigManager() {
 
     private val scope = CoroutineScope(Dispatchers.IO)
-
-    private val configFilePersist = filePersist.getPersist("appConfig.json", AppFileType.USER)
 
     override fun loadConfig(): AppConfig? {
         return configFilePersist.read(AppConfig::class)

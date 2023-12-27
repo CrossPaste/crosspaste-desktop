@@ -1,5 +1,6 @@
 package com.clipevery
 
+import com.clipevery.app.AppFileType
 import com.clipevery.app.AppInfo
 import com.clipevery.app.DesktopAppInfoFactory
 import com.clipevery.clip.ClipboardService
@@ -51,7 +52,7 @@ object Dependencies {
         val appModule = module {
             single<AppInfo> { DesktopAppInfoFactory(get()).createAppInfo() }
             single<FilePersist> { DesktopFilePersist() }
-            single<ConfigManager> { DefaultConfigManager(get()) }
+            single<ConfigManager> { DefaultConfigManager(get<FilePersist>().getPersist("appConfig.json", AppFileType.USER)) }
             single<ClipServer> { DesktopClipServer().start() }
             single<Lazy<ClipServer>> { lazy { get<ClipServer>() } }
             single<ClipClient> { DesktopClipClient() }
