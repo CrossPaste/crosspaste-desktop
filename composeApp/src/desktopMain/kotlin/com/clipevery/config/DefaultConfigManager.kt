@@ -4,13 +4,9 @@ import com.clipevery.presist.OneFilePersist
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 
-class DefaultConfigManager(private val configFilePersist: OneFilePersist) : ConfigManager() {
+class DefaultConfigManager(private val configFilePersist: OneFilePersist) : ConfigManager(configFilePersist) {
 
     private val scope = CoroutineScope(Dispatchers.IO)
-
-    override fun loadConfig(): AppConfig? {
-        return configFilePersist.read(AppConfig::class)
-    }
 
     override fun ioScope(): CoroutineScope {
         return scope
