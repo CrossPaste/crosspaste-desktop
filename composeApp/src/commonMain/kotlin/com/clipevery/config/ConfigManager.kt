@@ -1,10 +1,10 @@
 package com.clipevery.config
 
+import com.clipevery.presist.OneFilePersist
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-@Suppress("LeakingThis")
-abstract class ConfigManager {
+abstract class ConfigManager(private val configFilePersist: OneFilePersist) {
 
     var config: AppConfig
 
@@ -16,7 +16,9 @@ abstract class ConfigManager {
         }
     }
 
-    protected abstract fun loadConfig(): AppConfig?
+    private fun loadConfig(): AppConfig? {
+        return configFilePersist.read(AppConfig::class)
+    }
 
     protected abstract fun ioScope(): CoroutineScope
 
