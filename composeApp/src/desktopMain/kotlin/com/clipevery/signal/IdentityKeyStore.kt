@@ -55,10 +55,10 @@ class DesktopIdentityKeyStore(private val database: Database,
 
     override fun saveIdentity(address: SignalProtocolAddress, identityKey: IdentityKey): Boolean {
         database.identityKeyQueries.selectIndentity(appInstanceId).executeAsOneOrNull()?.let {
-            database.identityKeyQueries.update(identityKey.serialize(), appInstanceId)
+            database.identityKeyQueries.update(identityKey.serialize(), address.name)
             return true
         } ?: let {
-            database.identityKeyQueries.insert(appInstanceId, identityKey.serialize())
+            database.identityKeyQueries.insert(address.name, identityKey.serialize())
             return false
         }
     }
@@ -69,7 +69,7 @@ class DesktopIdentityKeyStore(private val database: Database,
         direction: IdentityKeyStore.Direction
     ): Boolean {
         val identity: IdentityKey? = getIdentity(address)
-        return identity?.let { it == identityKey } ?: true
+        return identity?.let { it == identityKey } ?: false
     }
 
     override fun getIdentity(address: SignalProtocolAddress): IdentityKey? {
