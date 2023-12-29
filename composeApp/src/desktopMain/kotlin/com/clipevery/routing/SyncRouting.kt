@@ -5,7 +5,6 @@ import com.clipevery.dao.SignalStoreDao
 import com.clipevery.dao.SyncInfoDao
 import com.clipevery.dto.sync.RequestSyncInfo
 import com.clipevery.dto.sync.SyncInfo
-import com.clipevery.utils.decodeReceive
 import com.clipevery.utils.getAppInstanceId
 import com.clipevery.utils.successResponse
 import io.ktor.server.application.call
@@ -44,7 +43,6 @@ fun Routing.syncRouting() {
     }
 
     get("/sync/telnet") {
-        decodeReceive<String>(call, signalProtocolStore)
         successResponse(call)
     }
 
