@@ -17,40 +17,23 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.signal.libsignal.protocol.IdentityKey
 import org.signal.libsignal.protocol.IdentityKeyPair
 import org.signal.libsignal.protocol.SignalProtocolAddress
-import org.signal.libsignal.protocol.ecc.Curve
 import org.signal.libsignal.protocol.state.IdentityKeyStore
-import org.signal.libsignal.protocol.state.PreKeyRecord
-import org.signal.libsignal.protocol.state.PreKeyStore
-import org.signal.libsignal.protocol.state.SignedPreKeyRecord
-import org.signal.libsignal.protocol.state.SignedPreKeyStore
 import org.signal.libsignal.protocol.util.KeyHelper
-import org.signal.libsignal.protocol.util.Medium
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
-import java.util.Random
 
 class DesktopIdentityKeyStore(private val database: Database,
                               private val appInstanceId: String,
                               private val identityKeyPair: IdentityKeyPair,
-                              private val registrationId: Int,
-                              private val preKeyId: Int,
-                              private val signedPreKeyId: Int): ClipIdentityKeyStore {
+                              private val registrationId: Int): IdentityKeyStore {
     override fun getIdentityKeyPair(): IdentityKeyPair {
         return identityKeyPair
     }
 
     override fun getLocalRegistrationId(): Int {
         return registrationId
-    }
-
-    override fun getPreKeyId(): Int {
-        return preKeyId
-    }
-
-    override fun getSignedPreKeyId(): Int {
-        return signedPreKeyId
     }
 
     override fun saveIdentity(address: SignalProtocolAddress, identityKey: IdentityKey): Boolean {
@@ -84,25 +67,21 @@ class DesktopIdentityKeyStore(private val database: Database,
 val logger = KotlinLogging.logger {}
 
 fun getClipIdentityKeyStoreFactory(appInfo: AppInfo,
-                                   database: Database,
-                                   preKeyStore: PreKeyStore,
-                                   signedPreKeyStore: SignedPreKeyStore): ClipIdentityKeyStoreFactory {
+                                   database: Database): IdentityKeyStoreFactory {
     val currentPlatform = currentPlatform()
     return if (currentPlatform.isMacos()) {
-        MacosClipIdentityKeyStoreFactory(appInfo, database, preKeyStore, signedPreKeyStore)
+        MacosIdentityKeyStoreFactory(appInfo, database)
     } else if (currentPlatform.isWindows()) {
-        WindowsClipIdentityKeyStoreFactory(appInfo, database, preKeyStore, signedPreKeyStore)
+        WindowsIdentityKeyStoreFactory(appInfo, database)
     } else {
         throw IllegalStateException("Unknown platform: ${currentPlatform.name}")
     }
 }
 
-private data class IdentityKeyPairWithOtherKeyId(val identityKeyPair: IdentityKeyPair,
-                                                 val registrationId: Int,
-                                                 val preKeyId: Int,
-                                                 val signedPreKeyId: Int)
+private data class IdentityKeyPairWithRegistrationId(val identityKeyPair: IdentityKeyPair,
+                                                     val registrationId: Int)
 
-private fun readIdentityKeyPairWithOtherKeyId(data: ByteArray): IdentityKeyPairWithOtherKeyId {
+private fun readIdentityKeyPairWithRegistrationId(data: ByteArray): IdentityKeyPairWithRegistrationId {
     val byteArrayInputStream = ByteArrayInputStream(data)
     val inputStream = DataInputStream(byteArrayInputStream)
     val byteSize = inputStream.readInt()
@@ -110,33 +89,27 @@ private fun readIdentityKeyPairWithOtherKeyId(data: ByteArray): IdentityKeyPairW
     inputStream.read(byteArray)
     val identityKeyPair = IdentityKeyPair(byteArray)
     val registrationId = inputStream.readInt()
-    val preKeyId = inputStream.readInt()
-    val signedPreKeyId = inputStream.readInt()
-    return IdentityKeyPairWithOtherKeyId(identityKeyPair, registrationId, preKeyId, signedPreKeyId)
+    return IdentityKeyPairWithRegistrationId(identityKeyPair, registrationId)
 }
 
-private fun writeIdentityKeyPairWithOtherKeyId(identityKeyPair: IdentityKeyPair, registrationId: Int, preKeyId: Int, signedPreKeyId: Int): ByteArray {
+private fun writeIdentityKeyPairWithRegistrationId(identityKeyPair: IdentityKeyPair, registrationId: Int): ByteArray {
     val byteArrayOutputStream = ByteArrayOutputStream()
     val dataOutputStream = DataOutputStream(byteArrayOutputStream)
     val identityKeyPairBytes = identityKeyPair.serialize()
     dataOutputStream.writeInt(identityKeyPairBytes.size)
     dataOutputStream.write(identityKeyPairBytes)
     dataOutputStream.writeInt(registrationId)
-    dataOutputStream.writeInt(preKeyId)
-    dataOutputStream.writeInt(signedPreKeyId)
     return byteArrayOutputStream.toByteArray()
 }
 
-class MacosClipIdentityKeyStoreFactory(private val appInfo: AppInfo,
-                                       private val database: Database,
-                                       private val preKeyStore: PreKeyStore,
-                                       private val signedPreKeyStore: SignedPreKeyStore): ClipIdentityKeyStoreFactory {
+class MacosIdentityKeyStoreFactory(private val appInfo: AppInfo,
+                                   private val database: Database): IdentityKeyStoreFactory {
 
     private val filePersist = DesktopOneFilePersist(
         getPathProvider()
         .resolve("signal.data", AppFileType.ENCRYPT))
 
-    override fun createClipIdentityKeyStore(): ClipIdentityKeyStore {
+    override fun createIdentityKeyStore(): IdentityKeyStore {
         val file = filePersist.path.toFile()
         if (file.exists()) {
             logger.info { "Found ideIdentityKey encrypt file" }
@@ -148,8 +121,8 @@ class MacosClipIdentityKeyStoreFactory(private val appInfo: AppInfo,
                 try {
                     val secretKey = stringToSecretKey(it)
                     val decryptData = decryptData(secretKey, bytes)
-                    val (identityKeyPair, registrationId, preKeyId, signedPreKeyId) = readIdentityKeyPairWithOtherKeyId(decryptData)
-                    return DesktopIdentityKeyStore(database, appInfo.appInstanceId, identityKeyPair, registrationId, preKeyId, signedPreKeyId)
+                    val (identityKeyPair, registrationId) = readIdentityKeyPairWithRegistrationId(decryptData)
+                    return DesktopIdentityKeyStore(database, appInfo.appInstanceId, identityKeyPair, registrationId)
                 } catch (e: Exception) {
                     logger.error(e) { "Failed to decrypt signalProtocol" }
                 }
@@ -166,22 +139,7 @@ class MacosClipIdentityKeyStoreFactory(private val appInfo: AppInfo,
         logger.info { "Creating new ideIdentityKey" }
         val identityKeyPair = IdentityKeyPair.generate()
         val registrationId = KeyHelper.generateRegistrationId(false)
-        val preKeyPair = Curve.generateKeyPair()
-        val signedPreKeyPair = Curve.generateKeyPair()
-        val signedPreKeySignature = Curve.calculateSignature(
-            identityKeyPair.privateKey,
-            signedPreKeyPair.publicKey.serialize()
-        )
-        val random = Random()
-        val preKeyId = random.nextInt(Medium.MAX_VALUE)
-        val signedPreKeyId = random.nextInt(Medium.MAX_VALUE)
-        preKeyStore.storePreKey(preKeyId, PreKeyRecord(preKeyId, preKeyPair))
-        signedPreKeyStore.storeSignedPreKey(signedPreKeyId,
-            SignedPreKeyRecord(
-                signedPreKeyId, System.currentTimeMillis(), signedPreKeyPair, signedPreKeySignature
-            )
-        )
-        val data = writeIdentityKeyPairWithOtherKeyId(identityKeyPair, registrationId, preKeyId, signedPreKeyId)
+        val data = writeIdentityKeyPairWithRegistrationId(identityKeyPair, registrationId)
         val password = MacosKeychainHelper.getPassword(appInfo.appInstanceId, appInfo.userName)
 
         val secretKey = password?.let {
@@ -196,21 +154,19 @@ class MacosClipIdentityKeyStoreFactory(private val appInfo: AppInfo,
 
         val encryptData = encryptData(secretKey, data)
         filePersist.saveBytes(encryptData)
-        return DesktopIdentityKeyStore(database, appInfo.appInstanceId, identityKeyPair, registrationId, preKeyId, signedPreKeyId)
+        return DesktopIdentityKeyStore(database, appInfo.appInstanceId, identityKeyPair, registrationId)
     }
 }
 
 
-class WindowsClipIdentityKeyStoreFactory(private val appInfo: AppInfo,
-                                         private val database: Database,
-                                         private val preKeyStore: PreKeyStore,
-                                         private val signedPreKeyStore: SignedPreKeyStore) : ClipIdentityKeyStoreFactory {
+class WindowsIdentityKeyStoreFactory(private val appInfo: AppInfo,
+                                     private val database: Database) : IdentityKeyStoreFactory {
 
     private val filePersist = DesktopOneFilePersist(
         getPathProvider()
         .resolve("signal.data", AppFileType.ENCRYPT))
 
-    override fun createClipIdentityKeyStore(): ClipIdentityKeyStore {
+    override fun createIdentityKeyStore(): IdentityKeyStore {
         val file = filePersist.path.toFile()
         if (file.exists()) {
             logger.info { "Found ideIdentityKey encrypt file" }
@@ -218,8 +174,8 @@ class WindowsClipIdentityKeyStoreFactory(private val appInfo: AppInfo,
                 try {
                     val decryptData = WindowDapiHelper.decryptData(it)
                     decryptData?.let { byteArray ->
-                        val (identityKeyPair, registrationId, preKeyId, signedPreKeyId) = readIdentityKeyPairWithOtherKeyId(byteArray)
-                        return DesktopIdentityKeyStore(database, appInfo.appInstanceId, identityKeyPair, registrationId, preKeyId, signedPreKeyId)
+                        val (identityKeyPair, registrationId) = readIdentityKeyPairWithRegistrationId(byteArray)
+                        return DesktopIdentityKeyStore(database, appInfo.appInstanceId, identityKeyPair, registrationId)
                     }
                 } catch (e: Exception) {
                     logger.error(e) { "Failed to decrypt ideIdentityKey" }
@@ -235,24 +191,9 @@ class WindowsClipIdentityKeyStoreFactory(private val appInfo: AppInfo,
         logger.info { "Creating new ideIdentityKey" }
         val identityKeyPair = IdentityKeyPair.generate()
         val registrationId = KeyHelper.generateRegistrationId(false)
-        val preKeyPair = Curve.generateKeyPair()
-        val signedPreKeyPair = Curve.generateKeyPair()
-        val signedPreKeySignature = Curve.calculateSignature(
-            identityKeyPair.privateKey,
-            signedPreKeyPair.publicKey.serialize()
-        )
-        val random = Random()
-        val preKeyId = random.nextInt(Medium.MAX_VALUE)
-        val signedPreKeyId = random.nextInt(Medium.MAX_VALUE)
-        preKeyStore.storePreKey(preKeyId, PreKeyRecord(preKeyId, preKeyPair))
-        signedPreKeyStore.storeSignedPreKey(signedPreKeyId,
-            SignedPreKeyRecord(
-                signedPreKeyId, System.currentTimeMillis(), signedPreKeyPair, signedPreKeySignature
-            )
-        )
-        val data = writeIdentityKeyPairWithOtherKeyId(identityKeyPair, registrationId, preKeyId, signedPreKeyId)
+        val data = writeIdentityKeyPairWithRegistrationId(identityKeyPair, registrationId)
         val encryptData = WindowDapiHelper.encryptData(data)
         filePersist.saveBytes(encryptData!!)
-        return DesktopIdentityKeyStore(database, appInfo.appInstanceId, identityKeyPair, registrationId, preKeyId, signedPreKeyId)
+        return DesktopIdentityKeyStore(database, appInfo.appInstanceId, identityKeyPair, registrationId)
     }
 }

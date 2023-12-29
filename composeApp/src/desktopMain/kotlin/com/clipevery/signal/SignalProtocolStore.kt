@@ -21,7 +21,7 @@ import org.signal.libsignal.protocol.state.SignedPreKeyStore
 import org.signal.libsignal.protocol.state.impl.InMemoryKyberPreKeyStore
 import java.util.UUID
 
-class DesktopSignalProtocolStore(private val identityKeyStore: ClipIdentityKeyStore,
+class DesktopSignalProtocolStore(private val identityKeyStore: IdentityKeyStore,
                                  private val preKeyStore: PreKeyStore,
                                  private val sessionStore: SessionStore,
                                  private val signedPreKeyStore: SignedPreKeyStore,
