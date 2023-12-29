@@ -26,7 +26,6 @@ import com.clipevery.net.DesktopClipClient
 import com.clipevery.net.DesktopClipServer
 import com.clipevery.presist.DesktopFilePersist
 import com.clipevery.presist.FilePersist
-import com.clipevery.signal.ClipIdentityKeyStore
 import com.clipevery.signal.DesktopPreKeyStore
 import com.clipevery.signal.DesktopSessionStore
 import com.clipevery.signal.DesktopSignalProtocolStore
@@ -39,6 +38,7 @@ import com.clipevery.utils.QRCodeGenerator
 import org.koin.core.KoinApplication
 import org.koin.core.context.GlobalContext
 import org.koin.dsl.module
+import org.signal.libsignal.protocol.state.IdentityKeyStore
 import org.signal.libsignal.protocol.state.PreKeyStore
 import org.signal.libsignal.protocol.state.SessionStore
 import org.signal.libsignal.protocol.state.SignalProtocolStore
@@ -65,7 +65,7 @@ object Dependencies {
             single<GlobalListener> { GlobalListener() }
             single<DriverFactory> { DriverFactory() }
             single<ThemeDetector> { DesktopThemeDetector(get()) }
-            single<ClipIdentityKeyStore> { getClipIdentityKeyStoreFactory(get(), get(), get(), get()).createClipIdentityKeyStore() }
+            single<IdentityKeyStore> { getClipIdentityKeyStoreFactory(get(), get()).createIdentityKeyStore() }
             single<SessionStore> { DesktopSessionStore(get()) }
             single<PreKeyStore> { DesktopPreKeyStore(get())  }
             single<SignedPreKeyStore> { DesktopSignedPreKeyStore(get()) }
