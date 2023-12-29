@@ -38,7 +38,7 @@ kotlin {
             implementation(libs.ktor.server.core)
             implementation(libs.ktor.server.netty)
             implementation(libs.ktor.server.content.negotiation)
-            implementation(libs.ktor.serialization.jackson)
+            implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.cio)
             implementation("org.signal:libsignal-client:0.37.0")
