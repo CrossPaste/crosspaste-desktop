@@ -15,13 +15,18 @@ import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.SignalProtocolAddress
 import org.signal.libsignal.protocol.message.SignalMessage
 import org.signal.libsignal.protocol.state.SignalProtocolStore
+import java.io.ByteArrayInputStream
 
 
-suspend fun successResponse(call: ApplicationCall) {
+suspend inline fun successResponse(call: ApplicationCall) {
     call.respond(status = HttpStatusCode.OK, message = "")
 }
 
-suspend fun failResponse(call: ApplicationCall, message: FailResponse) {
+suspend inline fun <reified T : Any> successResponse(call: ApplicationCall, message: T) {
+    call.respond(status = HttpStatusCode.OK, message = message)
+}
+
+suspend inline fun failResponse(call: ApplicationCall, message: FailResponse) {
     call.respond(status = HttpStatusCode.InternalServerError, message = message)
 }
 
@@ -58,6 +63,21 @@ suspend inline fun <reified T : Any> encodeResponse(call: ApplicationCall,
     val encrypt = sessionCipher.encrypt(Json.encodeToString(message).encodeToByteArray())
 
     call.respond(status = HttpStatusCode.OK, message = encrypt)
+}
+
+suspend inline fun getAppInstanceId(call: ApplicationCall): String? {
+    val appInstanceId = call.request.headers["appInstanceId"]
+    if (appInstanceId == null) {
+        failResponse(call, FailResponse(StandardErrorCode.NOT_FOUND_APP_INSTANCE_ID.toErrorCode().code,
+            "not found app instance id"))
+    }
+    return appInstanceId
+}
+
+@ExperimentalSerializationApi
+suspend inline fun <reified T : Any> jsonReceive(call: ApplicationCall): T {
+    val bytes = call.receive<ByteArray>()
+    return Json.decodeFromStream(ByteArrayInputStream(bytes))
 }
 
 data class FailResponse(val errorCode: Int,

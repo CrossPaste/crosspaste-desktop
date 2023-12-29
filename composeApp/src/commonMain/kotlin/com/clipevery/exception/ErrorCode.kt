@@ -1,17 +1,13 @@
 package com.clipevery.exception
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonProperty
 import java.util.Objects
 
-class ErrorCode @JsonCreator constructor(
-    @JsonProperty("code") code: Int,
-    @JsonProperty("name") name: String,
-    @JsonProperty("type") type: ErrorType) {
-    @get:JsonProperty
+class ErrorCode constructor(
+    code: Int,
+    name: String,
+    type: ErrorType) {
     val code: Int
 
-    @get:JsonProperty
     val name: String
     private val type: ErrorType
 
@@ -22,7 +18,6 @@ class ErrorCode @JsonCreator constructor(
         this.type = type
     }
 
-    @JsonProperty
     fun getType(): ErrorType {
         return type
     }

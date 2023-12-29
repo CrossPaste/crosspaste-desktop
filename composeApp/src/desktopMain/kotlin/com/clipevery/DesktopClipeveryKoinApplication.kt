@@ -10,6 +10,8 @@ import com.clipevery.clip.getDesktopClipboardService
 import com.clipevery.config.ConfigManager
 import com.clipevery.config.DefaultConfigManager
 import com.clipevery.dao.DriverFactory
+import com.clipevery.dao.SignalStoreDao
+import com.clipevery.dao.SignalStoreDaoImpl
 import com.clipevery.dao.SyncInfoDao
 import com.clipevery.dao.SyncInfoDaoImpl
 import com.clipevery.dao.createDatabase
@@ -72,6 +74,7 @@ object Dependencies {
             single<SignalProtocolStore> { DesktopSignalProtocolStore(get(), get(), get(), get()) }
             single<Database> { createDatabase(DriverFactory()) }
             single<SyncInfoDao> { SyncInfoDaoImpl(get()) }
+            single<SignalStoreDao> { SignalStoreDaoImpl(get()) }
         }
         return GlobalContext.startKoin {
             modules(appModule)
