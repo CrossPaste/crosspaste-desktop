@@ -1,6 +1,7 @@
 package com.clipevery.net
 
 import com.clipevery.routing.syncRouting
+import com.clipevery.serializer.PreKeyBundleSerializer
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.install
@@ -10,6 +11,9 @@ import io.ktor.server.netty.NettyApplicationEngine
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.routing.routing
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.serializersModuleOf
+import org.signal.libsignal.protocol.state.PreKeyBundle
 
 class DesktopClipServer: ClipServer {
 
@@ -19,7 +23,9 @@ class DesktopClipServer: ClipServer {
 
     private var server: NettyApplicationEngine = embeddedServer(Netty, port = 0) {
         install(ContentNegotiation) {
-            json()
+            json(Json {
+                serializersModule = serializersModuleOf(PreKeyBundle::class, PreKeyBundleSerializer)
+            })
         }
         routing {
             syncRouting()
