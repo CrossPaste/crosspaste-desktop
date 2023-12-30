@@ -19,7 +19,7 @@ class SignalStoreDaoImpl(override val database: Database): SignalStoreDao {
         var preKeyId: Int
         do {
             preKeyId = random.nextInt(Medium.MAX_VALUE)
-        } while (database.preKeyQueries.selectById(preKeyId.toLong()).executeAsOneOrNull() == null)
+        } while (database.preKeyQueries.selectById(preKeyId.toLong()).executeAsOneOrNull() != null)
         val preKeyRecord = PreKeyRecord(preKeyId, preKeyPair)
         val serialize = preKeyRecord.serialize()
         database.preKeyQueries.insert(preKeyId.toLong(), serialize)
