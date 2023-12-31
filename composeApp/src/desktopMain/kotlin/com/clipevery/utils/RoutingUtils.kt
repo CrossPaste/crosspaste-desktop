@@ -8,6 +8,7 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
@@ -80,5 +81,6 @@ suspend inline fun <reified T : Any> jsonReceive(call: ApplicationCall): T {
     return Json.decodeFromStream(ByteArrayInputStream(bytes))
 }
 
+@Serializable
 data class FailResponse(val errorCode: Int,
                         val message: String)
