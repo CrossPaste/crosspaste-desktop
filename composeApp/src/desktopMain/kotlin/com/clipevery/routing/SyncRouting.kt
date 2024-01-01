@@ -5,11 +5,12 @@ import com.clipevery.dao.SignalStoreDao
 import com.clipevery.dao.SyncInfoDao
 import com.clipevery.dto.sync.RequestSyncInfo
 import com.clipevery.dto.sync.SyncInfo
-import com.clipevery.signal.logger
+import com.clipevery.exception.StandardErrorCode
 import com.clipevery.utils.encodePreKeyBundle
 import com.clipevery.utils.failResponse
 import com.clipevery.utils.getAppInstanceId
 import com.clipevery.utils.successResponse
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.request.receive
@@ -32,6 +33,8 @@ import org.signal.libsignal.protocol.state.SignedPreKeyRecord
 import java.util.Objects
 
 fun Routing.syncRouting() {
+
+    val logger = KotlinLogging.logger {}
 
     val koinApplication = Dependencies.koinApplication
 
@@ -131,18 +134,15 @@ fun Routing.syncRouting() {
                     failResponse(call, "exchange fail", status = HttpStatusCode.ExpectationFailed)
                 }
             } catch (e: InvalidMessageException) {
-                logger.error(e) {  }
-                failResponse(call, "invalid message", status = HttpStatusCode.ExpectationFailed)
+                failResponse(call, "invalid message", exception = e, logger = logger, errorCodeSupplier = StandardErrorCode.INVALID_PARAMETER, status = HttpStatusCode.ExpectationFailed)
             } catch (e: InvalidKeyIdException) {
-                logger.error(e) {  }
-                failResponse(call, "invalid key id", status = HttpStatusCode.ExpectationFailed)
+                failResponse(call, "invalid key id", exception = e, logger = logger, errorCodeSupplier = StandardErrorCode.INVALID_PARAMETER, status = HttpStatusCode.ExpectationFailed)
             } catch (e: InvalidKeyException) {
-                logger.error(e) {  }
-                failResponse(call, "invalid key", status = HttpStatusCode.ExpectationFailed)
+                failResponse(call, "invalid key", exception = e, logger = logger, errorCodeSupplier = StandardErrorCode.INVALID_PARAMETER, status = HttpStatusCode.ExpectationFailed)
             } catch (e: UntrustedIdentityException) {
-                logger.error(e) {  }
-                failResponse(call, "untrusted identity", status = HttpStatusCode.ExpectationFailed)
+                failResponse(call, "untrusted identity", exception = e, logger = logger, errorCodeSupplier = StandardErrorCode.INVALID_PARAMETER, status = HttpStatusCode.ExpectationFailed)
             }
         }
     }
 }
+
