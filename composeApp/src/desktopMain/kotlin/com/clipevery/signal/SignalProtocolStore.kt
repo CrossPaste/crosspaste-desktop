@@ -48,7 +48,7 @@ class DesktopSignalProtocolStore(private val identityKeyStore: IdentityKeyStore,
         return identityKeyStore.isTrustedIdentity(address, identityKey, direction)
     }
 
-    override fun getIdentity(address: SignalProtocolAddress?): IdentityKey {
+    override fun getIdentity(address: SignalProtocolAddress?): IdentityKey? {
         return identityKeyStore.getIdentity(address)
     }
 
@@ -69,7 +69,7 @@ class DesktopSignalProtocolStore(private val identityKeyStore: IdentityKeyStore,
         preKeyStore.removePreKey(preKeyId)
     }
 
-    override fun loadSession(address: SignalProtocolAddress?): SessionRecord {
+    override fun loadSession(address: SignalProtocolAddress?): SessionRecord? {
         return sessionStore.loadSession(address)
     }
 

@@ -6,22 +6,33 @@ import com.clipevery.dao.SyncInfoDao
 import com.clipevery.dto.sync.RequestSyncInfo
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.utils.encodePreKeyBundle
+import com.clipevery.utils.failResponse
 import com.clipevery.utils.getAppInstanceId
 import com.clipevery.utils.successResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.request.receive
 import io.ktor.server.response.header
 import io.ktor.server.response.respondBytes
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import org.signal.libsignal.protocol.InvalidKeyException
+import org.signal.libsignal.protocol.InvalidKeyIdException
+import org.signal.libsignal.protocol.InvalidMessageException
 import org.signal.libsignal.protocol.SessionBuilder
+import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.SignalProtocolAddress
+import org.signal.libsignal.protocol.UntrustedIdentityException
+import org.signal.libsignal.protocol.message.PreKeySignalMessage
+import org.signal.libsignal.protocol.message.SignalMessage
 import org.signal.libsignal.protocol.state.PreKeyBundle
 import org.signal.libsignal.protocol.state.PreKeyRecord
 import org.signal.libsignal.protocol.state.SignalProtocolStore
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord
+import java.util.Objects
 
 fun Routing.syncRouting() {
 
@@ -84,6 +95,49 @@ fun Routing.syncRouting() {
             call.response.header(HttpHeaders.ContentType, ContentType.Application.OctetStream.toString())
             call.respondBytes(bytes)
         }
+    }
 
+    post("sync/exchangePreKey") {
+        getAppInstanceId(call).let { appInstanceId ->
+            val bytes = call.receive<ByteArray>()
+            try {
+                val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
+                val identityKey = signalProtocolStore.getIdentity(signalProtocolAddress)
+                val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
+                val decrypt = if (identityKey == null) {
+                    val preKeySignalMessage = PreKeySignalMessage(bytes)
+
+                    val signedPreKeyId = preKeySignalMessage.signedPreKeyId
+
+                    if (signalProtocolStore.containsSignedPreKey(signedPreKeyId)) {
+                        signalProtocolStore.saveIdentity(
+                            signalProtocolAddress,
+                            preKeySignalMessage.identityKey
+                        )
+                        sessionCipher.decrypt(preKeySignalMessage)
+                    } else {
+                        failResponse(call, "invalid key id", status = HttpStatusCode.ExpectationFailed)
+                        return@let
+                    }
+
+                } else {
+                    sessionCipher.decrypt(SignalMessage(bytes))
+                }
+
+                if (Objects.equals("exchange", String(decrypt, Charsets.UTF_8))) {
+                    successResponse(call)
+                } else {
+                    failResponse(call, "exchange fail", status = HttpStatusCode.ExpectationFailed)
+                }
+            } catch (e: InvalidMessageException) {
+                failResponse(call, "invalid message", status = HttpStatusCode.ExpectationFailed)
+            } catch (e: InvalidKeyIdException) {
+                failResponse(call, "invalid key id", status = HttpStatusCode.ExpectationFailed)
+            } catch (e: InvalidKeyException) {
+                failResponse(call, "invalid key", status = HttpStatusCode.ExpectationFailed)
+            } catch (e: UntrustedIdentityException) {
+                failResponse(call, "untrusted identity", status = HttpStatusCode.ExpectationFailed)
+            }
+        }
     }
 }
