@@ -5,6 +5,7 @@ import com.clipevery.dao.SignalStoreDao
 import com.clipevery.dao.SyncInfoDao
 import com.clipevery.dto.sync.RequestSyncInfo
 import com.clipevery.dto.sync.SyncInfo
+import com.clipevery.signal.logger
 import com.clipevery.utils.encodePreKeyBundle
 import com.clipevery.utils.failResponse
 import com.clipevery.utils.getAppInstanceId
@@ -98,7 +99,15 @@ fun Routing.syncRouting() {
                 val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
                 val identityKey = signalProtocolStore.getIdentity(signalProtocolAddress)
                 val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
-                val decrypt = if (identityKey == null) {
+                var decrypt: ByteArray? = null
+                if (identityKey != null) {
+                    try {
+                        val signalMessage = SignalMessage(bytes)
+                        decrypt = sessionCipher.decrypt(signalMessage)
+                    } catch (ignore: InvalidMessageException) {}
+                }
+
+                if (decrypt == null) {
                     val preKeySignalMessage = PreKeySignalMessage(bytes)
 
                     val signedPreKeyId = preKeySignalMessage.signedPreKeyId
@@ -108,29 +117,30 @@ fun Routing.syncRouting() {
                             signalProtocolAddress,
                             preKeySignalMessage.identityKey
                         )
-                        sessionCipher.decrypt(preKeySignalMessage)
+                        decrypt = sessionCipher.decrypt(preKeySignalMessage)
                     } else {
                         failResponse(call, "invalid key id", status = HttpStatusCode.ExpectationFailed)
                         return@let
                     }
-
-                } else {
-                    sessionCipher.decrypt(SignalMessage(bytes))
                 }
 
-                if (Objects.equals("exchange", String(decrypt, Charsets.UTF_8))) {
+                if (Objects.equals("exchange", String(decrypt!!, Charsets.UTF_8))) {
                     val ciphertextMessage = sessionCipher.encrypt("exchange".toByteArray(Charsets.UTF_8))
                     successResponse(call, ciphertextMessage.serialize())
                 } else {
                     failResponse(call, "exchange fail", status = HttpStatusCode.ExpectationFailed)
                 }
             } catch (e: InvalidMessageException) {
+                logger.error(e) {  }
                 failResponse(call, "invalid message", status = HttpStatusCode.ExpectationFailed)
             } catch (e: InvalidKeyIdException) {
+                logger.error(e) {  }
                 failResponse(call, "invalid key id", status = HttpStatusCode.ExpectationFailed)
             } catch (e: InvalidKeyException) {
+                logger.error(e) {  }
                 failResponse(call, "invalid key", status = HttpStatusCode.ExpectationFailed)
             } catch (e: UntrustedIdentityException) {
+                logger.error(e) {  }
                 failResponse(call, "untrusted identity", status = HttpStatusCode.ExpectationFailed)
             }
         }
