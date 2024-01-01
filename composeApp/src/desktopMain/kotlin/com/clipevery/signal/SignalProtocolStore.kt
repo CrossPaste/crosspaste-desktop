@@ -69,7 +69,7 @@ class DesktopSignalProtocolStore(private val identityKeyStore: IdentityKeyStore,
         preKeyStore.removePreKey(preKeyId)
     }
 
-    override fun loadSession(address: SignalProtocolAddress?): SessionRecord {
+    override fun loadSession(address: SignalProtocolAddress?): SessionRecord? {
         return sessionStore.loadSession(address)
     }
 

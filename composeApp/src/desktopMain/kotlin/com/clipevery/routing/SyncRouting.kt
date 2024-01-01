@@ -19,9 +19,13 @@ import io.ktor.server.response.respondBytes
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import org.signal.libsignal.protocol.InvalidKeyException
+import org.signal.libsignal.protocol.InvalidKeyIdException
+import org.signal.libsignal.protocol.InvalidMessageException
 import org.signal.libsignal.protocol.SessionBuilder
 import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.SignalProtocolAddress
+import org.signal.libsignal.protocol.UntrustedIdentityException
 import org.signal.libsignal.protocol.message.PreKeySignalMessage
 import org.signal.libsignal.protocol.state.PreKeyBundle
 import org.signal.libsignal.protocol.state.PreKeyRecord
@@ -97,14 +101,33 @@ fun Routing.syncRouting() {
             val bytes = call.receive<ByteArray>()
 
             val preKeySignalMessage = PreKeySignalMessage(bytes)
-
             val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
+
+            val signedPreKeyId = preKeySignalMessage.signedPreKeyId
+
+            if (signalProtocolStore.containsSignedPreKey(signedPreKeyId)) {
+                signalProtocolStore.saveIdentity(
+                    signalProtocolAddress,
+                    preKeySignalMessage.identityKey
+                )
+            }
+
             val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
-            val decrypt = sessionCipher.decrypt(preKeySignalMessage)
-            if (Objects.equals("exchange", String(decrypt, Charsets.UTF_8))) {
-                successResponse(call)
-            } else {
-                failResponse(call, "exchange fail", status = HttpStatusCode.ExpectationFailed)
+            try {
+                val decrypt = sessionCipher.decrypt(preKeySignalMessage)
+                if (Objects.equals("exchange", String(decrypt, Charsets.UTF_8))) {
+                    successResponse(call)
+                } else {
+                    failResponse(call, "exchange fail", status = HttpStatusCode.ExpectationFailed)
+                }
+            } catch (e: InvalidMessageException) {
+                failResponse(call, "invalid message", status = HttpStatusCode.ExpectationFailed)
+            } catch (e: InvalidKeyIdException) {
+                failResponse(call, "invalid key id", status = HttpStatusCode.ExpectationFailed)
+            } catch (e: InvalidKeyException) {
+                failResponse(call, "invalid key", status = HttpStatusCode.ExpectationFailed)
+            } catch (e: UntrustedIdentityException) {
+                failResponse(call, "untrusted identity", status = HttpStatusCode.ExpectationFailed)
             }
         }
     }
