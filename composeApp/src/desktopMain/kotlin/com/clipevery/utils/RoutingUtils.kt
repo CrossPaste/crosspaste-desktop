@@ -27,8 +27,13 @@ suspend inline fun <reified T : Any> successResponse(call: ApplicationCall, mess
     call.respond(status = HttpStatusCode.OK, message = message)
 }
 
-suspend inline fun failResponse(call: ApplicationCall, message: FailResponse) {
-    call.respond(status = HttpStatusCode.InternalServerError, message = message)
+suspend inline fun failResponse(call: ApplicationCall, message: FailResponse, status: HttpStatusCode = HttpStatusCode.InternalServerError) {
+    call.respond(status = status, message = message)
+}
+
+suspend inline fun failResponse(call: ApplicationCall, message: String, status: HttpStatusCode = HttpStatusCode.InternalServerError) {
+    val failMessage = FailResponse(StandardErrorCode.INVALID_PARAMETER.toErrorCode().code, message)
+    call.respond(status = status, message = failMessage)
 }
 
 @ExperimentalSerializationApi
