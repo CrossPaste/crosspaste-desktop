@@ -27,6 +27,7 @@ import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.SignalProtocolAddress
 import org.signal.libsignal.protocol.UntrustedIdentityException
 import org.signal.libsignal.protocol.message.PreKeySignalMessage
+import org.signal.libsignal.protocol.message.SignalMessage
 import org.signal.libsignal.protocol.state.PreKeyBundle
 import org.signal.libsignal.protocol.state.PreKeyRecord
 import org.signal.libsignal.protocol.state.SignalProtocolStore
@@ -99,22 +100,33 @@ fun Routing.syncRouting() {
     post("sync/exchangePreKey") {
         getAppInstanceId(call).let { appInstanceId ->
             val bytes = call.receive<ByteArray>()
-
-            val preKeySignalMessage = PreKeySignalMessage(bytes)
-            val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
-
-            val signedPreKeyId = preKeySignalMessage.signedPreKeyId
-
-            if (signalProtocolStore.containsSignedPreKey(signedPreKeyId)) {
-                signalProtocolStore.saveIdentity(
-                    signalProtocolAddress,
-                    preKeySignalMessage.identityKey
-                )
-            }
-
-            val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
             try {
-                val decrypt = sessionCipher.decrypt(preKeySignalMessage)
+                val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
+                val identityKey = signalProtocolStore.getIdentity(signalProtocolAddress)
+
+                val signalMessage = if (identityKey == null) {
+                    val preKeySignalMessage = PreKeySignalMessage(bytes)
+
+                    val signedPreKeyId = preKeySignalMessage.signedPreKeyId
+
+                    if (signalProtocolStore.containsSignedPreKey(signedPreKeyId)) {
+                        signalProtocolStore.saveIdentity(
+                            signalProtocolAddress,
+                            preKeySignalMessage.identityKey
+                        )
+                        preKeySignalMessage.whisperMessage
+                    } else {
+                        failResponse(call, "invalid key id", status = HttpStatusCode.ExpectationFailed)
+                        return@let
+                    }
+
+                } else {
+                    SignalMessage(bytes)
+                }
+
+                val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
+
+                val decrypt = sessionCipher.decrypt(signalMessage)
                 if (Objects.equals("exchange", String(decrypt, Charsets.UTF_8))) {
                     successResponse(call)
                 } else {
