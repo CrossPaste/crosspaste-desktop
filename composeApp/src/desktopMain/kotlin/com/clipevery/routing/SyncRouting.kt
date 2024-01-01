@@ -103,8 +103,8 @@ fun Routing.syncRouting() {
             try {
                 val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
                 val identityKey = signalProtocolStore.getIdentity(signalProtocolAddress)
-
-                val signalMessage = if (identityKey == null) {
+                val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
+                val decrypt = if (identityKey == null) {
                     val preKeySignalMessage = PreKeySignalMessage(bytes)
 
                     val signedPreKeyId = preKeySignalMessage.signedPreKeyId
@@ -114,19 +114,16 @@ fun Routing.syncRouting() {
                             signalProtocolAddress,
                             preKeySignalMessage.identityKey
                         )
-                        preKeySignalMessage.whisperMessage
+                        sessionCipher.decrypt(preKeySignalMessage)
                     } else {
                         failResponse(call, "invalid key id", status = HttpStatusCode.ExpectationFailed)
                         return@let
                     }
 
                 } else {
-                    SignalMessage(bytes)
+                    sessionCipher.decrypt(SignalMessage(bytes))
                 }
 
-                val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
-
-                val decrypt = sessionCipher.decrypt(signalMessage)
                 if (Objects.equals("exchange", String(decrypt, Charsets.UTF_8))) {
                     successResponse(call)
                 } else {
