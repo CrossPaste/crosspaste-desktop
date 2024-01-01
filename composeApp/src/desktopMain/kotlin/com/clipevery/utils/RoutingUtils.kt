@@ -1,12 +1,17 @@
 package com.clipevery.utils
 
 import com.clipevery.app.AppInfo
+import com.clipevery.exception.ErrorCodeSupplier
 import com.clipevery.exception.StandardErrorCode
+import io.github.oshai.kotlinlogging.KLogger
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.receive
 import io.ktor.server.response.header
 import io.ktor.server.response.respond
+import io.ktor.server.response.respondBytes
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -23,6 +28,11 @@ suspend inline fun successResponse(call: ApplicationCall) {
     call.respond(status = HttpStatusCode.OK, message = "")
 }
 
+suspend inline fun successResponse(call: ApplicationCall, message: ByteArray) {
+    call.response.header(HttpHeaders.ContentType, ContentType.Application.OctetStream.toString())
+    call.respondBytes(message)
+}
+
 suspend inline fun <reified T : Any> successResponse(call: ApplicationCall, message: T) {
     call.respond(status = HttpStatusCode.OK, message = message)
 }
@@ -31,8 +41,19 @@ suspend inline fun failResponse(call: ApplicationCall, message: FailResponse, st
     call.respond(status = status, message = message)
 }
 
-suspend inline fun failResponse(call: ApplicationCall, message: String, status: HttpStatusCode = HttpStatusCode.InternalServerError) {
-    val failMessage = FailResponse(StandardErrorCode.INVALID_PARAMETER.toErrorCode().code, message)
+suspend inline fun failResponse(call: ApplicationCall,
+                                message: String,
+                                exception: java.lang.Exception?  = null,
+                                logger: KLogger? = null,
+                                errorCodeSupplier: ErrorCodeSupplier = StandardErrorCode.UNKNOWN_ERROR,
+                                status: HttpStatusCode = HttpStatusCode.InternalServerError) {
+
+    logger.let {
+        exception.let {
+            logger?.error(exception) { message }
+        } ?: logger?.error { message }
+    }
+    val failMessage = FailResponse(errorCodeSupplier.toErrorCode().code, message)
     call.respond(status = status, message = failMessage)
 }
 
