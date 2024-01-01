@@ -2,11 +2,14 @@ package com.clipevery.utils
 
 import com.clipevery.app.AppInfo
 import com.clipevery.exception.StandardErrorCode
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.receive
 import io.ktor.server.response.header
 import io.ktor.server.response.respond
+import io.ktor.server.response.respondBytes
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -21,6 +24,11 @@ import java.io.ByteArrayInputStream
 
 suspend inline fun successResponse(call: ApplicationCall) {
     call.respond(status = HttpStatusCode.OK, message = "")
+}
+
+suspend inline fun successResponse(call: ApplicationCall, message: ByteArray) {
+    call.response.header(HttpHeaders.ContentType, ContentType.Application.OctetStream.toString())
+    call.respondBytes(message)
 }
 
 suspend inline fun <reified T : Any> successResponse(call: ApplicationCall, message: T) {

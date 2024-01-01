@@ -9,13 +9,9 @@ import com.clipevery.utils.encodePreKeyBundle
 import com.clipevery.utils.failResponse
 import com.clipevery.utils.getAppInstanceId
 import com.clipevery.utils.successResponse
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.request.receive
-import io.ktor.server.response.header
-import io.ktor.server.response.respondBytes
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
@@ -91,9 +87,7 @@ fun Routing.syncRouting() {
             )
 
             val bytes = encodePreKeyBundle(preKeyBundle)
-
-            call.response.header(HttpHeaders.ContentType, ContentType.Application.OctetStream.toString())
-            call.respondBytes(bytes)
+            successResponse(call, bytes)
         }
     }
 
@@ -125,7 +119,9 @@ fun Routing.syncRouting() {
                 }
 
                 if (Objects.equals("exchange", String(decrypt, Charsets.UTF_8))) {
-                    successResponse(call)
+                    successResponse(call,
+                        sessionCipher.encrypt("exchange".toByteArray(Charsets.UTF_8))
+                    )
                 } else {
                     failResponse(call, "exchange fail", status = HttpStatusCode.ExpectationFailed)
                 }
