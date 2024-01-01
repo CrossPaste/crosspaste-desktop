@@ -119,9 +119,8 @@ fun Routing.syncRouting() {
                 }
 
                 if (Objects.equals("exchange", String(decrypt, Charsets.UTF_8))) {
-                    successResponse(call,
-                        sessionCipher.encrypt("exchange".toByteArray(Charsets.UTF_8))
-                    )
+                    val ciphertextMessage = sessionCipher.encrypt("exchange".toByteArray(Charsets.UTF_8))
+                    successResponse(call, sessionCipher.encrypt(ciphertextMessage.serialize()))
                 } else {
                     failResponse(call, "exchange fail", status = HttpStatusCode.ExpectationFailed)
                 }
