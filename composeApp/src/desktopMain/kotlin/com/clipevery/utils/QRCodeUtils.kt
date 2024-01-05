@@ -3,7 +3,7 @@ package com.clipevery.utils
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.clipevery.app.AppInfo
-import com.clipevery.app.AppToken
+import com.clipevery.app.AppUI
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.endpoint.EndpointInfoFactory
 import com.google.zxing.BarcodeFormat
@@ -15,12 +15,12 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 
-class DesktopQRCodeGenerator(private val appToken: AppToken,
+class DesktopQRCodeGenerator(private val appUI: AppUI,
                              private val appInfo: AppInfo,
                              private val endpointInfoFactory: EndpointInfoFactory): QRCodeGenerator {
 
     private fun buildQRCode(): String {
-        val generateToken = appToken.generateToken()
+        val generateToken = appUI.token
         val endpointInfo = endpointInfoFactory.createEndpointInfo()
         val syncInfo = SyncInfo(appInfo, endpointInfo)
 

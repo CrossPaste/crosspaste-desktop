@@ -64,6 +64,7 @@ import java.net.URI
 @Composable
 fun HomeUI(currentPage: MutableState<PageType>) {
     HomeWindowDecoration(currentPage)
+    TokenUI()
     TabsUI()
 }
 

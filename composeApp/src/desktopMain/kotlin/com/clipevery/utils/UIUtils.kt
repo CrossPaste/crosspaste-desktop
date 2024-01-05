@@ -7,12 +7,6 @@ import com.clipevery.app.AppUI
 import java.awt.GraphicsEnvironment
 import java.awt.Toolkit
 
-fun initAppUI(): AppUI {
-    return AppUI(
-        width = 460.dp,
-        height = 710.dp
-    )
-}
  fun getPreferredWindowSize(appUI: AppUI): DpSize {
      val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
      val bounds = gd.defaultConfiguration.bounds
