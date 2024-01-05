@@ -2,31 +2,34 @@ package com.clipevery.utils
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
-import com.clipevery.endpoint.EndpointInfo
+import com.clipevery.app.AppInfo
+import com.clipevery.app.AppToken
+import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.endpoint.EndpointInfoFactory
-import com.clipevery.platform.Platform
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.awt.Color
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 
-class DesktopQRCodeGenerator(private val endpointInfoFactory: EndpointInfoFactory): QRCodeGenerator {
+class DesktopQRCodeGenerator(private val appToken: AppToken,
+                             private val appInfo: AppInfo,
+                             private val endpointInfoFactory: EndpointInfoFactory): QRCodeGenerator {
 
-    private fun endpointInfo(): String {
-        val token = createToken()
+    private fun buildQRCode(): String {
+        val generateToken = appToken.generateToken()
         val endpointInfo = endpointInfoFactory.createEndpointInfo()
-        return encodeEndpointInfo(endpointInfo, token)
-    }
+        val syncInfo = SyncInfo(appInfo, endpointInfo)
 
-    private fun createToken(): Int {
-        return (0..999999).random()
+        return buildQRCode(syncInfo, generateToken)
     }
 
     override fun generateQRCode(width: Int, height: Int): ImageBitmap {
         val writer = QRCodeWriter()
-        val bitMatrix = writer.encode(endpointInfo(), BarcodeFormat.QR_CODE, width, height)
+        val bitMatrix = writer.encode(buildQRCode(), BarcodeFormat.QR_CODE, width, height)
         val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
         for (x in 0 until width) {
             for (y in 0 until height) {
@@ -36,40 +39,21 @@ class DesktopQRCodeGenerator(private val endpointInfoFactory: EndpointInfoFactor
         return image.toComposeImageBitmap()
     }
 
-    private fun encodeEndpointInfo(endpointInfo: EndpointInfo, token: Int): String {
-        val byteStream = ByteArrayOutputStream()
-        val dataStream = DataOutputStream(byteStream)
-        doEncodeDeviceInfo(endpointInfo, dataStream)
-        val byteArray = byteStream.toByteArray()
-        val size = byteArray.size
+    private fun buildQRCode(syncInfo: SyncInfo, token: CharArray): String {
+        val syncInfoJson = Json.encodeToString(syncInfo)
+        val syncInfoBytes = syncInfoJson.toByteArray()
+        return encodeSyncInfo(syncInfoBytes, String(token).toInt())
+    }
+
+    private fun encodeSyncInfo(syncInfoBytes: ByteArray, token: Int): String {
+        val size = syncInfoBytes.size
         val offset = token % size
-        val byteArrayRotate = byteArray.rotate(offset)
+        val byteArrayRotate = syncInfoBytes.rotate(offset)
         val saltByteStream = ByteArrayOutputStream()
         val saltDataStream = DataOutputStream(saltByteStream)
         saltDataStream.write(byteArrayRotate)
         saltDataStream.writeInt(token)
         return base64Encode(saltByteStream.toByteArray())
-    }
-
-    private fun doEncodeDeviceInfo(endpointInfo: EndpointInfo,
-                                   dataOutputStream: DataOutputStream
-    ) {
-        dataOutputStream.writeUTF(endpointInfo.deviceId)
-        dataOutputStream.writeUTF(endpointInfo.deviceName)
-        encodePlatform(endpointInfo.platform, dataOutputStream)
-        dataOutputStream.writeInt(endpointInfo.hostInfoList.size)
-        endpointInfo.hostInfoList.forEach {
-            dataOutputStream.writeUTF(it.hostName)
-            dataOutputStream.writeUTF(it.hostAddress)
-        }
-        dataOutputStream.writeInt(endpointInfo.port)
-    }
-
-    private fun encodePlatform(platform: Platform, dataOutputStream: DataOutputStream) {
-        dataOutputStream.writeUTF(platform.name)
-        dataOutputStream.writeUTF(platform.arch)
-        dataOutputStream.writeInt(platform.bitMode)
-        dataOutputStream.writeUTF(platform.version)
     }
 
     private fun ByteArray.rotate(offset: Int): ByteArray {
