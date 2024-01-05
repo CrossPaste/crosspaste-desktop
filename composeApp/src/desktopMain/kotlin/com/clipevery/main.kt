@@ -1,11 +1,7 @@
 package com.clipevery
 
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
@@ -14,6 +10,7 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.clipevery.app.AppFileType
+import com.clipevery.app.AppUI
 import com.clipevery.clip.ClipboardService
 import com.clipevery.listen.GlobalListener
 import com.clipevery.log.initLogger
@@ -25,16 +22,11 @@ import com.clipevery.platform.currentPlatform
 import com.clipevery.ui.getTrayMouseAdapter
 import com.clipevery.utils.QRCodeGenerator
 import com.clipevery.utils.getPreferredWindowSize
-import com.clipevery.utils.initAppUI
 import com.clipevery.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.launch
 import org.koin.core.KoinApplication
 import kotlin.io.path.pathString
-
-
-val appUI = initAppUI()
-
 
 fun initInject(koinApplication: KoinApplication) {
     koinApplication.koin.get<GlobalListener>()
@@ -61,11 +53,11 @@ fun main() = application {
 
     val ioScope = rememberCoroutineScope { ioDispatcher }
 
-    var showWindow by remember { mutableStateOf(false) }
-
     val koinApplication = Dependencies.koinApplication
 
     initInject(koinApplication)
+
+    val appUI = koinApplication.koin.get<AppUI>()
 
     val trayIcon = if(currentPlatform().isMacos()) {
         painterResource("clipevery_mac_tray.png")
@@ -81,11 +73,11 @@ fun main() = application {
 
     Tray(
         icon = trayIcon,
-        mouseListener = getTrayMouseAdapter(windowState) { showWindow = !showWindow },
+        mouseListener = getTrayMouseAdapter(windowState) { appUI.showWindow = !appUI.showWindow },
     )
 
     val exitApplication: () -> Unit = {
-        showWindow = false
+        appUI.showWindow = false
         ioScope.launch {
             exitClipEveryApplication { exitApplication() }
         }
@@ -93,7 +85,7 @@ fun main() = application {
 
     Window(
         onCloseRequest = exitApplication,
-        visible = showWindow,
+        visible = appUI.showWindow,
         state = windowState,
         title = "Clipevery",
         icon = painterResource("clipevery_icon.png"),
@@ -106,16 +98,16 @@ fun main() = application {
         LaunchedEffect(Unit) {
             window.addWindowFocusListener(object : java.awt.event.WindowFocusListener {
                 override fun windowGainedFocus(e: java.awt.event.WindowEvent?) {
-                    showWindow = true
+                    appUI.showWindow = true
                 }
 
                 override fun windowLostFocus(e: java.awt.event.WindowEvent?) {
-                    showWindow = false
+                    appUI.showWindow = false
                 }
             })
         }
         ClipeveryApp(koinApplication,
-            hideWindow = { showWindow = false },
+            hideWindow = { appUI.showWindow = false },
             exitApplication = exitApplication)
     }
 }

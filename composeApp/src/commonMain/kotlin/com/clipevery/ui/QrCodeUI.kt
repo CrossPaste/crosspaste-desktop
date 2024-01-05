@@ -17,11 +17,8 @@ import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,13 +27,11 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
+import com.clipevery.app.AppUI
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.utils.QRCodeGenerator
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Scan
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 
 val qrSize: DpSize = DpSize(275.dp, 275.dp)
@@ -45,26 +40,25 @@ val qrSize: DpSize = DpSize(275.dp, 275.dp)
 fun bindingQRCode() {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
+    val appUI = current.koin.get<AppUI>()
     val qrCodeGenerator = current.koin.get<QRCodeGenerator>()
-    val coroutineScope = rememberCoroutineScope()
-    var refreshJob: Job? by remember { mutableStateOf(null) }
 
     val density = LocalDensity.current
 
     val width = with(density) { qrSize.width.roundToPx() }
     val height = with(density) { qrSize.width.roundToPx() }
 
-    var qrImage by remember { mutableStateOf(qrCodeGenerator.generateQRCode(width, height)) }
+    val qrImage = derivedStateOf {
+        qrCodeGenerator.generateQRCode(width, height, appUI.token)
+    }
+
+    LaunchedEffect(Unit) {
+        appUI.startRefreshToken()
+    }
 
     DisposableEffect(Unit) {
-        refreshJob = coroutineScope.launch {
-            while (true) {
-                qrImage = qrCodeGenerator.generateQRCode(width, height)
-                delay(5000)
-            }
-        }
         onDispose {
-            refreshJob?.cancel()
+            appUI.stopRefreshToken()
         }
     }
 
@@ -105,7 +99,7 @@ fun bindingQRCode() {
                 }
             }
             Image(
-                bitmap = qrImage,
+                bitmap = qrImage.value,
                 contentDescription = "QR Code",
                 modifier = Modifier.align(Alignment.Center)
             )

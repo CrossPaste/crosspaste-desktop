@@ -3,7 +3,6 @@ package com.clipevery.utils
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.clipevery.app.AppInfo
-import com.clipevery.app.AppToken
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.endpoint.EndpointInfoFactory
 import com.google.zxing.BarcodeFormat
@@ -15,21 +14,19 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 
-class DesktopQRCodeGenerator(private val appToken: AppToken,
-                             private val appInfo: AppInfo,
+class DesktopQRCodeGenerator(private val appInfo: AppInfo,
                              private val endpointInfoFactory: EndpointInfoFactory): QRCodeGenerator {
 
-    private fun buildQRCode(): String {
-        val generateToken = appToken.generateToken()
+    private fun buildQRCode(token: CharArray): String {
         val endpointInfo = endpointInfoFactory.createEndpointInfo()
         val syncInfo = SyncInfo(appInfo, endpointInfo)
 
-        return buildQRCode(syncInfo, generateToken)
+        return buildQRCode(syncInfo, token)
     }
 
-    override fun generateQRCode(width: Int, height: Int): ImageBitmap {
+    override fun generateQRCode(width: Int, height: Int, token: CharArray): ImageBitmap {
         val writer = QRCodeWriter()
-        val bitMatrix = writer.encode(buildQRCode(), BarcodeFormat.QR_CODE, width, height)
+        val bitMatrix = writer.encode(buildQRCode(token), BarcodeFormat.QR_CODE, width, height)
         val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
         for (x in 0 until width) {
             for (y in 0 until height) {

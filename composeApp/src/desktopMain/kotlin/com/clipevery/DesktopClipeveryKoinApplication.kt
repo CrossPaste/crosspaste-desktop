@@ -1,8 +1,9 @@
 package com.clipevery
 
+import androidx.compose.ui.unit.dp
 import com.clipevery.app.AppFileType
 import com.clipevery.app.AppInfo
-import com.clipevery.app.AppToken
+import com.clipevery.app.AppUI
 import com.clipevery.app.DesktopAppInfoFactory
 import com.clipevery.clip.ClipboardService
 import com.clipevery.clip.DesktopTransferableConsumer
@@ -53,15 +54,15 @@ object Dependencies {
 
     private fun initKoinApplication(): KoinApplication {
         val appModule = module {
+            single<AppUI> { AppUI(width = 460.dp, height = 710.dp) }
             single<AppInfo> { DesktopAppInfoFactory(get()).createAppInfo() }
-            single<AppToken> { AppToken() }
             single<FilePersist> { DesktopFilePersist() }
             single<ConfigManager> { DefaultConfigManager(get<FilePersist>().getPersist("appConfig.json", AppFileType.USER)) }
             single<ClipServer> { DesktopClipServer().start() }
             single<Lazy<ClipServer>> { lazy { get<ClipServer>() } }
             single<ClipClient> { DesktopClipClient() }
             single<EndpointInfoFactory> { DesktopEndpointInfoFactory( lazy { get<ClipServer>() }) }
-            single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get(), get()) }
+            single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
             single<ClipBonjourService> { DesktopClipBonjourService(get(), get()).registerService() }
             single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
             single<ClipboardService> { getDesktopClipboardService(get()) }

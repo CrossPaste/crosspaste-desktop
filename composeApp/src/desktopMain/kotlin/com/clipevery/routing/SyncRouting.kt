@@ -1,6 +1,7 @@
 package com.clipevery.routing
 
 import com.clipevery.Dependencies
+import com.clipevery.app.AppUI
 import com.clipevery.dao.SignalStoreDao
 import com.clipevery.dao.SyncInfoDao
 import com.clipevery.dto.sync.RequestSyncInfo
@@ -143,6 +144,12 @@ fun Routing.syncRouting() {
                 failResponse(call, "untrusted identity", exception = e, logger = logger, errorCodeSupplier = StandardErrorCode.INVALID_PARAMETER, status = HttpStatusCode.ExpectationFailed)
             }
         }
+    }
+
+    get("/sync/showToken") {
+        val appUI = koinApplication.koin.get<AppUI>()
+        appUI.showToken = true
+        appUI.showWindow = true
     }
 }
 
