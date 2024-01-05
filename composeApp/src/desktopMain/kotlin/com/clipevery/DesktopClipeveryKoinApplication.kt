@@ -62,7 +62,7 @@ object Dependencies {
             single<Lazy<ClipServer>> { lazy { get<ClipServer>() } }
             single<ClipClient> { DesktopClipClient() }
             single<EndpointInfoFactory> { DesktopEndpointInfoFactory( lazy { get<ClipServer>() }) }
-            single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get(), get()) }
+            single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
             single<ClipBonjourService> { DesktopClipBonjourService(get(), get()).registerService() }
             single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
             single<ClipboardService> { getDesktopClipboardService(get()) }

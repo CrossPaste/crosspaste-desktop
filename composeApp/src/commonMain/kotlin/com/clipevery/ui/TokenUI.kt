@@ -23,6 +23,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -43,7 +44,6 @@ import androidx.compose.ui.window.PopupProperties
 import com.clipevery.LocalKoinApplication
 import com.clipevery.app.AppUI
 import com.clipevery.i18n.GlobalCopywriter
-import kotlinx.coroutines.delay
 
 @Composable
 fun TokenUI() {
@@ -76,9 +76,12 @@ fun TokenUI() {
     )
 
     LaunchedEffect(appUI.showToken) {
-        while (appUI.showToken) {
-            appUI.refreshToken()
-            delay(5000)
+        appUI.startRefreshToken()
+    }
+
+    DisposableEffect(appUI.showToken) {
+        onDispose {
+            appUI.stopRefreshToken()
         }
     }
 
@@ -149,7 +152,8 @@ fun OTPCodeBox(appUI: AppUI) {
                     text = char.toString(),
                     color = MaterialTheme.colors.primary,
                     fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace
                 )
             }
         }
