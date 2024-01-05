@@ -73,6 +73,11 @@ fun HomeWindowDecoration(currentPage: MutableState<PageType>) {
     TitleUI(currentPage)
 }
 
+val customFontFamily = FontFamily(
+    Font(resource = "font/BebasNeue.otf", FontWeight.Normal)
+)
+
+val clipeveryIcon = loadImageBitmap("clipevery_icon.png")
 
 @Preview
 @Composable
@@ -87,10 +92,6 @@ fun TitleUI(currentPage: MutableState<PageType>) {
     var buttonSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size(0.0f, 0.0f)) }
 
     val density = LocalDensity.current
-
-    val customFontFamily = FontFamily(
-        Font(resource = "font/BebasNeue.otf", FontWeight.Normal)
-    )
 
     Box(
         modifier = Modifier.background(Color.Black)
@@ -115,7 +116,7 @@ fun TitleUI(currentPage: MutableState<PageType>) {
                     .align(Alignment.CenterVertically)
                     .clip(RoundedCornerShape(3.dp))
                     .size(36.dp),
-                bitmap = loadImageBitmap("clipevery_icon.png"),
+                bitmap = clipeveryIcon,
                 contentDescription = "clipevery icon",
             )
             Column(Modifier.wrapContentWidth()
