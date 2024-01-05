@@ -35,7 +35,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.platform.Font
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,10 +50,6 @@ fun TokenUI() {
     val density = LocalDensity.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val appUI = current.koin.get<AppUI>()
-
-    val customFontFamily = FontFamily(
-        Font(resource = "font/BebasNeue.otf", FontWeight.Normal)
-    )
 
     val offsetY = animateIntOffsetAsState(
         targetValue = if (appUI.showToken) IntOffset(
@@ -117,7 +112,6 @@ fun TokenUI() {
                     IconButton(
                         onClick = { appUI.showToken = false },
                         modifier = Modifier.align(Alignment.TopEnd)
-                            .then(Modifier.size(16.dp))
                             .offset(y = (-8).dp)
                             .padding(0.dp)
                             .size(16.dp)

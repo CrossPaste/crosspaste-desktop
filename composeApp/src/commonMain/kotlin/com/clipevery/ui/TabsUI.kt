@@ -50,6 +50,10 @@ fun TabsUI() {
     val config = remember { mutableStateOf(configManager.config) }
     var selectedTabIndex by remember { mutableStateOf(0) }
 
+    val showBindingQRCode = remember(config.value.bindingState) {
+        !config.value.bindingState
+    }
+
     val tabTitles = listOf("Clipboard", "Devices", "Scan")
     Row(modifier = Modifier.padding(8.dp)
         .wrapContentWidth()) {
@@ -68,7 +72,7 @@ fun TabsUI() {
             0 -> ClipPreview()
             1 -> Syncs()
             2 -> {
-                if (!config.value.bindingState) {
+                if (showBindingQRCode) {
                     bindingQRCode()
                 } else {
                     mainUI()

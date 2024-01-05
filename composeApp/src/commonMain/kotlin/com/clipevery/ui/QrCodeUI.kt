@@ -18,7 +18,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,9 +46,9 @@ fun bindingQRCode() {
     val density = LocalDensity.current
 
     val width = with(density) { qrSize.width.roundToPx() }
-    val height = with(density) { qrSize.width.roundToPx() }
+    val height = with(density) { qrSize.height.roundToPx() }
 
-    val qrImage = derivedStateOf {
+    val qrImage = remember(width, height, appUI.token) {
         qrCodeGenerator.generateQRCode(width, height, appUI.token)
     }
 
@@ -99,7 +99,7 @@ fun bindingQRCode() {
                 }
             }
             Image(
-                bitmap = qrImage.value,
+                bitmap = qrImage,
                 contentDescription = "QR Code",
                 modifier = Modifier.align(Alignment.Center)
             )
