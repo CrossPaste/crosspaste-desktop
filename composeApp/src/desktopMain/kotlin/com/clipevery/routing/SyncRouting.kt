@@ -6,6 +6,7 @@ import com.clipevery.dao.SignalStoreDao
 import com.clipevery.dao.SyncInfoDao
 import com.clipevery.dto.sync.RequestSyncInfo
 import com.clipevery.dto.sync.SyncInfo
+import com.clipevery.dto.sync.decodeRequestTrust
 import com.clipevery.exception.StandardErrorCode
 import com.clipevery.utils.encodePreKeyBundle
 import com.clipevery.utils.failResponse
@@ -150,6 +151,34 @@ fun Routing.syncRouting() {
         val appUI = koinApplication.koin.get<AppUI>()
         appUI.showToken = true
         appUI.showWindow = true
+    }
+
+    get("/sync/isTrust") {
+        getAppInstanceId(call).let { appInstanceId ->
+            val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
+            signalProtocolStore.getIdentity(signalProtocolAddress)?.let {
+                successResponse(call)
+            } ?: failResponse(call, "not trust", status = HttpStatusCode.ExpectationFailed)
+        }
+    }
+
+    post("sync/trust") {
+        getAppInstanceId(call).let { appInstanceId ->
+            val bytes = call.receive<ByteArray>()
+            val requestTrust = decodeRequestTrust(bytes)
+
+            val appUI = koinApplication.koin.get<AppUI>()
+
+            if (requestTrust.token == String(appUI.token).toInt()) {
+                val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
+                signalProtocolStore.saveIdentity(
+                    signalProtocolAddress,
+                    requestTrust.identityKey
+                )
+            } else {
+                failResponse(call, "token isn't right", status = HttpStatusCode.ExpectationFailed)
+            }
+        }
     }
 }
 
