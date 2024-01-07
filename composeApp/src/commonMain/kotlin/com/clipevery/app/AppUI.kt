@@ -35,7 +35,7 @@ class AppUI(val width: Dp, val height: Dp) {
             refreshTokenJob = scope.launch {
                 while (isActive) {
                     refreshToken()
-                    delay(10000)
+                    delay(30000)
                 }
             }
         }

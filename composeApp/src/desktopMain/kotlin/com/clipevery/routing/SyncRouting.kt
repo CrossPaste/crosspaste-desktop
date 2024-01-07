@@ -175,6 +175,8 @@ fun Routing.syncRouting() {
                     signalProtocolAddress,
                     requestTrust.identityKey
                 )
+                appUI.showToken = false
+                successResponse(call)
             } else {
                 failResponse(call, "token isn't right", status = HttpStatusCode.ExpectationFailed)
             }
