@@ -4,6 +4,5 @@ plugins {
     alias(libs.plugins.jetbrainsCompose) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
     alias(libs.plugins.kotlinSerialization) apply false
-    id("app.cash.sqldelight") version "2.0.1" apply false
     id("io.realm.kotlin") version "1.11.0" apply false
 }

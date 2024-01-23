@@ -4,7 +4,7 @@ import com.clipevery.app.AppFileType
 import java.nio.file.Path
 
 interface PathProvider {
-    fun resolve(fileName: String?, appFileType: AppFileType): Path {
+    fun resolve(fileName: String? = null, appFileType: AppFileType): Path {
         val path = when (appFileType) {
             AppFileType.USER -> clipUserPath
             AppFileType.LOG -> clipLogPath.resolve("logs")

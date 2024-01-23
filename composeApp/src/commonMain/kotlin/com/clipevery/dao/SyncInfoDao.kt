@@ -1,11 +1,11 @@
 package com.clipevery.dao
 
-import com.clipevery.Database
 import com.clipevery.dto.sync.SyncInfo
+import io.realm.kotlin.Realm
 
 interface SyncInfoDao {
 
-    val database: Database
+    val realm: Realm
 
     fun saveSyncInfo(syncInfo: SyncInfo)
 

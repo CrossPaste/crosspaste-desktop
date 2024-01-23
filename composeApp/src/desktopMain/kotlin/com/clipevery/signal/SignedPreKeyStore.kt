@@ -1,37 +1,30 @@
 package com.clipevery.signal
 
-import com.clipevery.Database
-import com.clipevery.sql.SignedPreKey
+import com.clipevery.dao.signal.SignalRealm
 import org.signal.libsignal.protocol.InvalidKeyIdException
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord
 import org.signal.libsignal.protocol.state.SignedPreKeyStore
 
-class DesktopSignedPreKeyStore(private val database: Database): SignedPreKeyStore {
+class DesktopSignedPreKeyStore(private val signalRealm: SignalRealm): SignedPreKeyStore {
     override fun loadSignedPreKey(signedPreKeyId: Int): SignedPreKeyRecord {
-        val signedPreKey: SignedPreKey = database.signedPreKeyQueries.selectById(signedPreKeyId.toLong())
-            .executeAsOneOrNull()?.let {
-                return SignedPreKeyRecord(it.serialized)
-            } ?: throw InvalidKeyIdException("No such signedPreKeyId: $signedPreKeyId")
-        return SignedPreKeyRecord(signedPreKey.serialized)
+        signalRealm.loadSignedPreKey(signedPreKeyId)?.let {
+            return SignedPreKeyRecord(it)
+        } ?: throw InvalidKeyIdException("No such signedPreKeyId: $signedPreKeyId")
     }
 
     override fun loadSignedPreKeys(): MutableList<SignedPreKeyRecord> {
-        database.signedPreKeyQueries.selectAll().executeAsList().let { signedPreKeys ->
-            return signedPreKeys.map { SignedPreKeyRecord(it.serialized) }.toMutableList()
-        }
+        return signalRealm.loadSignedPreKeys().map { SignedPreKeyRecord(it) }.toMutableList()
     }
 
     override fun storeSignedPreKey(signedPreKeyId: Int, record: SignedPreKeyRecord) {
-        database.signedPreKeyQueries.insert(signedPreKeyId.toLong(), record.serialize())
+        signalRealm.storeSignedPreKey(signedPreKeyId, record.serialize())
     }
 
     override fun containsSignedPreKey(signedPreKeyId: Int): Boolean {
-        return database.signedPreKeyQueries.count(signedPreKeyId.toLong()).executeAsOneOrNull()?.let {
-            return it > 0
-        } ?: false
+        return signalRealm.containsSignedPreKey(signedPreKeyId)
     }
 
     override fun removeSignedPreKey(signedPreKeyId: Int) {
-        database.signedPreKeyQueries.delete(signedPreKeyId.toLong())
+        signalRealm.removeSignedPreKey(signedPreKeyId)
     }
 }

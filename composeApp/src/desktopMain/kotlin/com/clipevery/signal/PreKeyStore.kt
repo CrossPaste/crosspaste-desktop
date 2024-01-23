@@ -1,30 +1,29 @@
 package com.clipevery.signal
 
-import com.clipevery.Database
-import com.clipevery.sql.PreKey
+import com.clipevery.dao.signal.SignalRealm
 import org.signal.libsignal.protocol.InvalidKeyIdException
 import org.signal.libsignal.protocol.state.PreKeyRecord
 import org.signal.libsignal.protocol.state.PreKeyStore
 
-class DesktopPreKeyStore(private val database: Database): PreKeyStore {
+class DesktopPreKeyStore(private val signalRealm: SignalRealm): PreKeyStore {
 
     override fun loadPreKey(preKeyId: Int): PreKeyRecord {
-        val preKey: PreKey = database.preKeyQueries.selectById(preKeyId.toLong())
-            .executeAsOneOrNull() ?: throw InvalidKeyIdException("No such preKeyId: $preKeyId")
-        return PreKeyRecord(preKey.serialized)
+        signalRealm.loadPreKey(preKeyId)?.let {
+            return PreKeyRecord(it)
+        } ?: throw InvalidKeyIdException("No such preKeyId: $preKeyId")
     }
 
     override fun storePreKey(preKeyId: Int, record: PreKeyRecord) {
-        database.preKeyQueries.insert(preKeyId.toLong(), record.serialize())
+        signalRealm.storePreKey(preKeyId, record.serialize())
     }
 
     override fun containsPreKey(preKeyId: Int): Boolean {
-        return database.preKeyQueries.count(preKeyId.toLong()).executeAsOneOrNull()?.let {
-            return it > 0
-        } ?: false
+        signalRealm.loadPreKey(preKeyId)?.let {
+            return true
+        } ?: return false
     }
 
     override fun removePreKey(keyId: Int) {
-        database.preKeyQueries.delete(keyId.toLong())
+        signalRealm.removePreKey(keyId)
     }
 }

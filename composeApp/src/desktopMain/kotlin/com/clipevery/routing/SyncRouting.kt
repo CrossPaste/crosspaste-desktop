@@ -2,8 +2,8 @@ package com.clipevery.routing
 
 import com.clipevery.Dependencies
 import com.clipevery.app.AppUI
-import com.clipevery.dao.SignalStoreDao
-import com.clipevery.dao.SyncInfoDao
+import com.clipevery.dao.signal.SignalRealm
+import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.dto.sync.RequestSyncInfo
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.dto.sync.decodeRequestTrust
@@ -40,22 +40,20 @@ fun Routing.syncRouting() {
 
     val koinApplication = Dependencies.koinApplication
 
-    val syncInfoDao = koinApplication.koin.get<SyncInfoDao>()
+    val signalRealm = koinApplication.koin.get<SignalRealm>()
 
-    val signalStoreDao = koinApplication.koin.get<SignalStoreDao>()
+    val syncRuntimeInfoDao = koinApplication.koin.get<SyncRuntimeInfoDao>()
 
     val signalProtocolStore = koinApplication.koin.get<SignalProtocolStore>()
 
     get("/sync/receive") {
         val requestSyncInfos = call.receive<List<RequestSyncInfo>>()
-        syncInfoDao.database.transaction {
-            for (requestSyncInfo in requestSyncInfos) {
-                val signalProtocolAddress = SignalProtocolAddress(requestSyncInfo.appInfo.appInstanceId, 1)
-                val sessionBuilder = SessionBuilder(signalProtocolStore, signalProtocolAddress)
-                val preKeyBundle = requestSyncInfo.preKeyBundle
-                syncInfoDao.saveSyncInfo(SyncInfo(requestSyncInfo.appInfo, requestSyncInfo.endpointInfo))
-                sessionBuilder.process(preKeyBundle)
-            }
+        for (requestSyncInfo in requestSyncInfos) {
+            val signalProtocolAddress = SignalProtocolAddress(requestSyncInfo.appInfo.appInstanceId, 1)
+            val sessionBuilder = SessionBuilder(signalProtocolStore, signalProtocolAddress)
+            val preKeyBundle = requestSyncInfo.preKeyBundle
+            syncRuntimeInfoDao.inertOrUpdate(SyncInfo(requestSyncInfo.appInfo, requestSyncInfo.endpointInfo))
+            sessionBuilder.process(preKeyBundle)
         }
         successResponse(call)
     }
@@ -70,13 +68,13 @@ fun Routing.syncRouting() {
             val identityKeyPair = signalProtocolStore.identityKeyPair
             val registrationId = signalProtocolStore.localRegistrationId
             val deviceId = 1
-            val preKey = signalStoreDao.generatePreKeyPair()
-            val preKeyId = preKey.id.toInt()
+            val preKey = signalRealm.generatePreKeyPair()
+            val preKeyId = preKey.id
             val preKeyRecord = PreKeyRecord(preKey.serialized)
             val preKeyPairPublicKey = preKeyRecord.keyPair.publicKey
 
-            val signedPreKey = signalStoreDao.generatesSignedPreKeyPair(identityKeyPair.privateKey)
-            val signedPreKeyId = signedPreKey.id.toInt()
+            val signedPreKey = signalRealm.generatesSignedPreKeyPair(identityKeyPair.privateKey)
+            val signedPreKeyId = signedPreKey.id
             val signedPreKeyRecord = SignedPreKeyRecord(signedPreKey.serialized)
             signedPreKeyRecord.keyPair.publicKey
             val signedPreKeySignature = signedPreKeyRecord.signature

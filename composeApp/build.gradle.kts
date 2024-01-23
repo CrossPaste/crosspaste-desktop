@@ -11,16 +11,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.kotlinSerialization)
-    id("app.cash.sqldelight") version "2.0.1"
     id("io.realm.kotlin") version "1.11.0"
-}
-
-sqldelight {
-    databases {
-        create("Database") {
-            packageName.set("com.clipevery")
-        }
-    }
 }
 
 kotlin {
@@ -46,7 +37,6 @@ kotlin {
             implementation("br.com.devsrsouza.compose.icons:tabler-icons-desktop:1.1.0")
             implementation("io.insert-koin:koin-core:3.5.3")
             implementation("com.github.kwhat:jnativehook:2.2.2")
-            implementation("app.cash.sqldelight:sqlite-driver:2.0.1")
             implementation("com.github.Dansoftowner:jSystemThemeDetector:3.8")
             implementation("org.jmdns:jmdns:3.5.9")
         }
