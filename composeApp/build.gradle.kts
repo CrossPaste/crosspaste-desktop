@@ -12,6 +12,7 @@ plugins {
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.kotlinSerialization)
     id("app.cash.sqldelight") version "2.0.1"
+    id("io.realm.kotlin") version "1.11.0"
 }
 
 sqldelight {
@@ -57,6 +58,8 @@ kotlin {
             implementation(compose.components.resources)
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
             implementation("io.github.oshai:kotlin-logging-jvm:6.0.3")
+            implementation("io.realm.kotlin:library-base:1.11.0")
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.0")
         }
 
         val commonTest by getting {
