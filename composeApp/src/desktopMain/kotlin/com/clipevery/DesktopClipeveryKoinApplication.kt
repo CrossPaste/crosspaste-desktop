@@ -11,12 +11,9 @@ import com.clipevery.clip.TransferableConsumer
 import com.clipevery.clip.getDesktopClipboardService
 import com.clipevery.config.ConfigManager
 import com.clipevery.config.DefaultConfigManager
-import com.clipevery.dao.DriverFactory
-import com.clipevery.dao.SignalStoreDao
-import com.clipevery.dao.SignalStoreDaoImpl
-import com.clipevery.dao.SyncInfoDao
-import com.clipevery.dao.SyncInfoDaoImpl
-import com.clipevery.dao.createDatabase
+import com.clipevery.dao.signal.SignalRealm
+import com.clipevery.dao.sync.SyncRuntimeInfoDao
+import com.clipevery.dao.sync.SyncRuntimeInfoRealm
 import com.clipevery.endpoint.DesktopEndpointInfoFactory
 import com.clipevery.endpoint.EndpointInfoFactory
 import com.clipevery.i18n.GlobalCopywriter
@@ -28,8 +25,10 @@ import com.clipevery.net.ClipServer
 import com.clipevery.net.DesktopClipBonjourService
 import com.clipevery.net.DesktopClipClient
 import com.clipevery.net.DesktopClipServer
+import com.clipevery.path.getPathProvider
 import com.clipevery.presist.DesktopFilePersist
 import com.clipevery.presist.FilePersist
+import com.clipevery.realm.RealmManager
 import com.clipevery.signal.DesktopPreKeyStore
 import com.clipevery.signal.DesktopSessionStore
 import com.clipevery.signal.DesktopSignalProtocolStore
@@ -53,31 +52,43 @@ object Dependencies {
     val koinApplication: KoinApplication = initKoinApplication()
 
     private fun initKoinApplication(): KoinApplication {
+        val pathProvider = getPathProvider()
         val appModule = module {
-            single<AppUI> { AppUI(width = 460.dp, height = 710.dp) }
+
+            // simple component
             single<AppInfo> { DesktopAppInfoFactory(get()).createAppInfo() }
+            single<EndpointInfoFactory> { DesktopEndpointInfoFactory( lazy { get<ClipServer>() }) }
             single<FilePersist> { DesktopFilePersist() }
             single<ConfigManager> { DefaultConfigManager(get<FilePersist>().getPersist("appConfig.json", AppFileType.USER)) }
-            single<ClipServer> { DesktopClipServer().start() }
-            single<Lazy<ClipServer>> { lazy { get<ClipServer>() } }
-            single<ClipClient> { DesktopClipClient() }
-            single<EndpointInfoFactory> { DesktopEndpointInfoFactory( lazy { get<ClipServer>() }) }
             single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
+
+            // realm component
+            single<RealmManager> { RealmManager.createRealmManager(pathProvider = pathProvider) }
+            single<SignalRealm> { SignalRealm(get<RealmManager>().realm) }
+            single<SyncRuntimeInfoDao> { SyncRuntimeInfoRealm(get<RealmManager>().realm) }
+
+            // net component
+            single<ClipServer> { DesktopClipServer().start() }
+            single<ClipClient> { DesktopClipClient() }
+            single<Lazy<ClipServer>> { lazy { get<ClipServer>() } }
             single<ClipBonjourService> { DesktopClipBonjourService(get(), get()).registerService() }
-            single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
-            single<ClipboardService> { getDesktopClipboardService(get()) }
-            single<TransferableConsumer> { DesktopTransferableConsumer() }
-            single<GlobalListener> { GlobalListener() }
-            single<DriverFactory> { DriverFactory() }
-            single<ThemeDetector> { DesktopThemeDetector(get()) }
+
+            // signal component
             single<IdentityKeyStore> { getClipIdentityKeyStoreFactory(get(), get()).createIdentityKeyStore() }
             single<SessionStore> { DesktopSessionStore(get()) }
             single<PreKeyStore> { DesktopPreKeyStore(get())  }
             single<SignedPreKeyStore> { DesktopSignedPreKeyStore(get()) }
             single<SignalProtocolStore> { DesktopSignalProtocolStore(get(), get(), get(), get()) }
-            single<Database> { createDatabase(DriverFactory()) }
-            single<SyncInfoDao> { SyncInfoDaoImpl(get()) }
-            single<SignalStoreDao> { SignalStoreDaoImpl(get()) }
+
+            // clip component
+            single<ClipboardService> { getDesktopClipboardService(get()) }
+            single<TransferableConsumer> { DesktopTransferableConsumer() }
+
+            // ui component
+            single<AppUI> { AppUI(width = 460.dp, height = 710.dp) }
+            single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
+            single<GlobalListener> { GlobalListener() }
+            single<ThemeDetector> { DesktopThemeDetector(get()) }
         }
         return GlobalContext.startKoin {
             modules(appModule)

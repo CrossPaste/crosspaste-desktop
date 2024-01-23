@@ -38,19 +38,20 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
+import com.clipevery.dao.sync.SyncRuntimeInfo
+import com.clipevery.dao.sync.SyncState
 import com.clipevery.i18n.Copywriter
 import com.clipevery.i18n.GlobalCopywriter
-import com.clipevery.dto.sync.SyncInfoUI
-import com.clipevery.dto.sync.SyncState
+import com.clipevery.platform.Platform
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SyncItem(syncInfoUI: SyncInfoUI) {
+fun SyncItem(syncRuntimeInfo: SyncRuntimeInfo) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
 
-    val backgroundColor = when (syncInfoUI.syncState) {
-        SyncState.ONLINE -> {
+    val backgroundColor = when (syncRuntimeInfo.connectState) {
+        SyncState.CONNECTED -> {
             val color = Color(154, 222, 123)
             val lightColor = Color(203, 255, 169)
             val infiniteTransition = rememberInfiniteTransition()
@@ -66,7 +67,7 @@ fun SyncItem(syncInfoUI: SyncInfoUI) {
             )
             animatedColor
         }
-        SyncState.OFFLINE -> {
+        SyncState.DISCONNECTED -> {
             Color(238, 245, 255)
         }
         SyncState.UNVERIFIED -> {
@@ -77,11 +78,15 @@ fun SyncItem(syncInfoUI: SyncInfoUI) {
         }
     }
 
-    val showHostAddress = syncInfoUI.connectHostInfo != null
+    val showHostAddress = syncRuntimeInfo.connectHostAddress != null
 
-    val showWarning = syncInfoUI.syncState != SyncState.ONLINE
+    val showWarning = syncRuntimeInfo.connectState != SyncState.CONNECTED
 
-    val platform = syncInfoUI.endpointInfo.platform
+
+    val platform = Platform(syncRuntimeInfo.platformName,
+        syncRuntimeInfo.platformArch,
+        syncRuntimeInfo.platformBitMode,
+        syncRuntimeInfo.platformVersion)
 
     val imageVector = if (platform.isMacos()) {
         macos()
@@ -126,7 +131,7 @@ fun SyncItem(syncInfoUI: SyncInfoUI) {
             }
 
             Text(modifier = Modifier.width(150.dp),
-                text = syncInfoUI.endpointInfo.deviceId,
+                text = syncRuntimeInfo.deviceId,
                 fontSize = 15.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -145,14 +150,14 @@ fun SyncItem(syncInfoUI: SyncInfoUI) {
 
         if (showHostAddress) {
             Text(
-                text = syncInfoUI.connectHostInfo!!.hostAddress,
+                text = syncRuntimeInfo.connectHostAddress!!,
                 style = TextStyle(fontWeight = FontWeight.Light),
                 fontFamily = FontFamily.SansSerif,
                 fontSize = 17.sp
             )
         }
 
-        val detailInfo by remember { mutableStateOf(deviceDetailInfo(copywriter, syncInfoUI)) }
+        val detailInfo by remember { mutableStateOf(deviceDetailInfo(copywriter, syncRuntimeInfo)) }
 
         TooltipArea(
             tooltip = {
@@ -178,12 +183,12 @@ fun SyncItem(syncInfoUI: SyncInfoUI) {
     }
 }
 
-fun deviceDetailInfo(copywriter: Copywriter, syncInfoUI: SyncInfoUI): String {
+fun deviceDetailInfo(copywriter: Copywriter, syncRuntimeInfo: SyncRuntimeInfo): String {
     return """
-        |${copywriter.getText("Device_ID")}: ${syncInfoUI.endpointInfo.deviceId}
-        |${copywriter.getText("App_Version")}: ${syncInfoUI.appInfo.appVersion}
-        |${copywriter.getText("User_Name")}: ${syncInfoUI.appInfo.userName}
-        |${copywriter.getText("Platform")}: ${syncInfoUI.endpointInfo.platform.name} ${syncInfoUI.endpointInfo.platform.version}
-        |${copywriter.getText("State")}: ${syncInfoUI.syncState}
+        |${copywriter.getText("Device_ID")}: ${syncRuntimeInfo.deviceId}
+        |${copywriter.getText("App_Version")}: ${syncRuntimeInfo.appVersion}
+        |${copywriter.getText("User_Name")}: ${syncRuntimeInfo.userName}
+        |${copywriter.getText("Platform")}: ${syncRuntimeInfo.platformName} ${syncRuntimeInfo.platformVersion}
+        |${copywriter.getText("State")}: ${syncRuntimeInfo.connectState}
     """.trimMargin()
 }

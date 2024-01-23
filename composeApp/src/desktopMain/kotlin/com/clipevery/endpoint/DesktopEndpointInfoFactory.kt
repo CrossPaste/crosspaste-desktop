@@ -1,8 +1,8 @@
 package com.clipevery.endpoint
 
+import com.clipevery.dao.sync.HostInfo
 import com.clipevery.os.macos.api.MacosApi
 import com.clipevery.net.ClipServer
-import com.clipevery.net.HostInfo
 import com.clipevery.platform.Platform
 import com.clipevery.platform.currentPlatform
 import com.sun.jna.platform.win32.Kernel32Util
@@ -77,8 +77,10 @@ private fun getHostInfoList(): List<HostInfo> {
             for (inetAddress in Collections.list(inetAddresses)) {
                 if (inetAddress.isSiteLocalAddress) {
                     add(
-                        HostInfo(hostName = inetAddress.hostName,
-                            hostAddress = inetAddress.hostAddress)
+                        HostInfo().apply {
+                            this.hostName = inetAddress.hostName
+                            this.hostAddress = inetAddress.hostAddress
+                        }
                     )
                 }
             }

@@ -1,6 +1,6 @@
 package com.clipevery.endpoint
 
-import com.clipevery.net.HostInfo
+import com.clipevery.dao.sync.HostInfo
 import com.clipevery.platform.Platform
 import kotlinx.serialization.Serializable
 
