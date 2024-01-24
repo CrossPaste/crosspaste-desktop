@@ -17,7 +17,7 @@ class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
 
     override fun updateConnectState(appInstanceId: String, connectState: Int) {
         realm.writeBlocking {
-            realm.query(SyncRuntimeInfo::class, "appInstanceId == $0", appInstanceId)
+            query(SyncRuntimeInfo::class, "appInstanceId == $0", appInstanceId)
                 .first()
                 .find()?.let {
                     it.connectState = connectState
@@ -27,7 +27,7 @@ class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
 
     override fun updateConnectInfo(appInstanceId: String, connectState: Int, connectHostAddress: String) {
         realm.writeBlocking {
-            realm.query(SyncRuntimeInfo::class, "appInstanceId == $0", appInstanceId)
+            query(SyncRuntimeInfo::class, "appInstanceId == $0", appInstanceId)
                 .first()
                 .find()?.let {
                     it.connectState = connectState
@@ -38,7 +38,7 @@ class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
 
     override fun updateAllowSend(appInstanceId: String, allowSend: Boolean) {
         realm.writeBlocking {
-            realm.query(SyncRuntimeInfo::class, "appInstanceId == $0", appInstanceId)
+            query(SyncRuntimeInfo::class, "appInstanceId == $0", appInstanceId)
                 .first()
                 .find()?.let {
                     it.allowSend = allowSend
@@ -48,7 +48,7 @@ class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
 
     override fun updateAllowReceive(appInstanceId: String, allowReceive: Boolean) {
         realm.writeBlocking {
-            realm.query(SyncRuntimeInfo::class, "appInstanceId == $0", appInstanceId)
+            query(SyncRuntimeInfo::class, "appInstanceId == $0", appInstanceId)
                 .first()
                 .find()?.let {
                     it.allowReceive = allowReceive
@@ -132,7 +132,7 @@ class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
 
     override fun inertOrUpdate(syncInfo: SyncInfo) {
         realm.writeBlocking {
-            realm.query(SyncRuntimeInfo::class, "appInstanceId == $0", syncInfo.appInfo.appInstanceId)
+            query(SyncRuntimeInfo::class, "appInstanceId == $0", syncInfo.appInfo.appInstanceId)
                 .first()
                 .find()?.let {
                     updateSyncRuntimeInfo(it, syncInfo)
@@ -146,7 +146,7 @@ class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
         return realm.writeBlocking {
             return@writeBlocking buildList {
                 syncInfos.forEach { syncInfo ->
-                    realm.query(
+                    query(
                         SyncRuntimeInfo::class,
                         "appInstanceId == $0",
                         syncInfo.appInfo.appInstanceId
@@ -165,7 +165,7 @@ class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
 
     override fun deleteSyncRuntimeInfo(appInstanceId: String) {
         realm.writeBlocking {
-            realm.query(SyncRuntimeInfo::class, "appInstanceId == $0", appInstanceId)
+            query(SyncRuntimeInfo::class, "appInstanceId == $0", appInstanceId)
                 .first()
                 .find()?.let {
                     delete(it)
