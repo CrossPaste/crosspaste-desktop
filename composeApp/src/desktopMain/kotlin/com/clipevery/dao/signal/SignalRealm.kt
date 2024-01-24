@@ -56,13 +56,11 @@ class SignalRealm(private val realm: Realm) {
 
     fun saveIdentity(appInstanceId: String, serialized: ByteArray): Boolean {
         return realm.writeBlocking {
-            val clipIdentityKey = realm.query(ClipIdentityKey::class, "appInstanceId == $0", appInstanceId).first().find()
+            val clipIdentityKey = query(ClipIdentityKey::class, "appInstanceId == $0", appInstanceId).first().find()
 
             clipIdentityKey?.let {
-                findLatest(it)?.let { key ->
-                    key.serialized = serialized
-                    return@writeBlocking true
-                }
+                clipIdentityKey.serialized = serialized
+                return@writeBlocking true
             }
             val newClipIdentityKey = ClipIdentityKey().apply {
                 this.appInstanceId = appInstanceId
@@ -97,11 +95,9 @@ class SignalRealm(private val realm: Realm) {
 
     fun removePreKey(id: Int) {
         realm.writeBlocking {
-            val clipPreKey = realm.query(ClipPreKey::class, "id == $0", id).first().find()
+            val clipPreKey = query(ClipPreKey::class, "id == $0", id).first().find()
             clipPreKey?.let {
-                findLatest(clipPreKey)?.let { key ->
-                    delete(key)
-                }
+                delete(clipPreKey)
             }
         }
     }
@@ -134,18 +130,16 @@ class SignalRealm(private val realm: Realm) {
 
     fun deleteSession(appInstanceId: String) {
         realm.writeBlocking {
-            val clipSession = realm.query(ClipSession::class, "appInstanceId == $0", appInstanceId).first().find()
+            val clipSession = query(ClipSession::class, "appInstanceId == $0", appInstanceId).first().find()
             clipSession?.let {
-                findLatest(clipSession)?.let {
-                    delete(it)
-                }
+                delete(it)
             }
         }
     }
 
     fun deleteAllSession() {
         realm.writeBlocking {
-            val clipSessions = realm.query(ClipSession::class).find()
+            val clipSessions = query(ClipSession::class).find()
             delete(clipSessions)
         }
     }
@@ -178,7 +172,7 @@ class SignalRealm(private val realm: Realm) {
 
     fun removeSignedPreKey(id: Int) {
         realm.writeBlocking {
-            val clipSignedPreKey = realm.query(ClipSignedPreKey::class, "id == $0", id).first().find()
+            val clipSignedPreKey = query(ClipSignedPreKey::class, "id == $0", id).first().find()
             clipSignedPreKey?.let {
                 delete(it)
             }
