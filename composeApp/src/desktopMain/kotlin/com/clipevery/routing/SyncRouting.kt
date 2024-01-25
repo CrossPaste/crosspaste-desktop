@@ -4,10 +4,10 @@ import com.clipevery.Dependencies
 import com.clipevery.app.AppUI
 import com.clipevery.dao.signal.SignalRealm
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
-import com.clipevery.dto.sync.RequestSyncInfo
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.dto.sync.decodeRequestTrust
 import com.clipevery.exception.StandardErrorCode
+import com.clipevery.utils.decodeReceive
 import com.clipevery.utils.encodePreKeyBundle
 import com.clipevery.utils.failResponse
 import com.clipevery.utils.getAppInstanceId
@@ -19,10 +19,10 @@ import io.ktor.server.request.receive
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import kotlinx.serialization.ExperimentalSerializationApi
 import org.signal.libsignal.protocol.InvalidKeyException
 import org.signal.libsignal.protocol.InvalidKeyIdException
 import org.signal.libsignal.protocol.InvalidMessageException
-import org.signal.libsignal.protocol.SessionBuilder
 import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.SignalProtocolAddress
 import org.signal.libsignal.protocol.UntrustedIdentityException
@@ -34,6 +34,7 @@ import org.signal.libsignal.protocol.state.SignalProtocolStore
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord
 import java.util.Objects
 
+@OptIn(ExperimentalSerializationApi::class)
 fun Routing.syncRouting() {
 
     val logger = KotlinLogging.logger {}
@@ -46,15 +47,9 @@ fun Routing.syncRouting() {
 
     val signalProtocolStore = koinApplication.koin.get<SignalProtocolStore>()
 
-    get("/sync/receive") {
-        val requestSyncInfos = call.receive<List<RequestSyncInfo>>()
-        for (requestSyncInfo in requestSyncInfos) {
-            val signalProtocolAddress = SignalProtocolAddress(requestSyncInfo.appInfo.appInstanceId, 1)
-            val sessionBuilder = SessionBuilder(signalProtocolStore, signalProtocolAddress)
-            val preKeyBundle = requestSyncInfo.preKeyBundle
-            syncRuntimeInfoDao.inertOrUpdate(SyncInfo(requestSyncInfo.appInfo, requestSyncInfo.endpointInfo))
-            sessionBuilder.process(preKeyBundle)
-        }
+    post("/sync/syncInfos") {
+        val syncInfos: List<SyncInfo> = decodeReceive(call, signalProtocolStore)
+        syncRuntimeInfoDao.inertOrUpdate(syncInfos)
         successResponse(call)
     }
 
