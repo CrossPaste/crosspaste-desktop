@@ -1,11 +1,5 @@
-package com.clipevery.ui
+package com.clipevery.ui.devices
 
-import androidx.compose.animation.animateColor
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.TooltipPlacement
@@ -21,8 +15,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.Icon
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,8 +28,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
@@ -43,45 +41,31 @@ import com.clipevery.dao.sync.SyncState
 import com.clipevery.i18n.Copywriter
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.platform.Platform
+import com.clipevery.ui.android
+import com.clipevery.ui.arrowLeftIcon
+import com.clipevery.ui.arrowRightIcon
+import com.clipevery.ui.block
+import com.clipevery.ui.ipad
+import com.clipevery.ui.iphone
+import com.clipevery.ui.linux
+import com.clipevery.ui.macos
+import com.clipevery.ui.questionOS
+import com.clipevery.ui.syncAlt
+import com.clipevery.ui.windows
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SyncItem(syncRuntimeInfo: SyncRuntimeInfo) {
+fun DeviceItemView(syncRuntimeInfo: SyncRuntimeInfo) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
 
-    val backgroundColor = when (syncRuntimeInfo.connectState) {
-        SyncState.CONNECTED -> {
-            val color = Color(154, 222, 123)
-            val lightColor = Color(203, 255, 169)
-            val infiniteTransition = rememberInfiniteTransition()
-            val animatedColor: Color by infiniteTransition.animateColor(
-                initialValue = lightColor,
-                targetValue = color,
-                animationSpec = infiniteRepeatable(
-                    // TweenSpec for smooth transition between colors
-                    animation = tween(durationMillis = 2000, easing = FastOutSlowInEasing),
-                    // RepeatMode.Reverse to go back and forth between the colors
-                    repeatMode = RepeatMode.Reverse
-                )
-            )
-            animatedColor
-        }
-        SyncState.DISCONNECTED -> {
-            Color(238, 245, 255)
-        }
-        SyncState.UNVERIFIED -> {
-            Color(250, 112, 112)
-        }
-        else -> {
-            Color.White
-        }
+    val (connectColor, connectText) = if (syncRuntimeInfo.allowSend || syncRuntimeInfo.allowReceive)  {
+        getConnectStateColorAndText(syncRuntimeInfo.connectState)
+    } else {
+        Pair(Color.Red, "OFF_CONNECTED")
     }
 
-    val showHostAddress = syncRuntimeInfo.connectHostAddress != null
-
-    val showWarning = syncRuntimeInfo.connectState != SyncState.CONNECTED
-
+    val connectIcon = getAllowSendAndReceiveImage(syncRuntimeInfo)
 
     val platform = Platform(syncRuntimeInfo.platformName,
         syncRuntimeInfo.platformArch,
@@ -106,56 +90,56 @@ fun SyncItem(syncRuntimeInfo: SyncRuntimeInfo) {
 
     Row(modifier = Modifier
         .fillMaxWidth()
-        .height(72.dp)
-        .background(backgroundColor),
+        .height(60.dp)
+        .background(MaterialTheme.colors.background),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
     ) {
         Icon(
-            modifier = Modifier.padding(10.dp).size(44.dp),
+            modifier = Modifier.padding(12.dp).size(36.dp),
             imageVector = imageVector,
             contentDescription = "OS Icon",
-            tint = Color.Unspecified
+            tint = MaterialTheme.colors.onBackground
         )
 
         Column(modifier = Modifier.align(Alignment.CenterVertically)) {
             Row(modifier = Modifier.wrapContentWidth(),
                 verticalAlignment = Alignment.CenterVertically) {
                 Text(text = platform.name,
-                    style = TextStyle(fontWeight = FontWeight.Bold),
-                    fontSize = 25.sp)
+                    style = TextStyle(fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colors.onBackground,
+                        fontSize = 17.sp)
+                )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(text = platform.version,
-                    style = TextStyle(fontWeight = FontWeight.Light),
-                    fontSize = 15.sp)
+                    style = TextStyle(fontWeight = FontWeight.Light,
+                        color = MaterialTheme.colors.onBackground,
+                        fontSize = 15.sp)
+                )
             }
 
-            Text(modifier = Modifier.width(150.dp),
-                text = syncRuntimeInfo.deviceId,
-                fontSize = 15.sp,
+            Text(modifier = Modifier.fillMaxWidth(fraction = 0.5f),
+                text = syncRuntimeInfo.deviceName,
+                style = TextStyle(fontWeight = FontWeight.Light,
+                    color = MaterialTheme.colors.onBackground,
+                    fontSize = 15.sp),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
         }
         Spacer(modifier = Modifier.weight(2f, fill = true))
 
-        if (showWarning) {
-            Icon(
-                modifier = Modifier.padding(6.dp).size(20.dp),
-                imageVector = warning(),
-                contentDescription = "Info Icon",
-                tint = Color.Yellow
-            )
-        }
+        Icon(
+            connectIcon,
+            contentDescription = "connectState",
+            modifier = Modifier.padding(16.dp).size(20.dp),
+            tint = connectColor)
 
-        if (showHostAddress) {
-            Text(
-                text = syncRuntimeInfo.connectHostAddress!!,
-                style = TextStyle(fontWeight = FontWeight.Light),
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 17.sp
-            )
-        }
+        Text(text = copywriter.getText(connectText),
+            style = TextStyle(fontWeight = FontWeight.Light,
+                color = connectColor,
+                fontSize = 17.sp)
+        )
 
         val detailInfo by remember { mutableStateOf(deviceDetailInfo(copywriter, syncRuntimeInfo)) }
 
@@ -174,12 +158,37 @@ fun SyncItem(syncRuntimeInfo: SyncRuntimeInfo) {
             )
         ) {
             Icon(
+                Icons.Outlined.Info,
+                contentDescription = "info",
                 modifier = Modifier.padding(16.dp).size(20.dp),
-                imageVector = question(),
-                contentDescription = "Info Icon",
-                tint = Color.Unspecified
-            )
+                tint = MaterialTheme.colors.primary)
         }
+    }
+}
+
+@Composable
+fun getAllowSendAndReceiveImage(syncRuntimeInfo: SyncRuntimeInfo): ImageVector {
+    return if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
+        Icons.Outlined.Lock
+    } else if (syncRuntimeInfo.allowSend && syncRuntimeInfo.allowReceive) {
+        syncAlt()
+    } else if (syncRuntimeInfo.allowSend) {
+        arrowLeftIcon()
+    } else if (syncRuntimeInfo.allowReceive) {
+        arrowRightIcon()
+    } else {
+        block()
+    }
+}
+
+fun getConnectStateColorAndText(connectState: Int): Pair<Color, String> {
+    return when(connectState) {
+        SyncState.CONNECTED -> Pair(Color.Green, "CONNECTED")
+        SyncState.CONNECTING -> Pair(Color.Gray, "CONNECTING")
+        SyncState.DISCONNECTED -> Pair(Color.Red, "DISCONNECTED")
+        SyncState.UNMATCHED -> Pair(Color.Yellow, "UNMATCHED")
+        SyncState.UNVERIFIED -> Pair(Color(0xFFFFA500), "UNVERIFIED")
+        else -> Pair(Color.Red, "OFF_CONNECTED")
     }
 }
 
