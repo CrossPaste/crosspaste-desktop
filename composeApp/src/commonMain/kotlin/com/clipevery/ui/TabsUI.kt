@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.config.ConfigManager
 import com.clipevery.i18n.GlobalCopywriter
+import com.clipevery.ui.devices.DevicesView
 
 @Composable
 fun TabsUI() {
@@ -70,7 +71,7 @@ fun TabsUI() {
     Column(modifier = Modifier.fillMaxSize()) {
         when (selectedTabIndex) {
             0 -> ClipPreview()
-            1 -> Syncs()
+            1 -> DevicesView()
             2 -> {
                 if (showBindingQRCode) {
                     bindingQRCode()
