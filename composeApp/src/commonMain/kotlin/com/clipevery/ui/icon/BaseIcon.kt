@@ -1,4 +1,4 @@
-package com.clipevery.ui
+package com.clipevery.ui.icon
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.material.Icon

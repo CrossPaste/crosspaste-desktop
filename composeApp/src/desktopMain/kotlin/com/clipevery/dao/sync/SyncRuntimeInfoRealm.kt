@@ -36,23 +36,19 @@ class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
         }
     }
 
-    override fun updateAllowSend(appInstanceId: String, allowSend: Boolean) {
-        realm.writeBlocking {
-            query(SyncRuntimeInfo::class, "appInstanceId == $0", appInstanceId)
-                .first()
-                .find()?.let {
-                    it.allowSend = allowSend
-                }
+    override fun updateAllowSend(syncRuntimeInfo: SyncRuntimeInfo, allowSend: Boolean): SyncRuntimeInfo? {
+        return realm.writeBlocking {
+            findLatest(syncRuntimeInfo)?.apply {
+                this.allowSend = allowSend
+            }
         }
     }
 
-    override fun updateAllowReceive(appInstanceId: String, allowReceive: Boolean) {
-        realm.writeBlocking {
-            query(SyncRuntimeInfo::class, "appInstanceId == $0", appInstanceId)
-                .first()
-                .find()?.let {
-                    it.allowReceive = allowReceive
-                }
+    override fun updateAllowReceive(syncRuntimeInfo: SyncRuntimeInfo, allowReceive: Boolean): SyncRuntimeInfo? {
+        return realm.writeBlocking {
+            findLatest(syncRuntimeInfo)?.apply {
+                this.allowReceive = allowReceive
+            }
         }
     }
 

@@ -5,11 +5,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
-import com.clipevery.PageType
 
 @Composable
-fun AboutUI(currentPage: MutableState<PageType>) {
-    WindowDecoration(currentPage, "About")
+fun AboutUI(currentPageViewContext: MutableState<PageViewContext>) {
+    WindowDecoration(currentPageViewContext, "About")
     AboutContentUI()
 }
 

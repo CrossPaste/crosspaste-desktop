@@ -25,6 +25,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,7 +45,7 @@ import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.devices.DevicesView
 
 @Composable
-fun TabsUI() {
+fun TabsUI(currentPageViewContext: MutableState<PageViewContext>) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val configManager = current.koin.get<ConfigManager>()
@@ -71,7 +72,7 @@ fun TabsUI() {
     Column(modifier = Modifier.fillMaxSize()) {
         when (selectedTabIndex) {
             0 -> ClipPreview()
-            1 -> DevicesView()
+            1 -> DevicesView(currentPageViewContext)
             2 -> {
                 if (showBindingQRCode) {
                     bindingQRCode()
