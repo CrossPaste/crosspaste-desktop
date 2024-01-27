@@ -133,7 +133,7 @@ fun SettingItem(title: String, value: String) {
         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(title, color = Color.LightGray, modifier = Modifier.weight(1f))
-        Text(value, color = Color.White)
+        Text(title, color = MaterialTheme.colors.onBackground, modifier = Modifier.weight(1f))
+        Text(value, color = MaterialTheme.colors.onBackground)
     }
 }
