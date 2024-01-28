@@ -25,7 +25,10 @@ import androidx.compose.ui.unit.dp
 import com.clipevery.ui.AboutUI
 import com.clipevery.ui.ClipeveryTheme
 import com.clipevery.ui.HomeUI
+import com.clipevery.ui.PageViewContext
+import com.clipevery.ui.PageViewType
 import com.clipevery.ui.SettingsUI
+import com.clipevery.ui.devices.DeviceDetailView
 import org.koin.core.KoinApplication
 
 @Composable
@@ -93,16 +96,19 @@ fun ClipeveryWindow(hideWindow: () -> Unit) {
 
 @Composable
 fun ClipeveryContent() {
-    val currentPage = remember { mutableStateOf(PageType.HOME) }
-    when (currentPage.value) {
-        PageType.HOME -> {
-            HomeUI(currentPage)
+    val currentPageViewContext = remember { mutableStateOf(PageViewContext(PageViewType.HOME)) }
+    when (currentPageViewContext.value.pageViewType) {
+        PageViewType.HOME -> {
+            HomeUI(currentPageViewContext)
         }
-        PageType.SETTINGS -> {
-            SettingsUI(currentPage)
+        PageViewType.SETTINGS -> {
+            SettingsUI(currentPageViewContext)
         }
-        PageType.ABOUT -> {
-            AboutUI(currentPage)
+        PageViewType.ABOUT -> {
+            AboutUI(currentPageViewContext)
+        }
+        PageViewType.DEVICE_DETAIL -> {
+            DeviceDetailView(currentPageViewContext)
         }
     }
 }
@@ -113,8 +119,4 @@ fun loadImageBitmap(resourcePath: String): ImageBitmap {
         Thread.currentThread().contextClassLoader.getResourceAsStream(resourcePath)
         ?.readBytes()!!)
     return image.toComposeImageBitmap()
-}
-
-enum class PageType {
-    HOME, SETTINGS, ABOUT
 }

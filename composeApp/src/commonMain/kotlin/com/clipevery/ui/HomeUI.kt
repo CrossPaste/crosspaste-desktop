@@ -53,7 +53,6 @@ import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Popup
 import com.clipevery.LocalExitApplication
 import com.clipevery.LocalKoinApplication
-import com.clipevery.PageType
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.loadImageBitmap
 import compose.icons.TablerIcons
@@ -62,14 +61,14 @@ import java.awt.Desktop
 import java.net.URI
 
 @Composable
-fun HomeUI(currentPage: MutableState<PageType>) {
-    HomeWindowDecoration(currentPage)
+fun HomeUI(currentPageViewContext: MutableState<PageViewContext>) {
+    HomeWindowDecoration(currentPageViewContext)
     TokenUI()
-    TabsUI()
+    TabsUI(currentPageViewContext)
 }
 
 @Composable
-fun HomeWindowDecoration(currentPage: MutableState<PageType>) {
+fun HomeWindowDecoration(currentPage: MutableState<PageViewContext>) {
     TitleUI(currentPage)
 }
 
@@ -81,7 +80,7 @@ val clipeveryIcon = loadImageBitmap("clipevery_icon.png")
 
 @Preview
 @Composable
-fun TitleUI(currentPage: MutableState<PageType>) {
+fun TitleUI(currentPage: MutableState<PageViewContext>) {
     val current = LocalKoinApplication.current
     val applicationExit = LocalExitApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
@@ -94,7 +93,7 @@ fun TitleUI(currentPage: MutableState<PageType>) {
     val density = LocalDensity.current
 
     Box(
-        modifier = Modifier.background(Color.Black)
+        modifier = Modifier.background(Color(0xFF121314))
             .border(0.dp, Color.Transparent)
 
             .background(
@@ -153,7 +152,7 @@ fun TitleUI(currentPage: MutableState<PageType>) {
                     modifier = Modifier.padding(13.dp)
                         .align(Alignment.End)
                         .size(36.dp) // Set the size of the button
-                        .background(Color.Black, CircleShape) // Set the background to blue and shape to circle
+                        .background(Color(0xFF121314), CircleShape) // Set the background to blue and shape to circle
                         .onGloballyPositioned { coordinates ->
                             buttonPosition = coordinates.localToWindow(Offset.Zero)
                             buttonSize = coordinates.size.toSize()
@@ -198,11 +197,11 @@ fun TitleUI(currentPage: MutableState<PageType>) {
                                     showPopup = false
                                 }
                                 MenuItem(copywriter.getText("Settings")) {
-                                    currentPage.value = PageType.SETTINGS
+                                    currentPage.value = PageViewContext(PageViewType.SETTINGS)
                                     showPopup = false
                                 }
                                 MenuItem(copywriter.getText("About")) {
-                                    currentPage.value = PageType.ABOUT
+                                    currentPage.value = PageViewContext(PageViewType.ABOUT)
                                     showPopup = false
                                 }
                                 MenuItem(copywriter.getText("FQA")) {

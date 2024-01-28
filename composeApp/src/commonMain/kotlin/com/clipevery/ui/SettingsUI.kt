@@ -47,18 +47,21 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Popup
 import com.clipevery.LocalKoinApplication
-import com.clipevery.PageType
 import com.clipevery.i18n.GlobalCopywriter
+import com.clipevery.ui.icon.arrowDown
+import com.clipevery.ui.icon.arrowLeft
+import com.clipevery.ui.icon.arrowRight
+import com.clipevery.ui.icon.arrowUp
 import kotlinx.coroutines.delay
 
 @Composable
-fun SettingsUI(currentPage: MutableState<PageType>) {
-    SettingsContentUI(currentPage)
+fun SettingsUI(currentPageViewContext: MutableState<PageViewContext>) {
+    SettingsContentUI(currentPageViewContext)
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SettingsContentUI(currentPage: MutableState<PageType>) {
+fun SettingsContentUI(currentPage: MutableState<PageViewContext>) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     var hasBeenClicked by remember { mutableStateOf(false) }

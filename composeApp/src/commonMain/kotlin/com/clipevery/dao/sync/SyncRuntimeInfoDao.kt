@@ -11,9 +11,9 @@ interface SyncRuntimeInfoDao {
 
     fun updateConnectInfo(appInstanceId: String, connectState: Int, connectHostAddress: String)
 
-    fun updateAllowSend(appInstanceId: String, allowSend: Boolean)
+    fun updateAllowSend(syncRuntimeInfo: SyncRuntimeInfo, allowSend: Boolean): SyncRuntimeInfo?
 
-    fun updateAllowReceive(appInstanceId: String, allowReceive: Boolean)
+    fun updateAllowReceive(syncRuntimeInfo: SyncRuntimeInfo, allowReceive: Boolean): SyncRuntimeInfo?
 
     fun inertOrUpdate(syncInfo: SyncInfo)
 

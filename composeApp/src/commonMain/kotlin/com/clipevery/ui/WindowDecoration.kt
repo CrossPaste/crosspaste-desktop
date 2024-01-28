@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
@@ -29,11 +30,11 @@ import androidx.compose.ui.text.platform.Font
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
-import com.clipevery.PageType
 import com.clipevery.i18n.GlobalCopywriter
+import com.clipevery.ui.icon.left
 
 @Composable
-fun WindowDecoration(currentPage: MutableState<PageType>, title: String) {
+fun WindowDecoration(currentPageViewContext: MutableState<PageViewContext>, title: String) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -46,12 +47,12 @@ fun WindowDecoration(currentPage: MutableState<PageType>, title: String) {
             bottomStart = 0.dp
         )
     ) {
-        DecorationUI(currentPage, title)
+        DecorationUI(currentPageViewContext, title)
     }
 }
 
 @Composable
-fun DecorationUI(currentPage: MutableState<PageType>, title: String) {
+fun DecorationUI(currentPageViewContext: MutableState<PageViewContext>, title: String) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
 
@@ -60,7 +61,8 @@ fun DecorationUI(currentPage: MutableState<PageType>, title: String) {
     )
 
     Box(
-        modifier = Modifier.background(Color.Black)
+        modifier = Modifier
+            .background(Color(0xFF121314))
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
@@ -74,21 +76,27 @@ fun DecorationUI(currentPage: MutableState<PageType>, title: String) {
     ) {
         Row(modifier = Modifier.align(Alignment.CenterStart)
             .wrapContentWidth(),
-            horizontalArrangement = Arrangement.Center) {
+            verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(0.5f)
-                .align(Alignment.CenterVertically)
-                .offset(y = 2.dp),
-                horizontalAlignment = Alignment.CenterHorizontally) {
-                Row(modifier = Modifier.padding(16.dp)
+                .align(Alignment.CenterVertically),
+                verticalArrangement = Arrangement.SpaceAround) {
+                Row(modifier = Modifier.padding(8.dp)
                     .align(Alignment.Start)
-                    .clickable { currentPage.value = PageType.HOME }) {
-                    Icon(imageVector = arrowLeft(),
-                        contentDescription = null,
-                        tint = Color(0xFF1672FF))
+                    .clickable { currentPageViewContext.value = PageViewContext(PageViewType.HOME) },
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        left(),
+                        contentDescription = "return",
+                        modifier = Modifier.size(40.dp),
+                        tint = MaterialTheme.colors.primary
+                    )
                     Text(
+                        modifier = Modifier.offset(x = (-8).dp),
                         text = copywriter.getText("Return"),
-                        color = Color(0xFF1672FF),
-                        fontWeight = FontWeight.Light
+                        style = TextStyle(fontWeight = FontWeight.Light,
+                            color = MaterialTheme.colors.primary,
+                            fontSize = 20.sp
+                        )
                     )
                 }
             }
