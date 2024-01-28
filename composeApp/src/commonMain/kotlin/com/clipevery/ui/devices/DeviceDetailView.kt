@@ -1,5 +1,6 @@
 package com.clipevery.ui.devices
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -7,7 +8,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Switch
@@ -21,10 +26,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.dao.sync.SyncRuntimeInfo
@@ -50,90 +63,148 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
     DeviceBarView(syncRuntimeInfo, currentPageViewContext, false)
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp)
+        modifier = Modifier.fillMaxSize()
+            .background(MaterialTheme.colors.surface)
+            .padding(16.dp)
     ) {
         // Header
-        Text(copywriter.getText("Sync_Control"),
+        Text( modifier = Modifier.wrapContentSize()
+            .padding(start = 15.dp, bottom = 5.dp),
+            text = copywriter.getText("Sync_Control"),
             color = MaterialTheme.colors.onBackground,
+            style = MaterialTheme.typography.h6,
+            fontFamily = FontFamily.SansSerif,
+            fontSize = 12.sp)
+        Column(modifier = Modifier.wrapContentSize()
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colors.background)
+        ) {
+            Row(
+                modifier = Modifier.wrapContentSize().padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = copywriter.getText("Allow_Send_to_this_device"),
+                    color = MaterialTheme.colors.onBackground,
+                    style = TextStyle(fontWeight = FontWeight.Light),
+                    fontFamily = FontFamily.SansSerif,
+                    fontSize = 17.sp,
+                    modifier = Modifier.weight(1f)
+                )
+                Switch(
+                    modifier = Modifier.align(Alignment.CenterVertically).padding(0.dp),
+                    checked = syncRuntimeInfo.allowSend,
+                    onCheckedChange = { it ->
+                        syncRuntimeInfoDao.updateAllowSend(syncRuntimeInfo, it)?.let {
+                            syncRuntimeInfo = it
+                        }
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.Green,
+                        uncheckedThumbColor = Color.Gray
+                    )
+                )
+            }
+
+            Divider(modifier = Modifier.padding(start = 15.dp), color = Color.Gray)
+
+            Row(
+                modifier = Modifier.wrapContentSize().padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = copywriter.getText("Allow_Receive_from_this_device"),
+                    color = MaterialTheme.colors.onBackground,
+                    style = TextStyle(fontWeight = FontWeight.Light),
+                    fontFamily = FontFamily.SansSerif,
+                    fontSize = 17.sp,
+                    modifier = Modifier.weight(1f)
+                )
+                Switch(
+                    modifier = Modifier.align(Alignment.CenterVertically).padding(0.dp),
+                    checked = syncRuntimeInfo.allowReceive,
+                    onCheckedChange = { it ->
+                        syncRuntimeInfoDao.updateAllowReceive(syncRuntimeInfo, it)?.let {
+                            syncRuntimeInfo = it
+                        }
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.Green,
+                        uncheckedThumbColor = Color.Gray
+                    )
+                )
+            }
+        }
+
+
+        Spacer(Modifier.height(16.dp))
+
+        var maxWidth by remember { mutableStateOf(0.dp) }
+
+        val properties = remember(syncRuntimeInfo) {
+            arrayOf(
+                Pair("App_Version", syncRuntimeInfo.appVersion),
+                Pair("User_Name", syncRuntimeInfo.userName),
+                Pair("Device_ID", syncRuntimeInfo.deviceId),
+                Pair("Arch", syncRuntimeInfo.platformArch),
+                Pair("Connect_Host", syncRuntimeInfo.connectHostAddress ?: ""),
+                Pair("Port", syncRuntimeInfo.port.toString())
+            )
+        }
+
+        val textStyle = TextStyle(fontSize = 16.sp,
+            fontWeight = FontWeight.Normal)
+
+        for (property in properties) {
+            maxWidth = maxOf(maxWidth, measureTextWidth(copywriter.getText(property.first), textStyle))
+        }
+
+        Text( modifier = Modifier.wrapContentSize()
+            .padding(start = 15.dp, bottom = 5.dp),
+            text = copywriter.getText("Base_Info"),
+            color = MaterialTheme.colors.onBackground,
+            fontFamily = FontFamily.SansSerif,
             style = MaterialTheme.typography.h6,
             fontSize = 12.sp)
 
-        Row(
-            modifier = Modifier.wrapContentWidth().padding(vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(modifier = Modifier.wrapContentSize()
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colors.background)
         ) {
-            Text(text = copywriter.getText("Allow_Send_to_this_device"),
-                style = TextStyle(
-                    fontWeight = FontWeight.Normal,
-                    color = MaterialTheme.colors.onBackground,
-                    fontSize = 17.sp
-                ),
-                modifier = Modifier.weight(1f)
-            )
-            Switch(
-                checked = syncRuntimeInfo.allowSend,
-                onCheckedChange = { it ->
-                    syncRuntimeInfoDao.updateAllowSend(syncRuntimeInfo, it)?.let {
-                        syncRuntimeInfo = it
-                    }
-                },
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = Color.Green,
-                    uncheckedThumbColor = Color.Gray
-                )
-            )
+
+            properties.forEachIndexed { index, pair ->
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                        .padding(horizontal = 12.dp)
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        modifier = Modifier.width(maxWidth + 16.dp),
+                        text = copywriter.getText(pair.first),
+                        style = TextStyle(fontWeight = FontWeight.Light),
+                        fontFamily = FontFamily.SansSerif,
+                        color = MaterialTheme.colors.onBackground,
+                        fontSize = 17.sp
+                    )
+                    Text(text = pair.second,
+                        style = TextStyle(fontWeight = FontWeight.Light),
+                        fontFamily = FontFamily.SansSerif,
+                        color = MaterialTheme.colors.onBackground,
+                        fontSize = 16.sp
+                    )
+                }
+                if (index < properties.size - 1) {
+                    Divider(modifier = Modifier.padding(start = 15.dp), color = Color.Gray)
+                }
+            }
         }
-
-        Row(
-            modifier = Modifier.wrapContentWidth().padding(vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(text = copywriter.getText("Allow_Receive_from_this_device"),
-                style = TextStyle(
-                    fontWeight = FontWeight.Normal,
-                    color = MaterialTheme.colors.onBackground,
-                    fontSize = 17.sp
-                ),
-                modifier = Modifier.weight(1f)
-            )
-            Switch(
-                checked = syncRuntimeInfo.allowReceive,
-                onCheckedChange = { it ->
-                    syncRuntimeInfoDao.updateAllowReceive(syncRuntimeInfo, it)?.let {
-                        syncRuntimeInfo = it
-                    }
-                },
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = Color.Green,
-                    uncheckedThumbColor = Color.Gray
-                )
-            )
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        Divider(color = Color.Gray)
-
-        Spacer(Modifier.height(16.dp))
-
-        SettingItem(title = copywriter.getText("App_Version"), value = syncRuntimeInfo.appVersion)
-        SettingItem(title = copywriter.getText("User_Name"), value = syncRuntimeInfo.userName)
-        SettingItem(title = copywriter.getText("Device_ID"), value = syncRuntimeInfo.deviceId)
-        SettingItem(title = copywriter.getText("Arch"), value = syncRuntimeInfo.platformArch)
-        SettingItem(title = copywriter.getText("Host_Name"), value = syncRuntimeInfo.connectHostAddress ?: "")
-        SettingItem(title = copywriter.getText("Port"), value = syncRuntimeInfo.port.toString())
     }
 
     Column(modifier = Modifier.fillMaxSize()) {  }
 }
 
 @Composable
-fun SettingItem(title: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(title, color = MaterialTheme.colors.onBackground, modifier = Modifier.weight(1f))
-        Text(value, color = MaterialTheme.colors.onBackground)
-    }
+fun measureTextWidth(text: String, style: TextStyle): Dp {
+    val textMeasurer = rememberTextMeasurer()
+    val widthInPixels = textMeasurer.measure(text, style).size.width
+    return with(LocalDensity.current) { widthInPixels.toDp() }
 }
