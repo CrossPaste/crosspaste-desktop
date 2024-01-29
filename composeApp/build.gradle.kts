@@ -33,7 +33,7 @@ kotlin {
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.cio)
-            implementation("org.signal:libsignal-client:0.39.2")
+            implementation("org.signal:libsignal-client:0.39.3")
             implementation("br.com.devsrsouza.compose.icons:tabler-icons-desktop:1.1.0")
             implementation("io.insert-koin:koin-core:3.5.3")
             implementation("com.github.kwhat:jnativehook:2.2.2")
