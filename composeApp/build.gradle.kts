@@ -11,7 +11,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.kotlinSerialization)
-    id("io.realm.kotlin") version "1.11.0"
+    id("io.realm.kotlin") version "1.13.0"
 }
 
 kotlin {
