@@ -59,9 +59,7 @@ fun ClipeveryWindow(hideWindow: () -> Unit) {
                     onLongPress = {
                         hideWindow()
                     },
-                    onPress = {
-                        hideWindow()
-                    },
+                    onPress = {},
                 )
             }
             .clip(RoundedCornerShape(10.dp))
