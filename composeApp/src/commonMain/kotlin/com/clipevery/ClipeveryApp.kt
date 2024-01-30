@@ -28,6 +28,7 @@ import com.clipevery.ui.HomeView
 import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.PageViewType
 import com.clipevery.ui.devices.DeviceDetailView
+import com.clipevery.ui.devices.TokenView
 import com.clipevery.ui.settings.SettingsView
 import org.koin.core.KoinApplication
 
@@ -95,6 +96,7 @@ fun ClipeveryWindow(hideWindow: () -> Unit) {
 @Composable
 fun ClipeveryContent() {
     val currentPageViewContext = remember { mutableStateOf(PageViewContext(PageViewType.CLIP_PREVIEW)) }
+    TokenView()
     when (currentPageViewContext.value.pageViewType) {
         PageViewType.CLIP_PREVIEW,
         PageViewType.DEVICE_PREVIEW,
