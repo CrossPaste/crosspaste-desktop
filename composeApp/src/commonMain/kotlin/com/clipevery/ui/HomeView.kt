@@ -201,11 +201,11 @@ fun TitleView(currentPage: MutableState<PageViewContext>) {
                                     showPopup = false
                                 }
                                 MenuItem(copywriter.getText("Settings")) {
-                                    currentPage.value = PageViewContext(PageViewType.SETTINGS)
+                                    currentPage.value = PageViewContext(PageViewType.SETTINGS, currentPage.value)
                                     showPopup = false
                                 }
                                 MenuItem(copywriter.getText("About")) {
-                                    currentPage.value = PageViewContext(PageViewType.ABOUT)
+                                    currentPage.value = PageViewContext(PageViewType.ABOUT, currentPage.value)
                                     showPopup = false
                                 }
                                 MenuItem(copywriter.getText("FQA")) {

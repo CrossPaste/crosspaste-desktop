@@ -82,7 +82,7 @@ fun DecorationUI(currentPageViewContext: MutableState<PageViewContext>, title: S
                 verticalArrangement = Arrangement.SpaceAround) {
                 Row(modifier = Modifier.padding(8.dp)
                     .align(Alignment.Start)
-                    .clickable { currentPageViewContext.value = PageViewContext(PageViewType.HOME) },
+                    .clickable { currentPageViewContext.value = currentPageViewContext.value.returnNext() },
                     verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         left(),
