@@ -1,4 +1,4 @@
-package com.clipevery.ui
+package com.clipevery.ui.settings
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.i18n.GlobalCopywriter
+import com.clipevery.ui.ThemeDetector
 
 @Composable
 fun ThemeSegmentedControl() {

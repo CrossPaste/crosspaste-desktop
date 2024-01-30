@@ -22,13 +22,13 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import com.clipevery.ui.AboutUI
+import com.clipevery.ui.AboutView
 import com.clipevery.ui.ClipeveryTheme
-import com.clipevery.ui.HomeUI
+import com.clipevery.ui.HomeView
 import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.PageViewType
-import com.clipevery.ui.SettingsUI
 import com.clipevery.ui.devices.DeviceDetailView
+import com.clipevery.ui.settings.SettingsView
 import org.koin.core.KoinApplication
 
 @Composable
@@ -97,13 +97,13 @@ fun ClipeveryContent() {
     val currentPageViewContext = remember { mutableStateOf(PageViewContext(PageViewType.HOME)) }
     when (currentPageViewContext.value.pageViewType) {
         PageViewType.HOME -> {
-            HomeUI(currentPageViewContext)
+            HomeView(currentPageViewContext)
         }
         PageViewType.SETTINGS -> {
-            SettingsUI(currentPageViewContext)
+            SettingsView(currentPageViewContext)
         }
         PageViewType.ABOUT -> {
-            AboutUI(currentPageViewContext)
+            AboutView(currentPageViewContext)
         }
         PageViewType.DEVICE_DETAIL -> {
             DeviceDetailView(currentPageViewContext)

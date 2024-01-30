@@ -1,4 +1,4 @@
-package com.clipevery.ui
+package com.clipevery.ui.settings
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -31,13 +31,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.i18n.GlobalCopywriter
-import com.clipevery.ui.icon.arrowDown
-import com.clipevery.ui.icon.arrowLeft
+import com.clipevery.ui.base.arrowDown
+import com.clipevery.ui.base.arrowLeft
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
-fun SettingsItemUI(title: String,
-                   content: @Composable () -> Unit) {
+fun SettingsItemView(title: String,
+                     content: @Composable () -> Unit) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     var hover by remember { mutableStateOf(false) }

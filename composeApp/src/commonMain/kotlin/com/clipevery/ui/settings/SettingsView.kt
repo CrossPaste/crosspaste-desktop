@@ -1,4 +1,4 @@
-package com.clipevery.ui
+package com.clipevery.ui.settings
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -48,20 +48,18 @@ import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Popup
 import com.clipevery.LocalKoinApplication
 import com.clipevery.i18n.GlobalCopywriter
-import com.clipevery.ui.icon.arrowDown
-import com.clipevery.ui.icon.arrowLeft
-import com.clipevery.ui.icon.arrowRight
-import com.clipevery.ui.icon.arrowUp
+import com.clipevery.ui.MenuItem
+import com.clipevery.ui.PageViewContext
+import com.clipevery.ui.WindowDecoration
+import com.clipevery.ui.base.arrowDown
+import com.clipevery.ui.base.arrowLeft
+import com.clipevery.ui.base.arrowRight
+import com.clipevery.ui.base.arrowUp
 import kotlinx.coroutines.delay
-
-@Composable
-fun SettingsUI(currentPageViewContext: MutableState<PageViewContext>) {
-    SettingsContentUI(currentPageViewContext)
-}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SettingsContentUI(currentPage: MutableState<PageViewContext>) {
+fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     var hasBeenClicked by remember { mutableStateOf(false) }
@@ -92,7 +90,7 @@ fun SettingsContentUI(currentPage: MutableState<PageViewContext>) {
         }
     }
 
-    WindowDecoration(currentPage, "Settings")
+    WindowDecoration(currentPageViewContext, "Settings")
 
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -217,7 +215,7 @@ fun SettingsContentUI(currentPage: MutableState<PageViewContext>) {
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        SettingsItemUI("Network") {
+        SettingsItemView("Network") {
             Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                 Text(text = copywriter.getText("Network"),
                     color = MaterialTheme.colors.onBackground,
@@ -228,7 +226,7 @@ fun SettingsContentUI(currentPage: MutableState<PageViewContext>) {
             }
         }
         Spacer(modifier = Modifier.height(10.dp))
-        SettingsItemUI("Store") {
+        SettingsItemView("Store") {
             Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                 Text(text = copywriter.getText("Store"),
                     color = MaterialTheme.colors.onBackground,

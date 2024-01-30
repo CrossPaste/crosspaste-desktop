@@ -58,19 +58,20 @@ import com.clipevery.LocalKoinApplication
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.loadImageBitmap
 import com.clipevery.ui.base.ClipIconButton
+import com.clipevery.ui.devices.TokenView
 import java.awt.Desktop
 import java.net.URI
 
 @Composable
-fun HomeUI(currentPageViewContext: MutableState<PageViewContext>) {
+fun HomeView(currentPageViewContext: MutableState<PageViewContext>) {
     HomeWindowDecoration(currentPageViewContext)
-    TokenUI()
-    TabsUI(currentPageViewContext)
+    TokenView()
+    TabsView(currentPageViewContext)
 }
 
 @Composable
 fun HomeWindowDecoration(currentPage: MutableState<PageViewContext>) {
-    TitleUI(currentPage)
+    TitleView(currentPage)
 }
 
 val customFontFamily = FontFamily(
@@ -81,7 +82,7 @@ val clipeveryIcon = loadImageBitmap("clipevery_icon.png")
 
 @Preview
 @Composable
-fun TitleUI(currentPage: MutableState<PageViewContext>) {
+fun TitleView(currentPage: MutableState<PageViewContext>) {
     val current = LocalKoinApplication.current
     val applicationExit = LocalExitApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()

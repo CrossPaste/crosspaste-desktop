@@ -40,28 +40,23 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
-import com.clipevery.config.ConfigManager
 import com.clipevery.i18n.GlobalCopywriter
+import com.clipevery.ui.clip.ClipPreviewView
 import com.clipevery.ui.devices.DevicesView
+import com.clipevery.ui.devices.bindingQRCode
 
 @Composable
-fun TabsUI(currentPageViewContext: MutableState<PageViewContext>) {
+fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
-    val configManager = current.koin.get<ConfigManager>()
-    val config = remember { mutableStateOf(configManager.config) }
     var selectedTabIndex by remember { mutableStateOf(0) }
-
-    val showBindingQRCode = remember(config.value.bindingState) {
-        !config.value.bindingState
-    }
 
     val tabTitles = listOf("Clipboard", "Devices", "Scan")
     Row(modifier = Modifier.padding(8.dp)
         .wrapContentWidth()) {
 
         tabTitles.forEachIndexed { index, title ->
-            TabUI(index == selectedTabIndex, copywriter.getText(title)) {
+            TabView(index == selectedTabIndex, copywriter.getText(title)) {
                 selectedTabIndex = index
             }
         }
@@ -71,15 +66,9 @@ fun TabsUI(currentPageViewContext: MutableState<PageViewContext>) {
 
     Column(modifier = Modifier.fillMaxSize()) {
         when (selectedTabIndex) {
-            0 -> ClipPreview()
+            0 -> ClipPreviewView()
             1 -> DevicesView(currentPageViewContext)
-            2 -> {
-                if (showBindingQRCode) {
-                    bindingQRCode()
-                } else {
-                    mainUI()
-                }
-            }
+            2 -> bindingQRCode()
         }
     }
 }
@@ -93,7 +82,7 @@ val bottomBorderShape = GenericShape { size, _ ->
 }
 
 @Composable
-fun TabUI(isSelect: Boolean, title: String, clickable: () -> Unit) {
+fun TabView(isSelect: Boolean, title: String, clickable: () -> Unit) {
     val textStyle: TextStyle
     val textUnit: TextUnit
     var modifier: Modifier = Modifier.padding(2.dp)
@@ -127,7 +116,7 @@ fun TabUI(isSelect: Boolean, title: String, clickable: () -> Unit) {
 
 @Composable
 @Preview
-fun PreviewTabsUI() {
+fun PreviewTabsView() {
     var selectedTabIndex by remember { mutableStateOf(0) }
     var searchText by remember { mutableStateOf("") }
     val tabTitles = listOf("Tab 1", "Tab 2", "Tab 3")
@@ -173,9 +162,4 @@ fun PreviewTabsUI() {
 @Composable
 fun TabContent(text: String) {
     Text(text = text)
-}
-
-@Composable
-fun mainUI() {
-    Text("mainUI")
 }
