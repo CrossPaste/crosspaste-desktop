@@ -24,7 +24,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
 import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
@@ -58,6 +57,7 @@ import com.clipevery.LocalExitApplication
 import com.clipevery.LocalKoinApplication
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.loadImageBitmap
+import com.clipevery.ui.base.ClipIconButton
 import java.awt.Desktop
 import java.net.URI
 
@@ -142,14 +142,15 @@ fun TitleUI(currentPage: MutableState<PageViewContext>) {
                 horizontalAlignment = Alignment.CenterHorizontally) {
 
 
-                IconButton(
+                ClipIconButton(
+                    radius = 18.dp,
                     onClick = {
                         showPopup = !showPopup
                     },
-                    modifier = Modifier.padding(13.dp)
+                    modifier = Modifier
+                        .padding(13.dp)
                         .align(Alignment.End)
-                        .size(36.dp) // Set the size of the button
-                        .background(Color(0xFF121314), CircleShape) // Set the background to blue and shape to circle
+                        .background(Color.Transparent, CircleShape) // Set the background to blue and shape to circle
                         .onGloballyPositioned { coordinates ->
                             buttonPosition = coordinates.localToWindow(Offset.Zero)
                             buttonSize = coordinates.size.toSize()
