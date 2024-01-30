@@ -49,26 +49,28 @@ import com.clipevery.ui.devices.bindingQRCode
 fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
-    var selectedTabIndex by remember { mutableStateOf(0) }
 
-    val tabTitles = listOf("Clipboard", "Devices", "Scan")
+    val tabs = listOf(
+        Pair(PageViewType.CLIP_PREVIEW, "Clipboard"),
+        Pair(PageViewType.DEVICE_PREVIEW, "Devices"),
+        Pair(PageViewType.QR_CODE, "Scan")
+    )
     Row(modifier = Modifier.padding(8.dp)
         .wrapContentWidth()) {
 
-        tabTitles.forEachIndexed { index, title ->
-            TabView(index == selectedTabIndex, copywriter.getText(title)) {
-                selectedTabIndex = index
-            }
+        tabs.forEach { pair ->
+            TabView(currentPageViewContext, pair.first, copywriter.getText(pair.second))
         }
 
         Spacer(modifier = Modifier.fillMaxWidth())
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        when (selectedTabIndex) {
-            0 -> ClipPreviewView()
-            1 -> DevicesView(currentPageViewContext)
-            2 -> bindingQRCode()
+        when (currentPageViewContext.value.pageViewType) {
+            PageViewType.CLIP_PREVIEW -> ClipPreviewView()
+            PageViewType.DEVICE_PREVIEW -> DevicesView(currentPageViewContext)
+            PageViewType.QR_CODE -> bindingQRCode()
+            else -> ClipPreviewView()
         }
     }
 }
@@ -82,14 +84,14 @@ val bottomBorderShape = GenericShape { size, _ ->
 }
 
 @Composable
-fun TabView(isSelect: Boolean, title: String, clickable: () -> Unit) {
+fun TabView(currentPageViewContext: MutableState<PageViewContext>, pageViewType: PageViewType, title: String) {
     val textStyle: TextStyle
     val textUnit: TextUnit
     var modifier: Modifier = Modifier.padding(2.dp)
         .height(30.dp)
         .wrapContentSize(Alignment.CenterStart)
 
-    if (isSelect) {
+    if (currentPageViewContext.value.pageViewType == pageViewType) {
         textStyle = TextStyle(fontWeight = FontWeight.Bold)
         modifier = modifier.border(5.dp, MaterialTheme.colors.primary, bottomBorderShape)
         textUnit = 16.sp
@@ -108,7 +110,7 @@ fun TabView(isSelect: Boolean, title: String, clickable: () -> Unit) {
             modifier = Modifier
                 .padding(8.dp, 0.dp, 8.dp, 8.dp)
                 .align(Alignment.BottomStart)
-                .clickable { clickable.invoke() }
+                .clickable { currentPageViewContext.value = PageViewContext(pageViewType) }
         )
     }
 }

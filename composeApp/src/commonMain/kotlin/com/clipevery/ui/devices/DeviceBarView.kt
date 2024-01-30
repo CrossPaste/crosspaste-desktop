@@ -132,6 +132,7 @@ fun DeviceBarView(syncRuntimeInfo: SyncRuntimeInfo,
         ).clickable {
             currentPageViewContext.value = PageViewContext(
                 PageViewType.DEVICE_DETAIL,
+                currentPageViewContext.value,
                 syncRuntimeInfo
             )
         }

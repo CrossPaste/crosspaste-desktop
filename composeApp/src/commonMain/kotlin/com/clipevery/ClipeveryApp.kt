@@ -94,9 +94,11 @@ fun ClipeveryWindow(hideWindow: () -> Unit) {
 
 @Composable
 fun ClipeveryContent() {
-    val currentPageViewContext = remember { mutableStateOf(PageViewContext(PageViewType.HOME)) }
+    val currentPageViewContext = remember { mutableStateOf(PageViewContext(PageViewType.CLIP_PREVIEW)) }
     when (currentPageViewContext.value.pageViewType) {
-        PageViewType.HOME -> {
+        PageViewType.CLIP_PREVIEW,
+        PageViewType.DEVICE_PREVIEW,
+        PageViewType.QR_CODE -> {
             HomeView(currentPageViewContext)
         }
         PageViewType.SETTINGS -> {
