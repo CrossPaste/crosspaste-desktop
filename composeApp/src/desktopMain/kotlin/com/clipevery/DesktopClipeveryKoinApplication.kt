@@ -26,8 +26,8 @@ import com.clipevery.net.DesktopClipBonjourService
 import com.clipevery.net.DesktopClipClient
 import com.clipevery.net.DesktopClipServer
 import com.clipevery.path.getPathProvider
-import com.clipevery.presist.DesktopFilePersist
 import com.clipevery.presist.FilePersist
+import com.clipevery.presist.getFilePersist
 import com.clipevery.realm.RealmManager
 import com.clipevery.signal.DesktopPreKeyStore
 import com.clipevery.signal.DesktopSessionStore
@@ -58,7 +58,7 @@ object Dependencies {
             // simple component
             single<AppInfo> { DesktopAppInfoFactory(get()).createAppInfo() }
             single<EndpointInfoFactory> { DesktopEndpointInfoFactory( lazy { get<ClipServer>() }) }
-            single<FilePersist> { DesktopFilePersist() }
+            single<FilePersist> { getFilePersist() }
             single<ConfigManager> { DefaultConfigManager(get<FilePersist>().getPersist("appConfig.json", AppFileType.USER)) }
             single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
 

@@ -44,70 +44,81 @@ fun exitClipEveryApplication(exitApplication: () -> Unit) {
     exitApplication()
 }
 
-fun main() = application {
+fun main(args: Array<String>) {
+    val logLevel = if (args.isNotEmpty()) {
+        args[0]
+    } else {
+        "info"
+    }
     val pathProvider = getPathProvider()
-    initLogger(pathProvider.resolve("clipevery.log", AppFileType.LOG).pathString)
+    initLogger(pathProvider.resolve("clipevery.log", AppFileType.LOG).pathString, logLevel)
     val logger = KotlinLogging.logger {}
 
     logger.info { "Starting Clipevery" }
-
-    val ioScope = rememberCoroutineScope { ioDispatcher }
 
     val koinApplication = Dependencies.koinApplication
 
     initInject(koinApplication)
 
-    val appUI = koinApplication.koin.get<AppUI>()
+    application {
+        val ioScope = rememberCoroutineScope { ioDispatcher }
 
-    val trayIcon = if(currentPlatform().isMacos()) {
-        painterResource("clipevery_mac_tray.png")
-    } else {
-        painterResource("clipevery_icon.png")
-    }
+        val appUI = koinApplication.koin.get<AppUI>()
 
-    val windowState = rememberWindowState(
-        placement = WindowPlacement.Floating,
-        position = WindowPosition.PlatformDefault,
-        size = getPreferredWindowSize(appUI)
-    )
-
-    Tray(
-        icon = trayIcon,
-        mouseListener = getTrayMouseAdapter(windowState) { appUI.showWindow = !appUI.showWindow },
-    )
-
-    val exitApplication: () -> Unit = {
-        appUI.showWindow = false
-        ioScope.launch {
-            exitClipEveryApplication { exitApplication() }
+        val trayIcon = if (currentPlatform().isMacos()) {
+            painterResource("clipevery_mac_tray.png")
+        } else {
+            painterResource("clipevery_icon.png")
         }
-    }
 
-    Window(
-        onCloseRequest = exitApplication,
-        visible = appUI.showWindow,
-        state = windowState,
-        title = "Clipevery",
-        icon = painterResource("clipevery_icon.png"),
-        alwaysOnTop = true,
-        undecorated = true,
-        transparent = true,
-        resizable = false
-    ) {
+        val windowState = rememberWindowState(
+            placement = WindowPlacement.Floating,
+            position = WindowPosition.PlatformDefault,
+            size = getPreferredWindowSize(appUI)
+        )
 
-        LaunchedEffect(Unit) {
-            window.addWindowFocusListener(object : java.awt.event.WindowFocusListener {
-                override fun windowGainedFocus(e: java.awt.event.WindowEvent?) {
-                    appUI.showWindow = true
-                }
+        Tray(
+            icon = trayIcon,
+            mouseListener = getTrayMouseAdapter(windowState) {
+                appUI.showWindow = !appUI.showWindow
+            },
+        )
 
-                override fun windowLostFocus(e: java.awt.event.WindowEvent?) {
-                    appUI.showWindow = false
-                }
-            })
+        val exitApplication: () -> Unit = {
+            appUI.showWindow = false
+            ioScope.launch {
+                exitClipEveryApplication { exitApplication() }
+            }
         }
-        ClipeveryApp(koinApplication,
-            hideWindow = { appUI.showWindow = false },
-            exitApplication = exitApplication)
+
+        Window(
+            onCloseRequest = exitApplication,
+            visible = appUI.showWindow,
+            state = windowState,
+            title = "Clipevery",
+            icon = painterResource("clipevery_icon.png"),
+            alwaysOnTop = true,
+            undecorated = true,
+            transparent = true,
+            resizable = false
+        ) {
+
+            LaunchedEffect(Unit) {
+                window.addWindowFocusListener(object : java.awt.event.WindowFocusListener {
+                    override fun windowGainedFocus(e: java.awt.event.WindowEvent?) {
+                        appUI.showWindow = true
+                    }
+
+                    override fun windowLostFocus(e: java.awt.event.WindowEvent?) {
+                        appUI.showWindow = false
+                    }
+                })
+            }
+            ClipeveryApp(
+                koinApplication,
+                hideWindow = { appUI.showWindow = false },
+                exitApplication = exitApplication
+            )
+        }
     }
 }

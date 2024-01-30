@@ -9,7 +9,7 @@ import ch.qos.logback.core.rolling.TimeBasedRollingPolicy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-actual fun initLogger(logPath: String) {
+actual fun initLogger(logPath: String, logLevel: String) {
     val context = LoggerFactory.getILoggerFactory() as LoggerContext
 
     val encoder = PatternLayoutEncoder()
@@ -33,9 +33,20 @@ actual fun initLogger(logPath: String) {
     rollingFileAppender.start()
 
     val rootLogger = context.getLogger(Logger.ROOT_LOGGER_NAME) as ch.qos.logback.classic.Logger
-    rootLogger.level = Level.DEBUG
+    rootLogger.level = getLevel(logLevel)
     rootLogger.addAppender(rollingFileAppender)
 
     val jThemeLogger = context.getLogger("com.jthemedetecor") as ch.qos.logback.classic.Logger
     jThemeLogger.level = Level.OFF
+}
+
+fun getLevel(logLevel: String): Level {
+    return when (logLevel) {
+        "trace" -> Level.TRACE
+        "debug" -> Level.DEBUG
+        "info" -> Level.INFO
+        "warn" -> Level.WARN
+        "error" -> Level.ERROR
+        else -> Level.INFO
+    }
 }
