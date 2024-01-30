@@ -24,9 +24,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
 import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -51,12 +52,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import com.clipevery.LocalExitApplication
 import com.clipevery.LocalKoinApplication
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.loadImageBitmap
-import compose.icons.TablerIcons
-import compose.icons.tablericons.Settings
+import com.clipevery.ui.base.ClipIconButton
 import java.awt.Desktop
 import java.net.URI
 
@@ -85,7 +86,6 @@ fun TitleUI(currentPage: MutableState<PageViewContext>) {
     val applicationExit = LocalExitApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     var showPopup by remember { mutableStateOf(false) }
-    var onDismissTime by remember { mutableStateOf(0L) }
 
     var buttonPosition by remember { mutableStateOf(Offset.Zero) }
     var buttonSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size(0.0f, 0.0f)) }
@@ -142,29 +142,27 @@ fun TitleUI(currentPage: MutableState<PageViewContext>) {
                 horizontalAlignment = Alignment.CenterHorizontally) {
 
 
-                IconButton(
+                ClipIconButton(
+                    radius = 18.dp,
                     onClick = {
-                        val currentTimeMillis = System.currentTimeMillis()
-                        if (currentTimeMillis - onDismissTime >= 500 && !showPopup) {
-                            showPopup = true
-                        }
+                        showPopup = !showPopup
                     },
-                    modifier = Modifier.padding(13.dp)
+                    modifier = Modifier
+                        .padding(13.dp)
                         .align(Alignment.End)
-                        .size(36.dp) // Set the size of the button
-                        .background(Color(0xFF121314), CircleShape) // Set the background to blue and shape to circle
+                        .background(Color.Transparent, CircleShape) // Set the background to blue and shape to circle
                         .onGloballyPositioned { coordinates ->
                             buttonPosition = coordinates.localToWindow(Offset.Zero)
                             buttonSize = coordinates.size.toSize()
                         }
 
                 ) {
-                    // Icon inside the IconButton
-                    Icon(modifier = Modifier.padding(3.dp)
-                        .size(30.dp),
-                        imageVector = TablerIcons.Settings,
-                        contentDescription = "Settings",
-                        tint = Color.White)
+                    Icon(
+                        Icons.Outlined.Settings,
+                        contentDescription = "info",
+                        modifier = Modifier.padding(3.dp).size(30.dp),
+                        tint = Color.White
+                    )
                 }
 
                 if (showPopup) {
@@ -172,14 +170,19 @@ fun TitleUI(currentPage: MutableState<PageViewContext>) {
                         alignment = Alignment.TopEnd,
                         offset = IntOffset(
                             with(density) { ((-14).dp).roundToPx() },
-                            with(density) { (50.dp).roundToPx() },
+                            with(density) { (60.dp).roundToPx() },
                         ),
                         onDismissRequest = {
                             if (showPopup) {
                                 showPopup = false
-                                onDismissTime = System.currentTimeMillis()
                             }
-                        }
+                        },
+                        properties = PopupProperties(
+                            focusable = true,
+                            dismissOnBackPress = true,
+                            dismissOnClickOutside = true
+
+                        )
                     ) {
                         Box(modifier = Modifier
                             .wrapContentSize()
