@@ -66,6 +66,8 @@ compose.desktop {
     application {
         mainClass = "com.clipevery.MainKt"
 
+        args("info")
+
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             modules("jdk.charsets")

@@ -4,6 +4,10 @@ import com.clipevery.path.PathProvider
 import com.clipevery.path.getPathProvider
 import java.nio.file.Path
 
+fun getFilePersist(): FilePersist {
+    return DesktopFilePersist()
+}
+
 class DesktopFilePersist: FilePersist {
 
     override val pathProvider: PathProvider = getPathProvider()
