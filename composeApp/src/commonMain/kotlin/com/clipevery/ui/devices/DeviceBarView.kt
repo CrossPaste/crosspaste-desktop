@@ -58,18 +58,18 @@ import com.clipevery.platform.Platform
 import com.clipevery.ui.MenuItem
 import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.PageViewType
-import com.clipevery.ui.android
+import com.clipevery.ui.base.android
 import com.clipevery.ui.base.ClipIconButton
-import com.clipevery.ui.icon.arrowLeftIcon
-import com.clipevery.ui.icon.arrowRightIcon
-import com.clipevery.ui.icon.block
-import com.clipevery.ui.icon.syncAlt
-import com.clipevery.ui.ipad
-import com.clipevery.ui.iphone
-import com.clipevery.ui.linux
-import com.clipevery.ui.macos
-import com.clipevery.ui.questionOS
-import com.clipevery.ui.windows
+import com.clipevery.ui.base.arrowLeftIcon
+import com.clipevery.ui.base.arrowRightIcon
+import com.clipevery.ui.base.block
+import com.clipevery.ui.base.syncAlt
+import com.clipevery.ui.base.ipad
+import com.clipevery.ui.base.iphone
+import com.clipevery.ui.base.linux
+import com.clipevery.ui.base.macos
+import com.clipevery.ui.base.questionOS
+import com.clipevery.ui.base.windows
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable

@@ -1,4 +1,4 @@
-package com.clipevery.ui.icon
+package com.clipevery.ui.base
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember

@@ -1,4 +1,4 @@
-package com.clipevery.ui
+package com.clipevery.ui.clip
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
@@ -25,7 +25,7 @@ import compose.icons.tablericons.FileText
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun ClipPreviewItem(clipItem: ClipItem) {
+fun ClipPreviewItemView(clipItem: ClipItem) {
 
     var hover by remember { mutableStateOf(false) }
     val backgroundColor = if (hover) MaterialTheme.colors.secondaryVariant else MaterialTheme.colors.background

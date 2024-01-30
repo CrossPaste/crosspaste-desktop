@@ -1,4 +1,4 @@
-package com.clipevery.ui
+package com.clipevery.ui.devices
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement

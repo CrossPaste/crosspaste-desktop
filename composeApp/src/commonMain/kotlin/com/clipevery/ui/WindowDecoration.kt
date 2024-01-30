@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.i18n.GlobalCopywriter
-import com.clipevery.ui.icon.left
+import com.clipevery.ui.base.left
 
 @Composable
 fun WindowDecoration(currentPageViewContext: MutableState<PageViewContext>, title: String) {

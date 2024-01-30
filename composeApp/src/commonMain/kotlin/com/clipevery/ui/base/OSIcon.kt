@@ -1,4 +1,4 @@
-package com.clipevery.ui
+package com.clipevery.ui.base
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember

@@ -1,4 +1,4 @@
-package com.clipevery.ui
+package com.clipevery.ui.clip
 
 import androidx.compose.foundation.ScrollbarStyle
 import androidx.compose.foundation.VerticalScrollbar
@@ -37,7 +37,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun ClipPreview() {
+fun ClipPreviewView() {
     val listState = rememberLazyListState()
     var isScrolling by remember { mutableStateOf(false) }
     var scrollJob: Job? by remember { mutableStateOf(null) }
@@ -72,7 +72,7 @@ fun ClipPreview() {
             modifier = Modifier.wrapContentHeight()
         ) {
             items(clipItems) { clipItem ->
-                ClipPreviewItem(clipItem)
+                ClipPreviewItemView(clipItem)
             }
         }
 

@@ -7,12 +7,12 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
 
 @Composable
-fun AboutUI(currentPageViewContext: MutableState<PageViewContext>) {
+fun AboutView(currentPageViewContext: MutableState<PageViewContext>) {
     WindowDecoration(currentPageViewContext, "About")
-    AboutContentUI()
+    AboutContentView()
 }
 
 @Composable
-fun AboutContentUI() {
+fun AboutContentView() {
     Column(modifier = Modifier.fillMaxSize()) {  }
 }

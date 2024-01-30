@@ -1,4 +1,4 @@
-package com.clipevery.ui
+package com.clipevery.ui.devices
 
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -43,9 +43,10 @@ import androidx.compose.ui.window.PopupProperties
 import com.clipevery.LocalKoinApplication
 import com.clipevery.app.AppUI
 import com.clipevery.i18n.GlobalCopywriter
+import com.clipevery.ui.customFontFamily
 
 @Composable
-fun TokenUI() {
+fun TokenView() {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
     val copywriter = current.koin.get<GlobalCopywriter>()
