@@ -58,14 +58,12 @@ import com.clipevery.LocalKoinApplication
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.loadImageBitmap
 import com.clipevery.ui.base.ClipIconButton
-import com.clipevery.ui.devices.TokenView
 import java.awt.Desktop
 import java.net.URI
 
 @Composable
 fun HomeView(currentPageViewContext: MutableState<PageViewContext>) {
     HomeWindowDecoration(currentPageViewContext)
-    TokenView()
     TabsView(currentPageViewContext)
 }
 
