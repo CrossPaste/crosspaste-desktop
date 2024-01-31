@@ -3,36 +3,39 @@ package com.clipevery.dao.sync
 import com.clipevery.dto.sync.SyncInfo
 import io.realm.kotlin.Realm
 import io.realm.kotlin.ext.toRealmList
+import io.realm.kotlin.query.Sort
 import io.realm.kotlin.types.RealmInstant
 
 class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
 
     override fun getAllSyncRuntimeInfos(): List<SyncRuntimeInfo> {
-        return realm.query(SyncRuntimeInfo::class).find()
+        return realm.query(SyncRuntimeInfo::class).sort("createTime", Sort.DESCENDING).find()
     }
 
     override fun getSyncRuntimeInfo(appInstanceId: String): SyncRuntimeInfo? {
         return realm.query(SyncRuntimeInfo::class, "appInstanceId == $0", appInstanceId).first().find()
     }
 
-    override fun updateConnectState(appInstanceId: String, connectState: Int) {
-        realm.writeBlocking {
-            query(SyncRuntimeInfo::class, "appInstanceId == $0", appInstanceId)
-                .first()
-                .find()?.let {
-                    it.connectState = connectState
-                }
+    override suspend fun getSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo): SyncRuntimeInfo? {
+        return realm.write {
+            findLatest(syncRuntimeInfo)
         }
     }
 
-    override fun updateConnectInfo(appInstanceId: String, connectState: Int, connectHostAddress: String) {
-        realm.writeBlocking {
-            query(SyncRuntimeInfo::class, "appInstanceId == $0", appInstanceId)
-                .first()
-                .find()?.let {
-                    it.connectState = connectState
-                    it.connectHostAddress = connectHostAddress
-                }
+    override suspend fun updateConnectState(syncRuntimeInfo: SyncRuntimeInfo, connectState: Int) {
+        realm.write {
+            findLatest(syncRuntimeInfo)?.apply {
+                this.connectState = connectState
+            }
+        }
+    }
+
+    override suspend fun updateConnectInfo(syncRuntimeInfo: SyncRuntimeInfo, connectState: Int, connectHostAddress: String) {
+        realm.write {
+            findLatest(syncRuntimeInfo)?.apply {
+                this.connectState = connectState
+                this.connectHostAddress = connectHostAddress
+            }
         }
     }
 

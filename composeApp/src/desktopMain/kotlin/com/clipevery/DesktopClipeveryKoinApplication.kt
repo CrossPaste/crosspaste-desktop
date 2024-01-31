@@ -11,6 +11,7 @@ import com.clipevery.clip.TransferableConsumer
 import com.clipevery.clip.getDesktopClipboardService
 import com.clipevery.config.ConfigManager
 import com.clipevery.config.DefaultConfigManager
+import com.clipevery.dao.signal.SignalDao
 import com.clipevery.dao.signal.SignalRealm
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.dao.sync.SyncRuntimeInfoRealm
@@ -19,12 +20,16 @@ import com.clipevery.endpoint.EndpointInfoFactory
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.i18n.GlobalCopywriterImpl
 import com.clipevery.listen.GlobalListener
+import com.clipevery.net.ClientHandlerManager
 import com.clipevery.net.ClipBonjourService
 import com.clipevery.net.ClipClient
 import com.clipevery.net.ClipServer
+import com.clipevery.net.DesktopClientHandlerManager
 import com.clipevery.net.DesktopClipBonjourService
 import com.clipevery.net.DesktopClipClient
 import com.clipevery.net.DesktopClipServer
+import com.clipevery.net.DesktopDeviceRefresher
+import com.clipevery.net.DeviceRefresher
 import com.clipevery.path.getPathProvider
 import com.clipevery.presist.FilePersist
 import com.clipevery.presist.getFilePersist
@@ -64,14 +69,16 @@ object Dependencies {
 
             // realm component
             single<RealmManager> { RealmManager.createRealmManager(pathProvider = pathProvider) }
-            single<SignalRealm> { SignalRealm(get<RealmManager>().realm) }
+            single<SignalDao> { SignalRealm(get<RealmManager>().realm) }
             single<SyncRuntimeInfoDao> { SyncRuntimeInfoRealm(get<RealmManager>().realm) }
 
             // net component
-            single<ClipServer> { DesktopClipServer().start() }
-            single<ClipClient> { DesktopClipClient() }
+            single<ClipClient> { DesktopClipClient(get<AppInfo>()) }
+            single<ClientHandlerManager> { DesktopClientHandlerManager(get(), get(), get(), get()) }
+            single<ClipServer> { DesktopClipServer(get<ClientHandlerManager>()).start() }
             single<Lazy<ClipServer>> { lazy { get<ClipServer>() } }
             single<ClipBonjourService> { DesktopClipBonjourService(get(), get()).registerService() }
+            single<DeviceRefresher> { DesktopDeviceRefresher(get<ClientHandlerManager>()) }
 
             // signal component
             single<IdentityKeyStore> { getClipIdentityKeyStoreFactory(get(), get()).createIdentityKeyStore() }

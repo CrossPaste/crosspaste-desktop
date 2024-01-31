@@ -1,30 +1,30 @@
 package com.clipevery.signal
 
-import com.clipevery.dao.signal.SignalRealm
+import com.clipevery.dao.signal.SignalDao
 import org.signal.libsignal.protocol.InvalidKeyIdException
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord
 import org.signal.libsignal.protocol.state.SignedPreKeyStore
 
-class DesktopSignedPreKeyStore(private val signalRealm: SignalRealm): SignedPreKeyStore {
+class DesktopSignedPreKeyStore(private val signalDao: SignalDao): SignedPreKeyStore {
     override fun loadSignedPreKey(signedPreKeyId: Int): SignedPreKeyRecord {
-        signalRealm.loadSignedPreKey(signedPreKeyId)?.let {
+        signalDao.loadSignedPreKey(signedPreKeyId)?.let {
             return SignedPreKeyRecord(it)
         } ?: throw InvalidKeyIdException("No such signedPreKeyId: $signedPreKeyId")
     }
 
     override fun loadSignedPreKeys(): MutableList<SignedPreKeyRecord> {
-        return signalRealm.loadSignedPreKeys().map { SignedPreKeyRecord(it) }.toMutableList()
+        return signalDao.loadSignedPreKeys().map { SignedPreKeyRecord(it) }.toMutableList()
     }
 
     override fun storeSignedPreKey(signedPreKeyId: Int, record: SignedPreKeyRecord) {
-        signalRealm.storeSignedPreKey(signedPreKeyId, record.serialize())
+        signalDao.storeSignedPreKey(signedPreKeyId, record.serialize())
     }
 
     override fun containsSignedPreKey(signedPreKeyId: Int): Boolean {
-        return signalRealm.containsSignedPreKey(signedPreKeyId)
+        return signalDao.containsSignedPreKey(signedPreKeyId)
     }
 
     override fun removeSignedPreKey(signedPreKeyId: Int) {
-        signalRealm.removeSignedPreKey(signedPreKeyId)
+        signalDao.removeSignedPreKey(signedPreKeyId)
     }
 }
