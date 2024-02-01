@@ -14,7 +14,7 @@ class DesktopSyncClientApi(private val clipClient: ClipClient): SyncClientApi {
 
     override suspend fun getPreKeyBundle(toUrl: URLBuilder.(URLBuilder) -> Unit): PreKeyBundle? {
         try {
-            val response = clipClient.get(toUrl)
+            val response = clipClient.get(urlBuilder = toUrl)
             if (response.status.value != 200) {
                 return null
             }
@@ -29,7 +29,7 @@ class DesktopSyncClientApi(private val clipClient: ClipClient): SyncClientApi {
                                         toUrl: URLBuilder.(URLBuilder) -> Unit): Boolean {
         try {
             val ciphertextMessage = sessionCipher.encrypt("exchange".toByteArray(Charsets.UTF_8))
-            val response = clipClient.post(toUrl, ciphertextMessage.serialize())
+            val response = clipClient.post(ciphertextMessage.serialize(), urlBuilder = toUrl)
             if (response.status.value != 200) {
                 return false
             }

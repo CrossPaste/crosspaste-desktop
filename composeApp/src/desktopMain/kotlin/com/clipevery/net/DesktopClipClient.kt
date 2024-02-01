@@ -3,6 +3,7 @@ package com.clipevery.net
 import com.clipevery.app.AppInfo
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -16,20 +17,28 @@ class DesktopClipClient(private val appInfo: AppInfo): ClipClient {
 
     @OptIn(InternalAPI::class)
     override suspend fun post(
-        urlBuilder: URLBuilder.(URLBuilder) -> Unit,
         message: ByteArray,
+        timeout: Long,
+        urlBuilder: URLBuilder.(URLBuilder) -> Unit
     ): HttpResponse {
         return client.post {
             header("appInstanceId", appInfo.appInstanceId)
+            timeout {
+                requestTimeoutMillis = timeout
+            }
             body = message
         }
     }
 
     override suspend fun get(
-        urlBuilder: URLBuilder.(URLBuilder) -> Unit
+        timeout: Long,
+        urlBuilder: URLBuilder.(URLBuilder) -> Unit,
     ): HttpResponse {
         return client.get {
             header("appInstanceId", appInfo.appInstanceId)
+            timeout {
+                requestTimeoutMillis = timeout
+            }
             url {
                 urlBuilder(this)
             }

@@ -43,6 +43,7 @@ import com.clipevery.ui.DesktopThemeDetector
 import com.clipevery.ui.ThemeDetector
 import com.clipevery.utils.DesktopQRCodeGenerator
 import com.clipevery.utils.QRCodeGenerator
+import com.clipevery.utils.TelnetUtils
 import org.koin.core.KoinApplication
 import org.koin.core.context.GlobalContext
 import org.koin.dsl.module
@@ -79,6 +80,7 @@ object Dependencies {
             single<Lazy<ClipServer>> { lazy { get<ClipServer>() } }
             single<ClipBonjourService> { DesktopClipBonjourService(get(), get()).registerService() }
             single<DeviceRefresher> { DesktopDeviceRefresher(get<ClientHandlerManager>()) }
+            single<TelnetUtils> { TelnetUtils(get<ClipClient>()) }
 
             // signal component
             single<IdentityKeyStore> { getClipIdentityKeyStoreFactory(get(), get()).createIdentityKeyStore() }

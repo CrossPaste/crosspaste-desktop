@@ -6,11 +6,13 @@ import io.ktor.http.URLBuilder
 interface ClipClient {
 
     suspend fun post(
-        urlBuilder: URLBuilder.(URLBuilder) -> Unit,
         message: ByteArray,
+        timeout: Long = 1000L,
+        urlBuilder: URLBuilder.(URLBuilder) -> Unit
     ): HttpResponse
 
     suspend fun get(
-        urlBuilder: URLBuilder.(URLBuilder) -> Unit
+        timeout: Long = 1000L,
+        urlBuilder: URLBuilder.(URLBuilder) -> Unit,
     ): HttpResponse
 }

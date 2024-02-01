@@ -1,6 +1,9 @@
 package com.clipevery.net
 
+import com.clipevery.Dependencies
 import com.clipevery.dao.sync.SyncRuntimeInfo
+import com.clipevery.dao.sync.SyncState
+import com.clipevery.utils.TelnetUtils
 
 class ConnectedState: ConnectState {
     override suspend fun autoResolve(syncRuntimeInfo: SyncRuntimeInfo) {
@@ -33,14 +36,21 @@ class ConnectingState(private val clientHandler: ClientHandler): ConnectState {
     }
 
     override suspend fun next(): Boolean {
-        TODO("Not yet implemented")
+        return true
     }
 
 }
 
 class DisconnectedState(private val clientHandler: ClientHandler): ConnectState {
+
+    private val telnetUtils = Dependencies.koinApplication.koin.get<TelnetUtils>()
+
     override suspend fun autoResolve(syncRuntimeInfo: SyncRuntimeInfo) {
-        TODO("Not yet implemented")
+        telnetUtils.switchHost(syncRuntimeInfo.hostInfoList, syncRuntimeInfo.port)?.let { hostInfo ->
+            clientHandler.updateSyncStateWithHostInfo(SyncState.Companion.CONNECTING, hostInfo, syncRuntimeInfo.port)
+        } ?: run {
+            clientHandler.updateSyncState(SyncState.Companion.UNMATCHED)
+        }
     }
 
     override suspend fun next(): Boolean {
@@ -51,22 +61,22 @@ class DisconnectedState(private val clientHandler: ClientHandler): ConnectState 
 
 class UnmatchedState: ConnectState {
     override suspend fun autoResolve(syncRuntimeInfo: SyncRuntimeInfo) {
-        TODO("Not yet implemented")
+        // do nothing
     }
 
     override suspend fun next(): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
 }
 
 class UnverifiedState(private val clientHandler: ClientHandler): ConnectState {
     override suspend fun autoResolve(syncRuntimeInfo: SyncRuntimeInfo) {
-        TODO("Not yet implemented")
+        // do nothing
     }
 
     override suspend fun next(): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
 }
