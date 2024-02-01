@@ -186,19 +186,5 @@ fun Routing.syncRouting() {
             }
         }
     }
-
-//    post("sync/trustPeers") {
-//        getAppInstanceId(call).let { appInstanceId ->
-//            val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
-//            signalProtocolStore.getIdentity(signalProtocolAddress)?.let {
-//                val requestTrustSyncInfos: List<RequestTrustSyncInfo> = call.receive()
-//
-//                successResponse(call)
-//            } ?: run {
-//                failResponse(call, "not trust $appInstanceId", status = HttpStatusCode.ExpectationFailed)
-//
-//            }
-//        }
-//    }
 }
 
