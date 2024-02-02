@@ -21,15 +21,9 @@ jobs:
           check-latest: true
           cache: gradle
 
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            %USERPROFILE%\.gradle\caches
-            %USERPROFILE%\.gradle\wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+      - name: Install Zstandard
+        run: choco install zstandard
+        shell: pwsh
 
       - name: Build with Gradle
         run: ./gradlew.bat build
