@@ -2,27 +2,60 @@
 compose = "1.5.4"
 compose-plugin = "1.5.12"
 compose-compiler = "1.5.8"
-kotlin = "1.9.22"
+jmdns = "3.5.9"
+jna = "5.14.0"
+jnativehook = "2.2.2"
 junit = "4.13.2"
+koin = "3.5.3"
+kotlin = "1.9.22"
+kotlin-logging = "6.0.3"
+kotlinx-coroutines = "1.7.3"
+kotlinx-serialization = "1.6.2"
 ktor = "2.3.8"
+logback = "1.4.14"
+realm = "1.13.0"
+signal = "0.39.3"
+tabler-icons = "1.1.0"
+theme-detector = "3.8"
+zxing = "3.5.3"
 
 [libraries]
-kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
-kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
-junit = { group = "junit", name = "junit", version.ref = "junit" }
 compose-ui = { module = "androidx.compose.ui:ui", version.ref = "compose" }
 compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "compose" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "compose" }
 compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "compose" }
 compose-material = { module = "androidx.compose.material:material", version.ref = "compose" }
+jmdns = { module = "org.jmdns:jmdns", version.ref = "jmdns" }
+jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
+jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
+jnativehook = { module = "com.github.kwhat:jnativehook", version.ref = "jnativehook" }
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+kotlin-logging = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "kotlin-logging" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
 ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+material-desktop = { module = "org.jetbrains.compose.material:material-desktop", version.ref = "compose-plugin" }
+realm-kotlin-base = { module = "io.realm.kotlin:library-base", version.ref = "realm" }
+signal-client = { module = "org.signal:libsignal-client", version.ref = "signal" }
+tabler-icons = { module = "br.com.devsrsouza.compose.icons:tabler-icons-desktop", version.ref = "tabler-icons" }
+theme-detector = { module = "com.github.Dansoftowner:jSystemThemeDetector", version.ref = "theme-detector" }
+zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
+zxing-javase = { module = "com.google.zxing:javase", version.ref = "zxing" }
+
+# test libs
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+
 
 [plugins]
 jetbrainsCompose = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+realmKotlin = { id = "io.realm.kotlin", version.ref = "realm" }

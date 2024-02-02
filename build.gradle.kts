@@ -4,5 +4,5 @@ plugins {
     alias(libs.plugins.jetbrainsCompose) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
     alias(libs.plugins.kotlinSerialization) apply false
-    id("io.realm.kotlin") version "1.13.0" apply false
+    alias(libs.plugins.realmKotlin) apply false
 }
