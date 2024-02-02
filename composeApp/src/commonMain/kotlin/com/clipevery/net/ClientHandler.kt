@@ -4,7 +4,6 @@ import com.clipevery.dao.sync.HostInfo
 import com.clipevery.net.clientapi.SyncClientApi
 import org.signal.libsignal.protocol.SessionBuilder
 import org.signal.libsignal.protocol.SessionCipher
-import org.signal.libsignal.protocol.state.SignalProtocolStore
 
 interface ClientHandler {
 

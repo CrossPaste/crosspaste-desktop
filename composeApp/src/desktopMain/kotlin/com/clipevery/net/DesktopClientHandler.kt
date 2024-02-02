@@ -36,7 +36,7 @@ class DesktopClientHandler(private val syncRuntimeInfo: SyncRuntimeInfo,
 
     private val unmatched: UnmatchedState = UnmatchedState()
 
-    private val unverified: UnverifiedState = UnverifiedState(this)
+    private val unverified: UnverifiedState = UnverifiedState()
 
     override fun getId(): String {
         return syncRuntimeInfo.appInstanceId

@@ -114,7 +114,7 @@ class UnmatchedState: ConnectState {
 
 }
 
-class UnverifiedState(private val clientHandler: ClientHandler): ConnectState {
+class UnverifiedState: ConnectState {
     override suspend fun autoResolve(syncRuntimeInfo: SyncRuntimeInfo) {
         // do nothing
     }
