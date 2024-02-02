@@ -8,25 +8,29 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
-
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
           check-latest: true
-          cache: gradle
 
-      - name: Install Zstandard
-        run: choco install zstandard
-        shell: pwsh
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
       - name: Build with Gradle
-        run: ./gradlew.bat build
+        run: ./gradlew build
 
       - name: Run tests
-        run: ./gradlew.bat desktopTest
+        run: ./gradlew desktopTest

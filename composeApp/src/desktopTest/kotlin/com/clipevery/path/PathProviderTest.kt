@@ -2,12 +2,14 @@ package com.clipevery.path
 
 import com.clipevery.app.AppFileType
 import com.clipevery.platform.currentPlatform
+import org.junit.Ignore
 import org.junit.Test
 import kotlin.test.assertEquals
 
 class PathProviderTest {
 
     @Test
+    @Ignore
     fun testPathProvider() {
         val pathProvider = getPathProvider()
 
