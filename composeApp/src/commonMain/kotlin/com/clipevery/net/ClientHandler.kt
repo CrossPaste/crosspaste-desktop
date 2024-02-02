@@ -4,12 +4,15 @@ import com.clipevery.dao.sync.HostInfo
 import com.clipevery.net.clientapi.SyncClientApi
 import org.signal.libsignal.protocol.SessionBuilder
 import org.signal.libsignal.protocol.SessionCipher
+import org.signal.libsignal.protocol.state.SignalProtocolStore
 
 interface ClientHandler {
 
     fun getId(): String
 
     fun getSyncClientApi(): SyncClientApi
+
+    fun isExistSession(): Boolean
 
     fun createSessionBuilder(): SessionBuilder
 

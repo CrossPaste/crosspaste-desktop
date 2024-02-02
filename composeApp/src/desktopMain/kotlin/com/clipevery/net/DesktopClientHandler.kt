@@ -46,6 +46,13 @@ class DesktopClientHandler(private val syncRuntimeInfo: SyncRuntimeInfo,
         return syncClientApi
     }
 
+    override fun isExistSession(): Boolean {
+        signalProtocolStore.loadSession(signalProtocolAddress)?.let {
+            return true
+        }
+        return false
+    }
+
     override fun createSessionBuilder(): SessionBuilder {
         return SessionBuilder(signalProtocolStore,
             SignalProtocolAddress( syncRuntimeInfo.appInstanceId, 1))

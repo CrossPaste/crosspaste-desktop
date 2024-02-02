@@ -1,9 +1,11 @@
 package com.clipevery.net
 
 import com.clipevery.Dependencies
+import com.clipevery.dao.sync.HostInfo
 import com.clipevery.dao.sync.SyncRuntimeInfo
 import com.clipevery.dao.sync.SyncState
 import com.clipevery.utils.TelnetUtils
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 class ConnectedState: ConnectState {
     override suspend fun autoResolve(syncRuntimeInfo: SyncRuntimeInfo) {
@@ -17,22 +19,64 @@ class ConnectedState: ConnectState {
 }
 
 class ConnectingState(private val clientHandler: ClientHandler): ConnectState {
+
+    val logger = KotlinLogging.logger {}
+
     override suspend fun autoResolve(syncRuntimeInfo: SyncRuntimeInfo) {
-        clientHandler.getHostInfo()?.let {
-            val syncClientApi = clientHandler.getSyncClientApi()
-            try {
-                syncClientApi.getPreKeyBundle { urlBuilder ->
-                    urlBuilder.port = clientHandler.port()
-                    urlBuilder.host = it.hostAddress
-                }?.let {
-                    val sessionBuilder = clientHandler.createSessionBuilder()
-                    sessionBuilder.process(it)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
+        clientHandler.getHostInfo()?.let { hostInfo ->
+            if (clientHandler.isExistSession()) {
+                useSession(hostInfo, syncRuntimeInfo.port)
+            } else {
+                createSession(hostInfo, syncRuntimeInfo.port)
             }
-            syncClientApi
+        } ?: run {
+            clientHandler.updateSyncState(SyncState.DISCONNECTED)
         }
+    }
+
+    private suspend fun useSession(hostInfo: HostInfo, port: Int) {
+        val syncClientApi = clientHandler.getSyncClientApi()
+        val sessionCipher = clientHandler.getSessionCipher()
+        try {
+            if(syncClientApi.exchangePreKey(sessionCipher) { urlBuilder ->
+                urlBuilder.port = port
+                urlBuilder.host = hostInfo.hostAddress
+            }) {
+                return
+            }
+        } catch (e: Exception) {
+            logger.warn(e) { "useSession exchangePreKey fail" }
+        }
+        logger.info { "connect state to unmatched ${hostInfo.hostAddress} $port"}
+        clientHandler.updateSyncState(SyncState.UNMATCHED)
+    }
+
+    private suspend fun createSession(hostInfo: HostInfo, port: Int) {
+        val syncClientApi = clientHandler.getSyncClientApi()
+        val sessionCipher = clientHandler.getSessionCipher()
+        try {
+            syncClientApi.getPreKeyBundle { urlBuilder ->
+                urlBuilder.port = port
+                urlBuilder.host = hostInfo.hostAddress
+            }?.let { preKeyBundle ->
+                val sessionBuilder = clientHandler.createSessionBuilder()
+                sessionBuilder.process(preKeyBundle)
+                try {
+                    if (syncClientApi.exchangePreKey(sessionCipher) { urlBuilder ->
+                            urlBuilder.port = port
+                            urlBuilder.host = hostInfo.hostAddress
+                        }) {
+                        return
+                    }
+                } catch (e: Exception) {
+                    logger.warn(e) { "createSession exchangePreKey fail" }
+                }
+            }
+        } catch (e: Exception) {
+            logger.warn(e) { "createSession getPreKeyBundle fail" }
+        }
+        logger.info { "connect state to unmatched ${hostInfo.hostAddress} $port"}
+        clientHandler.updateSyncState(SyncState.UNMATCHED)
     }
 
     override suspend fun next(): Boolean {
