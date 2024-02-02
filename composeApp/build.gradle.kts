@@ -11,7 +11,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.kotlinSerialization)
-    id("io.realm.kotlin") version "1.13.0"
+    alias(libs.plugins.realmKotlin)
 }
 
 kotlin {
@@ -22,23 +22,22 @@ kotlin {
         
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
-            implementation("net.java.dev.jna:jna:5.14.0")
-            implementation("net.java.dev.jna:jna-platform:5.14.0")
-            implementation("com.google.zxing:core:3.5.3")
-            implementation("com.google.zxing:javase:3.5.3")
-            implementation("ch.qos.logback:logback-classic:1.4.14")
+            implementation(libs.jmdns)
+            implementation(libs.jna)
+            implementation(libs.jna.platform)
+            implementation(libs.jnativehook)
+            implementation(libs.koin.core)
             implementation(libs.ktor.server.core)
             implementation(libs.ktor.server.netty)
             implementation(libs.ktor.server.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.cio)
-            implementation("org.signal:libsignal-client:0.39.3")
-            implementation("br.com.devsrsouza.compose.icons:tabler-icons-desktop:1.1.0")
-            implementation("io.insert-koin:koin-core:3.5.3")
-            implementation("com.github.kwhat:jnativehook:2.2.2")
-            implementation("com.github.Dansoftowner:jSystemThemeDetector:3.8")
-            implementation("org.jmdns:jmdns:3.5.9")
+            implementation(libs.logback.classic)
+            implementation(libs.signal.client)
+            implementation(libs.theme.detector)
+            implementation(libs.zxing.core)
+            implementation(libs.zxing.javase)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -46,11 +45,12 @@ kotlin {
             implementation(compose.material)
             @OptIn(ExperimentalComposeLibrary::class)
             implementation(compose.components.resources)
-            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
-            implementation("io.github.oshai:kotlin-logging-jvm:6.0.3")
-            implementation("io.realm.kotlin:library-base:1.13.0")
-            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-            implementation("org.jetbrains.compose.material:material-desktop:1.5.12")
+            implementation(libs.kotlin.logging)
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.material.desktop)
+            implementation(libs.realm.kotlin.base)
+            implementation(libs.tabler.icons)
         }
 
         val commonTest by getting {
