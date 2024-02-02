@@ -19,6 +19,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           check-latest: true
+          cache: gradle
 
       - name: Cache Gradle dependencies
         uses: actions/cache@v3
