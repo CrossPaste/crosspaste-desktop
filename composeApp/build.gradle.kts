@@ -50,7 +50,7 @@ kotlin {
             implementation("io.github.oshai:kotlin-logging-jvm:6.0.3")
             implementation("io.realm.kotlin:library-base:1.13.0")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-            implementation("org.jetbrains.compose.material:material-desktop:1.5.11")
+            implementation("org.jetbrains.compose.material:material-desktop:1.5.12")
         }
 
         val commonTest by getting {
