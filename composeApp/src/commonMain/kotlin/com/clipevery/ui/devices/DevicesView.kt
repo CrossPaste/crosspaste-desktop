@@ -14,12 +14,14 @@ import com.clipevery.LocalKoinApplication
 import com.clipevery.dao.sync.SyncRuntimeInfo
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.ui.PageViewContext
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.toList
 
 @Composable
 fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
     val current = LocalKoinApplication.current
     val syncRuntimeInfoDao = current.koin.get<SyncRuntimeInfoDao>()
-    val syncRuntimeInfosFlow = syncRuntimeInfoDao.getAllSyncRuntimeInfos()
+    val syncRuntimeInfosFlow = syncRuntimeInfoDao.getAllSyncRuntimeInfos().asFlow()
 
     var rememberSyncRuntimeInfos by remember { mutableStateOf(emptyList<SyncRuntimeInfo>()) }
 
