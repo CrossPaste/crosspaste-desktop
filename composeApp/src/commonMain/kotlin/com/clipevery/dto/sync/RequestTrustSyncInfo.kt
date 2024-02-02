@@ -5,8 +5,8 @@ import kotlinx.serialization.Serializable
 import org.signal.libsignal.protocol.IdentityKey
 
 @Serializable
-data class RequestTrust(
+data class RequestTrustSyncInfo(
     @Serializable(with = IdentityKeySerializer::class) val identityKey: IdentityKey,
-    val token: Int
+    val syncInfo: SyncInfo
 )
 

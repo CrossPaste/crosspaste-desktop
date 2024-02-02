@@ -2,12 +2,15 @@ package com.clipevery.routing
 
 import com.clipevery.Dependencies
 import com.clipevery.app.AppUI
-import com.clipevery.dao.signal.SignalRealm
+import com.clipevery.dao.signal.ClipIdentityKey
+import com.clipevery.dao.signal.SignalDao
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
+import com.clipevery.dto.sync.RequestTrust
+import com.clipevery.dto.sync.RequestTrustSyncInfo
 import com.clipevery.dto.sync.SyncInfo
-import com.clipevery.dto.sync.decodeRequestTrust
 import com.clipevery.exception.StandardErrorCode
-import com.clipevery.utils.decodeReceive
+import com.clipevery.net.CheckAction
+import com.clipevery.net.DeviceRefresher
 import com.clipevery.utils.encodePreKeyBundle
 import com.clipevery.utils.failResponse
 import com.clipevery.utils.getAppInstanceId
@@ -19,7 +22,6 @@ import io.ktor.server.request.receive
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
-import kotlinx.serialization.ExperimentalSerializationApi
 import org.signal.libsignal.protocol.InvalidKeyException
 import org.signal.libsignal.protocol.InvalidKeyIdException
 import org.signal.libsignal.protocol.InvalidMessageException
@@ -34,23 +36,33 @@ import org.signal.libsignal.protocol.state.SignalProtocolStore
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord
 import java.util.Objects
 
-@OptIn(ExperimentalSerializationApi::class)
 fun Routing.syncRouting() {
 
     val logger = KotlinLogging.logger {}
 
     val koinApplication = Dependencies.koinApplication
 
-    val signalRealm = koinApplication.koin.get<SignalRealm>()
+    val signalDao = koinApplication.koin.get<SignalDao>()
 
     val syncRuntimeInfoDao = koinApplication.koin.get<SyncRuntimeInfoDao>()
 
     val signalProtocolStore = koinApplication.koin.get<SignalProtocolStore>()
 
+    val deviceRefresher = koinApplication.koin.get<DeviceRefresher>()
+
     post("/sync/syncInfos") {
-        val syncInfos: List<SyncInfo> = decodeReceive(call, signalProtocolStore)
-        syncRuntimeInfoDao.inertOrUpdate(syncInfos)
-        successResponse(call)
+        getAppInstanceId(call).let { appInstanceId ->
+            val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
+            signalProtocolStore.getIdentity(signalProtocolAddress)?.let {
+                val requestTrustSyncInfos: List<RequestTrustSyncInfo> = call.receive()
+                val syncInfos: List<SyncInfo> = requestTrustSyncInfos.map { it.syncInfo }
+                val identityKeys = requestTrustSyncInfos.map { ClipIdentityKey(it.syncInfo.appInfo.appInstanceId, it.identityKey.serialize()) }
+                syncRuntimeInfoDao.inertOrUpdate(syncInfos)
+                signalDao.saveIdentities(identityKeys)
+                deviceRefresher.refresh(CheckAction.CheckNonConnected)
+                successResponse(call)
+            } ?: failResponse(call, "not trust $appInstanceId", status = HttpStatusCode.ExpectationFailed)
+        }
     }
 
     get("/sync/telnet") {
@@ -63,12 +75,12 @@ fun Routing.syncRouting() {
             val identityKeyPair = signalProtocolStore.identityKeyPair
             val registrationId = signalProtocolStore.localRegistrationId
             val deviceId = 1
-            val preKey = signalRealm.generatePreKeyPair()
+            val preKey = signalDao.generatePreKeyPair()
             val preKeyId = preKey.id
             val preKeyRecord = PreKeyRecord(preKey.serialized)
             val preKeyPairPublicKey = preKeyRecord.keyPair.publicKey
 
-            val signedPreKey = signalRealm.generatesSignedPreKeyPair(identityKeyPair.privateKey)
+            val signedPreKey = signalDao.generatesSignedPreKeyPair(identityKeyPair.privateKey)
             val signedPreKeyId = signedPreKey.id
             val signedPreKeyRecord = SignedPreKeyRecord(signedPreKey.serialized)
             signedPreKeyRecord.keyPair.publicKey
@@ -151,14 +163,13 @@ fun Routing.syncRouting() {
             val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
             signalProtocolStore.getIdentity(signalProtocolAddress)?.let {
                 successResponse(call)
-            } ?: failResponse(call, "not trust", status = HttpStatusCode.ExpectationFailed)
+            } ?: failResponse(call, "not trust $appInstanceId", status = HttpStatusCode.ExpectationFailed)
         }
     }
 
     post("sync/trust") {
         getAppInstanceId(call).let { appInstanceId ->
-            val bytes = call.receive<ByteArray>()
-            val requestTrust = decodeRequestTrust(bytes)
+            val requestTrust = call.receive(RequestTrust::class)
 
             val appUI = koinApplication.koin.get<AppUI>()
 

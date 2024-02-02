@@ -8,7 +8,7 @@ import com.clipevery.utils.secretKeyToString
 import com.clipevery.utils.stringToSecretKey
 import com.clipevery.os.macos.MacosKeychainHelper
 import com.clipevery.app.AppInfo
-import com.clipevery.dao.signal.SignalRealm
+import com.clipevery.dao.signal.SignalDao
 import com.clipevery.path.getPathProvider
 import com.clipevery.platform.currentPlatform
 import com.clipevery.presist.DesktopOneFilePersist
@@ -24,7 +24,7 @@ import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
 
-class DesktopIdentityKeyStore(private val signalRealm: SignalRealm,
+class DesktopIdentityKeyStore(private val signalDao: SignalDao,
                               private val identityKeyPair: IdentityKeyPair,
                               private val registrationId: Int): IdentityKeyStore {
     override fun getIdentityKeyPair(): IdentityKeyPair {
@@ -36,7 +36,7 @@ class DesktopIdentityKeyStore(private val signalRealm: SignalRealm,
     }
 
     override fun saveIdentity(address: SignalProtocolAddress, identityKey: IdentityKey): Boolean {
-        return signalRealm.saveIdentity(address.name, identityKey.serialize())
+        return signalDao.saveIdentity(address.name, identityKey.serialize())
     }
 
     override fun isTrustedIdentity(
@@ -49,7 +49,7 @@ class DesktopIdentityKeyStore(private val signalRealm: SignalRealm,
     }
 
     override fun getIdentity(address: SignalProtocolAddress): IdentityKey? {
-        return signalRealm.identity(address.name)?.let {
+        return signalDao.identity(address.name)?.let {
             IdentityKey(it)
         }
     }
@@ -59,12 +59,12 @@ class DesktopIdentityKeyStore(private val signalRealm: SignalRealm,
 val logger = KotlinLogging.logger {}
 
 fun getClipIdentityKeyStoreFactory(appInfo: AppInfo,
-                                   signalRealm: SignalRealm): IdentityKeyStoreFactory {
+                                   signalDao: SignalDao): IdentityKeyStoreFactory {
     val currentPlatform = currentPlatform()
     return if (currentPlatform.isMacos()) {
-        MacosIdentityKeyStoreFactory(appInfo, signalRealm)
+        MacosIdentityKeyStoreFactory(appInfo, signalDao)
     } else if (currentPlatform.isWindows()) {
-        WindowsIdentityKeyStoreFactory(appInfo, signalRealm)
+        WindowsIdentityKeyStoreFactory(appInfo, signalDao)
     } else {
         throw IllegalStateException("Unknown platform: ${currentPlatform.name}")
     }
@@ -95,7 +95,7 @@ private fun writeIdentityKeyPairWithRegistrationId(identityKeyPair: IdentityKeyP
 }
 
 class MacosIdentityKeyStoreFactory(private val appInfo: AppInfo,
-                                   private val signalRealm: SignalRealm): IdentityKeyStoreFactory {
+                                   private val signalDao: SignalDao): IdentityKeyStoreFactory {
 
     private val filePersist = DesktopOneFilePersist(
         getPathProvider()
@@ -114,7 +114,7 @@ class MacosIdentityKeyStoreFactory(private val appInfo: AppInfo,
                     val secretKey = stringToSecretKey(it)
                     val decryptData = decryptData(secretKey, bytes)
                     val (identityKeyPair, registrationId) = readIdentityKeyPairWithRegistrationId(decryptData)
-                    return DesktopIdentityKeyStore(signalRealm, identityKeyPair, registrationId)
+                    return DesktopIdentityKeyStore(signalDao, identityKeyPair, registrationId)
                 } catch (e: Exception) {
                     logger.error(e) { "Failed to decrypt signalProtocol" }
                 }
@@ -146,13 +146,13 @@ class MacosIdentityKeyStoreFactory(private val appInfo: AppInfo,
 
         val encryptData = encryptData(secretKey, data)
         filePersist.saveBytes(encryptData)
-        return DesktopIdentityKeyStore(signalRealm, identityKeyPair, registrationId)
+        return DesktopIdentityKeyStore(signalDao, identityKeyPair, registrationId)
     }
 }
 
 
 class WindowsIdentityKeyStoreFactory(private val appInfo: AppInfo,
-                                     private val signalRealm: SignalRealm) : IdentityKeyStoreFactory {
+                                     private val signalDao: SignalDao) : IdentityKeyStoreFactory {
 
     private val filePersist = DesktopOneFilePersist(
         getPathProvider()
@@ -167,7 +167,7 @@ class WindowsIdentityKeyStoreFactory(private val appInfo: AppInfo,
                     val decryptData = WindowDapiHelper.decryptData(it)
                     decryptData?.let { byteArray ->
                         val (identityKeyPair, registrationId) = readIdentityKeyPairWithRegistrationId(byteArray)
-                        return DesktopIdentityKeyStore(signalRealm, identityKeyPair, registrationId)
+                        return DesktopIdentityKeyStore(signalDao, identityKeyPair, registrationId)
                     }
                 } catch (e: Exception) {
                     logger.error(e) { "Failed to decrypt ideIdentityKey" }
@@ -186,6 +186,6 @@ class WindowsIdentityKeyStoreFactory(private val appInfo: AppInfo,
         val data = writeIdentityKeyPairWithRegistrationId(identityKeyPair, registrationId)
         val encryptData = WindowDapiHelper.encryptData(data)
         filePersist.saveBytes(encryptData!!)
-        return DesktopIdentityKeyStore(signalRealm, identityKeyPair, registrationId)
+        return DesktopIdentityKeyStore(signalDao, identityKeyPair, registrationId)
     }
 }

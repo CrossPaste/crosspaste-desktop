@@ -20,7 +20,7 @@ class SyncRuntimeInfo: RealmObject {
     var hostInfoList: RealmList<HostInfo> = realmListOf()
     var port: Int = 0
     var connectHostAddress: String? = null
-    var connectState: Int = 0
+    var connectState: Int = SyncState.DISCONNECTED
     var allowSend: Boolean = true
     var allowReceive: Boolean = true
     var createTime: RealmInstant = RealmInstant.now()
