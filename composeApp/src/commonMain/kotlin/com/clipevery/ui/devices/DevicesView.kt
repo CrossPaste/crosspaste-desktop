@@ -14,25 +14,22 @@ import com.clipevery.LocalKoinApplication
 import com.clipevery.dao.sync.SyncRuntimeInfo
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.ui.PageViewContext
-import kotlinx.coroutines.flow.asFlow
 
 @Composable
 fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
     val current = LocalKoinApplication.current
     val syncRuntimeInfoDao = current.koin.get<SyncRuntimeInfoDao>()
-    val syncRuntimeInfosFlow = syncRuntimeInfoDao.getAllSyncRuntimeInfos().asFlow()
+    val syncRuntimeInfosFlow = syncRuntimeInfoDao.getAllSyncRuntimeInfos()
 
-    var syncRuntimeInfos by remember { mutableStateOf(emptyList<SyncRuntimeInfo>()) }
+    var rememberSyncRuntimeInfos by remember { mutableStateOf(emptyList<SyncRuntimeInfo>()) }
 
     LaunchedEffect(syncRuntimeInfosFlow) {
-        syncRuntimeInfosFlow.collect { updatedUsers ->
-            syncRuntimeInfos = listOf(updatedUsers)
-        }
+        rememberSyncRuntimeInfos = syncRuntimeInfosFlow.toList()
     }
 
-    for ((index, syncRuntimeInfo) in syncRuntimeInfos.withIndex()) {
+    for ((index, syncRuntimeInfo) in rememberSyncRuntimeInfos.withIndex()) {
         DeviceItemView(syncRuntimeInfo, currentPageViewContext)
-        if (index != syncRuntimeInfos.size - 1) {
+        if (index != rememberSyncRuntimeInfos.size - 1) {
             Divider(modifier = Modifier.fillMaxWidth())
         }
     }
