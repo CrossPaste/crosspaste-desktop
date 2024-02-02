@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
@@ -21,7 +21,7 @@ jobs:
           check-latest: true
 
       - name: Cache Gradle dependencies
-        uses: actions/cache@v2.1.4
+        uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
@@ -31,7 +31,7 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Build with Gradle
-        run: ./gradlew.bat build
+        run: ./gradlew build
 
       - name: Run tests
-        run: ./gradlew.bat desktopTest
+        run: ./gradlew desktopTest
