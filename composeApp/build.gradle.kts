@@ -24,7 +24,7 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation("net.java.dev.jna:jna:5.14.0")
             implementation("net.java.dev.jna:jna-platform:5.14.0")
-            implementation("com.google.zxing:core:3.5.2")
+            implementation("com.google.zxing:core:3.5.3")
             implementation("com.google.zxing:javase:3.5.3")
             implementation("ch.qos.logback:logback-classic:1.4.14")
             implementation(libs.ktor.server.core)
