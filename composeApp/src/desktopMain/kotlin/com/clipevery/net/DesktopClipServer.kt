@@ -1,9 +1,11 @@
 package com.clipevery.net
 
+import com.clipevery.exception.StandardErrorCode
 import com.clipevery.net.exception.signalExceptionHandler
 import com.clipevery.routing.syncRouting
 import com.clipevery.serializer.IdentityKeySerializer
 import com.clipevery.serializer.PreKeyBundleSerializer
+import com.clipevery.utils.failResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.install
@@ -36,6 +38,10 @@ class DesktopClipServer(private val clientHandlerManager :ClientHandlerManager):
             })
         }
         install(StatusPages) {
+            exception(Exception::class) { call, cause ->
+                logger.error(cause) { "Unhandled exception" }
+                failResponse(call, StandardErrorCode.UNKNOWN_ERROR.toErrorCode())
+            }
             signalExceptionHandler()
         }
         routing {
