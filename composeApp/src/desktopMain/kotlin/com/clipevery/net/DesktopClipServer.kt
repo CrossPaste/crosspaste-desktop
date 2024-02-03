@@ -2,6 +2,7 @@ package com.clipevery.net
 
 import com.clipevery.exception.StandardErrorCode
 import com.clipevery.net.exception.signalExceptionHandler
+import com.clipevery.net.plugin.SignalDecryption
 import com.clipevery.routing.syncRouting
 import com.clipevery.serializer.IdentityKeySerializer
 import com.clipevery.serializer.PreKeyBundleSerializer
@@ -47,6 +48,9 @@ class DesktopClipServer(private val clientHandlerManager :ClientHandlerManager):
                 failResponse(call, StandardErrorCode.UNKNOWN_ERROR.toErrorCode())
             }
             signalExceptionHandler()
+        }
+        install(SignalDecryption) {
+
         }
         intercept(ApplicationCallPipeline.Setup) {
             logger.info {"Received request: ${call.request.httpMethod.value} ${call.request.uri}" }
