@@ -8,12 +8,16 @@ import com.clipevery.serializer.PreKeyBundleSerializer
 import com.clipevery.utils.failResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.server.application.ApplicationCallPipeline
+import io.ktor.server.application.call
 import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.netty.NettyApplicationEngine
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.request.httpMethod
+import io.ktor.server.request.uri
 import io.ktor.server.routing.routing
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -43,6 +47,10 @@ class DesktopClipServer(private val clientHandlerManager :ClientHandlerManager):
                 failResponse(call, StandardErrorCode.UNKNOWN_ERROR.toErrorCode())
             }
             signalExceptionHandler()
+        }
+        intercept(ApplicationCallPipeline.Setup) {
+            logger.info {"Received request: ${call.request.httpMethod.value} ${call.request.uri}" }
+            proceed()
         }
         routing {
             syncRouting()
