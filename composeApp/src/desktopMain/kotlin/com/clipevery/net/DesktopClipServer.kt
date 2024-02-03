@@ -1,5 +1,6 @@
 package com.clipevery.net
 
+import com.clipevery.net.exception.signalExceptionHandler
 import com.clipevery.routing.syncRouting
 import com.clipevery.serializer.IdentityKeySerializer
 import com.clipevery.serializer.PreKeyBundleSerializer
@@ -10,6 +11,7 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.netty.NettyApplicationEngine
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.routing.routing
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -32,6 +34,9 @@ class DesktopClipServer(private val clientHandlerManager :ClientHandlerManager):
                     serializersModuleOf(IdentityKey::class, IdentityKeySerializer)
                 }
             })
+        }
+        install(StatusPages) {
+            signalExceptionHandler()
         }
         routing {
             syncRouting()

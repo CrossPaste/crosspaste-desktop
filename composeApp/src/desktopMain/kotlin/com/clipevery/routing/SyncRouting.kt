@@ -15,19 +15,14 @@ import com.clipevery.utils.encodePreKeyBundle
 import com.clipevery.utils.failResponse
 import com.clipevery.utils.getAppInstanceId
 import com.clipevery.utils.successResponse
-import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.request.receive
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
-import org.signal.libsignal.protocol.InvalidKeyException
-import org.signal.libsignal.protocol.InvalidKeyIdException
 import org.signal.libsignal.protocol.InvalidMessageException
 import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.SignalProtocolAddress
-import org.signal.libsignal.protocol.UntrustedIdentityException
 import org.signal.libsignal.protocol.message.PreKeySignalMessage
 import org.signal.libsignal.protocol.message.SignalMessage
 import org.signal.libsignal.protocol.state.PreKeyBundle
@@ -37,8 +32,6 @@ import org.signal.libsignal.protocol.state.SignedPreKeyRecord
 import java.util.Objects
 
 fun Routing.syncRouting() {
-
-    val logger = KotlinLogging.logger {}
 
     val koinApplication = Dependencies.koinApplication
 
@@ -61,7 +54,7 @@ fun Routing.syncRouting() {
                 signalDao.saveIdentities(identityKeys)
                 deviceRefresher.refresh(CheckAction.CheckNonConnected)
                 successResponse(call)
-            } ?: failResponse(call, "not trust $appInstanceId", status = HttpStatusCode.ExpectationFailed)
+            } ?:  failResponse(call, StandardErrorCode.SIGNAL_UNTRUSTED_IDENTITY.toErrorCode(), "not trust $appInstanceId")
         }
     }
 
@@ -105,49 +98,39 @@ fun Routing.syncRouting() {
     post("sync/exchangePreKey") {
         getAppInstanceId(call).let { appInstanceId ->
             val bytes = call.receive<ByteArray>()
-            try {
-                val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
-                val identityKey = signalProtocolStore.getIdentity(signalProtocolAddress)
-                val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
-                var decrypt: ByteArray? = null
-                if (identityKey != null) {
-                    try {
-                        val signalMessage = SignalMessage(bytes)
-                        decrypt = sessionCipher.decrypt(signalMessage)
-                    } catch (ignore: InvalidMessageException) {}
-                }
+            val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
+            val identityKey = signalProtocolStore.getIdentity(signalProtocolAddress)
+            val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
+            var decrypt: ByteArray? = null
+            if (identityKey != null) {
+                try {
+                    val signalMessage = SignalMessage(bytes)
+                    decrypt = sessionCipher.decrypt(signalMessage)
+                } catch (ignore: InvalidMessageException) {}
+            }
 
-                if (decrypt == null) {
-                    val preKeySignalMessage = PreKeySignalMessage(bytes)
+            if (decrypt == null) {
+                val preKeySignalMessage = PreKeySignalMessage(bytes)
 
-                    val signedPreKeyId = preKeySignalMessage.signedPreKeyId
+                val signedPreKeyId = preKeySignalMessage.signedPreKeyId
 
-                    if (signalProtocolStore.containsSignedPreKey(signedPreKeyId)) {
-                        signalProtocolStore.saveIdentity(
-                            signalProtocolAddress,
-                            preKeySignalMessage.identityKey
-                        )
-                        decrypt = sessionCipher.decrypt(preKeySignalMessage)
-                    } else {
-                        failResponse(call, "invalid key id", status = HttpStatusCode.ExpectationFailed)
-                        return@let
-                    }
-                }
-
-                if (Objects.equals("exchange", String(decrypt!!, Charsets.UTF_8))) {
-                    val ciphertextMessage = sessionCipher.encrypt("exchange".toByteArray(Charsets.UTF_8))
-                    successResponse(call, ciphertextMessage.serialize())
+                if (signalProtocolStore.containsSignedPreKey(signedPreKeyId)) {
+                    signalProtocolStore.saveIdentity(
+                        signalProtocolAddress,
+                        preKeySignalMessage.identityKey
+                    )
+                    decrypt = sessionCipher.decrypt(preKeySignalMessage)
                 } else {
-                    failResponse(call, "exchange fail", status = HttpStatusCode.ExpectationFailed)
+                    failResponse(call, StandardErrorCode.SIGNAL_INVALID_KEY_ID.toErrorCode())
+                    return@let
                 }
-            } catch (e: InvalidMessageException) {
-                failResponse(call, "invalid message", exception = e, logger = logger, errorCodeSupplier = StandardErrorCode.INVALID_PARAMETER, status = HttpStatusCode.ExpectationFailed)
-            } catch (e: InvalidKeyIdException) {
-                failResponse(call, "invalid key id", exception = e, logger = logger, errorCodeSupplier = StandardErrorCode.INVALID_PARAMETER, status = HttpStatusCode.ExpectationFailed)
-            } catch (e: InvalidKeyException) {
-                failResponse(call, "invalid key", exception = e, logger = logger, errorCodeSupplier = StandardErrorCode.INVALID_PARAMETER, status = HttpStatusCode.ExpectationFailed)
-            } catch (e: UntrustedIdentityException) {
-                failResponse(call, "untrusted identity", exception = e, logger = logger, errorCodeSupplier = StandardErrorCode.INVALID_PARAMETER, status = HttpStatusCode.ExpectationFailed)
+            }
+
+            if (Objects.equals("exchange", String(decrypt!!, Charsets.UTF_8))) {
+                val ciphertextMessage = sessionCipher.encrypt("exchange".toByteArray(Charsets.UTF_8))
+                successResponse(call, ciphertextMessage.serialize())
+            } else {
+                failResponse(call, StandardErrorCode.SIGNAL_EXCHANGE_FAIL.toErrorCode())
             }
         }
     }
@@ -163,7 +146,7 @@ fun Routing.syncRouting() {
             val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
             signalProtocolStore.getIdentity(signalProtocolAddress)?.let {
                 successResponse(call)
-            } ?: failResponse(call, "not trust $appInstanceId", status = HttpStatusCode.ExpectationFailed)
+            } ?: failResponse(call, StandardErrorCode.SIGNAL_UNTRUSTED_IDENTITY.toErrorCode(), "not trust $appInstanceId")
         }
     }
 
@@ -182,7 +165,7 @@ fun Routing.syncRouting() {
                 appUI.showToken = false
                 successResponse(call)
             } else {
-                failResponse(call, "token isn't right", status = HttpStatusCode.ExpectationFailed)
+                failResponse(call, StandardErrorCode.TOKEN_INVALID.toErrorCode())
             }
         }
     }

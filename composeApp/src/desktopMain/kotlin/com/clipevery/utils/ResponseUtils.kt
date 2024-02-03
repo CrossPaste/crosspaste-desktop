@@ -1,9 +1,9 @@
 package com.clipevery.utils
 
 import com.clipevery.app.AppInfo
-import com.clipevery.exception.ErrorCodeSupplier
+import com.clipevery.exception.ErrorCode
+import com.clipevery.exception.ErrorType
 import com.clipevery.exception.StandardErrorCode
-import io.github.oshai.kotlinlogging.KLogger
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
@@ -21,7 +21,6 @@ import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.SignalProtocolAddress
 import org.signal.libsignal.protocol.message.SignalMessage
 import org.signal.libsignal.protocol.state.SignalProtocolStore
-import java.io.ByteArrayInputStream
 
 
 suspend inline fun successResponse(call: ApplicationCall) {
@@ -41,20 +40,16 @@ suspend inline fun failResponse(call: ApplicationCall, message: FailResponse, st
     call.respond(status = status, message = message)
 }
 
-suspend inline fun failResponse(call: ApplicationCall,
-                                message: String,
-                                exception: java.lang.Exception?  = null,
-                                logger: KLogger? = null,
-                                errorCodeSupplier: ErrorCodeSupplier = StandardErrorCode.UNKNOWN_ERROR,
-                                status: HttpStatusCode = HttpStatusCode.InternalServerError) {
-
-    logger.let {
-        exception.let {
-            logger?.error(exception) { message }
-        } ?: logger?.error { message }
+suspend inline fun failResponse(call: ApplicationCall, errorCode: ErrorCode, message: String? = null) {
+    val code = errorCode.code
+    val type = errorCode.type
+    val status = when (type) {
+        ErrorType.EXTERNAL_ERROR -> HttpStatusCode.BadRequest
+        ErrorType.INTERNAL_ERROR -> HttpStatusCode.InternalServerError
+        ErrorType.USER_ERROR -> HttpStatusCode.UnprocessableEntity
     }
-    val failMessage = FailResponse(errorCodeSupplier.toErrorCode().code, message)
-    call.respond(status = status, message = failMessage)
+    val failMessage = FailResponse(code, errorCode.name)
+    failResponse(call, failMessage, status)
 }
 
 @ExperimentalSerializationApi
@@ -63,8 +58,7 @@ suspend inline fun <reified T : Any> decodeReceive(call: ApplicationCall,
     val bytes = call.receive<ByteArray>()
     val appInstanceId = call.request.headers["appInstanceId"]
     if (appInstanceId == null) {
-        failResponse(call, FailResponse(StandardErrorCode.NOT_FOUND_APP_INSTANCE_ID.toErrorCode().code,
-            "not found app instance id"))
+        failResponse(call, StandardErrorCode.NOT_FOUND_APP_INSTANCE_ID.toErrorCode())
     }
     val signalProtocolAddress = SignalProtocolAddress(appInstanceId!!, 1)
 
@@ -95,18 +89,11 @@ suspend inline fun <reified T : Any> encodeResponse(call: ApplicationCall,
 suspend inline fun getAppInstanceId(call: ApplicationCall): String? {
     val appInstanceId = call.request.headers["appInstanceId"]
     if (appInstanceId == null) {
-        failResponse(call, FailResponse(StandardErrorCode.NOT_FOUND_APP_INSTANCE_ID.toErrorCode().code,
-            "not found app instance id"))
+        failResponse(call, StandardErrorCode.NOT_FOUND_APP_INSTANCE_ID.toErrorCode())
     }
     return appInstanceId
 }
 
-@ExperimentalSerializationApi
-suspend inline fun <reified T : Any> jsonReceive(call: ApplicationCall): T {
-    val bytes = call.receive<ByteArray>()
-    return Json.decodeFromStream(ByteArrayInputStream(bytes))
-}
-
 @Serializable
 data class FailResponse(val errorCode: Int,
-                        val message: String)
+                        val message: String = "")
