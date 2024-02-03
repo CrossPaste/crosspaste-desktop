@@ -2,24 +2,18 @@ package com.clipevery.exception
 
 import java.util.Objects
 
-class ErrorCode constructor(
-    code: Int,
-    name: String,
-    type: ErrorType) {
+class ErrorCode(code: Int,
+                name: String,
+                type: ErrorType) {
     val code: Int
-
     val name: String
-    private val type: ErrorType
+    val type: ErrorType
 
     init {
         require(code >= 0) { "code is negative" }
         this.code = code
         this.name = name
         this.type = type
-    }
-
-    fun getType(): ErrorType {
-        return type
     }
 
     override fun equals(other: Any?): Boolean {
@@ -40,9 +34,9 @@ class ErrorCode constructor(
 
 
 enum class ErrorType {
-    USER_ERROR,
+    EXTERNAL_ERROR,
     INTERNAL_ERROR,
-    EXTERNAL
+    USER_ERROR
 }
 
 
