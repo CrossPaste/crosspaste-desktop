@@ -17,6 +17,7 @@ import io.ktor.server.netty.Netty
 import io.ktor.server.netty.NettyApplicationEngine
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.request.contentType
 import io.ktor.server.request.httpMethod
 import io.ktor.server.request.uri
 import io.ktor.server.routing.routing
@@ -53,8 +54,7 @@ class DesktopClipServer(private val clientHandlerManager :ClientHandlerManager):
 
         }
         intercept(ApplicationCallPipeline.Setup) {
-            logger.info {"Received request: ${call.request.httpMethod.value} ${call.request.uri}" }
-            proceed()
+            logger.info {"Received request: ${call.request.httpMethod.value} ${call.request.uri} ${call.request.contentType()}" }
         }
         routing {
             syncRouting()
