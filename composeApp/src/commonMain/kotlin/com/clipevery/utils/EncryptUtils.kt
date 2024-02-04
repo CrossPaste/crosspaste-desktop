@@ -32,6 +32,14 @@ fun base64Decode(string: String): ByteArray {
     return Base64.getDecoder().decode(string)
 }
 
+fun base64mimeEncode(bytes: ByteArray): String {
+    return Base64.getMimeEncoder().encodeToString(bytes)
+}
+
+fun base64mimeDecode(string: String): ByteArray {
+    return Base64.getMimeDecoder().decode(string)
+}
+
 fun encryptData(key: SecretKey, data: ByteArray): ByteArray {
     val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
     val ivBytes = ByteArray(cipher.blockSize)
