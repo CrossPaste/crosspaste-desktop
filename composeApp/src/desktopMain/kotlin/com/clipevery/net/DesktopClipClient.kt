@@ -3,6 +3,7 @@ package com.clipevery.net
 import com.clipevery.app.AppInfo
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -13,7 +14,11 @@ import io.ktor.util.InternalAPI
 
 class DesktopClipClient(private val appInfo: AppInfo): ClipClient {
 
-    private val client: HttpClient = HttpClient(CIO)
+    private val client: HttpClient = HttpClient(CIO) {
+        install(HttpTimeout) {
+            requestTimeoutMillis = 1000
+        }
+    }
 
     @OptIn(InternalAPI::class)
     override suspend fun post(

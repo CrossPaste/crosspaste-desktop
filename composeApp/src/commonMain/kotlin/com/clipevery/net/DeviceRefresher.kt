@@ -1,5 +1,10 @@
 package com.clipevery.net
 
+import androidx.compose.runtime.State
+
 interface DeviceRefresher {
-    suspend fun refresh(checkAction: CheckAction)
+
+    val isRefreshing: State<Boolean>
+
+    fun refresh(checkAction: CheckAction)
 }
