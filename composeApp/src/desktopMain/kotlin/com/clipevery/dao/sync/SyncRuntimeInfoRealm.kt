@@ -3,12 +3,13 @@ package com.clipevery.dao.sync
 import com.clipevery.dto.sync.SyncInfo
 import io.realm.kotlin.Realm
 import io.realm.kotlin.ext.toRealmList
+import io.realm.kotlin.query.RealmResults
 import io.realm.kotlin.query.Sort
 import io.realm.kotlin.types.RealmInstant
 
 class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
 
-    override fun getAllSyncRuntimeInfos(): List<SyncRuntimeInfo> {
+    override fun getAllSyncRuntimeInfos(): RealmResults<SyncRuntimeInfo> {
         return realm.query(SyncRuntimeInfo::class).sort("createTime", Sort.DESCENDING).find()
     }
 

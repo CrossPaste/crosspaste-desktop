@@ -1,9 +1,10 @@
 package com.clipevery.dao.sync
 
 import com.clipevery.dto.sync.SyncInfo
+import io.realm.kotlin.query.RealmResults
 
 interface SyncRuntimeInfoDao {
-    fun getAllSyncRuntimeInfos(): List<SyncRuntimeInfo>
+    fun getAllSyncRuntimeInfos(): RealmResults<SyncRuntimeInfo>
 
     fun getSyncRuntimeInfo(appInstanceId: String): SyncRuntimeInfo?
 
