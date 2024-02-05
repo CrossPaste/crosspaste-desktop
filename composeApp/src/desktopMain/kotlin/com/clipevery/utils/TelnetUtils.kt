@@ -3,6 +3,8 @@ package com.clipevery.utils
 import com.clipevery.dao.sync.HostInfo
 import com.clipevery.net.ClipClient
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.http.URLProtocol
+import io.ktor.http.path
 import kotlinx.coroutines.async
 import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.withContext
@@ -24,14 +26,12 @@ class TelnetUtils(private val clipClient: ClipClient) {
         }
 
         var result: HostInfo? = null
-        while (deferredArray.isNotEmpty() && result == null) {
-            select {
-                deferredArray.forEach { deferred ->
-                    deferred.onAwait { hostInfo ->
-                        if (hostInfo != null) {
-                            result = hostInfo
-                            deferredArray.forEach { it.cancel() }
-                        }
+        select {
+            deferredArray.forEach { deferred ->
+                deferred.onAwait { hostInfo ->
+                    if (hostInfo != null) {
+                        result = hostInfo
+                        deferredArray.forEach { it.cancel() }
                     }
                 }
             }
@@ -42,9 +42,13 @@ class TelnetUtils(private val clipClient: ClipClient) {
     private suspend fun telnet(hostInfo: HostInfo, port: Int, timeout: Long): Boolean {
         return try {
             val httpResponse = clipClient.get(timeout = timeout) { urlBuilder ->
+                urlBuilder.protocol = URLProtocol.HTTP
                 urlBuilder.port = port
                 urlBuilder.host = hostInfo.hostAddress
+                urlBuilder.path("sync", "telnet")
             }
+            logger.info { "httpResponse.status = ${httpResponse.status.value} ${hostInfo.hostAddress}:$port" }
+
             httpResponse.status.value == 200
         } catch (e: Exception) {
             logger.debug(e) { "telnet $hostInfo fail" }
