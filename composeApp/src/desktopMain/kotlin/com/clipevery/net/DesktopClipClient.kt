@@ -4,6 +4,7 @@ import com.clipevery.app.AppInfo
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -18,6 +19,7 @@ class DesktopClipClient(private val appInfo: AppInfo): ClipClient {
         install(HttpTimeout) {
             requestTimeoutMillis = 1000
         }
+        install(Logging)
     }
 
     @OptIn(InternalAPI::class)
