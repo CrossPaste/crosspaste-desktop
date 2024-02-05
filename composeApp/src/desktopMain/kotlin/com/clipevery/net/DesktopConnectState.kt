@@ -93,7 +93,7 @@ class DisconnectedState(private val clientHandler: ClientHandler): ConnectState 
         telnetUtils.switchHost(syncRuntimeInfo.hostInfoList, syncRuntimeInfo.port)?.let { hostInfo ->
             clientHandler.updateSyncStateWithHostInfo(SyncState.Companion.CONNECTING, hostInfo, syncRuntimeInfo.port)
         } ?: run {
-            clientHandler.updateSyncState(SyncState.Companion.UNMATCHED)
+            clientHandler.updateSyncState(SyncState.Companion.DISCONNECTED)
         }
     }
 
