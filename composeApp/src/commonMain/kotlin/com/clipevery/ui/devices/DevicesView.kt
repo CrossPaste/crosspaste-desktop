@@ -37,8 +37,8 @@ import com.clipevery.net.CheckAction
 import com.clipevery.net.DeviceRefresher
 import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.base.ClipIconButton
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.toList
+import io.realm.kotlin.notifications.ResultsChange
+import io.realm.kotlin.notifications.UpdatedResults
 
 @Composable
 fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
@@ -52,11 +52,30 @@ fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
 fun DevicesListView(currentPageViewContext: MutableState<PageViewContext>) {
     val current = LocalKoinApplication.current
     val syncRuntimeInfoDao = current.koin.get<SyncRuntimeInfoDao>()
-    val syncRuntimeInfosFlow = syncRuntimeInfoDao.getAllSyncRuntimeInfos().asFlow()
-    var rememberSyncRuntimeInfos by remember { mutableStateOf(emptyList<SyncRuntimeInfo>()) }
+    val syncRuntimeInfos = syncRuntimeInfoDao.getAllSyncRuntimeInfos()
+    var rememberSyncRuntimeInfos by remember { mutableStateOf(syncRuntimeInfos) }
 
-    LaunchedEffect(syncRuntimeInfosFlow) {
-        rememberSyncRuntimeInfos = syncRuntimeInfosFlow.toList()
+    LaunchedEffect(Unit) {
+        val syncRuntimeInfosFlow = syncRuntimeInfos.asFlow()
+        syncRuntimeInfosFlow.collect { changes: ResultsChange<SyncRuntimeInfo> ->
+            when (changes) {
+                is UpdatedResults -> {
+                    changes.insertions // indexes of inserted objects
+                    changes.insertionRanges // ranges of inserted objects
+                    changes.changes // indexes of modified objects
+                    changes.changeRanges // ranges of modified objects
+                    changes.deletions // indexes of deleted objects
+                    changes.deletionRanges // ranges of deleted objects
+                    changes.list // the full collection of objects
+
+                    rememberSyncRuntimeInfos = syncRuntimeInfoDao.getAllSyncRuntimeInfos()
+                }
+                else -> {
+                    // types other than UpdatedResults are not changes -- ignore them
+                }
+            }
+
+        }
     }
     Column {
         for ((index, syncRuntimeInfo) in rememberSyncRuntimeInfos.withIndex()) {
