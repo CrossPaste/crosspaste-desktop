@@ -9,5 +9,6 @@ data class AppConfig(
     val appInstanceId: String = UUID.randomUUID().toString(),
     val language: String = Locale.getDefault().language,
     val isFollowSystemTheme: Boolean = true,
-    val isDarkTheme: Boolean = false
+    val isDarkTheme: Boolean = false,
+    val port: Int = 13129
 )
