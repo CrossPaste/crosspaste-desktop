@@ -5,9 +5,9 @@ import com.clipevery.net.ClipClient
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.URLProtocol
 import io.ktor.http.path
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.selects.select
-import kotlinx.coroutines.withContext
 
 class TelnetUtils(private val clipClient: ClipClient) {
 
@@ -17,11 +17,9 @@ class TelnetUtils(private val clipClient: ClipClient) {
         if (hostInfoList.isEmpty()) {
             return null
         }
-        val deferredArray = withContext(ioDispatcher) {
-            hostInfoList.map { hostInfo ->
-                async {
-                    if (telnet(hostInfo, port, timeout)) hostInfo else null
-                }
+        val deferredArray = hostInfoList.map { hostInfo ->
+            CoroutineScope(ioDispatcher).async {
+                if (telnet(hostInfo, port, timeout)) hostInfo else null
             }
         }
 
