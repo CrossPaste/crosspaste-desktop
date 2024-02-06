@@ -1,5 +1,6 @@
 package com.clipevery.net
 
+import com.clipevery.config.ConfigManager
 import com.clipevery.exception.StandardErrorCode
 import com.clipevery.net.exception.signalExceptionHandler
 import com.clipevery.net.plugin.SignalDecryption
@@ -27,49 +28,62 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.serializersModuleOf
 import org.signal.libsignal.protocol.IdentityKey
 import org.signal.libsignal.protocol.state.PreKeyBundle
+import java.net.BindException
 
-class DesktopClipServer(private val clientHandlerManager :ClientHandlerManager): ClipServer {
+class DesktopClipServer(private val configManager: ConfigManager,
+                        private val clientHandlerManager :ClientHandlerManager): ClipServer {
 
     private val logger = KotlinLogging.logger {}
 
     private var port = 0
 
-    private var server: NettyApplicationEngine = embeddedServer(Netty, port = 0) {
-        install(ContentNegotiation) {
-            json(Json {
-                serializersModule = SerializersModule {
-                    serializersModuleOf(PreKeyBundle::class, PreKeyBundleSerializer)
-                    serializersModuleOf(IdentityKey::class, IdentityKeySerializer)
-                }
-            })
-        }
-        install(StatusPages) {
-            exception(Exception::class) { call, cause ->
-                logger.error(cause) { "Unhandled exception" }
-                failResponse(call, StandardErrorCode.UNKNOWN_ERROR.toErrorCode())
-            }
-            signalExceptionHandler()
-        }
-        install(SignalDecryption) {
+    private var server: NettyApplicationEngine = createServer(port = configManager.config.port)
 
-        }
-        intercept(ApplicationCallPipeline.Setup) {
-            logger.info {"Received request: ${call.request.httpMethod.value} ${call.request.uri} ${call.request.contentType()}" }
-        }
-        routing {
-            syncRouting()
+    private fun createServer(port: Int): NettyApplicationEngine {
+        return embeddedServer(Netty, port = port) {
+            install(ContentNegotiation) {
+                json(Json {
+                    serializersModule = SerializersModule {
+                        serializersModuleOf(PreKeyBundle::class, PreKeyBundleSerializer)
+                        serializersModuleOf(IdentityKey::class, IdentityKeySerializer)
+                    }
+                })
+            }
+            install(StatusPages) {
+                exception(Exception::class) { call, cause ->
+                    logger.error(cause) { "Unhandled exception" }
+                    failResponse(call, StandardErrorCode.UNKNOWN_ERROR.toErrorCode())
+                }
+                signalExceptionHandler()
+            }
+            install(SignalDecryption) {
+
+            }
+            intercept(ApplicationCallPipeline.Setup) {
+                logger.info {"Received request: ${call.request.httpMethod.value} ${call.request.uri} ${call.request.contentType()}" }
+            }
+            routing {
+                syncRouting()
+            }
         }
     }
 
     override fun start(): ClipServer {
         clientHandlerManager.start()
-        server.start(wait = false)
-        port = runBlocking { server.resolvedConnectors().first().port }
-        if (port == 0) {
-            logger.error { "Failed to start server" }
-        } else {
-            logger.info { "Server started at port $port" }
+        try {
+            server.start(wait = false)
+        } catch (e: BindException) {
+            logger.warn { "Port ${configManager.config.port} is already in use" }
+            server = createServer(port = 0)
+            server.start(wait = false)
         }
+        port = runBlocking { server.resolvedConnectors().first().port }
+        if (port != configManager.config.port) {
+            configManager.updateConfig {
+                it.copy(port = port)
+            }
+        }
+        logger.info { "Server started at port $port" }
         return this
     }
 

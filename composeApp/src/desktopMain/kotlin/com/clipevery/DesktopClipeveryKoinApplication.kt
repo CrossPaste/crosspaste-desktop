@@ -76,7 +76,7 @@ object Dependencies {
             // net component
             single<ClipClient> { DesktopClipClient(get<AppInfo>()) }
             single<ClientHandlerManager> { DesktopClientHandlerManager(get(), get(), get(), get()) }
-            single<ClipServer> { DesktopClipServer(get<ClientHandlerManager>()).start() }
+            single<ClipServer> { DesktopClipServer(get<ConfigManager>(), get<ClientHandlerManager>()).start() }
             single<Lazy<ClipServer>> { lazy { get<ClipServer>() } }
             single<ClipBonjourService> { DesktopClipBonjourService(get(), get()).registerService() }
             single<DeviceRefresher> { DesktopDeviceRefresher(get<ClientHandlerManager>()) }
