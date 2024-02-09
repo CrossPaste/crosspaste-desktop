@@ -1,12 +1,22 @@
 package com.clipevery.utils
 
-import kotlinx.serialization.encodeToString
+import com.clipevery.serializer.Base64MimeByteArraySerializer
+import com.clipevery.serializer.IdentityKeySerializer
+import com.clipevery.serializer.PreKeyBundleSerializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.serializersModuleOf
+import org.signal.libsignal.protocol.IdentityKey
+import org.signal.libsignal.protocol.state.PreKeyBundle
 
-inline fun <reified T> readJson(json: String): T {
-    return Json.decodeFromString<T>(json)
-}
+object JsonUtils {
 
-inline fun <reified T : Any> writeJson(obj: T): String {
-    return Json.encodeToString(obj)
+    val JSON: Json = Json {
+        serializersModule = SerializersModule {
+            serializersModuleOf(ByteArray::class, Base64MimeByteArraySerializer)
+            serializersModuleOf(PreKeyBundle::class, PreKeyBundleSerializer)
+            serializersModuleOf(IdentityKey::class, IdentityKeySerializer)
+        }
+    }
+
 }

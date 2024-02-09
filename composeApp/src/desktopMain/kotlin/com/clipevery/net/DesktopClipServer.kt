@@ -5,8 +5,7 @@ import com.clipevery.exception.StandardErrorCode
 import com.clipevery.net.exception.signalExceptionHandler
 import com.clipevery.net.plugin.SignalDecryption
 import com.clipevery.routing.syncRouting
-import com.clipevery.serializer.IdentityKeySerializer
-import com.clipevery.serializer.PreKeyBundleSerializer
+import com.clipevery.utils.JsonUtils
 import com.clipevery.utils.failResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.serialization.kotlinx.json.json
@@ -23,11 +22,6 @@ import io.ktor.server.request.httpMethod
 import io.ktor.server.request.uri
 import io.ktor.server.routing.routing
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.serializersModuleOf
-import org.signal.libsignal.protocol.IdentityKey
-import org.signal.libsignal.protocol.state.PreKeyBundle
 import java.net.BindException
 
 class DesktopClipServer(private val configManager: ConfigManager,
@@ -42,12 +36,7 @@ class DesktopClipServer(private val configManager: ConfigManager,
     private fun createServer(port: Int): NettyApplicationEngine {
         return embeddedServer(Netty, port = port) {
             install(ContentNegotiation) {
-                json(Json {
-                    serializersModule = SerializersModule {
-                        serializersModuleOf(PreKeyBundle::class, PreKeyBundleSerializer)
-                        serializersModuleOf(IdentityKey::class, IdentityKeySerializer)
-                    }
-                })
+                json(JsonUtils.JSON)
             }
             install(StatusPages) {
                 exception(Exception::class) { call, cause ->

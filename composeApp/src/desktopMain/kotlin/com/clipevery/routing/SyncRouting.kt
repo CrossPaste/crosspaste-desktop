@@ -5,6 +5,7 @@ import com.clipevery.app.AppUI
 import com.clipevery.dao.signal.ClipIdentityKey
 import com.clipevery.dao.signal.SignalDao
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
+import com.clipevery.dto.sync.ExchangePreKey
 import com.clipevery.dto.sync.RequestTrust
 import com.clipevery.dto.sync.RequestTrustSyncInfo
 import com.clipevery.dto.sync.SyncInfo
@@ -97,7 +98,8 @@ fun Routing.syncRouting() {
 
     post("sync/exchangePreKey") {
         getAppInstanceId(call).let { appInstanceId ->
-            val bytes = call.receive<ByteArray>()
+            val exchangePreKey = call.receive(ExchangePreKey::class)
+            val bytes = exchangePreKey.data
             val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
             val identityKey = signalProtocolStore.getIdentity(signalProtocolAddress)
             val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
@@ -128,7 +130,7 @@ fun Routing.syncRouting() {
 
             if (Objects.equals("exchange", String(decrypt!!, Charsets.UTF_8))) {
                 val ciphertextMessage = sessionCipher.encrypt("exchange".toByteArray(Charsets.UTF_8))
-                successResponse(call, ciphertextMessage.serialize())
+                successResponse(call, ExchangePreKey(ciphertextMessage.serialize()))
             } else {
                 failResponse(call, StandardErrorCode.SIGNAL_EXCHANGE_FAIL.toErrorCode())
             }

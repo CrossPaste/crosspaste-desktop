@@ -27,6 +27,7 @@ kotlin {
             implementation(libs.jna.platform)
             implementation(libs.jnativehook)
             implementation(libs.koin.core)
+            implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.cio)
             implementation(libs.ktor.client.logging)
