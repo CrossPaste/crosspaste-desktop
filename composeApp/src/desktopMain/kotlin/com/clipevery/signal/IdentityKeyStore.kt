@@ -45,7 +45,11 @@ class DesktopIdentityKeyStore(private val signalDao: SignalDao,
         direction: IdentityKeyStore.Direction
     ): Boolean {
         val identity: IdentityKey? = getIdentity(address)
-        return identity?.let { it == identityKey } ?: false
+        return identity?.let {
+            val eq = (it == identityKey)
+            print("isTrustedIdentity: $eq")
+            return eq
+        } ?: false
     }
 
     override fun getIdentity(address: SignalProtocolAddress): IdentityKey? {
