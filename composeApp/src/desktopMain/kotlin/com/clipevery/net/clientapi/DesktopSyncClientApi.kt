@@ -1,7 +1,8 @@
 package com.clipevery.net.clientapi
 
-import com.clipevery.dto.sync.ExchangePreKey
+import com.clipevery.dto.sync.DataContent
 import com.clipevery.net.ClipClient
+import com.clipevery.utils.decodePreKeyBundle
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.body
 import io.ktor.http.URLBuilder
@@ -20,7 +21,7 @@ class DesktopSyncClientApi(private val clipClient: ClipClient): SyncClientApi {
             if (response.status.value != 200) {
                 return null
             }
-            return response.body<PreKeyBundle>()
+            return decodePreKeyBundle(response.body<DataContent>().data)
         } catch (e: Exception) {
             logger.error(e) { "getPreKeyBundle error" }
         }
@@ -32,14 +33,14 @@ class DesktopSyncClientApi(private val clipClient: ClipClient): SyncClientApi {
         try {
             val ciphertextMessage = sessionCipher.encrypt("exchange".toByteArray(Charsets.UTF_8))
 
-            val exchangePreKey = ExchangePreKey(data = ciphertextMessage.serialize())
+            val dataContent = DataContent(data = ciphertextMessage.serialize())
 
-            val response = clipClient.post(exchangePreKey, typeInfo<ExchangePreKey>() , urlBuilder = toUrl)
+            val response = clipClient.post(dataContent, typeInfo<DataContent>() , urlBuilder = toUrl)
             if (response.status.value != 200) {
                 return false
             }
-            val getExchangePreKey = response.body<ExchangePreKey>()
-            val signalMessage = SignalMessage(getExchangePreKey.data)
+            val getDataContent = response.body<DataContent>()
+            val signalMessage = SignalMessage(getDataContent.data)
             val decrypt = sessionCipher.decrypt(signalMessage)
             return String(decrypt, Charsets.UTF_8) == "exchange"
         } catch (e: Exception) {

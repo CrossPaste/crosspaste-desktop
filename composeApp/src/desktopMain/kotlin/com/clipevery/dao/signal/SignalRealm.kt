@@ -57,11 +57,11 @@ class SignalRealm(private val realm: Realm): SignalDao {
     override fun saveIdentities(identityKeys: List<ClipIdentityKey>) {
         realm.writeBlocking {
             identityKeys.forEach { identityKey ->
-                query(ClipIdentityKey::class, "appInstanceId == $0", identityKey.appInstanceId)
-                    .first()
-                    .find()?.let { clipIdentityKey ->
-                        copyToRealm(clipIdentityKey, updatePolicy = UpdatePolicy.ALL)
-                    }
+                val newClipIdentityKey = ClipIdentityKey().apply {
+                    this.appInstanceId = identityKey.appInstanceId
+                    this.serialized = identityKey.serialized
+                }
+                copyToRealm(newClipIdentityKey, updatePolicy = UpdatePolicy.ALL)
             }
         }
     }

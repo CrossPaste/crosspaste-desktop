@@ -5,7 +5,7 @@ import com.clipevery.app.AppUI
 import com.clipevery.dao.signal.ClipIdentityKey
 import com.clipevery.dao.signal.SignalDao
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
-import com.clipevery.dto.sync.ExchangePreKey
+import com.clipevery.dto.sync.DataContent
 import com.clipevery.dto.sync.RequestTrust
 import com.clipevery.dto.sync.RequestTrustSyncInfo
 import com.clipevery.dto.sync.SyncInfo
@@ -84,7 +84,6 @@ fun Routing.syncRouting() {
             val signedPreKey = signalDao.generatesSignedPreKeyPair(identityKeyPair.privateKey)
             val signedPreKeyId = signedPreKey.id
             val signedPreKeyRecord = SignedPreKeyRecord(signedPreKey.serialized)
-            signedPreKeyRecord.keyPair.publicKey
             val signedPreKeySignature = signedPreKeyRecord.signature
 
             val preKeyBundle = PreKeyBundle(
@@ -95,18 +94,18 @@ fun Routing.syncRouting() {
                 signedPreKeyId,
                 signedPreKeyRecord.keyPair.publicKey,
                 signedPreKeySignature,
-                signalProtocolStore.identityKeyPair.publicKey
+                identityKeyPair.publicKey
             )
 
             val bytes = encodePreKeyBundle(preKeyBundle)
-            successResponse(call, bytes)
+            successResponse(call, DataContent(bytes))
         }
     }
 
     post("sync/exchangePreKey") {
         getAppInstanceId(call).let { appInstanceId ->
-            val exchangePreKey = call.receive(ExchangePreKey::class)
-            val bytes = exchangePreKey.data
+            val dataContent = call.receive(DataContent::class)
+            val bytes = dataContent.data
             val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
             val identityKey = signalProtocolStore.getIdentity(signalProtocolAddress)
             val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
@@ -137,7 +136,7 @@ fun Routing.syncRouting() {
 
             if (Objects.equals("exchange", String(decrypt!!, Charsets.UTF_8))) {
                 val ciphertextMessage = sessionCipher.encrypt("exchange".toByteArray(Charsets.UTF_8))
-                successResponse(call, ExchangePreKey(ciphertextMessage.serialize()))
+                successResponse(call, DataContent(ciphertextMessage.serialize()))
             } else {
                 failResponse(call, StandardErrorCode.SIGNAL_EXCHANGE_FAIL.toErrorCode())
             }

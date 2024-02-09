@@ -4,14 +4,14 @@ import com.clipevery.serializer.Base64MimeByteArraySerializer
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ExchangePreKey(
+data class DataContent(
     @Serializable(with = Base64MimeByteArraySerializer::class) val data: ByteArray
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as ExchangePreKey
+        other as DataContent
 
         return data.contentEquals(other.data)
     }

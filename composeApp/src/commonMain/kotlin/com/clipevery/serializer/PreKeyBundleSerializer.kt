@@ -11,7 +11,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import org.signal.libsignal.protocol.state.PreKeyBundle
 
-object PreKeyBundleSerializer : KSerializer<PreKeyBundle> {
+object PreKeyBundleSerializer: KSerializer<PreKeyBundle> {
 
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PreKeyBundle") {
 
