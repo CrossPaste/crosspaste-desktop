@@ -66,6 +66,13 @@ fun Routing.syncRouting() {
     get("/sync/preKeyBundle") {
         getAppInstanceId(call).let { appInstanceId ->
 
+            val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
+
+            signalProtocolStore.getIdentity(signalProtocolAddress)?.let {
+                failResponse(call, StandardErrorCode.SIGNAL_UNTRUSTED_IDENTITY.toErrorCode(), "not trust $appInstanceId")
+                return@get
+            }
+
             val identityKeyPair = signalProtocolStore.identityKeyPair
             val registrationId = signalProtocolStore.localRegistrationId
             val deviceId = 1
