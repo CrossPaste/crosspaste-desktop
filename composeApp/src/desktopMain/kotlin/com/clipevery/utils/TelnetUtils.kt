@@ -3,8 +3,6 @@ package com.clipevery.utils
 import com.clipevery.dao.sync.HostInfo
 import com.clipevery.net.ClipClient
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.http.URLProtocol
-import io.ktor.http.path
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.selects.select
@@ -40,10 +38,7 @@ class TelnetUtils(private val clipClient: ClipClient) {
     private suspend fun telnet(hostInfo: HostInfo, port: Int, timeout: Long): Boolean {
         return try {
             val httpResponse = clipClient.get(timeout = timeout) { urlBuilder ->
-                urlBuilder.protocol = URLProtocol.HTTP
-                urlBuilder.port = port
-                urlBuilder.host = hostInfo.hostAddress
-                urlBuilder.path("sync", "telnet")
+                buildUrl(urlBuilder, hostInfo, port, "sync", "telnet")
             }
             logger.info { "httpResponse.status = ${httpResponse.status.value} ${hostInfo.hostAddress}:$port" }
 
