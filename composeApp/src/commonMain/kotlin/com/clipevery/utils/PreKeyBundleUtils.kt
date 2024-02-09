@@ -30,7 +30,7 @@ fun decodePreKeyBundle(encoded: ByteArray): PreKeyBundle {
 
     val signedPreKeySignatureSize = dataStream.readInt()
     val signedPreKeySignatureBytes = ByteArray(signedPreKeySignatureSize)
-    dataStream.read(signedPreKeyPublicBytes)
+    dataStream.read(signedPreKeySignatureBytes)
 
     val identityKeySize = dataStream.readInt()
     val identityKeyBytes = ByteArray(identityKeySize)
