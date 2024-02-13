@@ -1,11 +1,11 @@
 package com.clipevery.dto.sync
 
-import com.clipevery.serializer.Base64MimeByteArraySerializer
+import com.clipevery.serializer.Base64ByteArraySerializer
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class DataContent(
-    @Serializable(with = Base64MimeByteArraySerializer::class) val data: ByteArray
+    @Serializable(with = Base64ByteArraySerializer::class) val data: ByteArray
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

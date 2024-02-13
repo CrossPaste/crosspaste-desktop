@@ -1,8 +1,6 @@
 package com.clipevery.net.plugin
 
 import com.clipevery.Dependencies
-import com.clipevery.serializer.Base64MimeByteArraySerializer
-import com.clipevery.utils.JsonUtils
 import io.ktor.server.application.ApplicationPlugin
 import io.ktor.server.application.createApplicationPlugin
 import io.ktor.server.application.hooks.ReceiveRequestBytes
@@ -30,9 +28,7 @@ val SignalDecryption: ApplicationPlugin<SignalDecryptionConfig> = createApplicat
                 if (signal == "1") {
                     call.request.path()
                     return@on application.writer {
-                        val base64Content = body.readRemaining().readBytes()
-                        val originalString = String(base64Content, Charsets.UTF_8)
-                        val encryptedContent = JsonUtils.JSON.decodeFromString(Base64MimeByteArraySerializer, originalString)
+                        val encryptedContent = body.readRemaining().readBytes()
                         val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
                         val signalMessage = SignalMessage(encryptedContent)
                         val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
