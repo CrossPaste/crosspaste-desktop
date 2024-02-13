@@ -4,7 +4,7 @@ import java.io.File
 
 interface ClipFile {
 
-    val file: File
+    fun getFile(): File
 
-    val extension: String
+    fun getExtension(): String
 }
