@@ -8,7 +8,7 @@ import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-object Base64MimeByteArraySerializer: KSerializer<ByteArray> {
+object Base64ByteArraySerializer: KSerializer<ByteArray> {
 
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ByteArray") {}
 
