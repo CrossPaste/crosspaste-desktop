@@ -11,7 +11,7 @@ class PathProviderTest {
     @Test
     @Ignore
     fun testPathProvider() {
-        val pathProvider = getPathProvider()
+        val pathProvider = DesktopPathProvider
 
         val configPath = pathProvider.resolve("test.config", AppFileType.USER)
 
