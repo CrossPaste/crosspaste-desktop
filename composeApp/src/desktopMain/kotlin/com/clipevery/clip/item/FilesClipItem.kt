@@ -34,7 +34,7 @@ class FilesClipItem: RealmObject, ClipAppearItem, ClipFiles {
         }.joinToString(separator = " ")
     }
 
-    override fun getMd5(): String {
+    override fun getMD5(): String {
         return md5
     }
 

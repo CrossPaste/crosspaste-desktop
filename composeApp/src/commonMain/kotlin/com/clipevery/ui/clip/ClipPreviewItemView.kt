@@ -19,7 +19,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.dp
 import com.clipevery.clip.item.ClipItem
-import com.clipevery.clip.item.TextClipItem
+import com.clipevery.clip.item.ClipText
 import compose.icons.TablerIcons
 import compose.icons.tablericons.FileText
 
@@ -53,16 +53,16 @@ fun ClipPreviewItemView(clipItem: ClipItem) {
 
 @Composable
 fun ClipPreviewItemDetail(clipItem: ClipItem) {
-    if (clipItem is TextClipItem) {
+    if (clipItem is ClipText) {
         TextClipItem(clipItem)
     }
 }
 
 @Composable
-fun TextClipItem(textClipItem: TextClipItem) {
+fun TextClipItem(textClipItem: ClipText) {
     Icon(
         imageVector = TablerIcons.FileText,
         contentDescription = "clip text",
         tint = Color.Gray)
-    Text(text = textClipItem.text)
+    Text(text = textClipItem.getText())
 }

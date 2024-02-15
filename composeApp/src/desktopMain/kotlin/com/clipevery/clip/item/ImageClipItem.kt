@@ -21,7 +21,7 @@ class ImageClipItem: RealmObject, ClipAppearItem, ClipImage {
         TODO("Not yet implemented")
     }
 
-    override fun getMd5(): String {
+    override fun getMD5(): String {
         TODO("Not yet implemented")
     }
 

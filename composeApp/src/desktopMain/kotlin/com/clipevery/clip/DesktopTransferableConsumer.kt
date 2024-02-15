@@ -9,7 +9,7 @@ import java.awt.datatransfer.Transferable
 open class DesktopTransferableConsumer(private val appInfo: AppInfo,
                                        private val clipDao: ClipDao,
                                        private val idGenerator: IDGenerator,
-                                       itemServices: List<ClipItemService>,
+                                       private val itemServices: List<ClipItemService>,
                                        private val singleClipPlugins: List<SingleClipPlugin>,
                                        private val multiClipPlugins: List<MultiClipPlugin>): TransferableConsumer {
 

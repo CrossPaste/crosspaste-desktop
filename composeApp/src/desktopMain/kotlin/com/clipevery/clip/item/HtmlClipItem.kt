@@ -1,6 +1,5 @@
 package com.clipevery.clip.item
 
-import com.clipevery.clip.item.ClipHtml
 import com.clipevery.dao.clip.ClipAppearItem
 import io.realm.kotlin.types.RealmObject
 
@@ -21,7 +20,7 @@ class HtmlClipItem: RealmObject, ClipAppearItem, ClipHtml {
         TODO("Not yet implemented")
     }
 
-    override fun getMd5(): String {
+    override fun getMD5(): String {
         TODO("Not yet implemented")
     }
 

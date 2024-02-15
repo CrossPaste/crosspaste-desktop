@@ -1,12 +1,11 @@
 package com.clipevery.clip.item
 
-import com.clipevery.clip.item.ClipFiles
 import com.clipevery.dao.clip.ClipAppearItem
 import io.realm.kotlin.types.RealmObject
-import java.io.File
+import java.nio.file.Path
 
 class ImagesClipItem: RealmObject, ClipAppearItem, ClipFiles {
-    override fun getFiles(): List<File> {
+    override fun getFilePaths(): List<Path> {
         TODO("Not yet implemented")
     }
 
@@ -22,7 +21,7 @@ class ImagesClipItem: RealmObject, ClipAppearItem, ClipFiles {
         TODO("Not yet implemented")
     }
 
-    override fun getMd5(): String {
+    override fun getMD5(): String {
         TODO("Not yet implemented")
     }
 

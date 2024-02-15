@@ -45,7 +45,7 @@ class FileClipItem: RealmObject, ClipAppearItem, ClipFile {
         return relativePath
     }
 
-    override fun getMd5(): String {
+    override fun getMD5(): String {
         return md5
     }
 
