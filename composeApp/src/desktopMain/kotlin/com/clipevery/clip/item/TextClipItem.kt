@@ -1,12 +1,10 @@
-package com.clipevery.dao.clip.item
+package com.clipevery.clip.item
 
-import com.clipevery.clip.item.ClipImage
 import com.clipevery.dao.clip.ClipAppearItem
 import io.realm.kotlin.types.RealmObject
-import java.awt.Image
 
-class ImageClipItem: RealmObject, ClipAppearItem, ClipImage {
-    override fun getImage(): Image {
+class TextClipItem: RealmObject, ClipAppearItem, ClipText {
+    override fun getText(): String {
         TODO("Not yet implemented")
     }
 

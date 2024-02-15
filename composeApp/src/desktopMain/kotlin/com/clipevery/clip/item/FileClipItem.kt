@@ -1,10 +1,13 @@
-package com.clipevery.dao.clip.item
+package com.clipevery.clip.item
 
-import com.clipevery.clip.item.ClipFile
+import com.clipevery.clip.service.FileItemService
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipType
+import com.clipevery.path.DesktopPathProvider
+import com.clipevery.presist.DesktopOneFilePersist
+import io.ktor.util.extension
 import io.realm.kotlin.types.RealmObject
-import java.io.File
+import java.nio.file.Path
 
 class FileClipItem: RealmObject, ClipAppearItem, ClipFile {
 
@@ -15,11 +18,15 @@ class FileClipItem: RealmObject, ClipAppearItem, ClipFile {
 
     constructor()
 
-    constructor(file: File, extension: String, identifier: String, relativePath: String, isFile: Boolean, md5: String) {
+    constructor(identifier: String, relativePath: String, isFile: Boolean, md5: String) {
         this.identifier = identifier
         this.relativePath = relativePath
         this.isFile = isFile
         this.md5 = md5
+    }
+
+    override fun getFilePath(): Path {
+        return DesktopPathProvider.resolve(FileItemService.FILE_BASE_PATH, relativePath, autoCreate = false)
     }
 
     override fun getIdentifiers(): List<String> {
@@ -28,6 +35,10 @@ class FileClipItem: RealmObject, ClipAppearItem, ClipFile {
 
     override fun getClipType(): Int {
         return ClipType.FILE
+    }
+
+    override fun getExtension(): String {
+        return getFilePath().extension
     }
 
     override fun getSearchContent(): String? {
@@ -47,16 +58,7 @@ class FileClipItem: RealmObject, ClipAppearItem, ClipFile {
 
     override fun clear() {
         if (this.relativePath != "") {
-
+            DesktopOneFilePersist(getFilePath()).delete()
         }
     }
-
-    override fun getFile(): File {
-        TODO("Not yet implemented")
-    }
-
-    override fun getExtension(): String {
-        TODO("Not yet implemented")
-    }
-
 }

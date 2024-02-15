@@ -10,4 +10,6 @@ interface OneFilePersist {
     fun <T> save(config: T)
 
     fun saveBytes(bytes: ByteArray)
+
+    fun delete(): Boolean
 }

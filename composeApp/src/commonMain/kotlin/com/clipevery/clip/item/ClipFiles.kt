@@ -1,7 +1,7 @@
 package com.clipevery.clip.item
 
-import java.io.File
+import java.nio.file.Path
 
 interface ClipFiles {
-    fun getFiles(): List<File>
+    fun getFilePaths(): List<Path>
 }

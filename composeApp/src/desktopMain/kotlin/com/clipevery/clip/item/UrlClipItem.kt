@@ -1,12 +1,11 @@
-package com.clipevery.dao.clip.item
+package com.clipevery.clip.item
 
-import com.clipevery.clip.item.ClipFiles
 import com.clipevery.dao.clip.ClipAppearItem
 import io.realm.kotlin.types.RealmObject
-import java.io.File
+import java.net.URL
 
-class ImagesClipItem: RealmObject, ClipAppearItem, ClipFiles {
-    override fun getFiles(): List<File> {
+class UrlClipItem: RealmObject, ClipAppearItem, ClipUrl {
+    override fun getUrl(): URL {
         TODO("Not yet implemented")
     }
 

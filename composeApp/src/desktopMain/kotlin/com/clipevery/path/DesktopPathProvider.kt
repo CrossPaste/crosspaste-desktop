@@ -5,18 +5,30 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
-fun getPathProvider(): PathProvider {
-    return if (currentPlatform().isWindows()) {
-        WindowsPathProvider()
-    } else if (currentPlatform().isMacos()) {
-        MacosPathProvider()
-    } else if (currentPlatform().isLinux()) {
-        LinuxPathProvider()
-    } else {
-        throw IllegalStateException("Unknown platform: ${currentPlatform().name}")
+object DesktopPathProvider: PathProvider {
+
+    private val pathProvider = getPathProvider()
+
+    override val clipUserPath: Path = pathProvider.clipUserPath
+
+    override val clipLogPath: Path get() = pathProvider.clipUserPath
+
+    override val clipEncryptPath get() = pathProvider.clipUserPath
+
+    override val clipDataPath get() = pathProvider.clipUserPath
+
+    private fun getPathProvider(): PathProvider {
+        return if (currentPlatform().isWindows()) {
+            WindowsPathProvider()
+        } else if (currentPlatform().isMacos()) {
+            MacosPathProvider()
+        } else if (currentPlatform().isLinux()) {
+            LinuxPathProvider()
+        } else {
+            throw IllegalStateException("Unknown platform: ${currentPlatform().name}")
+        }
     }
 }
-
 
 class WindowsPathProvider: PathProvider {
 
