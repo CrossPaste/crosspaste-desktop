@@ -3,10 +3,12 @@ package com.clipevery.clip.service
 import com.clipevery.clip.ClipCollector
 import com.clipevery.clip.ClipItemService
 import com.clipevery.clip.item.TextClipItem
+import com.clipevery.clip.item.UrlClipItem
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.utils.md5ByString
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
+import java.net.URL
 
 class TextItemService: ClipItemService {
 
@@ -31,12 +33,29 @@ class TextItemService: ClipItemService {
     ) {
         var clipItem: ClipAppearItem? = null
         if (transferData is String) {
-            clipItem = TextClipItem().apply {
-                identifier = dataFlavor.humanPresentableName
-                text = transferData
-                md5 = md5ByString(text)
+            getURL(transferData)?.let {
+                clipItem = UrlClipItem().apply {
+                    identifier = dataFlavor.humanPresentableName
+                    url = transferData
+                    md5 = md5ByString(url)
+                }
+            } ?: run {
+                clipItem = TextClipItem().apply {
+                    identifier = dataFlavor.humanPresentableName
+                    text = transferData
+                    md5 = md5ByString(text)
+                }
             }
         }
         clipItem?.let { clipCollector.collectItem(itemIndex, this::class, it) }
+    }
+
+    private fun getURL(str: String): String? {
+        return try {
+            URL(str)
+            str
+        } catch (e: Exception) {
+            null
+        }
     }
 }
