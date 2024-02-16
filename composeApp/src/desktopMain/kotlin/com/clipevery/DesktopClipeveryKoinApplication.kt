@@ -121,7 +121,7 @@ object Dependencies {
             // ui component
             single<AppUI> { AppUI(width = 460.dp, height = 710.dp) }
             single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
-            single<GlobalListener> { GlobalListener() }
+            single<GlobalListener> { GlobalListener(get()) }
             single<ThemeDetector> { DesktopThemeDetector(get()) }
         }
         return GlobalContext.startKoin {
