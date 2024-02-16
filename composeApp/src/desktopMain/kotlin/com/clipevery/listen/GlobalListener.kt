@@ -1,5 +1,7 @@
 package com.clipevery.listen
 
+import com.clipevery.app.AppEnv
+import com.clipevery.config.ConfigManager
 import com.github.kwhat.jnativehook.GlobalScreen
 import com.github.kwhat.jnativehook.NativeHookException
 
@@ -10,16 +12,18 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 
 val logger = KotlinLogging.logger {}
 
-class GlobalListener {
+class GlobalListener(configManager: ConfigManager) {
 
     init {
-        try {
-            GlobalScreen.registerNativeHook()
-        } catch (ex: NativeHookException) {
-            logger.error { "There was a problem registering the native hook." }
-            logger.error { "ex.message" }
+        if (configManager.config.appEnv == AppEnv.PRODUCTION) {
+            try {
+                GlobalScreen.registerNativeHook()
+            } catch (ex: NativeHookException) {
+                logger.error { "There was a problem registering the native hook." }
+                logger.error { "ex.message" }
+            }
+            GlobalScreen.addNativeKeyListener(GlobalKeyListenerExample())
         }
-        GlobalScreen.addNativeKeyListener(GlobalKeyListenerExample())
     }
 
 }
