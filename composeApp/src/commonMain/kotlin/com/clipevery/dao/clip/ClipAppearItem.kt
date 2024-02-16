@@ -14,3 +14,7 @@ interface ClipAppearItem {
 
     fun clear()
 }
+
+fun sortClipAppearItems(clipAppearItems: List<ClipAppearItem>): List<ClipAppearItem> {
+    return clipAppearItems.sortedBy { it.getClipType() }
+}

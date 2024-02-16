@@ -2,21 +2,38 @@ package com.clipevery.clip.service
 
 import com.clipevery.clip.ClipCollector
 import com.clipevery.clip.ClipItemService
+import com.clipevery.clip.item.HtmlClipItem
+import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.utils.md5ByString
+import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 
 class HtmlItemService: ClipItemService {
-    override fun getIdentifiers(): List<String> {
-        TODO("Not yet implemented")
+
+    companion object HtmlItemService {
+
+        const val HTML_ID = "text/html"
     }
 
-    override fun createClipItem(
-        clipId: Int,
-        itemIndex: Int,
-        hpn: String?,
-        transferable: Transferable,
-        clipCollector: ClipCollector
-    ) {
-        TODO("Not yet implemented")
+    override fun getIdentifiers(): List<String> {
+        return listOf(HTML_ID)
+    }
+
+    override fun doCreateClipItem(transferData: Any,
+                                  clipId: Int,
+                                  itemIndex: Int,
+                                  dataFlavor: DataFlavor,
+                                  transferable: Transferable,
+                                  clipCollector: ClipCollector) {
+        var clipItem: ClipAppearItem? = null
+        if (transferData is String) {
+            clipItem = HtmlClipItem().apply {
+                identifier = dataFlavor.humanPresentableName
+                html = transferData
+                md5 = md5ByString(html)
+            }
+        }
+        clipItem?.let { clipCollector.collectItem(itemIndex, this::class, it) }
     }
 
 

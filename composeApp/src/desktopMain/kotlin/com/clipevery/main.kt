@@ -59,6 +59,9 @@ fun main(args: Array<String>) {
 
     initInject(koinApplication)
 
+    val clipboardService = koinApplication.koin.get<ClipboardService>()
+    clipboardService.start()
+
     application {
         val ioScope = rememberCoroutineScope { ioDispatcher }
 
