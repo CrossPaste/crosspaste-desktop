@@ -2,17 +2,19 @@ package com.clipevery.clip.service
 
 import com.clipevery.clip.ClipCollector
 import com.clipevery.clip.ClipItemService
+import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 
 class TextItemService: ClipItemService {
     override fun getIdentifiers(): List<String> {
-        TODO("Not yet implemented")
+        return listOf()
     }
 
-    override fun createClipItem(
+    override fun doCreateClipItem(
+        transferData: Any,
         clipId: Int,
         itemIndex: Int,
-        hpn: String?,
+        dataFlavor: DataFlavor,
         transferable: Transferable,
         clipCollector: ClipCollector
     ) {

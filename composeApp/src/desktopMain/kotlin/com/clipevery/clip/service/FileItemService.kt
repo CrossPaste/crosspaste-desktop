@@ -4,6 +4,7 @@ import com.clipevery.app.AppFileType
 import com.clipevery.clip.ClipCollector
 import com.clipevery.clip.ClipItemService
 import com.clipevery.path.DesktopPathProvider
+import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import java.nio.file.Path
 
@@ -14,13 +15,14 @@ class FileItemService: ClipItemService {
     }
 
     override fun getIdentifiers(): List<String> {
-        TODO("Not yet implemented")
+        return listOf()
     }
 
-    override fun createClipItem(
+    override fun doCreateClipItem(
+        transferData: Any,
         clipId: Int,
         itemIndex: Int,
-        hpn: String?,
+        dataFlavor: DataFlavor,
         transferable: Transferable,
         clipCollector: ClipCollector
     ) {

@@ -43,6 +43,7 @@ import com.clipevery.path.DesktopPathProvider
 import com.clipevery.presist.DesktopFilePersist
 import com.clipevery.presist.FilePersist
 import com.clipevery.realm.RealmManager
+import com.clipevery.realm.RealmManagerImpl
 import com.clipevery.signal.DesktopPreKeyStore
 import com.clipevery.signal.DesktopSessionStore
 import com.clipevery.signal.DesktopSignalProtocolStore
@@ -80,7 +81,7 @@ object Dependencies {
             single<IDGenerator> { IDGeneratorFactory(get()).createIDGenerator() }
 
             // realm component
-            single<RealmManager> { RealmManager.createRealmManager(pathProvider = DesktopPathProvider) }
+            single<RealmManager> { RealmManagerImpl.createRealmManager(pathProvider = DesktopPathProvider) }
             single<SignalDao> { SignalRealm(get<RealmManager>().realm) }
             single<SyncRuntimeInfoDao> { SyncRuntimeInfoRealm(get<RealmManager>().realm) }
             single<ClipDao> { ClipRealm(get<RealmManager>().realm) }
