@@ -1,23 +1,30 @@
 package com.clipevery.config
 
+import com.clipevery.app.AppEnv
 import com.clipevery.presist.OneFilePersist
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-abstract class ConfigManager(private val configFilePersist: OneFilePersist) {
+abstract class ConfigManager(private val configFilePersist: OneFilePersist,
+                             private val appEnv: AppEnv) {
 
     var config: AppConfig
 
     init {
         config = try {
-            loadConfig() ?: AppConfig()
+            loadConfig() ?: AppConfig(appEnv)
         } catch (e: Exception) {
-            AppConfig()
+            AppConfig(appEnv)
         }
     }
 
     private fun loadConfig(): AppConfig? {
-        return configFilePersist.read(AppConfig::class)
+        return configFilePersist.read(AppConfig::class)?.let {
+            if (it.appEnv != this.appEnv) {
+                return AppConfig(it, this.appEnv)
+            }
+            return it
+        }
     }
 
     protected abstract fun ioScope(): CoroutineScope
