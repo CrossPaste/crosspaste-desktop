@@ -15,7 +15,7 @@ val logger = KotlinLogging.logger {}
 class GlobalListener(configManager: ConfigManager) {
 
     init {
-        if (configManager.config.appEnv == AppEnv.DEVELOPMENT) {
+        if (configManager.config.appEnv == AppEnv.PRODUCTION) {
             try {
                 GlobalScreen.registerNativeHook()
             } catch (ex: NativeHookException) {
