@@ -1,6 +1,7 @@
 package com.clipevery
 
 import androidx.compose.ui.unit.dp
+import com.clipevery.app.AppEnv
 import com.clipevery.app.AppFileType
 import com.clipevery.app.AppInfo
 import com.clipevery.app.AppUI
@@ -67,16 +68,20 @@ import org.signal.libsignal.protocol.state.SignedPreKeyStore
 
 object Dependencies {
 
-    val koinApplication: KoinApplication = initKoinApplication()
+    lateinit var koinApplication: KoinApplication
 
-    private fun initKoinApplication(): KoinApplication {
+    fun init(appEnv: AppEnv) {
+        this.koinApplication = initKoinApplication(appEnv)
+    }
+
+    private fun initKoinApplication(appEnv: AppEnv): KoinApplication {
         val appModule = module {
 
             // simple component
             single<AppInfo> { DesktopAppInfoFactory(get()).createAppInfo() }
             single<EndpointInfoFactory> { DesktopEndpointInfoFactory( lazy { get<ClipServer>() }) }
             single<FilePersist> { DesktopFilePersist }
-            single<ConfigManager> { DefaultConfigManager(get<FilePersist>().getPersist("appConfig.json", AppFileType.USER)) }
+            single<ConfigManager> { DefaultConfigManager(get<FilePersist>().getPersist("appConfig.json", AppFileType.USER), appEnv) }
             single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
             single<IDGenerator> { IDGeneratorFactory(get()).createIDGenerator() }
 

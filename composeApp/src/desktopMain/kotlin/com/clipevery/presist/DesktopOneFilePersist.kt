@@ -1,5 +1,6 @@
 package com.clipevery.presist
 
+import com.clipevery.utils.JsonUtils
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import java.nio.file.Path
@@ -11,7 +12,7 @@ class DesktopOneFilePersist(val path: Path) : OneFilePersist {
         val file = path.toFile()
         return if (file.exists()) {
             val serializer = Json.serializersModule.serializer(clazz.java)
-            Json.decodeFromString(serializer, file.readText()) as T
+            JsonUtils.JSON.decodeFromString(serializer, file.readText()) as T
         } else {
             null
         }
@@ -29,7 +30,7 @@ class DesktopOneFilePersist(val path: Path) : OneFilePersist {
     override fun <T> save(config: T) {
         val kClass = config!!::class
         val serializer = Json.serializersModule.serializer(kClass.java)
-        val json = Json.encodeToString(serializer, config)
+        val json = JsonUtils.JSON.encodeToString(serializer, config)
         val file = path.toFile()
         file.parentFile?.mkdirs()
         file.writeText(json)

@@ -9,6 +9,7 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import com.clipevery.app.AppEnv
 import com.clipevery.app.AppFileType
 import com.clipevery.app.AppUI
 import com.clipevery.clip.ClipboardService
@@ -50,6 +51,13 @@ fun main(args: Array<String>) {
     } else {
         "info"
     }
+
+    Dependencies.init(if (args.size >= 2) {
+        AppEnv.valueOf(args[1])
+    } else {
+        AppEnv.PRODUCTION
+    })
+
     initLogger(DesktopPathProvider.resolve("clipevery.log", AppFileType.LOG).pathString, logLevel)
     val logger = KotlinLogging.logger {}
 
