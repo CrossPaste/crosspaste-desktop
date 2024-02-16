@@ -9,8 +9,17 @@ import com.clipevery.clip.ClipboardService
 import com.clipevery.clip.DesktopTransferableConsumer
 import com.clipevery.clip.TransferableConsumer
 import com.clipevery.clip.getDesktopClipboardService
+import com.clipevery.clip.plugin.multi.MultiImagePlugin
+import com.clipevery.clip.plugin.single.UrlTextCombinePlugin
+import com.clipevery.clip.service.FileItemService
+import com.clipevery.clip.service.HtmlItemService
+import com.clipevery.clip.service.ImageItemService
+import com.clipevery.clip.service.TextItemService
+import com.clipevery.clip.service.UrlItemService
 import com.clipevery.config.ConfigManager
 import com.clipevery.config.DefaultConfigManager
+import com.clipevery.dao.clip.ClipDao
+import com.clipevery.dao.clip.ClipRealm
 import com.clipevery.dao.signal.SignalDao
 import com.clipevery.dao.signal.SignalRealm
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
@@ -30,9 +39,9 @@ import com.clipevery.net.DesktopClipClient
 import com.clipevery.net.DesktopClipServer
 import com.clipevery.net.DesktopDeviceRefresher
 import com.clipevery.net.DeviceRefresher
-import com.clipevery.path.getPathProvider
+import com.clipevery.path.DesktopPathProvider
+import com.clipevery.presist.DesktopFilePersist
 import com.clipevery.presist.FilePersist
-import com.clipevery.presist.getFilePersist
 import com.clipevery.realm.RealmManager
 import com.clipevery.signal.DesktopPreKeyStore
 import com.clipevery.signal.DesktopSessionStore
@@ -42,6 +51,8 @@ import com.clipevery.signal.getClipIdentityKeyStoreFactory
 import com.clipevery.ui.DesktopThemeDetector
 import com.clipevery.ui.ThemeDetector
 import com.clipevery.utils.DesktopQRCodeGenerator
+import com.clipevery.utils.IDGenerator
+import com.clipevery.utils.IDGeneratorFactory
 import com.clipevery.utils.QRCodeGenerator
 import com.clipevery.utils.TelnetUtils
 import org.koin.core.KoinApplication
@@ -58,20 +69,21 @@ object Dependencies {
     val koinApplication: KoinApplication = initKoinApplication()
 
     private fun initKoinApplication(): KoinApplication {
-        val pathProvider = getPathProvider()
         val appModule = module {
 
             // simple component
             single<AppInfo> { DesktopAppInfoFactory(get()).createAppInfo() }
             single<EndpointInfoFactory> { DesktopEndpointInfoFactory( lazy { get<ClipServer>() }) }
-            single<FilePersist> { getFilePersist() }
+            single<FilePersist> { DesktopFilePersist }
             single<ConfigManager> { DefaultConfigManager(get<FilePersist>().getPersist("appConfig.json", AppFileType.USER)) }
             single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
+            single<IDGenerator> { IDGeneratorFactory(get()).createIDGenerator() }
 
             // realm component
-            single<RealmManager> { RealmManager.createRealmManager(pathProvider = pathProvider) }
+            single<RealmManager> { RealmManager.createRealmManager(pathProvider = DesktopPathProvider) }
             single<SignalDao> { SignalRealm(get<RealmManager>().realm) }
             single<SyncRuntimeInfoDao> { SyncRuntimeInfoRealm(get<RealmManager>().realm) }
+            single<ClipDao> { ClipRealm(get<RealmManager>().realm) }
 
             // net component
             single<ClipClient> { DesktopClipClient(get<AppInfo>()) }
@@ -91,7 +103,14 @@ object Dependencies {
 
             // clip component
             single<ClipboardService> { getDesktopClipboardService(get()) }
-            single<TransferableConsumer> { DesktopTransferableConsumer() }
+            single<TransferableConsumer> { DesktopTransferableConsumer(
+                get(), get(), get(), listOf(
+                    FileItemService(),
+                    HtmlItemService(),
+                    ImageItemService(),
+                    TextItemService(),
+                    UrlItemService()
+                ), listOf(UrlTextCombinePlugin()), listOf(MultiImagePlugin())) }
 
             // ui component
             single<AppUI> { AppUI(width = 460.dp, height = 710.dp) }

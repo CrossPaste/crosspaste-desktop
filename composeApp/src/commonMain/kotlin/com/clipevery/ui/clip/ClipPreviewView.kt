@@ -31,7 +31,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.clipevery.clip.item.ClipItem
-import com.clipevery.clip.item.TextClipItem
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -104,6 +103,6 @@ fun loadMoreItems(items: MutableList<ClipItem>) {
     // 这里添加数据加载逻辑，如网络请求或数据库查询
     // 示例：添加新数据到列表
 //    if (items.size < 20) {
-        items += TextClipItem("New Item " + items.size)
+//        items += TextClipItem("New Item " + items.size)
 //    }
 }

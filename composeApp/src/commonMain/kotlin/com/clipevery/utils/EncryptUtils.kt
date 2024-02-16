@@ -1,5 +1,6 @@
 package com.clipevery.utils
 
+import java.io.ByteArrayOutputStream
 import java.security.SecureRandom
 import java.util.Base64
 import javax.crypto.Cipher
@@ -60,4 +61,22 @@ fun decryptData(key: SecretKey, encryptedData: ByteArray): ByteArray {
     cipher.init(Cipher.DECRYPT_MODE, key, ivSpec)
 
     return cipher.doFinal(actualEncryptedData)
+}
+
+fun md5(bytes: ByteArray): String {
+    val md = java.security.MessageDigest.getInstance("MD5")
+    val digest = md.digest(bytes)
+    return digest.fold("") { str, it -> str + "%02x".format(it) }
+}
+
+fun md5ByArray(array: Array<String>): String {
+    val outputStream = ByteArrayOutputStream()
+    array.forEach {
+        outputStream.write(it.toByteArray())
+    }
+    return md5(outputStream.toByteArray())
+}
+
+fun md5ByString(string: String): String {
+    return md5(string.toByteArray())
 }

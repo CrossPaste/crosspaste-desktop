@@ -1,10 +1,10 @@
 package com.clipevery.clip.item
 
-import java.io.File
+import java.nio.file.Path
 
 interface ClipFile {
 
-    val file: File
+    fun getFilePath(): Path
 
-    val extension: String
+    fun getExtension(): String
 }

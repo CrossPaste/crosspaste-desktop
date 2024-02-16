@@ -8,7 +8,7 @@ interface ClipAppearItem {
 
     fun getSearchContent(): String?
 
-    fun getMd5(): String
+    var md5: String
 
     fun update(data: Any, md5: String)
 

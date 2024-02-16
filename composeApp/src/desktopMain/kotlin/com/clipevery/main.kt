@@ -17,7 +17,7 @@ import com.clipevery.log.initLogger
 import com.clipevery.net.ClipBonjourService
 import com.clipevery.net.ClipClient
 import com.clipevery.net.ClipServer
-import com.clipevery.path.getPathProvider
+import com.clipevery.path.DesktopPathProvider
 import com.clipevery.platform.currentPlatform
 import com.clipevery.ui.getTrayMouseAdapter
 import com.clipevery.utils.QRCodeGenerator
@@ -50,8 +50,7 @@ fun main(args: Array<String>) {
     } else {
         "info"
     }
-    val pathProvider = getPathProvider()
-    initLogger(pathProvider.resolve("clipevery.log", AppFileType.LOG).pathString, logLevel)
+    initLogger(DesktopPathProvider.resolve("clipevery.log", AppFileType.LOG).pathString, logLevel)
     val logger = KotlinLogging.logger {}
 
     logger.info { "Starting Clipevery" }

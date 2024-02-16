@@ -9,10 +9,10 @@ import com.clipevery.utils.stringToSecretKey
 import com.clipevery.os.macos.MacosKeychainHelper
 import com.clipevery.app.AppInfo
 import com.clipevery.dao.signal.SignalDao
-import com.clipevery.path.getPathProvider
 import com.clipevery.platform.currentPlatform
 import com.clipevery.presist.DesktopOneFilePersist
 import com.clipevery.os.windows.WindowDapiHelper
+import com.clipevery.path.DesktopPathProvider
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.signal.libsignal.protocol.IdentityKey
 import org.signal.libsignal.protocol.IdentityKeyPair
@@ -102,8 +102,7 @@ class MacosIdentityKeyStoreFactory(private val appInfo: AppInfo,
                                    private val signalDao: SignalDao): IdentityKeyStoreFactory {
 
     private val filePersist = DesktopOneFilePersist(
-        getPathProvider()
-        .resolve("signal.data", AppFileType.ENCRYPT))
+        DesktopPathProvider.resolve("signal.data", AppFileType.ENCRYPT))
 
     override fun createIdentityKeyStore(): IdentityKeyStore {
         val file = filePersist.path.toFile()
@@ -159,8 +158,7 @@ class WindowsIdentityKeyStoreFactory(private val appInfo: AppInfo,
                                      private val signalDao: SignalDao) : IdentityKeyStoreFactory {
 
     private val filePersist = DesktopOneFilePersist(
-        getPathProvider()
-        .resolve("signal.data", AppFileType.ENCRYPT))
+        DesktopPathProvider.resolve("signal.data", AppFileType.ENCRYPT))
 
     override fun createIdentityKeyStore(): IdentityKeyStore {
         val file = filePersist.path.toFile()

@@ -40,4 +40,12 @@ class DesktopOneFilePersist(val path: Path) : OneFilePersist {
         file.parentFile?.mkdirs()
         file.writeBytes(bytes)
     }
+
+    override fun delete(): Boolean {
+        val file = path.toFile()
+        if (file.exists()) {
+            return file.delete()
+        }
+        return false
+    }
 }

@@ -4,5 +4,5 @@ import java.awt.Image
 
 interface ClipImage {
 
-    val image: Image
+    fun getImage(): Image
 }
