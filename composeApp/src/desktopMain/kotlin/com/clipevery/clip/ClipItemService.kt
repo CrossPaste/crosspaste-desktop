@@ -13,6 +13,4 @@ interface ClipItemService {
         transferable: Transferable,
         clipCollector: ClipCollector
     )
-
-//    fun createPreClipItem(clipId: Int, itemIndex: Int, identifier: String, itemProvider: DataFlavor, clipCollector: ClipCollector)
 }

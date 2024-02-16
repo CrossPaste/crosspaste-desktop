@@ -1,34 +1,35 @@
 package com.clipevery.clip.item
 
 import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.dao.clip.ClipType
 import io.realm.kotlin.types.RealmObject
 
 class HtmlClipItem: RealmObject, ClipAppearItem, ClipHtml {
-    override fun getHtml(): String {
-        TODO("Not yet implemented")
-    }
+
+    var identifier: String = ""
+    override var html: String = ""
+    override var md5: String = ""
 
     override fun getIdentifiers(): List<String> {
-        TODO("Not yet implemented")
+        return listOf(identifier)
     }
 
     override fun getClipType(): Int {
-        TODO("Not yet implemented")
+        return ClipType.HTML
     }
 
     override fun getSearchContent(): String? {
-        TODO("Not yet implemented")
-    }
-
-    override fun getMD5(): String {
-        TODO("Not yet implemented")
+        return html
     }
 
     override fun update(data: Any, md5: String) {
-        TODO("Not yet implemented")
+        (data as? String)?.let { html ->
+            this.html = html
+            this.md5 = md5
+        }
     }
 
     override fun clear() {
-        TODO("Not yet implemented")
+        // do nothing
     }
 }

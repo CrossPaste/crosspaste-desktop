@@ -1,34 +1,37 @@
 package com.clipevery.clip.item
 
 import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.dao.clip.ClipType
 import io.realm.kotlin.types.RealmObject
 
 class TextClipItem: RealmObject, ClipAppearItem, ClipText {
-    override fun getText(): String {
-        TODO("Not yet implemented")
-    }
+
+    var identifier: String = ""
+
+    override var text: String = ""
+
+    override var md5: String = ""
 
     override fun getIdentifiers(): List<String> {
-        TODO("Not yet implemented")
+        return listOf(identifier)
     }
 
     override fun getClipType(): Int {
-        TODO("Not yet implemented")
+        return ClipType.TEXT
     }
 
-    override fun getSearchContent(): String? {
-        TODO("Not yet implemented")
-    }
-
-    override fun getMD5(): String {
-        TODO("Not yet implemented")
+    override fun getSearchContent(): String {
+        return text
     }
 
     override fun update(data: Any, md5: String) {
-        TODO("Not yet implemented")
+        (data as? String)?.let { text ->
+            this.text = text
+            this.md5 = md5
+        }
     }
 
     override fun clear() {
-        TODO("Not yet implemented")
+        // do nothing
     }
 }

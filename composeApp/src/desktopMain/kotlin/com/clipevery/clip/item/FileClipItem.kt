@@ -14,7 +14,7 @@ class FileClipItem: RealmObject, ClipAppearItem, ClipFile {
     var identifier: String = ""
     var relativePath: String = ""
     var isFile: Boolean = false
-    var md5: String = ""
+    override var md5: String = ""
 
     constructor()
 
@@ -43,10 +43,6 @@ class FileClipItem: RealmObject, ClipAppearItem, ClipFile {
 
     override fun getSearchContent(): String? {
         return relativePath
-    }
-
-    override fun getMD5(): String {
-        return md5
     }
 
     override fun update(data: Any, md5: String) {

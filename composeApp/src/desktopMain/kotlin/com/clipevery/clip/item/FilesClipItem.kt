@@ -1,7 +1,9 @@
 package com.clipevery.clip.item
 
+import com.clipevery.clip.service.FileItemService
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipType
+import com.clipevery.path.DesktopPathProvider
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.types.RealmList
 import io.realm.kotlin.types.RealmObject
@@ -14,10 +16,12 @@ class FilesClipItem: RealmObject, ClipAppearItem, ClipFiles {
 
     var fileList: RealmList<String> = realmListOf()
 
-    var md5: String = ""
+    override var md5: String = ""
 
     override fun getFilePaths(): List<Path> {
-        TODO("Not yet implemented")
+        return fileList.map { relativePath ->
+            DesktopPathProvider.resolve(FileItemService.FILE_BASE_PATH, relativePath, autoCreate = false)
+        }
     }
 
     override fun getIdentifiers(): List<String> {
@@ -32,10 +36,6 @@ class FilesClipItem: RealmObject, ClipAppearItem, ClipFiles {
         return fileList.map { path ->
             Paths.get(path).fileName
         }.joinToString(separator = " ")
-    }
-
-    override fun getMD5(): String {
-        return md5
     }
 
     override fun update(data: Any, md5: String) {}

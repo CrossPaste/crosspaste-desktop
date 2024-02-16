@@ -1,35 +1,37 @@
 package com.clipevery.clip.item
 
 import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.dao.clip.ClipType
 import io.realm.kotlin.types.RealmObject
-import java.net.URL
 
 class UrlClipItem: RealmObject, ClipAppearItem, ClipUrl {
-    override fun getUrl(): URL {
-        TODO("Not yet implemented")
-    }
+
+    var identifier: String = ""
+
+    override var url: String = ""
+
+    override var md5: String = ""
 
     override fun getIdentifiers(): List<String> {
-        TODO("Not yet implemented")
+        return listOf(identifier)
     }
 
     override fun getClipType(): Int {
-        TODO("Not yet implemented")
+        return ClipType.URL
     }
 
-    override fun getSearchContent(): String? {
-        TODO("Not yet implemented")
-    }
-
-    override fun getMD5(): String {
-        TODO("Not yet implemented")
+    override fun getSearchContent(): String {
+        return url
     }
 
     override fun update(data: Any, md5: String) {
-        TODO("Not yet implemented")
+        (data as? String)?.let { url ->
+            this.url = url
+            this.md5 = md5
+        }
     }
 
     override fun clear() {
-        TODO("Not yet implemented")
+        // do nothing
     }
 }

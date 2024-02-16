@@ -64,5 +64,5 @@ fun TextClipItem(textClipItem: ClipText) {
         imageVector = TablerIcons.FileText,
         contentDescription = "clip text",
         tint = Color.Gray)
-    Text(text = textClipItem.getText())
+    Text(text = textClipItem.text)
 }

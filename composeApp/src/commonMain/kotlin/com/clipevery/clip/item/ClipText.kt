@@ -2,5 +2,5 @@ package com.clipevery.clip.item
 
 interface ClipText {
 
-    fun getText(): String
+    var text: String
 }

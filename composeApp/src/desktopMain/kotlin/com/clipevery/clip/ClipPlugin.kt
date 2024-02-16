@@ -5,7 +5,7 @@ import kotlin.reflect.KClass
 
 interface SingleClipPlugin {
 
-    fun pluginProcess(clipAppearItems: Map<KClass<ClipItemService>, ClipAppearItem>): Map<KClass<ClipItemService>, ClipAppearItem>
+    fun pluginProcess(clipAppearItems: Map<KClass<out ClipItemService>, ClipAppearItem>): Map<KClass<out ClipItemService>, ClipAppearItem>
 
 }
 
