@@ -1,6 +1,6 @@
-package com.clipevery.clip.plugin.multi
+package com.clipevery.clip.plugin
 
-import com.clipevery.clip.MultiClipPlugin
+import com.clipevery.clip.ClipPlugin
 import com.clipevery.clip.item.ImageClipItem
 import com.clipevery.clip.item.ImagesClipItem
 import com.clipevery.dao.clip.ClipAppearItem
@@ -8,7 +8,7 @@ import com.clipevery.dao.clip.ClipType
 import com.clipevery.utils.md5ByArray
 import io.realm.kotlin.ext.toRealmList
 
-class MultiImagePlugin: MultiClipPlugin {
+class MultiImagePlugin: ClipPlugin {
     override fun pluginProcess(clipAppearItems: List<ClipAppearItem>): List<ClipAppearItem> {
         val clipTypes: Set<Int> = clipAppearItems.map { clipAppearItem ->
             clipAppearItem.getClipType()

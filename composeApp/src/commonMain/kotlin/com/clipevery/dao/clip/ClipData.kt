@@ -1,10 +1,8 @@
 package com.clipevery.dao.clip
 
-import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.ext.realmSetOf
 import io.realm.kotlin.types.RealmAny
 import io.realm.kotlin.types.RealmInstant
-import io.realm.kotlin.types.RealmList
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.RealmSet
 import io.realm.kotlin.types.annotations.FullText
@@ -18,9 +16,9 @@ class ClipData: RealmObject {
     @Index
     var clipId: Int = 0
     var clipAppearContent: RealmAny? = null
-    var clipContents: RealmList<ClipContent> = realmListOf()
+    var clipContent: ClipContent? = null
     @Index
-    var clipType: Int = -1
+    var clipType: Int = ClipType.INVALID
     @FullText
     var clipSearchContent: String? = null
     @Index
@@ -38,17 +36,15 @@ class ClipData: RealmObject {
 
     constructor(
         clipId: Int,
-        clipAppearContent: RealmAny,
-        clipContents: RealmList<ClipContent>,
+        clipAppearContent: RealmAny?,
+        clipContent: ClipContent,
         clipType: Int,
         appInstanceId: String
     ) {
         this.clipId = clipId
         this.clipAppearContent = clipAppearContent
-        this.clipContents = clipContents
+        this.clipContent = clipContent
         this.clipType = clipType
         this.appInstanceId = appInstanceId
     }
-
-
 }

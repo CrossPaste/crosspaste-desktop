@@ -9,7 +9,7 @@ import java.io.IOException
 
 class ClipContent: RealmObject {
 
-    private var clipAppearItems: RealmList<RealmAny?> = realmListOf()
+    var clipAppearItems: RealmList<RealmAny?> = realmListOf()
 
     constructor()
 
@@ -36,7 +36,6 @@ class ClipContent: RealmObject {
                             null
                         }
                     }
-
                     else -> null
                 }
             }

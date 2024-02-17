@@ -6,15 +6,18 @@ import com.clipevery.dao.clip.ClipType
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.presist.DesktopOneFilePersist
 import io.realm.kotlin.types.RealmObject
+import io.realm.kotlin.types.annotations.PrimaryKey
+import org.mongodb.kbson.BsonObjectId
+import org.mongodb.kbson.ObjectId
 import java.awt.Image
 import java.nio.file.Path
 
 class ImageClipItem: RealmObject, ClipAppearItem, ClipImage {
 
+    @PrimaryKey
+    override var id: ObjectId = BsonObjectId()
     var identifier: String = ""
-
     var relativePath: String = ""
-
     override var md5: String = ""
 
     override fun getImage(): Image {

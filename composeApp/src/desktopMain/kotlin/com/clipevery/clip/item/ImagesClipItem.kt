@@ -5,12 +5,16 @@ import com.clipevery.dao.clip.ClipType
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.types.RealmList
 import io.realm.kotlin.types.RealmObject
+import io.realm.kotlin.types.annotations.PrimaryKey
+import org.mongodb.kbson.BsonObjectId
+import org.mongodb.kbson.ObjectId
 import java.nio.file.Path
 
 class ImagesClipItem: RealmObject, ClipAppearItem, ClipFiles {
 
+    @PrimaryKey
+    override var id: ObjectId = BsonObjectId()
     var imageClipItems: RealmList<ImageClipItem> = realmListOf()
-
     override var md5: String = ""
 
     override fun getFilePaths(): List<Path> {
