@@ -7,10 +7,15 @@ import com.clipevery.path.DesktopPathProvider
 import com.clipevery.presist.DesktopOneFilePersist
 import io.ktor.util.extension
 import io.realm.kotlin.types.RealmObject
+import io.realm.kotlin.types.annotations.PrimaryKey
+import org.mongodb.kbson.BsonObjectId
+import org.mongodb.kbson.ObjectId
 import java.nio.file.Path
 
 class FileClipItem: RealmObject, ClipAppearItem, ClipFile {
 
+    @PrimaryKey
+    override var id: ObjectId = BsonObjectId()
     var identifier: String = ""
     var relativePath: String = ""
     var isFile: Boolean = false

@@ -10,8 +10,8 @@ import com.clipevery.clip.ClipboardService
 import com.clipevery.clip.DesktopTransferableConsumer
 import com.clipevery.clip.TransferableConsumer
 import com.clipevery.clip.getDesktopClipboardService
-import com.clipevery.clip.plugin.multi.MultiImagePlugin
-import com.clipevery.clip.plugin.single.UrlTextCombinePlugin
+import com.clipevery.clip.plugin.MultiImagePlugin
+import com.clipevery.clip.plugin.UrlTextCombinePlugin
 import com.clipevery.clip.service.FileItemService
 import com.clipevery.clip.service.HtmlItemService
 import com.clipevery.clip.service.ImageItemService
@@ -116,7 +116,7 @@ object Dependencies {
                     ImageItemService(),
                     TextItemService(),
                     UrlItemService()
-                ), listOf(UrlTextCombinePlugin()), listOf(MultiImagePlugin())) }
+                ), listOf(UrlTextCombinePlugin(), MultiImagePlugin())) }
 
             // ui component
             single<AppUI> { AppUI(width = 460.dp, height = 710.dp) }

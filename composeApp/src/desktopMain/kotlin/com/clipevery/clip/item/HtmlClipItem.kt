@@ -3,9 +3,14 @@ package com.clipevery.clip.item
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipType
 import io.realm.kotlin.types.RealmObject
+import io.realm.kotlin.types.annotations.PrimaryKey
+import org.mongodb.kbson.BsonObjectId
+import org.mongodb.kbson.ObjectId
 
 class HtmlClipItem: RealmObject, ClipAppearItem, ClipHtml {
 
+    @PrimaryKey
+    override var id: ObjectId = BsonObjectId()
     var identifier: String = ""
     override var html: String = ""
     override var md5: String = ""

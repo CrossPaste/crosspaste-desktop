@@ -7,10 +7,16 @@ import com.clipevery.path.DesktopPathProvider
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.types.RealmList
 import io.realm.kotlin.types.RealmObject
+import io.realm.kotlin.types.annotations.PrimaryKey
+import org.mongodb.kbson.BsonObjectId
+import org.mongodb.kbson.ObjectId
 import java.nio.file.Path
 import java.nio.file.Paths
 
 class FilesClipItem: RealmObject, ClipAppearItem, ClipFiles {
+
+    @PrimaryKey
+    override var id: ObjectId = BsonObjectId()
 
     var identifiers: RealmList<String> = realmListOf()
 
