@@ -69,7 +69,10 @@ compose.desktop {
     application {
         mainClass = "com.clipevery.MainKt"
 
-        args("info")
+        val appInfo = project.findProperty("loggerLevel")?.toString() ?: "info"
+        val appEnv = project.findProperty("appEnv")?.toString() ?: "DEVELOPMENT"
+
+        args(appInfo, appEnv)
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
