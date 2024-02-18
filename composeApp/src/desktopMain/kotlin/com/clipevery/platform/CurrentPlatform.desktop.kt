@@ -1,8 +1,6 @@
 package com.clipevery.platform
 
 import com.clipevery.utils.OnceFunction
-import java.io.BufferedReader
-import java.io.InputStreamReader
 
 actual fun currentPlatform(): Platform {
     return OnceFunction { getCurrentPlatform() }.run()
@@ -18,25 +16,14 @@ private fun getCurrentPlatform(): Platform {
         32
     }
     return when {
-        "win" in osName -> Platform(name = "Windows", arch = architecture, bitMode = bitMode, version = getWindowsVersion())
+        "win" in osName -> Platform(name = "Windows", arch = architecture, bitMode = bitMode, version = getWindowsVersion(osName, version))
         "mac" in osName -> Platform(name = "Macos", arch = architecture, bitMode = bitMode, version = version)
         "nix" in osName || "nux" in osName || "aix" in osName -> Platform(name = "Linux", arch = architecture, bitMode = bitMode, version = version)
         else -> Platform(name = "Unknown", arch = architecture, bitMode = bitMode, version = version)
     }
 }
 
-private fun getWindowsVersion(): String {
-    try {
-        val process = Runtime.getRuntime().exec("reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\" /v DisplayVersion")
-        val reader = BufferedReader(InputStreamReader(process.inputStream))
-        var line: String?
-        while (reader.readLine().also { line = it } != null) {
-            if (line!!.contains("DisplayVersion")) {
-                return line!!.split(" ").last()
-            }
-        }
-    } catch (e: Exception) {
-        e.printStackTrace()
-    }
-    return "Unknown"
+private fun getWindowsVersion(osName: String, osVersion: String): String {
+    val parts = osName.split(" ", limit = 2)
+    return if (parts.size > 1) parts[1] else osVersion
 }
