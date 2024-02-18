@@ -3,37 +3,50 @@ package com.clipevery.utils
 import com.clipevery.dao.sync.HostInfo
 import com.clipevery.net.ClipClient
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.selects.select
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeout
 
 class TelnetUtils(private val clipClient: ClipClient) {
 
     private val logger = KotlinLogging.logger {}
 
     suspend fun switchHost(hostInfoList: List<HostInfo>, port: Int, timeout: Long = 500L): HostInfo? {
-        if (hostInfoList.isEmpty()) {
-            return null
-        }
-        val deferredArray = hostInfoList.map { hostInfo ->
-            CoroutineScope(ioDispatcher).async {
-                if (telnet(hostInfo, port, timeout)) hostInfo else null
+        if (hostInfoList.isEmpty()) return null
+
+        val result = CompletableDeferred<HostInfo?>()
+        val mutex = Mutex()
+        val scope = CoroutineScope(Dispatchers.IO)
+
+        hostInfoList.forEach { hostInfo ->
+            scope.launch {
+                try {
+                    if (telnet(hostInfo, port, timeout)) {
+                        mutex.withLock {
+                            if (!result.isCompleted) {
+                                result.complete(hostInfo)
+                            }
+                        }
+                    }
+                } catch (ignore: Exception) { }
             }
         }
 
-        var result: HostInfo? = null
-        select {
-            deferredArray.forEach { deferred ->
-                deferred.onAwait { hostInfo ->
-                    if (hostInfo != null) {
-                        result = hostInfo
-                        deferredArray.forEach { it.cancel() }
-                    }
-                }
-            }
+        return try {
+            withTimeout(timeout) { result.await() }
+        } catch (e: TimeoutCancellationException) {
+            null
+        } finally {
+            scope.cancel()
         }
-        return result
     }
+
 
     private suspend fun telnet(hostInfo: HostInfo, port: Int, timeout: Long): Boolean {
         return try {
