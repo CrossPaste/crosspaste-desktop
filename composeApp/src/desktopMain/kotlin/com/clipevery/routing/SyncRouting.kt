@@ -17,6 +17,7 @@ import com.clipevery.utils.encodePreKeyBundle
 import com.clipevery.utils.failResponse
 import com.clipevery.utils.getAppInstanceId
 import com.clipevery.utils.successResponse
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.call
 import io.ktor.server.request.receive
 import io.ktor.server.routing.Routing
@@ -34,6 +35,8 @@ import org.signal.libsignal.protocol.state.SignedPreKeyRecord
 import java.util.Objects
 
 fun Routing.syncRouting() {
+
+    val logger = KotlinLogging.logger {}
 
     val koinApplication = Dependencies.koinApplication
 
@@ -57,6 +60,7 @@ fun Routing.syncRouting() {
                 syncRuntimeInfoDao.inertOrUpdate(syncInfos)
                 signalDao.saveIdentities(identityKeys)
                 for (syncInfo in syncInfos) {
+                    logger.debug { "syncInfo = $syncInfo" }
                     clientHandlerManager.addHandler(syncInfo.appInfo.appInstanceId)
                 }
                 deviceRefresher.refresh(CheckAction.CheckNonConnected)
