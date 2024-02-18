@@ -1,5 +1,6 @@
 package com.clipevery.dao.clip
 
+import com.clipevery.dao.clip.ClipContent.Companion.getClipItem
 import io.realm.kotlin.ext.realmSetOf
 import io.realm.kotlin.types.RealmAny
 import io.realm.kotlin.types.RealmInstant
@@ -46,5 +47,10 @@ class ClipData: RealmObject {
         this.clipContent = clipContent
         this.clipType = clipType
         this.appInstanceId = appInstanceId
+    }
+
+    fun clear() {
+        getClipItem(clipAppearContent)?.clear()
+        clipContent?.clear()
     }
 }

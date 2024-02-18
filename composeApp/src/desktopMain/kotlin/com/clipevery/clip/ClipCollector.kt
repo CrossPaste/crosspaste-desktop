@@ -45,11 +45,11 @@ class ClipCollector(
             clipAppearItems = clipPlugin.pluginProcess(clipAppearItems)
         }
 
+        assert(clipAppearItems.isNotEmpty())
+
         val firstItem: ClipAppearItem = clipAppearItems.first()
 
         val remainingItems: List<ClipAppearItem> = clipAppearItems.drop(1)
-
-        assert(clipAppearItems.isNotEmpty())
 
         val clipAppearContent: RealmAny = RealmAny.create(firstItem as RealmObject)
 
