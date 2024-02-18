@@ -16,9 +16,14 @@ private fun getCurrentPlatform(): Platform {
         32
     }
     return when {
-        "win" in osName -> Platform(name = "Windows", arch = architecture, bitMode = bitMode, version = version)
+        "win" in osName -> Platform(name = "Windows", arch = architecture, bitMode = bitMode, version = getWindowsVersion(osName, version))
         "mac" in osName -> Platform(name = "Macos", arch = architecture, bitMode = bitMode, version = version)
         "nix" in osName || "nux" in osName || "aix" in osName -> Platform(name = "Linux", arch = architecture, bitMode = bitMode, version = version)
         else -> Platform(name = "Unknown", arch = architecture, bitMode = bitMode, version = version)
     }
+}
+
+private fun getWindowsVersion(osName: String, osVersion: String): String {
+    val parts = osName.split(" ", limit = 2)
+    return if (parts.size > 1) parts[1] else osVersion
 }
