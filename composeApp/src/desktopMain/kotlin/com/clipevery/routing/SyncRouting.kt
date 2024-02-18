@@ -11,11 +11,13 @@ import com.clipevery.dto.sync.RequestTrustSyncInfo
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.exception.StandardErrorCode
 import com.clipevery.net.CheckAction
+import com.clipevery.net.ClientHandlerManager
 import com.clipevery.net.DeviceRefresher
 import com.clipevery.utils.encodePreKeyBundle
 import com.clipevery.utils.failResponse
 import com.clipevery.utils.getAppInstanceId
 import com.clipevery.utils.successResponse
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.call
 import io.ktor.server.request.receive
 import io.ktor.server.routing.Routing
@@ -34,6 +36,8 @@ import java.util.Objects
 
 fun Routing.syncRouting() {
 
+    val logger = KotlinLogging.logger {}
+
     val koinApplication = Dependencies.koinApplication
 
     val signalDao = koinApplication.koin.get<SignalDao>()
@@ -44,6 +48,8 @@ fun Routing.syncRouting() {
 
     val deviceRefresher = koinApplication.koin.get<DeviceRefresher>()
 
+    val clientHandlerManager = koinApplication.koin.get<ClientHandlerManager>()
+
     post("/sync/syncInfos") {
         getAppInstanceId(call).let { appInstanceId ->
             val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
@@ -53,6 +59,10 @@ fun Routing.syncRouting() {
                 val identityKeys = requestTrustSyncInfos.map { ClipIdentityKey(it.syncInfo.appInfo.appInstanceId, it.identityKey.serialize()) }
                 syncRuntimeInfoDao.inertOrUpdate(syncInfos)
                 signalDao.saveIdentities(identityKeys)
+                for (syncInfo in syncInfos) {
+                    logger.debug { "syncInfo = $syncInfo" }
+                    clientHandlerManager.addHandler(syncInfo.appInfo.appInstanceId)
+                }
                 deviceRefresher.refresh(CheckAction.CheckNonConnected)
                 successResponse(call)
             } ?:  failResponse(call, StandardErrorCode.SIGNAL_UNTRUSTED_IDENTITY.toErrorCode(), "not trust $appInstanceId")
@@ -68,7 +78,7 @@ fun Routing.syncRouting() {
 
             val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
 
-            signalProtocolStore.getIdentity(signalProtocolAddress)?.let {
+            signalProtocolStore.getIdentity(signalProtocolAddress) ?: run {
                 failResponse(call, StandardErrorCode.SIGNAL_UNTRUSTED_IDENTITY.toErrorCode(), "not trust $appInstanceId")
                 return@get
             }
