@@ -2,6 +2,7 @@ package com.clipevery.dao.clip
 
 import com.clipevery.utils.DateUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.Realm
 import io.realm.kotlin.query.Sort
 import io.realm.kotlin.types.RealmObject
@@ -19,46 +20,41 @@ class ClipRealm(private val realm: Realm): ClipDao {
         realm.writeBlocking {
             copyToRealm(clipData)
         }
-
-        val clipDatas = realm.query(ClipData::class, "md5 == $0", clipData.md5).find()
-        clipDatas.query("createTime > $0", DateUtils.getPrevDay()).find()
-        realm.writeBlocking {
-            clipDatas.forEach {
-                doDeleteClipData(it)
-            }
+        doDeleteClipData {
+            query(ClipData::class, "md5 == $0", clipData.md5)
+                .query("createTime > $0", DateUtils.getPrevDay()).find().toList()
         }
     }
 
     override fun deleteClipData(id: ObjectId) {
-        realm.query(ClipData::class, "id == $0", id).first().find()?.let {
-            realm.writeBlocking {
-                doDeleteClipData(it)
-            }
+        doDeleteClipData {
+            query(ClipData::class, "id == $0", id).first().find()?.let { listOf(it) } ?: emptyList()
         }
     }
 
-    private fun doDeleteClipData(clipData: ClipData) {
-        try {
-            clipData.clear()
-        } catch (e: Exception) {
-            logger.error(e) { "clear id ${clipData.id} fail" }
-        }
-
-        val clipAppearContent = clipData.clipAppearContent
-        val clipAppearItem = ClipContent.getClipItem(clipAppearContent)
-        val clipAppearItems = clipData.clipContent?.clipAppearItems?.mapNotNull{ anyValue ->
-            ClipContent.getClipItem(anyValue)
-        }
+    private fun doDeleteClipData(queryToDelete: MutableRealm.() -> List<ClipData>) {
         realm.writeBlocking {
-            delete(clipData)
-            clipAppearItem?.let {
-                (clipAppearItem as? RealmObject)?.let {
-                    delete(it)
+            for (clipData in queryToDelete.invoke(this)) {
+                try {
+                    clipData.clear()
+                } catch (e: Exception) {
+                    logger.error(e) { "clear id ${clipData.id} fail" }
                 }
-            }
-            clipAppearItems?.forEach { it ->
-                (it as? RealmObject)?.let {
-                    delete(it)
+                val clipAppearContent = clipData.clipAppearContent
+                val clipAppearItem = ClipContent.getClipItem(clipAppearContent)
+                val clipAppearItems = clipData.clipContent?.clipAppearItems?.mapNotNull{ anyValue ->
+                    ClipContent.getClipItem(anyValue)
+                }
+                delete(clipData)
+                clipAppearItem?.let {
+                    (clipAppearItem as? RealmObject)?.let {
+                        delete(it)
+                    }
+                }
+                clipAppearItems?.forEach { it ->
+                    (it as? RealmObject)?.let {
+                        delete(it)
+                    }
                 }
             }
         }
