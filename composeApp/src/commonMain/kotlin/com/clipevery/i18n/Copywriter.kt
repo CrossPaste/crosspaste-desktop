@@ -1,7 +1,12 @@
 package com.clipevery.i18n
 
+import java.time.LocalDateTime
+
 interface Copywriter {
+
     fun getText(id: String): String
+
+    fun getDate(date: LocalDateTime): String
 
     fun getAbridge(): String
 }
@@ -29,6 +34,10 @@ class PreviewGlobalCopywriter: GlobalCopywriter {
 
     override fun getText(id: String): String {
         return id
+    }
+
+    override fun getDate(date: LocalDateTime): String {
+        return date.toString()
     }
 
     override fun getAbridge(): String {
