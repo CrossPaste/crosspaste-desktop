@@ -75,7 +75,9 @@ fun ClipPreviewsView() {
             modifier = Modifier.wrapContentHeight()
         ) {
             items(rememberClipDataList) { clipData ->
-                ClipPreviewItemView(clipData)
+                ClipPreviewItemView(clipData) {
+                    ClipSpecificPreviewItemView(clipData)
+                }
             }
         }
 
