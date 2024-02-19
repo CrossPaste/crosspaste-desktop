@@ -24,7 +24,10 @@ class ClipRealm(private val realm: Realm): ClipDao {
         }
         doDeleteClipData {
             query(ClipData::class, "md5 == $0", clipData.md5)
-                .query("createTime > $0", DateUtils.getPrevDay()).find().toList()
+                .query("createTime > $0", DateUtils.getPrevDay())
+                .query("clipId != $0", clipData.clipId)
+                .query("appInstanceId != $0", clipData.appInstanceId)
+                .find().toList()
         }
     }
 
