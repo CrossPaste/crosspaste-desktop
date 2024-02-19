@@ -8,6 +8,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.FileNotFoundException
 import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
+import java.time.LocalDateTime
 import java.util.Properties
 import java.util.concurrent.ConcurrentHashMap
 
@@ -47,6 +48,10 @@ open class GlobalCopywriterImpl(private val configManager: ConfigManager): Globa
 
     override fun getText(id: String): String {
         return copywriter.getText(id)
+    }
+
+    override fun getDate(date: LocalDateTime): String {
+        return copywriter.getDate(date)
     }
 
     override fun getAbridge(): String {
@@ -93,6 +98,10 @@ class CopywriterImpl(private val language: String) : Copywriter {
         } else {
             value
         }
+    }
+
+    override fun getDate(date: LocalDateTime): String {
+        return date.toString()
     }
 
     override fun getAbridge(): String {
