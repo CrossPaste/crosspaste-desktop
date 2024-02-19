@@ -62,7 +62,7 @@ fun ClipPreviewItemView(clipData: ClipData, isLast: Boolean, clipContent: @Compo
         val current = LocalKoinApplication.current
         val copywriter = current.koin.get<GlobalCopywriter>()
 
-        if (it.getClipType() == ClipType.TEXT) {
+        if (it.getClipType() == ClipType.TEXT || it.getClipType() == ClipType.URL) {
 
             var hover by remember { mutableStateOf(false) }
             val backgroundColor = if (hover) MaterialTheme.colors.secondaryVariant else MaterialTheme.colors.background
@@ -147,6 +147,7 @@ fun ClipSpecificPreviewItemView(clipData: ClipData) {
     } else {
         when(clipData.clipType) {
             ClipType.TEXT -> TextPreviewView(clipData)
+            ClipType.URL -> UrlPreviewView(clipData)
         }
     }
 }
