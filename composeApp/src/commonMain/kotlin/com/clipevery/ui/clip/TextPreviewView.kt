@@ -27,8 +27,7 @@ import com.clipevery.ui.base.feed
 
 fun getTitle(clipText: ClipText): String {
     val parts = clipText.text.split("\n", limit = 2)
-    println(parts[0])
-    return parts[0]
+    return parts[0].trim()
 }
 
 @Composable
@@ -60,7 +59,8 @@ fun TextPreviewView(clipData: ClipData) {
                 )
 
                 Row(
-                    modifier = Modifier.wrapContentWidth(),
+                    modifier = Modifier.wrapContentWidth()
+                        .padding(end = 8.dp),
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -77,7 +77,7 @@ fun TextPreviewView(clipData: ClipData) {
                         style = TextStyle(
                             fontWeight = FontWeight.Light,
                             color = MaterialTheme.colors.onBackground,
-                            fontSize = 8.sp
+                            fontSize = 10.sp
                         )
                     )
                 }
@@ -88,6 +88,9 @@ fun TextPreviewView(clipData: ClipData) {
                 modifier = Modifier.weight(1f),
                 text = it.text,
                 fontFamily = FontFamily.SansSerif,
+                maxLines = 4,
+                softWrap = true,
+                overflow = TextOverflow.Ellipsis,
                 style = TextStyle(
                     fontWeight = FontWeight.Normal,
                     color = MaterialTheme.colors.onBackground,

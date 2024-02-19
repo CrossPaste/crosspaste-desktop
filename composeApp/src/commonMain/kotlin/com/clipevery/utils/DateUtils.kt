@@ -27,7 +27,7 @@ object DateUtils {
             val seconds = ChronoUnit.SECONDS.between(date, now)
 
             if (hour < 1 && minutes < 1 && seconds < 60) {
-                return "Just now"
+                return "Just_now"
             }
             return "Today"
         }

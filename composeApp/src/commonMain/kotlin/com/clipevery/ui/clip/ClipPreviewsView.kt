@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -74,8 +74,8 @@ fun ClipPreviewsView() {
             state = listState,
             modifier = Modifier.wrapContentHeight()
         ) {
-            items(rememberClipDataList) { clipData ->
-                ClipPreviewItemView(clipData) {
+            itemsIndexed(rememberClipDataList) { index, clipData ->
+                ClipPreviewItemView(clipData, isLast = index == rememberClipDataList.size - 1) {
                     ClipSpecificPreviewItemView(clipData)
                 }
             }
