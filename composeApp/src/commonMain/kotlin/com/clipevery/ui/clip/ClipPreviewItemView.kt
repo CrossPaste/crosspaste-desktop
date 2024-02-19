@@ -4,12 +4,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -56,7 +56,7 @@ fun ClipData.getClipItem(): ClipAppearItem? {
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun ClipPreviewItemView(clipData: ClipData, clipContent: @Composable ClipAppearItem.() -> Unit) {
+fun ClipPreviewItemView(clipData: ClipData, isLast: Boolean, clipContent: @Composable ClipAppearItem.() -> Unit) {
 
     clipData.getClipItem()?.let {
         val current = LocalKoinApplication.current
@@ -93,11 +93,6 @@ fun ClipPreviewItemView(clipData: ClipData, clipContent: @Composable ClipAppearI
                             .height(120.dp)
                     ) {
                         it.clipContent()
-                        Column(modifier = Modifier.fillMaxHeight()) {
-                            Row() {
-
-                            }
-                        }
                     }
                     Row(
                         modifier = Modifier.fillMaxWidth()
@@ -125,6 +120,12 @@ fun ClipPreviewItemView(clipData: ClipData, clipContent: @Composable ClipAppearI
                         }
                     }
                 }
+            }
+            if (!isLast) {
+                Divider(
+                    color = MaterialTheme.colors.onBackground,
+                    thickness = 2.dp
+                )
             }
         }
     }
