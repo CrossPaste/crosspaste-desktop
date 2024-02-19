@@ -51,7 +51,7 @@ fun ClipPreviewItemView(clipData: ClipData, clipContent: @Composable ClipAppearI
 
             Row(modifier = Modifier
                 .fillMaxWidth()
-                .height(64.dp)
+                .height(150.dp)
                 .onPointerEvent(
                     eventType = PointerEventType.Enter,
                     onEvent = {
