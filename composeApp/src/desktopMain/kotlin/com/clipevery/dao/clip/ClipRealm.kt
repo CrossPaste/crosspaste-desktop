@@ -4,7 +4,9 @@ import com.clipevery.utils.DateUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.Realm
+import io.realm.kotlin.query.RealmResults
 import io.realm.kotlin.query.Sort
+import io.realm.kotlin.types.RealmInstant
 import io.realm.kotlin.types.RealmObject
 import org.mongodb.kbson.ObjectId
 
@@ -58,5 +60,25 @@ class ClipRealm(private val realm: Realm): ClipDao {
                 }
             }
         }
+    }
+
+    override fun getClipData(appInstanceId: String?, limit: Int): RealmResults<ClipData> {
+        val query = appInstanceId?.let {
+            realm.query(ClipData::class).query("appInstanceId == $0", appInstanceId)
+        } ?: realm.query(ClipData::class)
+        return query.sort("createTime", Sort.DESCENDING).limit(limit).find()
+    }
+
+    override fun getClipData(
+        appInstanceId: String?,
+        limit: Int,
+        createTime: RealmInstant,
+        excludeClipId: List<Int>
+    ): RealmResults<ClipData> {
+        var query = appInstanceId?.let {
+            realm.query(ClipData::class).query("appInstanceId == $0", appInstanceId)
+        } ?: realm.query(ClipData::class)
+        query = query.query("clipId not in $0", excludeClipId)
+        return query.sort("createTime", Sort.DESCENDING).limit(limit).find()
     }
 }
