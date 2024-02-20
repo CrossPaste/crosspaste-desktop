@@ -13,6 +13,7 @@ interface PathProvider {
             AppFileType.IMAGE -> clipDataPath.resolve("images")
             AppFileType.VIDEO -> clipUserPath.resolve("videos")
             AppFileType.FILE -> clipUserPath.resolve("files")
+            AppFileType.KCEF -> clipUserPath.resolve("kcef")
         }
 
         autoCreateDir(path)

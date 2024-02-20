@@ -1,10 +1,10 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.compose.ExperimentalComposeLibrary
-import java.net.URI
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 repositories {
     mavenCentral()
-    maven { url = URI("https://jitpack.io") }
+    maven("https://jitpack.io")
+    maven("https://jogamp.org/deployment/maven")
 }
 
 plugins {
@@ -48,6 +48,8 @@ kotlin {
             implementation(compose.material)
             @OptIn(ExperimentalComposeLibrary::class)
             implementation(compose.components.resources)
+            implementation(compose.desktop.currentOs)
+            implementation(libs.compose.webview.multiplatform)
             implementation(libs.kotlin.logging)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
@@ -67,6 +69,19 @@ kotlin {
 
 compose.desktop {
     application {
+
+        buildTypes.release.proguard {
+            configurationFiles.from("compose-desktop.pro")
+        }
+
+        jvmArgs("--add-opens", "java.desktop/sun.awt=ALL-UNNAMED")
+        jvmArgs("--add-opens", "java.desktop/java.awt.peer=ALL-UNNAMED")
+
+        if (System.getProperty("os.name").contains("Mac")) {
+            jvmArgs("--add-opens", "java.desktop/sun.lwawt=ALL-UNNAMED")
+            jvmArgs("--add-opens", "java.desktop/sun.lwawt.macosx=ALL-UNNAMED")
+        }
+
         mainClass = "com.clipevery.MainKt"
 
         val loggerLevel = project.findProperty("loggerLevel")?.toString() ?: "info"

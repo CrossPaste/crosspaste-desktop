@@ -17,3 +17,5 @@ captures
 **/xcshareddata/WorkspaceSettings.xcsettings
 logs
 composeApp/docs
+/composeApp/DawnCache/
+/composeApp/GPUCache/
