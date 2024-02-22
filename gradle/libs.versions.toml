@@ -1,7 +1,8 @@
 [versions]
 compose = "1.6.1"
-compose-plugin = "1.5.12"
+compose-plugin = "1.6.0-rc02"
 compose-compiler = "1.5.8"
+compose-webview-multiplatform = "1.8.8"
 jmdns = "3.5.9"
 jna = "5.14.0"
 jnativehook = "2.2.2"
@@ -25,6 +26,7 @@ compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = 
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "compose" }
 compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "compose" }
 compose-material = { module = "androidx.compose.material:material", version.ref = "compose" }
+compose-webview-multiplatform = { module = "io.github.kevinnzou:compose-webview-multiplatform", version.ref = "compose-webview-multiplatform" }
 jmdns = { module = "org.jmdns:jmdns", version.ref = "jmdns" }
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }

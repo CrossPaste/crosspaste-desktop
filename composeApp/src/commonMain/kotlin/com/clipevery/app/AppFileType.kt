@@ -7,5 +7,6 @@ enum class AppFileType {
     DATA,
     IMAGE,
     VIDEO,
-    FILE
+    FILE,
+    KCEF
 }
