@@ -59,6 +59,7 @@ fun main(args: Array<String>) {
     } else {
         "info"
     }
+    System.setProperty("compose.interop.blending", "true")
 
     Dependencies.init(if (args.size >= 2) {
         AppEnv.valueOf(args[1])

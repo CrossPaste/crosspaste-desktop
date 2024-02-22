@@ -3,6 +3,7 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 repositories {
     mavenCentral()
+    google()
     maven("https://jitpack.io")
     maven("https://jogamp.org/deployment/maven")
 }

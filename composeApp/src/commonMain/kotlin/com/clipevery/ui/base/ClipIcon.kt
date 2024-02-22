@@ -125,3 +125,69 @@ fun link(): ImageVector {
             .build()
     }
 }
+
+@Composable
+fun html(): ImageVector {
+    return remember {
+        ImageVector.Builder(
+            name = "Html", defaultWidth = 24.0.dp, defaultHeight = 24.0.dp,
+            viewportWidth = 960.0f, viewportHeight = 960.0f
+        ).apply {
+            path(fill = SolidColor(Color(0xFF000000)), stroke = null, strokeLineWidth = 0.0f,
+                strokeLineCap = Butt, strokeLineJoin = Miter, strokeLineMiter = 4.0f,
+                pathFillType = NonZero) {
+                moveTo(0.0f, 600.0f)
+                verticalLineToRelative(-240.0f)
+                horizontalLineToRelative(60.0f)
+                verticalLineToRelative(80.0f)
+                horizontalLineToRelative(80.0f)
+                verticalLineToRelative(-80.0f)
+                horizontalLineToRelative(60.0f)
+                verticalLineToRelative(240.0f)
+                horizontalLineToRelative(-60.0f)
+                verticalLineToRelative(-100.0f)
+                lineTo(60.0f, 500.0f)
+                verticalLineToRelative(100.0f)
+                lineTo(0.0f, 600.0f)
+                close()
+                moveTo(310.0f, 600.0f)
+                verticalLineToRelative(-180.0f)
+                horizontalLineToRelative(-70.0f)
+                verticalLineToRelative(-60.0f)
+                horizontalLineToRelative(200.0f)
+                verticalLineToRelative(60.0f)
+                horizontalLineToRelative(-70.0f)
+                verticalLineToRelative(180.0f)
+                horizontalLineToRelative(-60.0f)
+                close()
+                moveTo(480.0f, 600.0f)
+                verticalLineToRelative(-200.0f)
+                quadToRelative(0.0f, -17.0f, 11.5f, -28.5f)
+                reflectiveQuadTo(520.0f, 360.0f)
+                horizontalLineToRelative(180.0f)
+                quadToRelative(17.0f, 0.0f, 28.5f, 11.5f)
+                reflectiveQuadTo(740.0f, 400.0f)
+                verticalLineToRelative(200.0f)
+                horizontalLineToRelative(-60.0f)
+                verticalLineToRelative(-180.0f)
+                horizontalLineToRelative(-40.0f)
+                verticalLineToRelative(140.0f)
+                horizontalLineToRelative(-60.0f)
+                verticalLineToRelative(-140.0f)
+                horizontalLineToRelative(-40.0f)
+                verticalLineToRelative(180.0f)
+                horizontalLineToRelative(-60.0f)
+                close()
+                moveTo(800.0f, 600.0f)
+                verticalLineToRelative(-240.0f)
+                horizontalLineToRelative(60.0f)
+                verticalLineToRelative(180.0f)
+                horizontalLineToRelative(100.0f)
+                verticalLineToRelative(60.0f)
+                lineTo(800.0f, 600.0f)
+                close()
+            }
+        }
+            .build()
+    }
+}

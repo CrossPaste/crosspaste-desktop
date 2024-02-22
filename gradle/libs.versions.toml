@@ -1,6 +1,6 @@
 [versions]
 compose = "1.6.1"
-compose-plugin = "1.5.12"
+compose-plugin = "1.6.0-rc02"
 compose-compiler = "1.5.8"
 compose-webview-multiplatform = "1.8.8"
 jmdns = "3.5.9"
