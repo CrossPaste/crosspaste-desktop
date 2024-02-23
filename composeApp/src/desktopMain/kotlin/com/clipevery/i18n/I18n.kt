@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.clipevery.config.ConfigManager
+import com.clipevery.utils.DateUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.FileNotFoundException
 import java.io.InputStreamReader
@@ -101,7 +102,7 @@ class CopywriterImpl(private val language: String) : Copywriter {
     }
 
     override fun getDate(date: LocalDateTime): String {
-        return date.toString()
+        return DateUtils.getDateFormat(date, language)
     }
 
     override fun getAbridge(): String {
