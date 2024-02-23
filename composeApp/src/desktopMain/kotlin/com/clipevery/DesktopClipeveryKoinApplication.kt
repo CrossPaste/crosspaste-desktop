@@ -78,10 +78,11 @@ object Dependencies {
         val appModule = module {
 
             // simple component
+            single<AppEnv> { appEnv }
             single<AppInfo> { DesktopAppInfoFactory(get()).createAppInfo() }
             single<EndpointInfoFactory> { DesktopEndpointInfoFactory( lazy { get<ClipServer>() }) }
             single<FilePersist> { DesktopFilePersist }
-            single<ConfigManager> { DefaultConfigManager(get<FilePersist>().getPersist("appConfig.json", AppFileType.USER), appEnv) }
+            single<ConfigManager> { DefaultConfigManager(get<FilePersist>().getPersist("appConfig.json", AppFileType.USER), get()) }
             single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
             single<IDGenerator> { IDGeneratorFactory(get()).createIDGenerator() }
 

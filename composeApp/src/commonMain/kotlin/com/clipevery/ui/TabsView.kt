@@ -17,6 +17,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
@@ -26,6 +27,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
+import com.clipevery.app.AppEnv
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.clip.ClipPreviewsView
 import com.clipevery.ui.devices.DevicesView
@@ -34,13 +36,17 @@ import com.clipevery.ui.devices.bindingQRCode
 @Composable
 fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
     val current = LocalKoinApplication.current
+    val appEnv = current.koin.get<AppEnv>()
     val copywriter = current.koin.get<GlobalCopywriter>()
 
-    val tabs = listOf(
-        Pair(PageViewType.CLIP_PREVIEW, "Clipboard"),
-        Pair(PageViewType.DEVICE_PREVIEW, "Devices"),
-        Pair(PageViewType.QR_CODE, "Scan")
-    )
+    val tabs = remember {
+        listOfNotNull(
+            Pair(PageViewType.CLIP_PREVIEW, "Clipboard"),
+            Pair(PageViewType.DEVICE_PREVIEW, "Devices"),
+            Pair(PageViewType.QR_CODE, "Scan"),
+            if (appEnv == AppEnv.DEVELOPMENT) Pair(PageViewType.DEBUG, "Debug") else null
+        )
+    }
     Row(modifier = Modifier.padding(8.dp)
         .wrapContentWidth()) {
 
@@ -56,6 +62,7 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
             PageViewType.CLIP_PREVIEW -> ClipPreviewsView()
             PageViewType.DEVICE_PREVIEW -> DevicesView(currentPageViewContext)
             PageViewType.QR_CODE -> bindingQRCode()
+            PageViewType.DEBUG -> DebugView()
             else -> ClipPreviewsView()
         }
     }

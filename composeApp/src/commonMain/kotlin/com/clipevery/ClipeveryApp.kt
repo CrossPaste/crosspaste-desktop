@@ -100,7 +100,8 @@ fun ClipeveryContent() {
     when (currentPageViewContext.value.pageViewType) {
         PageViewType.CLIP_PREVIEW,
         PageViewType.DEVICE_PREVIEW,
-        PageViewType.QR_CODE -> {
+        PageViewType.QR_CODE,
+        PageViewType.DEBUG -> {
             HomeView(currentPageViewContext)
         }
         PageViewType.SETTINGS -> {
