@@ -9,7 +9,10 @@ import ch.qos.logback.core.rolling.TimeBasedRollingPolicy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-actual fun initLogger(logPath: String, logLevel: String) {
+actual fun initLogger(logPath: String) {
+
+    val logLevel = System.getProperty("loggerLevel") ?: "info"
+
     val context = LoggerFactory.getILoggerFactory() as LoggerContext
 
     val encoder = PatternLayoutEncoder()

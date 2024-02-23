@@ -1,3 +1,3 @@
 package com.clipevery.log
 
-expect fun initLogger(logPath: String, logLevel: String)
+expect fun initLogger(logPath: String)

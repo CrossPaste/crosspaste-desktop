@@ -41,6 +41,7 @@ import com.clipevery.net.DesktopClipServer
 import com.clipevery.net.DesktopDeviceRefresher
 import com.clipevery.net.DeviceRefresher
 import com.clipevery.path.DesktopPathProvider
+import com.clipevery.path.PathProvider
 import com.clipevery.presist.DesktopFilePersist
 import com.clipevery.presist.FilePersist
 import com.clipevery.realm.RealmManager
@@ -68,26 +69,32 @@ import org.signal.libsignal.protocol.state.SignedPreKeyStore
 
 object Dependencies {
 
-    lateinit var koinApplication: KoinApplication
+    val koinApplication: KoinApplication = initKoinApplication()
 
-    fun init(appEnv: AppEnv) {
-        this.koinApplication = initKoinApplication(appEnv)
-    }
+    private fun initKoinApplication(): KoinApplication {
 
-    private fun initKoinApplication(appEnv: AppEnv): KoinApplication {
+        val appEnv = System.getProperty("appEnv")?.let {
+            try {
+                AppEnv.valueOf(it)
+            } catch (e: Throwable) {
+                AppEnv.PRODUCTION
+            }
+        } ?: AppEnv.PRODUCTION
+
         val appModule = module {
 
             // simple component
             single<AppEnv> { appEnv }
             single<AppInfo> { DesktopAppInfoFactory(get()).createAppInfo() }
             single<EndpointInfoFactory> { DesktopEndpointInfoFactory( lazy { get<ClipServer>() }) }
+            single<PathProvider> { DesktopPathProvider }
             single<FilePersist> { DesktopFilePersist }
             single<ConfigManager> { DefaultConfigManager(get<FilePersist>().getPersist("appConfig.json", AppFileType.USER), get()) }
             single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
             single<IDGenerator> { IDGeneratorFactory(get()).createIDGenerator() }
 
             // realm component
-            single<RealmManager> { RealmManagerImpl.createRealmManager(pathProvider = DesktopPathProvider) }
+            single<RealmManager> { RealmManagerImpl.createRealmManager(get()) }
             single<SignalDao> { SignalRealm(get<RealmManager>().realm) }
             single<SyncRuntimeInfoDao> { SyncRuntimeInfoRealm(get<RealmManager>().realm) }
             single<ClipDao> { ClipRealm(get<RealmManager>().realm) }

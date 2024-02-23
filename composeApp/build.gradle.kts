@@ -1,4 +1,3 @@
-import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 repositories {
@@ -47,7 +46,6 @@ kotlin {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material)
-            @OptIn(ExperimentalComposeLibrary::class)
             implementation(compose.components.resources)
             implementation(compose.desktop.currentOs)
             implementation(libs.compose.webview.multiplatform)
@@ -75,6 +73,8 @@ compose.desktop {
             configurationFiles.from("compose-desktop.pro")
         }
 
+        mainClass = "com.clipevery.MainKt"
+
         jvmArgs("--add-opens", "java.desktop/sun.awt=ALL-UNNAMED")
         jvmArgs("--add-opens", "java.desktop/java.awt.peer=ALL-UNNAMED")
 
@@ -83,12 +83,11 @@ compose.desktop {
             jvmArgs("--add-opens", "java.desktop/sun.lwawt.macosx=ALL-UNNAMED")
         }
 
-        mainClass = "com.clipevery.MainKt"
-
         val loggerLevel = project.findProperty("loggerLevel")?.toString() ?: "info"
         val appEnv = project.findProperty("appEnv")?.toString() ?: "DEVELOPMENT"
 
-        args(loggerLevel, appEnv)
+        jvmArgs("-DloggerLevel=$loggerLevel")
+        jvmArgs("-DappEnv=$appEnv")
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
