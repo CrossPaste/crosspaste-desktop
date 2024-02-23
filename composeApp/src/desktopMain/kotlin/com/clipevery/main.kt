@@ -13,7 +13,6 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import com.clipevery.app.AppEnv
 import com.clipevery.app.AppFileType
 import com.clipevery.app.AppUI
 import com.clipevery.clip.ClipboardService
@@ -53,21 +52,10 @@ fun exitClipEveryApplication(exitApplication: () -> Unit) {
     exitApplication()
 }
 
-fun main(args: Array<String>) {
-    val logLevel = if (args.isNotEmpty()) {
-        args[0]
-    } else {
-        "info"
-    }
+fun main() {
     System.setProperty("compose.interop.blending", "true")
 
-    Dependencies.init(if (args.size >= 2) {
-        AppEnv.valueOf(args[1])
-    } else {
-        AppEnv.PRODUCTION
-    })
-
-    initLogger(DesktopPathProvider.resolve("clipevery.log", AppFileType.LOG).pathString, logLevel)
+    initLogger(DesktopPathProvider.resolve("clipevery.log", AppFileType.LOG).pathString)
     val logger = KotlinLogging.logger {}
 
     logger.info { "Starting Clipevery" }

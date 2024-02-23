@@ -6,6 +6,7 @@ import java.nio.file.Path
 interface PathProvider {
     fun resolve(fileName: String? = null, appFileType: AppFileType): Path {
         val path = when (appFileType) {
+            AppFileType.APP -> clipUserPath
             AppFileType.USER -> clipUserPath
             AppFileType.LOG -> clipLogPath.resolve("logs")
             AppFileType.ENCRYPT -> clipEncryptPath.resolve("encrypt")
@@ -41,6 +42,8 @@ interface PathProvider {
             path.toFile().mkdirs()
         }
     }
+
+    val clipAppPath: Path
 
     val clipUserPath: Path
 
