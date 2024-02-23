@@ -35,10 +35,20 @@ object DesktopPathProvider: PathProvider {
 class WindowsPathProvider: PathProvider {
 
     private val userHomePath = System.getProperty("user.home")
-    override val clipAppPath: Path
-        get() = TODO("Not yet implemented")
+
+    override val clipAppPath: Path = getAppPath()
 
     override val clipUserPath: Path = Paths.get(userHomePath).resolve(".clipevery")
+
+    private fun getAppPath(): Path {
+        System.getProperty("compose.application.resources.dir")?.let {
+            return Paths.get(it).parent.parent
+        }
+        System.getProperty("skiko.library.path")?.let {
+            return Paths.get(it).parent
+        }
+        throw IllegalStateException("Could not find app path")
+    }
 }
 
 
