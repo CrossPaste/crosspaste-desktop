@@ -1,11 +1,12 @@
 package com.clipevery.utils
 
 import io.realm.kotlin.types.RealmInstant
+import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
-import java.util.Calendar
+import java.util.*
 
 object DateUtils {
 
@@ -38,6 +39,27 @@ object DateUtils {
         }
 
         return null
+    }
+
+    fun getDateFormat(date: LocalDateTime, language: String): String {
+        val locale = when (language) {
+            "zh" -> Locale.SIMPLIFIED_CHINESE
+            "en" -> Locale.US
+            "jp" -> Locale.JAPAN
+            "es" -> Locale("es", "ES")
+            else -> Locale.getDefault()
+        }
+
+        val pattern = when (language) {
+            "en" -> "MM/dd/yyyy"
+            "es" -> "dd/MM/yyyy"
+            "jp" -> "yyyy/MM/dd"
+            "zh" -> "yyyy年MM月dd日"
+            else -> "MM/dd/yyyy"
+        }
+
+        val formatter = SimpleDateFormat(pattern, locale)
+        return formatter.format(date)
     }
 
     fun convertRealmInstantToLocalDateTime(realmInstant: RealmInstant): LocalDateTime {
