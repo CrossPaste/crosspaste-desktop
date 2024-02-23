@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
@@ -26,6 +27,7 @@ import com.clipevery.clip.item.ClipHtml
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.html
+import com.clipevery.ui.devices.measureTextWidth
 import com.multiplatform.webview.jsbridge.IJsMessageHandler
 import com.multiplatform.webview.jsbridge.JsMessage
 import com.multiplatform.webview.jsbridge.WebViewJsBridge
@@ -54,6 +56,14 @@ fun HtmlPreviewView(clipData: ClipData) {
         val current = LocalKoinApplication.current
         val copywriter = current.koin.get<GlobalCopywriter>()
 
+        val textStyle = TextStyle(
+            fontWeight = FontWeight.Light,
+            color = MaterialTheme.colors.onBackground,
+            fontSize = 10.sp
+        )
+
+        val webWidth = 387.dp - measureTextWidth(copywriter.getText("Html"), textStyle)
+
         Column(
             modifier = Modifier.fillMaxWidth()
                 .padding(8.dp)
@@ -70,11 +80,11 @@ fun HtmlPreviewView(clipData: ClipData) {
             }
 
             Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
-                Box(modifier = Modifier.fillMaxWidth()) {
+                Box(modifier = Modifier.width(webWidth)) {
                     WebView(
                         modifier = Modifier.fillMaxSize(),
                         state = webViewState,
@@ -84,9 +94,10 @@ fun HtmlPreviewView(clipData: ClipData) {
                 }
 
                 Row(
-                    modifier = Modifier.wrapContentWidth()
+                    modifier = Modifier.fillMaxWidth()
+                        .wrapContentWidth()
                         .weight(1f)
-                        .padding(end = 8.dp),
+                        .padding(start = 5.dp, end = 8.dp),
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -101,11 +112,7 @@ fun HtmlPreviewView(clipData: ClipData) {
                         modifier = Modifier.weight(1f),
                         text = copywriter.getText("Html"),
                         fontFamily = FontFamily.SansSerif,
-                        style = TextStyle(
-                            fontWeight = FontWeight.Light,
-                            color = MaterialTheme.colors.onBackground,
-                            fontSize = 10.sp
-                        )
+                        style = textStyle
                     )
                 }
             }
