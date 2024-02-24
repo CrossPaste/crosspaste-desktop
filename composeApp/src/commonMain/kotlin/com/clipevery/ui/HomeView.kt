@@ -56,8 +56,8 @@ import androidx.compose.ui.window.PopupProperties
 import com.clipevery.LocalExitApplication
 import com.clipevery.LocalKoinApplication
 import com.clipevery.i18n.GlobalCopywriter
-import com.clipevery.loadImageBitmap
 import com.clipevery.ui.base.ClipIconButton
+import com.clipevery.utils.ResourceUtils.loadImageBitmap
 import java.awt.Desktop
 import java.net.URI
 

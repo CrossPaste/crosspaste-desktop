@@ -6,7 +6,6 @@ import com.clipevery.clip.ClipItemService
 import com.clipevery.clip.item.ImageClipItem
 import com.clipevery.clip.service.HtmlItemService.HtmlItemService.HTML_ID
 import com.clipevery.dao.clip.ClipAppearItem
-import com.clipevery.path.DesktopPathProvider
 import com.clipevery.utils.DesktopFileUtils.createClipPath
 import com.clipevery.utils.DesktopFileUtils.createClipRelativePath
 import com.clipevery.utils.DesktopFileUtils.createRandomFileName
@@ -27,8 +26,6 @@ class ImageItemService: ClipItemService {
 
     companion object ImageItemService {
         const val IMAGE_ID = "image/x-java-image"
-
-        val IMAGE_BASE_PATH: Path = DesktopPathProvider.resolve(appFileType = AppFileType.IMAGE)
     }
 
     override fun getIdentifiers(): List<String> {
@@ -53,10 +50,7 @@ class ImageItemService: ClipItemService {
                "png"
            }
            val relativePath = createClipRelativePath(clipId, name)
-           val imagePath = createClipPath(relativePath, isFile = true, isImage = true)
-            ImageIO.getWriterFormatNames().forEach {
-                println(it)
-            }
+           val imagePath = createClipPath(relativePath, isFile = true, AppFileType.IMAGE)
            if (writeImage(image, ext, imagePath)) {
                clipItem = ImageClipItem().apply {
                    this.identifier = dataFlavor.humanPresentableName

@@ -18,8 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.clipevery.ui.AboutView
@@ -114,12 +112,4 @@ fun ClipeveryContent() {
             DeviceDetailView(currentPageViewContext)
         }
     }
-}
-
-fun loadImageBitmap(resourcePath: String): ImageBitmap {
-    // Assuming `resourcePath` is a valid path for an image file within your resources directory.
-    val image = org.jetbrains.skia.Image.makeFromEncoded(
-        Thread.currentThread().contextClassLoader.getResourceAsStream(resourcePath)
-        ?.readBytes()!!)
-    return image.toComposeImageBitmap()
 }
