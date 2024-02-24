@@ -5,7 +5,7 @@ import com.clipevery.clip.item.TextClipItem
 import com.clipevery.clip.item.UrlClipItem
 import com.clipevery.dao.clip.ClipAppearItem
 
-class UrlTextCombinePlugin: ClipPlugin {
+object UrlTextCombinePlugin: ClipPlugin {
 
     override fun pluginProcess(clipAppearItems: List<ClipAppearItem>): List<ClipAppearItem> {
         clipAppearItems.filterIsInstance<UrlClipItem>().firstOrNull()?.let { urlClipItem ->

@@ -48,7 +48,7 @@ open class DesktopTransferableConsumer(private val appInfo: AppInfo,
                 for (flavor in flavors) {
                     clipItemServiceMap[identifier]?.let { clipItemService ->
                         if (clipCollector.needCollectionItem(itemIndex, clipItemService::class)) {
-                            clipItemService.createClipItem(clipId, itemIndex, flavor, transferable, clipCollector)
+                            clipItemService.createClipItem(clipId, itemIndex, flavor, dataFlavorMap, transferable, clipCollector)
                         }
                     }
                 }

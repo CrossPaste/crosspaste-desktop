@@ -1,6 +1,8 @@
 package com.clipevery.clip.item
 
-import com.clipevery.clip.service.FileItemService
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.res.loadImageBitmap
+import com.clipevery.clip.service.ImageItemService
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.path.DesktopPathProvider
@@ -9,7 +11,6 @@ import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
 import org.mongodb.kbson.BsonObjectId
 import org.mongodb.kbson.ObjectId
-import java.awt.Image
 import java.nio.file.Path
 
 class ImageClipItem: RealmObject, ClipAppearItem, ClipImage {
@@ -20,12 +21,12 @@ class ImageClipItem: RealmObject, ClipAppearItem, ClipImage {
     var relativePath: String = ""
     override var md5: String = ""
 
-    override fun getImage(): Image {
-        TODO("Not yet implemented")
+    override fun getImage(): ImageBitmap {
+        return loadImageBitmap(getImagePath().toFile().inputStream())
     }
 
-    fun getImagePath(): Path {
-        return DesktopPathProvider.resolve(FileItemService.FILE_BASE_PATH, relativePath, autoCreate = false)
+    override fun getImagePath(): Path {
+        return DesktopPathProvider.resolve(ImageItemService.IMAGE_BASE_PATH, relativePath, autoCreate = false)
     }
 
     override fun getIdentifiers(): List<String> {

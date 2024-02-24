@@ -28,6 +28,7 @@ class TextItemService: ClipItemService {
         clipId: Int,
         itemIndex: Int,
         dataFlavor: DataFlavor,
+        dataFlavorMap: Map<String, List<DataFlavor>>,
         transferable: Transferable,
         clipCollector: ClipCollector
     ) {

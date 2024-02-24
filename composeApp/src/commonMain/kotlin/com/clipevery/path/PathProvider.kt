@@ -11,7 +11,7 @@ interface PathProvider {
             AppFileType.LOG -> clipLogPath.resolve("logs")
             AppFileType.ENCRYPT -> clipEncryptPath.resolve("encrypt")
             AppFileType.DATA -> clipDataPath.resolve("data")
-            AppFileType.IMAGE -> clipDataPath.resolve("images")
+            AppFileType.IMAGE -> clipUserPath.resolve("images")
             AppFileType.VIDEO -> clipUserPath.resolve("videos")
             AppFileType.FILE -> clipUserPath.resolve("files")
             AppFileType.KCEF -> clipUserPath.resolve("kcef")
