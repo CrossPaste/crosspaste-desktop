@@ -15,8 +15,10 @@ interface ClipDao {
     fun getClipData(appInstanceId: String? = null,
                     limit: Int): RealmResults<ClipData>
 
-    fun getClipData(appInstanceId: String?,
-                    limit: Int,
-                    createTime: RealmInstant,
-                    excludeClipId: List<Int>): RealmResults<ClipData>
+    fun getClipDataGreaterThan(appInstanceId: String? = null,
+                               createTime: RealmInstant): RealmResults<ClipData>
+
+    fun getClipDataLessThan(appInstanceId: String? = null,
+                            limit: Int,
+                            createTime: RealmInstant): RealmResults<ClipData>
 }

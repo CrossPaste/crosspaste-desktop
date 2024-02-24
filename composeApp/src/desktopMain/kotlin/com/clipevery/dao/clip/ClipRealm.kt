@@ -72,16 +72,26 @@ class ClipRealm(private val realm: Realm): ClipDao {
         return query.sort("createTime", Sort.DESCENDING).limit(limit).find()
     }
 
-    override fun getClipData(
+    override fun getClipDataGreaterThan(
         appInstanceId: String?,
-        limit: Int,
-        createTime: RealmInstant,
-        excludeClipId: List<Int>
+        createTime: RealmInstant
     ): RealmResults<ClipData> {
         var query = appInstanceId?.let {
             realm.query(ClipData::class).query("appInstanceId == $0", appInstanceId)
         } ?: realm.query(ClipData::class)
-        query = query.query("clipId not in $0", excludeClipId)
+        query = query.query("createTime >= $0", createTime)
+        return query.sort("createTime", Sort.DESCENDING).find()
+    }
+
+    override fun getClipDataLessThan(
+        appInstanceId: String?,
+        limit: Int,
+        createTime: RealmInstant
+    ): RealmResults<ClipData> {
+        var query = appInstanceId?.let {
+            realm.query(ClipData::class).query("appInstanceId == $0", appInstanceId)
+        } ?: realm.query(ClipData::class)
+        query = query.query("createTime <= $0", createTime)
         return query.sort("createTime", Sort.DESCENDING).limit(limit).find()
     }
 }
