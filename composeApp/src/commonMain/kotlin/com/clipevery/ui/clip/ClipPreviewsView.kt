@@ -33,30 +33,73 @@ import androidx.compose.ui.unit.dp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipData
+import io.realm.kotlin.notifications.ResultsChange
+import io.realm.kotlin.notifications.UpdatedResults
+import io.realm.kotlin.query.RealmResults
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+val clipDataComparator = compareByDescending<ClipData> { it.createTime }
+    .thenBy{ it.appInstanceId }
+    .thenBy { it.clipId }
 
 @Composable
 fun ClipPreviewsView() {
     val current = LocalKoinApplication.current
     val clipDao = current.koin.get<ClipDao>()
 
-    val clipDataList: List<ClipData> = clipDao.getClipData(limit = 20)
+    val clipDataList: RealmResults<ClipData> = clipDao.getClipData(limit = 20)
 
     val listState = rememberLazyListState()
     var isScrolling by remember { mutableStateOf(false) }
     var scrollJob: Job? by remember { mutableStateOf(null) }
     val coroutineScope = rememberCoroutineScope()
     val rememberClipDataList = remember { mutableStateListOf<ClipData>().apply {
-        addAll(clipDataList)
+        addAll(clipDataList.sortedWith(clipDataComparator))
     } }
+
+    LaunchedEffect(Unit) {
+        val clipDatasFlow = clipDao.getClipData(limit = 20).asFlow()
+        clipDatasFlow.collect { changes: ResultsChange<ClipData> ->
+            when (changes) {
+                is UpdatedResults -> {
+                    changes.insertions
+                    changes.insertionRanges
+                    val firstClipData: ClipData? = rememberClipDataList.firstOrNull()
+
+                    firstClipData?.let {
+                        val newClipDataList = clipDao.getClipDataGreaterThan(createTime = it.createTime)
+                        for (clipData in newClipDataList.reversed()) {
+                            if (clipDataComparator.compare(clipData, firstClipData) < 0) {
+                                rememberClipDataList.add(0, clipData)
+                            }
+                        }
+                    } ?: run {
+                        val newClipDataList = clipDao.getClipData(limit = 20)
+                        rememberClipDataList.addAll(newClipDataList.sortedWith(clipDataComparator))
+                    }
+                }
+                else -> {
+                    // types other than UpdatedResults are not changes -- ignore them
+                }
+            }
+        }
+    }
 
     LaunchedEffect(listState) {
         snapshotFlow { listState.layoutInfo.visibleItemsInfo }
             .collect { visibleItems ->
                 if (visibleItems.isNotEmpty() && visibleItems.last().index == rememberClipDataList.size - 1) {
-                    // todo loadMoreItems()
+                    val lastClipData: ClipData? = rememberClipDataList.lastOrNull()
+                    lastClipData?.let {
+                        val newClipDataList = clipDao.getClipDataLessThan(createTime = it.createTime, limit = 20)
+                        for (clipData in newClipDataList) {
+                            if (clipDataComparator.compare(clipData, lastClipData) > 0) {
+                                rememberClipDataList.add(clipData)
+                            }
+                        }
+                    }
                 }
                 isScrolling = true
                 scrollJob?.cancel()
