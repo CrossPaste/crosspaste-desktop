@@ -11,12 +11,13 @@ interface ClipItemService {
         clipId: Int,
         itemIndex: Int,
         dataFlavor: DataFlavor,
+        dataFlavorMap: Map<String, List<DataFlavor>>,
         transferable: Transferable,
         clipCollector: ClipCollector
     ) {
         try {
             val transferData = transferable.getTransferData(dataFlavor)
-            doCreateClipItem(transferData, clipId, itemIndex, dataFlavor, transferable, clipCollector)
+            doCreateClipItem(transferData, clipId, itemIndex, dataFlavor, dataFlavorMap, transferable, clipCollector)
         } catch (e: Exception) {
             collectError(e, clipId, itemIndex, clipCollector)
         }
@@ -26,6 +27,7 @@ interface ClipItemService {
                          clipId: Int,
                          itemIndex: Int,
                          dataFlavor: DataFlavor,
+                         dataFlavorMap: Map<String, List<DataFlavor>>,
                          transferable: Transferable,
                          clipCollector: ClipCollector)
 

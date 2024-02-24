@@ -64,7 +64,8 @@ fun ClipPreviewItemView(clipData: ClipData, isLast: Boolean, clipContent: @Compo
 
         if (it.getClipType() == ClipType.TEXT ||
             it.getClipType() == ClipType.URL ||
-            it.getClipType() == ClipType.HTML
+            it.getClipType() == ClipType.HTML ||
+            it.getClipType() == ClipType.IMAGE
             ) {
 
             var hover by remember { mutableStateOf(false) }
@@ -152,6 +153,7 @@ fun ClipSpecificPreviewItemView(clipData: ClipData) {
             ClipType.TEXT -> TextPreviewView(clipData)
             ClipType.URL -> UrlPreviewView(clipData)
             ClipType.HTML -> HtmlPreviewView(clipData)
+            ClipType.IMAGE -> ImagePreviewView(clipData)
         }
     }
 }

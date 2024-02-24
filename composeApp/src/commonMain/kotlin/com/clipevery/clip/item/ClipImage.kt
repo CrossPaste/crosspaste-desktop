@@ -1,8 +1,11 @@
 package com.clipevery.clip.item
 
-import java.awt.Image
+import androidx.compose.ui.graphics.ImageBitmap
+import java.nio.file.Path
 
 interface ClipImage {
 
-    fun getImage(): Image
+    fun getImage(): ImageBitmap
+
+    fun getImagePath(): Path
 }

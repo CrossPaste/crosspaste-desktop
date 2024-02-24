@@ -10,6 +10,7 @@ import com.clipevery.clip.ClipboardService
 import com.clipevery.clip.DesktopTransferableConsumer
 import com.clipevery.clip.TransferableConsumer
 import com.clipevery.clip.getDesktopClipboardService
+import com.clipevery.clip.plugin.ImageHtmlCombinePlugin
 import com.clipevery.clip.plugin.MultiImagePlugin
 import com.clipevery.clip.plugin.UrlTextCombinePlugin
 import com.clipevery.clip.service.FileItemService
@@ -53,7 +54,9 @@ import com.clipevery.signal.DesktopSignedPreKeyStore
 import com.clipevery.signal.getClipIdentityKeyStoreFactory
 import com.clipevery.ui.DesktopThemeDetector
 import com.clipevery.ui.ThemeDetector
+import com.clipevery.utils.DesktopFileUtils
 import com.clipevery.utils.DesktopQRCodeGenerator
+import com.clipevery.utils.FileUtils
 import com.clipevery.utils.IDGenerator
 import com.clipevery.utils.IDGeneratorFactory
 import com.clipevery.utils.QRCodeGenerator
@@ -92,6 +95,7 @@ object Dependencies {
             single<ConfigManager> { DefaultConfigManager(get<FilePersist>().getPersist("appConfig.json", AppFileType.USER), get()) }
             single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
             single<IDGenerator> { IDGeneratorFactory(get()).createIDGenerator() }
+            single<FileUtils> { DesktopFileUtils }
 
             // realm component
             single<RealmManager> { RealmManagerImpl.createRealmManager(get()) }
@@ -124,7 +128,9 @@ object Dependencies {
                     ImageItemService(),
                     TextItemService(),
                     UrlItemService()
-                ), listOf(UrlTextCombinePlugin(), MultiImagePlugin())) }
+                ), listOf(UrlTextCombinePlugin,
+                    ImageHtmlCombinePlugin,
+                    MultiImagePlugin)) }
 
             // ui component
             single<AppUI> { AppUI(width = 460.dp, height = 710.dp) }

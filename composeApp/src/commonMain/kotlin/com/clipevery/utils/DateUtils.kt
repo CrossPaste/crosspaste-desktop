@@ -5,11 +5,14 @@ import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Calendar
 import java.util.Locale
 
 object DateUtils {
+
+    val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
     fun getPrevDay(): RealmInstant {
         val calendar = Calendar.getInstance()
@@ -40,6 +43,10 @@ object DateUtils {
         }
 
         return null
+    }
+
+    fun getYYYYMMDD(): String {
+        return dateFormatter.format(LocalDateTime.now())
     }
 
     fun getDateFormat(date: LocalDateTime, language: String): String {

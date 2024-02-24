@@ -22,10 +22,12 @@ kotlin {
         
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
+            implementation(libs.guava)
             implementation(libs.jmdns)
             implementation(libs.jna)
             implementation(libs.jna.platform)
             implementation(libs.jnativehook)
+            implementation(libs.jsoup)
             implementation(libs.koin.core)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.client.core)

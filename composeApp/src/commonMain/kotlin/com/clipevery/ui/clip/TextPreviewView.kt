@@ -32,10 +32,10 @@ fun getTitle(clipText: ClipText): String {
 
 @Composable
 fun TextPreviewView(clipData: ClipData) {
-    val current = LocalKoinApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
-
     clipData.getClipItem(ClipText::class)?.let {
+        val current = LocalKoinApplication.current
+        val copywriter = current.koin.get<GlobalCopywriter>()
+
         Column(
             modifier = Modifier.fillMaxWidth()
                 .padding(8.dp)
