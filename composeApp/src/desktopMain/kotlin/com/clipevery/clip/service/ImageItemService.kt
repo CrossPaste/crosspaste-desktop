@@ -12,7 +12,6 @@ import com.clipevery.utils.DesktopFileUtils.createRandomFileName
 import com.clipevery.utils.DesktopFileUtils.getExtFromFileName
 import com.clipevery.utils.DesktopFileUtils.getFileMd5
 import io.realm.kotlin.MutableRealm
-import io.realm.kotlin.types.RealmObject
 import org.jsoup.Jsoup
 import java.awt.Image
 import java.awt.datatransfer.DataFlavor
@@ -69,7 +68,7 @@ class ImageItemService: ClipItemService {
            if (writeImage(image, ext, imagePath)) {
                val md5 = getFileMd5(imagePath)
                val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
-                   (realm.findLatest(clipItem as RealmObject) as ImageClipItem).apply {
+                   realm.query(ImageClipItem::class).query("id == $0", clipItem.id).first().find()?.apply {
                        this.relativePath = relativePath
                        this.md5 = md5
                    }

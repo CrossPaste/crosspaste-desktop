@@ -6,7 +6,6 @@ import com.clipevery.clip.item.HtmlClipItem
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.utils.md5ByString
 import io.realm.kotlin.MutableRealm
-import io.realm.kotlin.types.RealmObject
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 
@@ -45,7 +44,7 @@ class HtmlItemService: ClipItemService {
         if (transferData is String) {
             val md5 = md5ByString(transferData)
             val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
-                (realm.findLatest(clipItem as RealmObject) as HtmlClipItem).apply {
+                realm.query(HtmlClipItem::class).query("id == $0", clipItem.id).first().find()?.apply {
                     this.html = transferData
                     this.md5 = md5
                 }

@@ -5,7 +5,6 @@ import com.clipevery.utils.DateUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.Realm
-import io.realm.kotlin.ext.toRealmList
 import io.realm.kotlin.query.RealmResults
 import io.realm.kotlin.query.Sort
 import io.realm.kotlin.types.RealmAny
@@ -70,8 +69,9 @@ class ClipRealm(private val realm: Realm) : ClipDao {
     }
 
     override fun releaseClipData(id: ObjectId, clipPlugins: List<ClipPlugin>) {
+        var md5: String? = null
         realm.writeBlocking {
-            realm.query(ClipData::class).query("id == $0", id).first().find()?.let { clipData ->
+            query(ClipData::class).query("id == $0", id).first().find()?.let { clipData ->
                 clipData.clipContent?.let { clipContent ->
                     var clipAppearItems = clipContent.clipAppearItems.mapNotNull { anyValue ->
                         ClipContent.getClipItem(anyValue)
@@ -85,12 +85,15 @@ class ClipRealm(private val realm: Realm) : ClipDao {
 
                     val firstItem: ClipAppearItem = clipAppearItems.first()
 
+                    md5 = firstItem.md5
+
                     val remainingItems: List<ClipAppearItem> = clipAppearItems.drop(1)
 
                     val clipAppearContent: RealmAny = RealmAny.create(firstItem as RealmObject)
 
-                    clipContent.clipAppearItems =
-                        remainingItems.map { RealmAny.create(it as RealmObject) }.toRealmList()
+                    clipContent.clipAppearItems.clear()
+
+                    clipContent.clipAppearItems.addAll(remainingItems.map { RealmAny.create(it as RealmObject) })
 
                     clipData.clipAppearContent = clipAppearContent
                     clipData.clipContent = clipContent
@@ -98,16 +101,16 @@ class ClipRealm(private val realm: Realm) : ClipDao {
                     clipData.clipSearchContent = firstItem.getSearchContent()
                     clipData.md5 = firstItem.md5
                     clipData.preCreate = false
-
-
-                    doDeleteClipData {
-                        query(ClipData::class, "md5 == $0", firstItem.md5)
-                            .query("createTime > $0", DateUtils.getPrevDay())
-                            .query("clipId != $0", clipData.clipId)
-                            .query("appInstanceId != $0", clipData.appInstanceId)
-                            .find().toList()
-                    }
                 }
+            }
+        }
+
+        md5?.let {
+            doDeleteClipData {
+                query(ClipData::class, "md5 == $0", it)
+                    .query("createTime > $0", DateUtils.getPrevDay())
+                    .query("id != $0", id)
+                    .find().toList()
             }
         }
     }

@@ -9,7 +9,6 @@ import com.clipevery.utils.DesktopFileUtils
 import com.clipevery.utils.DesktopFileUtils.copyFile
 import com.clipevery.utils.DesktopFileUtils.createClipRelativePath
 import io.realm.kotlin.MutableRealm
-import io.realm.kotlin.types.RealmObject
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import java.io.File
@@ -60,7 +59,7 @@ class FileItemService: ClipItemService {
                     val md5 = DesktopFileUtils.getFileMd5(filePath)
 
                     val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
-                        (realm.findLatest(clipItem as RealmObject) as FileClipItem).apply {
+                        realm.query(FileClipItem::class).query("id == $0", clipItem.id).first().find()?.apply {
                             this.relativePath = relativePath
                             this.md5 = md5
                         }

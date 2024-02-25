@@ -6,7 +6,6 @@ import com.clipevery.clip.item.UrlClipItem
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.utils.md5ByString
 import io.realm.kotlin.MutableRealm
-import io.realm.kotlin.types.RealmObject
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 
@@ -46,7 +45,7 @@ class UrlItemService: ClipItemService {
         if (transferData is String) {
             val md5 = md5ByString(transferData)
             val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
-                (realm.findLatest(clipItem as RealmObject) as UrlClipItem).apply {
+                realm.query(UrlClipItem::class).query("id == $0", clipItem.id).first().find()?.apply {
                     this.url = transferData
                     this.md5 = md5
                 }
