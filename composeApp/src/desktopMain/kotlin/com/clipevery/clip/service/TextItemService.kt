@@ -3,12 +3,12 @@ package com.clipevery.clip.service
 import com.clipevery.clip.ClipCollector
 import com.clipevery.clip.ClipItemService
 import com.clipevery.clip.item.TextClipItem
-import com.clipevery.clip.item.UrlClipItem
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.utils.md5ByString
+import io.realm.kotlin.MutableRealm
+import io.realm.kotlin.types.RealmObject
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
-import java.net.URL
 
 class TextItemService: ClipItemService {
 
@@ -23,7 +23,21 @@ class TextItemService: ClipItemService {
         return listOf(UNICODE_STRING, TEXT, PLAIN_TEXT)
     }
 
-    override fun doCreateClipItem(
+    override fun createPreClipItem(
+        clipId: Int,
+        itemIndex: Int,
+        identifier: String,
+        transferable: Transferable,
+        clipCollector: ClipCollector
+    ) {
+        TextClipItem().apply {
+            this.identifier = identifier
+        }.let {
+            clipCollector.preCollectItem(itemIndex, this::class, it)
+        }
+    }
+
+    override fun doLoadRepresentation(
         transferData: Any,
         clipId: Int,
         itemIndex: Int,
@@ -32,31 +46,15 @@ class TextItemService: ClipItemService {
         transferable: Transferable,
         clipCollector: ClipCollector
     ) {
-        var clipItem: ClipAppearItem? = null
         if (transferData is String) {
-            getURL(transferData)?.let {
-                clipItem = UrlClipItem().apply {
-                    identifier = dataFlavor.humanPresentableName
-                    url = transferData
-                    md5 = md5ByString(url)
-                }
-            } ?: run {
-                clipItem = TextClipItem().apply {
-                    identifier = dataFlavor.humanPresentableName
-                    text = transferData
-                    md5 = md5ByString(text)
+            val md5 = md5ByString(transferData)
+            val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
+                (realm.findLatest(clipItem as RealmObject) as TextClipItem).apply {
+                    this.text = transferData
+                    this.md5 = md5
                 }
             }
-        }
-        clipItem?.let { clipCollector.collectItem(itemIndex, this::class, it) }
-    }
-
-    private fun getURL(str: String): String? {
-        return try {
-            URL(str)
-            str
-        } catch (e: Exception) {
-            null
+            clipCollector.updateCollectItem(itemIndex, this::class, update)
         }
     }
 }

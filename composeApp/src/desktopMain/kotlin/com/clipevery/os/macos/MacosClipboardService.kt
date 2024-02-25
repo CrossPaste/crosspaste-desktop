@@ -4,6 +4,7 @@ import com.clipevery.clip.ClipboardService
 import com.clipevery.clip.TransferableConsumer
 import com.clipevery.os.macos.api.MacosApi
 import com.clipevery.utils.cpuDispatcher
+import com.clipevery.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -11,6 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
 
@@ -33,7 +35,9 @@ class MacosClipboardService(override val clipConsumer: TransferableConsumer): Cl
                             changeCount = currentChangeCount
                             val contents = systemClipboard.getContents(null)
                             contents?.let {
-                                clipConsumer.consume(it)
+                                withContext(ioDispatcher) {
+                                    clipConsumer.consume(it)
+                                }
                             }
                         }
                     }

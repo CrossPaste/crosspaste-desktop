@@ -11,6 +11,8 @@ import com.clipevery.utils.DesktopFileUtils.createClipRelativePath
 import com.clipevery.utils.DesktopFileUtils.createRandomFileName
 import com.clipevery.utils.DesktopFileUtils.getExtFromFileName
 import com.clipevery.utils.DesktopFileUtils.getFileMd5
+import io.realm.kotlin.MutableRealm
+import io.realm.kotlin.types.RealmObject
 import org.jsoup.Jsoup
 import java.awt.Image
 import java.awt.datatransfer.DataFlavor
@@ -32,7 +34,21 @@ class ImageItemService: ClipItemService {
         return listOf(IMAGE_ID)
     }
 
-    override fun doCreateClipItem(
+    override fun createPreClipItem(
+        clipId: Int,
+        itemIndex: Int,
+        identifier: String,
+        transferable: Transferable,
+        clipCollector: ClipCollector
+    ) {
+        ImageClipItem().apply {
+            this.identifier = identifier
+        }.let {
+            clipCollector.preCollectItem(itemIndex, this::class, it)
+        }
+    }
+
+    override fun doLoadRepresentation(
         transferData: Any,
         clipId: Int,
         itemIndex: Int,
@@ -41,7 +57,6 @@ class ImageItemService: ClipItemService {
         transferable: Transferable,
         clipCollector: ClipCollector
     ) {
-        var clipItem: ClipAppearItem? = null
         if (transferData is Image) {
            val image: BufferedImage = toBufferedImage(transferData)
            var name = tryGetImageName(dataFlavorMap, transferable) ?: createRandomFileName(ext = "png")
@@ -52,15 +67,16 @@ class ImageItemService: ClipItemService {
            val relativePath = createClipRelativePath(clipId, name)
            val imagePath = createClipPath(relativePath, isFile = true, AppFileType.IMAGE)
            if (writeImage(image, ext, imagePath)) {
-               clipItem = ImageClipItem().apply {
-                   this.identifier = dataFlavor.humanPresentableName
-                   this.relativePath = relativePath
-                   this.md5 = getFileMd5(imagePath)
+               val md5 = getFileMd5(imagePath)
+               val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
+                   (realm.findLatest(clipItem as RealmObject) as ImageClipItem).apply {
+                       this.relativePath = relativePath
+                       this.md5 = md5
+                   }
                }
+                clipCollector.updateCollectItem(itemIndex, this::class, update)
            }
         }
-        clipItem?.let { clipCollector.collectItem(itemIndex, this::class, it) }
-
     }
 
     private fun writeImage(image: BufferedImage, ext: String, imagePath: Path): Boolean {
@@ -102,7 +118,7 @@ class ImageItemService: ClipItemService {
         return getLastPathSegment(src)
     }
 
-    fun getLastPathSegment(urlString: String): String? {
+    private fun getLastPathSegment(urlString: String): String? {
         try {
             val url = URL(urlString)
             var path: String = url.getPath()
@@ -116,7 +132,7 @@ class ImageItemService: ClipItemService {
         }
     }
 
-    fun toBufferedImage(img: Image): BufferedImage {
+    private fun toBufferedImage(img: Image): BufferedImage {
         if (img is BufferedImage) {
             return img
         }

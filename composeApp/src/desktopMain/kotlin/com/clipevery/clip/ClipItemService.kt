@@ -7,7 +7,15 @@ interface ClipItemService {
 
     fun getIdentifiers(): List<String>
 
-    fun createClipItem(
+    fun createPreClipItem(
+        clipId: Int,
+        itemIndex: Int,
+        identifier: String,
+        transferable: Transferable,
+        clipCollector: ClipCollector
+    )
+
+    fun loadRepresentation(
         clipId: Int,
         itemIndex: Int,
         dataFlavor: DataFlavor,
@@ -17,19 +25,19 @@ interface ClipItemService {
     ) {
         try {
             val transferData = transferable.getTransferData(dataFlavor)
-            doCreateClipItem(transferData, clipId, itemIndex, dataFlavor, dataFlavorMap, transferable, clipCollector)
+            doLoadRepresentation(transferData, clipId, itemIndex, dataFlavor, dataFlavorMap, transferable, clipCollector)
         } catch (e: Exception) {
             collectError(e, clipId, itemIndex, clipCollector)
         }
     }
 
-    fun doCreateClipItem(transferData: Any,
-                         clipId: Int,
-                         itemIndex: Int,
-                         dataFlavor: DataFlavor,
-                         dataFlavorMap: Map<String, List<DataFlavor>>,
-                         transferable: Transferable,
-                         clipCollector: ClipCollector)
+    fun doLoadRepresentation(transferData: Any,
+                             clipId: Int,
+                             itemIndex: Int,
+                             dataFlavor: DataFlavor,
+                             dataFlavorMap: Map<String, List<DataFlavor>>,
+                             transferable: Transferable,
+                             clipCollector: ClipCollector)
 
     fun collectError(error: Exception,
                      clipId: Int,

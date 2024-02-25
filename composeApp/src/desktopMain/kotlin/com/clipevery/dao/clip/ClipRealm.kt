@@ -1,16 +1,19 @@
 package com.clipevery.dao.clip
 
+import com.clipevery.clip.ClipPlugin
 import com.clipevery.utils.DateUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.Realm
+import io.realm.kotlin.ext.toRealmList
 import io.realm.kotlin.query.RealmResults
 import io.realm.kotlin.query.Sort
+import io.realm.kotlin.types.RealmAny
 import io.realm.kotlin.types.RealmInstant
 import io.realm.kotlin.types.RealmObject
 import org.mongodb.kbson.ObjectId
 
-class ClipRealm(private val realm: Realm): ClipDao {
+class ClipRealm(private val realm: Realm) : ClipDao {
 
     private val logger = KotlinLogging.logger {}
 
@@ -18,17 +21,11 @@ class ClipRealm(private val realm: Realm): ClipDao {
         return realm.query(ClipData::class).sort("clipId", Sort.DESCENDING).first().find()?.clipId ?: 0
     }
 
-    override fun createClipData(clipData: ClipData) {
+    override fun createClipData(clipData: ClipData): ObjectId {
         realm.writeBlocking {
             copyToRealm(clipData)
         }
-        doDeleteClipData {
-            query(ClipData::class, "md5 == $0", clipData.md5)
-                .query("createTime > $0", DateUtils.getPrevDay())
-                .query("clipId != $0", clipData.clipId)
-                .query("appInstanceId != $0", clipData.appInstanceId)
-                .find().toList()
-        }
+        return clipData.id
     }
 
     override fun deleteClipData(id: ObjectId) {
@@ -47,7 +44,7 @@ class ClipRealm(private val realm: Realm): ClipDao {
                 }
                 val clipAppearContent = clipData.clipAppearContent
                 val clipAppearItem = ClipContent.getClipItem(clipAppearContent)
-                val clipAppearItems = clipData.clipContent?.clipAppearItems?.mapNotNull{ anyValue ->
+                val clipAppearItems = clipData.clipContent?.clipAppearItems?.mapNotNull { anyValue ->
                     ClipContent.getClipItem(anyValue)
                 }
                 delete(clipData)
@@ -70,6 +67,55 @@ class ClipRealm(private val realm: Realm): ClipDao {
             realm.query(ClipData::class).query("appInstanceId == $0", appInstanceId)
         } ?: realm.query(ClipData::class)
         return query.sort("createTime", Sort.DESCENDING).limit(limit).find()
+    }
+
+    override fun releaseClipData(id: ObjectId, clipPlugins: List<ClipPlugin>) {
+        realm.writeBlocking {
+            realm.query(ClipData::class).query("id == $0", id).first().find()?.let { clipData ->
+                clipData.clipContent?.let { clipContent ->
+                    var clipAppearItems = clipContent.clipAppearItems.mapNotNull { anyValue ->
+                        ClipContent.getClipItem(anyValue)
+                    }
+
+                    assert(clipAppearItems.isNotEmpty())
+
+                    for (clipPlugin in clipPlugins) {
+                        clipAppearItems = clipPlugin.pluginProcess(clipAppearItems)
+                    }
+
+                    val firstItem: ClipAppearItem = clipAppearItems.first()
+
+                    val remainingItems: List<ClipAppearItem> = clipAppearItems.drop(1)
+
+                    val clipAppearContent: RealmAny = RealmAny.create(firstItem as RealmObject)
+
+                    clipContent.clipAppearItems =
+                        remainingItems.map { RealmAny.create(it as RealmObject) }.toRealmList()
+
+                    clipData.clipAppearContent = clipAppearContent
+                    clipData.clipContent = clipContent
+                    clipData.clipType = firstItem.getClipType()
+                    clipData.clipSearchContent = firstItem.getSearchContent()
+                    clipData.md5 = firstItem.md5
+                    clipData.preCreate = false
+
+
+                    doDeleteClipData {
+                        query(ClipData::class, "md5 == $0", firstItem.md5)
+                            .query("createTime > $0", DateUtils.getPrevDay())
+                            .query("clipId != $0", clipData.clipId)
+                            .query("appInstanceId != $0", clipData.appInstanceId)
+                            .find().toList()
+                    }
+                }
+            }
+        }
+    }
+
+    override fun updateClipItem(update: (MutableRealm) -> Unit) {
+        realm.writeBlocking {
+            update(this)
+        }
     }
 
     override fun getClipDataGreaterThan(

@@ -5,6 +5,8 @@ import com.clipevery.clip.ClipItemService
 import com.clipevery.clip.item.UrlClipItem
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.utils.md5ByString
+import io.realm.kotlin.MutableRealm
+import io.realm.kotlin.types.RealmObject
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 
@@ -18,7 +20,21 @@ class UrlItemService: ClipItemService {
         return listOf(URL)
     }
 
-    override fun doCreateClipItem(
+    override fun createPreClipItem(
+        clipId: Int,
+        itemIndex: Int,
+        identifier: String,
+        transferable: Transferable,
+        clipCollector: ClipCollector
+    ) {
+        UrlClipItem().apply {
+            this.identifier = identifier
+        }.let {
+            clipCollector.preCollectItem(itemIndex, this::class, it)
+        }
+    }
+
+    override fun doLoadRepresentation(
         transferData: Any,
         clipId: Int,
         itemIndex: Int,
@@ -27,16 +43,15 @@ class UrlItemService: ClipItemService {
         transferable: Transferable,
         clipCollector: ClipCollector
     ) {
-        var clipItem: ClipAppearItem? = null
         if (transferData is String) {
-            clipItem = UrlClipItem().apply {
-                identifier = dataFlavor.humanPresentableName
-                url = transferData
-                md5 = md5ByString(url)
+            val md5 = md5ByString(transferData)
+            val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
+                (realm.findLatest(clipItem as RealmObject) as UrlClipItem).apply {
+                    this.url = transferData
+                    this.md5 = md5
+                }
             }
-        }
-        clipItem?.let {
-            clipCollector.collectItem(itemIndex, this::class, it)
+            clipCollector.updateCollectItem(itemIndex, this::class, update)
         }
     }
 }
