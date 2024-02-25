@@ -10,6 +10,7 @@ import java.io.FileNotFoundException
 import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
+import java.util.Locale
 import java.util.Properties
 import java.util.concurrent.ConcurrentHashMap
 
@@ -102,7 +103,22 @@ class CopywriterImpl(private val language: String) : Copywriter {
     }
 
     override fun getDate(date: LocalDateTime): String {
-        return DateUtils.getDateFormat(date, language)
+        val locale = when (language) {
+            "zh" -> Locale.SIMPLIFIED_CHINESE
+            "en" -> Locale.US
+            "jp" -> Locale.JAPAN
+            "es" -> Locale("es", "ES")
+            else -> Locale.getDefault()
+        }
+
+        val pattern = when (language) {
+            "en" -> "MM/dd/yyyy"
+            "es" -> "dd/MM/yyyy"
+            "jp" -> "yyyy/MM/dd"
+            "zh" -> "yyyy年MM月dd日"
+            else -> "MM/dd/yyyy"
+        }
+        return DateUtils.getDateText(date, pattern, locale)
     }
 
     override fun getAbridge(): String {

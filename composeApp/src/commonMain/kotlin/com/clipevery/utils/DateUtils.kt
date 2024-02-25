@@ -1,7 +1,7 @@
 package com.clipevery.utils
 
+import androidx.compose.runtime.remember
 import io.realm.kotlin.types.RealmInstant
-import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -49,24 +49,10 @@ object DateUtils {
         return dateFormatter.format(LocalDateTime.now())
     }
 
-    fun getDateFormat(date: LocalDateTime, language: String): String {
-        val locale = when (language) {
-            "zh" -> Locale.SIMPLIFIED_CHINESE
-            "en" -> Locale.US
-            "jp" -> Locale.JAPAN
-            "es" -> Locale("es", "ES")
-            else -> Locale.getDefault()
+    fun getDateText(date: LocalDateTime, pattern: String, locale: Locale): String {
+        val formatter = remember(pattern, locale) {
+            DateTimeFormatter.ofPattern(pattern, locale)
         }
-
-        val pattern = when (language) {
-            "en" -> "MM/dd/yyyy"
-            "es" -> "dd/MM/yyyy"
-            "jp" -> "yyyy/MM/dd"
-            "zh" -> "yyyy年MM月dd日"
-            else -> "MM/dd/yyyy"
-        }
-
-        val formatter = SimpleDateFormat(pattern, locale)
         return formatter.format(date)
     }
 
