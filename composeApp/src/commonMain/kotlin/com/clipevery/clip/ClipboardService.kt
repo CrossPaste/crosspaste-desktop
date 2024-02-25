@@ -1,6 +1,6 @@
 package com.clipevery.clip
 
-interface ClipboardService: Runnable, ClipboardMonitor {
+interface ClipboardService: ClipboardMonitor {
 
   val clipConsumer: TransferableConsumer
 

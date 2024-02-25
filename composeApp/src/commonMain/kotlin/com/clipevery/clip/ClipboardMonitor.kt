@@ -4,4 +4,6 @@ interface ClipboardMonitor {
     fun start()
 
     fun stop()
+
+    fun run()
 }

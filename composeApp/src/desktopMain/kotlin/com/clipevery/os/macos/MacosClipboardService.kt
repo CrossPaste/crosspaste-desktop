@@ -3,62 +3,57 @@ package com.clipevery.os.macos
 import com.clipevery.clip.ClipboardService
 import com.clipevery.clip.TransferableConsumer
 import com.clipevery.os.macos.api.MacosApi
+import com.clipevery.utils.cpuDispatcher
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
-import java.awt.datatransfer.Transferable
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
 
-class MacosClipboardService
-    (override val clipConsumer: TransferableConsumer) : ClipboardService {
+class MacosClipboardService(override val clipConsumer: TransferableConsumer): ClipboardService {
 
-    private var executor: ScheduledExecutorService? = null
+    private val logger = KotlinLogging.logger {}
 
     private var changeCount = 0
 
     private var systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
 
-    override fun run() {
-        try {
-            MacosApi.INSTANCE.getClipboardChangeCount().let { currentChangeCount ->
-                if (changeCount == currentChangeCount) {
-                    return
+    private var job: Job? = null
+
+    override fun run(): Unit = runBlocking {
+        launch {
+            while (isActive) {
+                try {
+                    MacosApi.INSTANCE.getClipboardChangeCount().let { currentChangeCount ->
+                        if (changeCount != currentChangeCount) {
+                            changeCount = currentChangeCount
+                            val contents = systemClipboard.getContents(null)
+                            contents?.let {
+                                clipConsumer.consume(it)
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    logger.error(e) { "Failed to consume transferable" }
                 }
-                changeCount = currentChangeCount
-                val contents: Transferable? = systemClipboard.getContents(null)
-                contents?.let {
-                    clipConsumer.consume(it)
-                }
+                delay(300L)
             }
-        } catch (e: java.lang.Exception) {
-            e.printStackTrace()
         }
     }
 
     override fun start() {
-        if (executor?.isShutdown != false) {
-            executor = Executors.newScheduledThreadPool(2) { r -> Thread(r, "Clipboard Monitor") }
+        if (job?.isActive != true) {
+            job = CoroutineScope(cpuDispatcher).launch {
+                run()
+            }
         }
-        executor?.scheduleAtFixedRate(this, 0, 300, TimeUnit.MILLISECONDS)
     }
 
     override fun stop() {
-        executor?.let {
-            it.shutdown()
-
-            try {
-                if (!it.awaitTermination(600, TimeUnit.MICROSECONDS)) {
-                    it.shutdownNow()
-                    if (!it.awaitTermination(600, TimeUnit.MICROSECONDS)) {
-                        println("task did not terminate")
-                    }
-                }
-                println("stop ")
-            } catch (ie: InterruptedException) {
-                Thread.currentThread().interrupt()
-                it.shutdownNow()
-            }
-        }
+        job?.cancel()
     }
 }
