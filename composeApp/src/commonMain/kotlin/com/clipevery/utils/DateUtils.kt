@@ -1,5 +1,6 @@
 package com.clipevery.utils
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import io.realm.kotlin.types.RealmInstant
 import java.time.Instant
@@ -49,6 +50,7 @@ object DateUtils {
         return dateFormatter.format(LocalDateTime.now())
     }
 
+    @Composable
     fun getDateText(date: LocalDateTime, pattern: String, locale: Locale): String {
         val formatter = remember(pattern, locale) {
             DateTimeFormatter.ofPattern(pattern, locale)
