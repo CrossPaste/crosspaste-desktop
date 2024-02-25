@@ -23,10 +23,6 @@ interface ClipAppearItem {
     }
 }
 
-fun sortClipAppearItems(clipAppearItems: List<ClipAppearItem>): List<ClipAppearItem> {
-    return clipAppearItems.sortedBy { it.getClipType() }
-}
-
 data class ClipAppearItemId(val clipType: Int, val md5: String) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
