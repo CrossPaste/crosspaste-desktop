@@ -2,20 +2,21 @@ package com.clipevery.os.windows
 
 import com.clipevery.clip.ClipboardService
 import com.clipevery.clip.TransferableConsumer
-import com.clipevery.platform.currentPlatform
 import com.clipevery.os.windows.api.User32
+import com.clipevery.platform.currentPlatform
+import com.clipevery.utils.ioDispatcher
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.Kernel32
 import com.sun.jna.platform.win32.WinDef.HWND
 import com.sun.jna.platform.win32.WinDef.LPARAM
 import com.sun.jna.platform.win32.WinDef.WPARAM
 import com.sun.jna.platform.win32.WinUser.MSG
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.Transferable
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 
 class WindowsClipboardService
@@ -23,7 +24,7 @@ class WindowsClipboardService
 
     private var systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
 
-    private var executor: ExecutorService? = null
+    private var job: Job? = null
     private var viewer: HWND? = null
     private var nextViewer: HWND? = null
     private val event = Kernel32.INSTANCE.CreateEvent(
@@ -69,30 +70,16 @@ class WindowsClipboardService
     }
 
     override fun start() {
-        if (executor?.isShutdown != false) {
-            executor = Executors.newSingleThreadExecutor { r -> Thread(r, "Clipboard Monitor") }
+        if (job?.isActive != true) {
+            job = CoroutineScope(ioDispatcher).launch {
+                run()
+            }
         }
-        executor?.execute(this)
     }
 
     override fun stop() {
-        executor?.let {
-            Kernel32.INSTANCE.SetEvent(event)
-            it.shutdown()
-
-            try {
-                if (!it.awaitTermination(600, TimeUnit.MICROSECONDS)) {
-                    it.shutdownNow()
-                    if (!it.awaitTermination(600, TimeUnit.MICROSECONDS)) {
-                        println("task did not terminate")
-                    }
-                }
-                println("stop ")
-            } catch (ie: InterruptedException) {
-                Thread.currentThread().interrupt()
-                it.shutdownNow()
-            }
-        }
+        Kernel32.INSTANCE.SetEvent(event)
+        job?.cancel()
     }
 
     private fun onChange() {
