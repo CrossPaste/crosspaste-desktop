@@ -1,6 +1,6 @@
 package com.clipevery.clip.item
 
-import com.clipevery.clip.service.FileItemService
+import com.clipevery.app.AppFileType
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.path.DesktopPathProvider
@@ -18,7 +18,7 @@ class FileClipItem: RealmObject, ClipAppearItem, ClipFile {
     override var id: ObjectId = BsonObjectId()
     var identifier: String = ""
     var relativePath: String = ""
-    var isFile: Boolean = false
+    override var isFile: Boolean = false
     override var md5: String = ""
 
     constructor()
@@ -31,7 +31,9 @@ class FileClipItem: RealmObject, ClipAppearItem, ClipFile {
     }
 
     override fun getFilePath(): Path {
-        return DesktopPathProvider.resolve(FileItemService.FILE_BASE_PATH, relativePath, autoCreate = false)
+        return DesktopPathProvider.resolve(
+            DesktopPathProvider.resolve(appFileType = AppFileType.FILE),
+            relativePath, autoCreate = false)
     }
 
     override fun getIdentifiers(): List<String> {

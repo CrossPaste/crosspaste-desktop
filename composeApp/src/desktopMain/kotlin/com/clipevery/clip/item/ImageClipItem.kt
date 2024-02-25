@@ -2,7 +2,7 @@ package com.clipevery.clip.item
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.res.loadImageBitmap
-import com.clipevery.clip.service.ImageItemService
+import com.clipevery.app.AppFileType
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.path.DesktopPathProvider
@@ -26,7 +26,8 @@ class ImageClipItem: RealmObject, ClipAppearItem, ClipImage {
     }
 
     override fun getImagePath(): Path {
-        return DesktopPathProvider.resolve(ImageItemService.IMAGE_BASE_PATH, relativePath, autoCreate = false)
+        val basePath = DesktopPathProvider.resolve(appFileType = AppFileType.IMAGE)
+        return DesktopPathProvider.resolve(basePath, relativePath, autoCreate = false)
     }
 
     override fun getIdentifiers(): List<String> {

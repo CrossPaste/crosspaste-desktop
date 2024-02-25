@@ -1,6 +1,6 @@
 package com.clipevery.clip.item
 
-import com.clipevery.clip.service.FileItemService
+import com.clipevery.app.AppFileType
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.path.DesktopPathProvider
@@ -25,8 +25,9 @@ class FilesClipItem: RealmObject, ClipAppearItem, ClipFiles {
     override var md5: String = ""
 
     override fun getFilePaths(): List<Path> {
+        val basePath = DesktopPathProvider.resolve(appFileType = AppFileType.FILE)
         return fileList.map { relativePath ->
-            DesktopPathProvider.resolve(FileItemService.FILE_BASE_PATH, relativePath, autoCreate = false)
+            DesktopPathProvider.resolve(basePath, relativePath, autoCreate = false)
         }
     }
 

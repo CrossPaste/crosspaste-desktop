@@ -1,7 +1,6 @@
 package com.clipevery.utils
 
-import com.clipevery.clip.service.FileItemService.FileItemService.FILE_BASE_PATH
-import com.clipevery.clip.service.ImageItemService.ImageItemService.IMAGE_BASE_PATH
+import com.clipevery.app.AppFileType
 import com.clipevery.path.DesktopPathProvider
 import com.google.common.hash.Hashing
 import com.google.common.io.Files
@@ -50,12 +49,8 @@ object DesktopFileUtils: FileUtils {
         return clipFileName.split("_", limit = 2)[1]
     }
 
-    override fun createClipPath(fileRelativePath: String, isFile: Boolean, isImage: Boolean): Path {
-        val basePath = if (isImage) {
-            IMAGE_BASE_PATH
-        } else {
-            FILE_BASE_PATH
-        }
+    override fun createClipPath(fileRelativePath: String, isFile: Boolean, appFileType: AppFileType): Path {
+        val basePath = DesktopPathProvider.resolve(appFileType = appFileType)
         return DesktopPathProvider.resolve(basePath, fileRelativePath, isFile = isFile)
     }
 
@@ -68,5 +63,14 @@ object DesktopFileUtils: FileUtils {
         val byteSource = Files.asByteSource(file)
         val hc = byteSource.hash(Hashing.sha256())
         return hc.toString()
+    }
+
+    override fun copyFile(src: Path, dest: Path): Boolean {
+        return try {
+            Files.copy(src.toFile(), dest.toFile())
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 }

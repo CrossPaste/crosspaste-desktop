@@ -1,5 +1,6 @@
 package com.clipevery.utils
 
+import com.clipevery.app.AppFileType
 import java.nio.file.Path
 
 interface FileUtils {
@@ -14,9 +15,11 @@ interface FileUtils {
 
     fun getFileNameFromRelativePath(relativePath: Path): String
 
-    fun createClipPath(fileRelativePath: String, isFile: Boolean, isImage: Boolean = false): Path
+    fun createClipPath(fileRelativePath: String, isFile: Boolean, appFileType: AppFileType): Path
 
     fun getFileSize(path: Path): Long
 
     fun getFileMd5(path: Path): String
+
+    fun copyFile(src: Path, dest: Path): Boolean
 }
