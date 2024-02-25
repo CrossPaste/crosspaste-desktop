@@ -40,23 +40,62 @@ open class DesktopTransferableConsumer(private val appInfo: AppInfo,
         val clipCollector = ClipCollector(dataFlavorMap.size, appInfo, clipDao, clipPlugins)
 
         try {
-            var itemIndex = 0
-            for (entry in dataFlavorMap) {
-                val identifier = entry.key
-                val flavors = entry.value
-                logger.info { "itemIndex: $itemIndex Transferable flavor: $identifier" }
-                for (flavor in flavors) {
-                    clipItemServiceMap[identifier]?.let { clipItemService ->
-                        if (clipCollector.needCollectionItem(itemIndex, clipItemService::class)) {
-                            clipItemService.createClipItem(clipId, itemIndex, flavor, dataFlavorMap, transferable, clipCollector)
-                        }
-                    }
-                }
-                itemIndex ++
+            preCollect(clipId, dataFlavorMap, transferable, clipCollector)
+            clipCollector.createPreClipData(clipId)?.let {
+                updateClipData(clipId, dataFlavorMap, transferable, clipCollector)
+                clipCollector.completeCollect(it)
             }
-            clipCollector.completeCollect(clipId)
         } catch (e: Exception) {
             logger.error(e) { "Failed to consume transferable" }
+        }
+    }
+
+    private fun preCollect(clipId: Int,
+                           dataFlavorMap: Map<String, List<DataFlavor>>,
+                           transferable: Transferable,
+                           clipCollector: ClipCollector) {
+        var itemIndex = 0
+        for (entry in dataFlavorMap) {
+            val identifier = entry.key
+            val flavors = entry.value
+            logger.info { "itemIndex: $itemIndex Transferable flavor: $identifier" }
+            for (flavor in flavors) {
+                if (clipItemServiceMap[identifier]?.let { clipItemService ->
+                        if (clipCollector.needPreCollectionItem(itemIndex, clipItemService::class)) {
+                            clipItemService.createPreClipItem(clipId, itemIndex, identifier, transferable, clipCollector)
+                            false
+                        } else {
+                            true
+                        }
+                    } == true) {
+                    break
+                }
+            }
+            itemIndex ++
+        }
+    }
+
+    private fun updateClipData(clipId: Int,
+                               dataFlavorMap: Map<String, List<DataFlavor>>,
+                               transferable: Transferable,
+                               clipCollector: ClipCollector) {
+        var itemIndex = 0
+        for (entry in dataFlavorMap) {
+            val identifier = entry.key
+            val flavors = entry.value
+            for (flavor in flavors) {
+                if (clipItemServiceMap[identifier]?.let { clipItemService ->
+                        if (clipCollector.needUpdateCollectItem(itemIndex, clipItemService::class)) {
+                            clipItemService.loadRepresentation(clipId, itemIndex, flavor, dataFlavorMap, transferable, clipCollector)
+                            false
+                        } else {
+                            true
+                        }
+                    } == true) {
+                    break
+                }
+            }
+            itemIndex ++
         }
     }
 }

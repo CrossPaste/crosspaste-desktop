@@ -85,7 +85,9 @@ class WindowsClipboardService
     private fun onChange() {
         val contents: Transferable? = systemClipboard.getContents(null)
         contents?.let {
-            clipConsumer.consume(it)
+            CoroutineScope(ioDispatcher).launch {
+                clipConsumer.consume(it)
+            }
         }
     }
 

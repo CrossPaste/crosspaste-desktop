@@ -8,6 +8,7 @@ import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.utils.DesktopFileUtils
 import com.clipevery.utils.DesktopFileUtils.copyFile
 import com.clipevery.utils.DesktopFileUtils.createClipRelativePath
+import io.realm.kotlin.MutableRealm
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import java.io.File
@@ -23,7 +24,21 @@ class FileItemService: ClipItemService {
         return listOf(FILE_LIST_ID)
     }
 
-    override fun doCreateClipItem(
+    override fun createPreClipItem(
+        clipId: Int,
+        itemIndex: Int,
+        identifier: String,
+        transferable: Transferable,
+        clipCollector: ClipCollector
+    ) {
+        FileClipItem().apply {
+            this.identifier = identifier
+        }.let {
+            clipCollector.preCollectItem(itemIndex, this::class, it)
+        }
+    }
+
+    override fun doLoadRepresentation(
         transferData: Any,
         clipId: Int,
         itemIndex: Int,
@@ -32,21 +47,25 @@ class FileItemService: ClipItemService {
         transferable: Transferable,
         clipCollector: ClipCollector
     ) {
+
+
         if (transferData is List<*>) {
             val files = transferData.filterIsInstance<File>()
             if (files.size == 1) {
-                var clipItem: ClipAppearItem? = null
                 val fileName = files[0].name
                 val relativePath = createClipRelativePath(clipId, fileName)
                 val filePath = DesktopFileUtils.createClipPath(relativePath, isFile = true, AppFileType.FILE)
                 if (copyFile(files[0].toPath(), filePath)) {
-                    clipItem = FileClipItem().apply {
-                        this.identifier = dataFlavor.humanPresentableName
-                        this.relativePath = relativePath
-                        this.md5 = DesktopFileUtils.getFileMd5(filePath)
+                    val md5 = DesktopFileUtils.getFileMd5(filePath)
+
+                    val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
+                        realm.query(FileClipItem::class).query("id == $0", clipItem.id).first().find()?.apply {
+                            this.relativePath = relativePath
+                            this.md5 = md5
+                        }
                     }
+                    clipCollector.updateCollectItem(itemIndex, this::class, update)
                 }
-                clipItem?.let { clipCollector.collectItem(itemIndex, this::class, it) }
             } else if (files.size > 1) {
                 // todo multi files
             }
