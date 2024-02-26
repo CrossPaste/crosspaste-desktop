@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipData
+import com.clipevery.dao.clip.ClipType
 import io.realm.kotlin.notifications.ResultsChange
 import io.realm.kotlin.notifications.UpdatedResults
 import io.realm.kotlin.query.RealmResults
@@ -60,7 +61,7 @@ fun ClipPreviewsView() {
     } }
 
     LaunchedEffect(Unit) {
-        val clipDatasFlow = clipDao.getClipData(limit = 20).asFlow()
+        val clipDatasFlow = clipDataList.asFlow()
         clipDatasFlow.collect { changes: ResultsChange<ClipData> ->
             when (changes) {
                 is UpdatedResults -> {
@@ -78,6 +79,17 @@ fun ClipPreviewsView() {
                     } ?: run {
                         val newClipDataList = clipDao.getClipData(limit = 20)
                         rememberClipDataList.addAll(newClipDataList.sortedWith(clipDataComparator))
+                    }
+
+                    changes.changes
+                    changes.changeRanges
+
+                    rememberClipDataList.forEachIndexed { index, currentElement ->
+                        if (currentElement.clipType == ClipType.INVALID) {
+                            clipDao.getClipData(currentElement.id)?.let {
+                                rememberClipDataList[index] = it
+                            }
+                        }
                     }
                 }
                 else -> {

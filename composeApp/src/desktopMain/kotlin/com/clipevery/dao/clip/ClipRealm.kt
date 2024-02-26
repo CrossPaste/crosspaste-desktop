@@ -68,6 +68,10 @@ class ClipRealm(private val realm: Realm) : ClipDao {
         return query.sort("createTime", Sort.DESCENDING).limit(limit).find()
     }
 
+    override fun getClipData(objectId: ObjectId): ClipData? {
+        return realm.query(ClipData::class).query("id == $0", objectId).first().find()
+    }
+
     override fun releaseClipData(id: ObjectId, clipPlugins: List<ClipPlugin>) {
         var md5: String? = null
         realm.writeBlocking {
