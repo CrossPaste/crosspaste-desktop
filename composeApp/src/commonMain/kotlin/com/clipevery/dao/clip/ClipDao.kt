@@ -17,6 +17,8 @@ interface ClipDao {
     fun getClipData(appInstanceId: String? = null,
                     limit: Int): RealmResults<ClipData>
 
+    fun getClipData(objectId: ObjectId): ClipData?
+
     fun releaseClipData(id: ObjectId, clipPlugins: List<ClipPlugin>)
 
     fun updateClipItem(update: (MutableRealm) -> Unit)

@@ -22,6 +22,7 @@ kotlin {
         
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
+            implementation(libs.compose.shimmer)
             implementation(libs.guava)
             implementation(libs.jmdns)
             implementation(libs.jna)

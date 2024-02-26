@@ -133,6 +133,14 @@ fun ClipPreviewItemView(clipData: ClipData, isLast: Boolean, clipContent: @Compo
                 )
             }
         }
+    } ?: run {
+        PrePreviewView(clipData)
+        if (!isLast) {
+            Divider(
+                color = MaterialTheme.colors.onBackground,
+                thickness = 2.dp
+            )
+        }
     }
 }
 
@@ -148,7 +156,7 @@ fun getDateText(createTime: RealmInstant, copywriter: Copywriter): String {
 @Composable
 fun ClipSpecificPreviewItemView(clipData: ClipData) {
     if (clipData.preCreate) {
-        // todo preCreate
+        PrePreviewView(clipData)
     } else {
         when(clipData.clipType) {
             ClipType.TEXT -> TextPreviewView(clipData)
