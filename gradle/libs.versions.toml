@@ -1,6 +1,6 @@
 [versions]
 compose = "1.6.2"
-compose-plugin = "1.6.0-rc03"
+compose-plugin = "1.6.0-dev1440"
 compose-compiler = "1.5.8"
 compose-webview-multiplatform = "1.8.8"
 guava = "33.0.0-jre"
