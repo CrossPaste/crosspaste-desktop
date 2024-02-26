@@ -10,6 +10,7 @@ import com.clipevery.clip.ClipboardService
 import com.clipevery.clip.DesktopTransferableConsumer
 import com.clipevery.clip.TransferableConsumer
 import com.clipevery.clip.getDesktopClipboardService
+import com.clipevery.clip.plugin.ConvertUrlPlugin
 import com.clipevery.clip.plugin.ImageHtmlCombinePlugin
 import com.clipevery.clip.plugin.MultiImagePlugin
 import com.clipevery.clip.plugin.SortPlugin
@@ -129,7 +130,9 @@ object Dependencies {
                     ImageItemService(),
                     TextItemService(),
                     UrlItemService()
-                ), listOf(UrlTextCombinePlugin,
+                ), listOf(
+                    UrlTextCombinePlugin,
+                    ConvertUrlPlugin,
                     ImageHtmlCombinePlugin,
                     MultiImagePlugin,
                     SortPlugin
