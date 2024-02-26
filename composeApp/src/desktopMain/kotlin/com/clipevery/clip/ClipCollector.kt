@@ -42,7 +42,8 @@ class ClipCollector(
     }
 
     fun updateCollectItem(itemIndex: Int, kclass: KClass<out ClipItemService>, update: (ClipAppearItem, MutableRealm) -> Unit) {
-        preCollectors[itemIndex][kclass]?.let{
+        preCollectors[itemIndex][kclass]?.let {
+            updateCollectors[itemIndex].add(kclass)
             val updateClipItem: (MutableRealm) -> Unit = { realm ->
                 update(it, realm)
             }
