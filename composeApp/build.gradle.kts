@@ -1,4 +1,6 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import java.io.FileReader
+import java.util.Properties
 
 repositories {
     mavenCentral()
@@ -12,6 +14,7 @@ plugins {
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.realmKotlin)
+    alias(libs.plugins.download)
 }
 
 kotlin {
@@ -94,11 +97,27 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            modules("jdk.charsets")
 
+            appResourcesRootDir = project.layout.projectDirectory.dir("resources")
             packageName = "Clipevery"
             packageVersion = "1.0.0"
+
+            modules("jdk.charsets")
+
+            val properties = Properties()
+            val webDriverFile = project.projectDir.toPath().resolve("webDriver.properties").toFile()
+            properties.load(FileReader(webDriverFile))
+
             macOS {
+
+                val process = Runtime.getRuntime().exec("uname -m")
+                val result = process.inputStream.bufferedReader().use { it.readText() }.trim()
+
+                when (result) {
+                    "x86_64" -> getChromeDriver("mac-x64", properties, appResourcesRootDir.get().dir("macos-x64"))
+                    "arm64" -> getChromeDriver("mac-arm64", properties, appResourcesRootDir.get().dir("macos-arm64"))
+                }
+
                 iconFile = file("src/desktopMain/resources/icons/clipevery.icns")
                 bundleID = "com.clipevery"
                 appCategory = "public.app-category.utilities"
@@ -111,8 +130,42 @@ compose.desktop {
                 }
             }
             windows {
+
+                val architecture = System.getProperty("os.arch")
+
+                if (architecture.contains("64")) {
+                    getChromeDriver("win64", properties, appResourcesRootDir.get().dir("windows-x64"))
+                } else {
+                    getChromeDriver("win32", properties, appResourcesRootDir.get().dir("windows-x86"))
+                }
+
                 iconFile = file("src/desktopMain/resources/icons/clipevery.ico")
             }
         }
+    }
+}
+
+fun getChromeDriver(driverOsArch: String, properties: Properties, resourceDir: Directory) {
+    val chromeDriver = "chromedriver-$driverOsArch"
+    val chromeHeadlessShell = "chrome-headless-shell-$driverOsArch"
+
+    download(chromeDriver, properties, resourceDir)
+    download(chromeHeadlessShell, properties, resourceDir)
+}
+
+fun download(name: String, properties: Properties, resourceDir: Directory) {
+    if (resourceDir.dir(name).asFileTree.isEmpty) {
+        val chromeHeadlessShellUrl = properties.getProperty(name)!!
+        download.run {
+            src { chromeHeadlessShellUrl }
+            dest { resourceDir }
+            overwrite(true)
+            tempAndMove(true)
+        }
+        copy {
+            from(zipTree(resourceDir.file("$name.zip")))
+            into(resourceDir)
+        }
+        delete(resourceDir.file("$name.zip"))
     }
 }
