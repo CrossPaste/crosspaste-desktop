@@ -91,6 +91,17 @@ fun ClipPreviewsView() {
                             }
                         }
                     }
+
+                    changes.deletions
+                    changes.deletionRanges
+
+                    val iterator = rememberClipDataList.iterator()
+                    while (iterator.hasNext()) {
+                        val clipData = iterator.next()
+                        if (clipDao.getClipData(clipData.id) == null) {
+                            iterator.remove()
+                        }
+                    }
                 }
                 else -> {
                     // types other than UpdatedResults are not changes -- ignore them
