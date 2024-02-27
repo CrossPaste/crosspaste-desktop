@@ -19,3 +19,5 @@ logs
 composeApp/docs
 /composeApp/DawnCache/
 /composeApp/GPUCache/
+chrome-headless-shell-*/
+chromedriver-*/
