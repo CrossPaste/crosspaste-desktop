@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
@@ -96,6 +96,7 @@ fun ClipPreviewItemView(clipData: ClipData, isLast: Boolean, clipContent: @Compo
                     Row(
                         modifier = Modifier.fillMaxWidth()
                             .height(120.dp)
+                            .padding(10.dp)
                     ) {
                         it.clipContent()
                     }
@@ -103,15 +104,20 @@ fun ClipPreviewItemView(clipData: ClipData, isLast: Boolean, clipContent: @Compo
                         modifier = Modifier.fillMaxWidth()
                             .background(color = MaterialTheme.colors.surface)
                             .height(30.dp)
-                            .padding(end = 16.dp)
-                        ,
+                            .padding(horizontal = 10.dp),
                         horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(modifier = Modifier.wrapContentSize()
+                        Row(modifier = Modifier.width(340.dp)
+                            .padding(end = 10.dp)
+                        ) {
+                            // todo label list ui
+                        }
+                        Row(modifier = Modifier.width(70.dp)
                             .clip(RoundedCornerShape(3.dp))
                             .background(color = MaterialTheme.colors.background)
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                            .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.Center
                         ) {
                             Text(
                                 text = getDateText(clipData.createTime, copywriter),
@@ -126,21 +132,17 @@ fun ClipPreviewItemView(clipData: ClipData, isLast: Boolean, clipContent: @Compo
                     }
                 }
             }
-            if (!isLast) {
-                Divider(
-                    color = MaterialTheme.colors.onBackground,
-                    thickness = 2.dp
-                )
-            }
+
         }
     } ?: run {
         PrePreviewView(clipData)
-        if (!isLast) {
-            Divider(
-                color = MaterialTheme.colors.onBackground,
-                thickness = 2.dp
-            )
-        }
+    }
+
+    if (!isLast) {
+        Divider(
+            color = MaterialTheme.colors.onBackground,
+            thickness = 2.dp
+        )
     }
 }
 
@@ -154,7 +156,7 @@ fun getDateText(createTime: RealmInstant, copywriter: Copywriter): String {
 }
 
 @Composable
-fun ClipSpecificPreviewItemView(clipData: ClipData) {
+fun ClipSpecificPreviewView(clipData: ClipData) {
     if (clipData.preCreate) {
         PrePreviewView(clipData)
     } else {
@@ -165,5 +167,27 @@ fun ClipSpecificPreviewItemView(clipData: ClipData) {
             ClipType.IMAGE -> ImagePreviewView(clipData)
             ClipType.FILE -> FilePreviewView(clipData)
         }
+    }
+}
+
+@Composable
+fun ClipSpecificPreviewContentView(
+    clipAppearItem: ClipAppearItem,
+    clipLeftContent: @Composable ClipAppearItem.() -> Unit,
+    clipRightInfo: @Composable ClipAppearItem.() -> Unit
+) {
+    Column(
+        modifier = Modifier.width(340.dp)
+            .height(100.dp)
+    ) {
+        clipAppearItem.clipLeftContent()
+    }
+    Column(
+        modifier = Modifier.width(70.dp)
+            .padding(start = 10.dp)
+            .height(100.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        clipAppearItem.clipRightInfo()
     }
 }

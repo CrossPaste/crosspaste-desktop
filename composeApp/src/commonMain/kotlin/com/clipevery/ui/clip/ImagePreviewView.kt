@@ -4,8 +4,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -34,25 +34,23 @@ import com.clipevery.utils.FileUtils
 
 @Composable
 fun ImagePreviewView(clipData: ClipData) {
-    clipData.getClipItem(ClipImage::class)?.let {
+    clipData.getClipItem()?.let {
 
         val current = LocalKoinApplication.current
         val copywriter = current.koin.get<GlobalCopywriter>()
         val fileUtils = current.koin.get<FileUtils>()
 
-        val imageBitmap: ImageBitmap = remember(it) {
-            it.getImage()
+        val clipImage = it as ClipImage
+
+        val imageBitmap: ImageBitmap = remember(clipImage) {
+            clipImage.getImage()
         }
 
-        val imageSize = remember(it) {
-            fileUtils.formatBytes(fileUtils.getFileSize(it.getImagePath()))
+        val imageSize = remember(clipImage) {
+            fileUtils.formatBytes(fileUtils.getFileSize(clipImage.getImagePath()))
         }
 
-        Row(modifier = Modifier.fillMaxSize()
-            .padding(10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-
+        ClipSpecificPreviewContentView(it, {
             Row {
                 Image(
                     modifier = Modifier.size(100.dp)
@@ -99,20 +97,15 @@ fun ImagePreviewView(clipData: ClipData) {
                     )
                 }
             }
-
-            Row(
-                modifier = Modifier.wrapContentWidth()
-                    .padding(end = 8.dp),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+        }, {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     image(),
                     contentDescription = "Image",
                     modifier = Modifier.padding(3.dp).size(14.dp),
                     tint = MaterialTheme.colors.onBackground
                 )
-
+                Spacer(modifier = Modifier.size(3.dp))
                 Text(
                     text = copywriter.getText("Image"),
                     fontFamily = FontFamily.SansSerif,
@@ -123,6 +116,6 @@ fun ImagePreviewView(clipData: ClipData) {
                     )
                 )
             }
-        }
+        })
     }
 }

@@ -1,13 +1,11 @@
 package com.clipevery.ui.clip
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -31,64 +29,17 @@ import java.net.URI
 
 @Composable
 fun UrlPreviewView(clipData: ClipData) {
-    val current = LocalKoinApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
-
-    clipData.getClipItem(ClipUrl::class)?.let {
-        Column(
-            modifier = Modifier.fillMaxWidth()
-                .padding(8.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    modifier = Modifier.weight(1f),
-                    text = it.url,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    fontFamily = FontFamily.SansSerif,
-                    style = TextStyle(
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colors.onBackground,
-                        fontSize = 17.sp
-                    )
-                )
-
-                Row(
-                    modifier = Modifier.wrapContentWidth()
-                        .padding(end = 8.dp),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        link(),
-                        contentDescription = "Link",
-                        modifier = Modifier.padding(3.dp).size(14.dp),
-                        tint = MaterialTheme.colors.onBackground
-                    )
-
-                    Text(
-                        text = copywriter.getText("Link"),
-                        fontFamily = FontFamily.SansSerif,
-                        style = TextStyle(
-                            fontWeight = FontWeight.Light,
-                            color = MaterialTheme.colors.onBackground,
-                            fontSize = 10.sp
-                        )
-                    )
-                }
-            }
-
-
+    clipData.getClipItem()?.let {
+        val current = LocalKoinApplication.current
+        val copywriter = current.koin.get<GlobalCopywriter>()
+        val clipUrl = it as ClipUrl
+        ClipSpecificPreviewContentView(it, {
             Text(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.fillMaxSize()
                     .clickable {
-                        openUrlInBrowser(it.url)
+                        openUrlInBrowser(clipUrl.url)
                     },
-                text = it.url,
+                text = clipUrl.url,
                 textDecoration = TextDecoration.Underline,
                 fontFamily = FontFamily.SansSerif,
                 maxLines = 4,
@@ -99,7 +50,26 @@ fun UrlPreviewView(clipData: ClipData) {
                     fontSize = 14.sp
                 )
             )
-        }
+        }, {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    link(),
+                    contentDescription = "Link",
+                    modifier = Modifier.padding(3.dp).size(14.dp),
+                    tint = MaterialTheme.colors.onBackground
+                )
+                Spacer(modifier = Modifier.size(3.dp))
+                Text(
+                    text = copywriter.getText("Link"),
+                    fontFamily = FontFamily.SansSerif,
+                    style = TextStyle(
+                        fontWeight = FontWeight.Light,
+                        color = MaterialTheme.colors.onBackground,
+                        fontSize = 10.sp
+                    )
+                )
+            }
+        })
     }
 }
 
