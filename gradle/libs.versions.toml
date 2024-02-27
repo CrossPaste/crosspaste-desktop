@@ -19,6 +19,7 @@ kotlinx-serialization = "1.6.3"
 ktor = "2.3.8"
 logback = "1.5.0"
 realm = "1.13.0"
+selenium = "4.18.1"
 signal = "0.40.1"
 tabler-icons = "1.1.0"
 theme-detector = "3.8"
@@ -54,6 +55,7 @@ ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages", versio
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 material-desktop = { module = "org.jetbrains.compose.material:material-desktop", version.ref = "compose-plugin" }
 realm-kotlin-base = { module = "io.realm.kotlin:library-base", version.ref = "realm" }
+selenium-java = { module = "org.seleniumhq.selenium:selenium-java", version.ref = "selenium" }
 signal-client = { module = "org.signal:libsignal-client", version.ref = "signal" }
 tabler-icons = { module = "br.com.devsrsouza.compose.icons:tabler-icons-desktop", version.ref = "tabler-icons" }
 theme-detector = { module = "com.github.Dansoftowner:jSystemThemeDetector", version.ref = "theme-detector" }

@@ -44,6 +44,7 @@ kotlin {
             implementation(libs.ktor.server.netty)
             implementation(libs.ktor.server.status.pages)
             implementation(libs.logback.classic)
+            implementation(libs.selenium.java)
             implementation(libs.signal.client)
             implementation(libs.theme.detector)
             implementation(libs.zxing.core)

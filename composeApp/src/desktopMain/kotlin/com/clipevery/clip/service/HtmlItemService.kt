@@ -1,9 +1,14 @@
 package com.clipevery.clip.service
 
+import com.clipevery.app.AppFileType
 import com.clipevery.clip.ClipCollector
 import com.clipevery.clip.ClipItemService
+import com.clipevery.clip.DesktopChromeService
 import com.clipevery.clip.item.HtmlClipItem
 import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.path.DesktopPathProvider
+import com.clipevery.presist.DesktopOneFilePersist
+import com.clipevery.utils.DesktopFileUtils
 import com.clipevery.utils.md5ByString
 import io.realm.kotlin.MutableRealm
 import java.awt.datatransfer.DataFlavor
@@ -14,6 +19,8 @@ class HtmlItemService: ClipItemService {
     companion object HtmlItemService {
 
         const val HTML_ID = "text/html"
+
+        val chromeService = DesktopChromeService
     }
 
     override fun getIdentifiers(): List<String> {
@@ -43,9 +50,16 @@ class HtmlItemService: ClipItemService {
                                       clipCollector: ClipCollector) {
         if (transferData is String) {
             val md5 = md5ByString(transferData)
+            val relativePath = DesktopFileUtils.createClipRelativePath(clipId, "html2Image.png")
+            chromeService.html2Image(transferData)?.let {
+                val basePath = DesktopPathProvider.resolve(appFileType = AppFileType.HTML)
+                val imagePath = DesktopPathProvider.resolve(basePath, relativePath, isFile = true)
+                DesktopOneFilePersist(imagePath).saveBytes(it)
+            }
             val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
                 realm.query(HtmlClipItem::class).query("id == $0", clipItem.id).first().find()?.apply {
                     this.html = transferData
+                    this.relativePath = relativePath
                     this.md5 = md5
                 }
             }

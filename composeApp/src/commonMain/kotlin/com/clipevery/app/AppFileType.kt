@@ -6,6 +6,7 @@ enum class AppFileType {
     LOG,
     ENCRYPT,
     DATA,
+    HTML,
     IMAGE,
     VIDEO,
     FILE,
