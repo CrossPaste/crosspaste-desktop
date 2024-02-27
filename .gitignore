@@ -22,5 +22,3 @@ composeApp/docs
 chrome-headless-shell-*/
 chromedriver-*/
 /composeApp/.user/
-chrome-headless-shell-*/
-chromedriver-*/
