@@ -87,10 +87,10 @@ class WindowsPathProvider: PathProvider {
 
     private fun getAppPath(): Path {
         System.getProperty("compose.application.resources.dir")?.let {
-            return Paths.get(it).parent.parent
+            return Paths.get(it).parent
         }
         System.getProperty("skiko.library.path")?.let {
-            return Paths.get(it).parent
+            return Paths.get(it)
         }
         throw IllegalStateException("Could not find app path")
     }
@@ -140,10 +140,10 @@ class MacosPathProvider: PathProvider {
 
     private fun getAppPath(): Path {
         System.getProperty("compose.application.resources.dir")?.let {
-            return Paths.get(it).parent.parent
+            return Paths.get(it).parent
         }
         System.getProperty("skiko.library.path")?.let {
-            return Paths.get(it).parent
+            return Paths.get(it)
         }
         throw IllegalStateException("Could not find app path")
     }

@@ -15,5 +15,17 @@ enum class AppEnv {
                 }
             } ?: PRODUCTION
         }
+
+        fun isProduction(): Boolean {
+            return getAppEnv() == PRODUCTION
+        }
+
+        fun isDevelopment(): Boolean {
+            return getAppEnv() == DEVELOPMENT
+        }
+
+        fun isTest(): Boolean {
+            return getAppEnv() == TEST
+        }
     }
 }

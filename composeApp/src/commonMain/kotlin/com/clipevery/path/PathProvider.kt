@@ -6,11 +6,12 @@ import java.nio.file.Path
 interface PathProvider {
     fun resolve(fileName: String? = null, appFileType: AppFileType): Path {
         val path = when (appFileType) {
-            AppFileType.APP -> clipUserPath
+            AppFileType.APP -> clipAppPath
             AppFileType.USER -> clipUserPath
             AppFileType.LOG -> clipLogPath.resolve("logs")
             AppFileType.ENCRYPT -> clipEncryptPath.resolve("encrypt")
             AppFileType.DATA -> clipDataPath.resolve("data")
+            AppFileType.HTML -> clipUserPath.resolve("html")
             AppFileType.IMAGE -> clipUserPath.resolve("images")
             AppFileType.VIDEO -> clipUserPath.resolve("videos")
             AppFileType.FILE -> clipUserPath.resolve("files")
@@ -29,10 +30,12 @@ interface PathProvider {
                 autoCreate: Boolean = true,
                 isFile: Boolean = false): Path {
         val newPath = basePath.resolve(path)
-        if (isFile) {
-            autoCreateDir(newPath.parent)
-        } else {
-            autoCreateDir(newPath)
+        if (autoCreate) {
+            if (isFile) {
+                autoCreateDir(newPath.parent)
+            } else {
+                autoCreateDir(newPath)
+            }
         }
         return newPath
     }

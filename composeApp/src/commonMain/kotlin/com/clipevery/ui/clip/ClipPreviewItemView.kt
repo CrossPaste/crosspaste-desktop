@@ -161,7 +161,7 @@ fun ClipSpecificPreviewItemView(clipData: ClipData) {
         when(clipData.clipType) {
             ClipType.TEXT -> TextPreviewView(clipData)
             ClipType.URL -> UrlPreviewView(clipData)
-            ClipType.HTML -> HtmlPreviewView(clipData)
+            ClipType.HTML -> HtmlToImagePreviewView(clipData)
             ClipType.IMAGE -> ImagePreviewView(clipData)
             ClipType.FILE -> FilePreviewView(clipData)
         }
