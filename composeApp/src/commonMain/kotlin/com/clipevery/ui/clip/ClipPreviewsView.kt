@@ -142,7 +142,7 @@ fun ClipPreviewsView() {
         ) {
             itemsIndexed(rememberClipDataList) { index, clipData ->
                 ClipPreviewItemView(clipData, isLast = index == rememberClipDataList.size - 1) {
-                    ClipSpecificPreviewItemView(clipData)
+                    ClipSpecificPreviewView(clipData)
                 }
             }
         }

@@ -2,17 +2,14 @@ package com.clipevery.ui.clip
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Icon
@@ -35,39 +32,35 @@ import com.clipevery.clip.ChromeService
 import com.clipevery.clip.item.ClipHtml
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
-import com.clipevery.path.PathProvider
 import com.clipevery.presist.FilePersist
 import com.clipevery.ui.base.html
 
 @Composable
 fun HtmlToImagePreviewView(clipData: ClipData) {
-    clipData.getClipItem(ClipHtml::class)?.let {
+    clipData.getClipItem()?.let {
         val current = LocalKoinApplication.current
         val copywriter = current.koin.get<GlobalCopywriter>()
-        val pathProvider = current.koin.get<PathProvider>()
         val filePersist = current.koin.get<FilePersist>()
 
-        val imageBitmap: ImageBitmap? = remember(it) {
-            it.getHtmlImage()
+        val clipHtml = it as ClipHtml
+
+        val imageBitmap: ImageBitmap? = remember(clipHtml) {
+            clipHtml.getHtmlImage()
         }
 
         if (imageBitmap == null) {
             val chromeService = current.koin.get<ChromeService>()
             LaunchedEffect(Unit) {
-                chromeService.html2Image(it.html)?.let { bytes ->
+                chromeService.html2Image(clipHtml.html)?.let { bytes ->
                     filePersist.createOneFilePersist(it.getHtmlImagePath())
                         .saveBytes(bytes)
                 }
             }
         }
 
-        Row(modifier = Modifier.fillMaxSize()
-            .padding(10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
+        ClipSpecificPreviewContentView(it, {
             Row {
-
-                imageBitmap?.let {
+                imageBitmap?.let { bitmap ->
                     val horizontalScrollState = rememberScrollState()
                     val verticalScrollState = rememberScrollState()
 
@@ -79,14 +72,14 @@ fun HtmlToImagePreviewView(clipData: ClipData) {
                             .verticalScroll(verticalScrollState)
                     ) {
                         Image(
-                            bitmap = it,
+                            bitmap = bitmap,
                             contentDescription = "Html 2 Image",
                             modifier = Modifier.wrapContentSize()
                         )
                     }
                 } ?: run {
                     Text(
-                        text = it.html,
+                        text = clipHtml.html,
                         fontFamily = FontFamily.SansSerif,
                         maxLines = 4,
                         softWrap = true,
@@ -99,24 +92,16 @@ fun HtmlToImagePreviewView(clipData: ClipData) {
                     )
                 }
             }
-
-            Row(
-                modifier = Modifier.fillMaxWidth()
-                    .wrapContentWidth()
-                    .weight(1f)
-                    .padding(start = 5.dp, end = 8.dp),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+        }, {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     html(),
                     contentDescription = "Html",
                     modifier = Modifier.padding(3.dp).size(14.dp),
                     tint = MaterialTheme.colors.onBackground
                 )
-
+                Spacer(modifier = Modifier.size(3.dp))
                 Text(
-                    modifier = Modifier.weight(1f),
                     text = copywriter.getText("Html"),
                     fontFamily = FontFamily.SansSerif,
                     style = TextStyle(
@@ -126,14 +111,6 @@ fun HtmlToImagePreviewView(clipData: ClipData) {
                     )
                 )
             }
-        }
-
-
-
-
-
-
-
-
+        })
     }
 }

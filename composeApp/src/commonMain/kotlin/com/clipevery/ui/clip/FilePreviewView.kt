@@ -4,8 +4,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -35,13 +35,13 @@ import com.clipevery.utils.FileUtils
 
 @Composable
 fun FilePreviewView(clipData: ClipData) {
-    clipData.getClipItem(ClipFile::class)?.let {
+    clipData.getClipItem()?.let {
         val current = LocalKoinApplication.current
         val copywriter = current.koin.get<GlobalCopywriter>()
         val fileUtils = current.koin.get<FileUtils>()
-
-        val imageBitmap: ImageBitmap? = remember(it.getExtension()) {
-            getExtImage(it.getExtension())
+        val clipFile = it as ClipFile
+        val imageBitmap: ImageBitmap? = remember(clipFile.getExtension()) {
+            getExtImage(clipFile.getExtension())
         }
 
         val isFile: Boolean = remember(it) {
@@ -52,10 +52,7 @@ fun FilePreviewView(clipData: ClipData) {
             fileUtils.formatBytes(fileUtils.getFileSize(it.getFilePath()))
         }
 
-        Row(modifier = Modifier.fillMaxSize()
-            .padding(10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
+        ClipSpecificPreviewContentView(it, {
             Row {
                 imageBitmap?.let {
                     Image(
@@ -88,7 +85,6 @@ fun FilePreviewView(clipData: ClipData) {
                             fontSize = 10.sp
                         )
                     )
-
                     Text(
                         text = "${copywriter.getText("Size")}: $fileSize",
                         color = MaterialTheme.colors.onBackground,
@@ -100,20 +96,15 @@ fun FilePreviewView(clipData: ClipData) {
                     )
                 }
             }
-
-            Row(
-                modifier = Modifier.wrapContentWidth()
-                    .padding(end = 8.dp),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+        }, {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     file(),
                     contentDescription = "File",
                     modifier = Modifier.padding(3.dp).size(14.dp),
                     tint = MaterialTheme.colors.onBackground
                 )
-
+                Spacer(modifier = Modifier.size(3.dp))
                 Text(
                     text = copywriter.getText("File"),
                     fontFamily = FontFamily.SansSerif,
@@ -124,7 +115,6 @@ fun FilePreviewView(clipData: ClipData) {
                     )
                 )
             }
-        }
+        })
     }
-
 }

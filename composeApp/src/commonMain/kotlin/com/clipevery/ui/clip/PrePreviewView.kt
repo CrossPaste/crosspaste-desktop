@@ -20,45 +20,54 @@ import com.valentinilk.shimmer.shimmer
 
 @Composable
 fun PrePreviewView(clipData: ClipData) {
-    Row(
-        modifier = Modifier
-            .width(400.dp)
-            .height(150.dp)
-            .background(MaterialTheme.colors.background)
-            .shimmer(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(131.dp)
-                .padding(10.dp)
-                .background(Color.Gray)
-        )
 
-        Column(modifier = Modifier.height(150.dp).width(230.dp).padding(10.dp),
-            verticalArrangement = Arrangement.Center
-        ) {
-            Box(
+    clipData.getClipItem()?.let {
+        ClipSpecificPreviewContentView(it, {
+            Row(
                 modifier = Modifier
-                    .height(37.dp)
-                    .width(230.dp)
-                    .padding(bottom = 5.dp)
-                    .background(Color.Gray)
-            )
-            Box(
-                modifier = Modifier
-                    .height(37.dp)
-                    .width(180.dp)
-                    .padding(vertical = 5.dp)
-                    .background(Color.Gray)
-            )
-            Box(
-                modifier = Modifier
-                    .height(37.dp)
-                    .width(230.dp)
-                    .padding(top = 5.dp)
-                    .background(Color.Gray)
-            )
-        }
+                    .width(400.dp)
+                    .height(150.dp)
+                    .background(MaterialTheme.colors.background)
+                    .shimmer(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(131.dp)
+                        .padding(10.dp)
+                        .background(Color.Gray)
+                )
+
+                Column(modifier = Modifier.height(150.dp).width(230.dp).padding(10.dp),
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .height(37.dp)
+                            .width(230.dp)
+                            .padding(bottom = 5.dp)
+                            .background(Color.Gray)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .height(37.dp)
+                            .width(180.dp)
+                            .padding(vertical = 5.dp)
+                            .background(Color.Gray)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .height(37.dp)
+                            .width(230.dp)
+                            .padding(top = 5.dp)
+                            .background(Color.Gray)
+                    )
+                }
+            }
+        }, {
+
+        })
     }
+
+
 }
