@@ -1,6 +1,8 @@
 package com.clipevery.path
 
+import com.clipevery.app.AppEnv
 import com.clipevery.platform.currentPlatform
+import com.clipevery.utils.ResourceUtils
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -20,16 +22,59 @@ object DesktopPathProvider: PathProvider {
     override val clipDataPath get() = pathProvider.clipUserPath
 
     private fun getPathProvider(): PathProvider {
-        return if (currentPlatform().isWindows()) {
-            WindowsPathProvider()
-        } else if (currentPlatform().isMacos()) {
-            MacosPathProvider()
-        } else if (currentPlatform().isLinux()) {
-            LinuxPathProvider()
+        val appEnv = AppEnv.getAppEnv()
+        return if (appEnv == AppEnv.DEVELOPMENT) {
+            DevelopmentPathProvider()
         } else {
-            throw IllegalStateException("Unknown platform: ${currentPlatform().name}")
+            if (currentPlatform().isWindows()) {
+                WindowsPathProvider()
+            } else if (currentPlatform().isMacos()) {
+                MacosPathProvider()
+            } else if (currentPlatform().isLinux()) {
+                LinuxPathProvider()
+            } else {
+                throw IllegalStateException("Unknown platform: ${currentPlatform().name}")
+            }
         }
     }
+}
+
+class DevelopmentPathProvider:PathProvider {
+
+    private val composeAppDir = System.getProperty("user.dir")
+
+    private val development = ResourceUtils.loadProperties("development.properties")
+
+    override val clipAppPath: Path = getAppPath()
+
+    override val clipUserPath: Path = getUserPath()
+
+    private fun getAppPath(): Path {
+        development.getProperty("clipAppPath")?.let {
+            val path = Paths.get(it)
+            if (path.isAbsolute) {
+                return path
+            } else {
+                return Paths.get(composeAppDir).resolve(it)
+            }
+        } ?: run {
+            return Paths.get(composeAppDir)
+        }
+    }
+
+    private fun getUserPath(): Path {
+        development.getProperty("clipUserPath")?.let {
+            val path = Paths.get(it)
+            if (path.isAbsolute) {
+                return path
+            } else {
+                return Paths.get(composeAppDir).resolve(it)
+            }
+        } ?: run {
+            return Paths.get(composeAppDir).resolve(".user")
+        }
+    }
+
 }
 
 class WindowsPathProvider: PathProvider {

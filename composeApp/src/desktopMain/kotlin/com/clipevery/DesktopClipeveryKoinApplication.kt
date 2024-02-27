@@ -78,13 +78,7 @@ object Dependencies {
 
     private fun initKoinApplication(): KoinApplication {
 
-        val appEnv = System.getProperty("appEnv")?.let {
-            try {
-                AppEnv.valueOf(it)
-            } catch (e: Throwable) {
-                AppEnv.PRODUCTION
-            }
-        } ?: AppEnv.PRODUCTION
+        val appEnv = AppEnv.getAppEnv()
 
         val appModule = module {
 

@@ -1,5 +1,6 @@
 package com.clipevery.signal
 
+import com.clipevery.app.AppEnv
 import com.clipevery.app.AppFileType
 import com.clipevery.utils.decryptData
 import com.clipevery.utils.encryptData
@@ -105,14 +106,15 @@ class MacosIdentityKeyStoreFactory(private val appInfo: AppInfo,
         DesktopPathProvider.resolve("signal.data", AppFileType.ENCRYPT))
 
     override fun createIdentityKeyStore(): IdentityKeyStore {
+        val service = "clipevery-${AppEnv.getAppEnv().name}-${appInfo.appInstanceId}"
         val file = filePersist.path.toFile()
         if (file.exists()) {
             logger.info { "Found ideIdentityKey encrypt file" }
             val bytes = file.readBytes()
-            val password = MacosKeychainHelper.getPassword(appInfo.appInstanceId, appInfo.userName)
+            val password = MacosKeychainHelper.getPassword(service, appInfo.userName)
 
             password?.let {
-                logger.info { "Found password in keychain by ${appInfo.appInstanceId} ${appInfo.userName}" }
+                logger.info { "Found password in keychain by $service ${appInfo.userName}" }
                 try {
                     val secretKey = stringToSecretKey(it)
                     val decryptData = decryptData(secretKey, bytes)
@@ -135,15 +137,15 @@ class MacosIdentityKeyStoreFactory(private val appInfo: AppInfo,
         val identityKeyPair = IdentityKeyPair.generate()
         val registrationId = KeyHelper.generateRegistrationId(false)
         val data = writeIdentityKeyPairWithRegistrationId(identityKeyPair, registrationId)
-        val password = MacosKeychainHelper.getPassword(appInfo.appInstanceId, appInfo.userName)
+        val password = MacosKeychainHelper.getPassword(service, appInfo.userName)
 
         val secretKey = password?.let {
-            logger.info { "Found password in keychain by ${appInfo.appInstanceId} ${appInfo.userName}" }
+            logger.info { "Found password in keychain by $service ${appInfo.userName}" }
             stringToSecretKey(it)
         } ?: run {
-            logger.info { "Generating new password in keychain by ${appInfo.appInstanceId} ${appInfo.userName}" }
+            logger.info { "Generating new password in keychain by $service ${appInfo.userName}" }
             val secretKey = generateAESKey()
-            MacosKeychainHelper.setPassword(appInfo.appInstanceId, appInfo.userName, secretKeyToString(secretKey))
+            MacosKeychainHelper.setPassword(service, appInfo.userName, secretKeyToString(secretKey))
             secretKey
         }
 
