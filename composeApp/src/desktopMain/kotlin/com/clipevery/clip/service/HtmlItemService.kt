@@ -49,21 +49,32 @@ class HtmlItemService: ClipItemService {
                                       transferable: Transferable,
                                       clipCollector: ClipCollector) {
         if (transferData is String) {
-            val md5 = md5ByString(transferData)
+            val html = extractHtml(transferData)
+            val md5 = md5ByString(html)
             val relativePath = DesktopFileUtils.createClipRelativePath(clipId, "html2Image.png")
-            chromeService.html2Image(transferData)?.let {
+            chromeService.html2Image(html)?.let {
                 val basePath = DesktopPathProvider.resolve(appFileType = AppFileType.HTML)
                 val imagePath = DesktopPathProvider.resolve(basePath, relativePath, isFile = true)
                 DesktopOneFilePersist(imagePath).saveBytes(it)
             }
             val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
                 realm.query(HtmlClipItem::class).query("id == $0", clipItem.id).first().find()?.apply {
-                    this.html = transferData
+                    this.html = html
                     this.relativePath = relativePath
                     this.md5 = md5
                 }
             }
             clipCollector.updateCollectItem(itemIndex, this::class, update)
         }
+    }
+
+    private fun extractHtml(inputStr: String): String {
+        val pattern = Regex("<([a-zA-Z]+).*?>.*?</\\1>", RegexOption.DOT_MATCHES_ALL)
+
+        val matches = pattern.findAll(inputStr)
+
+        val match = matches.firstOrNull()
+
+        return match?.value ?: inputStr
     }
 }
