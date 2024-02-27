@@ -1,3 +1,4 @@
+import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import java.io.FileReader
 import java.util.Properties
@@ -75,6 +76,8 @@ kotlin {
 compose.desktop {
     application {
 
+        val os: OperatingSystem = DefaultNativePlatform.getCurrentOperatingSystem()
+
         buildTypes.release.proguard {
             configurationFiles.from("compose-desktop.pro")
         }
@@ -84,7 +87,7 @@ compose.desktop {
         jvmArgs("--add-opens", "java.desktop/sun.awt=ALL-UNNAMED")
         jvmArgs("--add-opens", "java.desktop/java.awt.peer=ALL-UNNAMED")
 
-        if (System.getProperty("os.name").contains("Mac")) {
+        if (os.isMacOsX) {
             jvmArgs("--add-opens", "java.desktop/sun.lwawt=ALL-UNNAMED")
             jvmArgs("--add-opens", "java.desktop/sun.lwawt.macosx=ALL-UNNAMED")
         }
@@ -109,13 +112,18 @@ compose.desktop {
             properties.load(FileReader(webDriverFile))
 
             macOS {
+                if (os.isMacOsX) {
+                    val process = Runtime.getRuntime().exec("uname -m")
+                    val result = process.inputStream.bufferedReader().use { it.readText() }.trim()
 
-                val process = Runtime.getRuntime().exec("uname -m")
-                val result = process.inputStream.bufferedReader().use { it.readText() }.trim()
-
-                when (result) {
-                    "x86_64" -> getChromeDriver("mac-x64", properties, appResourcesRootDir.get().dir("macos-x64"))
-                    "arm64" -> getChromeDriver("mac-arm64", properties, appResourcesRootDir.get().dir("macos-arm64"))
+                    when (result) {
+                        "x86_64" -> getChromeDriver("mac-x64", properties, appResourcesRootDir.get().dir("macos-x64"))
+                        "arm64" -> getChromeDriver(
+                            "mac-arm64",
+                            properties,
+                            appResourcesRootDir.get().dir("macos-arm64")
+                        )
+                    }
                 }
 
                 iconFile = file("src/desktopMain/resources/icons/clipevery.icns")
