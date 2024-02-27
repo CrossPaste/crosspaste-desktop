@@ -21,3 +21,4 @@ composeApp/docs
 /composeApp/GPUCache/
 chrome-headless-shell-*/
 chromedriver-*/
+/composeApp/.user/

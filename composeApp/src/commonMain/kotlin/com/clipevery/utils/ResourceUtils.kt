@@ -2,6 +2,7 @@ package com.clipevery.utils
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
+import java.util.Properties
 
 object ResourceUtils {
 
@@ -11,5 +12,18 @@ object ResourceUtils {
             Thread.currentThread().contextClassLoader.getResourceAsStream(resourcePath)
                 ?.readBytes()!!)
         return image.toComposeImageBitmap()
+    }
+
+    fun loadProperties(fileName: String): Properties {
+        val properties = Properties()
+        val classLoader = Thread.currentThread().contextClassLoader
+        classLoader.getResourceAsStream(fileName).use { inputStream ->
+            if (inputStream == null) {
+                throw IllegalArgumentException("File not found: $fileName")
+            } else {
+                properties.load(inputStream)
+            }
+        }
+        return properties
     }
 }

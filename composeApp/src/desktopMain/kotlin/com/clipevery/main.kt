@@ -53,8 +53,6 @@ fun exitClipEveryApplication(exitApplication: () -> Unit) {
 }
 
 fun main() {
-    System.setProperty("compose.interop.blending", "true")
-
     initLogger(DesktopPathProvider.resolve("clipevery.log", AppFileType.LOG).pathString)
     val logger = KotlinLogging.logger {}
 

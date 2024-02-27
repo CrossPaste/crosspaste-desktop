@@ -97,6 +97,7 @@ compose.desktop {
 
         jvmArgs("-DloggerLevel=$loggerLevel")
         jvmArgs("-DappEnv=$appEnv")
+        jvmArgs("-Dcompose.interop.blending=true")
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
