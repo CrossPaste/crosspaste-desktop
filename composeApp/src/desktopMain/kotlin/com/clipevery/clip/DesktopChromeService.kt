@@ -70,7 +70,7 @@ object DesktopChromeService: ChromeService {
     override fun html2Image(html: String): ByteArray? {
         chromeDriver?.let{ driver ->
             val encodedContent = Base64.getEncoder().encodeToString(html.toByteArray())
-            driver.get("data:text/html;base64,$encodedContent")
+            driver.get("data:text/html;charset=UTF-8;base64,$encodedContent")
             driver.manage().window().size = Dimension(408, 120)
             val pageHeight = driver.executeScript("return document.body.scrollHeight") as Long
             val pageWidth = driver.executeScript("return document.body.scrollWidth") as Long
