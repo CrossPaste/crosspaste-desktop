@@ -27,6 +27,8 @@ class ClipCollector(
 
     private val updateCollectors: Array<MutableSet<KClass<out ClipItemService>>> = Array(itemCount) { mutableSetOf() }
 
+    private val updateErrors: Array<Exception?> = Array(itemCount) { null }
+
     private var existError = false
 
     fun needPreCollectionItem(itemIndex: Int, kclass: KClass<out ClipItemService>): Boolean {
@@ -53,6 +55,7 @@ class ClipCollector(
 
     fun collectError(clipId: Int, itemIndex: Int, error: Exception) {
         logger.error(error) { "Failed to collect item $itemIndex of clip $clipId" }
+        updateErrors[itemIndex] = error
         existError = true
     }
 
@@ -78,7 +81,7 @@ class ClipCollector(
     }
 
     fun completeCollect(id: ObjectId) {
-        if (existError || preCollectors.isEmpty()) {
+        if (preCollectors.isEmpty() || (existError && updateErrors.all { it != null })) {
             try {
                 clipDao.deleteClipData(id)
             } catch (e: Exception) {
@@ -86,7 +89,7 @@ class ClipCollector(
             }
         } else {
             try {
-              clipDao.releaseClipData(id, clipPlugins)
+                clipDao.releaseClipData(id, clipPlugins)
             } catch (e: Exception) {
                 logger.error(e) { "Failed to release clip $id" }
             }

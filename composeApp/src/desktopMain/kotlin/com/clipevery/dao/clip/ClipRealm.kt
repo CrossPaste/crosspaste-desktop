@@ -77,21 +77,28 @@ class ClipRealm(private val realm: Realm) : ClipDao {
         realm.writeBlocking {
             query(ClipData::class).query("id == $0", id).first().find()?.let { clipData ->
                 clipData.clipContent?.let { clipContent ->
-                    var clipAppearItems = clipContent.clipAppearItems.mapNotNull { anyValue ->
+                    val clipAppearItems = clipContent.clipAppearItems.mapNotNull { anyValue ->
                         ClipContent.getClipItem(anyValue)
                     }
 
-                    assert(clipAppearItems.isNotEmpty())
+                    var updatedClipAppearItems = clipAppearItems.filter { it.md5 != "" }
 
-                    for (clipPlugin in clipPlugins) {
-                        clipAppearItems = clipPlugin.pluginProcess(clipAppearItems)
+                    clipAppearItems.filter { it.md5 == "" }.forEach {
+                        it.clear()
+                        delete(it as RealmObject)
                     }
 
-                    val firstItem: ClipAppearItem = clipAppearItems.first()
+                    assert(updatedClipAppearItems.isNotEmpty())
+
+                    for (clipPlugin in clipPlugins) {
+                        updatedClipAppearItems = clipPlugin.pluginProcess(updatedClipAppearItems)
+                    }
+
+                    val firstItem: ClipAppearItem = updatedClipAppearItems.first()
 
                     md5 = firstItem.md5
 
-                    val remainingItems: List<ClipAppearItem> = clipAppearItems.drop(1)
+                    val remainingItems: List<ClipAppearItem> = updatedClipAppearItems.drop(1)
 
                     val clipAppearContent: RealmAny = RealmAny.create(firstItem as RealmObject)
 
