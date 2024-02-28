@@ -4,6 +4,7 @@ import com.clipevery.app.AppEnv
 import com.clipevery.app.AppFileType
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.platform.currentPlatform
+import com.clipevery.utils.Retry
 import org.openqa.selenium.Dimension
 import org.openqa.selenium.OutputType
 import org.openqa.selenium.chrome.ChromeDriver
@@ -20,7 +21,6 @@ object DesktopChromeService: ChromeService {
 
     private val options: ChromeOptions = ChromeOptions()
 
-
     private val initChromeDriver: (String, String, String, Path) -> Unit = { chromeSuffix, driverName, headlessName, resourcesPath ->
         System.setProperty("webdriver.chrome.driver", resourcesPath
             .resolve("$CHROME_DRIVER-$chromeSuffix")
@@ -34,8 +34,11 @@ object DesktopChromeService: ChromeService {
 
     private var chromeDriver: ChromeDriver? = null
 
-
     init {
+        initChromeDriver()
+    }
+
+    private fun initChromeDriver() {
         val resourcesPath = DesktopPathProvider.resolve("resources", AppFileType.APP)
         val currentPlatform = currentPlatform()
         if (currentPlatform.isMacos()) {
@@ -68,6 +71,15 @@ object DesktopChromeService: ChromeService {
 
     @Synchronized
     override fun html2Image(html: String): ByteArray? {
+        return Retry.retry(3, {
+            doHtml2Image(html)
+        }) {
+            chromeDriver?.quit()
+            initChromeDriver()
+        }
+    }
+
+    private fun doHtml2Image(html: String): ByteArray? {
         chromeDriver?.let{ driver ->
             val encodedContent = Base64.getEncoder().encodeToString(html.toByteArray())
             driver.get("data:text/html;charset=UTF-8;base64,$encodedContent")
