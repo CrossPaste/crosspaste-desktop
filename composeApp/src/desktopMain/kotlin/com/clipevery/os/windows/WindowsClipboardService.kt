@@ -11,16 +11,21 @@ import com.sun.jna.platform.win32.WinDef.HWND
 import com.sun.jna.platform.win32.WinDef.LPARAM
 import com.sun.jna.platform.win32.WinDef.WPARAM
 import com.sun.jna.platform.win32.WinUser.MSG
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.Transferable
+import java.lang.IllegalStateException
+import kotlin.math.min
 
 
 class WindowsClipboardService
     (override val clipConsumer: TransferableConsumer) : ClipboardService, User32.WNDPROC {
+
+    private val logger = KotlinLogging.logger {}
 
     private var systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
 
@@ -83,7 +88,26 @@ class WindowsClipboardService
     }
 
     private fun onChange() {
-        val contents: Transferable? = systemClipboard.getContents(null)
+        var contents: Transferable? = null
+        var waitTime = 20L
+        var totalWaitTime = 0L
+        do {
+            try {
+                contents = systemClipboard.getContents(null)
+            } catch (e: IllegalStateException) {
+                logger.warn(e) { "systemClipboard get contents fail" }
+            }
+
+            if (contents == null) {
+                if (totalWaitTime + waitTime > 1000) {
+                    break
+                }
+                Thread.sleep(waitTime)
+                totalWaitTime += waitTime
+                waitTime = min(waitTime * 2, 1000)
+            }
+        } while (contents == null)
+
         contents?.let {
             CoroutineScope(ioDispatcher).launch {
                 clipConsumer.consume(it)
