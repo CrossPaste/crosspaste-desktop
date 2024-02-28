@@ -72,6 +72,7 @@ class ClipRealm(private val realm: Realm) : ClipDao {
         return realm.query(ClipData::class).query("id == $0", objectId).first().find()
     }
 
+    @Synchronized
     override fun releaseClipData(id: ObjectId, clipPlugins: List<ClipPlugin>) {
         var md5: String? = null
         realm.writeBlocking {
