@@ -82,24 +82,11 @@ class HtmlItemService: ClipItemService {
     }
 
     private fun extractHtmlFromMicrosoftHtml(inputStr: String): String {
-        try {
-            val startHtmlRegex = "StartHTML:(\\d+)".toRegex()
-            val endHtmlRegex = "EndHTML:(\\d+)".toRegex()
-
-            val startHtmlMatchResult = startHtmlRegex.find(inputStr)
-            val endHtmlMatchResult = endHtmlRegex.find(inputStr)
-
-            if (startHtmlMatchResult != null && endHtmlMatchResult != null) {
-                val startHtmlIndex = startHtmlMatchResult.groupValues[1].toInt()
-                val endHtmlIndex = endHtmlMatchResult.groupValues[1].toInt()
-
-                return inputStr.substring(startHtmlIndex, endHtmlIndex)
-            } else {
-                return inputStr
-            }
-        } catch (e: Exception) {
-            logger.error(e) { "extractHtmlFromMicrosoftHtml error:\n$inputStr" }
-            return inputStr
+        val start = inputStr.indexOfFirst { it == '<' }
+        return if (start != -1) {
+            inputStr.substring(start)
+        } else {
+            inputStr
         }
     }
 }
