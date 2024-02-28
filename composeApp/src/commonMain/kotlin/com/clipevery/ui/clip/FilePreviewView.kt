@@ -2,12 +2,15 @@ package com.clipevery.ui.clip
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
@@ -28,6 +31,7 @@ import com.clipevery.LocalKoinApplication
 import com.clipevery.clip.item.ClipFile
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
+import com.clipevery.ui.base.SketchBackground
 import com.clipevery.ui.base.file
 import com.clipevery.ui.base.folder
 import com.clipevery.utils.FileExtUtils.getExtImagePainter
@@ -52,20 +56,25 @@ fun FilePreviewView(clipData: ClipData) {
 
         ClipSpecificPreviewContentView(it, {
             Row {
-                optionPainter?.let { painter ->
-                    Image(
-                        modifier = Modifier.size(100.dp)
-                            .clip(RoundedCornerShape(5.dp)),
-                        painter = painter,
-                        contentDescription = "fileType"
-                    )
-                } ?: run {
-                    Icon(
-                        modifier = Modifier.size(100.dp),
-                        painter = if (isFile) file() else folder(),
-                        contentDescription = "fileType",
-                        tint = MaterialTheme.colors.onBackground
-                    )
+                Box(modifier = Modifier.width(100.dp)
+                    .height(100.dp)
+                ) {
+                    SketchBackground(100.dp, 100.dp, 5.dp, MaterialTheme.colors.primary)
+                    optionPainter?.let { painter ->
+                        Image(
+                            modifier = Modifier.size(100.dp)
+                                .clip(RoundedCornerShape(5.dp)),
+                            painter = painter,
+                            contentDescription = "fileType"
+                        )
+                    } ?: run {
+                        Icon(
+                            modifier = Modifier.size(100.dp),
+                            painter = if (isFile) file() else folder(),
+                            contentDescription = "fileType",
+                            tint = MaterialTheme.colors.onBackground
+                        )
+                    }
                 }
 
                 Column(
