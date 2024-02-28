@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.i18n.GlobalCopywriter
-import com.clipevery.ui.base.left
+import com.clipevery.ui.base.chevronLeft
 
 @Composable
 fun WindowDecoration(currentPageViewContext: MutableState<PageViewContext>, title: String) {
@@ -85,7 +85,7 @@ fun DecorationUI(currentPageViewContext: MutableState<PageViewContext>, title: S
                     .clickable { currentPageViewContext.value = currentPageViewContext.value.returnNext() },
                     verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        left(),
+                        chevronLeft(),
                         contentDescription = "return",
                         modifier = Modifier.size(40.dp),
                         tint = MaterialTheme.colors.primary

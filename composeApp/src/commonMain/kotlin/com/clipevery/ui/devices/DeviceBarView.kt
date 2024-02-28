@@ -36,6 +36,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
@@ -68,7 +69,7 @@ import com.clipevery.ui.base.ipad
 import com.clipevery.ui.base.iphone
 import com.clipevery.ui.base.linux
 import com.clipevery.ui.base.macos
-import com.clipevery.ui.base.questionOS
+import com.clipevery.ui.base.question
 import com.clipevery.ui.base.windows
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -97,7 +98,7 @@ fun DeviceBarView(syncRuntimeInfo: SyncRuntimeInfo,
         syncRuntimeInfo.platformBitMode,
         syncRuntimeInfo.platformVersion)
 
-    val imageVector = if (platform.isMacos()) {
+    val painter: Painter = if (platform.isMacos()) {
         macos()
     } else if (platform.isWindows()) {
         windows()
@@ -110,7 +111,7 @@ fun DeviceBarView(syncRuntimeInfo: SyncRuntimeInfo,
     } else if (platform.isAndroid()) {
         android()
     } else {
-        questionOS()
+        question()
     }
 
     var modifier = Modifier
@@ -145,7 +146,7 @@ fun DeviceBarView(syncRuntimeInfo: SyncRuntimeInfo,
     ) {
         Icon(
             modifier = Modifier.padding(12.dp).size(36.dp),
-            imageVector = imageVector,
+            painter = painter,
             contentDescription = "OS Icon",
             tint = MaterialTheme.colors.onBackground
         )
