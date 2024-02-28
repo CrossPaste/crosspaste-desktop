@@ -92,19 +92,18 @@ class WindowsClipboardService
         var waitTime = 20L
         var totalWaitTime = 0L
         do {
+            Thread.sleep(waitTime)
+            totalWaitTime += waitTime
+            waitTime = min(waitTime * 2, 1000)
             try {
                 contents = systemClipboard.getContents(null)
             } catch (e: IllegalStateException) {
                 logger.warn(e) { "systemClipboard get contents fail" }
             }
 
-            if (contents == null) {
-                if (totalWaitTime + waitTime > 1000) {
-                    break
-                }
-                Thread.sleep(waitTime)
-                totalWaitTime += waitTime
-                waitTime = min(waitTime * 2, 1000)
+            if (contents == null && totalWaitTime + waitTime > 1000) {
+                logger.error { "systemClipboard get contents timeout" }
+                break
             }
         } while (contents == null)
 
