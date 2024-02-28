@@ -81,6 +81,8 @@ class ClipRealm(private val realm: Realm) : ClipDao {
                         ClipContent.getClipItem(anyValue)
                     }
 
+                    clipAppearItems = clipAppearItems.filter { it.md5 != "" }
+
                     assert(clipAppearItems.isNotEmpty())
 
                     for (clipPlugin in clipPlugins) {
