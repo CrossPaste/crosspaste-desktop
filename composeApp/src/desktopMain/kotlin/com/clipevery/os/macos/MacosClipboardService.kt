@@ -33,6 +33,7 @@ class MacosClipboardService(override val clipConsumer: TransferableConsumer): Cl
                     MacosApi.INSTANCE.getClipboardChangeCount().let { currentChangeCount ->
                         if (changeCount != currentChangeCount) {
                             changeCount = currentChangeCount
+                            delay(20L)
                             val contents = systemClipboard.getContents(null)
                             contents?.let {
                                 withContext(ioDispatcher) {
@@ -44,7 +45,7 @@ class MacosClipboardService(override val clipConsumer: TransferableConsumer): Cl
                 } catch (e: Exception) {
                     logger.error(e) { "Failed to consume transferable" }
                 }
-                delay(300L)
+                delay(280L)
             }
         }
     }
