@@ -35,7 +35,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
@@ -72,7 +72,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
     var languageOnDismissTime by remember { mutableStateOf(0L) }
 
 
-    val languageArrow: ImageVector = when (animationPhase) {
+    val languageArrow: Painter = when (animationPhase) {
         0 -> arrowDown()
         1 -> arrowLeft()
         2 -> arrowUp()
@@ -126,7 +126,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                     modifier = Modifier
                         .padding(5.dp, 0.dp, 5.dp, 0.dp)
                         .size(15.dp),
-                    imageVector = languageArrow,
+                    painter = languageArrow,
                     contentDescription = null,
                     tint = MaterialTheme.colors.onBackground
                 )

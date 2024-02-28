@@ -21,7 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.text.TextStyle
@@ -45,7 +45,7 @@ fun SettingsItemView(title: String,
 
     var openSettings by remember { mutableStateOf(false) }
 
-    val languageArrow: ImageVector = if (openSettings) {
+    val languageArrow: Painter = if (openSettings) {
         arrowDown()
     } else {
         arrowLeft()
@@ -80,7 +80,7 @@ fun SettingsItemView(title: String,
                 modifier = Modifier
                     .padding(5.dp, 0.dp, 5.dp, 0.dp)
                     .size(15.dp),
-                imageVector = languageArrow,
+                painter = languageArrow,
                 contentDescription = null,
                 tint = MaterialTheme.colors.onBackground
                 )

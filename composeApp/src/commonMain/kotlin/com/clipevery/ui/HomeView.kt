@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -57,7 +58,6 @@ import com.clipevery.LocalExitApplication
 import com.clipevery.LocalKoinApplication
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.ClipIconButton
-import com.clipevery.utils.ResourceUtils.loadImageBitmap
 import java.awt.Desktop
 import java.net.URI
 
@@ -75,8 +75,6 @@ fun HomeWindowDecoration(currentPage: MutableState<PageViewContext>) {
 val customFontFamily = FontFamily(
     Font(resource = "font/BebasNeue.otf", FontWeight.Normal)
 )
-
-val clipeveryIcon = loadImageBitmap("clipevery_icon.png")
 
 @Preview
 @Composable
@@ -114,7 +112,7 @@ fun TitleView(currentPage: MutableState<PageViewContext>) {
                     .align(Alignment.CenterVertically)
                     .clip(RoundedCornerShape(3.dp))
                     .size(36.dp),
-                bitmap = clipeveryIcon,
+                painter = painterResource("clipevery_icon.png"),
                 contentDescription = "clipevery icon",
             )
             Column(Modifier.wrapContentWidth()

@@ -18,7 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -30,7 +30,7 @@ import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.file
 import com.clipevery.ui.base.folder
-import com.clipevery.utils.FileExtUtils.getExtImage
+import com.clipevery.utils.FileExtUtils.getExtImagePainter
 import com.clipevery.utils.FileUtils
 
 @Composable
@@ -40,9 +40,7 @@ fun FilePreviewView(clipData: ClipData) {
         val copywriter = current.koin.get<GlobalCopywriter>()
         val fileUtils = current.koin.get<FileUtils>()
         val clipFile = it as ClipFile
-        val imageBitmap: ImageBitmap? = remember(clipFile.getExtension()) {
-            getExtImage(clipFile.getExtension())
-        }
+        val optionPainter: Painter? = getExtImagePainter(clipFile.getExtension())
 
         val isFile: Boolean = remember(it) {
             it.isFile
@@ -54,17 +52,17 @@ fun FilePreviewView(clipData: ClipData) {
 
         ClipSpecificPreviewContentView(it, {
             Row {
-                imageBitmap?.let {
+                optionPainter?.let { painter ->
                     Image(
                         modifier = Modifier.size(100.dp)
                             .clip(RoundedCornerShape(5.dp)),
-                        bitmap = it,
+                        painter = painter,
                         contentDescription = "fileType"
                     )
                 } ?: run {
                     Icon(
                         modifier = Modifier.size(100.dp),
-                        imageVector = if (isFile) file() else folder(),
+                        painter = if (isFile) file() else folder(),
                         contentDescription = "fileType",
                         tint = MaterialTheme.colors.onBackground
                     )

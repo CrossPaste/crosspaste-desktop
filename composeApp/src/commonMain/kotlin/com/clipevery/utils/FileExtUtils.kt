@@ -1,6 +1,8 @@
 package com.clipevery.utils
 
-import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.painterResource
 
 object FileExtUtils {
 
@@ -17,6 +19,7 @@ object FileExtUtils {
         Pair("numbers", "numbers")
     )
 
-    fun getExtImage(ext: String): ImageBitmap? =
-        extImageMap[ext]?.let { ResourceUtils.loadImageBitmap("file-ext/$it.png") }
+    @Composable
+    fun getExtImagePainter(ext: String): Painter? =
+        extImageMap[ext]?.let { painterResource("file-ext/$it.png") }
 }
