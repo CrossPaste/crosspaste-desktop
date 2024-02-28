@@ -11,6 +11,7 @@ import com.clipevery.presist.DesktopOneFilePersist
 import com.clipevery.utils.DesktopFileUtils
 import com.clipevery.utils.md5ByString
 import io.realm.kotlin.MutableRealm
+import org.jsoup.Jsoup
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 
@@ -69,12 +70,7 @@ class HtmlItemService: ClipItemService {
     }
 
     private fun extractHtml(inputStr: String): String {
-        val pattern = Regex("<([a-zA-Z]+).*?>.*?</\\1>", RegexOption.DOT_MATCHES_ALL)
-
-        val matches = pattern.findAll(inputStr)
-
-        val match = matches.firstOrNull()
-
-        return match?.value ?: inputStr
+        val doc = Jsoup.parse(inputStr)
+        return doc.toString()
     }
 }
