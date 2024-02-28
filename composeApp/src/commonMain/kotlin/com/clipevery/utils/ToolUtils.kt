@@ -1,5 +1,7 @@
 package com.clipevery.utils
 
+import io.github.oshai.kotlinlogging.KotlinLogging
+
 class OnceFunction<T>(private val function: () -> T) {
     private var hasRun = false
     private var result: T? = null
@@ -22,4 +24,23 @@ object Memoize {
         }
     }
 
+}
+
+object Retry {
+
+    val logger = KotlinLogging.logger {}
+
+    fun <T> retry(maxAttempts: Int, action: () -> T, cleanUp: () -> Unit = {}): T {
+        var lastException: Exception? = null
+        for (attempt in 1..maxAttempts) {
+            try {
+                return action()
+            } catch (e: Exception) {
+                lastException = e
+                logger.warn { "Attempt $attempt failed, retrying..." }
+                cleanUp()
+            }
+        }
+        throw lastException ?: IllegalStateException("Unknown retry failure.")
+    }
 }
