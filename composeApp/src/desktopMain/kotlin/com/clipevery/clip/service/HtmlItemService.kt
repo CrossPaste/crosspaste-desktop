@@ -10,8 +10,8 @@ import com.clipevery.path.DesktopPathProvider
 import com.clipevery.presist.DesktopOneFilePersist
 import com.clipevery.utils.DesktopFileUtils
 import com.clipevery.utils.md5ByString
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
-import org.jsoup.Jsoup
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 
@@ -23,6 +23,8 @@ class HtmlItemService: ClipItemService {
 
         val chromeService = DesktopChromeService
     }
+
+    val logger = KotlinLogging.logger {}
 
     override fun getIdentifiers(): List<String> {
         return listOf(HTML_ID)
@@ -70,7 +72,34 @@ class HtmlItemService: ClipItemService {
     }
 
     private fun extractHtml(inputStr: String): String {
-        val doc = Jsoup.parse(inputStr)
-        return doc.toString()
+        // this is microsoft html format
+        // https://learn.microsoft.com/zh-cn/windows/win32/dataxchg/html-clipboard-format?redirectedfrom=MSDN
+        return if (inputStr.startsWith("Version:")) {
+            extractHtmlFromMicrosoftHtml(inputStr)
+        } else {
+            inputStr
+        }
+    }
+
+    private fun extractHtmlFromMicrosoftHtml(inputStr: String): String {
+        try {
+            val startHtmlRegex = "StartHTML:(\\d+)".toRegex()
+            val endHtmlRegex = "EndHTML:(\\d+)".toRegex()
+
+            val startHtmlMatchResult = startHtmlRegex.find(inputStr)
+            val endHtmlMatchResult = endHtmlRegex.find(inputStr)
+
+            if (startHtmlMatchResult != null && endHtmlMatchResult != null) {
+                val startHtmlIndex = startHtmlMatchResult.groupValues[1].toInt()
+                val endHtmlIndex = endHtmlMatchResult.groupValues[1].toInt()
+
+                return inputStr.substring(startHtmlIndex, endHtmlIndex)
+            } else {
+                return inputStr
+            }
+        } catch (e: Exception) {
+            logger.error(e) { "extractHtmlFromMicrosoftHtml error:\n$inputStr" }
+            return inputStr
+        }
     }
 }
