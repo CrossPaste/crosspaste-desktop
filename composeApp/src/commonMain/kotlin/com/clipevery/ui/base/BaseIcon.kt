@@ -8,3 +8,8 @@ import androidx.compose.ui.res.painterResource
 fun question(): Painter {
     return painterResource("icon/base/question.svg")
 }
+
+@Composable
+fun autoRenew(): Painter {
+    return painterResource("icon/base/autorenew.svg")
+}
