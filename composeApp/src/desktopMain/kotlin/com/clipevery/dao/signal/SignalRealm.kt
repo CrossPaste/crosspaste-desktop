@@ -83,6 +83,15 @@ class SignalRealm(private val realm: Realm): SignalDao {
         }
     }
 
+    override fun deleteIdentity(appInstanceId: String) {
+        return realm.writeBlocking {
+            val clipIdentityKey = query(ClipIdentityKey::class, "appInstanceId == $0", appInstanceId).first().find()
+            clipIdentityKey?.let {
+                delete(clipIdentityKey)
+            }
+        }
+    }
+
     override fun identity(appInstanceId: String): ByteArray? {
         return realm.query(ClipIdentityKey::class, "appInstanceId == $0", appInstanceId)
             .first()
