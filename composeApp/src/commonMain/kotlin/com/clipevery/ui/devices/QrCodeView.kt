@@ -42,8 +42,10 @@ import com.clipevery.app.AppUI
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.autoRenew
 import com.clipevery.utils.QRCodeGenerator
+import com.clipevery.utils.ioDispatcher
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Scan
+import kotlinx.coroutines.withContext
 
 
 val qrSize: DpSize = DpSize(275.dp, 275.dp)
@@ -67,7 +69,10 @@ fun bindingQRCode() {
     }
 
     LaunchedEffect(appUI.token) {
-        qrImage = qrCodeGenerator.generateQRCode(width, height, appUI.token)
+        // maybe slow (get host), we use ioDispatcher to avoid blocking the UI
+        qrImage = withContext(ioDispatcher) {
+            qrCodeGenerator.generateQRCode(width, height, appUI.token)
+        }
     }
 
     DisposableEffect(Unit) {
