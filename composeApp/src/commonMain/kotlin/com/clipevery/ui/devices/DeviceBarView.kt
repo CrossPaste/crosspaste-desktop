@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -142,140 +143,143 @@ fun DeviceBarView(syncRuntimeInfo: SyncRuntimeInfo,
 
     Row(modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Start
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Icon(
-            modifier = Modifier.padding(12.dp).size(36.dp),
-            painter = painter,
-            contentDescription = "OS Icon",
-            tint = MaterialTheme.colors.onBackground
-        )
+        Row(modifier = Modifier.wrapContentSize()) {
+            Icon(
+                modifier = Modifier.padding(12.dp).size(36.dp),
+                painter = painter,
+                contentDescription = "OS Icon",
+                tint = MaterialTheme.colors.onBackground
+            )
 
-        Column(modifier = Modifier.align(Alignment.CenterVertically)) {
-            Row(
-                modifier = Modifier.wrapContentWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = platform.name,
-                    style = TextStyle(
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colors.onBackground,
-                        fontSize = 17.sp
+            Column(modifier = Modifier.align(Alignment.CenterVertically)) {
+                Row(
+                    modifier = Modifier.wrapContentWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = platform.name,
+                        style = TextStyle(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colors.onBackground,
+                            fontSize = 17.sp
+                        )
                     )
-                )
-                Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = platform.version,
+                        style = TextStyle(
+                            fontWeight = FontWeight.Light,
+                            color = MaterialTheme.colors.onBackground,
+                            fontSize = 15.sp
+                        )
+                    )
+                }
+
                 Text(
-                    text = platform.version,
+                    modifier = Modifier.wrapContentSize(),
+                    text = syncRuntimeInfo.deviceName,
                     style = TextStyle(
                         fontWeight = FontWeight.Light,
                         color = MaterialTheme.colors.onBackground,
                         fontSize = 15.sp
-                    )
+                    ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
+        }
+
+        Row(modifier = Modifier.wrapContentSize(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.End) {
+            Icon(
+                connectIcon,
+                contentDescription = "connectState",
+                modifier = Modifier.padding(16.dp).size(20.dp),
+                tint = connectColor
+            )
 
             Text(
-                modifier = Modifier.fillMaxWidth(fraction = 0.5f),
-                text = syncRuntimeInfo.deviceName,
+                text = copywriter.getText(connectText),
                 style = TextStyle(
                     fontWeight = FontWeight.Light,
-                    color = MaterialTheme.colors.onBackground,
-                    fontSize = 15.sp
-                ),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        Spacer(modifier = Modifier.weight(2f, fill = true))
-
-        Icon(
-            connectIcon,
-            contentDescription = "connectState",
-            modifier = Modifier.padding(16.dp).size(20.dp),
-            tint = connectColor
-        )
-
-        Text(
-            text = copywriter.getText(connectText),
-            style = TextStyle(
-                fontWeight = FontWeight.Light,
-                color = connectColor,
-                fontSize = 17.sp
-            )
-        )
-
-        var showPopup by remember { mutableStateOf(false) }
-
-        var buttonPosition by remember { mutableStateOf(Offset.Zero) }
-        var buttonSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size(0.0f, 0.0f)) }
-
-        if (deviceInteractionEnabled) {
-            ClipIconButton(
-                radius = 18.dp,
-                onClick = {
-                    showPopup = !showPopup
-                },
-                modifier = Modifier
-                    .background(Color.Transparent, CircleShape) // Set the background to blue and shape to circle
-                    .onGloballyPositioned { coordinates ->
-                        buttonPosition = coordinates.localToWindow(Offset.Zero)
-                        buttonSize = coordinates.size.toSize()
-                    }
-
-            ) {
-                Icon(
-                    Icons.Outlined.MoreVert,
-                    contentDescription = "info",
-                    modifier = Modifier.padding(3.dp).size(18.dp),
-                    tint = MaterialTheme.colors.primary
+                    color = connectColor,
+                    fontSize = 17.sp
                 )
-            }
+            )
 
-            if (showPopup) {
-                Popup(
-                    alignment = Alignment.TopEnd,
-                    offset = IntOffset(
-                        with(density) { ((-14).dp).roundToPx() },
-                        with(density) { (50.dp).roundToPx() },
-                    ),
-                    onDismissRequest = {
-                        if (showPopup) {
-                            showPopup = false
-                        }
+            var showPopup by remember { mutableStateOf(false) }
+
+            var buttonPosition by remember { mutableStateOf(Offset.Zero) }
+            var buttonSize by remember { mutableStateOf(Size(0.0f, 0.0f)) }
+
+            if (deviceInteractionEnabled) {
+                ClipIconButton(
+                    radius = 18.dp,
+                    onClick = {
+                        showPopup = !showPopup
                     },
-                    properties = PopupProperties(
-                        focusable = true,
-                        dismissOnBackPress = true,
-                        dismissOnClickOutside = true
-
-                    )
+                    modifier = Modifier
+                        .background(Color.Transparent, CircleShape) // Set the background to blue and shape to circle
+                        .onGloballyPositioned { coordinates ->
+                            buttonPosition = coordinates.localToWindow(Offset.Zero)
+                            buttonSize = coordinates.size.toSize()
+                        }
                 ) {
-                    Box(modifier = Modifier
-                        .wrapContentSize()
-                        .background(Color.Transparent)
-                        .shadow(15.dp)) {
-                        Column(
-                            modifier = Modifier
-                                .width(180.dp)
-                                .wrapContentHeight()
-                                .clip(RoundedCornerShape(5.dp))
-                                .background(MaterialTheme.colors.surface)
-                        ) {
-                            MenuItem(copywriter.getText("Remove_Device")) {
-                                // TODO: remove device
+                    Icon(
+                        Icons.Outlined.MoreVert,
+                        contentDescription = "info",
+                        modifier = Modifier.padding(3.dp).size(18.dp),
+                        tint = MaterialTheme.colors.primary
+                    )
+                }
+
+                if (showPopup) {
+                    Popup(
+                        alignment = Alignment.TopEnd,
+                        offset = IntOffset(
+                            with(density) { ((-40).dp).roundToPx() },
+                            with(density) { (20.dp).roundToPx() },
+                        ),
+                        onDismissRequest = {
+                            if (showPopup) {
                                 showPopup = false
+                            }
+                        },
+                        properties = PopupProperties(
+                            focusable = true,
+                            dismissOnBackPress = true,
+                            dismissOnClickOutside = true
+
+                        )
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .wrapContentSize()
+                                .background(Color.Transparent)
+                                .shadow(15.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .width(180.dp)
+                                    .wrapContentHeight()
+                                    .clip(RoundedCornerShape(5.dp))
+                                    .background(MaterialTheme.colors.surface)
+                            ) {
+                                MenuItem(copywriter.getText("Remove_Device")) {
+                                    // TODO: remove device
+                                    showPopup = false
+                                }
                             }
                         }
                     }
                 }
+            } else {
+                Spacer(modifier = Modifier.width(16.dp))
             }
-
-
-        } else {
-            Spacer(modifier = Modifier.width(16.dp))
         }
-
     }
 }
 
