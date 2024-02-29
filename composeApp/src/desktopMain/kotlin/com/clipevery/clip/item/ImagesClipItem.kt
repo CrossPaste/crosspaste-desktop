@@ -26,7 +26,7 @@ class ImagesClipItem: RealmObject, ClipAppearItem, ClipFiles {
     }
 
     override fun getClipType(): Int {
-        return ClipType.IMAGES
+        return ClipType.IMAGE
     }
 
     override fun getSearchContent(): String {

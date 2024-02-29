@@ -17,7 +17,7 @@ import com.clipevery.clip.plugin.ImageHtmlCombinePlugin
 import com.clipevery.clip.plugin.MultiImagePlugin
 import com.clipevery.clip.plugin.SortPlugin
 import com.clipevery.clip.plugin.UrlTextCombinePlugin
-import com.clipevery.clip.service.FileItemService
+import com.clipevery.clip.service.FilesItemService
 import com.clipevery.clip.service.HtmlItemService
 import com.clipevery.clip.service.ImageItemService
 import com.clipevery.clip.service.TextItemService
@@ -121,7 +121,7 @@ object Dependencies {
             single<ClipboardService> { getDesktopClipboardService(get()) }
             single<TransferableConsumer> { DesktopTransferableConsumer(
                 get(), get(), get(), listOf(
-                    FileItemService(),
+                    FilesItemService(),
                     HtmlItemService(),
                     ImageItemService(),
                     TextItemService(),
