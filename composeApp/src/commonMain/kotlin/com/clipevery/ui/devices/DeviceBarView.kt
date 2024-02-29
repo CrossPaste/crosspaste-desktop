@@ -53,7 +53,9 @@ import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.clipevery.LocalKoinApplication
+import com.clipevery.dao.signal.SignalDao
 import com.clipevery.dao.sync.SyncRuntimeInfo
+import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.dao.sync.SyncState
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.platform.Platform
@@ -80,6 +82,8 @@ fun DeviceBarView(syncRuntimeInfo: SyncRuntimeInfo,
                   deviceInteractionEnabled: Boolean) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
+    val syncRuntimeInfoDao = current.koin.get<SyncRuntimeInfoDao>()
+    val signalDao = current.koin.get<SignalDao>()
 
     var hover by remember { mutableStateOf(false) }
     val backgroundColor = if (hover) MaterialTheme.colors.secondaryVariant else MaterialTheme.colors.background
@@ -269,7 +273,10 @@ fun DeviceBarView(syncRuntimeInfo: SyncRuntimeInfo,
                                     .background(MaterialTheme.colors.surface)
                             ) {
                                 MenuItem(copywriter.getText("Remove_Device")) {
-                                    // TODO: remove device
+                                    val id = syncRuntimeInfo.appInstanceId
+                                    syncRuntimeInfoDao.deleteSyncRuntimeInfo(id)
+                                    signalDao.deleteSession(id)
+                                    signalDao.deleteIdentity(id)
                                     showPopup = false
                                 }
                             }
