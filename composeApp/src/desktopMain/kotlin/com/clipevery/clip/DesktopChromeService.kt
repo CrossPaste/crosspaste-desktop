@@ -2,6 +2,7 @@ package com.clipevery.clip
 
 import com.clipevery.app.AppEnv
 import com.clipevery.app.AppFileType
+import com.clipevery.os.windows.WindowDpiHelper
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.platform.currentPlatform
 import com.clipevery.utils.Retry
@@ -19,7 +20,10 @@ object DesktopChromeService: ChromeService {
 
     private const val CHROME_HEADLESS_SHELL = "chrome-headless-shell"
 
+    private val currentPlatform = currentPlatform()
+
     private val options: ChromeOptions = ChromeOptions()
+        .addArguments("--hide-scrollbars")
 
     private val initChromeDriver: (String, String, String, Path) -> Unit = { chromeSuffix, driverName, headlessName, resourcesPath ->
         System.setProperty("webdriver.chrome.driver", resourcesPath
@@ -32,6 +36,15 @@ object DesktopChromeService: ChromeService {
             .absolutePathString())
     }
 
+    private val windowDimension: Dimension  = if (currentPlatform.isWindows()) {
+        val maxDpi: Int = WindowDpiHelper.getMaxDpiForMonitor()
+        val width: Int = ((350.0 * maxDpi) / 96.0).toInt()
+        val height: Int = ((120.0 * maxDpi) / 96.0).toInt()
+        Dimension(width, height)
+    } else {
+        Dimension(350, 120)
+    }
+
     private var chromeDriver: ChromeDriver? = null
 
     init {
@@ -40,7 +53,6 @@ object DesktopChromeService: ChromeService {
 
     private fun initChromeDriver() {
         val resourcesPath = DesktopPathProvider.resolve("resources", AppFileType.APP)
-        val currentPlatform = currentPlatform()
         if (currentPlatform.isMacos()) {
             if (currentPlatform.arch.contains("x86_64")) {
                 val macX64ResourcesPath =
@@ -83,7 +95,7 @@ object DesktopChromeService: ChromeService {
         chromeDriver?.let{ driver ->
             val encodedContent = Base64.getEncoder().encodeToString(html.toByteArray())
             driver.get("data:text/html;charset=UTF-8;base64,$encodedContent")
-            driver.manage().window().size = Dimension(408, 120)
+            driver.manage().window().size = windowDimension
             val pageHeight = driver.executeScript("return document.body.scrollHeight") as Long
             val pageWidth = driver.executeScript("return document.body.scrollWidth") as Long
             driver.manage().window().size = Dimension(pageWidth.toInt() + 20, pageHeight.toInt())

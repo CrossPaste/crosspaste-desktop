@@ -1,11 +1,14 @@
 package com.clipevery.os.windows.api
 
 import com.sun.jna.Native
+import com.sun.jna.platform.win32.WinDef.HDC
 import com.sun.jna.platform.win32.WinDef.HRGN
 import com.sun.jna.platform.win32.WinDef.HWND
 import com.sun.jna.platform.win32.WinDef.LPARAM
+import com.sun.jna.platform.win32.WinDef.RECT
 import com.sun.jna.platform.win32.WinDef.WPARAM
 import com.sun.jna.platform.win32.WinNT.HANDLE
+import com.sun.jna.platform.win32.WinUser.MONITORENUMPROC
 import com.sun.jna.platform.win32.WinUser.MSG
 import com.sun.jna.win32.StdCallLibrary
 import com.sun.jna.win32.StdCallLibrary.StdCallCallback
@@ -49,6 +52,8 @@ interface User32 : StdCallLibrary {
     fun SetWindowRgn(hWnd: HWND?, hRgn: HRGN?, bRedraw: Boolean): Boolean
 
     fun GetDpiForSystem(): Int
+
+    fun EnumDisplayMonitors(hdc: HDC?, lprcClip: RECT?, lpfnEnum: MONITORENUMPROC?, dwData: LPARAM?): Boolean
 
     companion object {
         val INSTANCE = Native.load("user32", User32::class.java, DEFAULT_OPTIONS
