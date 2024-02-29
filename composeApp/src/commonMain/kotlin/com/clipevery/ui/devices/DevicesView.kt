@@ -74,10 +74,9 @@ fun DevicesListView(currentPageViewContext: MutableState<PageViewContext>) {
                     // types other than UpdatedResults are not changes -- ignore them
                 }
             }
-
         }
     }
-    Column {
+    Column(modifier = Modifier.fillMaxWidth()) {
         for ((index, syncRuntimeInfo) in rememberSyncRuntimeInfos.withIndex()) {
             DeviceItemView(syncRuntimeInfo, currentPageViewContext)
             if (index != rememberSyncRuntimeInfos.size - 1) {
