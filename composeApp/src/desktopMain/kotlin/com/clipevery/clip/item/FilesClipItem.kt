@@ -18,29 +18,29 @@ class FilesClipItem: RealmObject, ClipAppearItem, ClipFiles {
     @PrimaryKey
     override var id: ObjectId = BsonObjectId()
 
-    var identifiers: RealmList<String> = realmListOf()
+    var identifier: String = ""
 
-    var fileList: RealmList<String> = realmListOf()
+    var relativePathList: RealmList<String> = realmListOf()
 
     override var md5: String = ""
 
     override fun getFilePaths(): List<Path> {
         val basePath = DesktopPathProvider.resolve(appFileType = AppFileType.FILE)
-        return fileList.map { relativePath ->
+        return relativePathList.map { relativePath ->
             DesktopPathProvider.resolve(basePath, relativePath, autoCreate = false)
         }
     }
 
     override fun getIdentifiers(): List<String> {
-        return identifiers.toList()
+        return listOf(identifier)
     }
 
     override fun getClipType(): Int {
-        return ClipType.FILES
+        return ClipType.FILE
     }
 
-    override fun getSearchContent(): String? {
-        return fileList.map { path ->
+    override fun getSearchContent(): String {
+        return relativePathList.map { path ->
             Paths.get(path).fileName
         }.joinToString(separator = " ")
     }

@@ -9,8 +9,4 @@ object ClipType {
     const val FILE = 3
     const val HTML = 4
 
-    const val IMAGES = 5
-    const val FILES = 6
-
-
 }
