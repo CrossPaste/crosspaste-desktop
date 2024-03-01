@@ -4,14 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
@@ -74,46 +73,38 @@ fun DecorationUI(currentPageViewContext: MutableState<PageViewContext>, title: S
                 )
             ),
     ) {
-        Row(modifier = Modifier.align(Alignment.CenterStart)
-            .wrapContentWidth(),
+        Row(modifier = Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(0.5f)
-                .align(Alignment.CenterVertically),
-                verticalArrangement = Arrangement.SpaceAround) {
-                Row(modifier = Modifier.padding(8.dp)
-                    .align(Alignment.Start)
-                    .clickable { currentPageViewContext.value = currentPageViewContext.value.returnNext() },
-                    verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        chevronLeft(),
-                        contentDescription = "return",
-                        modifier = Modifier.size(40.dp),
-                        tint = MaterialTheme.colors.primary
-                    )
-                    Text(
-                        modifier = Modifier.offset(x = (-8).dp),
-                        text = copywriter.getText("Return"),
-                        style = TextStyle(fontWeight = FontWeight.Light,
-                            color = MaterialTheme.colors.primary,
-                            fontSize = 20.sp
-                        )
-                    )
-                }
-            }
-            Column(Modifier.weight(0.5f)
-                .align(Alignment.CenterVertically),
-                horizontalAlignment = Alignment.CenterHorizontally) {
+            Row(modifier = Modifier.wrapContentSize().padding(10.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = chevronLeft(),
+                    contentDescription = "return",
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colors.primary
+                )
+
                 Text(
-                    modifier = Modifier.padding(16.dp)
-                        .align(Alignment.End),
-                    text = copywriter.getText(title),
-                    color = Color.White,
-                    fontSize = 25.sp,
-                    style = TextStyle(fontWeight = FontWeight.Bold),
-                    fontFamily = customFontFamily
+                    modifier = Modifier
+                        .clickable { currentPageViewContext.value = currentPageViewContext.value.returnNext() },
+                    text = copywriter.getText("Return"),
+                    style = TextStyle(fontWeight = FontWeight.Light,
+                        color = MaterialTheme.colors.primary,
+                        fontFamily = customFontFamily,
+                        fontSize = 22.sp
+                    )
                 )
             }
 
+            Text(
+                modifier = Modifier.padding(16.dp),
+                text = copywriter.getText(title),
+                color = Color.White,
+                fontSize = 22.sp,
+                style = TextStyle(fontWeight = FontWeight.Bold),
+                fontFamily = customFontFamily
+            )
         }
     }
 }
