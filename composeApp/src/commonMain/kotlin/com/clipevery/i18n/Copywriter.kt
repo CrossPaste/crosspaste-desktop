@@ -4,6 +4,8 @@ import java.time.LocalDateTime
 
 interface Copywriter {
 
+    fun language(): String
+
     fun getText(id: String): String
 
     fun getDate(date: LocalDateTime): String
@@ -22,6 +24,7 @@ interface GlobalCopywriter: Copywriter {
 data class Language(val abridge: String, val name: String)
 
 class PreviewGlobalCopywriter: GlobalCopywriter {
+
     override fun switchLanguage(language: String) {
         println("switchLanguage: $language")
     }
@@ -30,6 +33,10 @@ class PreviewGlobalCopywriter: GlobalCopywriter {
         return listOf(
             Language("en", "English"),
         )
+    }
+
+    override fun language(): String {
+        return "en"
     }
 
     override fun getText(id: String): String {
