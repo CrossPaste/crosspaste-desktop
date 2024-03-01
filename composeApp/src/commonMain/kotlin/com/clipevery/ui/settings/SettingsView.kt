@@ -43,18 +43,20 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Popup
 import com.clipevery.LocalKoinApplication
 import com.clipevery.i18n.GlobalCopywriter
-import com.clipevery.ui.MenuItem
 import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.WindowDecoration
+import com.clipevery.ui.base.MenuItem
 import com.clipevery.ui.base.arrowDown
 import com.clipevery.ui.base.arrowLeft
 import com.clipevery.ui.base.arrowRight
 import com.clipevery.ui.base.arrowUp
+import com.clipevery.ui.base.getMenWidth
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -149,9 +151,14 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                         .wrapContentSize()
                         .background(Color.Transparent)
                         .shadow(15.dp)) {
+
+                        val maxWidth = max(150.dp,
+                            getMenWidth(copywriter.getAllLanguages().map { it.name }.toTypedArray())
+                        )
+
                         Column(
                             modifier = Modifier
-                                .width(180.dp)
+                                .width(maxWidth)
                                 .wrapContentHeight()
                                 .clip(RoundedCornerShape(5.dp))
                                 .background(MaterialTheme.colors.surface)

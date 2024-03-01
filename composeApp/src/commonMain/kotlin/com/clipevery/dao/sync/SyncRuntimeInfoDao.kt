@@ -21,4 +21,6 @@ interface SyncRuntimeInfoDao {
     fun inertOrUpdate(syncInfos: List<SyncInfo>): List<String>
 
     fun deleteSyncRuntimeInfo(appInstanceId: String)
+
+    fun updateNoteName(syncRuntimeInfo: SyncRuntimeInfo, noteName: String): SyncRuntimeInfo?
 }
