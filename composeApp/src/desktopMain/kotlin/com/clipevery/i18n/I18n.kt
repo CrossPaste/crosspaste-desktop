@@ -33,6 +33,10 @@ open class GlobalCopywriterImpl(private val configManager: ConfigManager): Globa
         CopywriterImpl(configManager.config.language)
     })
 
+    override fun language(): String {
+        return copywriter.language()
+    }
+
     override fun switchLanguage(language: String) {
         copywriter = languageMap.computeIfAbsent(language) { CopywriterImpl(language) }
         configManager.updateConfig { it.copy(language = language) }
@@ -90,6 +94,10 @@ class CopywriterImpl(private val language: String) : Copywriter {
             en
         }
         return properties
+    }
+
+    override fun language(): String {
+        return language
     }
 
     override fun getText(id: String): String {

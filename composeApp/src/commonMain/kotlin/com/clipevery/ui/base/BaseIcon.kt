@@ -13,3 +13,8 @@ fun question(): Painter {
 fun autoRenew(): Painter {
     return painterResource("icon/base/autorenew.svg")
 }
+
+@Composable
+fun arrowBack(): Painter {
+    return painterResource("icon/base/arrow_back.svg")
+}
