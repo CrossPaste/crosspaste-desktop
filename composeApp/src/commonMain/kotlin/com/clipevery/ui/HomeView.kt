@@ -4,10 +4,6 @@ import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.hoverable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,6 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.platform.Font
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Popup
@@ -58,6 +55,8 @@ import com.clipevery.LocalExitApplication
 import com.clipevery.LocalKoinApplication
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.ClipIconButton
+import com.clipevery.ui.base.MenuItem
+import com.clipevery.ui.base.getMenWidth
 import java.awt.Desktop
 import java.net.URI
 
@@ -185,9 +184,19 @@ fun TitleView(currentPage: MutableState<PageViewContext>) {
                             .wrapContentSize()
                             .background(Color.Transparent)
                             .shadow(15.dp)) {
+
+                            val menuTexts = arrayOf(copywriter.getText("Check_for_updates"),
+                                copywriter.getText("Settings"),
+                                copywriter.getText("About"),
+                                copywriter.getText("FQA"),
+                                copywriter.getText("Quit")
+                            )
+
+                            val maxWidth = max(150.dp, getMenWidth(menuTexts))
+
                             Column(
                                 modifier = Modifier
-                                    .width(180.dp)
+                                    .width(maxWidth)
                                     .wrapContentHeight()
                                     .clip(RoundedCornerShape(5.dp))
                                     .background(MaterialTheme.colors.surface)
@@ -220,25 +229,4 @@ fun TitleView(currentPage: MutableState<PageViewContext>) {
             }
         }
     }
-}
-
-@Composable
-fun MenuItem(text: String, onClick: () -> Unit) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isHovered by interactionSource.collectIsHoveredAsState()
-    val backgroundColor = if (isHovered) MaterialTheme.colors.secondaryVariant else Color.Transparent
-
-    Text(
-        text = text,
-        color = MaterialTheme.colors.onBackground,
-        fontSize = 12.sp,
-        fontFamily = FontFamily.SansSerif,
-        style = TextStyle(fontWeight = FontWeight.Light),
-        modifier = Modifier
-            .fillMaxWidth()
-            .hoverable(interactionSource = interactionSource)
-            .background(backgroundColor)
-            .clickable(onClick = onClick)
-            .padding(16.dp, 8.dp, 16.dp, 8.dp),
-    )
 }

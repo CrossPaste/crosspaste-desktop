@@ -19,6 +19,7 @@ class SyncRuntimeInfo: RealmObject {
     var platformVersion: String = ""
     var hostInfoList: RealmList<HostInfo> = realmListOf()
     var port: Int = 0
+    var noteName: String? = null
     var connectHostAddress: String? = null
     var connectState: Int = SyncState.DISCONNECTED
     var allowSend: Boolean = true

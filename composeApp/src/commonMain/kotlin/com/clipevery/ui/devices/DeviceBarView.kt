@@ -59,27 +59,29 @@ import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.dao.sync.SyncState
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.platform.Platform
-import com.clipevery.ui.MenuItem
 import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.PageViewType
-import com.clipevery.ui.base.android
 import com.clipevery.ui.base.ClipIconButton
+import com.clipevery.ui.base.MenuItem
+import com.clipevery.ui.base.android
 import com.clipevery.ui.base.arrowLeftIcon
 import com.clipevery.ui.base.arrowRightIcon
 import com.clipevery.ui.base.block
-import com.clipevery.ui.base.syncAlt
+import com.clipevery.ui.base.getMenWidth
 import com.clipevery.ui.base.ipad
 import com.clipevery.ui.base.iphone
 import com.clipevery.ui.base.linux
 import com.clipevery.ui.base.macos
 import com.clipevery.ui.base.question
+import com.clipevery.ui.base.syncAlt
 import com.clipevery.ui.base.windows
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun DeviceBarView(syncRuntimeInfo: SyncRuntimeInfo,
                   currentPageViewContext: MutableState<PageViewContext>,
-                  deviceInteractionEnabled: Boolean) {
+                  deviceInteractionEnabled: Boolean,
+                  onEdit: (SyncRuntimeInfo) -> Unit) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val syncRuntimeInfoDao = current.koin.get<SyncRuntimeInfoDao>()
@@ -183,7 +185,7 @@ fun DeviceBarView(syncRuntimeInfo: SyncRuntimeInfo,
 
                 Text(
                     modifier = Modifier.wrapContentSize(),
-                    text = syncRuntimeInfo.deviceName,
+                    text = syncRuntimeInfo.noteName ?: syncRuntimeInfo.deviceName,
                     style = TextStyle(
                         fontWeight = FontWeight.Light,
                         color = MaterialTheme.colors.onBackground,
@@ -265,13 +267,25 @@ fun DeviceBarView(syncRuntimeInfo: SyncRuntimeInfo,
                                 .background(Color.Transparent)
                                 .shadow(15.dp)
                         ) {
+
+                            val menuTexts = arrayOf(copywriter.getText("Add_Note"),
+                                copywriter.getText("Remove_Device")
+                            )
+
+                            val maxWidth = getMenWidth(menuTexts)
+
                             Column(
                                 modifier = Modifier
-                                    .width(180.dp)
+                                    .width(maxWidth)
                                     .wrapContentHeight()
                                     .clip(RoundedCornerShape(5.dp))
                                     .background(MaterialTheme.colors.surface)
                             ) {
+
+                                MenuItem(copywriter.getText("Add_Note")) {
+                                    onEdit(syncRuntimeInfo)
+                                    showPopup = false
+                                }
                                 MenuItem(copywriter.getText("Remove_Device")) {
                                     val id = syncRuntimeInfo.appInstanceId
                                     syncRuntimeInfoDao.deleteSyncRuntimeInfo(id)

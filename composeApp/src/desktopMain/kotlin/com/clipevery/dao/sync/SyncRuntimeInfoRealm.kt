@@ -25,28 +25,46 @@ class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
         }
     }
 
-    override suspend fun updateConnectInfo(syncRuntimeInfo: SyncRuntimeInfo, connectState: Int, connectHostAddress: String) {
-        realm.write {
-            findLatest(syncRuntimeInfo)?.apply {
-                this.connectState = connectState
-                this.connectHostAddress = connectHostAddress
+    private fun update(syncRuntimeInfo: SyncRuntimeInfo, block: SyncRuntimeInfo.() -> Unit): SyncRuntimeInfo? {
+        return realm.writeBlocking {
+            findLatest(syncRuntimeInfo)?.let {
+                return@writeBlocking it.apply(block)
+            } ?: run {
+                query(SyncRuntimeInfo::class).query("appInstanceId == $0", syncRuntimeInfo.appInstanceId).first().find()?.let {
+                    return@writeBlocking it.apply(block)
+                }
             }
+        }
+    }
+
+    private suspend fun suspendUpdate(syncRuntimeInfo: SyncRuntimeInfo, block: SyncRuntimeInfo.() -> Unit): SyncRuntimeInfo? {
+        return realm.write {
+            findLatest(syncRuntimeInfo)?.let {
+                return@write it.apply(block)
+            } ?: run {
+                query(SyncRuntimeInfo::class).query("appInstanceId == $0", syncRuntimeInfo.appInstanceId).first().find()?.let {
+                    return@write it.apply(block)
+                }
+            }
+        }
+    }
+
+    override suspend fun updateConnectInfo(syncRuntimeInfo: SyncRuntimeInfo, connectState: Int, connectHostAddress: String) {
+        suspendUpdate(syncRuntimeInfo) {
+            this.connectState = connectState
+            this.connectHostAddress = connectHostAddress
         }
     }
 
     override fun updateAllowSend(syncRuntimeInfo: SyncRuntimeInfo, allowSend: Boolean): SyncRuntimeInfo? {
-        return realm.writeBlocking {
-            findLatest(syncRuntimeInfo)?.apply {
-                this.allowSend = allowSend
-            }
+        return update(syncRuntimeInfo) {
+            this.allowSend = allowSend
         }
     }
 
     override fun updateAllowReceive(syncRuntimeInfo: SyncRuntimeInfo, allowReceive: Boolean): SyncRuntimeInfo? {
-        return realm.writeBlocking {
-            findLatest(syncRuntimeInfo)?.apply {
-                this.allowReceive = allowReceive
-            }
+        return update(syncRuntimeInfo) {
+            this.allowReceive = allowReceive
         }
     }
 
@@ -164,6 +182,12 @@ class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
                 .find()?.let {
                     delete(it)
                 }
+        }
+    }
+
+    override fun updateNoteName(syncRuntimeInfo: SyncRuntimeInfo, noteName: String): SyncRuntimeInfo? {
+        return update(syncRuntimeInfo) {
+            this.noteName = noteName
         }
     }
 }
