@@ -8,8 +8,6 @@ interface SyncRuntimeInfoDao {
 
     fun getSyncRuntimeInfo(appInstanceId: String): SyncRuntimeInfo?
 
-    suspend fun getSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo): SyncRuntimeInfo?
-
     suspend fun updateConnectState(syncRuntimeInfo: SyncRuntimeInfo, connectState: Int)
 
     suspend fun updateConnectInfo(syncRuntimeInfo: SyncRuntimeInfo, connectState: Int, connectHostAddress: String)

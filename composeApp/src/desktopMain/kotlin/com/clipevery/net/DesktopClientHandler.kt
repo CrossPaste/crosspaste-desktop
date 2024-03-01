@@ -11,7 +11,7 @@ import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.SignalProtocolAddress
 import org.signal.libsignal.protocol.state.SignalProtocolStore
 
-class DesktopClientHandler(private val syncRuntimeInfo: SyncRuntimeInfo,
+class DesktopClientHandler(private var syncRuntimeInfo: SyncRuntimeInfo,
                            private val syncClientApi: SyncClientApi,
                            private val signalProtocolStore: SignalProtocolStore,
                            private val syncRuntimeInfoDao: SyncRuntimeInfoDao): ClientHandler {
@@ -116,7 +116,8 @@ class DesktopClientHandler(private val syncRuntimeInfo: SyncRuntimeInfo,
             this.currentConnectState = this.disconnected
         }
 
-        syncRuntimeInfoDao.getSyncRuntimeInfo(syncRuntimeInfo)?.let {
+        syncRuntimeInfoDao.getSyncRuntimeInfo(syncRuntimeInfo.appInstanceId)?.let {
+            syncRuntimeInfo = it
             do {
                 try {
                     this.currentConnectState!!.autoResolve(it)

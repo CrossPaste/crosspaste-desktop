@@ -24,6 +24,7 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import org.signal.libsignal.protocol.InvalidMessageException
+import org.signal.libsignal.protocol.NoSessionException
 import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.SignalProtocolAddress
 import org.signal.libsignal.protocol.message.PreKeySignalMessage
@@ -124,7 +125,8 @@ fun Routing.syncRouting() {
                 try {
                     val signalMessage = SignalMessage(bytes)
                     decrypt = sessionCipher.decrypt(signalMessage)
-                } catch (ignore: InvalidMessageException) {}
+                } catch (ignore: InvalidMessageException) {
+                } catch (ignore: NoSessionException) { }
             }
 
             if (decrypt == null) {

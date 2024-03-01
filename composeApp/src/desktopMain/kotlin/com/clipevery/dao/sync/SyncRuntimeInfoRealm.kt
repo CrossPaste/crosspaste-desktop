@@ -17,12 +17,6 @@ class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
         return realm.query(SyncRuntimeInfo::class, "appInstanceId == $0", appInstanceId).first().find()
     }
 
-    override suspend fun getSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo): SyncRuntimeInfo? {
-        return realm.write {
-            findLatest(syncRuntimeInfo)
-        }
-    }
-
     override suspend fun updateConnectState(syncRuntimeInfo: SyncRuntimeInfo, connectState: Int) {
         realm.write {
             findLatest(syncRuntimeInfo)?.apply {
