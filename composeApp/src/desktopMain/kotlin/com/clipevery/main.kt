@@ -15,6 +15,7 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.clipevery.app.AppFileType
 import com.clipevery.app.AppUI
+import com.clipevery.clip.ClipSearchService
 import com.clipevery.clip.ClipboardService
 import com.clipevery.listen.GlobalListener
 import com.clipevery.log.initLogger
@@ -47,6 +48,7 @@ fun initInject(koinApplication: KoinApplication) {
 
 fun exitClipEveryApplication(exitApplication: () -> Unit) {
     val koinApplication = Dependencies.koinApplication
+    koinApplication.koin.get<ClipSearchService>().stop()
     koinApplication.koin.get<ClipBonjourService>().unregisterService()
     koinApplication.koin.get<ClipServer>().stop()
     exitApplication()
@@ -89,12 +91,12 @@ fun main() {
         Tray(
             icon = trayIcon,
             mouseListener = getTrayMouseAdapter(windowState) {
-                appUI.showWindow = !appUI.showWindow
+                appUI.showMainWindow = !appUI.showMainWindow
             },
         )
 
         val exitApplication: () -> Unit = {
-            appUI.showWindow = false
+            appUI.showMainWindow = false
             ioScope.launch {
                 exitClipEveryApplication { exitApplication() }
             }
@@ -102,7 +104,7 @@ fun main() {
 
         Window(
             onCloseRequest = exitApplication,
-            visible = appUI.showWindow,
+            visible = appUI.showMainWindow,
             state = windowState,
             title = "Clipevery",
             icon = painterResource("clipevery_icon.png"),
@@ -115,11 +117,11 @@ fun main() {
             LaunchedEffect(Unit) {
                 window.addWindowFocusListener(object : java.awt.event.WindowFocusListener {
                     override fun windowGainedFocus(e: java.awt.event.WindowEvent?) {
-                        appUI.showWindow = true
+                        appUI.showMainWindow = true
                     }
 
                     override fun windowLostFocus(e: java.awt.event.WindowEvent?) {
-                        appUI.showWindow = false
+                        appUI.showMainWindow = false
                     }
                 })
 
@@ -151,7 +153,7 @@ fun main() {
             }
             ClipeveryApp(
                 koinApplication,
-                hideWindow = { appUI.showWindow = false },
+                hideWindow = { appUI.showMainWindow = false },
                 exitApplication = exitApplication
             )
         }

@@ -98,6 +98,7 @@ compose.desktop {
 
         jvmArgs("-DloggerLevel=$loggerLevel")
         jvmArgs("-DappEnv=$appEnv")
+        jvmArgs("-DsupportShortcutKey=true")
         jvmArgs("-Dcompose.interop.blending=true")
 
         nativeDistributions {

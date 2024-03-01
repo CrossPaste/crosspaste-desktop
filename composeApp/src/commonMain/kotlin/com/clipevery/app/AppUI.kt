@@ -19,7 +19,9 @@ class AppUI(val width: Dp, val height: Dp) {
     private var refreshTokenJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.IO)
 
-    var showWindow by mutableStateOf(false)
+    var showMainWindow by mutableStateOf(false)
+
+    var showSearchWindow by mutableStateOf(true)
 
     var showToken by mutableStateOf(false)
 
