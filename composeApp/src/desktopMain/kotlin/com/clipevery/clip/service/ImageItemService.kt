@@ -1,6 +1,7 @@
 package com.clipevery.clip.service
 
 import com.clipevery.app.AppFileType
+import com.clipevery.app.AppInfo
 import com.clipevery.clip.ClipCollector
 import com.clipevery.clip.ClipItemService
 import com.clipevery.clip.item.ImageClipItem
@@ -23,7 +24,7 @@ import java.nio.file.Path
 import javax.imageio.ImageIO
 
 
-class ImageItemService: ClipItemService {
+class ImageItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
 
     companion object ImageItemService {
         const val IMAGE_ID = "image/x-java-image"
@@ -63,7 +64,7 @@ class ImageItemService: ClipItemService {
                name += ".png"
                "png"
            }
-           val relativePath = createClipRelativePath(clipId, name)
+           val relativePath = createClipRelativePath(appInfo.appInstanceId, clipId, name)
            val imagePath = createClipPath(relativePath, isFile = true, AppFileType.IMAGE)
            if (writeImage(image, ext, imagePath)) {
                val md5 = getFileMd5(imagePath)

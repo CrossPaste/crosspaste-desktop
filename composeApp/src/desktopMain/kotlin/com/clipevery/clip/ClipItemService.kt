@@ -1,13 +1,14 @@
 package com.clipevery.clip
 
+import com.clipevery.app.AppInfo
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 
-interface ClipItemService {
+abstract class ClipItemService(protected val appInfo: AppInfo) {
 
-    fun getIdentifiers(): List<String>
+    abstract fun getIdentifiers(): List<String>
 
-    fun createPreClipItem(
+    abstract fun createPreClipItem(
         clipId: Int,
         itemIndex: Int,
         identifier: String,
@@ -31,13 +32,13 @@ interface ClipItemService {
         }
     }
 
-    fun doLoadRepresentation(transferData: Any,
-                             clipId: Int,
-                             itemIndex: Int,
-                             dataFlavor: DataFlavor,
-                             dataFlavorMap: Map<String, List<DataFlavor>>,
-                             transferable: Transferable,
-                             clipCollector: ClipCollector)
+    abstract fun doLoadRepresentation(transferData: Any,
+                                      clipId: Int,
+                                      itemIndex: Int,
+                                      dataFlavor: DataFlavor,
+                                      dataFlavorMap: Map<String, List<DataFlavor>>,
+                                      transferable: Transferable,
+                                      clipCollector: ClipCollector)
 
     fun collectError(error: Exception,
                      clipId: Int,
