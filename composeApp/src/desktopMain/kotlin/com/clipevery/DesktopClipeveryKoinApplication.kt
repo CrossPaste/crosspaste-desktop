@@ -60,6 +60,8 @@ import com.clipevery.signal.DesktopSignedPreKeyStore
 import com.clipevery.signal.getClipIdentityKeyStoreFactory
 import com.clipevery.ui.DesktopThemeDetector
 import com.clipevery.ui.ThemeDetector
+import com.clipevery.ui.resource.ClipResourceLoader
+import com.clipevery.ui.resource.DesktopAbsoluteClipResourceLoader
 import com.clipevery.utils.DesktopFileUtils
 import com.clipevery.utils.DesktopQRCodeGenerator
 import com.clipevery.utils.FileUtils
@@ -144,6 +146,7 @@ object Dependencies {
             single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
             single<GlobalListener> { GlobalListener(get(), get()) }
             single<ThemeDetector> { DesktopThemeDetector(get()) }
+            single<ClipResourceLoader> { DesktopAbsoluteClipResourceLoader }
         }
         return GlobalContext.startKoin {
             modules(appModule)
