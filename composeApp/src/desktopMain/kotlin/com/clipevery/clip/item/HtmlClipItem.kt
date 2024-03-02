@@ -24,7 +24,7 @@ class HtmlClipItem: RealmObject, ClipAppearItem, ClipHtml {
 
     override fun getHtmlImagePath(): Path {
         val basePath = DesktopPathProvider.resolve(appFileType = AppFileType.HTML)
-        return DesktopPathProvider.resolve(basePath, relativePath, autoCreate = false)
+        return DesktopPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
 
     }
 

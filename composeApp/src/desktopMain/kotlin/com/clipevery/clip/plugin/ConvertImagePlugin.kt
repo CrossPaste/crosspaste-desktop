@@ -21,9 +21,9 @@ object ConvertImagePlugin: ClipPlugin {
                 val imageBasePath = DesktopPathProvider.resolve(appFileType = AppFileType.IMAGE)
 
                 appearItem.relativePathList.map {
-                    val srcPath = DesktopPathProvider.resolve(fileBasePath, it, autoCreate = false)
-                    val destPath = DesktopPathProvider.resolve(imageBasePath, it, autoCreate = true)
-                    if (DesktopFileUtils.moveFile(srcPath, destPath)) {
+                    val srcPath = DesktopPathProvider.resolve(fileBasePath, it, autoCreate = false, isFile = true)
+                    val destPath = DesktopPathProvider.resolve(imageBasePath, it, autoCreate = true, isFile = true)
+                    if (!DesktopFileUtils.moveFile(srcPath, destPath)) {
                         throw IllegalStateException("Failed to move file from $srcPath to $destPath")
                     }
                 }
