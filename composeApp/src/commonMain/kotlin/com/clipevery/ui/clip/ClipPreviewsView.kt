@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -134,15 +135,19 @@ fun ClipPreviewsView() {
     }
 
     Box(modifier = Modifier.fillMaxWidth()) {
-
-
         LazyColumn(
             state = listState,
             modifier = Modifier.wrapContentHeight()
         ) {
             itemsIndexed(rememberClipDataList) { index, clipData ->
-                ClipPreviewItemView(clipData, isLast = index == rememberClipDataList.size - 1) {
-                    ClipSpecificPreviewView(clipData)
+                ClipPreviewItemView(clipData) {
+                    ClipSpecificPreviewView(this)
+                }
+                if (index != rememberClipDataList.size - 1) {
+                    Divider(
+                        color = MaterialTheme.colors.onBackground,
+                        thickness = 2.dp
+                    )
                 }
             }
         }
