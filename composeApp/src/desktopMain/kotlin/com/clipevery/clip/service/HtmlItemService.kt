@@ -1,6 +1,7 @@
 package com.clipevery.clip.service
 
 import com.clipevery.app.AppFileType
+import com.clipevery.app.AppInfo
 import com.clipevery.clip.ClipCollector
 import com.clipevery.clip.ClipItemService
 import com.clipevery.clip.DesktopChromeService
@@ -15,7 +16,7 @@ import io.realm.kotlin.MutableRealm
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 
-class HtmlItemService: ClipItemService {
+class HtmlItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
 
     companion object HtmlItemService {
 
@@ -54,7 +55,7 @@ class HtmlItemService: ClipItemService {
         if (transferData is String) {
             val html = extractHtml(transferData)
             val md5 = md5ByString(html)
-            val relativePath = DesktopFileUtils.createClipRelativePath(clipId, "html2Image.png")
+            val relativePath = DesktopFileUtils.createClipRelativePath(appInfo.appInstanceId, clipId, "html2Image.png")
             chromeService.html2Image(html)?.let {
                 val basePath = DesktopPathProvider.resolve(appFileType = AppFileType.HTML)
                 val imagePath = DesktopPathProvider.resolve(basePath, relativePath, isFile = true)

@@ -1,5 +1,6 @@
 package com.clipevery.clip.service
 
+import com.clipevery.app.AppInfo
 import com.clipevery.clip.ClipCollector
 import com.clipevery.clip.ClipItemService
 import com.clipevery.clip.item.TextClipItem
@@ -9,7 +10,7 @@ import io.realm.kotlin.MutableRealm
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 
-class TextItemService: ClipItemService {
+class TextItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
 
     companion object TextItemService {
 

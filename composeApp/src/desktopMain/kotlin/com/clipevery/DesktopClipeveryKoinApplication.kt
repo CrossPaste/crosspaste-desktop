@@ -123,11 +123,11 @@ object Dependencies {
             single<ClipboardService> { getDesktopClipboardService(get()) }
             single<TransferableConsumer> { DesktopTransferableConsumer(
                 get(), get(), get(), listOf(
-                    FilesItemService(),
-                    HtmlItemService(),
-                    ImageItemService(),
-                    TextItemService(),
-                    UrlItemService()
+                    FilesItemService(appInfo = get()),
+                    HtmlItemService(appInfo = get()),
+                    ImageItemService(appInfo = get()),
+                    TextItemService(appInfo = get()),
+                    UrlItemService(appInfo = get())
                 ), listOf(
                     UrlTextCombinePlugin,
                     ConvertUrlPlugin,
