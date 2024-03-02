@@ -22,4 +22,6 @@ interface FileUtils {
     fun getFileMd5(path: Path): String
 
     fun copyFile(src: Path, dest: Path): Boolean
+
+    fun moveFile(src: Path, dest: Path): Boolean
 }

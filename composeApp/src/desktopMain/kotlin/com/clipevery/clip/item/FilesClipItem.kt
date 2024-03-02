@@ -4,6 +4,8 @@ import com.clipevery.app.AppFileType
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.path.DesktopPathProvider
+import com.clipevery.presist.DesktopOneFilePersist
+import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.types.RealmList
 import io.realm.kotlin.types.RealmObject
@@ -18,21 +20,27 @@ class FilesClipItem: RealmObject, ClipAppearItem, ClipFiles {
     @PrimaryKey
     override var id: ObjectId = BsonObjectId()
 
-    var identifier: String = ""
+    var identifierList: RealmList<String> = realmListOf()
 
     var relativePathList: RealmList<String> = realmListOf()
+
+    var md5List: RealmList<String> = realmListOf()
 
     override var md5: String = ""
 
     override fun getFilePaths(): List<Path> {
         val basePath = DesktopPathProvider.resolve(appFileType = AppFileType.FILE)
         return relativePathList.map { relativePath ->
-            DesktopPathProvider.resolve(basePath, relativePath, autoCreate = false)
+            DesktopPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
         }
     }
 
+    override fun getFileMd5List(): List<String> {
+        return md5List
+    }
+
     override fun getIdentifiers(): List<String> {
-        return listOf(identifier)
+        return identifierList
     }
 
     override fun getClipType(): Int {
@@ -47,5 +55,10 @@ class FilesClipItem: RealmObject, ClipAppearItem, ClipFiles {
 
     override fun update(data: Any, md5: String) {}
 
-    override fun clear() {}
+    override fun clear(realm: MutableRealm) {
+        for (path in getFilePaths()) {
+            DesktopOneFilePersist(path).delete()
+        }
+        realm.delete(this)
+    }
 }

@@ -1,7 +1,11 @@
 package com.clipevery.clip.item
 
+import com.clipevery.app.AppFileType
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipType
+import com.clipevery.path.DesktopPathProvider
+import com.clipevery.presist.DesktopOneFilePersist
+import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.types.RealmList
 import io.realm.kotlin.types.RealmObject
@@ -9,20 +13,34 @@ import io.realm.kotlin.types.annotations.PrimaryKey
 import org.mongodb.kbson.BsonObjectId
 import org.mongodb.kbson.ObjectId
 import java.nio.file.Path
+import java.nio.file.Paths
 
 class ImagesClipItem: RealmObject, ClipAppearItem, ClipFiles {
 
     @PrimaryKey
     override var id: ObjectId = BsonObjectId()
-    var imageClipItems: RealmList<ImageClipItem> = realmListOf()
+
+    var identifierList: RealmList<String> = realmListOf()
+
+    var relativePathList: RealmList<String> = realmListOf()
+
+    var md5List: RealmList<String> = realmListOf()
+
     override var md5: String = ""
 
     override fun getFilePaths(): List<Path> {
-        return imageClipItems.map { it.getImagePath() }
+        val basePath = DesktopPathProvider.resolve(appFileType = AppFileType.IMAGE)
+        return relativePathList.map { relativePath ->
+            DesktopPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
+        }
+    }
+
+    override fun getFileMd5List(): List<String> {
+        return md5List
     }
 
     override fun getIdentifiers(): List<String> {
-        return imageClipItems.map { it.identifier }
+        return identifierList
     }
 
     override fun getClipType(): Int {
@@ -30,14 +48,17 @@ class ImagesClipItem: RealmObject, ClipAppearItem, ClipFiles {
     }
 
     override fun getSearchContent(): String {
-        return imageClipItems.map { it.relativePath }.joinToString(separator = " ")
+        return relativePathList.map { path ->
+            Paths.get(path).fileName
+        }.joinToString(separator = " ")
     }
 
     override fun update(data: Any, md5: String) {}
 
-    override fun clear() {
-        for (imageClipItem in imageClipItems) {
-            imageClipItem.clear()
+    override fun clear(realm: MutableRealm) {
+        for (path in getFilePaths()) {
+            DesktopOneFilePersist(path).delete()
         }
+        realm.delete(this)
     }
 }

@@ -6,6 +6,7 @@ import com.clipevery.app.AppFileType
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.path.DesktopPathProvider
+import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
 import org.mongodb.kbson.BsonObjectId
@@ -23,7 +24,7 @@ class HtmlClipItem: RealmObject, ClipAppearItem, ClipHtml {
 
     override fun getHtmlImagePath(): Path {
         val basePath = DesktopPathProvider.resolve(appFileType = AppFileType.HTML)
-        return DesktopPathProvider.resolve(basePath, relativePath, autoCreate = false)
+        return DesktopPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
 
     }
 
@@ -57,7 +58,8 @@ class HtmlClipItem: RealmObject, ClipAppearItem, ClipHtml {
         }
     }
 
-    override fun clear() {
-        // do nothing
+    override fun clear(realm: MutableRealm) {
+        // todo clear html image
+        realm.delete(this)
     }
 }

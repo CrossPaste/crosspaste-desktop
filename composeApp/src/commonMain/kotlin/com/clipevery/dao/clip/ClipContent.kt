@@ -1,5 +1,6 @@
 package com.clipevery.dao.clip
 
+import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.asRealmObject
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.types.RealmAny
@@ -18,10 +19,11 @@ class ClipContent: RealmObject {
     }
 
     @Throws(IOException::class)
-    fun clear() {
+    fun clear(realm: MutableRealm) {
         for (clipAppearItem in clipAppearItems) {
-            getClipItem(clipAppearItem)?.clear()
+            getClipItem(clipAppearItem)?.clear(realm)
         }
+        realm.delete(this)
     }
 
     companion object {

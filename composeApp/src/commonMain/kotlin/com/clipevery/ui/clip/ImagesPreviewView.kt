@@ -2,8 +2,10 @@ package com.clipevery.ui.clip
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -16,21 +18,29 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
-import com.clipevery.clip.item.ClipImage
+import com.clipevery.clip.item.ClipFiles
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.image
 
 @Composable
-fun ImagePreviewView(clipData: ClipData) {
+fun ImagesPreviewView(clipData: ClipData) {
     clipData.getClipItem()?.let {
 
         val current = LocalKoinApplication.current
         val copywriter = current.koin.get<GlobalCopywriter>()
-        val clipImage = it as ClipImage
+        val clipFiles = it as ClipFiles
 
         ClipSpecificPreviewContentView(it, {
-            SingleImagePreviewView(clipImage.getImagePath())
+            val imagePaths = clipFiles.getFilePaths()
+            LazyRow(modifier = Modifier.fillMaxSize()) {
+                items(imagePaths.size) { index ->
+                    SingleImagePreviewView(imagePaths[index])
+                    if (index != imagePaths.size - 1) {
+                        Spacer(modifier = Modifier.size(10.dp))
+                    }
+                }
+            }
         }, {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(

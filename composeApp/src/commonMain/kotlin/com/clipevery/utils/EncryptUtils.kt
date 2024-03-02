@@ -70,11 +70,18 @@ fun md5(bytes: ByteArray): String {
 }
 
 fun md5ByArray(array: Array<String>): String {
-    val outputStream = ByteArrayOutputStream()
-    array.forEach {
-        outputStream.write(it.toByteArray())
+    if (array.isEmpty()) {
+        throw IllegalArgumentException("Array is empty")
     }
-    return md5(outputStream.toByteArray())
+    if (array.size == 1) {
+        return array[0]
+    } else {
+        val outputStream = ByteArrayOutputStream()
+        array.forEach {
+            outputStream.write(it.toByteArray())
+        }
+        return md5(outputStream.toByteArray())
+    }
 }
 
 fun md5ByString(string: String): String {
