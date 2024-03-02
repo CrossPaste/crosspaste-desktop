@@ -38,11 +38,11 @@ object DesktopChromeService: ChromeService {
 
     private val windowDimension: Dimension  = if (currentPlatform.isWindows()) {
         val maxDpi: Int = WindowDpiHelper.getMaxDpiForMonitor()
-        val width: Int = ((350.0 * maxDpi) / 96.0).toInt()
-        val height: Int = ((120.0 * maxDpi) / 96.0).toInt()
+        val width: Int = ((340.0 * maxDpi) / 96.0).toInt()
+        val height: Int = ((100.0 * maxDpi) / 96.0).toInt()
         Dimension(width, height)
     } else {
-        Dimension(350, 120)
+        Dimension(340, 100)
     }
 
     private var chromeDriver: ChromeDriver? = null
@@ -98,7 +98,7 @@ object DesktopChromeService: ChromeService {
             driver.manage().window().size = windowDimension
             val pageHeight = driver.executeScript("return document.body.scrollHeight") as Long
             val pageWidth = driver.executeScript("return document.body.scrollWidth") as Long
-            driver.manage().window().size = Dimension(pageWidth.toInt() + 20, pageHeight.toInt())
+            driver.manage().window().size = Dimension(pageWidth.toInt(), pageHeight.toInt())
             return driver.getScreenshotAs(OutputType.BYTES)
         } ?: run {
             return null

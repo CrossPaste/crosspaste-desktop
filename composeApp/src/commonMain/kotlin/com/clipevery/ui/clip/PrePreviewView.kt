@@ -43,7 +43,7 @@ fun PrePreviewView(clipData: ClipData) {
     Row {
         Column(
             modifier = Modifier.width(340.dp)
-                .height(120.dp)
+                .height(100.dp)
         ) {
             Row(
                 modifier = Modifier
@@ -89,8 +89,8 @@ fun PrePreviewView(clipData: ClipData) {
         }
         Column(
             modifier = Modifier.width(70.dp)
-                .padding(start = 10.dp)
-                .height(100.dp),
+                .height(100.dp)
+                .padding(start = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {

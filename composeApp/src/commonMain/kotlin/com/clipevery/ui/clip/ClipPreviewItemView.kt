@@ -86,7 +86,8 @@ fun ClipPreviewItemView(clipData: ClipData, clipContent: @Composable ClipData.()
             Row(
                 modifier = Modifier.fillMaxWidth()
                     .height(120.dp)
-                    .padding(10.dp)
+                    .padding(10.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 clipData.clipContent()
             }
@@ -162,8 +163,8 @@ fun ClipSpecificPreviewContentView(
     }
     Column(
         modifier = Modifier.width(70.dp)
-            .padding(start = 10.dp)
-            .height(100.dp),
+            .height(100.dp)
+            .padding(start = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         clipAppearItem.clipRightInfo()
