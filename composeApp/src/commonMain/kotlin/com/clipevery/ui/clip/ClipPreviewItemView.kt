@@ -142,7 +142,7 @@ fun ClipSpecificPreviewView(clipData: ClipData) {
             ClipType.TEXT -> TextPreviewView(clipData)
             ClipType.URL -> UrlPreviewView(clipData)
             ClipType.HTML -> HtmlToImagePreviewView(clipData)
-            ClipType.IMAGE -> ImagePreviewView(clipData)
+            ClipType.IMAGE -> ImagesPreviewView(clipData)
             ClipType.FILE -> FilesPreviewView(clipData)
         }
     }

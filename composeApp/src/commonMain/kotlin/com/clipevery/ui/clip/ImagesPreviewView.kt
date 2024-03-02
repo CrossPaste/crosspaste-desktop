@@ -24,7 +24,7 @@ import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.image
 
 @Composable
-fun ImagePreviewView(clipData: ClipData) {
+fun ImagesPreviewView(clipData: ClipData) {
     clipData.getClipItem()?.let {
 
         val current = LocalKoinApplication.current
