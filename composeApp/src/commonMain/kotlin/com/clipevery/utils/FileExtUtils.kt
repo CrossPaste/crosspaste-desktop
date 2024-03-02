@@ -6,7 +6,7 @@ import androidx.compose.ui.res.painterResource
 
 object FileExtUtils {
 
-    private val extImageMap = mapOf(
+    private val extIconImageMap = mapOf(
         Pair("pdf", "pdf"),
         Pair("doc", "word"),
         Pair("docx", "word"),
@@ -19,7 +19,12 @@ object FileExtUtils {
         Pair("numbers", "numbers")
     )
 
+    private val canPreviewImageMap = setOf(
+        "png", "jpg", "jpeg", "gif", "bmp", "webp", "heic", "heif", "tiff", "svg")
+
+    fun canPreviewImage(ext: String): Boolean = canPreviewImageMap.contains(ext.lowercase())
+
     @Composable
-    fun getExtImagePainter(ext: String): Painter? =
-        extImageMap[ext]?.let { painterResource("file-ext/$it.png") }
+    fun getExtPreviewImagePainter(ext: String): Painter? =
+        extIconImageMap[ext]?.let { painterResource("file-ext/$it.png") }
 }
