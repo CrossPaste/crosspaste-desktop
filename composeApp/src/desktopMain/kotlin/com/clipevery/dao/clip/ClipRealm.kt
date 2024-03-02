@@ -37,25 +37,9 @@ class ClipRealm(private val realm: Realm) : ClipDao {
         realm.writeBlocking {
             for (clipData in queryToDelete.invoke(this)) {
                 try {
-                    clipData.clear()
+                    clipData.clear(this)
                 } catch (e: Exception) {
                     logger.error(e) { "clear id ${clipData.id} fail" }
-                }
-                val clipAppearContent = clipData.clipAppearContent
-                val clipAppearItem = ClipContent.getClipItem(clipAppearContent)
-                val clipAppearItems = clipData.clipContent?.clipAppearItems?.mapNotNull { anyValue ->
-                    ClipContent.getClipItem(anyValue)
-                }
-                delete(clipData)
-                clipAppearItem?.let {
-                    (clipAppearItem as? RealmObject)?.let {
-                        delete(it)
-                    }
-                }
-                clipAppearItems?.forEach { it ->
-                    (it as? RealmObject)?.let {
-                        delete(it)
-                    }
                 }
             }
         }
@@ -75,55 +59,70 @@ class ClipRealm(private val realm: Realm) : ClipDao {
     @Synchronized
     override fun releaseClipData(id: ObjectId, clipPlugins: List<ClipPlugin>) {
         var md5: String? = null
+        var releaseFail = false
         realm.writeBlocking {
             query(ClipData::class).query("id == $0", id).first().find()?.let { clipData ->
                 clipData.clipContent?.let { clipContent ->
-                    val clipAppearItems = clipContent.clipAppearItems.mapNotNull { anyValue ->
-                        ClipContent.getClipItem(anyValue)
+                    try {
+                        val iterator = clipContent.clipAppearItems.iterator()
+
+                        while (iterator.hasNext()) {
+                            val anyValue = iterator.next()
+                            ClipContent.getClipItem(anyValue)?.let {
+                                if (it.md5 == "") {
+                                    iterator.remove()
+                                    it.clear(this)
+                                }
+                            } ?: iterator.remove()
+                        }
+
+                        var clipAppearItems = clipContent.clipAppearItems.mapNotNull { anyValue ->
+                            ClipContent.getClipItem(anyValue)
+                        }
+
+                        assert(clipAppearItems.isNotEmpty())
+
+                        clipContent.clipAppearItems.clear()
+
+                        for (clipPlugin in clipPlugins) {
+                            clipAppearItems = clipPlugin.pluginProcess(clipAppearItems, this)
+                        }
+
+                        val firstItem: ClipAppearItem = clipAppearItems.first()
+
+                        md5 = firstItem.md5
+
+                        val remainingItems: List<ClipAppearItem> = clipAppearItems.drop(1)
+
+                        val clipAppearContent: RealmAny = RealmAny.create(firstItem as RealmObject)
+
+                        clipContent.clipAppearItems.addAll(remainingItems.map { RealmAny.create(it as RealmObject) })
+
+                        clipData.clipAppearContent = clipAppearContent
+                        clipData.clipContent = clipContent
+                        clipData.clipType = firstItem.getClipType()
+                        clipData.clipSearchContent = firstItem.getSearchContent()
+                        clipData.md5 = firstItem.md5
+                        clipData.preCreate = false
+                    } catch (e: Exception) {
+                        logger.error(e) { "releaseClipData fail" }
+                        releaseFail = true
                     }
-
-                    var updatedClipAppearItems = clipAppearItems.filter { it.md5 != "" }
-
-                    clipAppearItems.filter { it.md5 == "" }.forEach {
-                        it.clear()
-                        delete(it as RealmObject)
-                    }
-
-                    assert(updatedClipAppearItems.isNotEmpty())
-
-                    for (clipPlugin in clipPlugins) {
-                        updatedClipAppearItems = clipPlugin.pluginProcess(updatedClipAppearItems)
-                    }
-
-                    val firstItem: ClipAppearItem = updatedClipAppearItems.first()
-
-                    md5 = firstItem.md5
-
-                    val remainingItems: List<ClipAppearItem> = updatedClipAppearItems.drop(1)
-
-                    val clipAppearContent: RealmAny = RealmAny.create(firstItem as RealmObject)
-
-                    clipContent.clipAppearItems.clear()
-
-                    clipContent.clipAppearItems.addAll(remainingItems.map { RealmAny.create(it as RealmObject) })
-
-                    clipData.clipAppearContent = clipAppearContent
-                    clipData.clipContent = clipContent
-                    clipData.clipType = firstItem.getClipType()
-                    clipData.clipSearchContent = firstItem.getSearchContent()
-                    clipData.md5 = firstItem.md5
-                    clipData.preCreate = false
                 }
             }
         }
 
-        md5?.let {
-            doDeleteClipData {
-                query(ClipData::class, "md5 == $0", it)
-                    .query("createTime > $0", DateUtils.getPrevDay())
-                    .query("id != $0", id)
-                    .find().toList()
+        if (!releaseFail) {
+            md5?.let {
+                doDeleteClipData {
+                    query(ClipData::class, "md5 == $0", it)
+                        .query("createTime > $0", DateUtils.getPrevDay())
+                        .query("id != $0", id)
+                        .find().toList()
+                }
             }
+        } else {
+            deleteClipData(id)
         }
     }
 

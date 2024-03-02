@@ -3,7 +3,6 @@ package com.clipevery.realm
 import com.clipevery.app.AppFileType
 import com.clipevery.clip.item.FilesClipItem
 import com.clipevery.clip.item.HtmlClipItem
-import com.clipevery.clip.item.ImageClipItem
 import com.clipevery.clip.item.ImagesClipItem
 import com.clipevery.clip.item.TextClipItem
 import com.clipevery.clip.item.UrlClipItem
@@ -46,7 +45,6 @@ class RealmManagerImpl private constructor(private val config: RealmConfiguratio
             ClipLabel::class,
             FilesClipItem::class,
             HtmlClipItem::class,
-            ImageClipItem::class,
             ImagesClipItem::class,
             TextClipItem::class,
             UrlClipItem::class

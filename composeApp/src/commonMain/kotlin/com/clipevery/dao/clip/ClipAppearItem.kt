@@ -1,5 +1,6 @@
 package com.clipevery.dao.clip
 
+import io.realm.kotlin.MutableRealm
 import org.mongodb.kbson.ObjectId
 
 interface ClipAppearItem {
@@ -16,7 +17,7 @@ interface ClipAppearItem {
 
     fun update(data: Any, md5: String)
 
-    fun clear()
+    fun clear(realm: MutableRealm)
 
     fun getAppearItemId(): ClipAppearItemId {
         return ClipAppearItemId(getClipType(), md5)

@@ -73,4 +73,13 @@ object DesktopFileUtils: FileUtils {
             false
         }
     }
+
+    override fun moveFile(src: Path, dest: Path): Boolean {
+        return try {
+            Files.move(src.toFile(), dest.toFile())
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
 }

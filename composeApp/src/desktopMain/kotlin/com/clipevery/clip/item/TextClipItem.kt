@@ -2,6 +2,7 @@ package com.clipevery.clip.item
 
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipType
+import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
 import org.mongodb.kbson.BsonObjectId
@@ -34,7 +35,8 @@ class TextClipItem: RealmObject, ClipAppearItem, ClipText {
         }
     }
 
-    override fun clear() {
+    override fun clear(realm: MutableRealm) {
         // do nothing
+        realm.delete(this)
     }
 }

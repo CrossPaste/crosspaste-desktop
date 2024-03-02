@@ -11,6 +11,7 @@ import com.clipevery.utils.DesktopFileUtils.copyFile
 import com.clipevery.utils.DesktopFileUtils.createClipRelativePath
 import com.clipevery.utils.md5ByArray
 import io.realm.kotlin.MutableRealm
+import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.ext.toRealmList
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
@@ -35,7 +36,7 @@ class FilesItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
         clipCollector: ClipCollector
     ) {
         FilesClipItem().apply {
-            this.identifier = identifier
+            this.identifierList = realmListOf(identifier)
         }.let {
             clipCollector.preCollectItem(itemIndex, this::class, it)
         }
@@ -72,7 +73,8 @@ class FilesItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
             val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
                 realm.query(FilesClipItem::class).query("id == $0", clipItem.id).first().find()?.apply {
                     this.relativePathList = relativePathList.toRealmList()
-                    this.md5 = if (md5List.size == 1) md5List[0] else md5ByArray(md5List.toTypedArray())
+                    this.md5List = md5List.toRealmList()
+                    this.md5 = md5ByArray(md5List.toTypedArray())
                 }
             }
 

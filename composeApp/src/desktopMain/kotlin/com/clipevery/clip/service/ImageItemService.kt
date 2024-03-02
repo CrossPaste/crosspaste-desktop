@@ -4,7 +4,7 @@ import com.clipevery.app.AppFileType
 import com.clipevery.app.AppInfo
 import com.clipevery.clip.ClipCollector
 import com.clipevery.clip.ClipItemService
-import com.clipevery.clip.item.ImageClipItem
+import com.clipevery.clip.item.ImagesClipItem
 import com.clipevery.clip.service.HtmlItemService.HtmlItemService.HTML_ID
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.utils.DesktopFileUtils.createClipPath
@@ -13,6 +13,7 @@ import com.clipevery.utils.DesktopFileUtils.createRandomFileName
 import com.clipevery.utils.DesktopFileUtils.getExtFromFileName
 import com.clipevery.utils.DesktopFileUtils.getFileMd5
 import io.realm.kotlin.MutableRealm
+import io.realm.kotlin.ext.realmListOf
 import org.jsoup.Jsoup
 import java.awt.Image
 import java.awt.datatransfer.DataFlavor
@@ -41,8 +42,8 @@ class ImageItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
         transferable: Transferable,
         clipCollector: ClipCollector
     ) {
-        ImageClipItem().apply {
-            this.identifier = identifier
+        ImagesClipItem().apply {
+            this.identifierList = realmListOf(identifier)
         }.let {
             clipCollector.preCollectItem(itemIndex, this::class, it)
         }
@@ -69,12 +70,13 @@ class ImageItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
            if (writeImage(image, ext, imagePath)) {
                val md5 = getFileMd5(imagePath)
                val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
-                   realm.query(ImageClipItem::class).query("id == $0", clipItem.id).first().find()?.apply {
-                       this.relativePath = relativePath
+                   realm.query(ImagesClipItem::class).query("id == $0", clipItem.id).first().find()?.apply {
+                       this.relativePathList = realmListOf(relativePath)
+                       this.md5List = realmListOf(md5)
                        this.md5 = md5
                    }
                }
-                clipCollector.updateCollectItem(itemIndex, this::class, update)
+               clipCollector.updateCollectItem(itemIndex, this::class, update)
            }
         }
     }

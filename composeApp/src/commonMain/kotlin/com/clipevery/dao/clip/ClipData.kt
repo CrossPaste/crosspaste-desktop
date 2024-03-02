@@ -1,6 +1,7 @@
 package com.clipevery.dao.clip
 
 import com.clipevery.dao.clip.ClipContent.Companion.getClipItem
+import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmSetOf
 import io.realm.kotlin.types.RealmAny
 import io.realm.kotlin.types.RealmInstant
@@ -49,8 +50,10 @@ class ClipData: RealmObject {
         this.appInstanceId = appInstanceId
     }
 
-    fun clear() {
-        getClipItem(clipAppearContent)?.clear()
-        clipContent?.clear()
+    // must be called in writeBlocking
+    fun clear(realm: MutableRealm) {
+        getClipItem(clipAppearContent)?.clear(realm)
+        clipContent?.clear(realm)
+        realm.delete(this)
     }
 }
