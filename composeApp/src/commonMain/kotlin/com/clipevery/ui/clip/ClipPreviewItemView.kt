@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -56,93 +55,72 @@ fun ClipData.getClipItem(): ClipAppearItem? {
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun ClipPreviewItemView(clipData: ClipData, isLast: Boolean, clipContent: @Composable ClipAppearItem.() -> Unit) {
+fun ClipPreviewItemView(clipData: ClipData, clipContent: @Composable ClipData.() -> Unit) {
+    val current = LocalKoinApplication.current
+    val copywriter = current.koin.get<GlobalCopywriter>()
 
-    clipData.getClipItem()?.let {
-        val current = LocalKoinApplication.current
-        val copywriter = current.koin.get<GlobalCopywriter>()
+    var hover by remember { mutableStateOf(false) }
+    val backgroundColor = if (hover) MaterialTheme.colors.secondaryVariant else MaterialTheme.colors.background
 
-        if (it.getClipType() == ClipType.TEXT ||
-            it.getClipType() == ClipType.URL ||
-            it.getClipType() == ClipType.HTML ||
-            it.getClipType() == ClipType.IMAGE ||
-            it.getClipType() == ClipType.FILE
-            ) {
+    Row(modifier = Modifier
+        .fillMaxWidth()
+        .height(150.dp)
+        .onPointerEvent(
+            eventType = PointerEventType.Enter,
+            onEvent = {
+                hover = true
+            }
+        )
+        .onPointerEvent(
+            eventType = PointerEventType.Exit,
+            onEvent = {
+                hover = false
+            }
+        )
+        .background(backgroundColor)) {
 
-            var hover by remember { mutableStateOf(false) }
-            val backgroundColor = if (hover) MaterialTheme.colors.secondaryVariant else MaterialTheme.colors.background
-
-            Row(modifier = Modifier
-                .fillMaxWidth()
+        Column(
+            modifier = Modifier.fillMaxWidth()
                 .height(150.dp)
-                .onPointerEvent(
-                    eventType = PointerEventType.Enter,
-                    onEvent = {
-                        hover = true
-                    }
-                )
-                .onPointerEvent(
-                    eventType = PointerEventType.Exit,
-                    onEvent = {
-                        hover = false
-                    }
-                )
-                .background(backgroundColor)) {
-
-                Column(
-                    modifier = Modifier.fillMaxWidth()
-                        .height(150.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth()
+                    .height(120.dp)
+                    .padding(10.dp)
+            ) {
+                clipData.clipContent()
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth()
+                    .background(color = MaterialTheme.colors.surface)
+                    .height(30.dp)
+                    .padding(horizontal = 10.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(modifier = Modifier.width(340.dp)
+                    .padding(end = 10.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth()
-                            .height(120.dp)
-                            .padding(10.dp)
-                    ) {
-                        it.clipContent()
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth()
-                            .background(color = MaterialTheme.colors.surface)
-                            .height(30.dp)
-                            .padding(horizontal = 10.dp),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(modifier = Modifier.width(340.dp)
-                            .padding(end = 10.dp)
-                        ) {
-                            // todo label list ui
-                        }
-                        Row(modifier = Modifier.width(70.dp)
-                            .clip(RoundedCornerShape(3.dp))
-                            .background(color = MaterialTheme.colors.background)
-                            .padding(vertical = 4.dp),
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = getDateText(clipData.createTime, copywriter),
-                                fontFamily = FontFamily.SansSerif,
-                                style = TextStyle(
-                                    fontWeight = FontWeight.Light,
-                                    color = MaterialTheme.colors.onBackground,
-                                    fontSize = 10.sp
-                                )
-                            )
-                        }
-                    }
+                    // todo label list ui
+                }
+                Row(modifier = Modifier.width(70.dp)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(color = MaterialTheme.colors.background)
+                    .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = getDateText(clipData.createTime, copywriter),
+                        fontFamily = FontFamily.SansSerif,
+                        style = TextStyle(
+                            fontWeight = FontWeight.Light,
+                            color = MaterialTheme.colors.onBackground,
+                            fontSize = 10.sp
+                        )
+                    )
                 }
             }
-
         }
-    } ?: run {
-        PrePreviewView(clipData)
-    }
-
-    if (!isLast) {
-        Divider(
-            color = MaterialTheme.colors.onBackground,
-            thickness = 2.dp
-        )
     }
 }
 
