@@ -27,12 +27,16 @@ object ConvertImagePlugin: ClipPlugin {
                         throw IllegalStateException("Failed to move file from $srcPath to $destPath")
                     }
                 }
+                val identifierList = appearItem.getIdentifiers().toRealmList()
+                val relativePathList = appearItem.relativePathList.toRealmList()
+                val md5List = appearItem.getFileMd5List().toRealmList()
+                val md5 = appearItem.md5
                 appearItem.clear(realm)
                 ImagesClipItem().apply {
-                    this.identifierList = appearItem.getIdentifiers().toRealmList()
-                    this.relativePathList = appearItem.relativePathList.toRealmList()
-                    this.md5List = appearItem.getFileMd5List().toRealmList()
-                    this.md5 = appearItem.md5
+                    this.identifierList = identifierList
+                    this.relativePathList = relativePathList
+                    this.md5List = md5List
+                    this.md5 = md5
                 }
             } else {
                 appearItem

@@ -12,11 +12,14 @@ object ConvertUrlPlugin: ClipPlugin {
     override fun pluginProcess(clipAppearItems: List<ClipAppearItem>, realm: MutableRealm): List<ClipAppearItem> {
         return clipAppearItems.map {
             if (it is TextClipItem && isUrl(it.text)) {
+                val identifier = it.identifier
+                val text = it.text
+                val md5 = it.md5
                 it.clear(realm)
                 UrlClipItem().apply {
-                    this.identifier = it.identifier
-                    this.url = it.text
-                    this.md5 = it.md5
+                    this.identifier = identifier
+                    this.url = text
+                    this.md5 = md5
                 }
             } else {
                 it
