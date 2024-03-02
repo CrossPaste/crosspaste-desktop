@@ -13,6 +13,7 @@ import org.openqa.selenium.chrome.ChromeOptions
 import java.nio.file.Path
 import java.util.Base64
 import kotlin.io.path.absolutePathString
+import kotlin.math.max
 
 object DesktopChromeService: ChromeService {
 
@@ -24,6 +25,11 @@ object DesktopChromeService: ChromeService {
 
     private val options: ChromeOptions = ChromeOptions()
         .addArguments("--hide-scrollbars")
+        .addArguments("--disable-extensions")
+        .addArguments("--headless")
+        .addArguments("--disable-gpu")
+        .addArguments("--disable-software-rasterizer")
+        .addArguments("--no-sandbox")
 
     private val initChromeDriver: (String, String, String, Path) -> Unit = { chromeSuffix, driverName, headlessName, resourcesPath ->
         System.setProperty("webdriver.chrome.driver", resourcesPath
@@ -38,11 +44,11 @@ object DesktopChromeService: ChromeService {
 
     private val windowDimension: Dimension  = if (currentPlatform.isWindows()) {
         val maxDpi: Int = WindowDpiHelper.getMaxDpiForMonitor()
-        val width: Int = ((350.0 * maxDpi) / 96.0).toInt()
-        val height: Int = ((120.0 * maxDpi) / 96.0).toInt()
+        val width: Int = ((340.0 * maxDpi) / 96.0).toInt()
+        val height: Int = ((100.0 * maxDpi) / 96.0).toInt()
         Dimension(width, height)
     } else {
-        Dimension(350, 120)
+        Dimension(340, 100)
     }
 
     private var chromeDriver: ChromeDriver? = null
@@ -96,9 +102,10 @@ object DesktopChromeService: ChromeService {
             val encodedContent = Base64.getEncoder().encodeToString(html.toByteArray())
             driver.get("data:text/html;charset=UTF-8;base64,$encodedContent")
             driver.manage().window().size = windowDimension
-            val pageHeight = driver.executeScript("return document.body.scrollHeight") as Long
-            val pageWidth = driver.executeScript("return document.body.scrollWidth") as Long
-            driver.manage().window().size = Dimension(pageWidth.toInt() + 20, pageHeight.toInt())
+            val dimensions: List<Long> = driver.executeScript("return [document.body.scrollWidth, document.body.scrollHeight]") as List<Long>
+            val pageWidth = max(dimensions[0].toInt(), windowDimension.width)
+            val pageHeight = max(dimensions[1].toInt(), windowDimension.height)
+            driver.manage().window().size = Dimension(pageWidth, pageHeight)
             return driver.getScreenshotAs(OutputType.BYTES)
         } ?: run {
             return null
