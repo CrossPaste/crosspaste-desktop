@@ -101,6 +101,7 @@ object DesktopChromeService: ChromeService {
         chromeDriver?.let{ driver ->
             val encodedContent = Base64.getEncoder().encodeToString(html.toByteArray())
             driver.get("data:text/html;charset=UTF-8;base64,$encodedContent")
+            driver.manage().window().size = windowDimension
             val dimensions: List<Long> = driver.executeScript("return [document.body.scrollWidth, document.body.scrollHeight]") as List<Long>
             val pageWidth = max(dimensions[0].toInt(), windowDimension.width)
             val pageHeight = max(dimensions[1].toInt(), windowDimension.height)
