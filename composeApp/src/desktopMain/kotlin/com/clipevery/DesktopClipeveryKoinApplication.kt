@@ -7,8 +7,10 @@ import com.clipevery.app.AppInfo
 import com.clipevery.app.AppUI
 import com.clipevery.app.DesktopAppInfoFactory
 import com.clipevery.clip.ChromeService
+import com.clipevery.clip.ClipSearchService
 import com.clipevery.clip.ClipboardService
 import com.clipevery.clip.DesktopChromeService
+import com.clipevery.clip.DesktopClipSearchService
 import com.clipevery.clip.DesktopTransferableConsumer
 import com.clipevery.clip.TransferableConsumer
 import com.clipevery.clip.getDesktopClipboardService
@@ -135,11 +137,12 @@ object Dependencies {
                 )
             ) }
             single<ChromeService> { DesktopChromeService }
+            single<ClipSearchService> { DesktopClipSearchService(get()) }
 
             // ui component
             single<AppUI> { AppUI(width = 460.dp, height = 710.dp) }
             single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
-            single<GlobalListener> { GlobalListener(get()) }
+            single<GlobalListener> { GlobalListener(get(), get()) }
             single<ThemeDetector> { DesktopThemeDetector(get()) }
         }
         return GlobalContext.startKoin {

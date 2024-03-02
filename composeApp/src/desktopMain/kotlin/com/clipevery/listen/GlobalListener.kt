@@ -1,7 +1,9 @@
 package com.clipevery.listen
 
-import com.clipevery.app.AppEnv
+import com.clipevery.clip.ClipSearchService
 import com.clipevery.config.ConfigManager
+import com.clipevery.ui.search.createSearchWindow
+import com.clipevery.utils.ioDispatcher
 import com.github.kwhat.jnativehook.GlobalScreen
 import com.github.kwhat.jnativehook.NativeHookException
 
@@ -9,43 +11,46 @@ import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
 
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 val logger = KotlinLogging.logger {}
 
-class GlobalListener(configManager: ConfigManager) {
+class GlobalListener(private val configManager: ConfigManager,
+                     private val clipSearchService: ClipSearchService) {
 
     init {
-        if (configManager.config.appEnv == AppEnv.PRODUCTION) {
+        if (System.getProperty("supportShortcutKey", false.toString()).toBoolean()) {
             try {
                 GlobalScreen.registerNativeHook()
             } catch (ex: NativeHookException) {
                 logger.error { "There was a problem registering the native hook." }
                 logger.error { "ex.message" }
             }
-            GlobalScreen.addNativeKeyListener(GlobalKeyListenerExample())
+            GlobalScreen.addNativeKeyListener(OpenSearchListener(clipSearchService))
         }
     }
 
 }
 
 
-class GlobalKeyListenerExample : NativeKeyListener {
+class OpenSearchListener(private val clipSearchService: ClipSearchService) : NativeKeyListener {
+
+    private val logger = KotlinLogging.logger {}
+
+    private val dispatcher = CoroutineScope(ioDispatcher)
+
     override fun nativeKeyPressed(e: NativeKeyEvent) {
-        logger.info { "Key Pressed: " + NativeKeyEvent.getKeyText(e.keyCode) }
-        if (e.keyCode == NativeKeyEvent.VC_ESCAPE) {
-            try {
-                GlobalScreen.unregisterNativeHook()
-            } catch (nativeHookException: NativeHookException) {
-                nativeHookException.printStackTrace()
+
+        val isCmdOrCtrlPressed = (e.modifiers and NativeKeyEvent.META_MASK) != 0
+        val isShiftPressed = (e.modifiers and NativeKeyEvent.SHIFT_MASK) != 0
+        val isSpacePressed = e.keyCode == NativeKeyEvent.VC_SPACE
+
+        if (isCmdOrCtrlPressed && isShiftPressed && isSpacePressed) {
+            dispatcher.launch {
+                logger.info { "Open search window" }
+                createSearchWindow(clipSearchService)
             }
         }
-    }
-
-    override fun nativeKeyReleased(e: NativeKeyEvent) {
-        logger.info { "Key Released: " + NativeKeyEvent.getKeyText(e.keyCode) }
-    }
-
-    override fun nativeKeyTyped(e: NativeKeyEvent) {
-        logger.info { "Key Typed: " + NativeKeyEvent.getKeyText(e.keyCode) }
     }
 }

@@ -158,7 +158,7 @@ fun Routing.syncRouting() {
     get("/sync/showToken") {
         val appUI = koinApplication.koin.get<AppUI>()
         appUI.showToken = true
-        appUI.showWindow = true
+        appUI.showMainWindow = true
     }
 
     get("/sync/isTrust") {
