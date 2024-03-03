@@ -1,7 +1,9 @@
 package com.clipevery.dao.clip
 
 import com.clipevery.clip.ClipPlugin
+import com.clipevery.dao.task.TaskType
 import com.clipevery.utils.DateUtils
+import com.clipevery.utils.TaskUtils.createTask
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.Realm
@@ -37,6 +39,7 @@ class ClipRealm(private val realm: Realm) : ClipDao {
         realm.writeBlocking {
             for (clipData in queryToMarkDelete.invoke(this)) {
                 clipData.clipState = ClipState.DELETED
+                copyToRealm(createTask(clipData.clipId, TaskType.SYNC_CLIP_TASK))
             }
         }
     }
@@ -118,6 +121,7 @@ class ClipRealm(private val realm: Realm) : ClipDao {
                         clipData.clipSearchContent = firstItem.getSearchContent()
                         clipData.md5 = firstItem.md5
                         clipData.clipState = ClipState.LOADED
+                        copyToRealm(createTask(clipData.clipId, TaskType.SYNC_CLIP_TASK))
                     } catch (e: Exception) {
                         logger.error(e) { "releaseClipData fail" }
                         releaseFail = true
