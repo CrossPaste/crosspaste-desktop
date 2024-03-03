@@ -27,6 +27,20 @@ class ClipRealm(private val realm: Realm) : ClipDao {
         return clipData.id
     }
 
+    override fun markDeleteClipData(id: ObjectId) {
+        doMarkDeleteClipData {
+            query(ClipData::class, "id == $0", id).first().find()?.let { listOf(it) } ?: emptyList()
+        }
+    }
+
+    private fun doMarkDeleteClipData(queryToMarkDelete: MutableRealm.() -> List<ClipData>) {
+        realm.writeBlocking {
+            for (clipData in queryToMarkDelete.invoke(this)) {
+                clipData.clipState = ClipState.DELETED
+            }
+        }
+    }
+
     override fun deleteClipData(id: ObjectId) {
         doDeleteClipData {
             query(ClipData::class, "id == $0", id).first().find()?.let { listOf(it) } ?: emptyList()
@@ -47,13 +61,13 @@ class ClipRealm(private val realm: Realm) : ClipDao {
 
     override fun getClipData(appInstanceId: String?, limit: Int): RealmResults<ClipData> {
         val query = appInstanceId?.let {
-            realm.query(ClipData::class, "appInstanceId == $0", appInstanceId)
-        } ?: realm.query(ClipData::class)
+            realm.query(ClipData::class, "appInstanceId == $0 AND clipState != $1", appInstanceId, ClipState.DELETED)
+        } ?: realm.query(ClipData::class, "clipState != $0", ClipState.DELETED)
         return query.sort("createTime", Sort.DESCENDING).limit(limit).find()
     }
 
     override fun getClipData(objectId: ObjectId): ClipData? {
-        return realm.query(ClipData::class, "id == $0", objectId).first().find()
+        return realm.query(ClipData::class, "id == $0 AND clipState != $1", objectId, ClipState.DELETED).first().find()
     }
 
     @Synchronized
@@ -61,7 +75,7 @@ class ClipRealm(private val realm: Realm) : ClipDao {
         var md5: String? = null
         var releaseFail = false
         realm.writeBlocking {
-            query(ClipData::class, "id == $0", id).first().find()?.let { clipData ->
+            query(ClipData::class, "id == $0 AND clipState == $1", id, ClipState.LOADING).first().find()?.let { clipData ->
                 clipData.clipContent?.let { clipContent ->
                     try {
                         val iterator = clipContent.clipAppearItems.iterator()
@@ -103,7 +117,7 @@ class ClipRealm(private val realm: Realm) : ClipDao {
                         clipData.clipType = firstItem.getClipType()
                         clipData.clipSearchContent = firstItem.getSearchContent()
                         clipData.md5 = firstItem.md5
-                        clipData.preCreate = false
+                        clipData.clipState = ClipState.LOADED
                     } catch (e: Exception) {
                         logger.error(e) { "releaseClipData fail" }
                         releaseFail = true
@@ -114,14 +128,14 @@ class ClipRealm(private val realm: Realm) : ClipDao {
 
         if (!releaseFail) {
             md5?.let {
-                doDeleteClipData {
-                    query(ClipData::class, "md5 == $0 AND createTime > $1 AND id != $2"
-                        , it, DateUtils.getPrevDay(), id)
+                doMarkDeleteClipData {
+                    query(ClipData::class, "md5 == $0 AND createTime > $1 AND id != $2 AND clipState != $3"
+                        , it, DateUtils.getPrevDay(), id, ClipState.DELETED)
                         .find().toList()
                 }
             }
         } else {
-            deleteClipData(id)
+            markDeleteClipData(id)
         }
     }
 
@@ -136,8 +150,9 @@ class ClipRealm(private val realm: Realm) : ClipDao {
         createTime: RealmInstant
     ): RealmResults<ClipData> {
         val query = appInstanceId?.let {
-            realm.query(ClipData::class, "appInstanceId == $0 AND createTime >= $1", appInstanceId, createTime)
-        } ?: realm.query(ClipData::class, "createTime >= $0", createTime)
+            realm.query(ClipData::class, "appInstanceId == $0 AND createTime >= $1 AND clipState != $2",
+                appInstanceId, createTime, ClipState.DELETED)
+        } ?: realm.query(ClipData::class, "createTime >= $0 AND clipState != $1", createTime, ClipState.DELETED)
         return query.sort("createTime", Sort.DESCENDING).find()
     }
 
@@ -147,8 +162,9 @@ class ClipRealm(private val realm: Realm) : ClipDao {
         createTime: RealmInstant
     ): RealmResults<ClipData> {
         val query = appInstanceId?.let {
-            realm.query(ClipData::class, "appInstanceId == $0 AND createTime <= $1", appInstanceId, createTime)
-        } ?: realm.query(ClipData::class, "createTime <= $0", createTime)
+            realm.query(ClipData::class, "appInstanceId == $0 AND createTime <= $1 AND clipState != $2",
+                appInstanceId, createTime, ClipState.DELETED)
+        } ?: realm.query(ClipData::class, "createTime <= $0 AND clipState != $1", createTime, ClipState.DELETED)
         return query.sort("createTime", Sort.DESCENDING).limit(limit).find()
     }
 }

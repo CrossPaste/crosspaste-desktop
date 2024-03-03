@@ -12,6 +12,8 @@ interface ClipDao {
 
     fun createClipData(clipData: ClipData): ObjectId
 
+    fun markDeleteClipData(id: ObjectId)
+
     fun deleteClipData(id: ObjectId)
 
     fun getClipData(appInstanceId: String? = null,
