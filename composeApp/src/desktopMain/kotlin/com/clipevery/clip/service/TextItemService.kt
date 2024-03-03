@@ -49,7 +49,7 @@ class TextItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
         if (transferData is String) {
             val md5 = md5ByString(transferData)
             val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
-                realm.query(TextClipItem::class).query("id == $0", clipItem.id).first().find()?.apply {
+                realm.query(TextClipItem::class, "id == $0", clipItem.id).first().find()?.apply {
                     this.text = transferData
                     this.md5 = md5
                 }

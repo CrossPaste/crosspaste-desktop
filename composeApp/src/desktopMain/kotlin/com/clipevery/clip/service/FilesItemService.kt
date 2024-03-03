@@ -71,7 +71,7 @@ class FilesItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
             }
 
             val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
-                realm.query(FilesClipItem::class).query("id == $0", clipItem.id).first().find()?.apply {
+                realm.query(FilesClipItem::class, "id == $0", clipItem.id).first().find()?.apply {
                     this.relativePathList = relativePathList.toRealmList()
                     this.md5List = md5List.toRealmList()
                     this.md5 = md5ByArray(md5List.toTypedArray())

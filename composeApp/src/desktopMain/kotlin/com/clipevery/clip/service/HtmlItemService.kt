@@ -62,7 +62,7 @@ class HtmlItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
                 DesktopOneFilePersist(imagePath).saveBytes(it)
             }
             val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
-                realm.query(HtmlClipItem::class).query("id == $0", clipItem.id).first().find()?.apply {
+                realm.query(HtmlClipItem::class, "id == $0", clipItem.id).first().find()?.apply {
                     this.html = html
                     this.relativePath = relativePath
                     this.md5 = md5

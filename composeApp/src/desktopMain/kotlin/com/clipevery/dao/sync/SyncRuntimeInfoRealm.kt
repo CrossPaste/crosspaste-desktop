@@ -30,7 +30,7 @@ class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
             findLatest(syncRuntimeInfo)?.let {
                 return@writeBlocking it.apply(block)
             } ?: run {
-                query(SyncRuntimeInfo::class).query("appInstanceId == $0", syncRuntimeInfo.appInstanceId).first().find()?.let {
+                query(SyncRuntimeInfo::class, "appInstanceId == $0", syncRuntimeInfo.appInstanceId).first().find()?.let {
                     return@writeBlocking it.apply(block)
                 }
             }
@@ -42,7 +42,7 @@ class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
             findLatest(syncRuntimeInfo)?.let {
                 return@write it.apply(block)
             } ?: run {
-                query(SyncRuntimeInfo::class).query("appInstanceId == $0", syncRuntimeInfo.appInstanceId).first().find()?.let {
+                query(SyncRuntimeInfo::class, "appInstanceId == $0", syncRuntimeInfo.appInstanceId).first().find()?.let {
                     return@write it.apply(block)
                 }
             }

@@ -70,7 +70,7 @@ class ImageItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
            if (writeImage(image, ext, imagePath)) {
                val md5 = getFileMd5(imagePath)
                val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
-                   realm.query(ImagesClipItem::class).query("id == $0", clipItem.id).first().find()?.apply {
+                   realm.query(ImagesClipItem::class, "id == $0", clipItem.id).first().find()?.apply {
                        this.relativePathList = realmListOf(relativePath)
                        this.md5List = realmListOf(md5)
                        this.md5 = md5
