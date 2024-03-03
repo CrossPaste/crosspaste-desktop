@@ -5,6 +5,7 @@ import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipContent
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipData
+import com.clipevery.dao.clip.ClipState
 import com.clipevery.dao.clip.ClipType
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
@@ -75,7 +76,7 @@ class ClipCollector(
             this.md5 = ""
             this.appInstanceId = appInfo.appInstanceId
             this.createTime = RealmInstant.now()
-            this.preCreate = true
+            this.clipState = ClipState.LOADING
         }
         return clipDao.createClipData(clipData)
     }
@@ -83,15 +84,20 @@ class ClipCollector(
     fun completeCollect(id: ObjectId) {
         if (preCollectors.isEmpty() || (existError && updateErrors.all { it != null })) {
             try {
-                clipDao.deleteClipData(id)
+                clipDao.markDeleteClipData(id)
             } catch (e: Exception) {
-                logger.error(e) { "Failed to delete clip $id" }
+                logger.error(e) { "Failed to mark delete clip $id" }
             }
         } else {
             try {
                 clipDao.releaseClipData(id, clipPlugins)
             } catch (e: Exception) {
                 logger.error(e) { "Failed to release clip $id" }
+                try {
+                    clipDao.markDeleteClipData(id)
+                } catch (e: Exception) {
+                    logger.error(e) { "Failed to mark delete clip $id" }
+                }
             }
         }
     }

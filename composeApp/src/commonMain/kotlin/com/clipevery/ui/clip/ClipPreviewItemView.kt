@@ -31,6 +31,7 @@ import com.clipevery.LocalKoinApplication
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipContent
 import com.clipevery.dao.clip.ClipData
+import com.clipevery.dao.clip.ClipState
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.i18n.Copywriter
 import com.clipevery.i18n.GlobalCopywriter
@@ -136,7 +137,7 @@ fun getDateText(createTime: RealmInstant, copywriter: Copywriter): String {
 
 @Composable
 fun ClipSpecificPreviewView(clipData: ClipData) {
-    if (clipData.preCreate) {
+    if (clipData.clipState == ClipState.LOADING) {
         PrePreviewView(clipData)
     } else {
         when(clipData.clipType) {

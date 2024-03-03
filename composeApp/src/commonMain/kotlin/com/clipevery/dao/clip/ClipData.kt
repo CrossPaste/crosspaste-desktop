@@ -30,7 +30,7 @@ class ClipData: RealmObject {
     @Index
     var createTime: RealmInstant = RealmInstant.now()
 
-    var preCreate: Boolean = true
+    var clipState: Int = ClipState.LOADING
 
     var labels: RealmSet<ClipLabel> = realmSetOf()
 
