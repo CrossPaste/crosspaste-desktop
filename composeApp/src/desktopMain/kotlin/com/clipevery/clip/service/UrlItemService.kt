@@ -46,7 +46,7 @@ class UrlItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
         if (transferData is String) {
             val md5 = md5ByString(transferData)
             val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
-                realm.query(UrlClipItem::class).query("id == $0", clipItem.id).first().find()?.apply {
+                realm.query(UrlClipItem::class, "id == $0", clipItem.id).first().find()?.apply {
                     this.url = transferData
                     this.md5 = md5
                 }
