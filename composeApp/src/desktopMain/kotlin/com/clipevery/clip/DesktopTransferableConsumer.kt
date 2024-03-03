@@ -32,7 +32,7 @@ open class DesktopTransferableConsumer(private val appInfo: AppInfo,
         return dataFlavorMap
     }
 
-    override fun consume(transferable: Transferable) {
+    override suspend fun consume(transferable: Transferable) {
         val clipId = idGenerator.nextID()
 
         val dataFlavorMap: Map<String, List<DataFlavor>> = createDataFlavorMap(transferable)

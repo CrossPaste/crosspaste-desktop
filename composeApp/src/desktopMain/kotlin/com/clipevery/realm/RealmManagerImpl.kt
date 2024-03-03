@@ -15,6 +15,7 @@ import com.clipevery.dao.signal.ClipSession
 import com.clipevery.dao.signal.ClipSignedPreKey
 import com.clipevery.dao.sync.HostInfo
 import com.clipevery.dao.sync.SyncRuntimeInfo
+import com.clipevery.dao.task.ClipTask
 import com.clipevery.path.PathProvider
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.Realm
@@ -50,9 +51,13 @@ class RealmManagerImpl private constructor(private val config: RealmConfiguratio
             UrlClipItem::class
         )
 
+        private val TASK_TYPES: Set<KClass<out TypedRealmObject>> = setOf(
+            ClipTask::class
+        )
+
         fun createRealmManager(pathProvider: PathProvider): RealmManager {
             val path = pathProvider.resolve(appFileType = AppFileType.DATA)
-            val config = RealmConfiguration.Builder(DTO_TYPES + SIGNAL_TYPES + CLIP_TYPES)
+            val config = RealmConfiguration.Builder(DTO_TYPES + SIGNAL_TYPES + CLIP_TYPES + TASK_TYPES)
                 .directory(path.pathString)
                 .name("clipevery.realm")
                 .schemaVersion(1)

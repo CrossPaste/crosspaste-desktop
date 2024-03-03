@@ -81,7 +81,7 @@ class ClipCollector(
         return clipDao.createClipData(clipData)
     }
 
-    fun completeCollect(id: ObjectId) {
+    suspend fun completeCollect(id: ObjectId) {
         if (preCollectors.isEmpty() || (existError && updateErrors.all { it != null })) {
             try {
                 clipDao.markDeleteClipData(id)
@@ -93,6 +93,9 @@ class ClipCollector(
                 clipDao.releaseClipData(id, clipPlugins)
             } catch (e: Exception) {
                 logger.error(e) { "Failed to release clip $id" }
+                // The following errors will be sent next
+                // [RLM_ERR_WRONG_TRANSACTION_STATE]: The Realm is already in a write transaction
+                // https://github.com/realm/realm-kotlin/pull/1621  wait new version release
                 try {
                     clipDao.markDeleteClipData(id)
                 } catch (e: Exception) {

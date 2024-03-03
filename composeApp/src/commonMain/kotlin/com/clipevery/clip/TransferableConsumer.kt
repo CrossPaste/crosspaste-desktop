@@ -4,5 +4,5 @@ import java.awt.datatransfer.Transferable
 
 interface TransferableConsumer {
 
-    fun consume(transferable: Transferable)
+    suspend fun consume(transferable: Transferable)
 }
