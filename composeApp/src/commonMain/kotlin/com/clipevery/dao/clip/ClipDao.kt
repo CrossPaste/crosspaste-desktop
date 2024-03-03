@@ -12,7 +12,7 @@ interface ClipDao {
 
     fun createClipData(clipData: ClipData): ObjectId
 
-    fun markDeleteClipData(id: ObjectId)
+    suspend fun markDeleteClipData(id: ObjectId)
 
     fun deleteClipData(id: ObjectId)
 
@@ -21,7 +21,7 @@ interface ClipDao {
 
     fun getClipData(objectId: ObjectId): ClipData?
 
-    fun releaseClipData(id: ObjectId, clipPlugins: List<ClipPlugin>)
+    suspend fun releaseClipData(id: ObjectId, clipPlugins: List<ClipPlugin>)
 
     fun updateClipItem(update: (MutableRealm) -> Unit)
 

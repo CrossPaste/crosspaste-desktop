@@ -29,18 +29,17 @@ class ClipRealm(private val realm: Realm) : ClipDao {
         return clipData.id
     }
 
-    override fun markDeleteClipData(id: ObjectId) {
-        doMarkDeleteClipData {
-            query(ClipData::class, "id == $0", id).first().find()?.let { listOf(it) } ?: emptyList()
+    override suspend fun markDeleteClipData(id: ObjectId) {
+        realm.write {
+            val markDeleteClipDatas = query(ClipData::class, "id == $0", id).first().find()?.let { listOf(it) } ?: emptyList()
+            doMarkDeleteClipData(markDeleteClipDatas)
         }
     }
 
-    private fun doMarkDeleteClipData(queryToMarkDelete: MutableRealm.() -> List<ClipData>) {
-        realm.writeBlocking {
-            for (clipData in queryToMarkDelete.invoke(this)) {
-                clipData.clipState = ClipState.DELETED
-                copyToRealm(createTask(clipData.clipId, TaskType.SYNC_CLIP_TASK))
-            }
+    private fun MutableRealm.doMarkDeleteClipData(markDeleteClipDatas: List<ClipData>) {
+        for (markDeleteClipData in markDeleteClipDatas) {
+            markDeleteClipData.clipState = ClipState.DELETED
+            copyToRealm(createTask(markDeleteClipData.clipId, TaskType.SYNC_CLIP_TASK))
         }
     }
 
@@ -73,73 +72,54 @@ class ClipRealm(private val realm: Realm) : ClipDao {
         return realm.query(ClipData::class, "id == $0 AND clipState != $1", objectId, ClipState.DELETED).first().find()
     }
 
-    @Synchronized
-    override fun releaseClipData(id: ObjectId, clipPlugins: List<ClipPlugin>) {
-        var md5: String? = null
-        var releaseFail = false
-        realm.writeBlocking {
+    override suspend fun releaseClipData(id: ObjectId, clipPlugins: List<ClipPlugin>) {
+        realm.write {
             query(ClipData::class, "id == $0 AND clipState == $1", id, ClipState.LOADING).first().find()?.let { clipData ->
                 clipData.clipContent?.let { clipContent ->
-                    try {
-                        val iterator = clipContent.clipAppearItems.iterator()
-
-                        while (iterator.hasNext()) {
-                            val anyValue = iterator.next()
-                            ClipContent.getClipItem(anyValue)?.let {
-                                if (it.md5 == "") {
-                                    iterator.remove()
-                                    it.clear(this)
-                                }
-                            } ?: iterator.remove()
-                        }
-
-                        var clipAppearItems = clipContent.clipAppearItems.mapNotNull { anyValue ->
-                            ClipContent.getClipItem(anyValue)
-                        }
-
-                        assert(clipAppearItems.isNotEmpty())
-
-                        clipContent.clipAppearItems.clear()
-
-                        for (clipPlugin in clipPlugins) {
-                            clipAppearItems = clipPlugin.pluginProcess(clipAppearItems, this)
-                        }
-
-                        val firstItem: ClipAppearItem = clipAppearItems.first()
-
-                        md5 = firstItem.md5
-
-                        val remainingItems: List<ClipAppearItem> = clipAppearItems.drop(1)
-
-                        val clipAppearContent: RealmAny = RealmAny.create(firstItem as RealmObject)
-
-                        clipContent.clipAppearItems.addAll(remainingItems.map { RealmAny.create(it as RealmObject) })
-
-                        clipData.clipAppearContent = clipAppearContent
-                        clipData.clipContent = clipContent
-                        clipData.clipType = firstItem.getClipType()
-                        clipData.clipSearchContent = firstItem.getSearchContent()
-                        clipData.md5 = firstItem.md5
-                        clipData.clipState = ClipState.LOADED
-                        copyToRealm(createTask(clipData.clipId, TaskType.SYNC_CLIP_TASK))
-                    } catch (e: Exception) {
-                        logger.error(e) { "releaseClipData fail" }
-                        releaseFail = true
+                    // remove not update appearItems
+                    val iterator = clipContent.clipAppearItems.iterator()
+                    while (iterator.hasNext()) {
+                        val anyValue = iterator.next()
+                        ClipContent.getClipItem(anyValue)?.let {
+                            if (it.md5 == "") {
+                                iterator.remove()
+                                it.clear(this)
+                            }
+                        } ?: iterator.remove()
                     }
-                }
-            }
-        }
 
-        if (!releaseFail) {
-            md5?.let {
-                doMarkDeleteClipData {
-                    query(ClipData::class, "md5 == $0 AND createTime > $1 AND id != $2 AND clipState != $3"
-                        , it, DateUtils.getPrevDay(), id, ClipState.DELETED)
-                        .find().toList()
+                    // use plugin to process clipAppearItems
+                    var clipAppearItems = clipContent.clipAppearItems.mapNotNull { anyValue ->
+                        ClipContent.getClipItem(anyValue)
+                    }
+                    assert(clipAppearItems.isNotEmpty())
+                    clipContent.clipAppearItems.clear()
+                    for (clipPlugin in clipPlugins) {
+                        clipAppearItems = clipPlugin.pluginProcess(clipAppearItems, this)
+                    }
+
+                    // first appearItem as clipAppearContent
+                    // remaining appearItems as clipContent
+                    val firstItem: ClipAppearItem = clipAppearItems.first()
+                    val remainingItems: List<ClipAppearItem> = clipAppearItems.drop(1)
+                    val clipAppearContent: RealmAny = RealmAny.create(firstItem as RealmObject)
+
+                    // update realm data
+                    clipData.clipAppearContent = clipAppearContent
+                    clipContent.clipAppearItems.addAll(remainingItems.map { RealmAny.create(it as RealmObject) })
+                    clipData.clipType = firstItem.getClipType()
+                    clipData.clipSearchContent = firstItem.getSearchContent()
+                    clipData.md5 = firstItem.md5
+                    clipData.clipState = ClipState.LOADED
+                    copyToRealm(createTask(clipData.clipId, TaskType.SYNC_CLIP_TASK))
+
+                    query(ClipData::class, "md5 == $0 AND createTime > $1 AND id != $2 AND clipState != $3",
+                        clipData.md5, DateUtils.getPrevDay(), id, ClipState.DELETED)
+                        .find().let { deleteClipDatas ->
+                            doMarkDeleteClipData(deleteClipDatas)
+                        }
                 }
             }
-        } else {
-            markDeleteClipData(id)
         }
     }
 
