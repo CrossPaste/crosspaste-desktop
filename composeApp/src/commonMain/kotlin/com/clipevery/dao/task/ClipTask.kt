@@ -27,4 +27,11 @@ class ClipTask: RealmObject {
     var modifyTime: RealmInstant = RealmInstant.now()
 
     var extraInfo: RealmAny? = null
+
+
+    companion object {
+        fun getExtraInfo(anyValue: RealmAny?): ClipTaskExtraInfo? {
+            return anyValue?.let { it as ClipTaskExtraInfo }
+        }
+    }
 }

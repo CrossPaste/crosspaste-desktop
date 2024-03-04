@@ -2,6 +2,7 @@ package com.clipevery.dao.clip
 
 import com.clipevery.clip.ClipPlugin
 import com.clipevery.dao.task.TaskType
+import com.clipevery.task.TaskExecutor
 import com.clipevery.utils.DateUtils
 import com.clipevery.utils.TaskUtils.createTask
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -14,7 +15,8 @@ import io.realm.kotlin.types.RealmInstant
 import io.realm.kotlin.types.RealmObject
 import org.mongodb.kbson.ObjectId
 
-class ClipRealm(private val realm: Realm) : ClipDao {
+class ClipRealm(private val realm: Realm,
+                private val taskExecutor: TaskExecutor) : ClipDao {
 
     private val logger = KotlinLogging.logger {}
 
@@ -30,16 +32,16 @@ class ClipRealm(private val realm: Realm) : ClipDao {
     }
 
     override suspend fun markDeleteClipData(id: ObjectId) {
-        realm.write {
+        taskExecutor.submitTasks(realm.write {
             val markDeleteClipDatas = query(ClipData::class, "id == $0", id).first().find()?.let { listOf(it) } ?: emptyList()
             doMarkDeleteClipData(markDeleteClipDatas)
-        }
+        })
     }
 
-    private fun MutableRealm.doMarkDeleteClipData(markDeleteClipDatas: List<ClipData>) {
-        for (markDeleteClipData in markDeleteClipDatas) {
-            markDeleteClipData.clipState = ClipState.DELETED
-            copyToRealm(createTask(markDeleteClipData.clipId, TaskType.SYNC_CLIP_TASK))
+    private fun MutableRealm.doMarkDeleteClipData(markDeleteClipDatas: List<ClipData>): List<ObjectId> {
+        return markDeleteClipDatas.map {
+            it.clipState = ClipState.DELETED
+            copyToRealm(createTask(it.clipId, TaskType.SYNC_CLIP_TASK)).taskId
         }
     }
 
@@ -111,15 +113,19 @@ class ClipRealm(private val realm: Realm) : ClipDao {
                     clipData.clipSearchContent = firstItem.getSearchContent()
                     clipData.md5 = firstItem.md5
                     clipData.clipState = ClipState.LOADED
-                    copyToRealm(createTask(clipData.clipId, TaskType.SYNC_CLIP_TASK))
 
+                    val tasks = mutableListOf<ObjectId>()
+                    tasks.add(copyToRealm(createTask(clipData.clipId, TaskType.SYNC_CLIP_TASK)).taskId)
                     query(ClipData::class, "md5 == $0 AND createTime > $1 AND id != $2 AND clipState != $3",
                         clipData.md5, DateUtils.getPrevDay(), id, ClipState.DELETED)
                         .find().let { deleteClipDatas ->
-                            doMarkDeleteClipData(deleteClipDatas)
+                            tasks.addAll(doMarkDeleteClipData(deleteClipDatas))
                         }
+                    return@write tasks
                 }
             }
+        }?.let { tasks ->
+            taskExecutor.submitTasks(tasks)
         }
     }
 
