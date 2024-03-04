@@ -33,6 +33,9 @@ import com.clipevery.dao.signal.SignalDao
 import com.clipevery.dao.signal.SignalRealm
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.dao.sync.SyncRuntimeInfoRealm
+import com.clipevery.dao.task.ClipTaskDao
+import com.clipevery.dao.task.ClipTaskRealm
+import com.clipevery.dao.task.TaskType
 import com.clipevery.endpoint.DesktopEndpointInfoFactory
 import com.clipevery.endpoint.EndpointInfoFactory
 import com.clipevery.i18n.GlobalCopywriter
@@ -59,6 +62,10 @@ import com.clipevery.signal.DesktopSessionStore
 import com.clipevery.signal.DesktopSignalProtocolStore
 import com.clipevery.signal.DesktopSignedPreKeyStore
 import com.clipevery.signal.getClipIdentityKeyStoreFactory
+import com.clipevery.task.DeleteClipTaskExecutor
+import com.clipevery.task.DesktopTaskExecutor
+import com.clipevery.task.SyncClipTaskExecutor
+import com.clipevery.task.TaskExecutor
 import com.clipevery.ui.DesktopThemeDetector
 import com.clipevery.ui.ThemeDetector
 import com.clipevery.ui.resource.ClipResourceLoader
@@ -104,7 +111,8 @@ object Dependencies {
             single<RealmManager> { RealmManagerImpl.createRealmManager(get()) }
             single<SignalDao> { SignalRealm(get<RealmManager>().realm) }
             single<SyncRuntimeInfoDao> { SyncRuntimeInfoRealm(get<RealmManager>().realm) }
-            single<ClipDao> { ClipRealm(get<RealmManager>().realm) }
+            single<ClipDao> { ClipRealm(get<RealmManager>().realm, get()) }
+            single<ClipTaskDao> { ClipTaskRealm(get<RealmManager>().realm) }
 
             // net component
             single<ClipClient> { DesktopClipClient(get<AppInfo>()) }
@@ -142,6 +150,10 @@ object Dependencies {
             ) }
             single<ChromeService> { DesktopChromeService }
             single<ClipSearchService> { DesktopClipSearchService(get()) }
+            single<TaskExecutor> { DesktopTaskExecutor(mapOf(
+                Pair(TaskType.SYNC_CLIP_TASK, SyncClipTaskExecutor()),
+                Pair(TaskType.DELETE_CLIP_TASK, DeleteClipTaskExecutor())
+            ), get()) }
 
             // ui component
             single<AppUI> { AppUI(width = 460.dp, height = 710.dp) }
