@@ -35,8 +35,7 @@ class UrlClipItem: RealmObject, ClipAppearItem, ClipUrl {
         }
     }
 
-    override fun clear(realm: MutableRealm) {
-        // do nothing
+    override fun clear(realm: MutableRealm, clearResource: Boolean) {
         realm.delete(this)
     }
 }

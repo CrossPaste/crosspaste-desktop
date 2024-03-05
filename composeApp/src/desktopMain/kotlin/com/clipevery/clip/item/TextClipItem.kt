@@ -35,8 +35,7 @@ class TextClipItem: RealmObject, ClipAppearItem, ClipText {
         }
     }
 
-    override fun clear(realm: MutableRealm) {
-        // do nothing
+    override fun clear(realm: MutableRealm, clearResource: Boolean) {
         realm.delete(this)
     }
 }

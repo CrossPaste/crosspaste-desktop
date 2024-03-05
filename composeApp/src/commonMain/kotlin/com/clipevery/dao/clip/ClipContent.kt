@@ -19,12 +19,12 @@ class ClipContent: RealmObject {
     }
 
     @Throws(IOException::class)
-    fun clear(realm: MutableRealm) {
+    fun clear(realm: MutableRealm, clearResource: Boolean = true) {
         val iterator = clipAppearItems.iterator()
         while(iterator.hasNext()) {
             val clipAppearItem = iterator.next()
             iterator.remove()
-            getClipItem(clipAppearItem)?.clear(realm)
+            getClipItem(clipAppearItem)?.clear(realm, clearResource)
         }
         realm.delete(this)
     }
