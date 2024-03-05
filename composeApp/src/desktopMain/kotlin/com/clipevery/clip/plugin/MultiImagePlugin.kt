@@ -22,7 +22,7 @@ object MultiImagePlugin: ClipPlugin {
 
             val md5 = md5ByArray(md5List.map { it }.toTypedArray())
 
-            clipAppearItems.forEach { it.clear(realm) }
+            clipAppearItems.forEach { it.clear(realm, clearResource = false) }
             return ImagesClipItem().apply {
                 this.relativePathList = relativePathList
                 this.md5List = md5List
