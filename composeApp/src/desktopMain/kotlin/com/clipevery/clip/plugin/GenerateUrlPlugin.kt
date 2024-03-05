@@ -8,23 +8,21 @@ import io.realm.kotlin.MutableRealm
 import java.net.MalformedURLException
 import java.net.URL
 
-object ConvertUrlPlugin: ClipPlugin {
+object GenerateUrlPlugin: ClipPlugin {
+
     override fun pluginProcess(clipAppearItems: List<ClipAppearItem>, realm: MutableRealm): List<ClipAppearItem> {
-        return clipAppearItems.map {
-            if (it is TextClipItem && isUrl(it.text)) {
-                val identifier = it.identifier
-                val text = it.text
-                val md5 = it.md5
-                it.clear(realm)
-                UrlClipItem().apply {
-                    this.identifier = identifier
-                    this.url = text
-                    this.md5 = md5
+        if (clipAppearItems.all { it !is UrlClipItem }) {
+            clipAppearItems.filterIsInstance<TextClipItem>().firstOrNull()?.let {
+                if (isUrl(it.text)) {
+                    return clipAppearItems + UrlClipItem().apply {
+                        this.identifier = it.identifier
+                        this.url = it.text
+                        this.md5 = it.md5
+                    }
                 }
-            } else {
-                it
             }
         }
+        return clipAppearItems
     }
 
     private fun isUrl(string: String): Boolean {

@@ -17,14 +17,14 @@ class BaseClipTaskExtraInfo: RealmObject, ClipTaskExtraInfo {
 
     var retryCount: Int = 0
 
-    var failMessages: String? = null
+    var failMessage: String? = null
 
     override fun retryCount(): Int {
         return retryCount
     }
 
     override fun failMessage(): String? {
-        return failMessages
+        return failMessage
     }
 
     override fun incrementRetryCount() {
@@ -32,7 +32,7 @@ class BaseClipTaskExtraInfo: RealmObject, ClipTaskExtraInfo {
     }
 
     override fun setFailMessage(message: String) {
-        failMessages = message
+        failMessage = message
     }
 
 }
