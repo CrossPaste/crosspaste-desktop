@@ -14,12 +14,10 @@ import com.clipevery.clip.DesktopClipSearchService
 import com.clipevery.clip.DesktopTransferableConsumer
 import com.clipevery.clip.TransferableConsumer
 import com.clipevery.clip.getDesktopClipboardService
-import com.clipevery.clip.plugin.ConvertImagePlugin
-import com.clipevery.clip.plugin.ConvertUrlPlugin
-import com.clipevery.clip.plugin.ImageHtmlCombinePlugin
-import com.clipevery.clip.plugin.MultiImagePlugin
+import com.clipevery.clip.plugin.FilesToImagesPlugin
+import com.clipevery.clip.plugin.DistinctPlugin
 import com.clipevery.clip.plugin.SortPlugin
-import com.clipevery.clip.plugin.UrlTextCombinePlugin
+import com.clipevery.clip.plugin.GenerateUrlPlugin
 import com.clipevery.clip.service.FilesItemService
 import com.clipevery.clip.service.HtmlItemService
 import com.clipevery.clip.service.ImageItemService
@@ -140,11 +138,9 @@ object Dependencies {
                     TextItemService(appInfo = get()),
                     UrlItemService(appInfo = get())
                 ), listOf(
-                    UrlTextCombinePlugin,
-                    ConvertUrlPlugin,
-                    ConvertImagePlugin,
-                    ImageHtmlCombinePlugin,
-                    MultiImagePlugin,
+                    DistinctPlugin,
+                    GenerateUrlPlugin,
+                    FilesToImagesPlugin,
                     SortPlugin
                 )
             ) }
