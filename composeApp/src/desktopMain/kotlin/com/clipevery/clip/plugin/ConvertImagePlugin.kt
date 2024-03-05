@@ -31,7 +31,7 @@ object ConvertImagePlugin: ClipPlugin {
                 val relativePathList = appearItem.relativePathList.toRealmList()
                 val md5List = appearItem.getFileMd5List().toRealmList()
                 val md5 = appearItem.md5
-                appearItem.clear(realm)
+                appearItem.clear(realm, clearResource = false)
                 ImagesClipItem().apply {
                     this.identifierList = identifierList
                     this.relativePathList = relativePathList

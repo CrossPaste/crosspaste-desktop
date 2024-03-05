@@ -51,9 +51,9 @@ class ClipData: RealmObject {
     }
 
     // must be called in writeBlocking
-    fun clear(realm: MutableRealm) {
-        getClipItem(clipAppearContent)?.clear(realm)
-        clipContent?.clear(realm)
+    fun clear(realm: MutableRealm, clearResource: Boolean = true) {
+        getClipItem(clipAppearContent)?.clear(realm, clearResource)
+        clipContent?.clear(realm, clearResource)
         realm.delete(this)
     }
 }

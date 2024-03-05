@@ -55,9 +55,11 @@ class ImagesClipItem: RealmObject, ClipAppearItem, ClipFiles {
 
     override fun update(data: Any, md5: String) {}
 
-    override fun clear(realm: MutableRealm) {
-        for (path in getFilePaths()) {
-            DesktopOneFilePersist(path).delete()
+    override fun clear(realm: MutableRealm, clearResource: Boolean) {
+        if (clearResource) {
+            for (path in getFilePaths()) {
+                DesktopOneFilePersist(path).delete()
+            }
         }
         realm.delete(this)
     }

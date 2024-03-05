@@ -58,8 +58,10 @@ class HtmlClipItem: RealmObject, ClipAppearItem, ClipHtml {
         }
     }
 
-    override fun clear(realm: MutableRealm) {
-        // todo clear html image
+    override fun clear(realm: MutableRealm, clearResource: Boolean) {
+        if (clearResource) {
+            // todo clear html image
+        }
         realm.delete(this)
     }
 }

@@ -17,7 +17,7 @@ interface ClipAppearItem {
 
     fun update(data: Any, md5: String)
 
-    fun clear(realm: MutableRealm)
+    fun clear(realm: MutableRealm, clearResource: Boolean = true)
 
     fun getAppearItemId(): ClipAppearItemId {
         return ClipAppearItemId(getClipType(), md5)
