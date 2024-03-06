@@ -6,6 +6,7 @@ import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.mongodb.kbson.BsonObjectId
 import org.mongodb.kbson.ObjectId
 
@@ -13,6 +14,7 @@ import org.mongodb.kbson.ObjectId
 class UrlClipItem: RealmObject, ClipAppearItem, ClipUrl {
 
     @PrimaryKey
+    @Transient
     override var id: ObjectId = BsonObjectId()
     var identifier: String = ""
     override var url: String = ""
