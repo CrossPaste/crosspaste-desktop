@@ -28,7 +28,7 @@ object FirstPlugin: ClipPlugin {
         return if (clipAppearItems.isEmpty()) {
             listOf()
         } else {
-            for (clipAppearItem in clipAppearItems.drop(0)) {
+            for (clipAppearItem in clipAppearItems.drop(1)) {
                 clipAppearItem.clear(realm)
             }
             listOf(clipAppearItems.first())
