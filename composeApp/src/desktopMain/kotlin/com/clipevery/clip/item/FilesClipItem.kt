@@ -11,6 +11,7 @@ import io.realm.kotlin.types.RealmList
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.mongodb.kbson.BsonObjectId
 import org.mongodb.kbson.ObjectId
 import java.nio.file.Path
@@ -20,6 +21,7 @@ import java.nio.file.Paths
 class FilesClipItem: RealmObject, ClipAppearItem, ClipFiles {
 
     @PrimaryKey
+    @Transient
     override var id: ObjectId = BsonObjectId()
 
     var identifierList: RealmList<String> = realmListOf()

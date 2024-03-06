@@ -11,6 +11,7 @@ import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import org.mongodb.kbson.BsonObjectId
 import org.mongodb.kbson.ObjectId
 import java.nio.file.Path
@@ -19,6 +20,7 @@ import java.nio.file.Path
 class HtmlClipItem: RealmObject, ClipAppearItem, ClipHtml {
 
     @PrimaryKey
+    @Transient
     override var id: ObjectId = BsonObjectId()
     var identifier: String = ""
     var relativePath: String = ""

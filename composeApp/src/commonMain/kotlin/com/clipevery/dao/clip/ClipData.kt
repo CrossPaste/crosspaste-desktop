@@ -28,12 +28,14 @@ import io.realm.kotlin.types.annotations.FullText
 import io.realm.kotlin.types.annotations.Index
 import io.realm.kotlin.types.annotations.PrimaryKey
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.UseSerializers
 import org.mongodb.kbson.ObjectId
 
 @Serializable
 class ClipData: RealmObject {
     @PrimaryKey
+    @Transient
     var id: ObjectId = ObjectId()
     @Index
     var clipId: Int = 0
@@ -42,6 +44,7 @@ class ClipData: RealmObject {
     @Index
     var clipType: Int = ClipType.INVALID
     @FullText
+    @Transient
     var clipSearchContent: String? = null
     @Index
     var md5: String = ""
@@ -50,6 +53,7 @@ class ClipData: RealmObject {
     @Index
     var createTime: RealmInstant = RealmInstant.now()
 
+    @Transient
     var clipState: Int = ClipState.LOADING
 
     var labels: RealmSet<ClipLabel> = realmSetOf()
