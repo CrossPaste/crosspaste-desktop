@@ -23,6 +23,7 @@ class HtmlClipItem: RealmObject, ClipAppearItem, ClipHtml {
     @Transient
     override var id: ObjectId = BsonObjectId()
     var identifier: String = ""
+    @Transient
     var relativePath: String = ""
     override var html: String = ""
 
