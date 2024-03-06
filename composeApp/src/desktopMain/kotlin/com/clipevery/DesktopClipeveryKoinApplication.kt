@@ -97,7 +97,7 @@ object Dependencies {
             // simple component
             single<AppEnv> { appEnv }
             single<AppInfo> { DesktopAppInfoFactory(get()).createAppInfo() }
-            single<EndpointInfoFactory> { DesktopEndpointInfoFactory( lazy { get<ClipServer>() }) }
+            single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<ClipServer>() }) }
             single<PathProvider> { DesktopPathProvider }
             single<FilePersist> { DesktopFilePersist }
             single<ConfigManager> { DefaultConfigManager(get<FilePersist>().getPersist("appConfig.json", AppFileType.USER), get()) }
@@ -116,7 +116,6 @@ object Dependencies {
             single<ClipClient> { DesktopClipClient(get<AppInfo>()) }
             single<ClientHandlerManager> { DesktopClientHandlerManager(get(), get(), get(), get()) }
             single<ClipServer> { DesktopClipServer(get<ConfigManager>(), get<ClientHandlerManager>()).start() }
-            single<Lazy<ClipServer>> { lazy { get<ClipServer>() } }
             single<ClipBonjourService> { DesktopClipBonjourService(get(), get()).registerService() }
             single<DeviceRefresher> { DesktopDeviceRefresher(get<ClientHandlerManager>()) }
             single<TelnetUtils> { TelnetUtils(get<ClipClient>()) }
@@ -147,7 +146,7 @@ object Dependencies {
             single<ChromeService> { DesktopChromeService }
             single<ClipSearchService> { DesktopClipSearchService(get()) }
             single<TaskExecutor> { DesktopTaskExecutor(mapOf(
-                Pair(TaskType.SYNC_CLIP_TASK, SyncClipTaskExecutor()),
+                Pair(TaskType.SYNC_CLIP_TASK, SyncClipTaskExecutor(lazy { get<ClipDao>() })),
                 Pair(TaskType.DELETE_CLIP_TASK, DeleteClipTaskExecutor())
             ), get()) }
 
