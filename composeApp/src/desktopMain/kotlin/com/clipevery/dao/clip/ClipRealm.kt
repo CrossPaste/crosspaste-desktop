@@ -41,7 +41,7 @@ class ClipRealm(private val realm: Realm,
     private fun MutableRealm.doMarkDeleteClipData(markDeleteClipDatas: List<ClipData>): List<ObjectId> {
         return markDeleteClipDatas.map {
             it.clipState = ClipState.DELETED
-            copyToRealm(createTask(it.clipId, TaskType.SYNC_CLIP_TASK)).taskId
+            copyToRealm(createTask(it.clipId, TaskType.DELETE_CLIP_TASK)).taskId
         }
     }
 
