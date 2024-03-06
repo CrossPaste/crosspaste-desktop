@@ -74,6 +74,10 @@ class ClipRealm(private val realm: Realm,
         return realm.query(ClipData::class, "id == $0 AND clipState != $1", objectId, ClipState.DELETED).first().find()
     }
 
+    override fun getClipData(clipId: Int): ClipData? {
+        return realm.query(ClipData::class, "clipId == $0 AND clipState != $1", clipId, ClipState.DELETED).first().find()
+    }
+
     override suspend fun releaseClipData(id: ObjectId, clipPlugins: List<ClipPlugin>) {
         realm.write {
             query(ClipData::class, "id == $0 AND clipState == $1", id, ClipState.LOADING).first().find()?.let { clipData ->

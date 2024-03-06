@@ -10,11 +10,13 @@ import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.types.RealmList
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
+import kotlinx.serialization.Serializable
 import org.mongodb.kbson.BsonObjectId
 import org.mongodb.kbson.ObjectId
 import java.nio.file.Path
 import java.nio.file.Paths
 
+@Serializable
 class FilesClipItem: RealmObject, ClipAppearItem, ClipFiles {
 
     @PrimaryKey

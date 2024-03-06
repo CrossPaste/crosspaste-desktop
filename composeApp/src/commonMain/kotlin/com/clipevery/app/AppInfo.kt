@@ -1,8 +1,8 @@
 package com.clipevery.app
 
-import com.clipevery.utils.JsonUtils
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 const val AppName: String = "Clipevery"
 
@@ -14,6 +14,6 @@ data class AppInfo(
 ) {
 
     override fun toString(): String {
-        return JsonUtils.JSON.encodeToString(this)
+        return Json.encodeToString(this)
     }
 }
