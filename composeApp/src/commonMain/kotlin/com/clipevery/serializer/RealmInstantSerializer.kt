@@ -5,11 +5,15 @@ import io.realm.kotlin.types.RealmInstant
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 object RealmInstantSerializer: KSerializer<RealmInstant> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RealmInstant") {}
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RealmInstant") {
+        element<Long>("epochSeconds")
+        element<Int>("nanosecondsOfSecond")
+    }
 
     override fun deserialize(decoder: Decoder): RealmInstant {
         val dec = decoder.beginStructure(descriptor)
