@@ -11,6 +11,7 @@
 package com.clipevery.dao.clip
 
 import com.clipevery.dao.clip.ClipContent.Companion.getClipItem
+import com.clipevery.serializer.RealmInstantSerializer
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmSetOf
 import io.realm.kotlin.serializers.MutableRealmIntKSerializer
@@ -51,6 +52,7 @@ class ClipData: RealmObject {
     @Index
     var appInstanceId: String = ""
     @Index
+    @Serializable(with = RealmInstantSerializer::class)
     var createTime: RealmInstant = RealmInstant.now()
 
     @Transient

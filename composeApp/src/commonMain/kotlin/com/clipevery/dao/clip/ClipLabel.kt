@@ -2,6 +2,7 @@ package com.clipevery.dao.clip
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import com.clipevery.serializer.RealmInstantSerializer
 import io.realm.kotlin.types.RealmInstant
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.Index
@@ -18,6 +19,7 @@ class ClipLabel: RealmObject {
     var color: Int = 0
     @Index
     var text: String = ""
+    @Serializable(with = RealmInstantSerializer::class)
     var createTime: RealmInstant = RealmInstant.now()
 
     constructor()
