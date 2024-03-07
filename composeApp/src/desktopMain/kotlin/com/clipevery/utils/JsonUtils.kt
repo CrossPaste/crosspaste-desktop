@@ -11,9 +11,9 @@ import com.clipevery.dao.clip.ClipLabel
 import com.clipevery.serializer.Base64ByteArraySerializer
 import com.clipevery.serializer.IdentityKeySerializer
 import com.clipevery.serializer.PreKeyBundleSerializer
+import com.clipevery.serializer.RealmInstantSerializer
 import io.realm.kotlin.serializers.MutableRealmIntKSerializer
 import io.realm.kotlin.serializers.RealmAnyKSerializer
-import io.realm.kotlin.serializers.RealmInstantKSerializer
 import io.realm.kotlin.serializers.RealmListKSerializer
 import io.realm.kotlin.serializers.RealmSetKSerializer
 import io.realm.kotlin.types.RealmAny
@@ -66,7 +66,7 @@ object JsonUtils {
             }
             serializersModuleOf(MutableRealmIntKSerializer)
             serializersModuleOf(RealmAnyKSerializer)
-            serializersModuleOf(RealmInstantKSerializer)
+            serializersModuleOf(RealmInstantSerializer)
         }
     }
 
