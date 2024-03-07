@@ -16,9 +16,9 @@ object DistinctPlugin: ClipPlugin {
     )
 
     override fun pluginProcess(clipAppearItems: List<ClipAppearItem>, realm: MutableRealm): List<ClipAppearItem> {
-        return clipAppearItems.map { clipAppearItem ->
-            val plugin = childPlugins[clipAppearItem.getClipType()]
-            plugin?.pluginProcess(listOf(clipAppearItem), realm) ?: listOf(clipAppearItem)
+        return clipAppearItems.groupBy { it.getClipType() }.map { (clipType, items) ->
+            val plugin = childPlugins[clipType]
+            plugin?.pluginProcess(items, realm) ?: items
         }.flatten()
     }
 }
