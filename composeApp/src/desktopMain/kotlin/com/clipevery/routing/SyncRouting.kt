@@ -10,19 +10,13 @@ import com.clipevery.dto.sync.RequestTrust
 import com.clipevery.dto.sync.RequestTrustSyncInfo
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.exception.StandardErrorCode
-import com.clipevery.net.CheckAction
-import com.clipevery.net.ClientHandlerManager
-import com.clipevery.net.DeviceRefresher
 import com.clipevery.utils.encodePreKeyBundle
 import com.clipevery.utils.failResponse
 import com.clipevery.utils.getAppInstanceId
 import com.clipevery.utils.successResponse
-import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.server.application.call
-import io.ktor.server.request.receive
-import io.ktor.server.routing.Routing
-import io.ktor.server.routing.get
-import io.ktor.server.routing.post
+import io.ktor.server.application.*
+import io.ktor.server.request.*
+import io.ktor.server.routing.*
 import org.signal.libsignal.protocol.InvalidMessageException
 import org.signal.libsignal.protocol.NoSessionException
 import org.signal.libsignal.protocol.SessionCipher
@@ -37,8 +31,6 @@ import java.util.Objects
 
 fun Routing.syncRouting() {
 
-    val logger = KotlinLogging.logger {}
-
     val koinApplication = Dependencies.koinApplication
 
     val signalDao = koinApplication.koin.get<SignalDao>()
@@ -46,10 +38,6 @@ fun Routing.syncRouting() {
     val syncRuntimeInfoDao = koinApplication.koin.get<SyncRuntimeInfoDao>()
 
     val signalProtocolStore = koinApplication.koin.get<SignalProtocolStore>()
-
-    val deviceRefresher = koinApplication.koin.get<DeviceRefresher>()
-
-    val clientHandlerManager = koinApplication.koin.get<ClientHandlerManager>()
 
     post("/sync/syncInfos") {
         getAppInstanceId(call).let { appInstanceId ->
@@ -60,11 +48,6 @@ fun Routing.syncRouting() {
                 val identityKeys = requestTrustSyncInfos.map { ClipIdentityKey(it.syncInfo.appInfo.appInstanceId, it.identityKey.serialize()) }
                 syncRuntimeInfoDao.inertOrUpdate(syncInfos)
                 signalDao.saveIdentities(identityKeys)
-                for (syncInfo in syncInfos) {
-                    logger.debug { "syncInfo = $syncInfo" }
-                    clientHandlerManager.addHandler(syncInfo.appInfo.appInstanceId)
-                }
-                deviceRefresher.refresh(CheckAction.CheckNonConnected)
                 successResponse(call)
             } ?:  failResponse(call, StandardErrorCode.SIGNAL_UNTRUSTED_IDENTITY.toErrorCode(), "not trust $appInstanceId")
         }

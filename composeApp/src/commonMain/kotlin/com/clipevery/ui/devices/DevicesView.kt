@@ -51,12 +51,10 @@ import com.clipevery.LocalKoinApplication
 import com.clipevery.dao.sync.SyncRuntimeInfo
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.i18n.GlobalCopywriter
-import com.clipevery.net.CheckAction
-import com.clipevery.net.DeviceRefresher
+import com.clipevery.net.SyncRefresher
+import com.clipevery.sync.SyncManager
 import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.base.ClipIconButton
-import io.realm.kotlin.notifications.ResultsChange
-import io.realm.kotlin.notifications.UpdatedResults
 
 @Composable
 fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
@@ -179,31 +177,9 @@ fun DeviceNoteNameEditView(syncRuntimeInfo: SyncRuntimeInfo, onComplete: () -> U
 @Composable
 fun DevicesListView(currentPageViewContext: MutableState<PageViewContext>, onEdit: (SyncRuntimeInfo) -> Unit) {
     val current = LocalKoinApplication.current
-    val syncRuntimeInfoDao = current.koin.get<SyncRuntimeInfoDao>()
-    val syncRuntimeInfos = syncRuntimeInfoDao.getAllSyncRuntimeInfos()
-    var rememberSyncRuntimeInfos by remember { mutableStateOf(syncRuntimeInfos) }
+    val syncManager = current.koin.get<SyncManager>()
+    val rememberSyncRuntimeInfos = remember { syncManager.realTimeSyncRuntimeInfos }
 
-    LaunchedEffect(Unit) {
-        val syncRuntimeInfosFlow = syncRuntimeInfos.asFlow()
-        syncRuntimeInfosFlow.collect { changes: ResultsChange<SyncRuntimeInfo> ->
-            when (changes) {
-                is UpdatedResults -> {
-                    changes.insertions // indexes of inserted objects
-                    changes.insertionRanges // ranges of inserted objects
-                    changes.changes // indexes of modified objects
-                    changes.changeRanges // ranges of modified objects
-                    changes.deletions // indexes of deleted objects
-                    changes.deletionRanges // ranges of deleted objects
-                    changes.list // the full collection of objects
-
-                    rememberSyncRuntimeInfos = syncRuntimeInfoDao.getAllSyncRuntimeInfos()
-                }
-                else -> {
-                    // types other than UpdatedResults are not changes -- ignore them
-                }
-            }
-        }
-    }
     Column(modifier = Modifier.fillMaxWidth()) {
         for ((index, syncRuntimeInfo) in rememberSyncRuntimeInfos.withIndex()) {
             DeviceBarView(syncRuntimeInfo, currentPageViewContext, true, onEdit)
@@ -217,9 +193,9 @@ fun DevicesListView(currentPageViewContext: MutableState<PageViewContext>, onEdi
 @Composable
 fun DevicesRefreshView() {
     val current = LocalKoinApplication.current
-    val deviceRefresher = current.koin.get<DeviceRefresher>()
+    val syncRefresher = current.koin.get<SyncRefresher>()
 
-    val isRefreshing by deviceRefresher.isRefreshing
+    val isRefreshing by syncRefresher.isRefreshing
 
     val rotationDegrees = remember { Animatable(0f) }
 
@@ -244,7 +220,7 @@ fun DevicesRefreshView() {
                 radius = 18.dp,
                 onClick = {
                     if (!isRefreshing) {
-                        deviceRefresher.refresh(CheckAction.CheckAll)
+                        syncRefresher.refresh(true)
                     }
                 },
                 modifier = Modifier

@@ -24,8 +24,7 @@ import io.ktor.server.routing.routing
 import kotlinx.coroutines.runBlocking
 import java.net.BindException
 
-class DesktopClipServer(private val configManager: ConfigManager,
-                        private val clientHandlerManager :ClientHandlerManager): ClipServer {
+class DesktopClipServer(private val configManager: ConfigManager): ClipServer {
 
     private val logger = KotlinLogging.logger {}
 
@@ -58,7 +57,6 @@ class DesktopClipServer(private val configManager: ConfigManager,
     }
 
     override fun start(): ClipServer {
-        clientHandlerManager.start()
         try {
             server.start(wait = false)
         } catch (e: BindException) {

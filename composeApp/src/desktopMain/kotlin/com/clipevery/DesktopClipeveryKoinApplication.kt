@@ -39,16 +39,15 @@ import com.clipevery.endpoint.EndpointInfoFactory
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.i18n.GlobalCopywriterImpl
 import com.clipevery.listen.GlobalListener
-import com.clipevery.net.ClientHandlerManager
 import com.clipevery.net.ClipBonjourService
 import com.clipevery.net.ClipClient
 import com.clipevery.net.ClipServer
-import com.clipevery.net.DesktopClientHandlerManager
 import com.clipevery.net.DesktopClipBonjourService
 import com.clipevery.net.DesktopClipClient
 import com.clipevery.net.DesktopClipServer
-import com.clipevery.net.DesktopDeviceRefresher
-import com.clipevery.net.DeviceRefresher
+import com.clipevery.net.SyncRefresher
+import com.clipevery.net.clientapi.DesktopSyncClientApi
+import com.clipevery.net.clientapi.SyncClientApi
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.path.PathProvider
 import com.clipevery.presist.DesktopFilePersist
@@ -60,6 +59,8 @@ import com.clipevery.signal.DesktopSessionStore
 import com.clipevery.signal.DesktopSignalProtocolStore
 import com.clipevery.signal.DesktopSignedPreKeyStore
 import com.clipevery.signal.getClipIdentityKeyStoreFactory
+import com.clipevery.sync.DesktopSyncManager
+import com.clipevery.sync.SyncManager
 import com.clipevery.task.DeleteClipTaskExecutor
 import com.clipevery.task.DesktopTaskExecutor
 import com.clipevery.task.SyncClipTaskExecutor
@@ -114,11 +115,13 @@ object Dependencies {
 
             // net component
             single<ClipClient> { DesktopClipClient(get<AppInfo>()) }
-            single<ClientHandlerManager> { DesktopClientHandlerManager(get(), get(), get(), get()) }
-            single<ClipServer> { DesktopClipServer(get<ConfigManager>(), get<ClientHandlerManager>()).start() }
+            single<ClipServer> { DesktopClipServer(get<ConfigManager>()).start() }
             single<ClipBonjourService> { DesktopClipBonjourService(get(), get()).registerService() }
-            single<DeviceRefresher> { DesktopDeviceRefresher(get<ClientHandlerManager>()) }
             single<TelnetUtils> { TelnetUtils(get<ClipClient>()) }
+            single<SyncClientApi> { DesktopSyncClientApi(get()) }
+            single { DesktopSyncManager(get(), get(), get(), get()) }
+            single<SyncRefresher> { get<DesktopSyncManager>() }
+            single<SyncManager> { get<DesktopSyncManager>() }
 
             // signal component
             single<IdentityKeyStore> { getClipIdentityKeyStoreFactory(get(), get()).createIdentityKeyStore() }
