@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.dp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipData
-import com.clipevery.dao.clip.ClipType
 import io.realm.kotlin.notifications.ResultsChange
 import io.realm.kotlin.notifications.UpdatedResults
 import io.realm.kotlin.query.RealmResults
@@ -66,43 +65,24 @@ fun ClipPreviewsView() {
         clipDatasFlow.collect { changes: ResultsChange<ClipData> ->
             when (changes) {
                 is UpdatedResults -> {
-                    changes.insertions
-                    changes.insertionRanges
-                    val firstClipData: ClipData? = rememberClipDataList.firstOrNull()
-
-                    firstClipData?.let {
-                        val newClipDataList = clipDao.getClipDataGreaterThan(createTime = it.createTime)
-                        for (clipData in newClipDataList.reversed()) {
-                            if (clipDataComparator.compare(clipData, firstClipData) < 0) {
-                                rememberClipDataList.add(0, clipData)
-                            }
+                    if (changes.insertions.isNotEmpty()) {
+                        for (i in changes.insertions.size - 1 downTo 0) {
+                            rememberClipDataList.add(0, changes.list[changes.insertions[i]])
                         }
-                    } ?: run {
-                        val newClipDataList = clipDao.getClipData(limit = 20)
-                        rememberClipDataList.addAll(newClipDataList.sortedWith(clipDataComparator))
-                    }
-
-                    changes.changes
-                    changes.changeRanges
-
-                    rememberClipDataList.forEachIndexed { index, currentElement ->
-                        if (currentElement.clipType == ClipType.INVALID) {
-                            clipDao.getClipData(currentElement.id)?.let {
-                                rememberClipDataList[index] = it
+                    } else if (changes.changes.isNotEmpty()) {
+                        var start = 0
+                        for (i in 0 until changes.changes.size) {
+                            val currentClipId = changes.list[changes.changes[i]].clipId
+                            for (j in start until rememberClipDataList.size) {
+                                if (currentClipId == rememberClipDataList[j].clipId) {
+                                    rememberClipDataList[j] = changes.list[changes.changes[i]]
+                                    start = j + 1
+                                    break
+                                }
                             }
                         }
                     }
-
-                    changes.deletions
-                    changes.deletionRanges
-
-                    val iterator = rememberClipDataList.iterator()
-                    while (iterator.hasNext()) {
-                        val clipData = iterator.next()
-                        if (clipDao.getClipData(clipData.id) == null) {
-                            iterator.remove()
-                        }
-                    }
+                    // changes.deletions handle separately
                 }
                 else -> {
                     // types other than UpdatedResults are not changes -- ignore them
