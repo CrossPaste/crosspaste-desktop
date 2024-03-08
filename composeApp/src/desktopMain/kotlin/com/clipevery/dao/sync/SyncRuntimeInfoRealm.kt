@@ -25,7 +25,7 @@ class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
         }
     }
 
-    private fun update(syncRuntimeInfo: SyncRuntimeInfo, block: SyncRuntimeInfo.() -> Unit): SyncRuntimeInfo? {
+    override fun update(syncRuntimeInfo: SyncRuntimeInfo, block: SyncRuntimeInfo.() -> Unit): SyncRuntimeInfo? {
         return realm.writeBlocking {
             findLatest(syncRuntimeInfo)?.let {
                 return@writeBlocking it.apply(block)
@@ -37,7 +37,7 @@ class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
         }
     }
 
-    private suspend fun suspendUpdate(syncRuntimeInfo: SyncRuntimeInfo, block: SyncRuntimeInfo.() -> Unit): SyncRuntimeInfo? {
+    override suspend fun suspendUpdate(syncRuntimeInfo: SyncRuntimeInfo, block: SyncRuntimeInfo.() -> Unit): SyncRuntimeInfo? {
         return realm.write {
             findLatest(syncRuntimeInfo)?.let {
                 return@write it.apply(block)

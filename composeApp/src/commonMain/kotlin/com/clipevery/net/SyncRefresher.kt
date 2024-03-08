@@ -2,9 +2,9 @@ package com.clipevery.net
 
 import androidx.compose.runtime.State
 
-interface DeviceRefresher {
+interface SyncRefresher {
 
     val isRefreshing: State<Boolean>
 
-    fun refresh(checkAction: CheckAction)
+    fun refresh(force: Boolean)
 }

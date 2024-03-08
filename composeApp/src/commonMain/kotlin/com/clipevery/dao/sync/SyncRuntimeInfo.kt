@@ -27,3 +27,17 @@ class SyncRuntimeInfo: RealmObject {
     var createTime: RealmInstant = RealmInstant.now()
     var modifyTime: RealmInstant = RealmInstant.now()
 }
+
+fun hostInfoListEqual(hostInfoList: RealmList<HostInfo>, otherHostInfoList: RealmList<HostInfo>): Boolean {
+    if (hostInfoList.size != otherHostInfoList.size) {
+        return false
+    }
+    val sortHostInfoList = hostInfoList.sortedWith { o1, o2 -> o1.hostAddress.compareTo(o2.hostAddress) }
+    val otherSortHostInfoList = otherHostInfoList.sortedWith { o1, o2 -> o1.hostAddress.compareTo(o2.hostAddress) }
+    for (i in 0 until hostInfoList.size) {
+        if (sortHostInfoList[i].hostAddress != otherSortHostInfoList[i].hostAddress) {
+            return false
+        }
+    }
+    return true
+}
