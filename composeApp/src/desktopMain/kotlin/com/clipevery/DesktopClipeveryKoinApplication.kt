@@ -46,6 +46,8 @@ import com.clipevery.net.DesktopClipBonjourService
 import com.clipevery.net.DesktopClipClient
 import com.clipevery.net.DesktopClipServer
 import com.clipevery.net.SyncRefresher
+import com.clipevery.net.clientapi.DesktopSyncClientApi
+import com.clipevery.net.clientapi.SyncClientApi
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.path.PathProvider
 import com.clipevery.presist.DesktopFilePersist
@@ -116,6 +118,7 @@ object Dependencies {
             single<ClipServer> { DesktopClipServer(get<ConfigManager>()).start() }
             single<ClipBonjourService> { DesktopClipBonjourService(get(), get()).registerService() }
             single<TelnetUtils> { TelnetUtils(get<ClipClient>()) }
+            single<SyncClientApi> { DesktopSyncClientApi(get()) }
             single { DesktopSyncManager(get(), get(), get(), get()) }
             single<SyncRefresher> { get<DesktopSyncManager>() }
             single<SyncManager> { get<DesktopSyncManager>() }
