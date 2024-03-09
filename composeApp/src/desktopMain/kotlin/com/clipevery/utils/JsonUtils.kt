@@ -8,10 +8,13 @@ import com.clipevery.clip.item.UrlClipItem
 import com.clipevery.dao.clip.ClipContent
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.dao.clip.ClipLabel
+import com.clipevery.dao.task.ClipTaskExtraInfo
 import com.clipevery.serializer.Base64ByteArraySerializer
 import com.clipevery.serializer.IdentityKeySerializer
 import com.clipevery.serializer.PreKeyBundleSerializer
 import com.clipevery.serializer.RealmInstantSerializer
+import com.clipevery.task.extra.BaseExtraInfo
+import com.clipevery.task.extra.SyncExtraInfo
 import io.realm.kotlin.serializers.MutableRealmIntKSerializer
 import io.realm.kotlin.serializers.RealmAnyKSerializer
 import io.realm.kotlin.serializers.RealmListKSerializer
@@ -35,9 +38,25 @@ object JsonUtils {
 
     val JSON: Json = Json {
         serializersModule = SerializersModule {
+            // use in http request
             serializersModuleOf(ByteArray::class, Base64ByteArraySerializer)
             serializersModuleOf(PreKeyBundle::class, PreKeyBundleSerializer)
             serializersModuleOf(IdentityKey::class, IdentityKeySerializer)
+
+            // use in clip data
+            serializersModuleOf(MutableRealmIntKSerializer)
+            serializersModuleOf(RealmAnyKSerializer)
+            serializersModuleOf(RealmInstantSerializer)
+            polymorphic(RealmObject::class) {
+                subclass(FilesClipItem::class)
+                subclass(HtmlClipItem::class)
+                subclass(ImagesClipItem::class)
+                subclass(TextClipItem::class)
+                subclass(UrlClipItem::class)
+                subclass(ClipLabel::class)
+                subclass(ClipData::class)
+                subclass(ClipContent::class)
+            }
             polymorphicDefaultSerializer(RealmList::class) { it: RealmList<*> ->
                 if (it.isEmpty() || it[0] is String) {
                     RealmListKSerializer(String.serializer()) as SerializationStrategy<RealmList<*>>
@@ -54,19 +73,12 @@ object JsonUtils {
                     throw IllegalArgumentException("Unsupported RealmSet type: ${it.first()}")
                 }
             }
-            polymorphic(RealmObject::class) {
-                subclass(FilesClipItem::class)
-                subclass(HtmlClipItem::class)
-                subclass(ImagesClipItem::class)
-                subclass(TextClipItem::class)
-                subclass(UrlClipItem::class)
-                subclass(ClipLabel::class)
-                subclass(ClipData::class)
-                subclass(ClipContent::class)
+
+            // use in clip task
+            polymorphic(ClipTaskExtraInfo::class) {
+                subclass(BaseExtraInfo::class)
+                subclass(SyncExtraInfo::class)
             }
-            serializersModuleOf(MutableRealmIntKSerializer)
-            serializersModuleOf(RealmAnyKSerializer)
-            serializersModuleOf(RealmInstantSerializer)
         }
     }
 
