@@ -1,8 +1,8 @@
 package com.clipevery.dao.task
 
-import com.clipevery.dao.task.ClipTask.Companion.getExtraInfo
+import com.clipevery.task.extra.BaseExtraInfo
+import com.clipevery.utils.TaskUtils.getExtraInfo
 import io.realm.kotlin.Realm
-import io.realm.kotlin.types.RealmAny
 import io.realm.kotlin.types.RealmInstant
 import org.mongodb.kbson.ObjectId
 
@@ -31,11 +31,8 @@ class ClipTaskRealm(private val realm: Realm): ClipTaskDao {
             query(ClipTask::class, "taskId = $0", taskId).first().find()?.let {
                 it.status = TaskStatus.FAILURE
                 it.modifyTime = RealmInstant.now()
-                getExtraInfo(it.extraInfo)?.setFailMessage(e.message ?: "Unknown error") ?: run {
-                    it.extraInfo = RealmAny.Companion.create(BaseClipTaskExtraInfo().apply {
-                        setFailMessage(e.message ?: "Unknown error")
-                    })
-                }
+                val extraInfo = getExtraInfo<BaseExtraInfo>(it)
+                // todo change extraInfo
                 return@let copyFromRealm(it)
             }
         }

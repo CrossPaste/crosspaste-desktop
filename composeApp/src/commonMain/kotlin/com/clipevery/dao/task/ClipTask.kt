@@ -1,6 +1,5 @@
 package com.clipevery.dao.task
 
-import io.realm.kotlin.types.RealmAny
 import io.realm.kotlin.types.RealmInstant
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.Index
@@ -26,12 +25,6 @@ class ClipTask: RealmObject {
     @Index
     var modifyTime: RealmInstant = RealmInstant.now()
 
-    var extraInfo: RealmAny? = null
+    var extraInfo: String = ""
 
-
-    companion object {
-        fun getExtraInfo(anyValue: RealmAny?): ClipTaskExtraInfo? {
-            return anyValue?.let { it as ClipTaskExtraInfo }
-        }
-    }
 }

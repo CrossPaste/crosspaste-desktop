@@ -3,6 +3,7 @@ package com.clipevery.dao.clip
 import com.clipevery.clip.ClipPlugin
 import com.clipevery.dao.task.TaskType
 import com.clipevery.task.TaskExecutor
+import com.clipevery.task.extra.SyncExtraInfo
 import com.clipevery.utils.DateUtils
 import com.clipevery.utils.TaskUtils.createTask
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -119,7 +120,7 @@ class ClipRealm(private val realm: Realm,
                     clipData.clipState = ClipState.LOADED
 
                     val tasks = mutableListOf<ObjectId>()
-                    tasks.add(copyToRealm(createTask(clipData.clipId, TaskType.SYNC_CLIP_TASK)).taskId)
+                    tasks.add(copyToRealm(createTask(clipData.clipId, TaskType.SYNC_CLIP_TASK, SyncExtraInfo())).taskId)
                     query(ClipData::class, "md5 == $0 AND createTime > $1 AND id != $2 AND clipState != $3",
                         clipData.md5, DateUtils.getPrevDay(), id, ClipState.DELETED)
                         .find().let { deleteClipDatas ->
