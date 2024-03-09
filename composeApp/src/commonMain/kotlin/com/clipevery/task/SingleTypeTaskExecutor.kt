@@ -1,14 +1,13 @@
 package com.clipevery.task
 
 import com.clipevery.dao.task.ClipTask
-import com.clipevery.dao.task.ClipTaskDao
 import com.clipevery.dao.task.ClipTaskExtraInfo
 
 interface SingleTypeTaskExecutor {
 
     suspend fun executeTask(clipTask: ClipTask,
                             success: suspend (ClipTaskExtraInfo?) -> Unit,
-                            fail: suspend (ClipTaskExtraInfo) -> Unit,
+                            fail: suspend (ClipTaskExtraInfo, Boolean) -> Unit,
                             retry: suspend () -> Unit) {
         val result = doExecuteTask(clipTask)
 
@@ -16,8 +15,9 @@ interface SingleTypeTaskExecutor {
             success(result.newExtraInfo)
         } else {
             val newExtraInfo = (result as FailClipTaskResult).newExtraInfo
-            fail(newExtraInfo)
-            if (needRetry(clipTask, newExtraInfo)) {
+            val needRetry = needRetry(clipTask, newExtraInfo)
+            fail(newExtraInfo, needRetry)
+            if (needRetry) {
                 retry()
             }
         }

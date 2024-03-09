@@ -53,11 +53,11 @@ class DesktopTaskExecutor(private val singleTypeTaskExecutorMap: Map<Int, Single
                                 extraInfo = JsonUtils.JSON.encodeToString(newExtraInfo)
                             }
                         }
-                    }, fail = {
+                    }, fail = { clipTaskExtraInfo, needRetry ->
                         clipTaskDao.update(taskId) {
-                            status = TaskStatus.FAILURE
+                            status = if (needRetry) TaskStatus.PREPARING else TaskStatus.FAILURE
                             modifyTime = System.currentTimeMillis()
-                            extraInfo = JsonUtils.JSON.encodeToString(it)
+                            extraInfo = JsonUtils.JSON.encodeToString(clipTaskExtraInfo)
                         }
                     }, retry = {
                         submitTask(taskId)
