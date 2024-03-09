@@ -20,10 +20,10 @@ class ClipTask: RealmObject {
     var status: Int = 0
 
     @Index
-    var createTime: RealmInstant = RealmInstant.now()
+    var createTime: Long = 0
 
     @Index
-    var modifyTime: RealmInstant = RealmInstant.now()
+    var modifyTime: Long = 0
 
     var extraInfo: String = ""
 

@@ -7,6 +7,15 @@ import io.realm.kotlin.types.RealmInstant
 import org.mongodb.kbson.ObjectId
 
 class ClipTaskRealm(private val realm: Realm): ClipTaskDao {
+
+    override suspend fun update(taskId: ObjectId, block: ClipTask.() -> Unit) {
+        realm.write {
+            query(ClipTask::class, "taskId = $0", taskId).first().find()?.let {
+                return@write it.apply(block)
+            }
+        }
+    }
+
     override suspend fun executingAndGet(taskId: ObjectId): ClipTask? {
         return realm.write {
             query(ClipTask::class, "taskId = $0", taskId).first().find()?.let {
@@ -34,6 +43,20 @@ class ClipTaskRealm(private val realm: Realm): ClipTaskDao {
                 val extraInfo = getExtraInfo<BaseExtraInfo>(it)
                 // todo change extraInfo
                 return@let copyFromRealm(it)
+            }
+        }
+    }
+
+    override suspend fun unexpectFail(taskId: ObjectId, e: Throwable) {
+        return realm.write {
+            query(ClipTask::class, "taskId = $0", taskId).first().find()?.let {
+                it.status = TaskStatus.FAILURE
+                it.modifyTime = RealmInstant.now()
+                getExtraInfo(it.extraInfo)?.setFailMessage(e.message ?: "Unknown error") ?: run {
+                    it.extraInfo = RealmAny.Companion.create(BaseClipTaskExtraInfo().apply {
+                        setFailMessage(e.message ?: "Unknown error")
+                    })
+                }
             }
         }
     }

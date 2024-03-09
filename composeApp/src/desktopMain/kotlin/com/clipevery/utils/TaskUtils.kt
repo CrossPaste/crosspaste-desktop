@@ -6,6 +6,9 @@ import com.clipevery.dao.task.TaskStatus
 import com.clipevery.task.extra.BaseExtraInfo
 import io.realm.kotlin.types.RealmInstant
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
+import kotlin.reflect.KClass
 
 object TaskUtils {
 
@@ -14,13 +17,15 @@ object TaskUtils {
             this.clipId = clipId
             this.taskType = taskType
             this.status = TaskStatus.PREPARING
-            this.createTime = RealmInstant.now()
-            this.modifyTime = RealmInstant.now()
+            this.createTime = System.currentTimeMillis()
+            this.modifyTime = System.currentTimeMillis()
             this.extraInfo = JsonUtils.JSON.encodeToString(extraInfo)
         }
     }
 
-    inline fun <reified T: ClipTaskExtraInfo> getExtraInfo(clipTask: ClipTask): T {
-        return JsonUtils.JSON.decodeFromString(clipTask.extraInfo)
+    @Suppress("UNCHECKED_CAST")
+    fun <T: ClipTaskExtraInfo> getExtraInfo(clipTask: ClipTask, kclass: KClass<T>): T {
+        val serializer = Json.serializersModule.serializer(kclass.java)
+        return JsonUtils.JSON.decodeFromString(serializer, clipTask.extraInfo) as T
     }
 }
