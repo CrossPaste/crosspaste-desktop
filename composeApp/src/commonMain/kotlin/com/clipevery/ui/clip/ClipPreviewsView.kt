@@ -34,6 +34,8 @@ import androidx.compose.ui.unit.dp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipData
+import com.clipevery.dao.clip.ClipDataHashObject
+import io.realm.kotlin.notifications.InitialResults
 import io.realm.kotlin.notifications.ResultsChange
 import io.realm.kotlin.notifications.UpdatedResults
 import io.realm.kotlin.query.RealmResults
@@ -41,51 +43,67 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-val clipDataComparator = compareByDescending<ClipData> { it.createTime }
-    .thenBy{ it.appInstanceId }
-    .thenBy { it.clipId }
+val clipDataComparator = compareByDescending<ClipData> { it.getClipDataHashObject() }
 
 @Composable
 fun ClipPreviewsView() {
     val current = LocalKoinApplication.current
     val clipDao = current.koin.get<ClipDao>()
 
-    val clipDataList: RealmResults<ClipData> = clipDao.getClipData(limit = 20)
 
     val listState = rememberLazyListState()
     var isScrolling by remember { mutableStateOf(false) }
     var scrollJob: Job? by remember { mutableStateOf(null) }
     val coroutineScope = rememberCoroutineScope()
-    val rememberClipDataList = remember { mutableStateListOf<ClipData>().apply {
-        addAll(clipDataList.sortedWith(clipDataComparator))
-    } }
+    val rememberClipDataList = remember { mutableStateListOf<ClipData>()}
 
     LaunchedEffect(Unit) {
+        val clipDataList: RealmResults<ClipData> = clipDao.getClipData(limit = 20)
+
         val clipDatasFlow = clipDataList.asFlow()
         clipDatasFlow.collect { changes: ResultsChange<ClipData> ->
             when (changes) {
                 is UpdatedResults -> {
                     if (changes.insertions.isNotEmpty()) {
                         for (i in changes.insertions.size - 1 downTo 0) {
-                            rememberClipDataList.add(0, changes.list[changes.insertions[i]])
+                            val newClipData = changes.list[changes.insertions[i]]
+                            val insertionIndex = rememberClipDataList.binarySearch(newClipData, clipDataComparator)
+                            if (insertionIndex < 0) {
+                                val index = -(insertionIndex + 1)
+                                rememberClipDataList.add(index, newClipData)
+                            }
                         }
-                    } else if (changes.changes.isNotEmpty()) {
-                        var start = 0
+                    }
+
+                    val md5Set: MutableSet<String> = mutableSetOf()
+                    val clipDataHashSet: MutableSet<ClipDataHashObject> = mutableSetOf()
+                    if (changes.changes.isNotEmpty()) {
                         for (i in 0 until changes.changes.size) {
-                            val currentClipId = changes.list[changes.changes[i]].clipId
-                            for (j in start until rememberClipDataList.size) {
-                                if (currentClipId == rememberClipDataList[j].clipId) {
-                                    rememberClipDataList[j] = changes.list[changes.changes[i]]
-                                    start = j + 1
-                                    break
-                                }
+                            val changeItem = changes.list[changes.changes[i]]
+                            val changeIndex = rememberClipDataList.binarySearch(changeItem, clipDataComparator)
+                            if (changeIndex >= 0) {
+                                rememberClipDataList[changeIndex] = changeItem
+                                md5Set.add(changeItem.md5)
+                                clipDataHashSet.add(changeItem.getClipDataHashObject())
+                            }
+                        }
+                    }
+
+                    if (md5Set.isNotEmpty()) {
+                        val iterator = rememberClipDataList.iterator()
+                        while (iterator.hasNext()) {
+                            val clipData = iterator.next()
+                            val hashObject = clipData.getClipDataHashObject()
+                            if (md5Set.contains(clipData.md5) && !clipDataHashSet.contains(hashObject)) {
+                                iterator.remove()
                             }
                         }
                     }
                     // changes.deletions handle separately
                 }
-                else -> {
-                    // types other than UpdatedResults are not changes -- ignore them
+                is InitialResults -> {
+                    val initList = changes.list.sortedWith(clipDataComparator)
+                    rememberClipDataList.addAll(initList)
                 }
             }
         }

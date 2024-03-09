@@ -27,9 +27,6 @@ interface ClipDao {
 
     fun updateClipItem(update: (MutableRealm) -> Unit)
 
-    fun getClipDataGreaterThan(appInstanceId: String? = null,
-                               createTime: RealmInstant): RealmResults<ClipData>
-
     fun getClipDataLessThan(appInstanceId: String? = null,
                             limit: Int,
                             createTime: RealmInstant): RealmResults<ClipData>
