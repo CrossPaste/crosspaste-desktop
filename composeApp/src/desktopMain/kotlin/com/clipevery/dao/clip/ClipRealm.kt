@@ -139,17 +139,6 @@ class ClipRealm(private val realm: Realm,
         }
     }
 
-    override fun getClipDataGreaterThan(
-        appInstanceId: String?,
-        createTime: RealmInstant
-    ): RealmResults<ClipData> {
-        val query = appInstanceId?.let {
-            realm.query(ClipData::class, "appInstanceId == $0 AND createTime >= $1 AND clipState != $2",
-                appInstanceId, createTime, ClipState.DELETED)
-        } ?: realm.query(ClipData::class, "createTime >= $0 AND clipState != $1", createTime, ClipState.DELETED)
-        return query.sort("createTime", Sort.DESCENDING).find()
-    }
-
     override fun getClipDataLessThan(
         appInstanceId: String?,
         limit: Int,

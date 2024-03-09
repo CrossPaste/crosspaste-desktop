@@ -43,9 +43,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-val clipDataComparator = compareByDescending<ClipData> { it.createTime }
-    .thenBy{ it.appInstanceId }
-    .thenBy { it.clipId }
+val clipDataComparator = compareByDescending<ClipData> { it.getClipDataHashObject() }
 
 @Composable
 fun ClipPreviewsView() {
@@ -106,7 +104,6 @@ fun ClipPreviewsView() {
                 is InitialResults -> {
                     val initList = changes.list.sortedWith(clipDataComparator)
                     rememberClipDataList.addAll(initList)
-                    // types other than UpdatedResults are not changes -- ignore them
                 }
             }
         }
