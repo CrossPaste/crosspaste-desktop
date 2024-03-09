@@ -82,4 +82,10 @@ class ClipData: RealmObject {
         clipContent?.clear(realm, clearResource)
         realm.delete(this)
     }
+
+    fun getClipDataHashObject(): ClipDataHashObject {
+        return ClipDataHashObject(createTime, clipId, appInstanceId)
+    }
 }
+
+data class ClipDataHashObject(val createTime: RealmInstant, val clipId: Int, val appInstanceId: String)
