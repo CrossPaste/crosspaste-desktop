@@ -24,6 +24,15 @@ class DesktopSyncHandler(override var syncRuntimeInfo: SyncRuntimeInfo,
 
     private val sessionCipher: SessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
 
+    override suspend fun getConnectHostAddress(): String? {
+        syncRuntimeInfo.connectHostAddress?.let {
+            return it
+        } ?: run {
+            resolveSync(false)
+            return syncRuntimeInfo.connectHostAddress
+        }
+    }
+
     override suspend fun resolveSync(force: Boolean) {
         if (force && syncRuntimeInfo.connectHostAddress != null) {
             update {

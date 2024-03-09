@@ -37,6 +37,7 @@ import org.signal.libsignal.protocol.state.PreKeyBundle
 object JsonUtils {
 
     val JSON: Json = Json {
+        ignoreUnknownKeys = true
         serializersModule = SerializersModule {
             // use in http request
             serializersModuleOf(ByteArray::class, Base64ByteArraySerializer)
