@@ -1,13 +1,18 @@
 package com.clipevery.presist
 
 import com.clipevery.utils.JsonUtils
+import com.clipevery.utils.ioDispatcher
+import io.ktor.utils.io.*
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
+import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardOpenOption
 import kotlin.reflect.KClass
 
 @Suppress("UNCHECKED_CAST")
-class DesktopOneFilePersist(val path: Path) : OneFilePersist {
+class DesktopOneFilePersist(override val path: Path) : OneFilePersist {
     override fun <T: Any> read(clazz: KClass<T>): T? {
         val file = path.toFile()
         return if (file.exists()) {
@@ -48,5 +53,20 @@ class DesktopOneFilePersist(val path: Path) : OneFilePersist {
             return file.delete()
         }
         return false
+    }
+
+    override suspend fun writeChannel(channel: ByteReadChannel) {
+        withContext(ioDispatcher) {
+            val fileChannel = Files.newByteChannel(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE)
+            val buffer = ByteArray(4096)
+            while (!channel.isClosedForRead) {
+                val bytesRead = channel.readAvailable(buffer)
+                if (bytesRead <= 0) {
+                    continue
+                }
+                fileChannel.write(java.nio.ByteBuffer.wrap(buffer, 0, bytesRead))
+            }
+            fileChannel.close()
+        }
     }
 }

@@ -4,6 +4,7 @@ import com.clipevery.config.ConfigManager
 import com.clipevery.exception.StandardErrorCode
 import com.clipevery.net.exception.signalExceptionHandler
 import com.clipevery.net.plugin.SignalDecryption
+import com.clipevery.routing.clipRouting
 import com.clipevery.routing.syncRouting
 import com.clipevery.utils.JsonUtils
 import com.clipevery.utils.failResponse
@@ -52,6 +53,7 @@ class DesktopClipServer(private val configManager: ConfigManager): ClipServer {
             }
             routing {
                 syncRouting()
+                clipRouting()
             }
         }
     }

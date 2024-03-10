@@ -7,4 +7,6 @@ interface ClipFiles {
     fun getFilePaths(): List<Path>
 
     fun getFileMd5List(): List<String>
+
+    fun getClipFiles(): List<ClipFile>
 }

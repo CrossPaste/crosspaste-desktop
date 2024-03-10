@@ -32,6 +32,7 @@ class ClipContent: RealmObject {
 
     var clipAppearItems: RealmList<RealmAny?> = realmListOf()
 
+    // realm need zero arg constructor
     constructor()
 
     constructor(clipAppearItems: RealmList<RealmAny?>) {
