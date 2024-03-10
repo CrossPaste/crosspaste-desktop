@@ -4,7 +4,6 @@ import com.clipevery.dao.task.ClipTask
 import com.clipevery.dao.task.ClipTaskExtraInfo
 import com.clipevery.dao.task.TaskStatus
 import com.clipevery.task.extra.BaseExtraInfo
-import io.realm.kotlin.types.RealmInstant
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
