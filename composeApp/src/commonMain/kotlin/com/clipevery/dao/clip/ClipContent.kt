@@ -32,13 +32,6 @@ class ClipContent: RealmObject {
 
     var clipAppearItems: RealmList<RealmAny?> = realmListOf()
 
-    // realm need zero arg constructor
-    constructor()
-
-    constructor(clipAppearItems: RealmList<RealmAny?>) {
-        this.clipAppearItems = clipAppearItems
-    }
-
     @Throws(IOException::class)
     fun clear(realm: MutableRealm, clearResource: Boolean = true) {
         val iterator = clipAppearItems.iterator()
