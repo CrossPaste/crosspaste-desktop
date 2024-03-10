@@ -3,9 +3,9 @@ package com.clipevery.net.clientapi
 import com.clipevery.dao.clip.ClipData
 import io.ktor.http.*
 
-interface SyncClipClientApi {
+interface SendClipClientApi {
 
-    suspend fun syncClip(clipData: ClipData,
+    suspend fun sendClip(clipData: ClipData,
                          clipBytes: ByteArray,
                          toUrl: URLBuilder.(URLBuilder) -> Unit): Int
 

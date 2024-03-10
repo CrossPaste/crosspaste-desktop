@@ -62,20 +62,6 @@ class ClipData: RealmObject {
 
     constructor()
 
-    constructor(
-        clipId: Int,
-        clipAppearContent: RealmAny?,
-        clipContent: ClipContent,
-        clipType: Int,
-        appInstanceId: String
-    ) {
-        this.clipId = clipId
-        this.clipAppearContent = clipAppearContent
-        this.clipContent = clipContent
-        this.clipType = clipType
-        this.appInstanceId = appInstanceId
-    }
-
     // must be called in writeBlocking
     fun clear(realm: MutableRealm, clearResource: Boolean = true) {
         getClipItem(clipAppearContent)?.clear(realm, clearResource)
@@ -85,6 +71,26 @@ class ClipData: RealmObject {
 
     fun getClipDataHashObject(): ClipDataHashObject {
         return ClipDataHashObject(createTime, clipId, appInstanceId)
+    }
+
+    fun getClipAppearItems(): List<ClipAppearItem> {
+        val appearItem: ClipAppearItem? = getClipItem(this.clipAppearContent)
+
+        val otherAppearItems: List<ClipAppearItem>? = this.clipContent?.clipAppearItems?.mapNotNull {
+            getClipItem(it)
+        }
+
+        val mutableList: MutableList<ClipAppearItem> = mutableListOf()
+
+        appearItem?.let {
+            mutableList.add(it)
+        }
+
+        otherAppearItems?.let {
+            mutableList.addAll(it)
+        }
+
+        return mutableList.toList()
     }
 }
 

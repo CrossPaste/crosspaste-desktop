@@ -3,7 +3,7 @@ package com.clipevery.task
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.task.ClipTask
 import com.clipevery.dao.task.ClipTaskExtraInfo
-import com.clipevery.net.clientapi.SyncClipClientApi
+import com.clipevery.net.clientapi.SendClipClientApi
 import com.clipevery.net.clientapi.SyncClipResult
 import com.clipevery.sync.SyncManager
 import com.clipevery.task.extra.SyncExtraInfo
@@ -11,7 +11,6 @@ import com.clipevery.utils.JsonUtils
 import com.clipevery.utils.TaskUtils
 import com.clipevery.utils.buildUrl
 import com.clipevery.utils.ioDispatcher
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
@@ -20,10 +19,8 @@ import kotlinx.serialization.json.encodeToStream
 import java.io.ByteArrayOutputStream
 
 class SyncClipTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
-                           private val syncClipClientApi: SyncClipClientApi,
+                           private val sendClipClientApi: SendClipClientApi,
                            private val syncManager: SyncManager): SingleTypeTaskExecutor {
-
-    private val logger = KotlinLogging.logger {}
 
     private val clipDao: ClipDao by lazy { lazyClipDao.value }
 
@@ -43,7 +40,7 @@ class SyncClipTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
                     val clientHandler = entryHandler.value
                     var syncClipResult = SyncClipResult.FAILED
                     clientHandler.getConnectHostAddress()?.let {
-                        syncClipResult = syncClipClientApi.syncClip(clipData, clipTaskBytes) {
+                        syncClipResult = sendClipClientApi.sendClip(clipData, clipTaskBytes) {
                             urlBuilder -> buildUrl(urlBuilder, it, port, "sync", "clip")
                         }
                     }

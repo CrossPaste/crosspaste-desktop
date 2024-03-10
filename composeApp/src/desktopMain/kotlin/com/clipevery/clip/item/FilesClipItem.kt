@@ -43,6 +43,19 @@ class FilesClipItem: RealmObject, ClipAppearItem, ClipFiles {
         return md5List
     }
 
+    override fun getClipFiles(): List<ClipFile> {
+        return getFilePaths().mapIndexed { index, path -> object: ClipFile {
+                override fun getFilePath(): Path {
+                    return path
+                }
+
+                override fun getMd5(): String {
+                    return md5List[index]
+                }
+            }
+        }
+    }
+
     override fun getIdentifiers(): List<String> {
         return identifierList
     }
