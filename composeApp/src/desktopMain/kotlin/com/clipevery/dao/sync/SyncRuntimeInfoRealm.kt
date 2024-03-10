@@ -17,14 +17,6 @@ class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
         return realm.query(SyncRuntimeInfo::class, "appInstanceId == $0", appInstanceId).first().find()
     }
 
-    override suspend fun updateConnectState(syncRuntimeInfo: SyncRuntimeInfo, connectState: Int) {
-        realm.write {
-            findLatest(syncRuntimeInfo)?.apply {
-                this.connectState = connectState
-            }
-        }
-    }
-
     override fun update(syncRuntimeInfo: SyncRuntimeInfo, block: SyncRuntimeInfo.() -> Unit): SyncRuntimeInfo? {
         return realm.writeBlocking {
             findLatest(syncRuntimeInfo)?.let {
@@ -46,25 +38,6 @@ class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
                     return@write it.apply(block)
                 }
             }
-        }
-    }
-
-    override suspend fun updateConnectInfo(syncRuntimeInfo: SyncRuntimeInfo, connectState: Int, connectHostAddress: String) {
-        suspendUpdate(syncRuntimeInfo) {
-            this.connectState = connectState
-            this.connectHostAddress = connectHostAddress
-        }
-    }
-
-    override fun updateAllowSend(syncRuntimeInfo: SyncRuntimeInfo, allowSend: Boolean): SyncRuntimeInfo? {
-        return update(syncRuntimeInfo) {
-            this.allowSend = allowSend
-        }
-    }
-
-    override fun updateAllowReceive(syncRuntimeInfo: SyncRuntimeInfo, allowReceive: Boolean): SyncRuntimeInfo? {
-        return update(syncRuntimeInfo) {
-            this.allowReceive = allowReceive
         }
     }
 
@@ -182,12 +155,6 @@ class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
                 .find()?.let {
                     delete(it)
                 }
-        }
-    }
-
-    override fun updateNoteName(syncRuntimeInfo: SyncRuntimeInfo, noteName: String): SyncRuntimeInfo? {
-        return update(syncRuntimeInfo) {
-            this.noteName = noteName
         }
     }
 }

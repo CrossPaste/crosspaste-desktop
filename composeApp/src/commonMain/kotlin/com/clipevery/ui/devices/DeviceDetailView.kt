@@ -88,9 +88,9 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
                 Switch(
                     modifier = Modifier.align(Alignment.CenterVertically).padding(0.dp),
                     checked = syncRuntimeInfo.allowSend,
-                    onCheckedChange = { it ->
-                        syncRuntimeInfoDao.updateAllowSend(syncRuntimeInfo, it)?.let {
-                            syncRuntimeInfo = it
+                    onCheckedChange = {
+                        syncRuntimeInfoDao.update(syncRuntimeInfo) {
+                            this.allowSend = it
                         }
                     },
                     colors = SwitchDefaults.colors(
@@ -116,9 +116,9 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
                 Switch(
                     modifier = Modifier.align(Alignment.CenterVertically).padding(0.dp),
                     checked = syncRuntimeInfo.allowReceive,
-                    onCheckedChange = { it ->
-                        syncRuntimeInfoDao.updateAllowReceive(syncRuntimeInfo, it)?.let {
-                            syncRuntimeInfo = it
+                    onCheckedChange = {
+                        syncRuntimeInfoDao.update(syncRuntimeInfo) {
+                            this.allowReceive = it
                         }
                     },
                     colors = SwitchDefaults.colors(
