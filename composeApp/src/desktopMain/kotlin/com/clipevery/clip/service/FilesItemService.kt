@@ -9,7 +9,7 @@ import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.utils.DesktopFileUtils
 import com.clipevery.utils.DesktopFileUtils.copyFile
 import com.clipevery.utils.DesktopFileUtils.createClipRelativePath
-import com.clipevery.utils.md5ByArray
+import com.clipevery.utils.EncryptUtils.md5ByArray
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.ext.toRealmList

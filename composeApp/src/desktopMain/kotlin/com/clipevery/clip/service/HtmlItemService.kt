@@ -10,7 +10,7 @@ import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.presist.DesktopOneFilePersist
 import com.clipevery.utils.DesktopFileUtils
-import com.clipevery.utils.md5ByString
+import com.clipevery.utils.EncryptUtils.md5ByString
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
 import java.awt.datatransfer.DataFlavor
