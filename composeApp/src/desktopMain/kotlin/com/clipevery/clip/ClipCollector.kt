@@ -67,7 +67,9 @@ class ClipCollector(
         }
         val clipAppearItems: List<ClipAppearItem> = preCollectors.flatMap { it.values }
 
-        val clipContent = ClipContent(clipAppearItems.map { RealmAny.create(it as RealmObject) }.toRealmList())
+        val clipContent = ClipContent().apply {
+            this.clipAppearItems = clipAppearItems.map { RealmAny.create(it as RealmObject) }.toRealmList()
+        }
 
         val clipData = ClipData().apply {
             this.clipId = clipId
