@@ -157,7 +157,9 @@ fun DeviceNoteNameEditView(syncRuntimeInfo: SyncRuntimeInfo, onComplete: () -> U
                             if (inputNoteName == "") {
                                 isError = true
                             } else {
-                                syncRuntimeInfoDao.updateNoteName(syncRuntimeInfo, inputNoteName)
+                                syncRuntimeInfoDao.update(syncRuntimeInfo) {
+                                    this.noteName = inputNoteName
+                                }
                                 onComplete()
                             }
                         },

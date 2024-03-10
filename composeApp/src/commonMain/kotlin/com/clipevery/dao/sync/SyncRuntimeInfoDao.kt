@@ -12,19 +12,9 @@ interface SyncRuntimeInfoDao {
 
     suspend fun suspendUpdate(syncRuntimeInfo: SyncRuntimeInfo, block: SyncRuntimeInfo.() -> Unit): SyncRuntimeInfo?
 
-    suspend fun updateConnectState(syncRuntimeInfo: SyncRuntimeInfo, connectState: Int)
-
-    suspend fun updateConnectInfo(syncRuntimeInfo: SyncRuntimeInfo, connectState: Int, connectHostAddress: String)
-
-    fun updateAllowSend(syncRuntimeInfo: SyncRuntimeInfo, allowSend: Boolean): SyncRuntimeInfo?
-
-    fun updateAllowReceive(syncRuntimeInfo: SyncRuntimeInfo, allowReceive: Boolean): SyncRuntimeInfo?
-
     fun inertOrUpdate(syncInfo: SyncInfo)
 
     fun inertOrUpdate(syncInfos: List<SyncInfo>): List<String>
 
     fun deleteSyncRuntimeInfo(appInstanceId: String)
-
-    fun updateNoteName(syncRuntimeInfo: SyncRuntimeInfo, noteName: String): SyncRuntimeInfo?
 }
