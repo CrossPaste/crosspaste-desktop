@@ -11,7 +11,7 @@
 package com.clipevery.dao.clip
 
 import com.clipevery.dao.clip.ClipContent.Companion.getClipItem
-import com.clipevery.serializer.RealmInstantSerializer
+import com.clipevery.serializer.ClipDataSerializer
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmSetOf
 import io.realm.kotlin.serializers.MutableRealmIntKSerializer
@@ -33,7 +33,7 @@ import kotlinx.serialization.Transient
 import kotlinx.serialization.UseSerializers
 import org.mongodb.kbson.ObjectId
 
-@Serializable
+@Serializable(with = ClipDataSerializer::class)
 class ClipData: RealmObject {
     @PrimaryKey
     @Transient
@@ -52,15 +52,13 @@ class ClipData: RealmObject {
     @Index
     var appInstanceId: String = ""
     @Index
-    @Serializable(with = RealmInstantSerializer::class)
+    @Transient
     var createTime: RealmInstant = RealmInstant.now()
 
     @Transient
     var clipState: Int = ClipState.LOADING
 
     var labels: RealmSet<ClipLabel> = realmSetOf()
-
-    constructor()
 
     // must be called in writeBlocking
     fun clear(realm: MutableRealm, clearResource: Boolean = true) {

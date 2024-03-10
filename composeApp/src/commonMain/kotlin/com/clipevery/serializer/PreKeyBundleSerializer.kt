@@ -1,7 +1,7 @@
 package com.clipevery.serializer
 
-import com.clipevery.utils.base64Decode
-import com.clipevery.utils.base64Encode
+import com.clipevery.utils.EncryptUtils.base64Decode
+import com.clipevery.utils.EncryptUtils.base64Encode
 import com.clipevery.utils.decodePreKeyBundle
 import com.clipevery.utils.encodePreKeyBundle
 import kotlinx.serialization.KSerializer

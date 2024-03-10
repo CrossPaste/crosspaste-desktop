@@ -5,7 +5,7 @@ import com.clipevery.clip.ClipCollector
 import com.clipevery.clip.ClipItemService
 import com.clipevery.clip.item.UrlClipItem
 import com.clipevery.dao.clip.ClipAppearItem
-import com.clipevery.utils.md5ByString
+import com.clipevery.utils.EncryptUtils.md5ByString
 import io.realm.kotlin.MutableRealm
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable

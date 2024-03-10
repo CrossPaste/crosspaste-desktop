@@ -3,7 +3,7 @@ package com.clipevery.clip.plugin
 import com.clipevery.clip.ClipPlugin
 import com.clipevery.clip.item.ImagesClipItem
 import com.clipevery.dao.clip.ClipAppearItem
-import com.clipevery.utils.md5ByArray
+import com.clipevery.utils.EncryptUtils.md5ByArray
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.toRealmList
 

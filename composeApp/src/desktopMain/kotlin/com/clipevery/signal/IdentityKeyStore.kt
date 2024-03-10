@@ -2,11 +2,6 @@ package com.clipevery.signal
 
 import com.clipevery.app.AppEnv
 import com.clipevery.app.AppFileType
-import com.clipevery.utils.decryptData
-import com.clipevery.utils.encryptData
-import com.clipevery.utils.generateAESKey
-import com.clipevery.utils.secretKeyToString
-import com.clipevery.utils.stringToSecretKey
 import com.clipevery.os.macos.MacosKeychainHelper
 import com.clipevery.app.AppInfo
 import com.clipevery.dao.signal.SignalDao
@@ -14,6 +9,11 @@ import com.clipevery.platform.currentPlatform
 import com.clipevery.presist.DesktopOneFilePersist
 import com.clipevery.os.windows.WindowDapiHelper
 import com.clipevery.path.DesktopPathProvider
+import com.clipevery.utils.EncryptUtils.decryptData
+import com.clipevery.utils.EncryptUtils.encryptData
+import com.clipevery.utils.EncryptUtils.generateAESKey
+import com.clipevery.utils.EncryptUtils.secretKeyToString
+import com.clipevery.utils.EncryptUtils.stringToSecretKey
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.signal.libsignal.protocol.IdentityKey
 import org.signal.libsignal.protocol.IdentityKeyPair

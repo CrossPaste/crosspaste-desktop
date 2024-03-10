@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.clipevery.app.AppInfo
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.endpoint.EndpointInfoFactory
+import com.clipevery.utils.EncryptUtils.base64Encode
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import kotlinx.serialization.encodeToString

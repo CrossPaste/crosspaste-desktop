@@ -6,7 +6,6 @@ import com.clipevery.clip.item.ImagesClipItem
 import com.clipevery.clip.item.TextClipItem
 import com.clipevery.clip.item.UrlClipItem
 import com.clipevery.dao.clip.ClipContent
-import com.clipevery.dao.clip.ClipData
 import com.clipevery.dao.clip.ClipLabel
 import com.clipevery.dao.task.ClipTaskExtraInfo
 import com.clipevery.serializer.Base64ByteArraySerializer
@@ -55,7 +54,6 @@ object JsonUtils {
                 subclass(TextClipItem::class)
                 subclass(UrlClipItem::class)
                 subclass(ClipLabel::class)
-                subclass(ClipData::class)
                 subclass(ClipContent::class)
             }
             polymorphicDefaultSerializer(RealmList::class) { it: RealmList<*> ->
