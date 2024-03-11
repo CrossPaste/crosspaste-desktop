@@ -2,6 +2,7 @@ package com.clipevery.clip
 
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
+import java.awt.datatransfer.UnsupportedFlavorException
 
 class ClipTransferable(private val map: LinkedHashMap<DataFlavor, Any>): Transferable {
 
@@ -16,6 +17,6 @@ class ClipTransferable(private val map: LinkedHashMap<DataFlavor, Any>): Transfe
     }
 
     override fun getTransferData(flavor: DataFlavor?): Any {
-        return map[flavor] ?: ""
+        return map[flavor] ?: throw UnsupportedFlavorException(flavor)
     }
 }
