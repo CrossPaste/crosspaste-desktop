@@ -79,7 +79,7 @@ class ClipRealm(private val realm: Realm,
         return realm.query(ClipData::class, "clipId == $0 AND clipState != $1", clipId, ClipState.DELETED).first().find()
     }
 
-    override suspend fun releaseClipData(id: ObjectId, clipPlugins: List<ClipPlugin>) {
+    override suspend fun releaseLocalClipData(id: ObjectId, clipPlugins: List<ClipPlugin>) {
         realm.write {
             query(ClipData::class, "id == $0 AND clipState == $1", id, ClipState.LOADING).first().find()?.let { clipData ->
                 clipData.clipContent?.let { clipContent ->
@@ -134,8 +134,22 @@ class ClipRealm(private val realm: Realm,
         }
     }
 
-    override fun updateClipItem(update: (MutableRealm) -> Unit) {
+    override suspend fun releaseRemoteClipData(id: ObjectId) {
+        realm.write {
+            query(ClipData::class, "id == $0 AND clipState == $1", id, ClipState.LOADING).first().find()?.let { clipData ->
+                clipData.clipState = ClipState.LOADED
+            }
+        }
+    }
+
+    override fun update(update: (MutableRealm) -> Unit) {
         realm.writeBlocking {
+            update(this)
+        }
+    }
+
+    override suspend fun suspendUpdate(update: (MutableRealm) -> Unit) {
+        realm.write {
             update(this)
         }
     }

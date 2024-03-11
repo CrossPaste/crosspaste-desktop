@@ -23,9 +23,13 @@ interface ClipDao {
 
     fun getClipData(clipId: Int): ClipData?
 
-    suspend fun releaseClipData(id: ObjectId, clipPlugins: List<ClipPlugin>)
+    suspend fun releaseLocalClipData(id: ObjectId, clipPlugins: List<ClipPlugin>)
 
-    fun updateClipItem(update: (MutableRealm) -> Unit)
+    suspend fun releaseRemoteClipData(id: ObjectId)
+
+    fun update(update: (MutableRealm) -> Unit)
+
+    suspend fun suspendUpdate(update: (MutableRealm) -> Unit)
 
     fun getClipDataLessThan(appInstanceId: String? = null,
                             limit: Int,
