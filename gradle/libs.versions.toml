@@ -1,5 +1,5 @@
 [versions]
-compose = "1.6.2"
+compose = "1.6.3"
 compose-plugin = "1.6.0"
 compose-compiler = "1.5.8"
 compose-shimmer = "1.2.0"
