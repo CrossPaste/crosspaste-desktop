@@ -60,7 +60,12 @@ fun Routing.clipRouting() {
                 part.dispose()
             }
 
-            successResponse(call)
+            id?.let {
+                clipDao.releaseRemoteClipData(it)
+                successResponse(call)
+            } ?: run {
+                failResponse(call, StandardErrorCode.SYNC_CLIP_NOT_FOUND_DATA.toErrorCode(), "not found clip data")
+            }
         } catch (e: Exception) {
             id?.let { clipDao.markDeleteClipData(it) }
             failResponse(call, StandardErrorCode.SYNC_CLIP_ERROR.toErrorCode())

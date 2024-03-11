@@ -50,7 +50,7 @@ class ClipCollector(
             val updateClipItem: (MutableRealm) -> Unit = { realm ->
                 update(it, realm)
             }
-            clipDao.updateClipItem(updateClipItem)
+            clipDao.update(updateClipItem)
         }
     }
 
@@ -92,7 +92,7 @@ class ClipCollector(
             }
         } else {
             try {
-                clipDao.releaseClipData(id, clipPlugins)
+                clipDao.releaseLocalClipData(id, clipPlugins)
             } catch (e: Exception) {
                 logger.error(e) { "Failed to release clip $id" }
                 // The following errors will be sent next
