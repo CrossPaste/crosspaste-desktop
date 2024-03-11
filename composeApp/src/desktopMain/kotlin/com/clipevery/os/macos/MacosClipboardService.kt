@@ -2,6 +2,8 @@ package com.clipevery.os.macos
 
 import com.clipevery.clip.ClipboardService
 import com.clipevery.clip.TransferableConsumer
+import com.clipevery.clip.TransferableProducer
+import com.clipevery.dao.clip.ClipData
 import com.clipevery.os.macos.api.MacosApi
 import com.clipevery.utils.cpuDispatcher
 import com.clipevery.utils.ioDispatcher
@@ -15,14 +17,28 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
+import java.awt.datatransfer.Transferable
 
-class MacosClipboardService(override val clipConsumer: TransferableConsumer): ClipboardService {
+class MacosClipboardService(override val clipConsumer: TransferableConsumer,
+                            override val clipProducer: TransferableProducer): ClipboardService {
 
     private val logger = KotlinLogging.logger {}
 
     private var changeCount = 0
 
-    private var systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
+    @Volatile
+    private var owner = false
+
+    @Volatile
+    private var ownerTransferable: Transferable? = null
+
+    override val systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
+
+    override fun setContent(clipData: ClipData) {
+        ownerTransferable = clipProducer.produce(clipData)
+        owner = true
+        systemClipboard.setContents(ownerTransferable, this)
+    }
 
     private var job: Job? = null
 
@@ -35,9 +51,11 @@ class MacosClipboardService(override val clipConsumer: TransferableConsumer): Cl
                             changeCount = currentChangeCount
                             delay(20L)
                             val contents = systemClipboard.getContents(null)
-                            contents?.let {
-                                withContext(ioDispatcher) {
-                                    clipConsumer.consume(it)
+                            if (contents != ownerTransferable) {
+                                contents?.let {
+                                    withContext(ioDispatcher) {
+                                        clipConsumer.consume(it)
+                                    }
                                 }
                             }
                         }
@@ -48,6 +66,10 @@ class MacosClipboardService(override val clipConsumer: TransferableConsumer): Cl
                 delay(280L)
             }
         }
+    }
+
+    override fun lostOwnership(clipboard: Clipboard?, contents: Transferable?) {
+        owner = false
     }
 
     override fun start() {

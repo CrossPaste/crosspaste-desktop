@@ -2,6 +2,8 @@ package com.clipevery.os.windows
 
 import com.clipevery.clip.ClipboardService
 import com.clipevery.clip.TransferableConsumer
+import com.clipevery.clip.TransferableProducer
+import com.clipevery.dao.clip.ClipData
 import com.clipevery.os.windows.api.User32
 import com.clipevery.platform.currentPlatform
 import com.clipevery.utils.ioDispatcher
@@ -22,12 +24,24 @@ import java.lang.IllegalStateException
 import kotlin.math.min
 
 
-class WindowsClipboardService
-    (override val clipConsumer: TransferableConsumer) : ClipboardService, User32.WNDPROC {
+class WindowsClipboardService(override val clipConsumer: TransferableConsumer,
+                              override val clipProducer: TransferableProducer) : ClipboardService, User32.WNDPROC {
 
     private val logger = KotlinLogging.logger {}
 
-    private var systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
+    @Volatile
+    private var owner = false
+
+    @Volatile
+    private var ownerTransferable: Transferable? = null
+
+    override val systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
+
+    override fun setContent(clipData: ClipData) {
+        ownerTransferable = clipProducer.produce(clipData)
+        owner = true
+        systemClipboard.setContents(ownerTransferable, this)
+    }
 
     private var job: Job? = null
     private var viewer: HWND? = null
@@ -74,6 +88,10 @@ class WindowsClipboardService
         }
     }
 
+    override fun lostOwnership(clipboard: Clipboard?, contents: Transferable?) {
+        owner = false
+    }
+
     override fun start() {
         if (job?.isActive != true) {
             job = CoroutineScope(ioDispatcher).launch {
@@ -109,7 +127,9 @@ class WindowsClipboardService
 
         contents?.let {
             CoroutineScope(ioDispatcher).launch {
-                clipConsumer.consume(it)
+                if (it != ownerTransferable) {
+                    clipConsumer.consume(it)
+                }
             }
         }
     }
