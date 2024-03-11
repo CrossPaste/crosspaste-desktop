@@ -12,7 +12,9 @@ import com.clipevery.clip.ClipboardService
 import com.clipevery.clip.DesktopChromeService
 import com.clipevery.clip.DesktopClipSearchService
 import com.clipevery.clip.DesktopTransferableConsumer
+import com.clipevery.clip.DesktopTransferableProducer
 import com.clipevery.clip.TransferableConsumer
+import com.clipevery.clip.TransferableProducer
 import com.clipevery.clip.getDesktopClipboardService
 import com.clipevery.clip.plugin.FilesToImagesPlugin
 import com.clipevery.clip.plugin.DistinctPlugin
@@ -134,7 +136,7 @@ object Dependencies {
             single<SignalProtocolStore> { DesktopSignalProtocolStore(get(), get(), get(), get()) }
 
             // clip component
-            single<ClipboardService> { getDesktopClipboardService(get()) }
+            single<ClipboardService> { getDesktopClipboardService(get(), get()) }
             single<TransferableConsumer> { DesktopTransferableConsumer(
                 get(), get(), get(), listOf(
                     FilesItemService(appInfo = get()),
@@ -149,6 +151,7 @@ object Dependencies {
                     SortPlugin
                 )
             ) }
+            single<TransferableProducer> { DesktopTransferableProducer() }
             single<ChromeService> { DesktopChromeService }
             single<ClipSearchService> { DesktopClipSearchService(get()) }
             single<TaskExecutor> { DesktopTaskExecutor(mapOf(
