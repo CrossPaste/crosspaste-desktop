@@ -48,6 +48,8 @@ class DesktopTransferableProducer: TransferableProducer {
 
     private fun addDataFlavor(map: MutableMap<DataFlavor, Any>, htmlClipItem: HtmlClipItem) {
         map[DataFlavor.selectionHtmlFlavor] = htmlClipItem.html
+        map[DataFlavor.fragmentHtmlFlavor] = htmlClipItem.html
+        map[DataFlavor.allHtmlFlavor] = htmlClipItem.html
     }
 
     private fun addDataFlavor(map: MutableMap<DataFlavor, Any>, imagesClipItem: ImagesClipItem) {
