@@ -14,6 +14,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.mongodb.kbson.BsonObjectId
 import org.mongodb.kbson.ObjectId
+import java.awt.datatransfer.DataFlavor
+import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -79,5 +81,10 @@ class FilesClipItem: RealmObject, ClipAppearItem, ClipFiles {
             }
         }
         realm.delete(this)
+    }
+
+    override fun fillDataFlavor(map: MutableMap<DataFlavor, Any>) {
+        val fileList: List<File> = getFilePaths().map { it.toFile() }
+        map[DataFlavor.javaFileListFlavor] = fileList
     }
 }

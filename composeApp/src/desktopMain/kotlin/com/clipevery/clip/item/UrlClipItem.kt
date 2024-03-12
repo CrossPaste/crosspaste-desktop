@@ -9,6 +9,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.mongodb.kbson.BsonObjectId
 import org.mongodb.kbson.ObjectId
+import java.awt.datatransfer.DataFlavor
+import java.net.URL
 
 @Serializable
 class UrlClipItem: RealmObject, ClipAppearItem, ClipUrl {
@@ -41,5 +43,9 @@ class UrlClipItem: RealmObject, ClipAppearItem, ClipUrl {
 
     override fun clear(realm: MutableRealm, clearResource: Boolean) {
         realm.delete(this)
+    }
+
+    override fun fillDataFlavor(map: MutableMap<DataFlavor, Any>) {
+        map[DataFlavor("application/x-java-url; class=java.net.URL")] = URL(url)
     }
 }
