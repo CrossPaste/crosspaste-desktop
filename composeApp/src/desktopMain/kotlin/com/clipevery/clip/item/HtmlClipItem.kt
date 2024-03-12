@@ -14,6 +14,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.mongodb.kbson.BsonObjectId
 import org.mongodb.kbson.ObjectId
+import java.awt.datatransfer.DataFlavor
 import java.nio.file.Path
 
 @Serializable
@@ -68,5 +69,11 @@ class HtmlClipItem: RealmObject, ClipAppearItem, ClipHtml {
             DesktopOneFilePersist(getHtmlImagePath()).delete()
         }
         realm.delete(this)
+    }
+
+    override fun fillDataFlavor(map: MutableMap<DataFlavor, Any>) {
+        map[DataFlavor.selectionHtmlFlavor] = html
+        map[DataFlavor.fragmentHtmlFlavor] = html
+        map[DataFlavor.allHtmlFlavor] = html
     }
 }
