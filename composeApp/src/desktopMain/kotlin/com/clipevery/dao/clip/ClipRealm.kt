@@ -46,20 +46,16 @@ class ClipRealm(private val realm: Realm,
         }
     }
 
-    override fun deleteClipData(id: ObjectId) {
+    override suspend fun deleteClipData(clipId: Int) {
         doDeleteClipData {
-            query(ClipData::class, "id == $0", id).first().find()?.let { listOf(it) } ?: emptyList()
+            query(ClipData::class, "clipId == $0", clipId).first().find()?.let { listOf(it) } ?: emptyList()
         }
     }
 
-    private fun doDeleteClipData(queryToDelete: MutableRealm.() -> List<ClipData>) {
-        realm.writeBlocking {
+    private suspend fun doDeleteClipData(queryToDelete: MutableRealm.() -> List<ClipData>) {
+        realm.write {
             for (clipData in queryToDelete.invoke(this)) {
-                try {
-                    clipData.clear(this)
-                } catch (e: Exception) {
-                    logger.error(e) { "clear id ${clipData.id} fail" }
-                }
+                clipData.clear(this)
             }
         }
     }

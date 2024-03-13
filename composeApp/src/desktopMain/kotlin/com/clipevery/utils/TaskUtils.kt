@@ -7,6 +7,9 @@ import com.clipevery.dao.task.TaskStatus
 import com.clipevery.task.extra.BaseExtraInfo
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.serializer
 import kotlin.reflect.KClass
 
@@ -29,15 +32,24 @@ object TaskUtils {
         return JsonUtils.JSON.decodeFromString(serializer, clipTask.extraInfo) as T
     }
 
-    fun unexpectError(clipTask: ClipTask, e: Throwable) {
-        clipTask.status = TaskStatus.FAILURE
+    fun createFailExtraInfo(clipTask: ClipTask, throwable: Throwable): String {
         val currentTime = System.currentTimeMillis()
         val executionHistory = ExecutionHistory(startTime = clipTask.modifyTime,
             endTime = currentTime,
             status = TaskStatus.FAILURE,
-            message = e.message ?: "Unknown error")
-        val clipTaskExtraInfo = JsonUtils.JSON.decodeFromString<BaseExtraInfo>(clipTask.extraInfo)
-        clipTaskExtraInfo.executionHistories.add(executionHistory)
-        clipTask.extraInfo = JsonUtils.JSON.encodeToString(clipTaskExtraInfo)
+            message = throwable.message ?: "Unknown error")
+        val jsonObject = JsonUtils.JSON.decodeFromString<JsonObject>(clipTask.extraInfo)
+
+        val mutableJsonObject = jsonObject.toMutableMap()
+
+        val jsonElement = JsonUtils.JSON.encodeToJsonElement(ExecutionHistory.serializer(), executionHistory)
+        mutableJsonObject["executionHistories"]?.let {
+            val list = it.jsonArray.toMutableList()
+            list.add(jsonElement)
+            mutableJsonObject["executionHistories"] = JsonArray(list)
+        } ?: run {
+            mutableJsonObject["executionHistories"] = JsonArray(listOf(jsonElement))
+        }
+        return JsonUtils.JSON.encodeToString(JsonObject(mutableJsonObject))
     }
 }
