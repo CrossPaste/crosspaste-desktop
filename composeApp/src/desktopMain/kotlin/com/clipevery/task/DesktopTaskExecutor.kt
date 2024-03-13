@@ -2,8 +2,7 @@ package com.clipevery.task
 
 import com.clipevery.dao.task.ClipTaskDao
 import com.clipevery.dao.task.TaskStatus
-import com.clipevery.utils.JsonUtils
-import com.clipevery.utils.TaskUtils.unexpectError
+import com.clipevery.utils.TaskUtils.createFailExtraInfo
 import com.clipevery.utils.cpuDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
@@ -11,7 +10,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
 import org.mongodb.kbson.ObjectId
 
 class DesktopTaskExecutor(private val singleTypeTaskExecutorMap: Map<Int, SingleTypeTaskExecutor>,
@@ -47,14 +45,14 @@ class DesktopTaskExecutor(private val singleTypeTaskExecutorMap: Map<Int, Single
                         status = TaskStatus.SUCCESS
                         modifyTime = System.currentTimeMillis()
                         it?.let {  newExtraInfo ->
-                            extraInfo = JsonUtils.JSON.encodeToString(newExtraInfo)
+                            extraInfo = newExtraInfo
                         }
                     }
                 }, fail = { clipTaskExtraInfo, needRetry ->
                     clipTaskDao.update(taskId) {
                         status = if (needRetry) TaskStatus.PREPARING else TaskStatus.FAILURE
                         modifyTime = System.currentTimeMillis()
-                        extraInfo = JsonUtils.JSON.encodeToString(clipTaskExtraInfo)
+                        extraInfo = clipTaskExtraInfo
                     }
                 }, retry = {
                     submitTask(taskId)
@@ -63,7 +61,8 @@ class DesktopTaskExecutor(private val singleTypeTaskExecutorMap: Map<Int, Single
         } catch (e: Throwable) {
             logger.error(e) { "execute task error: $taskId" }
             clipTaskDao.update(taskId) {
-                unexpectError(this, e)
+                status = TaskStatus.FAILURE
+                extraInfo = createFailExtraInfo(this, e)
             }
         }
     }

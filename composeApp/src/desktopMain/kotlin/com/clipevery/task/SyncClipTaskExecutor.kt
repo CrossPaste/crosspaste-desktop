@@ -2,7 +2,6 @@ package com.clipevery.task
 
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.task.ClipTask
-import com.clipevery.dao.task.ClipTaskExtraInfo
 import com.clipevery.net.clientapi.SendClipClientApi
 import com.clipevery.net.clientapi.SyncClipResult
 import com.clipevery.sync.SyncManager
@@ -59,15 +58,11 @@ class SyncClipTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
         syncExtraInfo.syncFails.clear()
 
         if (fails.isEmpty()) {
-            return SuccessClipTaskResult(syncExtraInfo)
+            return SuccessClipTaskResult(JsonUtils.JSON.encodeToString(SyncExtraInfo.serializer(), syncExtraInfo))
         } else {
             syncExtraInfo.syncFails.addAll(fails)
-            return FailClipTaskResult(syncExtraInfo)
+            val needRetry = syncExtraInfo.executionHistories.size < 3
+            return FailClipTaskResult(JsonUtils.JSON.encodeToString(SyncExtraInfo.serializer(), syncExtraInfo), needRetry)
         }
     }
-
-    override fun needRetry(clipTask: ClipTask, newExtraInfo: ClipTaskExtraInfo): Boolean {
-        return newExtraInfo.executionHistories.size < 3
-    }
-
 }

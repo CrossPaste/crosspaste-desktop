@@ -156,7 +156,7 @@ object Dependencies {
             single<ClipSearchService> { DesktopClipSearchService(get()) }
             single<TaskExecutor> { DesktopTaskExecutor(mapOf(
                 Pair(TaskType.SYNC_CLIP_TASK, SyncClipTaskExecutor(lazy { get<ClipDao>() }, get(), get())),
-                Pair(TaskType.DELETE_CLIP_TASK, DeleteClipTaskExecutor())
+                Pair(TaskType.DELETE_CLIP_TASK, DeleteClipTaskExecutor(lazy { get<ClipDao>() }))
             ), get()) }
 
             // ui component
