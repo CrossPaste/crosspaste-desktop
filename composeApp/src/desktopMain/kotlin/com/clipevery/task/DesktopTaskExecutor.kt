@@ -1,10 +1,9 @@
 package com.clipevery.task
 
 import com.clipevery.dao.task.ClipTaskDao
-import com.clipevery.dao.task.ExecutionHistory
 import com.clipevery.dao.task.TaskStatus
-import com.clipevery.task.extra.BaseExtraInfo
 import com.clipevery.utils.JsonUtils
+import com.clipevery.utils.TaskUtils.unexpectError
 import com.clipevery.utils.cpuDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
@@ -38,47 +37,34 @@ class DesktopTaskExecutor(private val singleTypeTaskExecutorMap: Map<Int, Single
 
     private suspend fun executeTask(taskId: ObjectId) {
         try {
-            clipTaskDao.executingAndGet(taskId)?.let { clipTask ->
+            clipTaskDao.update(taskId) {
+                status = TaskStatus.EXECUTING
+                modifyTime = System.currentTimeMillis()
+            }?.let { clipTask ->
                 val executor = getExecutorImpl(clipTask.taskType)
-                try {
+                executor.executeTask(clipTask, success = {
                     clipTaskDao.update(taskId) {
-                        status = TaskStatus.EXECUTING
+                        status = TaskStatus.SUCCESS
                         modifyTime = System.currentTimeMillis()
+                        it?.let {  newExtraInfo ->
+                            extraInfo = JsonUtils.JSON.encodeToString(newExtraInfo)
+                        }
                     }
-                    executor.executeTask(clipTask, success = {
-                        clipTaskDao.update(taskId) {
-                            status = TaskStatus.SUCCESS
-                            modifyTime = System.currentTimeMillis()
-                            it?.let {  newExtraInfo ->
-                                extraInfo = JsonUtils.JSON.encodeToString(newExtraInfo)
-                            }
-                        }
-                    }, fail = { clipTaskExtraInfo, needRetry ->
-                        clipTaskDao.update(taskId) {
-                            status = if (needRetry) TaskStatus.PREPARING else TaskStatus.FAILURE
-                            modifyTime = System.currentTimeMillis()
-                            extraInfo = JsonUtils.JSON.encodeToString(clipTaskExtraInfo)
-                        }
-                    }, retry = {
-                        submitTask(taskId)
-                    })
-                } catch (e: Throwable) {
-                    logger.error(e) { "execute task failed: ${clipTask.taskId}" }
+                }, fail = { clipTaskExtraInfo, needRetry ->
                     clipTaskDao.update(taskId) {
-                        status = TaskStatus.FAILURE
-                        val currentTime = System.currentTimeMillis()
-                        val executionHistory = ExecutionHistory(startTime = modifyTime,
-                            endTime = currentTime,
-                            status = TaskStatus.FAILURE,
-                            message = e.message ?: "Unknown error")
-                        val clipTaskExtraInfo = JsonUtils.JSON.decodeFromString<BaseExtraInfo>(extraInfo)
-                        clipTaskExtraInfo.executionHistories.add(executionHistory)
+                        status = if (needRetry) TaskStatus.PREPARING else TaskStatus.FAILURE
+                        modifyTime = System.currentTimeMillis()
                         extraInfo = JsonUtils.JSON.encodeToString(clipTaskExtraInfo)
                     }
-                }
+                }, retry = {
+                    submitTask(taskId)
+                })
             }
         } catch (e: Throwable) {
-            logger.error(e) { "execute task fail: $taskId" }
+            logger.error(e) { "execute task error: $taskId" }
+            clipTaskDao.update(taskId) {
+                unexpectError(this, e)
+            }
         }
     }
 
