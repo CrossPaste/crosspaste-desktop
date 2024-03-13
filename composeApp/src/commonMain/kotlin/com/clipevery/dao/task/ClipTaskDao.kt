@@ -4,8 +4,5 @@ import org.mongodb.kbson.ObjectId
 
 interface ClipTaskDao {
 
-    suspend fun update(taskId: ObjectId, block: ClipTask.() -> Unit)
-
-    suspend fun executingAndGet(taskId: ObjectId): ClipTask?
-
+    suspend fun update(taskId: ObjectId, copeFromRealm: Boolean = false, block: ClipTask.() -> Unit): ClipTask?
 }

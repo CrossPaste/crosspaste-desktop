@@ -2,6 +2,7 @@ package com.clipevery.utils
 
 import com.clipevery.dao.task.ClipTask
 import com.clipevery.dao.task.ClipTaskExtraInfo
+import com.clipevery.dao.task.ExecutionHistory
 import com.clipevery.dao.task.TaskStatus
 import com.clipevery.task.extra.BaseExtraInfo
 import kotlinx.serialization.encodeToString
@@ -26,5 +27,17 @@ object TaskUtils {
     fun <T: ClipTaskExtraInfo> getExtraInfo(clipTask: ClipTask, kclass: KClass<T>): T {
         val serializer = Json.serializersModule.serializer(kclass.java)
         return JsonUtils.JSON.decodeFromString(serializer, clipTask.extraInfo) as T
+    }
+
+    fun unexpectError(clipTask: ClipTask, e: Throwable) {
+        clipTask.status = TaskStatus.FAILURE
+        val currentTime = System.currentTimeMillis()
+        val executionHistory = ExecutionHistory(startTime = clipTask.modifyTime,
+            endTime = currentTime,
+            status = TaskStatus.FAILURE,
+            message = e.message ?: "Unknown error")
+        val clipTaskExtraInfo = JsonUtils.JSON.decodeFromString<BaseExtraInfo>(clipTask.extraInfo)
+        clipTaskExtraInfo.executionHistories.add(executionHistory)
+        clipTask.extraInfo = JsonUtils.JSON.encodeToString(clipTaskExtraInfo)
     }
 }
