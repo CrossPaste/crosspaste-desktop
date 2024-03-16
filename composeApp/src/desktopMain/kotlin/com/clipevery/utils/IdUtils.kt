@@ -13,6 +13,6 @@ class IDGeneratorFactory(private val clipDao: ClipDao) {
 
 class IDGenerator(private val initId: AtomicInteger) {
     fun nextID(): Int {
-        return initId.getAndAdd(1)
+        return initId.addAndGet(1)
     }
 }
