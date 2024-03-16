@@ -1,6 +1,7 @@
 package com.clipevery.ui.clip
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
@@ -33,12 +34,15 @@ import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.presist.FilePersist
 import com.clipevery.ui.base.html
+import com.clipevery.utils.FileUtils
+import java.awt.Desktop
 
 @Composable
 fun HtmlToImagePreviewView(clipData: ClipData) {
     clipData.getClipItem()?.let {
         val current = LocalKoinApplication.current
         val copywriter = current.koin.get<GlobalCopywriter>()
+        val fileUtils = current.koin.get<FileUtils>()
         val filePersist = current.koin.get<FilePersist>()
 
         val clipHtml = it as ClipHtml
@@ -68,6 +72,14 @@ fun HtmlToImagePreviewView(clipData: ClipData) {
                             .fillMaxSize()
                             .horizontalScroll(horizontalScrollState)
                             .verticalScroll(verticalScrollState)
+                            .clickable {
+                                if (Desktop.isDesktopSupported()) {
+                                    fileUtils.createTempFile(it.html.toByteArray(), fileUtils.createRandomFileName("html"))?.let { path ->
+                                        val desktop = Desktop.getDesktop()
+                                        desktop.browse(path.toFile().toURI())
+                                    }
+                                }
+                            }
                     ) {
                         Image(
                             bitmap = bitmap,

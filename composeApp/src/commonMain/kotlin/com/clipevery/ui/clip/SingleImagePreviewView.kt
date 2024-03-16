@@ -1,6 +1,7 @@
 package com.clipevery.ui.clip
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,6 +27,7 @@ import com.clipevery.LocalKoinApplication
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.resource.ClipResourceLoader
 import com.clipevery.utils.FileUtils
+import java.awt.Desktop
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 
@@ -44,7 +46,12 @@ fun SingleImagePreviewView(imagePath: Path) {
         fileUtils.formatBytes(fileUtils.getFileSize(imagePath))
     }
 
-    Row {
+    Row(modifier = Modifier.clickable {
+        if (Desktop.isDesktopSupported()) {
+            val desktop = Desktop.getDesktop()
+            desktop.open(imagePath.toFile())
+        }
+    }) {
         Image(
             modifier = Modifier.size(100.dp)
                 .clip(RoundedCornerShape(5.dp)),
