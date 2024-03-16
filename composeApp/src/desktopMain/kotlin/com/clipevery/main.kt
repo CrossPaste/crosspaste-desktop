@@ -39,6 +39,7 @@ import kotlin.io.path.pathString
 import kotlin.math.max
 
 fun initInject(koinApplication: KoinApplication) {
+    koinApplication.koin.get<FileUtils>()
     koinApplication.koin.get<GlobalListener>()
     koinApplication.koin.get<QRCodeGenerator>()
     koinApplication.koin.get<ClipServer>()
@@ -64,9 +65,6 @@ fun main() {
     val koinApplication = Dependencies.koinApplication
 
     initInject(koinApplication)
-
-    val fileUtils = koinApplication.koin.get<FileUtils>()
-    fileUtils.createTempDirectory()
 
     val clipboardService = koinApplication.koin.get<ClipboardService>()
     clipboardService.start()

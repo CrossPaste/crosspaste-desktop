@@ -12,8 +12,14 @@ import java.util.UUID
 
 object DesktopFileUtils: FileUtils {
 
+    override val tempDirectory: Path = java.nio.file.Files.createTempDirectory("clipevery")
+
     private val units = arrayOf("B", "KB", "MB", "GB", "TB")
     private val decimalFormat = DecimalFormat("#,##0.#")
+
+    init {
+        tempDirectory.toFile().deleteOnExit()
+    }
 
     override fun formatBytes(bytesSize: Long): String {
         if (bytesSize < 1024) return "$bytesSize B"
@@ -81,12 +87,6 @@ object DesktopFileUtils: FileUtils {
         } catch (e: Exception) {
             false
         }
-    }
-
-    override fun createTempDirectory(): Path {
-        val tempDirectory = java.nio.file.Files.createTempDirectory("clipevery")
-        tempDirectory.toFile().deleteOnExit()
-        return tempDirectory
     }
 
 }

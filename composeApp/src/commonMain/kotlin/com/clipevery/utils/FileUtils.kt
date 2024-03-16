@@ -5,6 +5,8 @@ import java.nio.file.Path
 
 interface FileUtils {
 
+    val tempDirectory: Path
+
     fun formatBytes(bytesSize: Long): String
 
     fun createRandomFileName(ext: String): String
@@ -24,6 +26,4 @@ interface FileUtils {
     fun copyFile(src: Path, dest: Path): Boolean
 
     fun moveFile(src: Path, dest: Path): Boolean
-
-    fun createTempDirectory(): Path
 }
