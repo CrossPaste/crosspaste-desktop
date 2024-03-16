@@ -1,5 +1,6 @@
 package com.clipevery.ui.clip
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,15 +23,26 @@ import com.clipevery.clip.item.ClipText
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.feed
+import com.clipevery.utils.FileUtils
+import java.awt.Desktop
 
 @Composable
 fun TextPreviewView(clipData: ClipData) {
     clipData.getClipItem()?.let {
         val current = LocalKoinApplication.current
         val copywriter = current.koin.get<GlobalCopywriter>()
+        val fileUtils = current.koin.get<FileUtils>()
         ClipSpecificPreviewContentView(it, {
             Text(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize()
+                    .clickable {
+                        if (Desktop.isDesktopSupported()) {
+                            val desktop = Desktop.getDesktop()
+                            fileUtils.createTempFile((it as ClipText).text.toByteArray(), fileUtils.createRandomFileName("txt"))?.let { path ->
+                                desktop.open(path.toFile())
+                            }
+                        }
+                    },
                 text = (it as ClipText).text,
                 fontFamily = FontFamily.SansSerif,
                 maxLines = 4,

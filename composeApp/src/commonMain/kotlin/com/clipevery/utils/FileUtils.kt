@@ -26,4 +26,10 @@ interface FileUtils {
     fun copyFile(src: Path, dest: Path): Boolean
 
     fun moveFile(src: Path, dest: Path): Boolean
+
+    fun createTempFile(src: Path, name: String): Path?
+
+    fun createTempFile(srcBytes: ByteArray, name: String): Path?
+
+    fun createSymbolicLink(src: Path, name: String): Path?
 }

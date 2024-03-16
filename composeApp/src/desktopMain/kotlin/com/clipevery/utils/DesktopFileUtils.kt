@@ -8,6 +8,7 @@ import java.io.File
 import java.nio.file.Path
 import java.text.DecimalFormat
 import java.util.UUID
+import kotlin.io.path.exists
 
 
 object DesktopFileUtils: FileUtils {
@@ -89,4 +90,35 @@ object DesktopFileUtils: FileUtils {
         }
     }
 
+    override fun createTempFile(src: Path, name: String): Path? {
+        val tempFile = tempDirectory.resolve(name)
+        return if (copyFile(src, tempFile)) {
+            tempFile
+        } else {
+            null
+        }
+    }
+
+    override fun createTempFile(srcBytes: ByteArray, name: String): Path? {
+        val tempFile = tempDirectory.resolve(name)
+        return try {
+            Files.write(srcBytes, tempFile.toFile())
+            tempFile
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    override fun createSymbolicLink(src: Path, name: String): Path? {
+        try {
+            val path = tempDirectory.resolve(name)
+            if (path.exists()) {
+                path.toFile().delete()
+            }
+            java.nio.file.Files.createSymbolicLink(tempDirectory.resolve(name), src)
+            return path
+        } catch (e: Exception) {
+            return null
+        }
+    }
 }

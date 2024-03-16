@@ -1,6 +1,7 @@
 package com.clipevery.ui.clip
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +32,7 @@ import com.clipevery.ui.base.folder
 import com.clipevery.utils.FileExtUtils
 import com.clipevery.utils.FileUtils
 import io.ktor.util.*
+import java.awt.Desktop
 import java.nio.file.Path
 
 @Composable
@@ -51,6 +53,12 @@ fun SingleFilePreviewView(filePath: Path) {
 
     Box(modifier = Modifier.width(100.dp)
         .height(100.dp)
+        .clickable {
+            if (Desktop.isDesktopSupported()) {
+                val desktop = Desktop.getDesktop()
+                desktop.browseFileDirectory(filePath.toFile())
+            }
+        }
     ) {
         SketchBackground(100.dp, 100.dp, 5.dp, MaterialTheme.colors.primary)
         optionPainter?.let { painter ->

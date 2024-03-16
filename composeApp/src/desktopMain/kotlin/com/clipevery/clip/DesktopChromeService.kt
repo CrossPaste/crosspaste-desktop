@@ -5,13 +5,13 @@ import com.clipevery.app.AppFileType
 import com.clipevery.os.windows.WindowDpiHelper
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.platform.currentPlatform
+import com.clipevery.utils.HtmlUtils.dataUrl
 import com.clipevery.utils.Retry
 import org.openqa.selenium.Dimension
 import org.openqa.selenium.OutputType
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
 import java.nio.file.Path
-import java.util.Base64
 import kotlin.io.path.absolutePathString
 import kotlin.math.max
 
@@ -99,8 +99,7 @@ object DesktopChromeService: ChromeService {
 
     private fun doHtml2Image(html: String): ByteArray? {
         chromeDriver?.let{ driver ->
-            val encodedContent = Base64.getEncoder().encodeToString(html.toByteArray())
-            driver.get("data:text/html;charset=UTF-8;base64,$encodedContent")
+            driver.get(dataUrl(html))
             driver.manage().window().size = windowDimension
             val dimensions: List<Long> = driver.executeScript("return [document.body.scrollWidth, document.body.scrollHeight]") as List<Long>
             val pageWidth = max(dimensions[0].toInt(), windowDimension.width)
