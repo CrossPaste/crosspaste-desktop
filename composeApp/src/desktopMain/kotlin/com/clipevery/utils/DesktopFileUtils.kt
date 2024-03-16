@@ -82,4 +82,11 @@ object DesktopFileUtils: FileUtils {
             false
         }
     }
+
+    override fun createTempDirectory(): Path {
+        val tempDirectory = java.nio.file.Files.createTempDirectory("clipevery")
+        tempDirectory.toFile().deleteOnExit()
+        return tempDirectory
+    }
+
 }

@@ -24,4 +24,6 @@ interface FileUtils {
     fun copyFile(src: Path, dest: Path): Boolean
 
     fun moveFile(src: Path, dest: Path): Boolean
+
+    fun createTempDirectory(): Path
 }

@@ -25,6 +25,7 @@ import com.clipevery.net.ClipServer
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.platform.currentPlatform
 import com.clipevery.ui.getTrayMouseAdapter
+import com.clipevery.utils.FileUtils
 import com.clipevery.utils.QRCodeGenerator
 import com.clipevery.utils.getPreferredWindowSize
 import com.clipevery.utils.ioDispatcher
@@ -63,6 +64,9 @@ fun main() {
     val koinApplication = Dependencies.koinApplication
 
     initInject(koinApplication)
+
+    val fileUtils = koinApplication.koin.get<FileUtils>()
+    fileUtils.createTempDirectory()
 
     val clipboardService = koinApplication.koin.get<ClipboardService>()
     clipboardService.start()
