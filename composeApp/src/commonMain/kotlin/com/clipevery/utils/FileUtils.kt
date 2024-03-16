@@ -5,6 +5,8 @@ import java.nio.file.Path
 
 interface FileUtils {
 
+    val tempDirectory: Path
+
     fun formatBytes(bytesSize: Long): String
 
     fun createRandomFileName(ext: String): String

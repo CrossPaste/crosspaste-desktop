@@ -25,6 +25,7 @@ import com.clipevery.net.ClipServer
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.platform.currentPlatform
 import com.clipevery.ui.getTrayMouseAdapter
+import com.clipevery.utils.FileUtils
 import com.clipevery.utils.QRCodeGenerator
 import com.clipevery.utils.getPreferredWindowSize
 import com.clipevery.utils.ioDispatcher
@@ -38,6 +39,7 @@ import kotlin.io.path.pathString
 import kotlin.math.max
 
 fun initInject(koinApplication: KoinApplication) {
+    koinApplication.koin.get<FileUtils>()
     koinApplication.koin.get<GlobalListener>()
     koinApplication.koin.get<QRCodeGenerator>()
     koinApplication.koin.get<ClipServer>()
