@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.Icon
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -139,7 +140,8 @@ fun bindingQRCode() {
                             modifier = Modifier.size(100.dp)
                                 .graphicsLayer(rotationZ = rotation),
                             painter = autoRenew(),
-                            contentDescription = "QR Code"
+                            contentDescription = "QR Code",
+                            tint = MaterialTheme.colors.onBackground
                         )
                     }
                 }
