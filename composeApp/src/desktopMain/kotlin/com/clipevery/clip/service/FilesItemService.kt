@@ -6,13 +6,16 @@ import com.clipevery.clip.ClipCollector
 import com.clipevery.clip.ClipItemService
 import com.clipevery.clip.item.FilesClipItem
 import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.presist.FileInfoTree
 import com.clipevery.utils.DesktopFileUtils
 import com.clipevery.utils.DesktopFileUtils.copyPath
 import com.clipevery.utils.DesktopFileUtils.createClipRelativePath
 import com.clipevery.utils.EncryptUtils.md5ByArray
+import com.clipevery.utils.JsonUtils
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.ext.toRealmList
+import kotlinx.serialization.encodeToString
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import java.io.File
@@ -53,8 +56,7 @@ class FilesItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
     ) {
         if (transferData is List<*>) {
             val files = transferData.filterIsInstance<File>()
-
-            val md5List = mutableListOf<String>()
+            val fileInfoTrees = mutableMapOf<String, FileInfoTree>()
             val relativePathList = mutableListOf<String>()
 
             for (file in files) {
@@ -63,18 +65,21 @@ class FilesItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
                 relativePathList.add(relativePath)
                 val filePath = DesktopFileUtils.createClipPath(relativePath, isFile = true, AppFileType.FILE)
                 if (copyPath(file.toPath(), filePath)) {
-                    val md5 = DesktopFileUtils.getPathMd5(filePath)
-                    md5List.add(md5)
+                    fileInfoTrees[file.name] = DesktopFileUtils.getFileInfoTree(filePath)
                 } else {
                     throw IllegalStateException("Failed to copy file")
                 }
             }
 
+            val relativePathRealmList = relativePathList.toRealmList()
+            val fileInfoTreeJsonString = JsonUtils.JSON.encodeToString(fileInfoTrees)
+            val md5 = md5ByArray(files.mapNotNull { fileInfoTrees[it.name]?.md5 }.toTypedArray())
+
             val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
                 realm.query(FilesClipItem::class, "id == $0", clipItem.id).first().find()?.apply {
-                    this.relativePathList = relativePathList.toRealmList()
-                    this.md5List = md5List.toRealmList()
-                    this.md5 = md5ByArray(md5List.toTypedArray())
+                    this.relativePathList = relativePathRealmList
+                    this.fileInfoTree = fileInfoTreeJsonString
+                    this.md5 = md5
                 }
             }
 

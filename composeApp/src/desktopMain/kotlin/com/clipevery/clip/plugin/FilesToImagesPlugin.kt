@@ -30,13 +30,13 @@ object FilesToImagesPlugin: ClipPlugin {
                     }
                     val identifierList = clipAppearItem.getIdentifiers().toRealmList()
                     val relativePathList = clipAppearItem.relativePathList.toRealmList()
-                    val md5List = clipAppearItem.getFileMd5List().toRealmList()
+                    val fileInfoTree = clipAppearItem.fileInfoTree
                     val md5 = clipAppearItem.md5
                     clipAppearItem.clear(realm, clearResource = false)
                     ImagesClipItem().apply {
                         this.identifierList = identifierList
                         this.relativePathList = relativePathList
-                        this.md5List = md5List
+                        this.fileInfoTree = fileInfoTree
                         this.md5 = md5
                     }
                 } else {

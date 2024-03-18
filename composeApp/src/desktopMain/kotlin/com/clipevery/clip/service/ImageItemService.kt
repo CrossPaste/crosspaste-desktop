@@ -7,13 +7,15 @@ import com.clipevery.clip.ClipItemService
 import com.clipevery.clip.item.ImagesClipItem
 import com.clipevery.clip.service.HtmlItemService.HtmlItemService.HTML_ID
 import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.utils.DesktopFileUtils
 import com.clipevery.utils.DesktopFileUtils.createClipPath
 import com.clipevery.utils.DesktopFileUtils.createClipRelativePath
 import com.clipevery.utils.DesktopFileUtils.createRandomFileName
 import com.clipevery.utils.DesktopFileUtils.getExtFromFileName
-import com.clipevery.utils.DesktopFileUtils.getPathMd5
+import com.clipevery.utils.JsonUtils
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
+import kotlinx.serialization.encodeToString
 import org.jsoup.Jsoup
 import java.awt.Image
 import java.awt.datatransfer.DataFlavor
@@ -68,12 +70,16 @@ class ImageItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
            val relativePath = createClipRelativePath(appInfo.appInstanceId, clipId, name)
            val imagePath = createClipPath(relativePath, isFile = true, AppFileType.IMAGE)
            if (writeImage(image, ext, imagePath)) {
-               val md5 = getPathMd5(imagePath)
+
+               val fileTree = DesktopFileUtils.getFileInfoTree(imagePath)
+
+               val fileInfoTreeJsonString = JsonUtils.JSON.encodeToString(mapOf(name to fileTree))
+
                val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
                    realm.query(ImagesClipItem::class, "id == $0", clipItem.id).first().find()?.apply {
                        this.relativePathList = realmListOf(relativePath)
-                       this.md5List = realmListOf(md5)
-                       this.md5 = md5
+                       this.fileInfoTree = fileInfoTreeJsonString
+                       this.md5 = fileTree.md5
                    }
                }
                clipCollector.updateCollectItem(itemIndex, this::class, update)

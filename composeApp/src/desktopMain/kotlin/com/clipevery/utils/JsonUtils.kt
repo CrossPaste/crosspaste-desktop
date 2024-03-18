@@ -8,6 +8,9 @@ import com.clipevery.clip.item.UrlClipItem
 import com.clipevery.dao.clip.ClipContent
 import com.clipevery.dao.clip.ClipLabel
 import com.clipevery.dao.task.ClipTaskExtraInfo
+import com.clipevery.presist.DirFileInfoTree
+import com.clipevery.presist.FileInfoTree
+import com.clipevery.presist.SingleFileInfoTree
 import com.clipevery.serializer.Base64ByteArraySerializer
 import com.clipevery.serializer.IdentityKeySerializer
 import com.clipevery.serializer.PreKeyBundleSerializer
@@ -71,6 +74,10 @@ object JsonUtils {
                 } else {
                     throw IllegalArgumentException("Unsupported RealmSet type: ${it.first()}")
                 }
+            }
+            polymorphic(FileInfoTree::class) {
+                subclass(SingleFileInfoTree::class)
+                subclass(DirFileInfoTree::class)
             }
 
             // use in clip task

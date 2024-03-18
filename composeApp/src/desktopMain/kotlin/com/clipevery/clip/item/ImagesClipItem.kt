@@ -5,6 +5,8 @@ import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.presist.DesktopOneFilePersist
+import com.clipevery.presist.FileInfoTree
+import com.clipevery.utils.JsonUtils
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.types.RealmList
@@ -32,7 +34,7 @@ class ImagesClipItem: RealmObject, ClipAppearItem, ClipFiles {
 
     var relativePathList: RealmList<String> = realmListOf()
 
-    var md5List: RealmList<String> = realmListOf()
+    var fileInfoTree: String = ""
 
     override var md5: String = ""
 
@@ -43,20 +45,15 @@ class ImagesClipItem: RealmObject, ClipAppearItem, ClipFiles {
         }
     }
 
-    override fun getFileMd5List(): List<String> {
-        return md5List
+    override fun getFileInfoTreeMap(): Map<String, FileInfoTree> {
+        return JsonUtils.JSON.decodeFromString(fileInfoTree)
     }
 
     override fun getClipFiles(): List<ClipFile> {
-        return getFilePaths().mapIndexed { index, path -> object: ClipFile {
-                override fun getFilePath(): Path {
-                    return path
-                }
-
-                override fun getMd5(): String {
-                    return md5List[index]
-                }
-            }
+        val fileTreeMap = getFileInfoTreeMap()
+        return getFilePaths().flatMap { path ->
+            val fileTree = fileTreeMap[path.fileName.toString()]!!
+            fileTree.getClipFileList(path)
         }
     }
 
