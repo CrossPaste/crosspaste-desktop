@@ -2,18 +2,24 @@ package com.clipevery.utils
 
 import com.clipevery.app.AppFileType
 import com.clipevery.path.DesktopPathProvider
+import com.clipevery.utils.EncryptUtils.md5ByArray
+import com.clipevery.utils.EncryptUtils.md5ByString
 import com.google.common.hash.Hashing
 import com.google.common.io.Files
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.text.DecimalFormat
 import java.util.UUID
 import kotlin.io.path.exists
+import kotlin.io.path.isDirectory
 import kotlin.io.path.pathString
 
 
 object DesktopFileUtils: FileUtils {
+
+    private val logger = KotlinLogging.logger {}
 
     override val tempDirectory: Path = java.nio.file.Files.createTempDirectory("clipevery")
 
@@ -62,20 +68,68 @@ object DesktopFileUtils: FileUtils {
         return path.toFile().length()
     }
 
-    override fun getFileMd5(path: Path): String {
+    override fun getPathMd5(path: Path): String {
+        return if (path.isDirectory()) {
+            getDirMd5(path)
+        } else {
+            getFileMd5(path)
+        }
+    }
+
+    private fun getFileMd5(path: Path): String {
         val file: File = path.toFile()
         val byteSource = Files.asByteSource(file)
         val hc = byteSource.hash(Hashing.sha256())
         return hc.toString()
     }
 
-    override fun copyFile(src: Path, dest: Path): Boolean {
+    private fun getDirMd5(path: Path): String {
+        path.toFile().listFiles()?.let {
+            val md5Array = it.map { file ->
+                getPathMd5(file.toPath())
+            }.toTypedArray()
+            if (md5Array.isEmpty()) {
+                return md5ByString(path.fileName.toString())
+            } else {
+                return md5ByArray(md5Array)
+            }
+        } ?: run {
+            return md5ByString(path.fileName.toString())
+        }
+    }
+
+    override fun copyPath(src: Path, dest: Path): Boolean {
+        return if (src.isDirectory()) {
+            copyDir(src, dest)
+        } else {
+            copyFile(src, dest)
+        }
+    }
+
+    private fun copyFile(src: Path, dest: Path): Boolean {
         return try {
             Files.copy(src.toFile(), dest.toFile())
             true
         } catch (e: Exception) {
+            logger.warn(e) { "Failed to copy file: $src to $dest" }
             false
         }
+    }
+
+    private fun copyDir(src: Path, dest: Path): Boolean {
+        val newDirFile = dest.toFile()
+        return if (newDirFile.mkdirs()) {
+            src.toFile().listFiles()?.forEach {
+                if(!copyPath(it.toPath(), dest.resolve(it.name))) {
+                    return false
+                }
+            }
+            true
+        } else {
+            logger.warn { "Failed to create directory: $newDirFile" }
+            false
+        }
+
     }
 
     override fun moveFile(src: Path, dest: Path): Boolean {

@@ -11,7 +11,7 @@ import com.clipevery.utils.DesktopFileUtils.createClipPath
 import com.clipevery.utils.DesktopFileUtils.createClipRelativePath
 import com.clipevery.utils.DesktopFileUtils.createRandomFileName
 import com.clipevery.utils.DesktopFileUtils.getExtFromFileName
-import com.clipevery.utils.DesktopFileUtils.getFileMd5
+import com.clipevery.utils.DesktopFileUtils.getPathMd5
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
 import org.jsoup.Jsoup
@@ -68,7 +68,7 @@ class ImageItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
            val relativePath = createClipRelativePath(appInfo.appInstanceId, clipId, name)
            val imagePath = createClipPath(relativePath, isFile = true, AppFileType.IMAGE)
            if (writeImage(image, ext, imagePath)) {
-               val md5 = getFileMd5(imagePath)
+               val md5 = getPathMd5(imagePath)
                val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
                    realm.query(ImagesClipItem::class, "id == $0", clipItem.id).first().find()?.apply {
                        this.relativePathList = realmListOf(relativePath)

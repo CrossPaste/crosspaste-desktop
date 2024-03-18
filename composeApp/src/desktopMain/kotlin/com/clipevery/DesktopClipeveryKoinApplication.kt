@@ -16,10 +16,11 @@ import com.clipevery.clip.DesktopTransferableProducer
 import com.clipevery.clip.TransferableConsumer
 import com.clipevery.clip.TransferableProducer
 import com.clipevery.clip.getDesktopClipboardService
-import com.clipevery.clip.plugin.FilesToImagesPlugin
 import com.clipevery.clip.plugin.DistinctPlugin
-import com.clipevery.clip.plugin.SortPlugin
+import com.clipevery.clip.plugin.FilesToImagesPlugin
 import com.clipevery.clip.plugin.GenerateUrlPlugin
+import com.clipevery.clip.plugin.RemoveFolderImagePlugin
+import com.clipevery.clip.plugin.SortPlugin
 import com.clipevery.clip.service.FilesItemService
 import com.clipevery.clip.service.HtmlItemService
 import com.clipevery.clip.service.ImageItemService
@@ -48,10 +49,10 @@ import com.clipevery.net.DesktopClipBonjourService
 import com.clipevery.net.DesktopClipClient
 import com.clipevery.net.DesktopClipServer
 import com.clipevery.net.SyncRefresher
-import com.clipevery.net.clientapi.DesktopSyncClientApi
 import com.clipevery.net.clientapi.DesktopSendClipClientApi
-import com.clipevery.net.clientapi.SyncClientApi
+import com.clipevery.net.clientapi.DesktopSyncClientApi
 import com.clipevery.net.clientapi.SendClipClientApi
+import com.clipevery.net.clientapi.SyncClientApi
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.path.PathProvider
 import com.clipevery.presist.DesktopFilePersist
@@ -148,6 +149,7 @@ object Dependencies {
                     DistinctPlugin,
                     GenerateUrlPlugin,
                     FilesToImagesPlugin,
+                    RemoveFolderImagePlugin,
                     SortPlugin
                 )
             ) }
