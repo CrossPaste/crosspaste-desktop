@@ -6,9 +6,11 @@ import com.google.common.hash.Hashing
 import com.google.common.io.Files
 import java.io.File
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.text.DecimalFormat
 import java.util.UUID
 import kotlin.io.path.exists
+import kotlin.io.path.pathString
 
 
 object DesktopFileUtils: FileUtils {
@@ -48,12 +50,7 @@ object DesktopFileUtils: FileUtils {
 
     override fun createClipRelativePath(appInstanceId: String, clipId: Int, fileName: String): String {
         val dateYYYYMMDD = DateUtils.getYYYYMMDD()
-        return "$appInstanceId/$dateYYYYMMDD/${clipId}_$fileName"
-    }
-
-    override fun getFileNameFromRelativePath(relativePath: Path): String {
-        val clipFileName = relativePath.fileName.toString()
-        return clipFileName.split("_", limit = 2)[1]
+        return Paths.get(appInstanceId, dateYYYYMMDD, clipId.toString(), fileName).pathString
     }
 
     override fun createClipPath(fileRelativePath: String, isFile: Boolean, appFileType: AppFileType): Path {

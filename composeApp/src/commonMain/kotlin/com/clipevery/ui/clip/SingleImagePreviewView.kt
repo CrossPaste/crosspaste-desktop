@@ -67,7 +67,7 @@ fun SingleImagePreviewView(imagePath: Path) {
             verticalArrangement = Arrangement.Bottom
         ) {
             Text(
-                text = "${copywriter.getText("File_Name")}: ${fileUtils.getFileNameFromRelativePath(imagePath)}",
+                text = "${copywriter.getText("File_Name")}: ${imagePath.fileName}",
                 color = MaterialTheme.colors.onBackground,
                 style = TextStyle(
                     fontWeight = FontWeight.Light,
