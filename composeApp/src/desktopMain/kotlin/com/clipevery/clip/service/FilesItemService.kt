@@ -7,7 +7,7 @@ import com.clipevery.clip.ClipItemService
 import com.clipevery.clip.item.FilesClipItem
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.utils.DesktopFileUtils
-import com.clipevery.utils.DesktopFileUtils.copyFile
+import com.clipevery.utils.DesktopFileUtils.copyPath
 import com.clipevery.utils.DesktopFileUtils.createClipRelativePath
 import com.clipevery.utils.EncryptUtils.md5ByArray
 import io.realm.kotlin.MutableRealm
@@ -62,8 +62,8 @@ class FilesItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
                 val relativePath = createClipRelativePath(appInfo.appInstanceId, clipId, fileName)
                 relativePathList.add(relativePath)
                 val filePath = DesktopFileUtils.createClipPath(relativePath, isFile = true, AppFileType.FILE)
-                if (copyFile(file.toPath(), filePath)) {
-                    val md5 = DesktopFileUtils.getFileMd5(filePath)
+                if (copyPath(file.toPath(), filePath)) {
+                    val md5 = DesktopFileUtils.getPathMd5(filePath)
                     md5List.add(md5)
                 } else {
                     throw IllegalStateException("Failed to copy file")
