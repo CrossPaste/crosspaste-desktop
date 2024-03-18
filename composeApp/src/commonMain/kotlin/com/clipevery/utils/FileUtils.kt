@@ -15,8 +15,6 @@ interface FileUtils {
 
     fun createClipRelativePath(appInstanceId: String, clipId: Int, fileName: String): String
 
-    fun getFileNameFromRelativePath(relativePath: Path): String
-
     fun createClipPath(fileRelativePath: String, isFile: Boolean, appFileType: AppFileType): Path
 
     fun getFileSize(path: Path): Long
