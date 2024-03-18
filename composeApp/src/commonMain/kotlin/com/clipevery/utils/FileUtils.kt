@@ -1,6 +1,7 @@
 package com.clipevery.utils
 
 import com.clipevery.app.AppFileType
+import com.clipevery.presist.FileInfoTree
 import java.nio.file.Path
 
 interface FileUtils {
@@ -17,9 +18,11 @@ interface FileUtils {
 
     fun createClipPath(fileRelativePath: String, isFile: Boolean, appFileType: AppFileType): Path
 
+    fun getFileInfoTree(path: Path): FileInfoTree
+
     fun getFileSize(path: Path): Long
 
-    fun getPathMd5(path: Path): String
+    fun getFileMd5(path: Path): String
 
     fun copyPath(src: Path, dest: Path): Boolean
 

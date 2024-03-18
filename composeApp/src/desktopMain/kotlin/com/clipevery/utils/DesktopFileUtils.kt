@@ -2,8 +2,9 @@ package com.clipevery.utils
 
 import com.clipevery.app.AppFileType
 import com.clipevery.path.DesktopPathProvider
-import com.clipevery.utils.EncryptUtils.md5ByArray
-import com.clipevery.utils.EncryptUtils.md5ByString
+import com.clipevery.presist.FileInfoTree
+import com.clipevery.presist.FileInfoTreeBuilder
+import com.clipevery.presist.SingleFileInfoTree
 import com.google.common.hash.Hashing
 import com.google.common.io.Files
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -64,38 +65,40 @@ object DesktopFileUtils: FileUtils {
         return DesktopPathProvider.resolve(basePath, fileRelativePath, isFile = isFile)
     }
 
+    override fun getFileInfoTree(path: Path): FileInfoTree {
+        return if (path.isDirectory()) {
+            getDirFileInfoTree(path)
+        } else {
+            getSingleFileInfoTree(path)
+        }
+    }
+
+    private fun getDirFileInfoTree(path: Path): FileInfoTree {
+        val builder = FileInfoTreeBuilder()
+        path.toFile().listFiles()?.let {
+            for (file in it.sortedBy { file -> file.name }) {
+                val fileTree = getFileInfoTree(file.toPath())
+                builder.addFileInfoTree(file.name, fileTree)
+            }
+        }
+        return builder.build(path)
+    }
+
+    private fun getSingleFileInfoTree(path: Path): FileInfoTree {
+        val size = getFileSize(path)
+        val md5 = getFileMd5(path)
+        return SingleFileInfoTree(size, md5)
+    }
+
     override fun getFileSize(path: Path): Long {
         return path.toFile().length()
     }
 
-    override fun getPathMd5(path: Path): String {
-        return if (path.isDirectory()) {
-            getDirMd5(path)
-        } else {
-            getFileMd5(path)
-        }
-    }
-
-    private fun getFileMd5(path: Path): String {
+    override fun getFileMd5(path: Path): String {
         val file: File = path.toFile()
         val byteSource = Files.asByteSource(file)
         val hc = byteSource.hash(Hashing.sha256())
         return hc.toString()
-    }
-
-    private fun getDirMd5(path: Path): String {
-        path.toFile().listFiles()?.let {
-            val md5Array = it.sortedBy { file -> file.name }.map { file ->
-                getPathMd5(file.toPath())
-            }.toTypedArray()
-            if (md5Array.isEmpty()) {
-                return md5ByString(path.fileName.toString())
-            } else {
-                return md5ByArray(md5Array)
-            }
-        } ?: run {
-            return md5ByString(path.fileName.toString())
-        }
     }
 
     override fun copyPath(src: Path, dest: Path): Boolean {

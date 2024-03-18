@@ -1,12 +1,13 @@
 package com.clipevery.clip.item
 
+import com.clipevery.presist.FileInfoTree
 import java.nio.file.Path
 
 interface ClipFiles {
 
     fun getFilePaths(): List<Path>
 
-    fun getFileMd5List(): List<String>
+    fun getFileInfoTreeMap(): Map<String, FileInfoTree>
 
     fun getClipFiles(): List<ClipFile>
 }

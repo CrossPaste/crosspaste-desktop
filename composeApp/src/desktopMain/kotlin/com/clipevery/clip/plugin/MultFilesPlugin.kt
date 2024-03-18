@@ -4,8 +4,10 @@ import com.clipevery.clip.ClipPlugin
 import com.clipevery.clip.item.FilesClipItem
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.utils.EncryptUtils.md5ByArray
+import com.clipevery.utils.JsonUtils
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.toRealmList
+import kotlinx.serialization.encodeToString
 
 object MultFilesPlugin: ClipPlugin {
     override fun pluginProcess(clipAppearItems: List<ClipAppearItem>, realm: MutableRealm): List<ClipAppearItem> {
@@ -14,13 +16,16 @@ object MultFilesPlugin: ClipPlugin {
         } else {
             val relativePathList = clipAppearItems.map { it as FilesClipItem }.flatMap { it.relativePathList }
                 .toRealmList()
-            val md5List = clipAppearItems.map { it as FilesClipItem }.flatMap { it.md5List }
-                .toRealmList()
-            val md5 = md5ByArray(md5List.map { it }.toTypedArray())
+            val fileInfoMap = clipAppearItems.map { it as FilesClipItem }
+                .flatMap { it.getFileInfoTreeMap().entries }
+                .associate { it.key to it.value }
+            val fileInfoMapJsonString = JsonUtils.JSON.encodeToString(fileInfoMap)
+            val md5 = clipAppearItems.map { it as FilesClipItem }.map { it.md5 }
+                .toTypedArray().let { md5ByArray(it) }
             clipAppearItems.forEach { it.clear(realm, clearResource = false) }
             return FilesClipItem().apply {
                 this.relativePathList = relativePathList
-                this.md5List = md5List
+                this.fileInfoTree = fileInfoMapJsonString
                 this.md5 = md5
             }.let { listOf(it) }
         }
