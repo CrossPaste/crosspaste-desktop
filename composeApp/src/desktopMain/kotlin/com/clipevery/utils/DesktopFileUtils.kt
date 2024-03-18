@@ -85,7 +85,7 @@ object DesktopFileUtils: FileUtils {
 
     private fun getDirMd5(path: Path): String {
         path.toFile().listFiles()?.let {
-            val md5Array = it.map { file ->
+            val md5Array = it.sortedBy { file -> file.name }.map { file ->
                 getPathMd5(file.toPath())
             }.toTypedArray()
             if (md5Array.isEmpty()) {
