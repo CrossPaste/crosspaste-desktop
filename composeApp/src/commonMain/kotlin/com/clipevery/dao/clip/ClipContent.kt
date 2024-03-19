@@ -1,37 +1,21 @@
-@file:UseSerializers(
-    MutableRealmIntKSerializer::class,
-    RealmAnyKSerializer::class,
-    RealmDictionaryKSerializer::class,
-    RealmInstantKSerializer::class,
-    RealmListKSerializer::class,
-    RealmSetKSerializer::class,
-    RealmUUIDKSerializer::class
-)
-
 package com.clipevery.dao.clip
 
+import com.clipevery.serializer.RealmAnyRealmListSerializer
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.asRealmObject
 import io.realm.kotlin.ext.realmListOf
-import io.realm.kotlin.serializers.MutableRealmIntKSerializer
-import io.realm.kotlin.serializers.RealmAnyKSerializer
-import io.realm.kotlin.serializers.RealmDictionaryKSerializer
-import io.realm.kotlin.serializers.RealmInstantKSerializer
-import io.realm.kotlin.serializers.RealmListKSerializer
-import io.realm.kotlin.serializers.RealmSetKSerializer
-import io.realm.kotlin.serializers.RealmUUIDKSerializer
 import io.realm.kotlin.types.RealmAny
 import io.realm.kotlin.types.RealmList
 import io.realm.kotlin.types.RealmObject
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.UseSerializers
 import java.io.IOException
 
 @Serializable
 @SerialName("content")
 class ClipContent: RealmObject {
 
+    @Serializable(with = RealmAnyRealmListSerializer::class)
     var clipAppearItems: RealmList<RealmAny?> = realmListOf()
 
     @Throws(IOException::class)

@@ -19,14 +19,7 @@ import com.clipevery.task.extra.BaseExtraInfo
 import com.clipevery.task.extra.SyncExtraInfo
 import io.realm.kotlin.serializers.MutableRealmIntKSerializer
 import io.realm.kotlin.serializers.RealmAnyKSerializer
-import io.realm.kotlin.serializers.RealmListKSerializer
-import io.realm.kotlin.serializers.RealmSetKSerializer
-import io.realm.kotlin.types.RealmAny
-import io.realm.kotlin.types.RealmList
 import io.realm.kotlin.types.RealmObject
-import io.realm.kotlin.types.RealmSet
-import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
@@ -35,7 +28,6 @@ import kotlinx.serialization.modules.subclass
 import org.signal.libsignal.protocol.IdentityKey
 import org.signal.libsignal.protocol.state.PreKeyBundle
 
-@Suppress("UNCHECKED_CAST")
 object JsonUtils {
 
     val JSON: Json = Json {
@@ -59,22 +51,7 @@ object JsonUtils {
                 subclass(ClipLabel::class)
                 subclass(ClipContent::class)
             }
-            polymorphicDefaultSerializer(RealmList::class) { it: RealmList<*> ->
-                if (it.isEmpty() || it[0] is String) {
-                    RealmListKSerializer(String.serializer()) as SerializationStrategy<RealmList<*>>
-                } else if (it[0] is RealmAny?) {
-                    RealmListKSerializer(RealmAnyKSerializer) as SerializationStrategy<RealmList<*>>
-                } else {
-                    throw IllegalArgumentException("Unsupported RealmList type: ${it[0]}")
-                }
-            }
-            polymorphicDefaultSerializer(RealmSet::class) { it: RealmSet<*> ->
-                if (it.isEmpty() || it.first() is ClipLabel) {
-                    RealmSetKSerializer(ClipLabel.serializer()) as SerializationStrategy<RealmSet<*>>
-                } else {
-                    throw IllegalArgumentException("Unsupported RealmSet type: ${it.first()}")
-                }
-            }
+
             polymorphic(FileInfoTree::class) {
                 subclass(SingleFileInfoTree::class)
                 subclass(DirFileInfoTree::class)
@@ -86,7 +63,6 @@ object JsonUtils {
                 subclass(SyncExtraInfo::class)
             }
 
-            classDiscriminator = "type"
         }
     }
 

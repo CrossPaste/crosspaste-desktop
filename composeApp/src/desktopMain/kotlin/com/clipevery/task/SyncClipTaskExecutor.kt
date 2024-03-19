@@ -32,7 +32,7 @@ class SyncClipTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
             val outputStream = ByteArrayOutputStream()
             JsonUtils.JSON.encodeToStream(clipData, outputStream)
             val clipTaskBytes = outputStream.toByteArray()
-
+            println(String(clipTaskBytes))
             val deferredResults: MutableList<Deferred<Pair<String, Int>>> = mutableListOf()
             for (entryHandler in syncManager.getSyncHandlers()) {
                 val deferred = ioScope.async {
