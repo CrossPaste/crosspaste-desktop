@@ -6,6 +6,7 @@ import com.clipevery.dao.clip.ClipType
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.presist.DesktopOneFilePersist
 import com.clipevery.presist.FileInfoTree
+import com.clipevery.serializer.StringRealmListSerializer
 import com.clipevery.utils.JsonUtils
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
@@ -30,8 +31,10 @@ class FilesClipItem: RealmObject, ClipAppearItem, ClipFiles {
     @Transient
     override var id: ObjectId = BsonObjectId()
 
+    @Serializable(with = StringRealmListSerializer::class)
     var identifierList: RealmList<String> = realmListOf()
 
+    @Serializable(with = StringRealmListSerializer::class)
     var relativePathList: RealmList<String> = realmListOf()
 
     var fileInfoTree: String = ""
