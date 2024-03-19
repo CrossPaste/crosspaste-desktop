@@ -85,6 +85,8 @@ object JsonUtils {
                 subclass(BaseExtraInfo::class)
                 subclass(SyncExtraInfo::class)
             }
+
+            classDiscriminator = "type"
         }
     }
 

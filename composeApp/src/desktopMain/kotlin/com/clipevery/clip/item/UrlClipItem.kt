@@ -5,6 +5,7 @@ import com.clipevery.dao.clip.ClipType
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.mongodb.kbson.BsonObjectId
@@ -13,6 +14,7 @@ import java.awt.datatransfer.DataFlavor
 import java.net.URL
 
 @Serializable
+@SerialName("url")
 class UrlClipItem: RealmObject, ClipAppearItem, ClipUrl {
 
     @PrimaryKey

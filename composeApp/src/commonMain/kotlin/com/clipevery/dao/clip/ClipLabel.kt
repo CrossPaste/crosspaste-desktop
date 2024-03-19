@@ -6,11 +6,13 @@ import io.realm.kotlin.types.RealmInstant
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.Index
 import io.realm.kotlin.types.annotations.PrimaryKey
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.mongodb.kbson.ObjectId
 
 @Serializable
+@SerialName("label")
 class ClipLabel: RealmObject {
     @PrimaryKey
     @Transient
