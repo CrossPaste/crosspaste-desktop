@@ -35,7 +35,7 @@ class DesktopTaskExecutor(private val singleTypeTaskExecutorMap: Map<Int, Single
 
     private suspend fun executeTask(taskId: ObjectId) {
         try {
-            clipTaskDao.update(taskId) {
+            clipTaskDao.update(taskId, copeFromRealm = true) {
                 status = TaskStatus.EXECUTING
                 modifyTime = System.currentTimeMillis()
             }?.let { clipTask ->

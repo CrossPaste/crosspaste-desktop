@@ -86,7 +86,6 @@ object JsonUtils {
                 subclass(SyncExtraInfo::class)
             }
 
-            encodeDefaults = true
             classDiscriminator = "type"
         }
     }
