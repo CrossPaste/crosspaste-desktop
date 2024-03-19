@@ -12,6 +12,7 @@ import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.types.RealmList
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.mongodb.kbson.BsonObjectId
@@ -24,6 +25,7 @@ import java.nio.file.Paths
 import javax.imageio.ImageIO
 
 @Serializable
+@SerialName("images")
 class ImagesClipItem: RealmObject, ClipAppearItem, ClipFiles {
 
     @PrimaryKey

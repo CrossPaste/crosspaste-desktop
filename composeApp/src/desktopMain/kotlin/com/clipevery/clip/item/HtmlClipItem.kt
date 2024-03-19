@@ -10,6 +10,7 @@ import com.clipevery.presist.DesktopOneFilePersist
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.mongodb.kbson.BsonObjectId
@@ -18,6 +19,7 @@ import java.awt.datatransfer.DataFlavor
 import java.nio.file.Path
 
 @Serializable
+@SerialName("html")
 class HtmlClipItem: RealmObject, ClipAppearItem, ClipHtml {
 
     @PrimaryKey

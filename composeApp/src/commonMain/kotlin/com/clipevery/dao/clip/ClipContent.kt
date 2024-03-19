@@ -23,11 +23,13 @@ import io.realm.kotlin.serializers.RealmUUIDKSerializer
 import io.realm.kotlin.types.RealmAny
 import io.realm.kotlin.types.RealmList
 import io.realm.kotlin.types.RealmObject
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import java.io.IOException
 
 @Serializable
+@SerialName("content")
 class ClipContent: RealmObject {
 
     var clipAppearItems: RealmList<RealmAny?> = realmListOf()

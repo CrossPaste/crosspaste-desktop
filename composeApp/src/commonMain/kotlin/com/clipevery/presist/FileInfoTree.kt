@@ -3,6 +3,7 @@ package com.clipevery.presist
 import com.clipevery.clip.item.ClipFile
 import com.clipevery.clip.item.ClipFileImpl
 import com.clipevery.utils.EncryptUtils
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.nio.file.Path
 
@@ -18,6 +19,7 @@ interface FileInfoTree {
 }
 
 @Serializable
+@SerialName("dir")
 class DirFileInfoTree(private val tree: Map<String, FileInfoTree>,
                       override val size: Long,
                       override val md5: String) : FileInfoTree {
@@ -33,6 +35,7 @@ class DirFileInfoTree(private val tree: Map<String, FileInfoTree>,
 }
 
 @Serializable
+@SerialName("file")
 class SingleFileInfoTree(override val size: Long,
                          override val md5: String) : FileInfoTree {
 
