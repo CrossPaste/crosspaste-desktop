@@ -12,6 +12,7 @@ import com.clipevery.utils.buildUrl
 import com.clipevery.utils.ioDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.encodeToStream
@@ -23,7 +24,7 @@ class SyncClipTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
 
     private val clipDao: ClipDao by lazy { lazyClipDao.value }
 
-    private val ioScope = CoroutineScope(ioDispatcher)
+    private val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
     @OptIn(ExperimentalSerializationApi::class)
     override suspend fun doExecuteTask(clipTask: ClipTask): ClipTaskResult {
@@ -38,6 +39,7 @@ class SyncClipTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
                 val deferred = ioScope.async {
                     val clientHandler = entryHandler.value
                     var syncClipResult = SyncClipResult.FAILED
+                    val port = clientHandler.syncRuntimeInfo.port
                     clientHandler.getConnectHostAddress()?.let {
                         syncClipResult = sendClipClientApi.sendClip(clipData, clipTaskBytes) {
                             urlBuilder -> buildUrl(urlBuilder, it, port, "sync", "clip")
