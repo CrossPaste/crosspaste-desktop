@@ -1,5 +1,6 @@
 package com.clipevery.listen
 
+import com.clipevery.Dependencies
 import com.clipevery.clip.ClipSearchService
 import com.clipevery.config.ConfigManager
 import com.clipevery.ui.search.createSearchWindow
@@ -49,7 +50,7 @@ class OpenSearchListener(private val clipSearchService: ClipSearchService) : Nat
         if (isCmdOrCtrlPressed && isShiftPressed && isSpacePressed) {
             dispatcher.launch {
                 logger.info { "Open search window" }
-                createSearchWindow(clipSearchService)
+                createSearchWindow(clipSearchService, Dependencies.koinApplication)
             }
         }
     }
