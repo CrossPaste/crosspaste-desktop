@@ -2,10 +2,11 @@ package com.clipevery.os.macos.api
 
 import com.sun.jna.Library
 import com.sun.jna.Native
+import com.sun.jna.ptr.IntByReference
 
 interface MacosApi : Library {
 
-    fun getClipboardChangeCount(): Int
+    fun getClipboardChangeCount(currentChangeCount: Int, isRemote: IntByReference, isClipevery: IntByReference): Int
 
     fun getPassword(service: String, account: String): String?
 

@@ -1,11 +1,29 @@
+import AppKit
 import Cocoa
-import Foundation
 import Security
 
 @_cdecl("getClipboardChangeCount")
-public func getClipboardChangeCount() -> Int {
+public func getClipboardChangeCount(currentChangeCount: Int,
+                                    isRemote: UnsafeMutablePointer<Bool>,
+                                    isClipevery: UnsafeMutablePointer<Bool>) -> Int {
     let pasteboard = NSPasteboard.general
-    return pasteboard.changeCount
+    let newChangeCount = pasteboard.changeCount
+
+    isRemote.pointee = false
+    isClipevery.pointee = false
+
+    if newChangeCount != currentChangeCount, let items = pasteboard.pasteboardItems {
+        for item in items {
+            for type in item.types {
+                if type.rawValue == "com.apple.is-remote-clipboard" {
+                    isRemote.pointee = true
+                } else if type.rawValue == "com.clipevery" {
+                    isClipevery.pointee = true
+                }
+            }
+        }
+    }
+    return newChangeCount
 }
 
 @_cdecl("getPassword")
@@ -109,7 +127,7 @@ public func getHardwareUUID() -> UnsafePointer<CChar>? {
 }
 
 private func IOPlatformUUID() -> String? {
-    let platformExpert = IOServiceGetMatchingService(kIOMainPortDefault,
+    let platformExpert = IOServiceGetMatchingService(kIOMasterPortDefault,
                                                      IOServiceMatching("IOPlatformExpertDevice"))
     defer { IOObjectRelease(platformExpert) }
 
