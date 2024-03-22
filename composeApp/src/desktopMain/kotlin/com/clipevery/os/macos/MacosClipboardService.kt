@@ -7,6 +7,7 @@ import com.clipevery.dao.clip.ClipData
 import com.clipevery.os.macos.api.MacosApi
 import com.clipevery.utils.cpuDispatcher
 import com.clipevery.utils.ioDispatcher
+import com.sun.jna.ptr.IntByReference
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -46,15 +47,21 @@ class MacosClipboardService(override val clipConsumer: TransferableConsumer,
         launch {
             while (isActive) {
                 try {
-                    MacosApi.INSTANCE.getClipboardChangeCount().let { currentChangeCount ->
+                    val isRemote = IntByReference()
+                    val isClipevery = IntByReference()
+                    MacosApi.INSTANCE.getClipboardChangeCount(changeCount, isRemote, isClipevery).let { currentChangeCount ->
                         if (changeCount != currentChangeCount) {
                             changeCount = currentChangeCount
-                            delay(20L)
-                            val contents = systemClipboard.getContents(null)
-                            if (contents != ownerTransferable) {
-                                contents?.let {
-                                    withContext(ioDispatcher) {
-                                        clipConsumer.consume(it)
+                            if (isClipevery.value != 0) {
+                                logger.debug { "Ignoring clipevery change" }
+                            } else {
+                                delay(20L)
+                                val contents = systemClipboard.getContents(null)
+                                if (contents != ownerTransferable) {
+                                    contents?.let {
+                                        withContext(ioDispatcher) {
+                                            clipConsumer.consume(it)
+                                        }
                                     }
                                 }
                             }
