@@ -1,10 +1,13 @@
 package com.clipevery.sync
 
 import com.clipevery.dao.sync.SyncRuntimeInfo
+import org.signal.libsignal.protocol.SessionCipher
 
 interface SyncHandler {
 
     var syncRuntimeInfo: SyncRuntimeInfo
+
+    val sessionCipher: SessionCipher
 
     suspend fun getConnectHostAddress(): String?
 

@@ -22,7 +22,7 @@ class DesktopSyncHandler(override var syncRuntimeInfo: SyncRuntimeInfo,
 
     private val signalProtocolAddress = SignalProtocolAddress(syncRuntimeInfo.appInstanceId, 1)
 
-    private val sessionCipher: SessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
+    override val sessionCipher: SessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
 
     override suspend fun getConnectHostAddress(): String? {
         syncRuntimeInfo.connectHostAddress?.let {

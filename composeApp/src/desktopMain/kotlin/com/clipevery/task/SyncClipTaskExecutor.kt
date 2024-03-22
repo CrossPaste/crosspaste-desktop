@@ -14,9 +14,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.json.encodeToStream
-import java.io.ByteArrayOutputStream
 
 class SyncClipTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
                            private val sendClipClientApi: SendClipClientApi,
@@ -26,14 +23,9 @@ class SyncClipTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
 
     private val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
-    @OptIn(ExperimentalSerializationApi::class)
     override suspend fun doExecuteTask(clipTask: ClipTask): ClipTaskResult {
         val syncExtraInfo: SyncExtraInfo = TaskUtils.getExtraInfo(clipTask, SyncExtraInfo::class)
         val mapResult = clipDao.getClipData(clipTask.clipId)?.let { clipData ->
-            val outputStream = ByteArrayOutputStream()
-            JsonUtils.JSON.encodeToStream(clipData, outputStream)
-            val clipTaskBytes = outputStream.toByteArray()
-            println(String(clipTaskBytes))
             val deferredResults: MutableList<Deferred<Pair<String, Int>>> = mutableListOf()
             for (entryHandler in syncManager.getSyncHandlers()) {
                 val deferred = ioScope.async {
@@ -41,7 +33,7 @@ class SyncClipTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
                     var syncClipResult = SyncClipResult.FAILED
                     val port = clientHandler.syncRuntimeInfo.port
                     clientHandler.getConnectHostAddress()?.let {
-                        syncClipResult = sendClipClientApi.sendClip(clipData, clipTaskBytes) {
+                        syncClipResult = sendClipClientApi.sendClip(clipData) {
                             urlBuilder -> buildUrl(urlBuilder, it, port, "sync", "clip")
                         }
                     }

@@ -3,7 +3,7 @@ package com.clipevery.net
 import com.clipevery.config.ConfigManager
 import com.clipevery.exception.StandardErrorCode
 import com.clipevery.net.exception.signalExceptionHandler
-import com.clipevery.net.plugin.SignalDecryption
+import com.clipevery.net.plugin.SignalServerDecryption
 import com.clipevery.routing.clipRouting
 import com.clipevery.routing.syncRouting
 import com.clipevery.utils.JsonUtils
@@ -45,7 +45,7 @@ class DesktopClipServer(private val configManager: ConfigManager): ClipServer {
                 }
                 signalExceptionHandler()
             }
-            install(SignalDecryption) {
+            install(SignalServerDecryption) {
 
             }
             intercept(ApplicationCallPipeline.Setup) {
