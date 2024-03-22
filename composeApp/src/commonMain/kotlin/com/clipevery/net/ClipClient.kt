@@ -1,8 +1,8 @@
 package com.clipevery.net
 
-import io.ktor.client.statement.HttpResponse
-import io.ktor.http.URLBuilder
-import io.ktor.util.reflect.TypeInfo
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import io.ktor.util.reflect.*
 import java.io.File
 
 interface ClipClient {
@@ -10,6 +10,7 @@ interface ClipClient {
     suspend fun <T: Any> post(
         message: T,
         messageType: TypeInfo,
+        encrypt: Boolean = false,
         timeout: Long = 1000L,
         urlBuilder: URLBuilder.(URLBuilder) -> Unit
     ): HttpResponse

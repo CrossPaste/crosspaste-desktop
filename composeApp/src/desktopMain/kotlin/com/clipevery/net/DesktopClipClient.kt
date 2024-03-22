@@ -1,6 +1,7 @@
 package com.clipevery.net
 
 import com.clipevery.app.AppInfo
+import com.clipevery.net.plugin.SignalClientEncryption
 import com.clipevery.utils.JsonUtils
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
@@ -29,16 +30,21 @@ class DesktopClipClient(private val appInfo: AppInfo): ClipClient {
         install(ContentNegotiation) {
             json(JsonUtils.JSON, ContentType.Application.Json)
         }
+        install(SignalClientEncryption)
     }
 
     override suspend fun <T: Any> post(
         message: T,
         messageType: TypeInfo,
+        encrypt: Boolean,
         timeout: Long,
         urlBuilder: URLBuilder.(URLBuilder) -> Unit
     ): HttpResponse {
         return client.post {
             header("appInstanceId", appInfo.appInstanceId)
+            if (encrypt) {
+                header("signal", "1")
+            }
             timeout {
                 requestTimeoutMillis = timeout
             }

@@ -1,22 +1,26 @@
 package com.clipevery.net.plugin
 
 import com.clipevery.Dependencies
-import io.ktor.server.application.ApplicationPlugin
-import io.ktor.server.application.createApplicationPlugin
-import io.ktor.server.application.hooks.ReceiveRequestBytes
-import io.ktor.server.request.path
-import io.ktor.util.KtorDsl
-import io.ktor.utils.io.core.readBytes
-import io.ktor.utils.io.writer
+import io.ktor.client.*
+import io.ktor.client.plugins.*
+import io.ktor.client.request.*
+import io.ktor.client.utils.EmptyContent.headers
+import io.ktor.content.*
+import io.ktor.server.application.*
+import io.ktor.server.application.hooks.*
+import io.ktor.server.request.*
+import io.ktor.util.*
+import io.ktor.utils.io.*
+import io.ktor.utils.io.core.*
 import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.SignalProtocolAddress
 import org.signal.libsignal.protocol.message.SignalMessage
 import org.signal.libsignal.protocol.state.SignalProtocolStore
 import java.nio.ByteBuffer
 
-val SignalDecryption: ApplicationPlugin<SignalDecryptionConfig> = createApplicationPlugin(
+val SignalServerDecryption: ApplicationPlugin<SignalConfig> = createApplicationPlugin(
     "SignalDecryption",
-    ::SignalDecryptionConfig
+    ::SignalConfig
 ) {
 
     val signalProtocolStore: SignalProtocolStore = pluginConfig.signalProtocolStore
@@ -43,7 +47,37 @@ val SignalDecryption: ApplicationPlugin<SignalDecryptionConfig> = createApplicat
 }
 
 @KtorDsl
-class SignalDecryptionConfig {
+class SignalConfig {
 
     val signalProtocolStore: SignalProtocolStore = Dependencies.koinApplication.koin.get()
+}
+
+object SignalClientEncryption : HttpClientPlugin<SignalConfig, SignalClientEncryption> {
+    override val key = AttributeKey<SignalClientEncryption>("SignalClientEncryption")
+
+    val signalProtocolStore: SignalProtocolStore = Dependencies.koinApplication.koin.get()
+
+    override fun prepare(block: SignalConfig.() -> Unit): SignalClientEncryption {
+        return SignalClientEncryption
+    }
+
+    @OptIn(InternalAPI::class)
+    override fun install(plugin: SignalClientEncryption, scope: HttpClient) {
+
+        scope.requestPipeline.intercept(HttpRequestPipeline.Render) {
+            headers["appInstanceId"]?.let { appInstanceId ->
+                headers["signal"]?.let { signal ->
+                    if (signal == "1") {
+                        val originalContent = context.body as? ByteArrayContent
+                        originalContent?.let {
+                            val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
+                            val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
+                            val encryptedData = sessionCipher.encrypt(it.bytes()).serialize()
+                            context.body = ByteArrayContent(encryptedData, it.contentType)
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
