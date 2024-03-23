@@ -6,6 +6,7 @@ import com.clipevery.clip.TransferableProducer
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.os.windows.api.User32
 import com.clipevery.platform.currentPlatform
+import com.clipevery.utils.cpuDispatcher
 import com.clipevery.utils.ioDispatcher
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.Kernel32
@@ -14,13 +15,14 @@ import com.sun.jna.platform.win32.WinDef.LPARAM
 import com.sun.jna.platform.win32.WinDef.WPARAM
 import com.sun.jna.platform.win32.WinUser.MSG
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.Transferable
-import java.lang.IllegalStateException
 import kotlin.math.min
 
 
@@ -37,6 +39,10 @@ class WindowsClipboardService(override val clipConsumer: TransferableConsumer,
 
     override val systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
 
+    private val serviceScope = CoroutineScope(ioDispatcher + SupervisorJob())
+
+    private val serviceConsumerScope = CoroutineScope(cpuDispatcher + SupervisorJob())
+
     override fun setContent(clipData: ClipData) {
         ownerTransferable = clipProducer.produce(clipData)
         owner = true
@@ -51,7 +57,7 @@ class WindowsClipboardService(override val clipConsumer: TransferableConsumer,
         false, null
     )
 
-    override fun run() {
+    private fun run() {
         viewer = User32.INSTANCE.CreateWindowEx(
             0, "STATIC", "", 0, 0, 0, 0, 0,
             null, 0, 0, null
@@ -94,7 +100,7 @@ class WindowsClipboardService(override val clipConsumer: TransferableConsumer,
 
     override fun start() {
         if (job?.isActive != true) {
-            job = CoroutineScope(ioDispatcher).launch {
+            job = serviceScope.launch(CoroutineName("WindowsClipboardService")) {
                 run()
             }
         }
@@ -126,7 +132,7 @@ class WindowsClipboardService(override val clipConsumer: TransferableConsumer,
         } while (contents == null)
 
         contents?.let {
-            CoroutineScope(ioDispatcher).launch {
+            serviceConsumerScope.launch(CoroutineName("WindowsClipboardConsumer")) {
                 if (it != ownerTransferable) {
                     clipConsumer.consume(it)
                 }

@@ -9,12 +9,13 @@ import com.clipevery.utils.cpuDispatcher
 import com.clipevery.utils.ioDispatcher
 import com.sun.jna.ptr.IntByReference
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
@@ -35,6 +36,8 @@ class MacosClipboardService(override val clipConsumer: TransferableConsumer,
 
     override val systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
 
+    private val serviceScope = CoroutineScope(cpuDispatcher + SupervisorJob())
+
     override fun setContent(clipData: ClipData) {
         ownerTransferable = clipProducer.produce(clipData)
         owner = true
@@ -43,30 +46,31 @@ class MacosClipboardService(override val clipConsumer: TransferableConsumer,
 
     private var job: Job? = null
 
-    override fun run(): Unit = runBlocking {
-        launch {
+    private fun run(): Job {
+        return serviceScope.launch(CoroutineName("MacClipboardService")) {
             while (isActive) {
                 try {
                     val isRemote = IntByReference()
                     val isClipevery = IntByReference()
-                    MacosApi.INSTANCE.getClipboardChangeCount(changeCount, isRemote, isClipevery).let { currentChangeCount ->
-                        if (changeCount != currentChangeCount) {
-                            changeCount = currentChangeCount
-                            if (isClipevery.value != 0) {
-                                logger.debug { "Ignoring clipevery change" }
-                            } else {
-                                delay(20L)
-                                val contents = systemClipboard.getContents(null)
-                                if (contents != ownerTransferable) {
-                                    contents?.let {
-                                        withContext(ioDispatcher) {
-                                            clipConsumer.consume(it)
+                    MacosApi.INSTANCE.getClipboardChangeCount(changeCount, isRemote, isClipevery)
+                        .let { currentChangeCount ->
+                            if (changeCount != currentChangeCount) {
+                                changeCount = currentChangeCount
+                                if (isClipevery.value != 0) {
+                                    logger.debug { "Ignoring clipevery change" }
+                                } else {
+                                    delay(20L)
+                                    val contents = systemClipboard.getContents(null)
+                                    if (contents != ownerTransferable) {
+                                        contents?.let {
+                                            withContext(ioDispatcher) {
+                                                clipConsumer.consume(it)
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
-                    }
                 } catch (e: Exception) {
                     logger.error(e) { "Failed to consume transferable" }
                 }
@@ -75,15 +79,14 @@ class MacosClipboardService(override val clipConsumer: TransferableConsumer,
         }
     }
 
+
     override fun lostOwnership(clipboard: Clipboard?, contents: Transferable?) {
         owner = false
     }
 
     override fun start() {
         if (job?.isActive != true) {
-            job = CoroutineScope(cpuDispatcher).launch {
-                run()
-            }
+            job = run()
         }
     }
 

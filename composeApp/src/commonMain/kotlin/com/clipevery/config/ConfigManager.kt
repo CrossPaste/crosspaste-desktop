@@ -2,6 +2,7 @@ package com.clipevery.config
 
 import com.clipevery.app.AppEnv
 import com.clipevery.presist.OneFilePersist
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -31,9 +32,15 @@ abstract class ConfigManager(private val configFilePersist: OneFilePersist,
 
     @Synchronized
     fun updateConfig(updateAction: (AppConfig) -> AppConfig) {
-        config = updateAction(config)
-        ioScope().launch {
-            saveConfig(config)
+        val oldConfig = config
+        config = updateAction(oldConfig)
+        ioScope().launch(CoroutineName("UpdateConfig")) {
+            try {
+                saveConfig(config)
+            } catch (e: Exception) {
+                // todo Pop-up window prompts user
+                config = oldConfig
+            }
         }
     }
 

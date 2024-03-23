@@ -12,6 +12,7 @@ import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
 
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -48,7 +49,7 @@ class OpenSearchListener(private val clipSearchService: ClipSearchService) : Nat
         val isSpacePressed = e.keyCode == NativeKeyEvent.VC_SPACE
 
         if (isCmdOrCtrlPressed && isShiftPressed && isSpacePressed) {
-            dispatcher.launch {
+            dispatcher.launch(CoroutineName("CrateSearchWindow")) {
                 logger.info { "Open search window" }
                 createSearchWindow(clipSearchService, Dependencies.koinApplication)
             }

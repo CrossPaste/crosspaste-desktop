@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.Dp
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -34,7 +35,7 @@ class AppUI(val width: Dp, val height: Dp) {
     @Synchronized
     fun startRefreshToken() {
         if (startRefreshNumber ++ == 0) {
-            refreshTokenJob = scope.launch {
+            refreshTokenJob = scope.launch(CoroutineName("RefreshToken")) {
                 while (isActive) {
                     refreshToken()
                     delay(30000)

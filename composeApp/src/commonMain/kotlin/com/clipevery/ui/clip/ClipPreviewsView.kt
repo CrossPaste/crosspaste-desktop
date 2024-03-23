@@ -39,6 +39,7 @@ import io.realm.kotlin.notifications.InitialResults
 import io.realm.kotlin.notifications.ResultsChange
 import io.realm.kotlin.notifications.UpdatedResults
 import io.realm.kotlin.query.RealmResults
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -125,7 +126,7 @@ fun ClipPreviewsView() {
                 }
                 isScrolling = true
                 scrollJob?.cancel()
-                scrollJob = coroutineScope.launch {
+                scrollJob = coroutineScope.launch(CoroutineName("HiddenScroll")) {
                     delay(500)
                     isScrolling = false
                 }
@@ -156,7 +157,7 @@ fun ClipPreviewsView() {
                 .draggable(
                 orientation = Orientation.Vertical,
                 state = rememberDraggableState { delta ->
-                    coroutineScope.launch {
+                    coroutineScope.launch(CoroutineName("ScrollClip")) {
                         listState.scrollBy(-delta)
                     }
                 },

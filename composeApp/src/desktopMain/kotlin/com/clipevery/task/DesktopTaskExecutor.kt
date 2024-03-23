@@ -5,6 +5,7 @@ import com.clipevery.dao.task.TaskStatus
 import com.clipevery.utils.TaskUtils.createFailExtraInfo
 import com.clipevery.utils.cpuDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -20,10 +21,10 @@ class DesktopTaskExecutor(private val singleTypeTaskExecutorMap: Map<Int, Single
 
     private val taskShardedFlow = MutableSharedFlow<ObjectId>()
 
-    private val supervisorJob = SupervisorJob()
+    private val scope = CoroutineScope(cpuDispatcher + SupervisorJob())
 
     init {
-        CoroutineScope(cpuDispatcher + supervisorJob).launch {
+        scope.launch(CoroutineName("TaskExecutor")) {
             taskShardedFlow.collect { taskId ->
                 executeTask(taskId)
             }

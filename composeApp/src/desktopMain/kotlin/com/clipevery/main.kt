@@ -31,6 +31,7 @@ import com.clipevery.utils.getPreferredWindowSize
 import com.clipevery.utils.ioDispatcher
 import dev.datlag.kcef.KCEF
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -99,7 +100,7 @@ fun main() {
 
         val exitApplication: () -> Unit = {
             appUI.showMainWindow = false
-            ioScope.launch {
+            ioScope.launch(CoroutineName("ExitApplication")) {
                 exitClipEveryApplication { exitApplication() }
             }
         }

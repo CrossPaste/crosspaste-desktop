@@ -14,6 +14,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.collections.*
 import io.realm.kotlin.notifications.ResultsChange
 import io.realm.kotlin.notifications.UpdatedResults
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -42,7 +43,7 @@ class DesktopSyncManager(private val telnetUtils: TelnetUtils,
     override val isRefreshing: State<Boolean> get() = _refreshing
 
     init {
-        realTimeSyncScope.launch {
+        realTimeSyncScope.launch(CoroutineName("SyncManagerListenChanger")) {
             val syncRuntimeInfos = syncRuntimeInfoDao.getAllSyncRuntimeInfos()
             internalSyncHandlers.putAll(syncRuntimeInfos.map { syncRuntimeInfo ->
                 syncRuntimeInfo.appInstanceId to DesktopSyncHandler(syncRuntimeInfo,
@@ -112,7 +113,7 @@ class DesktopSyncManager(private val telnetUtils: TelnetUtils,
 
     override fun resolveSync(id: String, force: Boolean) {
         internalSyncHandlers[id]?.let { syncHandler ->
-            realTimeSyncScope.launch {
+            realTimeSyncScope.launch(CoroutineName("SyncManagerResolve")) {
                 syncHandler.resolveSync(force)
             }
         }
@@ -124,7 +125,7 @@ class DesktopSyncManager(private val telnetUtils: TelnetUtils,
 
     override fun refresh(force: Boolean) {
         _refreshing.value = true
-        realTimeSyncScope.launch {
+        realTimeSyncScope.launch(CoroutineName("SyncManagerRefresh")) {
             logger.info { "start launch" }
             try {
                 resolveSyncs(force)
