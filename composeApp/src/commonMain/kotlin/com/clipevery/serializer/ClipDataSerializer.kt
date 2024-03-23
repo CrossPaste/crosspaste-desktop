@@ -61,6 +61,7 @@ object ClipDataSerializer: KSerializer<ClipData> {
             this.createTime = RealmInstant.now()
             this.labels = labels
             this.clipState = ClipState.LOADING
+            this.isRemote = true
         }
     }
 

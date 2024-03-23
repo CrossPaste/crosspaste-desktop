@@ -134,7 +134,8 @@ class WindowsClipboardService(override val clipConsumer: TransferableConsumer,
         contents?.let {
             serviceConsumerScope.launch(CoroutineName("WindowsClipboardConsumer")) {
                 if (it != ownerTransferable) {
-                    clipConsumer.consume(it)
+                    // in windows, we don't know if the clipboard is local or remote
+                    clipConsumer.consume(it, isRemote = false)
                 }
             }
         }

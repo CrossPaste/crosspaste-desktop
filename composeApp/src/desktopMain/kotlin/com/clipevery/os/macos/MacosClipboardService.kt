@@ -62,7 +62,7 @@ class MacosClipboardService(override val clipConsumer: TransferableConsumer,
                                     if (contents != ownerTransferable) {
                                         contents?.let {
                                             launch(CoroutineName("MacClipboardServiceConsumer")) {
-                                                clipConsumer.consume(it)
+                                                clipConsumer.consume(it, isRemote.value != 0)
                                             }
                                         }
                                     }

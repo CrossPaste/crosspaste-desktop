@@ -41,6 +41,8 @@ class ClipData: RealmObject {
     @Transient
     var clipState: Int = ClipState.LOADING
 
+    var isRemote: Boolean = false
+
     @Serializable(with = ClipLabelRealmSetSerializer::class)
     var labels: RealmSet<ClipLabel> = realmSetOf()
 
