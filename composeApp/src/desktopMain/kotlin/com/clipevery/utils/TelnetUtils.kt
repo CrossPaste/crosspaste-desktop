@@ -4,6 +4,7 @@ import com.clipevery.dao.sync.HostInfo
 import com.clipevery.net.ClipClient
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
@@ -25,7 +26,7 @@ class TelnetUtils(private val clipClient: ClipClient) {
         val scope = CoroutineScope(Dispatchers.IO)
 
         hostInfoList.forEach { hostInfo ->
-            scope.launch {
+            scope.launch(CoroutineName("SwitchHost")) {
                 try {
                     if (telnet(hostInfo, port, timeout)) {
                         mutex.withLock {
