@@ -26,7 +26,9 @@ class DesktopTaskExecutor(private val singleTypeTaskExecutorMap: Map<Int, Single
     init {
         scope.launch(CoroutineName("TaskExecutor")) {
             taskShardedFlow.collect { taskId ->
-                executeTask(taskId)
+                launch {
+                    executeTask(taskId)
+                }
             }
         }
     }

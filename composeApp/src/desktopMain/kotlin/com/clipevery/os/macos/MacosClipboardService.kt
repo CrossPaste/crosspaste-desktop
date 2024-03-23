@@ -6,7 +6,6 @@ import com.clipevery.clip.TransferableProducer
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.os.macos.api.MacosApi
 import com.clipevery.utils.cpuDispatcher
-import com.clipevery.utils.ioDispatcher
 import com.sun.jna.ptr.IntByReference
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
@@ -16,7 +15,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.Transferable
@@ -63,7 +61,7 @@ class MacosClipboardService(override val clipConsumer: TransferableConsumer,
                                     val contents = systemClipboard.getContents(null)
                                     if (contents != ownerTransferable) {
                                         contents?.let {
-                                            withContext(ioDispatcher) {
+                                            launch(CoroutineName("MacClipboardServiceConsumer")) {
                                                 clipConsumer.consume(it)
                                             }
                                         }
