@@ -124,7 +124,7 @@ object Dependencies {
             single<ClipBonjourService> { DesktopClipBonjourService(get(), get()).registerService() }
             single<TelnetUtils> { TelnetUtils(get<ClipClient>()) }
             single<SyncClientApi> { DesktopSyncClientApi(get()) }
-            single<SendClipClientApi> { DesktopSendClipClientApi(get()) }
+            single<SendClipClientApi> { DesktopSendClipClientApi(get(), get()) }
             single { DesktopSyncManager(get(), get(), get(), get()) }
             single<SyncRefresher> { get<DesktopSyncManager>() }
             single<SyncManager> { get<DesktopSyncManager>() }

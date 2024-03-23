@@ -1,11 +1,12 @@
 package com.clipevery.net.plugin
 
 import com.clipevery.Dependencies
+import com.clipevery.utils.EncryptUtils
 import io.ktor.client.*
 import io.ktor.client.plugins.*
 import io.ktor.client.request.*
-import io.ktor.client.utils.EmptyContent.headers
-import io.ktor.content.*
+import io.ktor.content.ByteArrayContent
+import io.ktor.http.content.*
 import io.ktor.server.application.*
 import io.ktor.server.application.hooks.*
 import io.ktor.server.request.*
@@ -64,16 +65,24 @@ object SignalClientEncryption : HttpClientPlugin<SignalConfig, SignalClientEncry
     @OptIn(InternalAPI::class)
     override fun install(plugin: SignalClientEncryption, scope: HttpClient) {
 
-        scope.requestPipeline.intercept(HttpRequestPipeline.Render) {
-            headers["appInstanceId"]?.let { appInstanceId ->
-                headers["signal"]?.let { signal ->
+        scope.sendPipeline.intercept(HttpSendPipeline.State) {
+            context.headers["appInstanceId"]?.let { appInstanceId ->
+                context.headers["signal"]?.let { signal ->
                     if (signal == "1") {
-                        val originalContent = context.body as? ByteArrayContent
+                        val originalContent = context.body as? OutgoingContent.ByteArrayContent
                         originalContent?.let {
-                            val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
-                            val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
-                            val encryptedData = sessionCipher.encrypt(it.bytes()).serialize()
-                            context.body = ByteArrayContent(encryptedData, it.contentType)
+                            context.headers["targetAppInstanceId"]?.let { targetAppInstanceId ->
+                                context.headers.remove("targetAppInstanceId")
+                                val signalProtocolAddress = SignalProtocolAddress(targetAppInstanceId, 1)
+                                val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
+                                val ciphertextMessage = sessionCipher.encrypt(it.bytes())
+                                val encryptedData = ciphertextMessage.serialize()
+                                println("encryptedData = ${encryptedData.size}  ${EncryptUtils.base64Encode(encryptedData).toByteArray().size}")
+                                context.body = ByteArrayContent(encryptedData)
+                                proceedWith(context.body)
+                            } ?: run {
+                                throw IllegalStateException("targetAppInstanceId is null")
+                            }
                         }
                     }
                 }

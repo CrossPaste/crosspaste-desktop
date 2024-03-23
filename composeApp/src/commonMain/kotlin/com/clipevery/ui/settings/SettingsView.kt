@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Popup
 import com.clipevery.LocalKoinApplication
+import com.clipevery.config.ConfigManager
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.WindowDecoration
@@ -63,6 +64,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
     val current = LocalKoinApplication.current
+    val configManager = current.koin.get<ConfigManager>()
     val copywriter = current.koin.get<GlobalCopywriter>()
     var hasBeenClicked by remember { mutableStateOf(false) }
     var showMoreLanguage by remember { mutableStateOf(false) }
@@ -186,6 +188,24 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
             Row(Modifier.padding(5.dp, 0.dp, 0.dp, 0.dp)) {
                 ThemeSegmentedControl()
             }
+        }
+
+        Row(modifier = Modifier.fillMaxWidth().height(40.dp).padding(20.dp, 5.dp, 0.dp, 5.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            var isEncrypted by remember { mutableStateOf(configManager.config.isEncryptSync) }
+            Switch(
+                checked = isEncrypted,
+                onCheckedChange = { it ->
+                    isEncrypted = it
+                    configManager.updateConfig { it.copy(isEncryptSync = isEncrypted) }
+                }
+            )
+
+            Text(text = copywriter.getText("Encrypted_sync"),
+                color = MaterialTheme.colors.onBackground,
+                fontSize = 14.sp,
+                fontFamily = FontFamily.SansSerif,
+                style = TextStyle(fontWeight = FontWeight.Light))
         }
 
         Row(modifier = Modifier.fillMaxWidth().height(40.dp).padding(20.dp, 5.dp, 0.dp, 5.dp),

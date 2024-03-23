@@ -76,7 +76,8 @@ class DesktopSyncManager(private val telnetUtils: TelnetUtils,
                             val oldSyncRuntimeInfo = internalSyncHandlers[changeSyncRuntimeInfo.appInstanceId]!!.syncRuntimeInfo
                             internalSyncHandlers[changeSyncRuntimeInfo.appInstanceId]!!
                                 .updateSyncRuntimeInfo(changeSyncRuntimeInfo)
-                            if (changeSyncRuntimeInfo.port != oldSyncRuntimeInfo.port ||
+                            if (changeSyncRuntimeInfo.connectHostAddress == null ||
+                                changeSyncRuntimeInfo.port != oldSyncRuntimeInfo.port ||
                                 !hostInfoListEqual(changeSyncRuntimeInfo.hostInfoList, oldSyncRuntimeInfo.hostInfoList)) {
                                 resolveSync(changeSyncRuntimeInfo.appInstanceId, true)
                             }

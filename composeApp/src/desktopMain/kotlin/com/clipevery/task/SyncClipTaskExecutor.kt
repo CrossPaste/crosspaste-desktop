@@ -32,8 +32,9 @@ class SyncClipTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
                     val clientHandler = entryHandler.value
                     var syncClipResult = SyncClipResult.FAILED
                     val port = clientHandler.syncRuntimeInfo.port
+                    val targetAppInstanceId = clientHandler.syncRuntimeInfo.appInstanceId
                     clientHandler.getConnectHostAddress()?.let {
-                        syncClipResult = sendClipClientApi.sendClip(clipData) {
+                        syncClipResult = sendClipClientApi.sendClip(clipData, targetAppInstanceId) {
                             urlBuilder -> buildUrl(urlBuilder, it, port, "sync", "clip")
                         }
                     }
