@@ -28,7 +28,7 @@ class SerializerTest {
             this.md5 = md5ByString(this.text)
         }
 
-       val clipData = ClipData().apply {
+        val clipData = ClipData().apply {
             this.clipId = 0
             this.clipAppearContent = RealmAny.Companion.create(textClipItem)
             this.clipContent = ClipContent().apply {
@@ -57,5 +57,6 @@ class SerializerTest {
         assertEquals(ClipState.LOADING, newClipData.clipState)
         assertNotEquals(clipData.createTime, newClipData.createTime)
         assertEquals(clipData.appInstanceId, newClipData.appInstanceId)
+        assertTrue(newClipData.isRemote)
     }
 }
