@@ -7,6 +7,7 @@ import com.clipevery.dao.clip.ClipData
 import com.clipevery.os.windows.api.User32
 import com.clipevery.platform.currentPlatform
 import com.clipevery.utils.cpuDispatcher
+import com.clipevery.utils.ioDispatcher
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.Kernel32
 import com.sun.jna.platform.win32.WinDef.HWND
@@ -38,7 +39,9 @@ class WindowsClipboardService(override val clipConsumer: TransferableConsumer,
 
     override val systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
 
-    private val serviceScope = CoroutineScope(cpuDispatcher + SupervisorJob())
+    private val serviceScope = CoroutineScope(ioDispatcher + SupervisorJob())
+
+    private val serviceConsumerScope = CoroutineScope(cpuDispatcher + SupervisorJob())
 
     override fun setContent(clipData: ClipData) {
         ownerTransferable = clipProducer.produce(clipData)
@@ -129,7 +132,7 @@ class WindowsClipboardService(override val clipConsumer: TransferableConsumer,
         } while (contents == null)
 
         contents?.let {
-            serviceScope.launch(CoroutineName("WindowsClipboardConsumer")) {
+            serviceConsumerScope.launch(CoroutineName("WindowsClipboardConsumer")) {
                 if (it != ownerTransferable) {
                     clipConsumer.consume(it)
                 }
