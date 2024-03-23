@@ -33,3 +33,13 @@ fun file(): Painter {
 fun folder(): Painter {
     return painterResource("icon/clip/folder.svg")
 }
+
+@Composable
+fun fileSlash(): Painter {
+    return painterResource("icon/clip/file-slash.svg")
+}
+
+@Composable
+fun imageSlash(): Painter {
+    return painterResource("icon/clip/image-slash.svg")
+}
