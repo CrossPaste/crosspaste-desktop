@@ -36,10 +36,11 @@ fun FilesPreviewView(clipData: ClipData) {
             val filePaths = clipFiles.getFilePaths()
             LazyRow(modifier = Modifier.fillMaxSize()) {
                 items(filePaths.size) { index ->
-                    if (canPreviewImage(filePaths[index].extension)) {
-                        SingleImagePreviewView(filePaths[index])
+                    val filepath = filePaths[index]
+                    if (canPreviewImage(filepath.extension)) {
+                        SingleImagePreviewView(filepath)
                     } else {
-                        SingleFilePreviewView(filePaths[index])
+                        SingleFilePreviewView(filepath)
                     }
                     if (index != filePaths.size - 1) {
                         Spacer(modifier = Modifier.size(10.dp))

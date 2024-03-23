@@ -16,6 +16,8 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,6 +30,7 @@ import com.clipevery.LocalKoinApplication
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.SketchBackground
 import com.clipevery.ui.base.file
+import com.clipevery.ui.base.fileSlash
 import com.clipevery.ui.base.folder
 import com.clipevery.utils.FileExtUtils
 import com.clipevery.utils.FileUtils
@@ -41,14 +44,12 @@ fun SingleFilePreviewView(filePath: Path) {
     val copywriter = current.koin.get<GlobalCopywriter>()
     val fileUtils = current.koin.get<FileUtils>()
 
-    val optionPainter: Painter? = FileExtUtils.getExtPreviewImagePainter(filePath.extension)
+    val existFile by remember { mutableStateOf(filePath.toFile().exists()) }
 
-    val isFile: Boolean = remember(filePath) {
-        filePath.toFile().isFile
-    }
-
-    val fileSize = remember(filePath) {
-        fileUtils.formatBytes(fileUtils.getFileSize(filePath))
+    val optionPainter: Painter? = if (existFile) {
+        FileExtUtils.getExtPreviewImagePainter(filePath.extension)
+    } else {
+        fileSlash()
     }
 
     Box(modifier = Modifier.width(100.dp)
@@ -69,6 +70,9 @@ fun SingleFilePreviewView(filePath: Path) {
                 contentDescription = "fileType"
             )
         } ?: run {
+            val isFile: Boolean = remember(filePath) {
+                filePath.toFile().isFile
+            }
             Icon(
                 modifier = Modifier.size(100.dp),
                 painter = if (isFile) file() else folder(),
@@ -93,14 +97,31 @@ fun SingleFilePreviewView(filePath: Path) {
                 fontSize = 10.sp
             )
         )
-        Text(
-            text = "${copywriter.getText("Size")}: $fileSize",
-            color = MaterialTheme.colors.onBackground,
-            style = TextStyle(
-                fontWeight = FontWeight.Light,
+
+        if (existFile) {
+
+            val fileSize = remember(filePath) {
+                fileUtils.formatBytes(fileUtils.getFileSize(filePath))
+            }
+
+            Text(
+                text = "${copywriter.getText("Size")}: $fileSize",
                 color = MaterialTheme.colors.onBackground,
-                fontSize = 10.sp
+                style = TextStyle(
+                    fontWeight = FontWeight.Light,
+                    color = MaterialTheme.colors.onBackground,
+                    fontSize = 10.sp
+                )
             )
-        )
+        } else {
+            Text(
+                text = copywriter.getText("Missing_File"),
+                color = MaterialTheme.colors.error,
+                style = TextStyle(
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 10.sp
+                )
+            )
+        }
     }
 }
