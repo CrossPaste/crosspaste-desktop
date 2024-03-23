@@ -13,7 +13,8 @@ data class AppConfig(
     val language: String = Locale.getDefault().language,
     val isFollowSystemTheme: Boolean = true,
     val isDarkTheme: Boolean = false,
-    val port: Int = 13129
+    val port: Int = 13129,
+    val isEncryptSync: Boolean = true
 ) {
 
     constructor(other: AppConfig, appEnv: AppEnv) : this(
@@ -22,6 +23,7 @@ data class AppConfig(
         language = other.language,
         isFollowSystemTheme = other.isFollowSystemTheme,
         isDarkTheme = other.isDarkTheme,
-        port = other.port
+        port = other.port,
+        isEncryptSync = other.isEncryptSync
     )
 }

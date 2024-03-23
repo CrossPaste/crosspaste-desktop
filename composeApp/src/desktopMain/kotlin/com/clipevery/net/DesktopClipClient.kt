@@ -36,12 +36,16 @@ class DesktopClipClient(private val appInfo: AppInfo): ClipClient {
     override suspend fun <T: Any> post(
         message: T,
         messageType: TypeInfo,
+        targetAppInstanceId: String?,
         encrypt: Boolean,
         timeout: Long,
         urlBuilder: URLBuilder.(URLBuilder) -> Unit
     ): HttpResponse {
         return client.post {
             header("appInstanceId", appInfo.appInstanceId)
+            targetAppInstanceId?.let {
+                header("targetAppInstanceId", it)
+            }
             if (encrypt) {
                 header("signal", "1")
             }

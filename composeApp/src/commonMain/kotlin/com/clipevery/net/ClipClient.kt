@@ -10,6 +10,7 @@ interface ClipClient {
     suspend fun <T: Any> post(
         message: T,
         messageType: TypeInfo,
+        targetAppInstanceId: String? = null,
         encrypt: Boolean = false,
         timeout: Long = 1000L,
         urlBuilder: URLBuilder.(URLBuilder) -> Unit
