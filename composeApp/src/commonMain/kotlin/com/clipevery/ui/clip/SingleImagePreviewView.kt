@@ -52,7 +52,7 @@ fun SingleImagePreviewView(imagePath: Path) {
     }
 
     Row(modifier = Modifier.clickable {
-        if (Desktop.isDesktopSupported()) {
+        if (Desktop.isDesktopSupported() && existFile) {
             val desktop = Desktop.getDesktop()
             desktop.open(imagePath.toFile())
         }
