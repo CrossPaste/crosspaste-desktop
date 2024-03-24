@@ -60,6 +60,12 @@ class DesktopSyncManager(private val telnetUtils: TelnetUtils,
             syncRuntimeInfosFlow.collect { changes: ResultsChange<SyncRuntimeInfo> ->
                 when (changes) {
                     is UpdatedResults -> {
+                        for (deletion in changes.deletions) {
+                            val deletionSyncRuntimeInfo = realTimeSyncRuntimeInfos[deletion]
+                            internalSyncHandlers.remove(deletionSyncRuntimeInfo.appInstanceId)!!
+                                .clearContext()
+                        }
+
                         for (insertion in changes.insertions) {
                             val insertionSyncRuntimeInfo = changes.list[insertion]
                             internalSyncHandlers[insertionSyncRuntimeInfo.appInstanceId] =
@@ -84,11 +90,6 @@ class DesktopSyncManager(private val telnetUtils: TelnetUtils,
                             }
                         }
 
-                        for (deletion in changes.deletions) {
-                            val deletionSyncRuntimeInfo = realTimeSyncRuntimeInfos[deletion]
-                            internalSyncHandlers.remove(deletionSyncRuntimeInfo.appInstanceId)!!
-                                .clearContext()
-                        }
 
                         withContext(Dispatchers.Main) {
                             realTimeSyncRuntimeInfos.clear()
