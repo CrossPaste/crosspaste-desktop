@@ -7,10 +7,12 @@ import com.clipevery.net.clientapi.SyncClientApi
 import com.clipevery.utils.TelnetUtils
 import com.clipevery.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.delay
 import org.signal.libsignal.protocol.SessionBuilder
 import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.SignalProtocolAddress
 import org.signal.libsignal.protocol.state.SignalProtocolStore
+import java.util.concurrent.atomic.AtomicReference
 
 class DesktopSyncHandler(override var syncRuntimeInfo: SyncRuntimeInfo,
                          private val telnetUtils: TelnetUtils,
@@ -24,6 +26,8 @@ class DesktopSyncHandler(override var syncRuntimeInfo: SyncRuntimeInfo,
 
     override val sessionCipher: SessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
 
+    private val resolveState = AtomicReference<Boolean?>(null)
+
     override suspend fun getConnectHostAddress(): String? {
         syncRuntimeInfo.connectHostAddress?.let {
             return it
@@ -34,9 +38,38 @@ class DesktopSyncHandler(override var syncRuntimeInfo: SyncRuntimeInfo,
     }
 
     override suspend fun resolveSync(force: Boolean) {
+        var delaySum = 0
+        while (true) {
+            if (delaySum >= 1000) {
+                break
+            } else {
+                when {
+                    force && resolveState.compareAndSet(null, true) -> try {
+                        doResolveSync(true)
+                        break
+                    } finally {
+                        resolveState.set(null)
+                    }
+
+                    !force && resolveState.compareAndSet(null, false) -> try {
+                        doResolveSync(false)
+                        break
+                    } finally {
+                        resolveState.set(null)
+                    }
+
+                    force -> while (resolveState.get() == false) {
+                        delay(100)
+                        delaySum += 100
+                    }
+                }
+            }
+        }
+    }
+
+    private suspend fun doResolveSync(force: Boolean) {
         if (force && syncRuntimeInfo.connectHostAddress != null) {
             update {
-                this.connectHostAddress = null
                 this.connectState = SyncState.DISCONNECTED
             } ?: run {
                 return
@@ -91,7 +124,7 @@ class DesktopSyncHandler(override var syncRuntimeInfo: SyncRuntimeInfo,
         syncRuntimeInfo.connectHostAddress?.let { host ->
             if (isExistSession()) {
                 if (useSession(host, syncRuntimeInfo.port)) {
-                    return
+                    return@resolveConnecting
                 }
             }
             createSession(host, syncRuntimeInfo.port)
@@ -118,8 +151,8 @@ class DesktopSyncHandler(override var syncRuntimeInfo: SyncRuntimeInfo,
                 buildUrl(urlBuilder, host, port, "sync", "preKeyBundle")
             }?.let { preKeyBundle ->
                 val sessionBuilder = createSessionBuilder()
-                sessionBuilder.process(preKeyBundle)
                 try {
+                    sessionBuilder.process(preKeyBundle)
                     if (exchangePreKey(host, port)) {
                         return
                     }
@@ -154,8 +187,7 @@ class DesktopSyncHandler(override var syncRuntimeInfo: SyncRuntimeInfo,
     }
 
     private fun createSessionBuilder(): SessionBuilder {
-        return SessionBuilder(signalProtocolStore,
-            SignalProtocolAddress( syncRuntimeInfo.appInstanceId, 1))
+        return SessionBuilder(signalProtocolStore, signalProtocolAddress)
     }
 
     override fun clearContext() {

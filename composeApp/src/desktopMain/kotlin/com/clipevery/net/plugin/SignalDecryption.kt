@@ -1,7 +1,6 @@
 package com.clipevery.net.plugin
 
 import com.clipevery.Dependencies
-import com.clipevery.utils.EncryptUtils
 import io.ktor.client.*
 import io.ktor.client.plugins.*
 import io.ktor.client.request.*
@@ -77,7 +76,6 @@ object SignalClientEncryption : HttpClientPlugin<SignalConfig, SignalClientEncry
                                 val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
                                 val ciphertextMessage = sessionCipher.encrypt(it.bytes())
                                 val encryptedData = ciphertextMessage.serialize()
-                                println("encryptedData = ${encryptedData.size}  ${EncryptUtils.base64Encode(encryptedData).toByteArray().size}")
                                 context.body = ByteArrayContent(encryptedData)
                                 proceedWith(context.body)
                             } ?: run {

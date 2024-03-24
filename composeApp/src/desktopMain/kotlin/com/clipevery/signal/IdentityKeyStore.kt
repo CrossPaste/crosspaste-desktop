@@ -2,13 +2,13 @@ package com.clipevery.signal
 
 import com.clipevery.app.AppEnv
 import com.clipevery.app.AppFileType
-import com.clipevery.os.macos.MacosKeychainHelper
 import com.clipevery.app.AppInfo
 import com.clipevery.dao.signal.SignalDao
-import com.clipevery.platform.currentPlatform
-import com.clipevery.presist.DesktopOneFilePersist
+import com.clipevery.os.macos.MacosKeychainHelper
 import com.clipevery.os.windows.WindowDapiHelper
 import com.clipevery.path.DesktopPathProvider
+import com.clipevery.platform.currentPlatform
+import com.clipevery.presist.DesktopOneFilePersist
 import com.clipevery.utils.EncryptUtils.decryptData
 import com.clipevery.utils.EncryptUtils.encryptData
 import com.clipevery.utils.EncryptUtils.generateAESKey
@@ -47,9 +47,7 @@ class DesktopIdentityKeyStore(private val signalDao: SignalDao,
     ): Boolean {
         val identity: IdentityKey? = getIdentity(address)
         return identity?.let {
-            val eq = (it == identityKey)
-            print("isTrustedIdentity: $eq")
-            return eq
+            return (it == identityKey)
         } ?: false
     }
 
