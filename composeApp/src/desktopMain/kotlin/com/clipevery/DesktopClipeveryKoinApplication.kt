@@ -74,8 +74,10 @@ import com.clipevery.ui.DesktopThemeDetector
 import com.clipevery.ui.ThemeDetector
 import com.clipevery.ui.resource.ClipResourceLoader
 import com.clipevery.ui.resource.DesktopAbsoluteClipResourceLoader
+import com.clipevery.utils.DesktopDeviceUtils
 import com.clipevery.utils.DesktopFileUtils
 import com.clipevery.utils.DesktopQRCodeGenerator
+import com.clipevery.utils.DeviceUtils
 import com.clipevery.utils.FileUtils
 import com.clipevery.utils.IDGenerator
 import com.clipevery.utils.IDGeneratorFactory
@@ -106,10 +108,11 @@ object Dependencies {
             single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<ClipServer>() }) }
             single<PathProvider> { DesktopPathProvider }
             single<FilePersist> { DesktopFilePersist }
-            single<ConfigManager> { DefaultConfigManager(get<FilePersist>().getPersist("appConfig.json", AppFileType.USER), get()) }
+            single<ConfigManager> { DefaultConfigManager(get<FilePersist>().getPersist("appConfig.json", AppFileType.USER), get(), get()) }
             single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
             single<IDGenerator> { IDGeneratorFactory(get()).createIDGenerator() }
             single<FileUtils> { DesktopFileUtils }
+            single<DeviceUtils> { DesktopDeviceUtils }
 
             // realm component
             single<RealmManager> { RealmManagerImpl.createRealmManager(get()) }

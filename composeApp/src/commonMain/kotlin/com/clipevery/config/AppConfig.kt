@@ -4,12 +4,11 @@ import com.clipevery.app.AppEnv
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import java.util.Locale
-import java.util.UUID
 
 @Serializable
 data class AppConfig(
     @Transient val appEnv: AppEnv = AppEnv.PRODUCTION,
-    val appInstanceId: String = UUID.randomUUID().toString(),
+    val appInstanceId: String,
     val language: String = Locale.getDefault().language,
     val isFollowSystemTheme: Boolean = true,
     val isDarkTheme: Boolean = false,

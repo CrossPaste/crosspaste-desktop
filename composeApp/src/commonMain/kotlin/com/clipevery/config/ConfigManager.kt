@@ -2,20 +2,22 @@ package com.clipevery.config
 
 import com.clipevery.app.AppEnv
 import com.clipevery.presist.OneFilePersist
+import com.clipevery.utils.DeviceUtils
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 abstract class ConfigManager(private val configFilePersist: OneFilePersist,
+                             deviceUtils: DeviceUtils,
                              private val appEnv: AppEnv) {
 
     var config: AppConfig
 
     init {
         config = try {
-            loadConfig() ?: AppConfig(appEnv)
+            loadConfig() ?: AppConfig(appEnv, deviceUtils.createAppInstanceId())
         } catch (e: Exception) {
-            AppConfig(appEnv)
+            AppConfig(appEnv, deviceUtils.createAppInstanceId())
         }
     }
 
