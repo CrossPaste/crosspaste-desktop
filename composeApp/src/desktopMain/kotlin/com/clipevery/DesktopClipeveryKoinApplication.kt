@@ -72,6 +72,8 @@ import com.clipevery.task.SyncClipTaskExecutor
 import com.clipevery.task.TaskExecutor
 import com.clipevery.ui.DesktopThemeDetector
 import com.clipevery.ui.ThemeDetector
+import com.clipevery.ui.base.DesktopToastManager
+import com.clipevery.ui.base.ToastManager
 import com.clipevery.ui.resource.ClipResourceLoader
 import com.clipevery.ui.resource.DesktopAbsoluteClipResourceLoader
 import com.clipevery.utils.DesktopDeviceUtils
@@ -170,6 +172,7 @@ object Dependencies {
             single<GlobalListener> { GlobalListener(get(), get()) }
             single<ThemeDetector> { DesktopThemeDetector(get()) }
             single<ClipResourceLoader> { DesktopAbsoluteClipResourceLoader }
+            single<ToastManager> { DesktopToastManager() }
         }
         return GlobalContext.startKoin {
             modules(appModule)
