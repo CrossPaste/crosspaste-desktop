@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -25,6 +26,8 @@ import com.clipevery.ui.ClipeveryTheme
 import com.clipevery.ui.HomeView
 import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.PageViewType
+import com.clipevery.ui.base.ToastManager
+import com.clipevery.ui.base.ToastView
 import com.clipevery.ui.devices.DeviceDetailView
 import com.clipevery.ui.devices.TokenView
 import com.clipevery.ui.settings.SettingsView
@@ -44,6 +47,11 @@ fun ClipeveryApp(koinApplication: KoinApplication,
 
 @Composable
 fun ClipeveryWindow(hideWindow: () -> Unit) {
+    val current = LocalKoinApplication.current
+    val toastManager = current.koin.get<ToastManager>()
+
+    val toast by toastManager.toast
+
     ClipeveryTheme {
         Box(modifier = Modifier
             .background(Color.Transparent)
@@ -85,6 +93,11 @@ fun ClipeveryWindow(hideWindow: () -> Unit) {
                     .fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally) {
                     ClipeveryContent()
+                }
+                toast?.let {
+                    ToastView(toast = it) {
+                        toastManager.cancel()
+                    }
                 }
             }
         }
