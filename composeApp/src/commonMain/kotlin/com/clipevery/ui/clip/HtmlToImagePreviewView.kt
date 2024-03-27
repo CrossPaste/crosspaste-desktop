@@ -55,8 +55,9 @@ fun HtmlToImagePreviewView(clipData: ClipData) {
             val chromeService = current.koin.get<ChromeService>()
             LaunchedEffect(Unit) {
                 chromeService.html2Image(clipHtml.html)?.let { bytes ->
-                    filePersist.createOneFilePersist(it.getHtmlImagePath())
-                        .saveBytes(bytes)
+                    it.getHtmlImagePath()?.let { path ->
+                        filePersist.createOneFilePersist(path).saveBytes(bytes)
+                    }
                 }
             }
         }

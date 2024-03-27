@@ -27,21 +27,25 @@ class HtmlClipItem: RealmObject, ClipAppearItem, ClipHtml {
     override var id: ObjectId = BsonObjectId()
     var identifier: String = ""
     @Transient
-    var relativePath: String = ""
+    var relativePath: String? = null
     override var html: String = ""
 
 
-    override fun getHtmlImagePath(): Path {
-        val basePath = DesktopPathProvider.resolve(appFileType = AppFileType.HTML)
-        return DesktopPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
+    override fun getHtmlImagePath(): Path? {
+        return relativePath?.let { relativePath ->
+            val basePath = DesktopPathProvider.resolve(appFileType = AppFileType.HTML)
+            return DesktopPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
+        }
     }
 
     override fun getHtmlImage(): ImageBitmap? {
-        val file = getHtmlImagePath().toFile()
-        return if (file.exists()) {
-            loadImageBitmap(file.inputStream())
-        } else {
-            null
+        return getHtmlImagePath()?.let { path ->
+            val file = path.toFile()
+            return if (file.exists()) {
+                loadImageBitmap(file.inputStream())
+            } else {
+                null
+            }
         }
     }
 
@@ -68,7 +72,9 @@ class HtmlClipItem: RealmObject, ClipAppearItem, ClipHtml {
 
     override fun clear(realm: MutableRealm, clearResource: Boolean) {
         if (clearResource) {
-            DesktopOneFilePersist(getHtmlImagePath()).delete()
+            getHtmlImagePath()?.let { path ->
+                DesktopOneFilePersist(path).delete()
+            }
         }
         realm.delete(this)
     }

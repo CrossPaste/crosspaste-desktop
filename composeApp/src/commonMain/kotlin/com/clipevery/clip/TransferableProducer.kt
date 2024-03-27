@@ -5,6 +5,6 @@ import java.awt.datatransfer.Transferable
 
 interface TransferableProducer {
 
-    fun produce(clipData: ClipData): Transferable
+    fun produce(clipData: ClipData, localOnly:Boolean = false, filterFile: Boolean = false): Transferable?
 
 }

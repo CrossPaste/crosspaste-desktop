@@ -7,7 +7,7 @@ interface ClipHtml {
 
     var html: String
 
-    fun getHtmlImagePath(): Path
+    fun getHtmlImagePath(): Path?
 
     fun getHtmlImage(): ImageBitmap?
 }
