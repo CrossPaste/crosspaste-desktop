@@ -142,7 +142,7 @@ object Dependencies {
             single<SignalProtocolStore> { DesktopSignalProtocolStore(get(), get(), get(), get()) }
 
             // clip component
-            single<ClipboardService> { getDesktopClipboardService(get(), get()) }
+            single<ClipboardService> { getDesktopClipboardService(get(), get(), get(), get()) }
             single<TransferableConsumer> { DesktopTransferableConsumer(
                 get(), get(), get(), listOf(
                     FilesItemService(appInfo = get()),

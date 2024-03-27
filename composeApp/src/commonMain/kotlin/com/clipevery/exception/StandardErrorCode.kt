@@ -18,6 +18,8 @@ enum class StandardErrorCode(code: Int, errorType: ErrorType): ErrorCodeSupplier
     SYNC_CLIP_ERROR(3000, ErrorType.EXTERNAL_ERROR),
     SYNC_CLIP_NOT_FOUND_RESOURCE(3001, ErrorType.EXTERNAL_ERROR),
     SYNC_CLIP_NOT_FOUND_DATA(3002, ErrorType.EXTERNAL_ERROR),
+
+    SYNC_NOT_ALLOW_RECEIVE(4000, ErrorType.USER_ERROR)
     ;
 
     private val errorCode: ErrorCode

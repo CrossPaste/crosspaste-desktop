@@ -3,9 +3,10 @@ package com.clipevery.os.windows
 import com.clipevery.clip.ClipboardService
 import com.clipevery.clip.TransferableConsumer
 import com.clipevery.clip.TransferableProducer
-import com.clipevery.dao.clip.ClipData
+import com.clipevery.dao.clip.ClipDao
 import com.clipevery.os.windows.api.User32
 import com.clipevery.platform.currentPlatform
+import com.clipevery.task.TaskExecutor
 import com.clipevery.utils.cpuDispatcher
 import com.clipevery.utils.ioDispatcher
 import com.sun.jna.Pointer
@@ -26,28 +27,24 @@ import java.awt.datatransfer.Transferable
 import kotlin.math.min
 
 
-class WindowsClipboardService(override val clipConsumer: TransferableConsumer,
+class WindowsClipboardService(override val clipDao: ClipDao,
+                              override val taskExecutor: TaskExecutor,
+                              override val clipConsumer: TransferableConsumer,
                               override val clipProducer: TransferableProducer) : ClipboardService, User32.WNDPROC {
 
     private val logger = KotlinLogging.logger {}
 
     @Volatile
-    private var owner = false
+    override var owner = false
 
     @Volatile
-    private var ownerTransferable: Transferable? = null
+    override var ownerTransferable: Transferable? = null
 
     override val systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
 
     private val serviceScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
     private val serviceConsumerScope = CoroutineScope(cpuDispatcher + SupervisorJob())
-
-    override fun setContent(clipData: ClipData) {
-        ownerTransferable = clipProducer.produce(clipData)
-        owner = true
-        systemClipboard.setContents(ownerTransferable, this)
-    }
 
     private var job: Job? = null
     private var viewer: HWND? = null

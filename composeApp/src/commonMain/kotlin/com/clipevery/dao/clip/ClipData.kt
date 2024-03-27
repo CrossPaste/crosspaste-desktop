@@ -1,5 +1,6 @@
 package com.clipevery.dao.clip
 
+import com.clipevery.clip.item.ClipFiles
 import com.clipevery.dao.clip.ClipContent.Companion.getClipItem
 import com.clipevery.serializer.ClipDataSerializer
 import com.clipevery.serializer.ClipLabelRealmSetSerializer
@@ -75,6 +76,10 @@ class ClipData: RealmObject {
         }
 
         return mutableList.toList()
+    }
+
+    fun existFileResource(): Boolean {
+        return getClipAppearItems().any { it is ClipFiles }
     }
 }
 

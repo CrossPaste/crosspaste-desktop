@@ -3,8 +3,9 @@ package com.clipevery.os.macos
 import com.clipevery.clip.ClipboardService
 import com.clipevery.clip.TransferableConsumer
 import com.clipevery.clip.TransferableProducer
-import com.clipevery.dao.clip.ClipData
+import com.clipevery.dao.clip.ClipDao
 import com.clipevery.os.macos.api.MacosApi
+import com.clipevery.task.TaskExecutor
 import com.clipevery.utils.cpuDispatcher
 import com.sun.jna.ptr.IntByReference
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -19,7 +20,9 @@ import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.Transferable
 
-class MacosClipboardService(override val clipConsumer: TransferableConsumer,
+class MacosClipboardService(override val clipDao: ClipDao,
+                            override val taskExecutor: TaskExecutor,
+                            override val clipConsumer: TransferableConsumer,
                             override val clipProducer: TransferableProducer): ClipboardService {
 
     private val logger = KotlinLogging.logger {}
@@ -27,20 +30,14 @@ class MacosClipboardService(override val clipConsumer: TransferableConsumer,
     private var changeCount = 0
 
     @Volatile
-    private var owner = false
+    override var owner = false
 
     @Volatile
-    private var ownerTransferable: Transferable? = null
+    override var ownerTransferable: Transferable? = null
 
     override val systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
 
     private val serviceScope = CoroutineScope(cpuDispatcher + SupervisorJob())
-
-    override fun setContent(clipData: ClipData) {
-        ownerTransferable = clipProducer.produce(clipData)
-        owner = true
-        systemClipboard.setContents(ownerTransferable, this)
-    }
 
     private var job: Job? = null
 

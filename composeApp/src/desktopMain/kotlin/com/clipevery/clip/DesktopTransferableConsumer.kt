@@ -37,6 +37,11 @@ open class DesktopTransferableConsumer(private val appInfo: AppInfo,
 
         val dataFlavorMap: Map<String, List<DataFlavor>> = createDataFlavorMap(transferable)
 
+        dataFlavorMap[LocalOnlyFlavor.humanPresentableName]?.let {
+            logger.info { "Ignoring local only flavor" }
+            return
+        }
+
         val clipCollector = ClipCollector(dataFlavorMap.size, appInfo, clipDao, clipPlugins)
 
         try {

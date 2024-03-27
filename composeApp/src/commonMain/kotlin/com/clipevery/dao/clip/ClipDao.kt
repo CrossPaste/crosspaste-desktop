@@ -25,7 +25,7 @@ interface ClipDao {
 
     suspend fun releaseLocalClipData(id: ObjectId, clipPlugins: List<ClipPlugin>)
 
-    suspend fun releaseRemoteClipData(id: ObjectId)
+    suspend fun releaseRemoteClipData(clipData: ClipData, tryWriteClipboard: (ClipData, Boolean) -> Unit): List<ObjectId>
 
     fun update(update: (MutableRealm) -> Unit)
 

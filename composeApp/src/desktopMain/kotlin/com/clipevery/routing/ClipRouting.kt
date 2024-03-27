@@ -1,74 +1,45 @@
 package com.clipevery.routing
 
 import com.clipevery.Dependencies
-import com.clipevery.dao.clip.ClipDao
+import com.clipevery.clip.ClipboardService
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.exception.StandardErrorCode
-import com.clipevery.presist.ClipDataFilePersistIterable
-import com.clipevery.presist.OneFilePersist
-import com.clipevery.utils.JsonUtils
+import com.clipevery.sync.SyncManager
 import com.clipevery.utils.failResponse
+import com.clipevery.utils.getAppInstanceId
 import com.clipevery.utils.successResponse
-import io.ktor.http.content.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
-import io.ktor.utils.io.*
-import org.mongodb.kbson.ObjectId
-import java.util.Collections.emptyIterator
+import kotlinx.coroutines.launch
 
 fun Routing.clipRouting() {
 
     val koinApplication = Dependencies.koinApplication
 
-    val clipDao = koinApplication.koin.get<ClipDao>()
+    val syncManager = koinApplication.koin.get<SyncManager>()
+
+    val clipboardService = koinApplication.koin.get<ClipboardService>()
 
     post("/sync/clip") {
-        val multipart = call.receiveMultipart()
-        var iterator: Iterator<OneFilePersist> = emptyIterator()
+        getAppInstanceId(call).let { appInstanceId ->
+            syncManager.getSyncHandlers()[appInstanceId]?.let { syncHandler ->
 
-        var id: ObjectId? = null
-
-        try {
-            multipart.forEachPart { part ->
-                when (part) {
-                    is PartData.FormItem -> {
-                        if (part.name == "json") {
-                            val clipData: ClipData = JsonUtils.JSON.decodeFromString(part.value)
-                            id = clipDao.createClipData(clipData)
-                            iterator = ClipDataFilePersistIterable(clipData).iterator()
-                        }
-                    }
-
-                    is PartData.BinaryChannelItem -> {
-                        if (iterator.hasNext()) {
-                            val oneFilePersist = iterator.next()
-                            val byteReadChannel: ByteReadChannel = part.provider()
-                            oneFilePersist.writeChannel(byteReadChannel)
-                        } else {
-                            failResponse(
-                                call, StandardErrorCode.SYNC_CLIP_NOT_FOUND_RESOURCE.toErrorCode(),
-                                "not found clip file resource ${part.name}"
-                            )
-                        }
-                    }
-
-                    else -> {
-                        // ignore
-                    }
+                if (!syncHandler.syncRuntimeInfo.allowReceive) {
+                    failResponse(call, StandardErrorCode.SYNC_NOT_ALLOW_RECEIVE.toErrorCode())
+                    return@post
                 }
-                part.dispose()
-            }
 
-            id?.let {
-                clipDao.releaseRemoteClipData(it)
+                val clipData = call.receive<ClipData>()
+
+                launch {
+                    clipboardService.tryWriteRemoteClipboard(clipData)
+                }
+
                 successResponse(call)
             } ?: run {
-                failResponse(call, StandardErrorCode.SYNC_CLIP_NOT_FOUND_DATA.toErrorCode(), "not found clip data")
+                failResponse(call, StandardErrorCode.NOT_FOUND_APP_INSTANCE_ID.toErrorCode())
             }
-        } catch (e: Exception) {
-            id?.let { clipDao.markDeleteClipData(it) }
-            failResponse(call, StandardErrorCode.SYNC_CLIP_ERROR.toErrorCode())
         }
     }
 }
