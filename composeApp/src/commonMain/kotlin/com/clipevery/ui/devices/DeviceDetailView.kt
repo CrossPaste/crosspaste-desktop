@@ -13,8 +13,6 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Switch
-import androidx.compose.material.SwitchDefaults
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -40,6 +38,7 @@ import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.WindowDecoration
+import com.clipevery.ui.base.CustomSwitch
 
 @Composable
 fun DeviceDetailView(currentPageViewContext: MutableState<PageViewContext>) {
@@ -85,18 +84,15 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
                     fontSize = 17.sp,
                     modifier = Modifier.weight(1f)
                 )
-                Switch(
+                CustomSwitch(
                     modifier = Modifier.align(Alignment.CenterVertically).padding(0.dp),
                     checked = syncRuntimeInfo.allowSend,
                     onCheckedChange = {
                         syncRuntimeInfoDao.update(syncRuntimeInfo) {
                             this.allowSend = it
-                        }
+                        }?.let { syncRuntimeInfo = it }
                     },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.Green,
-                        uncheckedThumbColor = Color.Gray
-                    )
+                    checkedThumbColor = Color.Green
                 )
             }
 
@@ -113,18 +109,15 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
                     fontSize = 17.sp,
                     modifier = Modifier.weight(1f)
                 )
-                Switch(
+                CustomSwitch(
                     modifier = Modifier.align(Alignment.CenterVertically).padding(0.dp),
                     checked = syncRuntimeInfo.allowReceive,
                     onCheckedChange = {
                         syncRuntimeInfoDao.update(syncRuntimeInfo) {
                             this.allowReceive = it
-                        }
+                        }?.let { syncRuntimeInfo = it }
                     },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.Green,
-                        uncheckedThumbColor = Color.Gray
-                    )
+                    checkedThumbColor = Color.Green
                 )
             }
         }

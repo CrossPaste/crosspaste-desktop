@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -52,6 +51,7 @@ import com.clipevery.config.ConfigManager
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.WindowDecoration
+import com.clipevery.ui.base.CustomSwitch
 import com.clipevery.ui.base.MenuItem
 import com.clipevery.ui.base.arrowDown
 import com.clipevery.ui.base.arrowLeft
@@ -193,7 +193,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
         Row(modifier = Modifier.fillMaxWidth().height(40.dp).padding(20.dp, 5.dp, 0.dp, 5.dp),
             verticalAlignment = Alignment.CenterVertically) {
             var isEncrypted by remember { mutableStateOf(configManager.config.isEncryptSync) }
-            Switch(
+            CustomSwitch(
                 checked = isEncrypted,
                 onCheckedChange = { it ->
                     isEncrypted = it
@@ -212,7 +212,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
             verticalAlignment = Alignment.CenterVertically) {
             var isChecked by remember { mutableStateOf(false) }
             // TODO: Boot_start_up
-            Switch(
+            CustomSwitch(
                 checked = isChecked,
                 onCheckedChange = { isChecked = it }
             )
@@ -228,7 +228,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
             verticalAlignment = Alignment.CenterVertically) {
             var isChecked by remember { mutableStateOf(false) }
             // TODO: AutomaticUpdate
-            Switch(
+            CustomSwitch(
                 checked = isChecked,
                 onCheckedChange = { isChecked = it }
             )
