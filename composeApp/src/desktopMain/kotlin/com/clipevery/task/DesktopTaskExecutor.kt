@@ -14,10 +14,12 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.launch
 import org.mongodb.kbson.ObjectId
 
-class DesktopTaskExecutor(private val singleTypeTaskExecutorMap: Map<Int, SingleTypeTaskExecutor>,
+class DesktopTaskExecutor(singleTypeTaskExecutors: List<SingleTypeTaskExecutor>,
                           private val clipTaskDao: ClipTaskDao): TaskExecutor {
 
     private val logger = KotlinLogging.logger {}
+
+    private val singleTypeTaskExecutorMap = singleTypeTaskExecutors.associateBy { it.taskType }
 
     private val taskShardedFlow = MutableSharedFlow<ObjectId>()
 

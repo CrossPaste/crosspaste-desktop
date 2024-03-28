@@ -9,6 +9,7 @@ import com.google.common.hash.Hashing
 import com.google.common.io.Files
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.File
+import java.io.RandomAccessFile
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.text.DecimalFormat
@@ -175,4 +176,16 @@ object DesktopFileUtils: FileUtils {
             return null
         }
     }
+
+    override fun createEmptyClipFile(path: Path, length: Long): Boolean {
+        try {
+            RandomAccessFile(path.toFile(), "rw").use { file ->
+                file.setLength(length)
+            }
+            return true
+        } catch (e: Exception) {
+            return false
+        }
+    }
+
 }

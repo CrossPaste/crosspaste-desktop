@@ -7,12 +7,6 @@ interface SendClipClientApi {
 
     suspend fun sendClip(clipData: ClipData,
                          targetAppInstanceId: String,
-                         toUrl: URLBuilder.(URLBuilder) -> Unit): SyncClipResult
+                         toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult
 
 }
-
-interface SyncClipResult
-
-class SuccessSyncClipResult: SyncClipResult
-
-data class FailSyncClipResult(val message: String): SyncClipResult

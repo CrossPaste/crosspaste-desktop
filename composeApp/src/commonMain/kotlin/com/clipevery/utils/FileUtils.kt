@@ -33,4 +33,6 @@ interface FileUtils {
     fun createTempFile(srcBytes: ByteArray, name: String): Path?
 
     fun createSymbolicLink(src: Path, name: String): Path?
+
+    fun createEmptyClipFile(path: Path, length: Long): Boolean
 }

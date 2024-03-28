@@ -13,7 +13,7 @@ class DesktopSendClipClientApi(private val clipClient: ClipClient,
         clipData: ClipData,
         targetAppInstanceId: String,
         toUrl: URLBuilder.(URLBuilder) -> Unit
-    ): SyncClipResult {
+    ): ClientApiResult {
         val response = clipClient.post(message = clipData,
             messageType = typeInfo<ClipData>(),
             targetAppInstanceId = targetAppInstanceId,
@@ -22,11 +22,11 @@ class DesktopSendClipClientApi(private val clipClient: ClipClient,
 
         // 422 is the status code for user not allow to receive clip
         return if (response.status.value == 422) {
-            SuccessSyncClipResult()
+            SuccessResult()
         } else if (response.status.value != 200) {
-            FailSyncClipResult(message = response.call.body())
+            FailureResult(message = response.call.body())
         } else {
-            SuccessSyncClipResult()
+            SuccessResult()
         }
     }
 }

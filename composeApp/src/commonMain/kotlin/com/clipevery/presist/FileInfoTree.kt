@@ -5,7 +5,9 @@ import com.clipevery.clip.item.ClipFileImpl
 import com.clipevery.utils.EncryptUtils
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import java.nio.file.Path
+import java.util.TreeMap
 
 interface FileInfoTree {
 
@@ -23,6 +25,13 @@ interface FileInfoTree {
 class DirFileInfoTree(private val tree: Map<String, FileInfoTree>,
                       override val size: Long,
                       override val md5: String) : FileInfoTree {
+    @Transient
+    private val sortTree: TreeMap<String, FileInfoTree> = TreeMap(tree)
+
+    fun getTree(): Map<String, FileInfoTree> {
+        return sortTree
+    }
+
     override fun isFile(): Boolean {
         return false
     }
@@ -50,7 +59,7 @@ class SingleFileInfoTree(override val size: Long,
 
 class FileInfoTreeBuilder {
 
-    private val tree = mutableMapOf<String, FileInfoTree>()
+    private val tree = TreeMap<String, FileInfoTree>()
 
     private var size = 0L
 
@@ -68,7 +77,7 @@ class FileInfoTreeBuilder {
         } else {
             EncryptUtils.md5ByArray(md5List.toTypedArray())
         }
-        return DirFileInfoTree(tree.toMap(), size, md5)
+        return DirFileInfoTree(tree, size, md5)
     }
 
 }

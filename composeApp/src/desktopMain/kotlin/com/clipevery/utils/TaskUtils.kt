@@ -4,6 +4,7 @@ import com.clipevery.dao.task.ClipTask
 import com.clipevery.dao.task.ClipTaskExtraInfo
 import com.clipevery.dao.task.ExecutionHistory
 import com.clipevery.dao.task.TaskStatus
+import com.clipevery.task.FailureClipTaskResult
 import com.clipevery.task.extra.BaseExtraInfo
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -51,5 +52,14 @@ object TaskUtils {
             mutableJsonObject["executionHistories"] = JsonArray(listOf(jsonElement))
         }
         return JsonUtils.JSON.encodeToString(JsonObject(mutableJsonObject))
+    }
+
+    fun createFailureClipTaskResult(retryHandler: () -> Boolean,
+                                    startTime: Long,
+                                    failMessage: String,
+                                    extraInfo: ClipTaskExtraInfo): FailureClipTaskResult {
+        val needRetry = retryHandler()
+        extraInfo.executionHistories.add(ExecutionHistory(startTime, System.currentTimeMillis(), TaskStatus.FAILURE, failMessage))
+        return FailureClipTaskResult(JsonUtils.JSON.encodeToString(extraInfo), needRetry)
     }
 }

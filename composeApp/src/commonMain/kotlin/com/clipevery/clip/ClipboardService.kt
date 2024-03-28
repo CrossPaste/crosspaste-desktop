@@ -33,7 +33,9 @@ interface ClipboardService : ClipboardMonitor, ClipboardOwner {
         val taskIds = clipDao.releaseRemoteClipData(clipData) { storeClipData, filterFile ->
             tryWriteClipboard(storeClipData, localOnly = true, filterFile)
         }
-        taskExecutor.submitTasks(taskIds)
+        if (taskIds.isNotEmpty()) {
+            taskExecutor.submitTasks(taskIds)
+        }
     }
 
 }
