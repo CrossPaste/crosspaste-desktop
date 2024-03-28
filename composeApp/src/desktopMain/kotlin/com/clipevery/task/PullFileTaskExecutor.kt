@@ -142,7 +142,6 @@ class PullFileTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
 
         channel.close()
 
-        // 等待所有结果完成并收集，过滤掉因异常而为null的结果
         val map = results.associate { it.await() }
 
         val successes = map.filter { it.value is SuccessResult }.map { it.key }

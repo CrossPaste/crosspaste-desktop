@@ -200,7 +200,6 @@ object DesktopFileUtils: FileUtils {
                 val buffer = ByteArray(8192)
                 var remaining = size
                 while (remaining > 0) {
-                    // 保证不超过当前文件块剩余所需字节数的读取量
                     val toRead = minOf(buffer.size, remaining.toInt())
                     val readSize = byteReadChannel.readAvailable(buffer, 0, toRead)
                     if (readSize == -1) {
