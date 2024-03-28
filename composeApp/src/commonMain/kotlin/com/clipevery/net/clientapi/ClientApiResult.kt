@@ -3,7 +3,7 @@ package com.clipevery.net.clientapi
 interface ClientApiResult
 
 @Suppress("UNCHECKED_CAST")
-class SuccessResult(val result: Any? = null): ClientApiResult {
+class SuccessResult(private val result: Any? = null): ClientApiResult {
     fun <T> getResult(): T {
         return result as T
     }
