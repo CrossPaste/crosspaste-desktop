@@ -36,7 +36,6 @@ import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.dao.sync.SyncRuntimeInfoRealm
 import com.clipevery.dao.task.ClipTaskDao
 import com.clipevery.dao.task.ClipTaskRealm
-import com.clipevery.dao.task.TaskType
 import com.clipevery.endpoint.DesktopEndpointInfoFactory
 import com.clipevery.endpoint.EndpointInfoFactory
 import com.clipevery.i18n.GlobalCopywriter
@@ -49,8 +48,10 @@ import com.clipevery.net.DesktopClipBonjourService
 import com.clipevery.net.DesktopClipClient
 import com.clipevery.net.DesktopClipServer
 import com.clipevery.net.SyncRefresher
+import com.clipevery.net.clientapi.DesktopPullFileClientApi
 import com.clipevery.net.clientapi.DesktopSendClipClientApi
 import com.clipevery.net.clientapi.DesktopSyncClientApi
+import com.clipevery.net.clientapi.PullFileClientApi
 import com.clipevery.net.clientapi.SendClipClientApi
 import com.clipevery.net.clientapi.SyncClientApi
 import com.clipevery.path.DesktopPathProvider
@@ -68,6 +69,7 @@ import com.clipevery.sync.DesktopSyncManager
 import com.clipevery.sync.SyncManager
 import com.clipevery.task.DeleteClipTaskExecutor
 import com.clipevery.task.DesktopTaskExecutor
+import com.clipevery.task.PullFileTaskExecutor
 import com.clipevery.task.SyncClipTaskExecutor
 import com.clipevery.task.TaskExecutor
 import com.clipevery.ui.DesktopThemeDetector
@@ -130,6 +132,7 @@ object Dependencies {
             single<TelnetUtils> { TelnetUtils(get<ClipClient>()) }
             single<SyncClientApi> { DesktopSyncClientApi(get()) }
             single<SendClipClientApi> { DesktopSendClipClientApi(get(), get()) }
+            single<PullFileClientApi> { DesktopPullFileClientApi(get(), get()) }
             single { DesktopSyncManager(get(), get(), get(), get()) }
             single<SyncRefresher> { get<DesktopSyncManager>() }
             single<SyncManager> { get<DesktopSyncManager>() }
@@ -161,9 +164,10 @@ object Dependencies {
             single<TransferableProducer> { DesktopTransferableProducer() }
             single<ChromeService> { DesktopChromeService }
             single<ClipSearchService> { DesktopClipSearchService(get()) }
-            single<TaskExecutor> { DesktopTaskExecutor(mapOf(
-                Pair(TaskType.SYNC_CLIP_TASK, SyncClipTaskExecutor(lazy { get<ClipDao>() }, get(), get())),
-                Pair(TaskType.DELETE_CLIP_TASK, DeleteClipTaskExecutor(lazy { get<ClipDao>() }))
+            single<TaskExecutor> { DesktopTaskExecutor(listOf(
+                SyncClipTaskExecutor(lazy { get<ClipDao>() }, get(), get()),
+                DeleteClipTaskExecutor(lazy { get<ClipDao>() }),
+                PullFileTaskExecutor(lazy { get<ClipDao>() }, get(), get(), get())
             ), get()) }
 
             // ui component

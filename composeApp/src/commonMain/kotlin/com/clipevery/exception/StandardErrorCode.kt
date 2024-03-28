@@ -5,6 +5,8 @@ enum class StandardErrorCode(code: Int, errorType: ErrorType): ErrorCodeSupplier
     BOOTSTRAP_ERROR(1, ErrorType.INTERNAL_ERROR),
     INVALID_PARAMETER(2, ErrorType.USER_ERROR),
 
+    CANT_CREATE_DIR(100, ErrorType.INTERNAL_ERROR),
+    CANT_CREATE_FILE(101, ErrorType.INTERNAL_ERROR),
 
     NOT_FOUND_APP_INSTANCE_ID(1000, ErrorType.EXTERNAL_ERROR),
     TOKEN_INVALID(1001, ErrorType.EXTERNAL_ERROR),

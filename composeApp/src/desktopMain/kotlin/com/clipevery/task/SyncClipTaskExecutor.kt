@@ -2,15 +2,15 @@ package com.clipevery.task
 
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.task.ClipTask
-import com.clipevery.dao.task.ExecutionHistory
-import com.clipevery.dao.task.TaskStatus
-import com.clipevery.net.clientapi.FailSyncClipResult
+import com.clipevery.dao.task.TaskType
+import com.clipevery.net.clientapi.ClientApiResult
+import com.clipevery.net.clientapi.FailureResult
 import com.clipevery.net.clientapi.SendClipClientApi
-import com.clipevery.net.clientapi.SyncClipResult
 import com.clipevery.sync.SyncManager
 import com.clipevery.task.extra.SyncExtraInfo
 import com.clipevery.utils.JsonUtils
 import com.clipevery.utils.TaskUtils
+import com.clipevery.utils.TaskUtils.createFailureClipTaskResult
 import com.clipevery.utils.buildUrl
 import com.clipevery.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -30,10 +30,12 @@ class SyncClipTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
 
     private val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
+    override val taskType: Int = TaskType.SYNC_CLIP_TASK
+
     override suspend fun doExecuteTask(clipTask: ClipTask): ClipTaskResult {
         val syncExtraInfo: SyncExtraInfo = TaskUtils.getExtraInfo(clipTask, SyncExtraInfo::class)
         val mapResult = clipDao.getClipData(clipTask.clipId)?.let { clipData ->
-            val deferredResults: MutableList<Deferred<Pair<String, SyncClipResult>>> = mutableListOf()
+            val deferredResults: MutableList<Deferred<Pair<String, ClientApiResult>>> = mutableListOf()
             for (entryHandler in syncManager.getSyncHandlers()) {
                 val deferred = ioScope.async {
                     try {
@@ -46,12 +48,12 @@ class SyncClipTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
                             }
                             return@async Pair(entryHandler.key, syncClipResult)
                         } ?: run {
-                            return@async Pair(entryHandler.key, FailSyncClipResult("Failed to get connect host address by ${entryHandler.key}"))
+                            return@async Pair(entryHandler.key, FailureResult("Failed to get connect host address by ${entryHandler.key}"))
                         }
                     } catch (e: Exception) {
                         val failMessage = "Failed to sync clip to ${entryHandler.key}"
                         logger.error(e) { failMessage }
-                        return@async Pair(entryHandler.key, FailSyncClipResult(message = failMessage))
+                        return@async Pair(entryHandler.key, FailureResult(message = failMessage))
                     }
                 }
                 deferredResults.add(deferred)
@@ -62,7 +64,7 @@ class SyncClipTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
             mapOf()
         }
 
-        val fails = mapResult.filter { it.value is FailSyncClipResult }.map { it.key }
+        val fails = mapResult.filter { it.value is FailureResult }.map { it.key }
 
         syncExtraInfo.syncFails.clear()
 
@@ -70,10 +72,11 @@ class SyncClipTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
             return SuccessClipTaskResult(JsonUtils.JSON.encodeToString(syncExtraInfo))
         } else {
             syncExtraInfo.syncFails.addAll(fails)
-            val needRetry = syncExtraInfo.executionHistories.size < 3
-            syncExtraInfo.executionHistories.add(
-                ExecutionHistory(clipTask.modifyTime, System.currentTimeMillis(), TaskStatus.FAILURE, fails.joinToString(", ")))
-            return FailClipTaskResult(JsonUtils.JSON.encodeToString(syncExtraInfo), needRetry)
+            return createFailureClipTaskResult(
+                retryHandler = { syncExtraInfo.executionHistories.size < 3 },
+                startTime = clipTask.modifyTime,
+                failMessage = fails.joinToString(", "),
+                extraInfo = syncExtraInfo)
         }
     }
 }

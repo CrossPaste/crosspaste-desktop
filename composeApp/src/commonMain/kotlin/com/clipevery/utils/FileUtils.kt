@@ -2,6 +2,8 @@ package com.clipevery.utils
 
 import com.clipevery.app.AppFileType
 import com.clipevery.presist.FileInfoTree
+import com.clipevery.presist.FilesChunk
+import io.ktor.utils.io.*
 import java.nio.file.Path
 
 interface FileUtils {
@@ -33,4 +35,8 @@ interface FileUtils {
     fun createTempFile(srcBytes: ByteArray, name: String): Path?
 
     fun createSymbolicLink(src: Path, name: String): Path?
+
+    fun createEmptyClipFile(path: Path, length: Long): Boolean
+
+    suspend fun writeFilesChunk(filesChunk: FilesChunk, byteReadChannel: ByteReadChannel)
 }

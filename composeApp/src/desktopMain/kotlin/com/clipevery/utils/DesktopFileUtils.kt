@@ -4,11 +4,14 @@ import com.clipevery.app.AppFileType
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.presist.FileInfoTree
 import com.clipevery.presist.FileInfoTreeBuilder
+import com.clipevery.presist.FilesChunk
 import com.clipevery.presist.SingleFileInfoTree
 import com.google.common.hash.Hashing
 import com.google.common.io.Files
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.utils.io.*
 import java.io.File
+import java.io.RandomAccessFile
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.text.DecimalFormat
@@ -173,6 +176,39 @@ object DesktopFileUtils: FileUtils {
             return path
         } catch (e: Exception) {
             return null
+        }
+    }
+
+    override fun createEmptyClipFile(path: Path, length: Long): Boolean {
+        try {
+            RandomAccessFile(path.toFile(), "rw").use { file ->
+                file.setLength(length)
+            }
+            return true
+        } catch (e: Exception) {
+            return false
+        }
+    }
+
+    override suspend fun writeFilesChunk(filesChunk: FilesChunk, byteReadChannel: ByteReadChannel) {
+        filesChunk.fileChunks.forEach { fileChunk ->
+            val file = fileChunk.path.toFile()
+            val offset = fileChunk.offset
+            val size = fileChunk.size
+            RandomAccessFile(file, "rw").use { randomAccessFile ->
+                randomAccessFile.seek(offset)
+                val buffer = ByteArray(8192)
+                var remaining = size
+                while (remaining > 0) {
+                    val toRead = minOf(buffer.size, remaining.toInt())
+                    val readSize = byteReadChannel.readAvailable(buffer, 0, toRead)
+                    if (readSize == -1) {
+                        break
+                    }
+                    randomAccessFile.write(buffer, 0, readSize)
+                    remaining -= readSize
+                }
+            }
         }
     }
 }

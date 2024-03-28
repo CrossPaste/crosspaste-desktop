@@ -43,8 +43,16 @@ class ImagesClipItem: RealmObject, ClipAppearItem, ClipFiles {
 
     override var md5: String = ""
 
+    override fun getAppFileType(): AppFileType {
+        return AppFileType.IMAGE
+    }
+
+    override fun getRelativePaths(): List<String> {
+        return relativePathList
+    }
+
     override fun getFilePaths(): List<Path> {
-        val basePath = DesktopPathProvider.resolve(appFileType = AppFileType.IMAGE)
+        val basePath = DesktopPathProvider.resolve(appFileType = getAppFileType())
         return relativePathList.map { relativePath ->
             DesktopPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
         }
