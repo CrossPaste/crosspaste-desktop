@@ -2,28 +2,59 @@ package com.clipevery.presist
 
 import java.nio.file.Path
 
-class FilesIndexBuilder {
-    fun add(fileInfoTreeMap: Map<String, FileInfoTree>) {
-        TODO("Not yet implemented")
+class FilesIndexBuilder(private val chunkSize: Long) {
+
+    private val filesChunks = mutableListOf<FilesChunk>()
+
+    private var filesChunkBuilder = FilesChunkBuilder(chunkSize)
+
+    fun addFile(filePath: Path, size: Long) {
+        var remainingSize = size
+        do {
+            remainingSize = filesChunkBuilder.addFile(filePath, remainingSize, size)
+            if (remainingSize > 0) {
+                filesChunks.add(filesChunkBuilder.build())
+                filesChunkBuilder = FilesChunkBuilder(chunkSize)
+            }
+        } while(remainingSize > 0)
     }
 
     fun build(): FilesIndex {
-        TODO("Not yet implemented")
-    }
-
-    fun addFile(filePath: Path, size: Long) {
-        TODO("Not yet implemented")
+        if (filesChunkBuilder.isNotEmpty()) {
+            filesChunks.add(filesChunkBuilder.build())
+        }
+        return FilesIndex(filesChunks.toList())
     }
 
 }
 
-class FilesIndex(private val chunkCount: Int) {
+class FilesIndex(private val filesChunks: List<FilesChunk>) {
+
     fun getChunk(chunkIndex: Int): FilesChunk? {
-        TODO("Not yet implemented")
+        return filesChunks.getOrNull(chunkIndex)
     }
 
     fun getChunkCount(): Int {
-        return chunkCount
+        return filesChunks.size
+    }
+}
+
+class FilesChunkBuilder(private val chunkSize: Long) {
+
+    private val fileChunks = mutableListOf<FileChunk>()
+
+    fun addFile(filePath: Path, remainingSize: Long, size: Long): Long {
+        val chunkSize = if (remainingSize > chunkSize) chunkSize else remainingSize
+        fileChunks.add(FileChunk(size - remainingSize, chunkSize, filePath))
+        return remainingSize - chunkSize
+    }
+
+    fun isNotEmpty(): Boolean {
+        return fileChunks.isNotEmpty()
+    }
+
+    fun build(): FilesChunk {
+        return FilesChunk(fileChunks.toList())
     }
 }
 

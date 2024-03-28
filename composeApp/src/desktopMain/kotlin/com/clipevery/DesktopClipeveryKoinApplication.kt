@@ -69,6 +69,7 @@ import com.clipevery.sync.DesktopSyncManager
 import com.clipevery.sync.SyncManager
 import com.clipevery.task.DeleteClipTaskExecutor
 import com.clipevery.task.DesktopTaskExecutor
+import com.clipevery.task.PullFileTaskExecutor
 import com.clipevery.task.SyncClipTaskExecutor
 import com.clipevery.task.TaskExecutor
 import com.clipevery.ui.DesktopThemeDetector
@@ -165,7 +166,8 @@ object Dependencies {
             single<ClipSearchService> { DesktopClipSearchService(get()) }
             single<TaskExecutor> { DesktopTaskExecutor(listOf(
                 SyncClipTaskExecutor(lazy { get<ClipDao>() }, get(), get()),
-                DeleteClipTaskExecutor(lazy { get<ClipDao>() })
+                DeleteClipTaskExecutor(lazy { get<ClipDao>() }),
+                PullFileTaskExecutor(lazy { get<ClipDao>() }, get(), get(), get())
             ), get()) }
 
             // ui component
