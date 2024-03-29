@@ -16,7 +16,7 @@ class DeleteClipTaskExecutor(private val lazyClipDao: Lazy<ClipDao>): SingleType
 
     override suspend fun doExecuteTask(clipTask: ClipTask): ClipTaskResult {
         try {
-            clipDao.deleteClipData(clipTask.clipId)
+            clipDao.deleteClipData(clipTask.clipDataId)
             return SuccessClipTaskResult()
         } catch (e: Throwable) {
             logger.error(e) { "delete clip data error: $clipTask" }

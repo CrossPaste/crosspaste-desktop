@@ -3,9 +3,11 @@ package com.clipevery.utils
 import com.clipevery.exception.ErrorCode
 import com.clipevery.exception.ErrorType
 import com.clipevery.exception.StandardErrorCode
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.ApplicationCall
-import io.ktor.server.response.respond
+import io.ktor.http.*
+import io.ktor.http.ContentType.Application.OctetStream
+import io.ktor.server.application.*
+import io.ktor.server.response.*
+import io.ktor.utils.io.*
 import kotlinx.serialization.Serializable
 
 
@@ -15,6 +17,10 @@ suspend inline fun successResponse(call: ApplicationCall) {
 
 suspend inline fun <reified T : Any> successResponse(call: ApplicationCall, message: T) {
     call.respond(status = HttpStatusCode.OK, message = message)
+}
+
+suspend inline fun successResponse(call: ApplicationCall, noinline producer: suspend ByteWriteChannel.() -> Unit) {
+    call.respondBytesWriter(contentType = OctetStream, status = HttpStatusCode.OK, producer = producer)
 }
 
 suspend inline fun failResponse(call: ApplicationCall, message: FailResponse, status: HttpStatusCode = HttpStatusCode.InternalServerError) {

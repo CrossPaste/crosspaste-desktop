@@ -211,4 +211,26 @@ object DesktopFileUtils: FileUtils {
             }
         }
     }
+
+    override suspend fun readFilesChunk(filesChunk: FilesChunk, byteWriteChannel: ByteWriteChannel) {
+        filesChunk.fileChunks.forEach { fileChunk ->
+            val file = fileChunk.path.toFile()
+            val offset = fileChunk.offset
+            val size = fileChunk.size
+            RandomAccessFile(file, "r").use { randomAccessFile ->
+                randomAccessFile.seek(offset)
+                val buffer = ByteArray(8192)
+                var remaining = size
+                while (remaining > 0) {
+                    val toRead = minOf(buffer.size, remaining.toInt())
+                    val readSize = randomAccessFile.read(buffer, 0, toRead)
+                    if (readSize == -1) {
+                        break
+                    }
+                    byteWriteChannel.writeFully(buffer, 0, readSize)
+                    remaining -= readSize
+                }
+            }
+        }
+    }
 }

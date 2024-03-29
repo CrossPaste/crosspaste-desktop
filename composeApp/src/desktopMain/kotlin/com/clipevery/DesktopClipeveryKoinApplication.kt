@@ -6,6 +6,7 @@ import com.clipevery.app.AppFileType
 import com.clipevery.app.AppInfo
 import com.clipevery.app.AppUI
 import com.clipevery.app.DesktopAppInfoFactory
+import com.clipevery.clip.CacheManager
 import com.clipevery.clip.ChromeService
 import com.clipevery.clip.ClipSearchService
 import com.clipevery.clip.ClipboardService
@@ -117,6 +118,7 @@ object Dependencies {
             single<IDGenerator> { IDGeneratorFactory(get()).createIDGenerator() }
             single<FileUtils> { DesktopFileUtils }
             single<DeviceUtils> { DesktopDeviceUtils }
+            single<CacheManager> { CacheManager(get()) }
 
             // realm component
             single<RealmManager> { RealmManagerImpl.createRealmManager(get()) }

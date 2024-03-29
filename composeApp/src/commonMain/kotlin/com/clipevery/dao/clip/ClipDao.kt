@@ -14,14 +14,14 @@ interface ClipDao {
 
     suspend fun markDeleteClipData(id: ObjectId)
 
-    suspend fun deleteClipData(clipId: Int)
+    suspend fun deleteClipData(id: ObjectId)
 
     fun getClipData(appInstanceId: String? = null,
                     limit: Int): RealmResults<ClipData>
 
-    fun getClipData(objectId: ObjectId): ClipData?
+    fun getClipData(id: ObjectId): ClipData?
 
-    fun getClipData(clipId: Int): ClipData?
+    fun getClipData(appInstanceId: String, clipId: Int): ClipData?
 
     suspend fun releaseLocalClipData(id: ObjectId, clipPlugins: List<ClipPlugin>)
 

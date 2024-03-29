@@ -5,23 +5,19 @@ import com.clipevery.exception.StandardErrorCode
 import com.clipevery.net.exception.signalExceptionHandler
 import com.clipevery.net.plugin.SignalServerDecryption
 import com.clipevery.routing.clipRouting
+import com.clipevery.routing.pullRouting
 import com.clipevery.routing.syncRouting
 import com.clipevery.utils.JsonUtils
 import com.clipevery.utils.failResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.serialization.kotlinx.json.json
-import io.ktor.server.application.ApplicationCallPipeline
-import io.ktor.server.application.call
-import io.ktor.server.application.install
-import io.ktor.server.engine.embeddedServer
-import io.ktor.server.netty.Netty
-import io.ktor.server.netty.NettyApplicationEngine
-import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.server.plugins.statuspages.StatusPages
-import io.ktor.server.request.contentType
-import io.ktor.server.request.httpMethod
-import io.ktor.server.request.uri
-import io.ktor.server.routing.routing
+import io.ktor.serialization.kotlinx.json.*
+import io.ktor.server.application.*
+import io.ktor.server.engine.*
+import io.ktor.server.netty.*
+import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.request.*
+import io.ktor.server.routing.*
 import kotlinx.coroutines.runBlocking
 import java.net.BindException
 
@@ -54,6 +50,7 @@ class DesktopClipServer(private val configManager: ConfigManager): ClipServer {
             routing {
                 syncRouting()
                 clipRouting()
+                pullRouting()
             }
         }
     }

@@ -12,13 +12,14 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.serializer
+import org.mongodb.kbson.ObjectId
 import kotlin.reflect.KClass
 
 object TaskUtils {
 
-    fun createTask(clipId: Int, taskType: Int, extraInfo: ClipTaskExtraInfo = BaseExtraInfo()): ClipTask {
+    fun createTask(clipDataId: ObjectId, taskType: Int, extraInfo: ClipTaskExtraInfo = BaseExtraInfo()): ClipTask {
         return ClipTask().apply {
-            this.clipId = clipId
+            this.clipDataId = clipDataId
             this.taskType = taskType
             this.status = TaskStatus.PREPARING
             this.createTime = System.currentTimeMillis()

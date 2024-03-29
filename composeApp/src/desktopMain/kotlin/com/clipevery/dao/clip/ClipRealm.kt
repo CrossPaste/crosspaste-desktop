@@ -42,7 +42,7 @@ class ClipRealm(private val realm: Realm,
     private fun MutableRealm.doMarkDeleteClipData(markDeleteClipDatas: List<ClipData>): List<ObjectId> {
         return markDeleteClipDatas.map {
             it.clipState = ClipState.DELETED
-            copyToRealm(createTask(it.clipId, TaskType.DELETE_CLIP_TASK)).taskId
+            copyToRealm(createTask(it.id, TaskType.DELETE_CLIP_TASK)).taskId
         }
     }
 
@@ -56,9 +56,9 @@ class ClipRealm(private val realm: Realm,
         return tasks
     }
 
-    override suspend fun deleteClipData(clipId: Int) {
+    override suspend fun deleteClipData(id: ObjectId) {
         doDeleteClipData {
-            query(ClipData::class, "clipId == $0", clipId).first().find()?.let { listOf(it) } ?: emptyList()
+            query(ClipData::class, "id == $0", id).first().find()?.let { listOf(it) } ?: emptyList()
         }
     }
 
@@ -81,8 +81,9 @@ class ClipRealm(private val realm: Realm,
         return realm.query(ClipData::class, "id == $0 AND clipState != $1", objectId, ClipState.DELETED).first().find()
     }
 
-    override fun getClipData(clipId: Int): ClipData? {
-        return realm.query(ClipData::class, "clipId == $0 AND clipState != $1", clipId, ClipState.DELETED).first().find()
+    override fun getClipData(appInstanceId: String, clipId: Int): ClipData? {
+        return realm.query(ClipData::class, "clipId == $0 AND appInstanceId == $1 AND clipState != $2",
+            clipId, appInstanceId, ClipState.DELETED).first().find()
     }
 
     override suspend fun releaseLocalClipData(id: ObjectId, clipPlugins: List<ClipPlugin>) {
@@ -126,7 +127,7 @@ class ClipRealm(private val realm: Realm,
                     clipData.clipState = ClipState.LOADED
 
                     val tasks = mutableListOf<ObjectId>()
-                    tasks.add(copyToRealm(createTask(clipData.clipId, TaskType.SYNC_CLIP_TASK, SyncExtraInfo())).taskId)
+                    tasks.add(copyToRealm(createTask(clipData.id, TaskType.SYNC_CLIP_TASK, SyncExtraInfo())).taskId)
                     tasks.addAll(markDeleteClipDatasInWrite(clipData.id, clipData.md5))
                     return@write tasks
                 }
@@ -149,7 +150,7 @@ class ClipRealm(private val realm: Realm,
         } else {
             createClipData(clipData)
             tryWriteClipboard(clipData, false)
-            val pullFileTask = createTask(clipData.clipId, TaskType.PULL_FILE_TASK)
+            val pullFileTask = createTask(clipData.id, TaskType.PULL_FILE_TASK)
             tasks.add(pullFileTask.taskId)
         }
         return tasks

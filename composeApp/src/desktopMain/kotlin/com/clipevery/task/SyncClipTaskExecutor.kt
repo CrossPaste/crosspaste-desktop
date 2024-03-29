@@ -34,7 +34,7 @@ class SyncClipTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
 
     override suspend fun doExecuteTask(clipTask: ClipTask): ClipTaskResult {
         val syncExtraInfo: SyncExtraInfo = TaskUtils.getExtraInfo(clipTask, SyncExtraInfo::class)
-        val mapResult = clipDao.getClipData(clipTask.clipId)?.let { clipData ->
+        val mapResult = clipDao.getClipData(clipTask.clipDataId)?.let { clipData ->
             val deferredResults: MutableList<Deferred<Pair<String, ClientApiResult>>> = mutableListOf()
             for (entryHandler in syncManager.getSyncHandlers()) {
                 val deferred = ioScope.async {
