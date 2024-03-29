@@ -39,4 +39,6 @@ interface FileUtils {
     fun createEmptyClipFile(path: Path, length: Long): Boolean
 
     suspend fun writeFilesChunk(filesChunk: FilesChunk, byteReadChannel: ByteReadChannel)
+
+    suspend fun readFilesChunk(filesChunk: FilesChunk, byteWriteChannel: ByteWriteChannel)
 }

@@ -7,6 +7,7 @@ enum class StandardErrorCode(code: Int, errorType: ErrorType): ErrorCodeSupplier
 
     CANT_CREATE_DIR(100, ErrorType.INTERNAL_ERROR),
     CANT_CREATE_FILE(101, ErrorType.INTERNAL_ERROR),
+    OUT_RANGE_CHUNK_INDEX(102, ErrorType.INTERNAL_ERROR),
 
     NOT_FOUND_APP_INSTANCE_ID(1000, ErrorType.EXTERNAL_ERROR),
     TOKEN_INVALID(1001, ErrorType.EXTERNAL_ERROR),

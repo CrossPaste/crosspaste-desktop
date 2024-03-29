@@ -39,7 +39,7 @@ class PullFileTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
 
         private val logger = KotlinLogging.logger {}
 
-        private const val CHUNK_SIZE: Long = 4096 * 1024 // 4MB
+        const val CHUNK_SIZE: Long = 4096 * 1024 // 4MB
     }
 
     private val clipDao: ClipDao by lazy { lazyClipDao.value }
@@ -49,14 +49,14 @@ class PullFileTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
     override suspend fun doExecuteTask(clipTask: ClipTask): ClipTaskResult {
         val pullExtraInfo: PullExtraInfo = TaskUtils.getExtraInfo(clipTask, PullExtraInfo::class)
 
-        clipDao.getClipData(clipTask.clipId)?.let { clipData ->
+        clipDao.getClipData(clipTask.clipDataId)?.let { clipData ->
             val fileItems = clipData.getClipAppearItems().filter { it is ClipFiles }
             val appInstanceId = clipData.appInstanceId
             val clipId = clipData.clipId
             val filesIndexBuilder = FilesIndexBuilder(CHUNK_SIZE)
             for (clipAppearItem in fileItems) {
                 val clipFiles = clipAppearItem as ClipFiles
-                DesktopPathProvider.resolve(appInstanceId, clipId, clipFiles, filesIndexBuilder)
+                DesktopPathProvider.resolve(appInstanceId, clipId, clipFiles, true, filesIndexBuilder)
             }
             val filesIndex = filesIndexBuilder.build()
 

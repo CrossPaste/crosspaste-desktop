@@ -50,30 +50,44 @@ interface PathProvider {
     fun resolve(appInstanceId: String,
                 clipId: Int,
                 clipFiles: ClipFiles,
+                isPull: Boolean,
                 filesIndexBuilder: FilesIndexBuilder? = null) {
         val basePath = resolve(appFileType = clipFiles.getAppFileType())
         val clipIdPath = basePath.resolve(appInstanceId).resolve(clipId.toString())
-        autoCreateDir(clipIdPath)
+        if (isPull) {
+            autoCreateDir(clipIdPath)
+        }
 
         val fileInfoTreeMap = clipFiles.getFileInfoTreeMap()
         for (fileInfoTreeEntry in fileInfoTreeMap) {
-            resolveFileInfoTree(clipIdPath, fileInfoTreeEntry.key, fileInfoTreeEntry.value, filesIndexBuilder)
+            resolveFileInfoTree(clipIdPath, fileInfoTreeEntry.key, fileInfoTreeEntry.value, isPull, filesIndexBuilder)
         }
     }
 
-    private fun resolveFileInfoTree(basePath: Path, name: String, fileInfoTree: FileInfoTree, filesIndexBuilder: FilesIndexBuilder?) {
+    private fun resolveFileInfoTree(basePath: Path,
+                                    name: String,
+                                    fileInfoTree: FileInfoTree,
+                                    isPull: Boolean,
+                                    filesIndexBuilder: FilesIndexBuilder?) {
         if (fileInfoTree.isFile()) {
             val filePath = basePath.resolve(name)
-            if (!fileUtils.createEmptyClipFile(filePath, fileInfoTree.size)) {
-                throw ClipException(StandardErrorCode.CANT_CREATE_FILE.toErrorCode(), "Failed to create file: $filePath")
+            if (isPull) {
+                if (!fileUtils.createEmptyClipFile(filePath, fileInfoTree.size)) {
+                    throw ClipException(
+                        StandardErrorCode.CANT_CREATE_FILE.toErrorCode(),
+                        "Failed to create file: $filePath"
+                    )
+                }
             }
             filesIndexBuilder?.addFile(filePath, fileInfoTree.size)
         } else {
             val dirPath = basePath.resolve(name)
+            if (isPull) {
             autoCreateDir(dirPath)
+                }
             val dirFileInfoTree = fileInfoTree as DirFileInfoTree
             dirFileInfoTree.getTree().forEach { (subName, subFileInfoTree) ->
-                resolveFileInfoTree(dirPath, subName, subFileInfoTree, filesIndexBuilder)
+                resolveFileInfoTree(dirPath, subName, subFileInfoTree, isPull, filesIndexBuilder)
             }
         }
     }
