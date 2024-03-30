@@ -151,9 +151,21 @@ class ClipRealm(private val realm: Realm,
             createClipData(clipData)
             tryWriteClipboard(clipData, false)
             val pullFileTask = createTask(clipData.id, TaskType.PULL_FILE_TASK)
+            suspendUpdate {
+                it.copyToRealm(pullFileTask)
+            }
             tasks.add(pullFileTask.taskId)
         }
         return tasks
+    }
+
+    override suspend fun releaseClipData(id: ObjectId) {
+        realm.write {
+            query(ClipData::class, "id == $0", id).first().find()?.let { clipData ->
+                clipData.clipState = ClipState.LOADED
+                copyToRealm(clipData)
+            }
+        }
     }
 
     override fun update(update: (MutableRealm) -> Unit) {

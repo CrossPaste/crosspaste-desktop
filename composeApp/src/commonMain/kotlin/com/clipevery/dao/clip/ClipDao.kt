@@ -34,4 +34,6 @@ interface ClipDao {
     fun getClipDataLessThan(appInstanceId: String? = null,
                             limit: Int,
                             createTime: RealmInstant): RealmResults<ClipData>
+
+    suspend fun releaseClipData(id: ObjectId)
 }

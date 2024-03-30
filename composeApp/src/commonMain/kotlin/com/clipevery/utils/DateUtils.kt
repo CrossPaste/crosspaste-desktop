@@ -44,8 +44,8 @@ object DateUtils {
         return null
     }
 
-    fun getYYYYMMDD(): String {
-        return dateFormatter.format(LocalDateTime.now())
+    fun getYYYYMMDD(date: LocalDateTime = LocalDateTime.now()): String {
+        return dateFormatter.format(date)
     }
 
     fun getDateText(date: LocalDateTime, pattern: String, locale: Locale): String {
