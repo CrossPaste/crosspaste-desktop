@@ -28,13 +28,13 @@ object FilesToImagesPlugin: ClipPlugin {
                             throw IllegalStateException("Failed to move file from $srcPath to $destPath")
                         }
                     }
-                    val identifierList = clipAppearItem.getIdentifiers().toRealmList()
+                    val identifierList = clipAppearItem.getIdentifierList().toRealmList()
                     val relativePathList = clipAppearItem.relativePathList.toRealmList()
                     val fileInfoTree = clipAppearItem.fileInfoTree
                     val md5 = clipAppearItem.md5
                     clipAppearItem.clear(realm, clearResource = false)
                     ImagesClipItem().apply {
-                        this.identifierList = identifierList
+                        this.identifiers = identifierList
                         this.relativePathList = relativePathList
                         this.fileInfoTree = fileInfoTree
                         this.md5 = md5

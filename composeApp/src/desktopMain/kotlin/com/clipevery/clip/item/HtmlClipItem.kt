@@ -51,7 +51,7 @@ class HtmlClipItem: RealmObject, ClipAppearItem, ClipHtml {
 
     override var md5: String = ""
 
-    override fun getIdentifiers(): List<String> {
+    override fun getIdentifierList(): List<String> {
         return listOf(identifier)
     }
 
@@ -59,7 +59,7 @@ class HtmlClipItem: RealmObject, ClipAppearItem, ClipHtml {
         return ClipType.HTML
     }
 
-    override fun getSearchContent(): String? {
+    override fun getSearchContent(): String {
         return html
     }
 

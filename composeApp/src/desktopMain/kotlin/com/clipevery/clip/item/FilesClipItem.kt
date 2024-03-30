@@ -68,7 +68,7 @@ class FilesClipItem: RealmObject, ClipAppearItem, ClipFiles {
         }
     }
 
-    override fun getIdentifiers(): List<String> {
+    override fun getIdentifierList(): List<String> {
         return identifierList
     }
 
