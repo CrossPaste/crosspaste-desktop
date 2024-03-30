@@ -8,7 +8,7 @@ interface ClipAppearItem {
 
     var id: ObjectId
 
-    fun getIdentifiers(): List<String>
+    fun getIdentifierList(): List<String>
 
     fun getClipType(): Int
 

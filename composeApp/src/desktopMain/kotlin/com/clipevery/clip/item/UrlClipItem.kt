@@ -24,7 +24,7 @@ class UrlClipItem: RealmObject, ClipAppearItem, ClipUrl {
     override var url: String = ""
     override var md5: String = ""
 
-    override fun getIdentifiers(): List<String> {
+    override fun getIdentifierList(): List<String> {
         return listOf(identifier)
     }
 

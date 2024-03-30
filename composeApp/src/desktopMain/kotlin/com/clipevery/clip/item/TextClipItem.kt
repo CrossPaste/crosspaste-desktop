@@ -23,7 +23,7 @@ class TextClipItem: RealmObject, ClipAppearItem, ClipText {
     override var text: String = ""
     override var md5: String = ""
 
-    override fun getIdentifiers(): List<String> {
+    override fun getIdentifierList(): List<String> {
         return listOf(identifier)
     }
 

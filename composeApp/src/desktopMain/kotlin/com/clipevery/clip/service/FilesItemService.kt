@@ -39,7 +39,7 @@ class FilesItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
         clipCollector: ClipCollector
     ) {
         FilesClipItem().apply {
-            this.identifierList = realmListOf(identifier)
+            this.identifiers = realmListOf(identifier)
         }.let {
             clipCollector.preCollectItem(itemIndex, this::class, it)
         }

@@ -45,7 +45,7 @@ class ImageItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
         clipCollector: ClipCollector
     ) {
         ImagesClipItem().apply {
-            this.identifierList = realmListOf(identifier)
+            this.identifiers = realmListOf(identifier)
         }.let {
             clipCollector.preCollectItem(itemIndex, this::class, it)
         }

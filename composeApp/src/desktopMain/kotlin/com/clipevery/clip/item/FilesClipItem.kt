@@ -32,7 +32,7 @@ class FilesClipItem: RealmObject, ClipAppearItem, ClipFiles {
     override var id: ObjectId = BsonObjectId()
 
     @Serializable(with = StringRealmListSerializer::class)
-    var identifierList: RealmList<String> = realmListOf()
+    var identifiers: RealmList<String> = realmListOf()
 
     @Serializable(with = StringRealmListSerializer::class)
     var relativePathList: RealmList<String> = realmListOf()
@@ -68,8 +68,8 @@ class FilesClipItem: RealmObject, ClipAppearItem, ClipFiles {
         }
     }
 
-    override fun getIdentifiers(): List<String> {
-        return identifierList
+    override fun getIdentifierList(): List<String> {
+        return identifiers
     }
 
     override fun getClipType(): Int {
