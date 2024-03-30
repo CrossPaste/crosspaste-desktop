@@ -2,6 +2,7 @@ package com.clipevery.task
 
 import com.clipevery.clip.item.ClipFiles
 import com.clipevery.dao.clip.ClipDao
+import com.clipevery.dao.clip.ClipData
 import com.clipevery.dao.task.ClipTask
 import com.clipevery.dao.task.TaskType
 import com.clipevery.dto.pull.PullFileRequest
@@ -14,12 +15,12 @@ import com.clipevery.presist.FilesIndex
 import com.clipevery.presist.FilesIndexBuilder
 import com.clipevery.sync.SyncManager
 import com.clipevery.task.extra.PullExtraInfo
+import com.clipevery.utils.DateUtils
 import com.clipevery.utils.FileUtils
 import com.clipevery.utils.TaskUtils
 import com.clipevery.utils.TaskUtils.createFailureClipTaskResult
 import com.clipevery.utils.buildUrl
 import com.clipevery.utils.cpuDispatcher
-import com.clipevery.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import io.ktor.utils.io.*
@@ -27,8 +28,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 
 class PullFileTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
                            private val pullFileClientApi: PullFileClientApi,
@@ -52,11 +57,14 @@ class PullFileTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
         clipDao.getClipData(clipTask.clipDataId)?.let { clipData ->
             val fileItems = clipData.getClipAppearItems().filter { it is ClipFiles }
             val appInstanceId = clipData.appInstanceId
+            val dateString = DateUtils.getYYYYMMDD(
+                DateUtils.convertRealmInstantToLocalDateTime(clipData.createTime)
+            )
             val clipId = clipData.clipId
             val filesIndexBuilder = FilesIndexBuilder(CHUNK_SIZE)
             for (clipAppearItem in fileItems) {
                 val clipFiles = clipAppearItem as ClipFiles
-                DesktopPathProvider.resolve(appInstanceId, clipId, clipFiles, true, filesIndexBuilder)
+                DesktopPathProvider.resolve(appInstanceId, dateString, clipId, clipFiles, true, filesIndexBuilder)
             }
             val filesIndex = filesIndexBuilder.build()
 
@@ -74,7 +82,7 @@ class PullFileTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
                 val port = it.syncRuntimeInfo.port
 
                 it.getConnectHostAddress()?.let { host ->
-                    return pullFiles(appInstanceId, clipId, host, port, filesIndex, pullExtraInfo, 4)
+                    return pullFiles(clipData, host, port, filesIndex, pullExtraInfo, 4)
                 } ?: run {
                     return createFailureClipTaskResult(
                         retryHandler = { pullExtraInfo.executionHistories.size < 3 },
@@ -96,13 +104,13 @@ class PullFileTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
         }
     }
 
-    private suspend fun pullFiles(appInstanceId: String,
-                                  clipId: Int,
+    private suspend fun pullFiles(clipData: ClipData,
                                   host: String,
                                   port: Int,
                                   filesIndex: FilesIndex,
                                   pullExtraInfo: PullExtraInfo,
                                   concurrencyLevel: Int): ClipTaskResult {
+        val semaphore = Semaphore(concurrencyLevel)
         val supervisorJob = SupervisorJob()
         val scope = CoroutineScope(cpuDispatcher + supervisorJob)
         val channel = Channel<Int>(Channel.UNLIMITED)
@@ -113,25 +121,25 @@ class PullFileTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
         repeat(concurrencyLevel) {
             scope.launch {
                 for (chunkIndex in channel) {
-                    val result = async(ioDispatcher + SupervisorJob()) {
-                        try {
-                            filesIndex.getChunk(chunkIndex)?.let { filesChunk ->
-                                val pullFileRequest = PullFileRequest(appInstanceId, clipId, chunkIndex)
-                                val result = pullFileClientApi.pullFile(pullFileRequest, toUrl)
-                                if (result is SuccessResult) {
-                                    val byteReadChannel = result.getResult<ByteReadChannel>()
-                                    fileUtils.writeFilesChunk(filesChunk, byteReadChannel)
-                                }
-                                return@async Pair(chunkIndex, result)
+                    semaphore.withPermit {
+                        val result = async {
+                            try {
+                                filesIndex.getChunk(chunkIndex)?.let { filesChunk ->
+                                    val pullFileRequest = PullFileRequest(clipData.appInstanceId, clipData.clipId, chunkIndex)
+                                    val result = pullFileClientApi.pullFile(pullFileRequest, toUrl)
+                                    if (result is SuccessResult) {
+                                        val byteReadChannel = result.getResult<ByteReadChannel>()
+                                        fileUtils.writeFilesChunk(filesChunk, byteReadChannel)
+                                        clipDao.releaseClipData(clipData.id)
+                                    }
+                                    Pair(chunkIndex, result)
+                                } ?: Pair(chunkIndex, FailureResult("chunkIndex $chunkIndex out of range"))
+                            } catch (e: Exception) {
+                                Pair(chunkIndex, FailureResult("pull chunk fail: ${e.message}"))
                             }
-                            return@async Pair(chunkIndex, FailureResult("chunkIndex $chunkIndex out of range: " +
-                                    "$chunkIndex count: ${filesIndex.getChunkCount()}"))
-                        } catch (e: Exception) {
-                            logger.error(e) { "pull chunk fail" }
-                            return@async Pair(chunkIndex, FailureResult("pull chunk fail: ${e.message}"))
                         }
+                        results.add(result)
                     }
-                    results.add(result)
                 }
             }
         }
@@ -141,8 +149,8 @@ class PullFileTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
         }
 
         channel.close()
-
-        val map = results.associate { it.await() }
+        scope.cancel()
+        val map = results.awaitAll().toMap()
 
         val successes = map.filter { it.value is SuccessResult }.map { it.key }
 
@@ -152,7 +160,7 @@ class PullFileTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
 
         return if (pullExtraInfo.pullChunks.contains(false)) {
             createFailureClipTaskResult(
-                retryHandler = { true },
+                retryHandler = { pullExtraInfo.executionHistories.size < 3 },
                 startTime = System.currentTimeMillis(),
                 failMessage = "exist pull chunk fail",
                 extraInfo = pullExtraInfo

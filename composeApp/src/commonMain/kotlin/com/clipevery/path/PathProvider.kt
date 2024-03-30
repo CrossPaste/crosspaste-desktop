@@ -48,12 +48,15 @@ interface PathProvider {
     }
 
     fun resolve(appInstanceId: String,
+                dateString: String,
                 clipId: Int,
                 clipFiles: ClipFiles,
                 isPull: Boolean,
                 filesIndexBuilder: FilesIndexBuilder? = null) {
         val basePath = resolve(appFileType = clipFiles.getAppFileType())
-        val clipIdPath = basePath.resolve(appInstanceId).resolve(clipId.toString())
+        val clipIdPath = basePath.resolve(appInstanceId)
+            .resolve(dateString)
+            .resolve(clipId.toString())
         if (isPull) {
             autoCreateDir(clipIdPath)
         }

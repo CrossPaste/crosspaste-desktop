@@ -59,7 +59,7 @@ class SingleFileInfoTree(override val size: Long,
 
 class FileInfoTreeBuilder {
 
-    private val tree = TreeMap<String, FileInfoTree>()
+    private val tree = mutableMapOf<String, FileInfoTree>()
 
     private var size = 0L
 
