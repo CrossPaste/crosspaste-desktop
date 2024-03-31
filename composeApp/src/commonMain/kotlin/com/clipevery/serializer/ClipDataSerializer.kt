@@ -19,7 +19,7 @@ import kotlinx.serialization.encoding.Encoder
 
 object ClipDataSerializer: KSerializer<ClipData> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ClipData") {
-        element<Int>("clipId")
+        element<Long>("clipId")
         element<RealmAny?>("clipAppearContent")
         element<ClipContent?>("clipContent")
         element<Int>("clipType")
@@ -30,7 +30,7 @@ object ClipDataSerializer: KSerializer<ClipData> {
 
     override fun deserialize(decoder: Decoder): ClipData {
         val dec = decoder.beginStructure(descriptor)
-        var clipId = 0
+        var clipId = 0L
         var clipAppearContent: RealmAny? = null
         var clipContent: ClipContent? = null
         var clipType = 0
@@ -39,7 +39,7 @@ object ClipDataSerializer: KSerializer<ClipData> {
         var labels: RealmSet<ClipLabel> = realmSetOf()
         loop@ while (true) {
             when (val index = dec.decodeElementIndex(descriptor)) {
-                0 -> clipId = dec.decodeIntElement(descriptor, index)
+                0 -> clipId = dec.decodeLongElement(descriptor, index)
                 1 -> clipAppearContent = dec.decodeSerializableElement(descriptor, index, RealmAnyKSerializer)
                 2 -> clipContent = dec.decodeSerializableElement(descriptor, index, ClipContent.serializer())
                 3 -> clipType = dec.decodeIntElement(descriptor, index)
@@ -67,7 +67,7 @@ object ClipDataSerializer: KSerializer<ClipData> {
 
     override fun serialize(encoder: Encoder, value: ClipData) {
         val compositeOutput = encoder.beginStructure(descriptor)
-        compositeOutput.encodeIntElement(descriptor, 0, value.clipId)
+        compositeOutput.encodeLongElement(descriptor, 0, value.clipId)
         value.clipAppearContent?.let {
             compositeOutput.encodeSerializableElement(descriptor, 1, RealmAnyKSerializer, it)
         }

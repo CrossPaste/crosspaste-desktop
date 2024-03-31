@@ -55,7 +55,7 @@ open class DesktopTransferableConsumer(private val appInfo: AppInfo,
         }
     }
 
-    private fun preCollect(clipId: Int,
+    private fun preCollect(clipId: Long,
                            dataFlavorMap: Map<String, List<DataFlavor>>,
                            transferable: Transferable,
                            clipCollector: ClipCollector) {
@@ -80,7 +80,7 @@ open class DesktopTransferableConsumer(private val appInfo: AppInfo,
         }
     }
 
-    private fun updateClipData(clipId: Int,
+    private fun updateClipData(clipId: Long,
                                dataFlavorMap: Map<String, List<DataFlavor>>,
                                transferable: Transferable,
                                clipCollector: ClipCollector) {

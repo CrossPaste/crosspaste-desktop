@@ -21,8 +21,8 @@ class ClipRealm(private val realm: Realm,
 
     private val logger = KotlinLogging.logger {}
 
-    override fun getMaxClipId(): Int {
-        return realm.query(ClipData::class).sort("clipId", Sort.DESCENDING).first().find()?.clipId ?: 0
+    override fun getMaxClipId(): Long {
+        return realm.query(ClipData::class).sort("clipId", Sort.DESCENDING).first().find()?.clipId ?: 0L
     }
 
     override fun createClipData(clipData: ClipData): ObjectId {
@@ -77,11 +77,11 @@ class ClipRealm(private val realm: Realm,
         return query.sort("createTime", Sort.DESCENDING).limit(limit).find()
     }
 
-    override fun getClipData(objectId: ObjectId): ClipData? {
-        return realm.query(ClipData::class, "id == $0 AND clipState != $1", objectId, ClipState.DELETED).first().find()
+    override fun getClipData(id: ObjectId): ClipData? {
+        return realm.query(ClipData::class, "id == $0 AND clipState != $1", id, ClipState.DELETED).first().find()
     }
 
-    override fun getClipData(appInstanceId: String, clipId: Int): ClipData? {
+    override fun getClipData(appInstanceId: String, clipId: Long): ClipData? {
         return realm.query(ClipData::class, "clipId == $0 AND appInstanceId == $1 AND clipState != $2",
             clipId, appInstanceId, ClipState.DELETED).first().find()
     }

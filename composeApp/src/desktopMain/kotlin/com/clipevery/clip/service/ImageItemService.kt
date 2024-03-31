@@ -38,7 +38,7 @@ class ImageItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
     }
 
     override fun createPreClipItem(
-        clipId: Int,
+        clipId: Long,
         itemIndex: Int,
         identifier: String,
         transferable: Transferable,
@@ -53,7 +53,7 @@ class ImageItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
 
     override fun doLoadRepresentation(
         transferData: Any,
-        clipId: Int,
+        clipId: Long,
         itemIndex: Int,
         dataFlavor: DataFlavor,
         dataFlavorMap: Map<String, List<DataFlavor>>,

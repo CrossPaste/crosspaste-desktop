@@ -58,7 +58,7 @@ object DesktopFileUtils: FileUtils {
         }
     }
 
-    override fun createClipRelativePath(appInstanceId: String, clipId: Int, fileName: String): String {
+    override fun createClipRelativePath(appInstanceId: String, clipId: Long, fileName: String): String {
         val dateYYYYMMDD = DateUtils.getYYYYMMDD()
         return Paths.get(appInstanceId, dateYYYYMMDD, clipId.toString(), fileName).pathString
     }

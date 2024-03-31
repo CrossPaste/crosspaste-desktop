@@ -54,13 +54,13 @@ class ClipCollector(
         }
     }
 
-    fun collectError(clipId: Int, itemIndex: Int, error: Exception) {
+    fun collectError(clipId: Long, itemIndex: Int, error: Exception) {
         logger.error(error) { "Failed to collect item $itemIndex of clip $clipId" }
         updateErrors[itemIndex] = error
         existError = true
     }
 
-    fun createPreClipData(clipId: Int, isRemote: Boolean): ObjectId? {
+    fun createPreClipData(clipId: Long, isRemote: Boolean): ObjectId? {
         val collector = preCollectors.filter { it.isNotEmpty() }
         if (collector.isEmpty()) {
             return null

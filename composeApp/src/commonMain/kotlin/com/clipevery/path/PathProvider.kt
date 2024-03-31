@@ -49,7 +49,7 @@ interface PathProvider {
 
     fun resolve(appInstanceId: String,
                 dateString: String,
-                clipId: Int,
+                clipId: Long,
                 clipFiles: ClipFiles,
                 isPull: Boolean,
                 filesIndexBuilder: FilesIndexBuilder? = null) {
