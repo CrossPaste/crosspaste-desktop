@@ -25,12 +25,12 @@ fun Routing.pullRouting() {
     val fileUtils = koinApplication.koin.get<FileUtils>()
 
     post("/pull/file") {
-        getAppInstanceId(call).let {
+        getAppInstanceId(call).let { fromAppInstanceId ->
             val pullFileRequest: PullFileRequest = call.receive()
             val appInstanceId = pullFileRequest.appInstanceId
             val clipId = pullFileRequest.clipId
 
-            syncManager.getSyncHandlers()[appInstanceId]?.let {
+            syncManager.getSyncHandlers()[fromAppInstanceId]?.let {
                 if (!it.syncRuntimeInfo.allowSend) {
                     failResponse(call, StandardErrorCode.SYNC_NOT_ALLOW_SEND.toErrorCode())
                     return@post
