@@ -17,10 +17,14 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -34,9 +38,12 @@ import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.presist.FilePersist
 import com.clipevery.ui.base.html
+import com.clipevery.ui.resource.ClipResourceLoader
 import com.clipevery.utils.FileUtils
 import java.awt.Desktop
+import kotlin.io.path.absolutePathString
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun HtmlToImagePreviewView(clipData: ClipData) {
     clipData.getClipItem()?.let {
@@ -44,27 +51,30 @@ fun HtmlToImagePreviewView(clipData: ClipData) {
         val copywriter = current.koin.get<GlobalCopywriter>()
         val fileUtils = current.koin.get<FileUtils>()
         val filePersist = current.koin.get<FilePersist>()
+        val chromeService = current.koin.get<ChromeService>()
+        val fileResourceLoader = current.koin.get<ClipResourceLoader>()
 
         val clipHtml = it as ClipHtml
 
-        val imageBitmap: ImageBitmap? = remember(clipHtml) {
-            clipHtml.getHtmlImage()
-        }
+        val filePath by remember { mutableStateOf(clipHtml.getHtmlImagePath()) }
 
-        if (imageBitmap == null) {
-            val chromeService = current.koin.get<ChromeService>()
-            LaunchedEffect(Unit) {
+        var existFile by remember { mutableStateOf(filePath.toFile().exists()) }
+
+
+        LaunchedEffect(Unit) {
+            if (!existFile) {
                 chromeService.html2Image(clipHtml.html)?.let { bytes ->
-                    it.getHtmlImagePath()?.let { path ->
-                        filePersist.createOneFilePersist(path).saveBytes(bytes)
-                    }
+                    filePersist.createOneFilePersist(filePath).saveBytes(bytes)
+                    existFile = true
                 }
             }
         }
 
         ClipSpecificPreviewContentView(it, {
             Row {
-                imageBitmap?.let { bitmap ->
+                if (existFile) {
+                    val html2ImagePainter = painterResource(filePath.absolutePathString(), fileResourceLoader)
+
                     val horizontalScrollState = rememberScrollState()
                     val verticalScrollState = rememberScrollState()
 
@@ -83,12 +93,12 @@ fun HtmlToImagePreviewView(clipData: ClipData) {
                             }
                     ) {
                         Image(
-                            bitmap = bitmap,
+                            painter = html2ImagePainter,
                             contentDescription = "Html 2 Image",
                             modifier = Modifier.wrapContentSize()
                         )
                     }
-                } ?: run {
+                } else {
                     Text(
                         text = clipHtml.html,
                         fontFamily = FontFamily.SansSerif,

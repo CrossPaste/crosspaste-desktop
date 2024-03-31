@@ -1,7 +1,5 @@
 package com.clipevery.clip.item
 
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.res.loadImageBitmap
 import com.clipevery.app.AppFileType
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipType
@@ -27,26 +25,13 @@ class HtmlClipItem: RealmObject, ClipAppearItem, ClipHtml {
     override var id: ObjectId = BsonObjectId()
     var identifier: String = ""
     @Transient
-    var relativePath: String? = null
+    var relativePath: String = ""
     override var html: String = ""
 
 
-    override fun getHtmlImagePath(): Path? {
-        return relativePath?.let { relativePath ->
-            val basePath = DesktopPathProvider.resolve(appFileType = AppFileType.HTML)
-            return DesktopPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
-        }
-    }
-
-    override fun getHtmlImage(): ImageBitmap? {
-        return getHtmlImagePath()?.let { path ->
-            val file = path.toFile()
-            return if (file.exists()) {
-                loadImageBitmap(file.inputStream())
-            } else {
-                null
-            }
-        }
+    override fun getHtmlImagePath(): Path {
+        val basePath = DesktopPathProvider.resolve(appFileType = AppFileType.HTML)
+        return DesktopPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
     }
 
     override var md5: String = ""
@@ -72,9 +57,7 @@ class HtmlClipItem: RealmObject, ClipAppearItem, ClipHtml {
 
     override fun clear(realm: MutableRealm, clearResource: Boolean) {
         if (clearResource) {
-            getHtmlImagePath()?.let { path ->
-                DesktopOneFilePersist(path).delete()
-            }
+            DesktopOneFilePersist(getHtmlImagePath()).delete()
         }
         realm.delete(this)
     }

@@ -1,14 +1,11 @@
 package com.clipevery.clip.service
 
-import com.clipevery.app.AppFileType
 import com.clipevery.app.AppInfo
 import com.clipevery.clip.ClipCollector
 import com.clipevery.clip.ClipItemService
 import com.clipevery.clip.DesktopChromeService
 import com.clipevery.clip.item.HtmlClipItem
 import com.clipevery.dao.clip.ClipAppearItem
-import com.clipevery.path.DesktopPathProvider
-import com.clipevery.presist.DesktopOneFilePersist
 import com.clipevery.utils.DesktopFileUtils
 import com.clipevery.utils.EncryptUtils.md5ByString
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -56,11 +53,6 @@ class HtmlItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
             val html = extractHtml(transferData)
             val md5 = md5ByString(html)
             val relativePath = DesktopFileUtils.createClipRelativePath(appInfo.appInstanceId, clipId, "html2Image.png")
-            chromeService.html2Image(html)?.let {
-                val basePath = DesktopPathProvider.resolve(appFileType = AppFileType.HTML)
-                val imagePath = DesktopPathProvider.resolve(basePath, relativePath, isFile = true)
-                DesktopOneFilePersist(imagePath).saveBytes(it)
-            }
             val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
                 realm.query(HtmlClipItem::class, "id == $0", clipItem.id).first().find()?.apply {
                     this.html = html
