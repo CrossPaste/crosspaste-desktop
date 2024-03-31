@@ -55,7 +55,7 @@ class ClipData: RealmObject {
     }
 
     fun getClipDataHashObject(): ClipDataHashObject {
-        return ClipDataHashObject(createTime, clipId, appInstanceId)
+        return ClipDataHashObject(clipId, appInstanceId)
     }
 
     fun getClipAppearItems(): List<ClipAppearItem> {
@@ -83,12 +83,8 @@ class ClipData: RealmObject {
     }
 }
 
-data class ClipDataHashObject(val createTime: RealmInstant, val clipId: Long, val appInstanceId: String): Comparable<ClipDataHashObject> {
+data class ClipDataHashObject(val clipId: Long, val appInstanceId: String): Comparable<ClipDataHashObject> {
     override fun compareTo(other: ClipDataHashObject): Int {
-        val createTimeCompare = createTime.compareTo(other.createTime)
-        if (createTimeCompare != 0) {
-            return createTimeCompare
-        }
         val clipIdCompare = clipId.compareTo(other.clipId)
         if (clipIdCompare != 0) {
             return clipIdCompare
