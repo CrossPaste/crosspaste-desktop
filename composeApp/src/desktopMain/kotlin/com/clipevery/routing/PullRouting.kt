@@ -4,6 +4,7 @@ import com.clipevery.Dependencies
 import com.clipevery.clip.CacheManager
 import com.clipevery.dto.pull.PullFileRequest
 import com.clipevery.exception.StandardErrorCode
+import com.clipevery.sync.SyncManager
 import com.clipevery.utils.FileUtils
 import com.clipevery.utils.failResponse
 import com.clipevery.utils.getAppInstanceId
@@ -17,6 +18,8 @@ fun Routing.pullRouting() {
 
     val koinApplication = Dependencies.koinApplication
 
+    val syncManager = koinApplication.koin.get<SyncManager>()
+
     val cacheManager = koinApplication.koin.get<CacheManager>()
 
     val fileUtils = koinApplication.koin.get<FileUtils>()
@@ -26,6 +29,16 @@ fun Routing.pullRouting() {
             val pullFileRequest: PullFileRequest = call.receive()
             val appInstanceId = pullFileRequest.appInstanceId
             val clipId = pullFileRequest.clipId
+
+            syncManager.getSyncHandlers()[appInstanceId]?.let {
+                if (!it.syncRuntimeInfo.allowSend) {
+                    failResponse(call, StandardErrorCode.SYNC_NOT_ALLOW_SEND.toErrorCode())
+                    return@post
+                }
+            } ?: run {
+                failResponse(call, StandardErrorCode.NOT_FOUND_APP_INSTANCE_ID.toErrorCode())
+                return@post
+            }
 
             cacheManager.filesIndexCache.get(PullFilesKey(appInstanceId, clipId)).let { filesIndex ->
                 filesIndex.getChunk(pullFileRequest.chunkIndex)?.let { chunk ->
