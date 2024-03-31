@@ -25,8 +25,13 @@ fun Routing.clipRouting() {
         getAppInstanceId(call).let { appInstanceId ->
             syncManager.getSyncHandlers()[appInstanceId]?.let { syncHandler ->
 
-                if (!syncHandler.syncRuntimeInfo.allowReceive) {
-                    failResponse(call, StandardErrorCode.SYNC_NOT_ALLOW_RECEIVE.toErrorCode())
+                syncManager.getSyncHandlers()[appInstanceId]?.let {
+                    if (!it.syncRuntimeInfo.allowSend) {
+                        failResponse(call, StandardErrorCode.SYNC_NOT_ALLOW_RECEIVE.toErrorCode())
+                        return@post
+                    }
+                } ?: run {
+                    failResponse(call, StandardErrorCode.NOT_FOUND_APP_INSTANCE_ID.toErrorCode())
                     return@post
                 }
 

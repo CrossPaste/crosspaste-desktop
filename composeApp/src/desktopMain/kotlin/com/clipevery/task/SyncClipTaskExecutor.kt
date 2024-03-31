@@ -37,26 +37,32 @@ class SyncClipTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
         val mapResult = clipDao.getClipData(clipTask.clipDataId)?.let { clipData ->
             val deferredResults: MutableList<Deferred<Pair<String, ClientApiResult>>> = mutableListOf()
             for (entryHandler in syncManager.getSyncHandlers()) {
-                val deferred = ioScope.async {
-                    try {
-                        val clientHandler = entryHandler.value
-                        val port = clientHandler.syncRuntimeInfo.port
-                        val targetAppInstanceId = clientHandler.syncRuntimeInfo.appInstanceId
-                        clientHandler.getConnectHostAddress()?.let {
-                            val syncClipResult = sendClipClientApi.sendClip(clipData, targetAppInstanceId) { urlBuilder ->
-                                buildUrl(urlBuilder, it, port, "sync", "clip")
+                if (entryHandler.value.syncRuntimeInfo.allowSend) {
+                    val deferred = ioScope.async {
+                        try {
+                            val clientHandler = entryHandler.value
+                            val port = clientHandler.syncRuntimeInfo.port
+                            val targetAppInstanceId = clientHandler.syncRuntimeInfo.appInstanceId
+                            clientHandler.getConnectHostAddress()?.let {
+                                val syncClipResult =
+                                    sendClipClientApi.sendClip(clipData, targetAppInstanceId) { urlBuilder ->
+                                        buildUrl(urlBuilder, it, port, "sync", "clip")
+                                    }
+                                return@async Pair(entryHandler.key, syncClipResult)
+                            } ?: run {
+                                return@async Pair(
+                                    entryHandler.key,
+                                    FailureResult("Failed to get connect host address by ${entryHandler.key}")
+                                )
                             }
-                            return@async Pair(entryHandler.key, syncClipResult)
-                        } ?: run {
-                            return@async Pair(entryHandler.key, FailureResult("Failed to get connect host address by ${entryHandler.key}"))
+                        } catch (e: Exception) {
+                            val failMessage = "Failed to sync clip to ${entryHandler.key}"
+                            logger.error(e) { failMessage }
+                            return@async Pair(entryHandler.key, FailureResult(message = failMessage))
                         }
-                    } catch (e: Exception) {
-                        val failMessage = "Failed to sync clip to ${entryHandler.key}"
-                        logger.error(e) { failMessage }
-                        return@async Pair(entryHandler.key, FailureResult(message = failMessage))
                     }
+                    deferredResults.add(deferred)
                 }
-                deferredResults.add(deferred)
             }
 
             deferredResults.associate { it.await() }
