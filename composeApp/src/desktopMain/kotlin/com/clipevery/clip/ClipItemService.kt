@@ -9,7 +9,7 @@ abstract class ClipItemService(protected val appInfo: AppInfo) {
     abstract fun getIdentifiers(): List<String>
 
     abstract fun createPreClipItem(
-        clipId: Int,
+        clipId: Long,
         itemIndex: Int,
         identifier: String,
         transferable: Transferable,
@@ -17,7 +17,7 @@ abstract class ClipItemService(protected val appInfo: AppInfo) {
     )
 
     fun loadRepresentation(
-        clipId: Int,
+        clipId: Long,
         itemIndex: Int,
         dataFlavor: DataFlavor,
         dataFlavorMap: Map<String, List<DataFlavor>>,
@@ -33,7 +33,7 @@ abstract class ClipItemService(protected val appInfo: AppInfo) {
     }
 
     abstract fun doLoadRepresentation(transferData: Any,
-                                      clipId: Int,
+                                      clipId: Long,
                                       itemIndex: Int,
                                       dataFlavor: DataFlavor,
                                       dataFlavorMap: Map<String, List<DataFlavor>>,
@@ -41,7 +41,7 @@ abstract class ClipItemService(protected val appInfo: AppInfo) {
                                       clipCollector: ClipCollector)
 
     fun collectError(error: Exception,
-                     clipId: Int,
+                     clipId: Long,
                      itemIndex: Int,
                      clipCollector: ClipCollector) {
         clipCollector.collectError(clipId, itemIndex, error)

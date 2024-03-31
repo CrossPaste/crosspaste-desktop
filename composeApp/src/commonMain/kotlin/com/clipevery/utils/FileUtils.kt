@@ -16,7 +16,7 @@ interface FileUtils {
 
     fun getExtFromFileName(fileName: String): String?
 
-    fun createClipRelativePath(appInstanceId: String, clipId: Int, fileName: String): String
+    fun createClipRelativePath(appInstanceId: String, clipId: Long, fileName: String): String
 
     fun createClipPath(fileRelativePath: String, isFile: Boolean, appFileType: AppFileType): Path
 

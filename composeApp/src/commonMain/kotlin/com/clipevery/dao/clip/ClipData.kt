@@ -23,7 +23,7 @@ class ClipData: RealmObject {
     @Transient
     var id: ObjectId = ObjectId()
     @Index
-    var clipId: Int = 0
+    var clipId: Long = 0
     var clipAppearContent: RealmAny? = null
     var clipContent: ClipContent? = null
     @Index
@@ -83,7 +83,7 @@ class ClipData: RealmObject {
     }
 }
 
-data class ClipDataHashObject(val createTime: RealmInstant, val clipId: Int, val appInstanceId: String): Comparable<ClipDataHashObject> {
+data class ClipDataHashObject(val createTime: RealmInstant, val clipId: Long, val appInstanceId: String): Comparable<ClipDataHashObject> {
     override fun compareTo(other: ClipDataHashObject): Int {
         val createTimeCompare = createTime.compareTo(other.createTime)
         if (createTimeCompare != 0) {

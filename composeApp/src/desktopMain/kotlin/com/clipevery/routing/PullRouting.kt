@@ -40,4 +40,4 @@ fun Routing.pullRouting() {
 }
 
 data class PullFilesKey(val appInstanceId: String,
-                        val clipId: Int)
+                        val clipId: Long)

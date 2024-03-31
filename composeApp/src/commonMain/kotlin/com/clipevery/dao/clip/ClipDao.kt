@@ -8,7 +8,7 @@ import org.mongodb.kbson.ObjectId
 
 interface ClipDao {
 
-    fun getMaxClipId(): Int
+    fun getMaxClipId(): Long
 
     fun createClipData(clipData: ClipData): ObjectId
 
@@ -21,7 +21,7 @@ interface ClipDao {
 
     fun getClipData(id: ObjectId): ClipData?
 
-    fun getClipData(appInstanceId: String, clipId: Int): ClipData?
+    fun getClipData(appInstanceId: String, clipId: Long): ClipData?
 
     suspend fun releaseLocalClipData(id: ObjectId, clipPlugins: List<ClipPlugin>)
 
