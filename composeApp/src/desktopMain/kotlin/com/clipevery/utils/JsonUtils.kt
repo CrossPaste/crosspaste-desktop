@@ -16,6 +16,7 @@ import com.clipevery.serializer.IdentityKeySerializer
 import com.clipevery.serializer.PreKeyBundleSerializer
 import com.clipevery.serializer.RealmInstantSerializer
 import com.clipevery.task.extra.BaseExtraInfo
+import com.clipevery.task.extra.PullExtraInfo
 import com.clipevery.task.extra.SyncExtraInfo
 import io.realm.kotlin.serializers.MutableRealmIntKSerializer
 import io.realm.kotlin.serializers.RealmAnyKSerializer
@@ -61,6 +62,7 @@ object JsonUtils {
             polymorphic(ClipTaskExtraInfo::class) {
                 subclass(BaseExtraInfo::class)
                 subclass(SyncExtraInfo::class)
+                subclass(PullExtraInfo::class)
             }
 
         }
