@@ -24,9 +24,11 @@ interface ClipboardService : ClipboardMonitor, ClipboardOwner {
     val taskExecutor: TaskExecutor
 
     fun tryWriteClipboard(clipData: ClipData, localOnly: Boolean = false, filterFile: Boolean = false) {
-        ownerTransferable = clipProducer.produce(clipData, localOnly, filterFile)
-        owner = true
-        systemClipboard.setContents(ownerTransferable, this)
+        clipProducer.produce(clipData, localOnly, filterFile)?.let {
+            ownerTransferable = it
+            owner = true
+            systemClipboard.setContents(ownerTransferable, this)
+        }
     }
 
     suspend fun tryWriteRemoteClipboard(clipData: ClipData) {
