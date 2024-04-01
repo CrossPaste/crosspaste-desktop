@@ -124,7 +124,7 @@ object Dependencies {
             single<RealmManager> { RealmManagerImpl.createRealmManager(get()) }
             single<SignalDao> { SignalRealm(get<RealmManager>().realm) }
             single<SyncRuntimeInfoDao> { SyncRuntimeInfoRealm(get<RealmManager>().realm) }
-            single<ClipDao> { ClipRealm(get<RealmManager>().realm, get()) }
+            single<ClipDao> { ClipRealm(get<RealmManager>().realm, lazy<TaskExecutor> { get() }) }
             single<ClipTaskDao> { ClipTaskRealm(get<RealmManager>().realm) }
 
             // net component
@@ -147,7 +147,7 @@ object Dependencies {
             single<SignalProtocolStore> { DesktopSignalProtocolStore(get(), get(), get(), get()) }
 
             // clip component
-            single<ClipboardService> { getDesktopClipboardService(get(), get(), get(), get()) }
+            single<ClipboardService> { getDesktopClipboardService(get(), get(), get()) }
             single<TransferableConsumer> { DesktopTransferableConsumer(
                 get(), get(), get(), listOf(
                     FilesItemService(appInfo = get()),
@@ -167,9 +167,9 @@ object Dependencies {
             single<ChromeService> { DesktopChromeService }
             single<ClipSearchService> { DesktopClipSearchService(get()) }
             single<TaskExecutor> { DesktopTaskExecutor(listOf(
-                SyncClipTaskExecutor(lazy { get<ClipDao>() }, get(), get()),
-                DeleteClipTaskExecutor(lazy { get<ClipDao>() }),
-                PullFileTaskExecutor(lazy { get<ClipDao>() }, lazy { get<ClipboardService>() }, get(), get(), get())
+                SyncClipTaskExecutor(get(), get(), get()),
+                DeleteClipTaskExecutor(get()),
+                PullFileTaskExecutor(get(), get(), get(), get(), get())
             ), get()) }
 
             // ui component

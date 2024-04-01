@@ -20,9 +20,11 @@ import java.util.concurrent.locks.ReadWriteLock
 
 
 class ClipRealm(private val realm: Realm,
-                private val taskExecutor: TaskExecutor) : ClipDao {
+                private val lazyTaskExecutor: Lazy<TaskExecutor>) : ClipDao {
 
     private val logger = KotlinLogging.logger {}
+
+    private val taskExecutor by lazy { lazyTaskExecutor.value }
 
     override fun getMaxClipId(): Long {
         return realm.query(ClipData::class).sort("clipId", Sort.DESCENDING).first().find()?.clipId ?: 0L
@@ -143,7 +145,7 @@ class ClipRealm(private val realm: Realm,
     private val stripedLocks: Striped<ReadWriteLock> = Striped.readWriteLock(15)
 
     override suspend fun releaseRemoteClipData(clipData: ClipData,
-                                               tryWriteClipboard: (ClipData, Boolean) -> Unit): List<ObjectId> {
+                                               tryWriteClipboard: (ClipData, Boolean) -> Unit) {
         val lock = stripedLocks.get(clipData.getClipDataHashObject()).writeLock()
         val tasks = mutableListOf<ObjectId>()
         val existFile = clipData.existFileResource()
@@ -151,7 +153,7 @@ class ClipRealm(private val realm: Realm,
             lock.lock()
 
             getClipData(clipData.id)?.let {
-                return listOf()
+                return
             }
 
             if (!existFile) {
@@ -172,12 +174,11 @@ class ClipRealm(private val realm: Realm,
         } finally {
             lock.unlock()
         }
-        return tasks
+        taskExecutor.submitTasks(tasks)
     }
 
     override suspend fun releaseRemoteClipDataWithFile(id: ObjectId,
-                                                       tryWriteClipboard: (ClipData) -> Unit
-    ): List<ObjectId> {
+                                                       tryWriteClipboard: (ClipData) -> Unit) {
         val tasks = mutableListOf<ObjectId>()
         realm.write {
             query(ClipData::class, "id == $0", id).first().find()?.let { clipData ->
@@ -188,7 +189,7 @@ class ClipRealm(private val realm: Realm,
         }?.let { clipData ->
             tryWriteClipboard(clipData)
         }
-        return tasks
+        taskExecutor.submitTasks(tasks)
     }
 
     override fun update(update: (MutableRealm) -> Unit) {

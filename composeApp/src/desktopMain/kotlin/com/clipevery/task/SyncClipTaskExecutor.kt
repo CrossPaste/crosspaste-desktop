@@ -20,13 +20,11 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.serialization.encodeToString
 
-class SyncClipTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
+class SyncClipTaskExecutor(private val clipDao: ClipDao,
                            private val sendClipClientApi: SendClipClientApi,
                            private val syncManager: SyncManager): SingleTypeTaskExecutor {
 
     private val logger = KotlinLogging.logger {}
-
-    private val clipDao: ClipDao by lazy { lazyClipDao.value }
 
     private val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
 

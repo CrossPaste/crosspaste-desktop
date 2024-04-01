@@ -2,7 +2,6 @@ package com.clipevery.clip
 
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipData
-import com.clipevery.task.TaskExecutor
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.channels.Channel
 import java.awt.datatransfer.Clipboard
@@ -25,8 +24,6 @@ interface ClipboardService : ClipboardMonitor, ClipboardOwner {
 
     val clipProducer: TransferableProducer
 
-    val taskExecutor: TaskExecutor
-
     val clipboardChannel: Channel<suspend () -> Unit>
 
     suspend fun tryWriteClipboard(clipData: ClipData, localOnly: Boolean = false, filterFile: Boolean = false) {
@@ -42,11 +39,8 @@ interface ClipboardService : ClipboardMonitor, ClipboardOwner {
     }
 
     suspend fun tryWriteRemoteClipboard(clipData: ClipData) {
-        val taskIds = clipDao.releaseRemoteClipData(clipData) { storeClipData, filterFile ->
+        clipDao.releaseRemoteClipData(clipData) { storeClipData, filterFile ->
             clipboardChannel.trySend { tryWriteClipboard(storeClipData, localOnly = true, filterFile = filterFile) }
-        }
-        if (taskIds.isNotEmpty()) {
-            taskExecutor.submitTasks(taskIds)
         }
     }
 
