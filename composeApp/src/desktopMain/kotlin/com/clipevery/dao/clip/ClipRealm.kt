@@ -155,6 +155,7 @@ class ClipRealm(private val realm: Realm,
                     copyToRealm(clipData)
                     tasks.addAll(markDeleteClipDatasInWrite(clipData.id, clipData.md5))
                 }
+                tryWriteClipboard(clipData, false)
             } else {
                 val pullFileTask = createTask(clipData.id, TaskType.PULL_FILE_TASK)
                 realm.write {
@@ -162,8 +163,8 @@ class ClipRealm(private val realm: Realm,
                     copyToRealm(pullFileTask)
                 }
                 tasks.add(pullFileTask.taskId)
+                tryWriteClipboard(clipData, true)
             }
-            tryWriteClipboard(clipData, false)
         } finally {
             lock.unlock()
         }
