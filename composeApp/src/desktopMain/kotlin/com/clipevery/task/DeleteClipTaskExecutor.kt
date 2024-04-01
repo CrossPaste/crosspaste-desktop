@@ -6,11 +6,9 @@ import com.clipevery.dao.task.TaskType
 import com.clipevery.utils.TaskUtils.createFailExtraInfo
 import io.github.oshai.kotlinlogging.KotlinLogging
 
-class DeleteClipTaskExecutor(private val lazyClipDao: Lazy<ClipDao>): SingleTypeTaskExecutor {
+class DeleteClipTaskExecutor(private val clipDao: ClipDao): SingleTypeTaskExecutor {
 
     private val logger = KotlinLogging.logger {}
-
-    private val clipDao: ClipDao by lazy { lazyClipDao.value }
 
     override val taskType: Int = TaskType.DELETE_CLIP_TASK
 

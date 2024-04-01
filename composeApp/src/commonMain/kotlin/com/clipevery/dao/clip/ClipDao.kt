@@ -25,7 +25,15 @@ interface ClipDao {
 
     suspend fun releaseLocalClipData(id: ObjectId, clipPlugins: List<ClipPlugin>)
 
-    suspend fun releaseRemoteClipData(clipData: ClipData, tryWriteClipboard: (ClipData, Boolean) -> Unit): List<ObjectId>
+    suspend fun releaseRemoteClipData(
+        clipData: ClipData,
+        tryWriteClipboard: (ClipData, Boolean) -> Unit
+    )
+
+    suspend fun releaseRemoteClipDataWithFile(
+        id: ObjectId,
+        tryWriteClipboard: (ClipData) -> Unit
+    )
 
     fun update(update: (MutableRealm) -> Unit)
 
@@ -34,9 +42,4 @@ interface ClipDao {
     fun getClipDataLessThan(appInstanceId: String? = null,
                             limit: Int,
                             createTime: RealmInstant): RealmResults<ClipData>
-
-    suspend fun releaseRemoteClipDataWithFile(
-        id: ObjectId,
-        tryWriteClipboard: (ClipData) -> Unit
-    ): List<ObjectId>
 }

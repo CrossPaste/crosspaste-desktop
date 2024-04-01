@@ -5,7 +5,6 @@ import com.clipevery.clip.TransferableConsumer
 import com.clipevery.clip.TransferableProducer
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.os.macos.api.MacosApi
-import com.clipevery.task.TaskExecutor
 import com.clipevery.utils.cpuDispatcher
 import com.sun.jna.ptr.IntByReference
 import io.github.oshai.kotlinlogging.KLogger
@@ -23,7 +22,6 @@ import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.Transferable
 
 class MacosClipboardService(override val clipDao: ClipDao,
-                            override val taskExecutor: TaskExecutor,
                             override val clipConsumer: TransferableConsumer,
                             override val clipProducer: TransferableProducer): ClipboardService {
     override val logger: KLogger = KotlinLogging.logger {}

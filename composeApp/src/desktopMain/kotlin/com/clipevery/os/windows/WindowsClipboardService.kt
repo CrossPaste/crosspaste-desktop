@@ -6,7 +6,6 @@ import com.clipevery.clip.TransferableProducer
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.os.windows.api.User32
 import com.clipevery.platform.currentPlatform
-import com.clipevery.task.TaskExecutor
 import com.clipevery.utils.cpuDispatcher
 import com.clipevery.utils.ioDispatcher
 import com.sun.jna.Pointer
@@ -30,7 +29,6 @@ import kotlin.math.min
 
 
 class WindowsClipboardService(override val clipDao: ClipDao,
-                              override val taskExecutor: TaskExecutor,
                               override val clipConsumer: TransferableConsumer,
                               override val clipProducer: TransferableProducer) : ClipboardService, User32.WNDPROC {
     override val logger: KLogger = KotlinLogging.logger {}

@@ -25,12 +25,11 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import io.ktor.utils.io.*
 
-class PullFileTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
-                           private val lazyClipboardService: Lazy<ClipboardService>,
+class PullFileTaskExecutor(private val clipDao: ClipDao,
                            private val pullFileClientApi: PullFileClientApi,
                            private val fileUtils: FileUtils,
-                           private val syncManager: SyncManager
-                           ): SingleTypeTaskExecutor {
+                           private val syncManager: SyncManager,
+                           private val clipboardService: ClipboardService): SingleTypeTaskExecutor {
 
     companion object PullFileTaskExecutor {
 
@@ -38,10 +37,6 @@ class PullFileTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
 
         const val CHUNK_SIZE: Long = 4096 * 1024 // 4MB
     }
-
-    private val clipDao: ClipDao by lazy { lazyClipDao.value }
-
-    private val clipboardService: ClipboardService by lazy { lazyClipboardService.value }
 
     override val taskType: Int = TaskType.PULL_FILE_TASK
 
