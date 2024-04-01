@@ -169,7 +169,7 @@ object Dependencies {
             single<TaskExecutor> { DesktopTaskExecutor(listOf(
                 SyncClipTaskExecutor(lazy { get<ClipDao>() }, get(), get()),
                 DeleteClipTaskExecutor(lazy { get<ClipDao>() }),
-                PullFileTaskExecutor(lazy { get<ClipDao>() }, get(), get(), get())
+                PullFileTaskExecutor(lazy { get<ClipDao>() }, lazy { get<ClipboardService>() }, get(), get(), get())
             ), get()) }
 
             // ui component

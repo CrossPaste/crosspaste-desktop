@@ -15,11 +15,13 @@ import com.sun.jna.platform.win32.WinDef.HWND
 import com.sun.jna.platform.win32.WinDef.LPARAM
 import com.sun.jna.platform.win32.WinDef.WPARAM
 import com.sun.jna.platform.win32.WinUser.MSG
+import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
@@ -31,8 +33,7 @@ class WindowsClipboardService(override val clipDao: ClipDao,
                               override val taskExecutor: TaskExecutor,
                               override val clipConsumer: TransferableConsumer,
                               override val clipProducer: TransferableProducer) : ClipboardService, User32.WNDPROC {
-
-    private val logger = KotlinLogging.logger {}
+    override val logger: KLogger = KotlinLogging.logger {}
 
     @Volatile
     override var owner = false
@@ -41,6 +42,8 @@ class WindowsClipboardService(override val clipDao: ClipDao,
     override var ownerTransferable: Transferable? = null
 
     override val systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
+
+    override val clipboardChannel: Channel<suspend () -> Unit> = Channel(Channel.UNLIMITED)
 
     private val serviceScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
@@ -53,6 +56,14 @@ class WindowsClipboardService(override val clipDao: ClipDao,
         null, false,
         false, null
     )
+
+    init {
+        serviceConsumerScope.launch {
+            for (task in clipboardChannel) {
+                task()
+            }
+        }
+    }
 
     private fun run() {
         viewer = User32.INSTANCE.CreateWindowEx(

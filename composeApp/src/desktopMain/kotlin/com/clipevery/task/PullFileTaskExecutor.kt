@@ -1,5 +1,6 @@
 package com.clipevery.task
 
+import com.clipevery.clip.ClipboardService
 import com.clipevery.clip.item.ClipFiles
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipData
@@ -25,9 +26,11 @@ import io.ktor.http.*
 import io.ktor.utils.io.*
 
 class PullFileTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
+                           private val lazyClipboardService: Lazy<ClipboardService>,
                            private val pullFileClientApi: PullFileClientApi,
                            private val fileUtils: FileUtils,
-                           private val syncManager: SyncManager): SingleTypeTaskExecutor {
+                           private val syncManager: SyncManager
+                           ): SingleTypeTaskExecutor {
 
     companion object PullFileTaskExecutor {
 
@@ -37,6 +40,8 @@ class PullFileTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
     }
 
     private val clipDao: ClipDao by lazy { lazyClipDao.value }
+
+    private val clipboardService: ClipboardService by lazy { lazyClipboardService.value }
 
     override val taskType: Int = TaskType.PULL_FILE_TASK
 
@@ -113,7 +118,7 @@ class PullFileTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
                         if (result is SuccessResult) {
                             val byteReadChannel = result.getResult<ByteReadChannel>()
                             fileUtils.writeFilesChunk(filesChunk, byteReadChannel)
-                            clipDao.releaseClipData(clipData.id)
+                            clipboardService.tryWriteRemoteClipboardWithFile(clipData)
                         }
                         Pair(chunkIndex, result)
                     } ?: Pair(chunkIndex, FailureResult("chunkIndex $chunkIndex out of range"))
