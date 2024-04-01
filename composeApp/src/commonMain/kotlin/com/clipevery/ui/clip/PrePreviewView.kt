@@ -24,7 +24,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
-import com.clipevery.dao.clip.ClipContent.Companion.getClipItem
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.i18n.GlobalCopywriter
@@ -119,31 +118,26 @@ fun PrePreviewView(clipData: ClipData) {
 
 @Composable
 fun getTypeInfo(clipData: ClipData): TypeInfo {
-    return clipData.clipContent?.let {
-        val clipType = it.clipAppearItems.mapNotNull { item -> getClipItem(item) }
-            .maxByOrNull { clipItem -> clipItem.getClipType() }?.getClipType() ?: ClipType.INVALID
-        when (clipType) {
-            ClipType.TEXT -> {
-                TypeInfo(feed(), "Text")
-            }
-            ClipType.URL -> {
-                TypeInfo(link(), "Link")
-            }
-            ClipType.IMAGE -> {
-                TypeInfo(image(), "Image")
-            }
-            ClipType.FILE -> {
-                TypeInfo(file(), "File")
-            }
-            ClipType.HTML -> {
-                TypeInfo(html(), "Html")
-            }
-            else -> {
-                TypeInfo(question(), "Unknown")
-            }
+    val clipType = clipData.getClipAppearItems().firstOrNull()?.getClipType() ?: ClipType.INVALID
+    return when (clipType) {
+        ClipType.TEXT -> {
+            TypeInfo(feed(), "Text")
         }
-    } ?: run {
-        TypeInfo(question(), "Unknown")
+        ClipType.URL -> {
+            TypeInfo(link(), "Link")
+        }
+        ClipType.IMAGE -> {
+            TypeInfo(image(), "Image")
+        }
+        ClipType.FILE -> {
+            TypeInfo(file(), "File")
+        }
+        ClipType.HTML -> {
+            TypeInfo(html(), "Html")
+        }
+        else -> {
+            TypeInfo(question(), "Unknown")
+        }
     }
 }
 
