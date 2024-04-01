@@ -67,7 +67,11 @@ class ImageItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
                name += ".png"
                "png"
            }
-           val relativePath = createClipRelativePath(appInfo.appInstanceId, clipId, name)
+           val relativePath = createClipRelativePath(
+               appInstanceId = appInfo.appInstanceId,
+               clipId = clipId,
+               fileName = name
+           )
            val imagePath = createClipPath(relativePath, isFile = true, AppFileType.IMAGE)
            if (writeImage(image, ext, imagePath)) {
 

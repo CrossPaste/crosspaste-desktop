@@ -61,7 +61,11 @@ class FilesItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
 
             for (file in files) {
                 val fileName = file.name
-                val relativePath = createClipRelativePath(appInfo.appInstanceId, clipId, fileName)
+                val relativePath = createClipRelativePath(
+                    appInstanceId = appInfo.appInstanceId,
+                    clipId = clipId,
+                    fileName = fileName
+                )
                 relativePathList.add(relativePath)
                 val filePath = DesktopFileUtils.createClipPath(relativePath, isFile = true, AppFileType.FILE)
                 if (copyPath(file.toPath(), filePath)) {
