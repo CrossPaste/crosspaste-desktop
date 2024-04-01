@@ -1,5 +1,6 @@
 package com.clipevery.serializer
 
+import com.clipevery.clip.item.ClipInit
 import com.clipevery.dao.clip.ClipContent
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.dao.clip.ClipLabel
@@ -50,7 +51,7 @@ object ClipDataSerializer: KSerializer<ClipData> {
             }
         }
         dec.endStructure(descriptor)
-        return ClipData().apply {
+        val clipData = ClipData().apply {
             this.clipId = clipId
             this.clipAppearContent = clipAppearContent
             this.clipContent = clipContent
@@ -63,6 +64,12 @@ object ClipDataSerializer: KSerializer<ClipData> {
             this.clipState = ClipState.LOADING
             this.isRemote = true
         }
+
+        for (clipInit in clipData.getClipAppearItems().filterIsInstance<ClipInit>()) {
+            clipInit.init(clipData.appInstanceId, clipData.clipId)
+        }
+
+        return clipData
     }
 
     override fun serialize(encoder: Encoder, value: ClipData) {

@@ -15,6 +15,7 @@ import java.io.RandomAccessFile
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.text.DecimalFormat
+import java.time.LocalDateTime
 import java.util.UUID
 import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
@@ -58,8 +59,11 @@ object DesktopFileUtils: FileUtils {
         }
     }
 
-    override fun createClipRelativePath(appInstanceId: String, clipId: Long, fileName: String): String {
-        val dateYYYYMMDD = DateUtils.getYYYYMMDD()
+    override fun createClipRelativePath(appInstanceId: String,
+                                        date: LocalDateTime,
+                                        clipId: Long,
+                                        fileName: String): String {
+        val dateYYYYMMDD = DateUtils.getYYYYMMDD(date)
         return Paths.get(appInstanceId, dateYYYYMMDD, clipId.toString(), fileName).pathString
     }
 
