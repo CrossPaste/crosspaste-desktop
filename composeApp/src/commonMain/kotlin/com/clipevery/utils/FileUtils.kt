@@ -5,6 +5,7 @@ import com.clipevery.presist.FileInfoTree
 import com.clipevery.presist.FilesChunk
 import io.ktor.utils.io.*
 import java.nio.file.Path
+import java.time.LocalDateTime
 
 interface FileUtils {
 
@@ -16,7 +17,7 @@ interface FileUtils {
 
     fun getExtFromFileName(fileName: String): String?
 
-    fun createClipRelativePath(appInstanceId: String, clipId: Long, fileName: String): String
+    fun createClipRelativePath(appInstanceId: String, date: LocalDateTime = LocalDateTime.now(), clipId: Long, fileName: String): String
 
     fun createClipPath(fileRelativePath: String, isFile: Boolean, appFileType: AppFileType): Path
 

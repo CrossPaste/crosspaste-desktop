@@ -5,6 +5,7 @@ import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.presist.DesktopOneFilePersist
+import com.clipevery.utils.DesktopFileUtils
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
@@ -32,6 +33,14 @@ class HtmlClipItem: RealmObject, ClipAppearItem, ClipHtml {
     override fun getHtmlImagePath(): Path {
         val basePath = DesktopPathProvider.resolve(appFileType = AppFileType.HTML)
         return DesktopPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
+    }
+
+    override fun init(appInstanceId: String, clipId: Long) {
+        relativePath = DesktopFileUtils.createClipRelativePath(
+            appInstanceId = appInstanceId,
+            clipId = clipId,
+            fileName = "html2Image.png"
+        )
     }
 
     override var md5: String = ""

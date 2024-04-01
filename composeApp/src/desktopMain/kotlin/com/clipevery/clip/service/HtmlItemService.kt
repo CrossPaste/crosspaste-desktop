@@ -52,7 +52,11 @@ class HtmlItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
         if (transferData is String) {
             val html = extractHtml(transferData)
             val md5 = md5ByString(html)
-            val relativePath = DesktopFileUtils.createClipRelativePath(appInfo.appInstanceId, clipId, "html2Image.png")
+            val relativePath = DesktopFileUtils.createClipRelativePath(
+                appInstanceId = appInfo.appInstanceId,
+                clipId = clipId,
+                fileName = "html2Image.png"
+            )
             val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
                 realm.query(HtmlClipItem::class, "id == $0", clipItem.id).first().find()?.apply {
                     this.html = html

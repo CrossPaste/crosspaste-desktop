@@ -2,7 +2,7 @@ package com.clipevery.clip.item
 
 import java.nio.file.Path
 
-interface ClipHtml {
+interface ClipHtml: ClipInit {
 
     var html: String
 
