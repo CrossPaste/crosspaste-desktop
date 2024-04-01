@@ -10,7 +10,7 @@ interface ClipDao {
 
     fun getMaxClipId(): Long
 
-    fun createClipData(clipData: ClipData): ObjectId
+    suspend fun createClipData(clipData: ClipData): ObjectId
 
     suspend fun markDeleteClipData(id: ObjectId)
 
@@ -35,5 +35,8 @@ interface ClipDao {
                             limit: Int,
                             createTime: RealmInstant): RealmResults<ClipData>
 
-    suspend fun releaseClipData(id: ObjectId)
+    suspend fun releaseRemoteClipDataWithFile(
+        id: ObjectId,
+        tryWriteClipboard: (ClipData) -> Unit
+    ): List<ObjectId>
 }

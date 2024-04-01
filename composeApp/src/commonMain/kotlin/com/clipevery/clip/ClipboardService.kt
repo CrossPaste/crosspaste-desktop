@@ -3,11 +3,15 @@ package com.clipevery.clip
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.task.TaskExecutor
+import io.github.oshai.kotlinlogging.KLogger
+import kotlinx.coroutines.channels.Channel
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.ClipboardOwner
 import java.awt.datatransfer.Transferable
 
 interface ClipboardService : ClipboardMonitor, ClipboardOwner {
+
+    val logger: KLogger
 
     var owner: Boolean
 
@@ -23,21 +27,32 @@ interface ClipboardService : ClipboardMonitor, ClipboardOwner {
 
     val taskExecutor: TaskExecutor
 
-    fun tryWriteClipboard(clipData: ClipData, localOnly: Boolean = false, filterFile: Boolean = false) {
-        clipProducer.produce(clipData, localOnly, filterFile)?.let {
-            ownerTransferable = it
-            owner = true
-            systemClipboard.setContents(ownerTransferable, this)
+    val clipboardChannel: Channel<suspend () -> Unit>
+
+    suspend fun tryWriteClipboard(clipData: ClipData, localOnly: Boolean = false, filterFile: Boolean = false) {
+        try {
+            clipProducer.produce(clipData, localOnly, filterFile)?.let {
+                ownerTransferable = it
+                owner = true
+                systemClipboard.setContents(ownerTransferable, this)
+            }
+        } catch (e: Exception) {
+            logger.error(e) { "tryWriteClipboard error" }
         }
     }
 
     suspend fun tryWriteRemoteClipboard(clipData: ClipData) {
         val taskIds = clipDao.releaseRemoteClipData(clipData) { storeClipData, filterFile ->
-            tryWriteClipboard(storeClipData, localOnly = true, filterFile)
+            clipboardChannel.trySend { tryWriteClipboard(storeClipData, localOnly = true, filterFile = filterFile) }
         }
         if (taskIds.isNotEmpty()) {
             taskExecutor.submitTasks(taskIds)
         }
     }
 
+    suspend fun tryWriteRemoteClipboardWithFile(clipData: ClipData) {
+        clipDao.releaseRemoteClipDataWithFile(clipData.id) { storeClipData ->
+            clipboardChannel.trySend { tryWriteClipboard(storeClipData, localOnly = true, filterFile = false) }
+        }
+    }
 }

@@ -8,11 +8,13 @@ import com.clipevery.os.macos.api.MacosApi
 import com.clipevery.task.TaskExecutor
 import com.clipevery.utils.cpuDispatcher
 import com.sun.jna.ptr.IntByReference
+import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -24,8 +26,7 @@ class MacosClipboardService(override val clipDao: ClipDao,
                             override val taskExecutor: TaskExecutor,
                             override val clipConsumer: TransferableConsumer,
                             override val clipProducer: TransferableProducer): ClipboardService {
-
-    private val logger = KotlinLogging.logger {}
+    override val logger: KLogger = KotlinLogging.logger {}
 
     private var changeCount = 0
 
@@ -37,9 +38,19 @@ class MacosClipboardService(override val clipDao: ClipDao,
 
     override val systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
 
+    override val clipboardChannel: Channel<suspend () -> Unit> = Channel(Channel.UNLIMITED)
+
     private val serviceScope = CoroutineScope(cpuDispatcher + SupervisorJob())
 
     private var job: Job? = null
+
+    init {
+        serviceScope.launch {
+            for (task in clipboardChannel) {
+                task()
+            }
+        }
+    }
 
     private fun run(): Job {
         return serviceScope.launch(CoroutineName("MacClipboardService")) {

@@ -20,7 +20,6 @@ import org.mongodb.kbson.ObjectId
 @Serializable(with = ClipDataSerializer::class)
 class ClipData: RealmObject {
     @PrimaryKey
-    @Transient
     var id: ObjectId = ObjectId()
     @Index
     var clipId: Long = 0

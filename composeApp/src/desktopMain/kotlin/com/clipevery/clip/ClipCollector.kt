@@ -60,7 +60,7 @@ class ClipCollector(
         existError = true
     }
 
-    fun createPreClipData(clipId: Long, isRemote: Boolean): ObjectId? {
+    suspend fun createPreClipData(clipId: Long, isRemote: Boolean): ObjectId? {
         val collector = preCollectors.filter { it.isNotEmpty() }
         if (collector.isEmpty()) {
             return null

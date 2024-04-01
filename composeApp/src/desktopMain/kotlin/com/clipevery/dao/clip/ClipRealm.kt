@@ -28,8 +28,8 @@ class ClipRealm(private val realm: Realm,
         return realm.query(ClipData::class).sort("clipId", Sort.DESCENDING).first().find()?.clipId ?: 0L
     }
 
-    override fun createClipData(clipData: ClipData): ObjectId {
-        realm.writeBlocking {
+    override suspend fun createClipData(clipData: ClipData): ObjectId {
+        realm.write {
             copyToRealm(clipData)
         }
         return clipData.id
@@ -49,7 +49,7 @@ class ClipRealm(private val realm: Realm,
         }
     }
 
-    private fun MutableRealm.markDeleteClipDatasInWrite(newClipDataId: ObjectId, newClipDataMd5: String): List<ObjectId> {
+    private fun MutableRealm.markDeleteSameMd5(newClipDataId: ObjectId, newClipDataMd5: String): List<ObjectId> {
         val tasks = mutableListOf<ObjectId>()
         query(ClipData::class, "md5 == $0 AND createTime > $1 AND id != $2 AND clipState != $3",
             newClipDataMd5, DateUtils.getPrevDay(), newClipDataId, ClipState.DELETED)
@@ -131,7 +131,7 @@ class ClipRealm(private val realm: Realm,
 
                     val tasks = mutableListOf<ObjectId>()
                     tasks.add(copyToRealm(createTask(clipData.id, TaskType.SYNC_CLIP_TASK, SyncExtraInfo())).taskId)
-                    tasks.addAll(markDeleteClipDatasInWrite(clipData.id, clipData.md5))
+                    tasks.addAll(markDeleteSameMd5(clipData.id, clipData.md5))
                     return@write tasks
                 }
             }
@@ -146,38 +146,49 @@ class ClipRealm(private val realm: Realm,
                                                tryWriteClipboard: (ClipData, Boolean) -> Unit): List<ObjectId> {
         val lock = stripedLocks.get(clipData.getClipDataHashObject()).writeLock()
         val tasks = mutableListOf<ObjectId>()
-        val existFile = !clipData.existFileResource()
+        val existFile = clipData.existFileResource()
         try {
             lock.lock()
-            if (existFile) {
+
+            getClipData(clipData.id)?.let {
+                return listOf()
+            }
+
+            if (!existFile) {
                 clipData.clipState = ClipState.LOADED
-                realm.write {
+                tasks.addAll(realm.write {
                     copyToRealm(clipData)
-                    tasks.addAll(markDeleteClipDatasInWrite(clipData.id, clipData.md5))
-                }
-                tryWriteClipboard(clipData, false)
+                    return@write markDeleteSameMd5(clipData.id, clipData.md5)
+                })
             } else {
                 val pullFileTask = createTask(clipData.id, TaskType.PULL_FILE_TASK)
-                realm.write {
+                tasks.add(realm.write {
                     copyToRealm(clipData)
                     copyToRealm(pullFileTask)
-                }
-                tasks.add(pullFileTask.taskId)
-                tryWriteClipboard(clipData, true)
+                    return@write pullFileTask.taskId
+                })
             }
+            tryWriteClipboard(clipData, existFile)
         } finally {
             lock.unlock()
         }
         return tasks
     }
 
-    override suspend fun releaseClipData(id: ObjectId) {
+    override suspend fun releaseRemoteClipDataWithFile(id: ObjectId,
+                                                       tryWriteClipboard: (ClipData) -> Unit
+    ): List<ObjectId> {
+        val tasks = mutableListOf<ObjectId>()
         realm.write {
             query(ClipData::class, "id == $0", id).first().find()?.let { clipData ->
                 clipData.clipState = ClipState.LOADED
-                copyToRealm(clipData)
+                tasks.addAll(markDeleteSameMd5(clipData.id, clipData.md5))
+                return@write clipData
             }
+        }?.let { clipData ->
+            tryWriteClipboard(clipData)
         }
+        return tasks
     }
 
     override fun update(update: (MutableRealm) -> Unit) {
