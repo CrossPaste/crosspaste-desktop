@@ -20,20 +20,9 @@ import com.clipevery.utils.FileUtils
 import com.clipevery.utils.TaskUtils
 import com.clipevery.utils.TaskUtils.createFailureClipTaskResult
 import com.clipevery.utils.buildUrl
-import com.clipevery.utils.cpuDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import io.ktor.utils.io.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 
 class PullFileTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
                            private val pullFileClientApi: PullFileClientApi,
@@ -110,47 +99,31 @@ class PullFileTaskExecutor(private val lazyClipDao: Lazy<ClipDao>,
                                   filesIndex: FilesIndex,
                                   pullExtraInfo: PullExtraInfo,
                                   concurrencyLevel: Int): ClipTaskResult {
-        val semaphore = Semaphore(concurrencyLevel)
-        val supervisorJob = SupervisorJob()
-        val scope = CoroutineScope(cpuDispatcher + supervisorJob)
-        val channel = Channel<Int>(Channel.UNLIMITED)
-        val results = mutableListOf<Deferred<Pair<Int, ClientApiResult>>>()
         val toUrl: URLBuilder.(URLBuilder) -> Unit = { urlBuilder: URLBuilder ->
             buildUrl(urlBuilder, host, port, "pull", "file")
         }
-        repeat(concurrencyLevel) {
-            scope.launch {
-                for (chunkIndex in channel) {
-                    semaphore.withPermit {
-                        val result = async {
-                            try {
-                                filesIndex.getChunk(chunkIndex)?.let { filesChunk ->
-                                    val pullFileRequest = PullFileRequest(clipData.appInstanceId, clipData.clipId, chunkIndex)
-                                    val result = pullFileClientApi.pullFile(pullFileRequest, toUrl)
-                                    if (result is SuccessResult) {
-                                        val byteReadChannel = result.getResult<ByteReadChannel>()
-                                        fileUtils.writeFilesChunk(filesChunk, byteReadChannel)
-                                        clipDao.releaseClipData(clipData.id)
-                                    }
-                                    Pair(chunkIndex, result)
-                                } ?: Pair(chunkIndex, FailureResult("chunkIndex $chunkIndex out of range"))
-                            } catch (e: Exception) {
-                                Pair(chunkIndex, FailureResult("pull chunk fail: ${e.message}"))
-                            }
+
+
+        val tasks: List<suspend () -> Pair<Int, ClientApiResult>> = List(filesIndex.getChunkCount()) { chunkIndex ->
+            {
+                try {
+                    filesIndex.getChunk(chunkIndex)?.let { filesChunk ->
+                        val pullFileRequest = PullFileRequest(clipData.appInstanceId, clipData.clipId, chunkIndex)
+                        val result = pullFileClientApi.pullFile(pullFileRequest, toUrl)
+                        if (result is SuccessResult) {
+                            val byteReadChannel = result.getResult<ByteReadChannel>()
+                            fileUtils.writeFilesChunk(filesChunk, byteReadChannel)
+                            clipDao.releaseClipData(clipData.id)
                         }
-                        results.add(result)
-                    }
+                        Pair(chunkIndex, result)
+                    } ?: Pair(chunkIndex, FailureResult("chunkIndex $chunkIndex out of range"))
+                } catch (e: Exception) {
+                    Pair(chunkIndex, FailureResult("pull chunk fail: ${e.message}"))
                 }
             }
         }
 
-        for (i in 0 until filesIndex.getChunkCount()) {
-            channel.send(i)
-        }
-
-        channel.close()
-        scope.cancel()
-        val map = results.awaitAll().toMap()
+        val map = TaskSemaphore.withTaskLimit(concurrencyLevel, tasks).toMap()
 
         val successes = map.filter { it.value is SuccessResult }.map { it.key }
 

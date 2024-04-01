@@ -31,7 +31,7 @@ class CacheManager(private val clipDao: ClipDao) {
                         val fileItems = clipData.getClipAppearItems().filter { it is ClipFiles }
                         for (clipAppearItem in fileItems) {
                             val clipFiles = clipAppearItem as ClipFiles
-                            DesktopPathProvider.resolve(appInstanceId, dateString, clipId, clipFiles, true, filesIndexBuilder)
+                            DesktopPathProvider.resolve(appInstanceId, dateString, clipId, clipFiles, false, filesIndexBuilder)
                         }
                         return filesIndexBuilder.build()
                     }
