@@ -104,7 +104,9 @@ class PullFileTaskExecutor(private val clipDao: ClipDao,
         }
 
 
-        val tasks: List<suspend () -> Pair<Int, ClientApiResult>> = List(filesIndex.getChunkCount()) { chunkIndex ->
+        val tasks: List<suspend () -> Pair<Int, ClientApiResult>> = (0..<filesIndex.getChunkCount())
+            .filter { !pullExtraInfo.pullChunks[it] }
+            .map { chunkIndex ->
             {
                 try {
                     filesIndex.getChunk(chunkIndex)?.let { filesChunk ->
