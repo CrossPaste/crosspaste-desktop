@@ -6,7 +6,6 @@ import com.clipevery.task.TaskExecutor
 import com.clipevery.task.extra.SyncExtraInfo
 import com.clipevery.utils.DateUtils
 import com.clipevery.utils.TaskUtils.createTask
-import com.google.common.util.concurrent.Striped
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.Realm
@@ -16,7 +15,6 @@ import io.realm.kotlin.types.RealmAny
 import io.realm.kotlin.types.RealmInstant
 import io.realm.kotlin.types.RealmObject
 import org.mongodb.kbson.ObjectId
-import java.util.concurrent.locks.ReadWriteLock
 
 
 class ClipRealm(private val realm: Realm,
@@ -142,39 +140,30 @@ class ClipRealm(private val realm: Realm,
         }
     }
 
-    private val stripedLocks: Striped<ReadWriteLock> = Striped.readWriteLock(15)
-
     override suspend fun releaseRemoteClipData(clipData: ClipData,
                                                tryWriteClipboard: (ClipData, Boolean) -> Unit) {
-        val lock = stripedLocks.get(clipData.getClipDataHashObject()).writeLock()
         val tasks = mutableListOf<ObjectId>()
         val existFile = clipData.existFileResource()
-        try {
-            lock.lock()
 
-            getClipData(clipData.id)?.let {
-                return
+        realm.write(block = {
+            query(ClipData::class, "id == $0 AND clipState != $1", clipData.id, ClipState.DELETED).first().find()?.let {
+                return@write null
             }
-
             if (!existFile) {
                 clipData.clipState = ClipState.LOADED
-                tasks.addAll(realm.write {
-                    copyToRealm(clipData)
-                    return@write markDeleteSameMd5(clipData.id, clipData.md5)
-                })
+                copyToRealm(clipData)
+                tasks.addAll(markDeleteSameMd5(clipData.id, clipData.md5))
             } else {
                 val pullFileTask = createTask(clipData.id, TaskType.PULL_FILE_TASK)
-                tasks.add(realm.write {
-                    copyToRealm(clipData)
-                    copyToRealm(pullFileTask)
-                    return@write pullFileTask.taskId
-                })
+                copyToRealm(clipData)
+                copyToRealm(pullFileTask)
+                tasks.add(pullFileTask.taskId)
             }
+            return@write clipData
+        })?.let {
             tryWriteClipboard(clipData, existFile)
-        } finally {
-            lock.unlock()
+            taskExecutor.submitTasks(tasks)
         }
-        taskExecutor.submitTasks(tasks)
     }
 
     override suspend fun releaseRemoteClipDataWithFile(id: ObjectId,
