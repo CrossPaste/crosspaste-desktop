@@ -113,7 +113,6 @@ class PullFileTaskExecutor(private val clipDao: ClipDao,
                         if (result is SuccessResult) {
                             val byteReadChannel = result.getResult<ByteReadChannel>()
                             fileUtils.writeFilesChunk(filesChunk, byteReadChannel)
-                            clipboardService.tryWriteRemoteClipboardWithFile(clipData)
                         }
                         Pair(chunkIndex, result)
                     } ?: Pair(chunkIndex, FailureResult("chunkIndex $chunkIndex out of range"))
@@ -139,6 +138,7 @@ class PullFileTaskExecutor(private val clipDao: ClipDao,
                 extraInfo = pullExtraInfo
             )
         } else {
+            clipboardService.tryWriteRemoteClipboardWithFile(clipData)
             SuccessClipTaskResult()
         }
     }
