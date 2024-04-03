@@ -1,6 +1,7 @@
 package com.clipevery.routing
 
 import com.clipevery.Dependencies
+import com.clipevery.app.AppInfo
 import com.clipevery.app.AppUI
 import com.clipevery.dao.signal.ClipIdentityKey
 import com.clipevery.dao.signal.SignalDao
@@ -14,6 +15,7 @@ import com.clipevery.utils.encodePreKeyBundle
 import com.clipevery.utils.failResponse
 import com.clipevery.utils.getAppInstanceId
 import com.clipevery.utils.successResponse
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
@@ -31,7 +33,11 @@ import java.util.Objects
 
 fun Routing.syncRouting() {
 
+    val logger = KotlinLogging.logger {}
+
     val koinApplication = Dependencies.koinApplication
+
+    val appInfo = koinApplication.koin.get<AppInfo>()
 
     val signalDao = koinApplication.koin.get<SignalDao>()
 
@@ -48,8 +54,12 @@ fun Routing.syncRouting() {
                 val identityKeys = requestTrustSyncInfos.map { ClipIdentityKey(it.syncInfo.appInfo.appInstanceId, it.identityKey.serialize()) }
                 syncRuntimeInfoDao.inertOrUpdate(syncInfos)
                 signalDao.saveIdentities(identityKeys)
+                logger.debug { "$appInstanceId sync info to ${appInfo.appInstanceId}:\n $syncInfos" }
                 successResponse(call)
-            } ?:  failResponse(call, StandardErrorCode.SIGNAL_UNTRUSTED_IDENTITY.toErrorCode(), "not trust $appInstanceId")
+            } ?:  run {
+                logger.debug { "${appInfo.appInstanceId} not trust $appInstanceId in /sync/syncInfos api" }
+                failResponse(call, StandardErrorCode.SIGNAL_UNTRUSTED_IDENTITY.toErrorCode(), "not trust $appInstanceId")
+            }
         }
     }
 
@@ -63,6 +73,7 @@ fun Routing.syncRouting() {
             val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
 
             signalProtocolStore.getIdentity(signalProtocolAddress) ?: run {
+                logger.debug { "${appInfo.appInstanceId} not trust $appInstanceId in /sync/preKeyBundle api" }
                 failResponse(call, StandardErrorCode.SIGNAL_UNTRUSTED_IDENTITY.toErrorCode(), "not trust $appInstanceId")
                 return@get
             }
@@ -92,6 +103,7 @@ fun Routing.syncRouting() {
             )
 
             val bytes = encodePreKeyBundle(preKeyBundle)
+            logger.debug { "${appInfo.appInstanceId} create preKeyBundle for $appInstanceId:\n $preKeyBundle" }
             successResponse(call, DataContent(bytes))
         }
     }
@@ -124,6 +136,7 @@ fun Routing.syncRouting() {
                     )
                     decrypt = sessionCipher.decrypt(preKeySignalMessage)
                 } else {
+                    logger.debug { "$appInstanceId exchangePreKey to ${appInfo.appInstanceId}, not contain signedPreKeyId" }
                     failResponse(call, StandardErrorCode.SIGNAL_INVALID_KEY_ID.toErrorCode())
                     return@let
                 }
@@ -131,8 +144,10 @@ fun Routing.syncRouting() {
 
             if (Objects.equals("exchange", String(decrypt!!, Charsets.UTF_8))) {
                 val ciphertextMessage = sessionCipher.encrypt("exchange".toByteArray(Charsets.UTF_8))
+                logger.debug { "$appInstanceId exchangePreKey to ${appInfo.appInstanceId} success" }
                 successResponse(call, DataContent(ciphertextMessage.serialize()))
             } else {
+                logger.debug { "$appInstanceId exchangePreKey to ${appInfo.appInstanceId} fail" }
                 failResponse(call, StandardErrorCode.SIGNAL_EXCHANGE_FAIL.toErrorCode())
             }
         }
@@ -142,14 +157,19 @@ fun Routing.syncRouting() {
         val appUI = koinApplication.koin.get<AppUI>()
         appUI.showToken = true
         appUI.showMainWindow = true
+        logger.debug { "show token" }
     }
 
     get("/sync/isTrust") {
         getAppInstanceId(call).let { appInstanceId ->
             val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
             signalProtocolStore.getIdentity(signalProtocolAddress)?.let {
+                logger.debug { "${appInfo.appInstanceId} isTrust $appInstanceId" }
                 successResponse(call)
-            } ?: failResponse(call, StandardErrorCode.SIGNAL_UNTRUSTED_IDENTITY.toErrorCode(), "not trust $appInstanceId")
+            } ?: run {
+                logger.debug { "${appInfo.appInstanceId} not trust $appInstanceId in /sync/isTrust api" }
+                failResponse(call, StandardErrorCode.SIGNAL_UNTRUSTED_IDENTITY.toErrorCode(), "not trust $appInstanceId")
+            }
         }
     }
 
@@ -166,11 +186,23 @@ fun Routing.syncRouting() {
                     requestTrust.identityKey
                 )
                 appUI.showToken = false
+                logger.debug { "${appInfo.appInstanceId} to trust $appInstanceId" }
                 successResponse(call)
             } else {
+                logger.error { "token invalid: ${requestTrust.token}" }
                 failResponse(call, StandardErrorCode.TOKEN_INVALID.toErrorCode())
             }
         }
     }
 }
 
+fun PreKeyBundle.toString() {
+    "PreKeyBundle(registrationId=$registrationId, " +
+            "deviceId=$deviceId, " +
+            "preKeyId=$preKeyId, " +
+            "preKey=$preKey, " +
+            "signedPreKeyId=$signedPreKeyId, " +
+            "signedPreKey=$signedPreKey, " +
+            "signedPreKeySignature=$signedPreKeySignature, " +
+            "identityKey=$identityKey)"
+}

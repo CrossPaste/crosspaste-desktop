@@ -4,16 +4,16 @@ import com.clipevery.dto.sync.DataContent
 import com.clipevery.net.ClipClient
 import com.clipevery.utils.decodePreKeyBundle
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.client.call.body
-import io.ktor.http.URLBuilder
-import io.ktor.util.reflect.typeInfo
+import io.ktor.client.call.*
+import io.ktor.http.*
+import io.ktor.util.reflect.*
 import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.message.SignalMessage
 import org.signal.libsignal.protocol.state.PreKeyBundle
 
 class DesktopSyncClientApi(private val clipClient: ClipClient): SyncClientApi {
 
-    val logger = KotlinLogging.logger {}
+    private val logger = KotlinLogging.logger {}
 
     override suspend fun getPreKeyBundle(toUrl: URLBuilder.(URLBuilder) -> Unit): PreKeyBundle? {
         try {

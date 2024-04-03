@@ -102,6 +102,7 @@ compose.desktop {
         jvmArgs("-DsupportShortcutKey=true")
         jvmArgs("-Dcompose.interop.blending=true")
         jvmArgs("-Dio.netty.maxDirectMemory=268435456")
+        jvmArgs("-DloggerDebugPackages=com.clipevery.routing,com.clipevery.net.clientapi")
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
