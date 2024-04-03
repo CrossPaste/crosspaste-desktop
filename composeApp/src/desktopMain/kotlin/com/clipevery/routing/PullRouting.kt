@@ -9,12 +9,15 @@ import com.clipevery.utils.FileUtils
 import com.clipevery.utils.failResponse
 import com.clipevery.utils.getAppInstanceId
 import com.clipevery.utils.successResponse
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.utils.io.*
 
 fun Routing.pullRouting() {
+
+    val logger = KotlinLogging.logger {}
 
     val koinApplication = Dependencies.koinApplication
 
@@ -32,10 +35,12 @@ fun Routing.pullRouting() {
 
             syncManager.getSyncHandlers()[fromAppInstanceId]?.let {
                 if (!it.syncRuntimeInfo.allowSend) {
+                    logger.debug { "sync handler ($fromAppInstanceId) not allow send" }
                     failResponse(call, StandardErrorCode.SYNC_NOT_ALLOW_SEND.toErrorCode())
                     return@post
                 }
             } ?: run {
+                logger.error { "not found appInstance id: $fromAppInstanceId" }
                 failResponse(call, StandardErrorCode.NOT_FOUND_APP_INSTANCE_ID.toErrorCode())
                 return@post
             }
@@ -46,7 +51,11 @@ fun Routing.pullRouting() {
                         fileUtils.readFilesChunk(chunk, this)
                     }
                     successResponse(call, producer)
-                } ?: failResponse(call, StandardErrorCode.OUT_RANGE_CHUNK_INDEX.toErrorCode(), "out range chunk index ${pullFileRequest.chunkIndex}")
+                } ?: run {
+                    logger.error { "$fromAppInstanceId get $appInstanceId chunk out range: ${pullFileRequest.chunkIndex}" }
+                    failResponse(call, StandardErrorCode.OUT_RANGE_CHUNK_INDEX.toErrorCode(),
+                        "out range chunk index ${pullFileRequest.chunkIndex}")
+                }
             }
         }
     }

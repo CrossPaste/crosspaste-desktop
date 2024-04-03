@@ -49,4 +49,9 @@ suspend inline fun getAppInstanceId(call: ApplicationCall): String? {
 
 @Serializable
 data class FailResponse(val errorCode: Int,
-                        val message: String = "")
+                        val message: String = "") {
+
+    override fun toString(): String {
+        return "FailResponse(errorCode=$errorCode, message='$message')"
+    }
+}

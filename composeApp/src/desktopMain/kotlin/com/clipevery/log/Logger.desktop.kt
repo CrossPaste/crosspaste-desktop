@@ -41,6 +41,13 @@ actual fun initLogger(logPath: String) {
 
     val jThemeLogger = context.getLogger("com.jthemedetecor") as ch.qos.logback.classic.Logger
     jThemeLogger.level = Level.OFF
+
+    System.getProperty("loggerDebugPackages")?.let { debugPackages ->
+        for (packageName in debugPackages.split(",")) {
+            val logger = context.getLogger(packageName) as ch.qos.logback.classic.Logger
+            logger.level = Level.DEBUG
+        }
+    }
 }
 
 fun getLevel(logLevel: String): Level {
