@@ -3,6 +3,7 @@ package com.clipevery.routing
 import com.clipevery.Dependencies
 import com.clipevery.clip.CacheManager
 import com.clipevery.dto.pull.PullFileRequest
+import com.clipevery.dto.pull.PullFilesKey
 import com.clipevery.exception.StandardErrorCode
 import com.clipevery.sync.SyncManager
 import com.clipevery.utils.FileUtils
@@ -60,6 +61,3 @@ fun Routing.pullRouting() {
         }
     }
 }
-
-data class PullFilesKey(val appInstanceId: String,
-                        val clipId: Long)

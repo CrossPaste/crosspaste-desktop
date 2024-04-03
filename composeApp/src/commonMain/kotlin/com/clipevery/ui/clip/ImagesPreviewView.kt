@@ -44,7 +44,7 @@ fun ImagesPreviewView(clipData: ClipData) {
         }, {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    image(),
+                    painter = image(),
                     contentDescription = "Image",
                     modifier = Modifier.padding(3.dp).size(14.dp),
                     tint = MaterialTheme.colors.onBackground

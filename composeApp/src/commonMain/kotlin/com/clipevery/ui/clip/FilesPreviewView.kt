@@ -23,7 +23,7 @@ import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.file
 import com.clipevery.utils.FileExtUtils.canPreviewImage
-import io.ktor.util.*
+import kotlin.io.path.extension
 
 @Composable
 fun FilesPreviewView(clipData: ClipData) {
