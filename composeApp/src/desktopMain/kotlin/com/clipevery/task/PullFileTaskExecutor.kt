@@ -128,13 +128,24 @@ class PullFileTaskExecutor(private val clipDao: ClipDao,
 
         val successes = map.filter { it.value is SuccessResult }.map { it.key }
 
+        for (entry in map.filter { it.value is FailureResult }) {
+            logger.error { "chunk index ${entry.key} fail: ${(entry.value as FailureResult).message}" }
+        }
+
         successes.forEach {
             pullExtraInfo.pullChunks[it] = true
         }
 
         return if (pullExtraInfo.pullChunks.contains(false)) {
+            val needRetry = pullExtraInfo.executionHistories.size < 3
+
+            if (!needRetry) {
+                logger.error { "exist pull chunk fail" }
+                clipboardService.clearRemoteClipboard(clipData)
+            }
+
             createFailureClipTaskResult(
-                retryHandler = { pullExtraInfo.executionHistories.size < 3 },
+                retryHandler = { needRetry },
                 startTime = System.currentTimeMillis(),
                 failMessage = "exist pull chunk fail",
                 extraInfo = pullExtraInfo
