@@ -16,6 +16,7 @@ class DesktopPullFileClientApi(private val clipClient: ClipClient,
             messageType = typeInfo<PullFileRequest>(),
             targetAppInstanceId = pullFileRequest.appInstanceId,
             encrypt = configManager.config.isEncryptSync,
+            timeout = 5000L, // pull file timeout is 5s
             urlBuilder = toUrl)
 
         return if (response.status.value == 200) {

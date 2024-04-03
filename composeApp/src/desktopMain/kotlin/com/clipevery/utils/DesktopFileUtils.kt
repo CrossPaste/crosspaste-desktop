@@ -199,9 +199,9 @@ object DesktopFileUtils: FileUtils {
             val file = fileChunk.path.toFile()
             val offset = fileChunk.offset
             val size = fileChunk.size
+            val buffer = ByteArray(8192)
             RandomAccessFile(file, "rw").use { randomAccessFile ->
                 randomAccessFile.seek(offset)
-                val buffer = ByteArray(8192)
                 var remaining = size
                 while (remaining > 0) {
                     val toRead = minOf(buffer.size, remaining.toInt())

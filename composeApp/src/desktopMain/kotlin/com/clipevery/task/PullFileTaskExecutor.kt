@@ -35,7 +35,7 @@ class PullFileTaskExecutor(private val clipDao: ClipDao,
 
         private val logger = KotlinLogging.logger {}
 
-        const val CHUNK_SIZE: Long = 4096 * 1024 // 4MB
+        const val CHUNK_SIZE: Long = 1024 * 1024 // 1MB
     }
 
     override val taskType: Int = TaskType.PULL_FILE_TASK
@@ -71,7 +71,7 @@ class PullFileTaskExecutor(private val clipDao: ClipDao,
                 val port = it.syncRuntimeInfo.port
 
                 it.getConnectHostAddress()?.let { host ->
-                    return pullFiles(clipData, host, port, filesIndex, pullExtraInfo, 4)
+                    return pullFiles(clipData, host, port, filesIndex, pullExtraInfo, 8)
                 } ?: run {
                     return createFailureClipTaskResult(
                         retryHandler = { pullExtraInfo.executionHistories.size < 3 },
@@ -124,7 +124,7 @@ class PullFileTaskExecutor(private val clipDao: ClipDao,
             }
         }
 
-        val map = TaskSemaphore.withTaskLimit(concurrencyLevel, tasks).toMap()
+        val map = TaskSemaphore.withIoTaskLimit(concurrencyLevel, tasks).toMap()
 
         val successes = map.filter { it.value is SuccessResult }.map { it.key }
 
