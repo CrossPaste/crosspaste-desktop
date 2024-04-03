@@ -53,8 +53,8 @@ class ClipData: RealmObject {
         realm.delete(this)
     }
 
-    fun getClipDataHashObject(): ClipDataHashObject {
-        return ClipDataHashObject(clipId, appInstanceId)
+    fun getClipDataSortObject(): ClipDataSortObject {
+        return ClipDataSortObject(createTime, clipId, appInstanceId)
     }
 
     fun getClipAppearItems(): List<ClipAppearItem> {
@@ -82,8 +82,13 @@ class ClipData: RealmObject {
     }
 }
 
-data class ClipDataHashObject(val clipId: Long, val appInstanceId: String): Comparable<ClipDataHashObject> {
-    override fun compareTo(other: ClipDataHashObject): Int {
+data class ClipDataSortObject(val createTime: RealmInstant, val clipId: Long, val appInstanceId: String) : Comparable<ClipDataSortObject> {
+
+    override fun compareTo(other: ClipDataSortObject): Int {
+        val createTimeCompare = createTime.compareTo(other.createTime)
+        if (createTimeCompare != 0) {
+            return createTimeCompare
+        }
         val clipIdCompare = clipId.compareTo(other.clipId)
         if (clipIdCompare != 0) {
             return clipIdCompare
@@ -91,4 +96,21 @@ data class ClipDataHashObject(val clipId: Long, val appInstanceId: String): Comp
         return appInstanceId.compareTo(other.appInstanceId)
     }
 
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is ClipDataSortObject) return false
+
+        if (createTime != other.createTime) return false
+        if (clipId != other.clipId) return false
+        if (appInstanceId != other.appInstanceId) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = createTime.hashCode()
+        result = 31 * result + clipId.hashCode()
+        result = 31 * result + appInstanceId.hashCode()
+        return result
+    }
 }

@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.dp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipData
-import com.clipevery.dao.clip.ClipDataHashObject
+import com.clipevery.dao.clip.ClipDataSortObject
 import io.realm.kotlin.notifications.InitialResults
 import io.realm.kotlin.notifications.ResultsChange
 import io.realm.kotlin.notifications.UpdatedResults
@@ -44,7 +44,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-val clipDataComparator = compareByDescending<ClipData> { it.getClipDataHashObject() }
+val clipDataComparator = compareByDescending<ClipData> { it.getClipDataSortObject() }
 
 @Composable
 fun ClipPreviewsView() {
@@ -77,7 +77,7 @@ fun ClipPreviewsView() {
                     }
 
                     val md5Set: MutableSet<String> = mutableSetOf()
-                    val clipDataHashSet: MutableSet<ClipDataHashObject> = mutableSetOf()
+                    val clipDataHashSet: MutableSet<ClipDataSortObject> = mutableSetOf()
                     if (changes.changes.isNotEmpty()) {
                         for (i in 0 until changes.changes.size) {
                             val changeItem = changes.list[changes.changes[i]]
@@ -85,7 +85,7 @@ fun ClipPreviewsView() {
                             if (changeIndex >= 0) {
                                 rememberClipDataList[changeIndex] = changeItem
                                 md5Set.add(changeItem.md5)
-                                clipDataHashSet.add(changeItem.getClipDataHashObject())
+                                clipDataHashSet.add(changeItem.getClipDataSortObject())
                             }
                         }
                     }
@@ -94,7 +94,7 @@ fun ClipPreviewsView() {
                         val iterator = rememberClipDataList.iterator()
                         while (iterator.hasNext()) {
                             val clipData = iterator.next()
-                            val hashObject = clipData.getClipDataHashObject()
+                            val hashObject = clipData.getClipDataSortObject()
                             if (md5Set.contains(clipData.md5) && !clipDataHashSet.contains(hashObject)) {
                                 iterator.remove()
                             }
