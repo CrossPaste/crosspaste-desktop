@@ -101,6 +101,7 @@ compose.desktop {
         jvmArgs("-DappEnv=$appEnv")
         jvmArgs("-DsupportShortcutKey=true")
         jvmArgs("-Dcompose.interop.blending=true")
+        jvmArgs("-Dio.netty.maxDirectMemory=268435456")
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
