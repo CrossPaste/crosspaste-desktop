@@ -49,4 +49,8 @@ interface ClipboardService : ClipboardMonitor, ClipboardOwner {
             clipboardChannel.trySend { tryWriteClipboard(storeClipData, localOnly = true, filterFile = false) }
         }
     }
+
+    suspend fun clearRemoteClipboard(clipData: ClipData) {
+        clipDao.markDeleteClipData(clipData.id)
+    }
 }
