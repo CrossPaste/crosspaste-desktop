@@ -19,12 +19,10 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.mongodb.kbson.BsonObjectId
 import org.mongodb.kbson.ObjectId
-import java.awt.Image
 import java.awt.datatransfer.DataFlavor
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
-import javax.imageio.ImageIO
 
 @Serializable
 @SerialName("images")
@@ -98,14 +96,7 @@ class ImagesClipItem: RealmObject, ClipAppearItem, ClipFiles {
 
     override fun fillDataFlavor(map: MutableMap<DataFlavor, Any>) {
         val filePaths = getFilePaths()
-        if (filePaths.size == 1) {
-            val imageFile = filePaths[0].toFile()
-            val bufferedImage: Image = ImageIO.read(imageFile)
-            map[DataFlavor.imageFlavor] = bufferedImage
-            map[DataFlavor.javaFileListFlavor] = listOf(imageFile)
-        } else {
-            val fileList: List<File> = filePaths.map { it.toFile() }
-            map[DataFlavor.javaFileListFlavor] = fileList
-        }
+        val fileList: List<File> = filePaths.map { it.toFile() }
+        map[DataFlavor.javaFileListFlavor] = fileList
     }
 }
