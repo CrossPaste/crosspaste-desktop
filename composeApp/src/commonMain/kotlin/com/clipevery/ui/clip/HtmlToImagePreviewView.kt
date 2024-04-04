@@ -22,9 +22,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -37,22 +36,22 @@ import com.clipevery.clip.item.ClipHtml
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.presist.FilePersist
+import com.clipevery.ui.base.AsyncView
+import com.clipevery.ui.base.LoadImageData
 import com.clipevery.ui.base.html
-import com.clipevery.ui.resource.ClipResourceLoader
+import com.clipevery.ui.base.loadImage
 import com.clipevery.utils.FileUtils
 import java.awt.Desktop
-import kotlin.io.path.absolutePathString
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun HtmlToImagePreviewView(clipData: ClipData) {
     clipData.getClipItem()?.let {
         val current = LocalKoinApplication.current
+        val density = LocalDensity.current
         val copywriter = current.koin.get<GlobalCopywriter>()
         val fileUtils = current.koin.get<FileUtils>()
         val filePersist = current.koin.get<FilePersist>()
         val chromeService = current.koin.get<ChromeService>()
-        val fileResourceLoader = current.koin.get<ClipResourceLoader>()
 
         val clipHtml = it as ClipHtml
 
@@ -72,46 +71,62 @@ fun HtmlToImagePreviewView(clipData: ClipData) {
 
         ClipSpecificPreviewContentView(it, {
             Row {
-                if (existFile) {
-                    val html2ImagePainter = painterResource(filePath.absolutePathString(), fileResourceLoader)
 
-                    val horizontalScrollState = rememberScrollState()
-                    val verticalScrollState = rememberScrollState()
+                AsyncView(
+                    load = {
+                        if (!existFile) {
+                            chromeService.html2Image(clipHtml.html)?.let { bytes ->
+                                filePersist.createOneFilePersist(filePath).saveBytes(bytes)
+                                existFile = true
+                            }
+                        }
+                        LoadImageData(filePath, loadImage(filePath, density))
+                    },
+                    loadFor = { loadImageView ->
+                        when (loadImageView) {
+                            is LoadImageData -> {
+                                val horizontalScrollState = rememberScrollState()
+                                val verticalScrollState = rememberScrollState()
 
-                    BoxWithConstraints(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .horizontalScroll(horizontalScrollState)
-                            .verticalScroll(verticalScrollState)
-                            .clickable {
-                                if (Desktop.isDesktopSupported()) {
-                                    fileUtils.createTempFile(it.html.toByteArray(), fileUtils.createRandomFileName("html"))?.let { path ->
-                                        val desktop = Desktop.getDesktop()
-                                        desktop.browse(path.toFile().toURI())
-                                    }
+                                BoxWithConstraints(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .horizontalScroll(horizontalScrollState)
+                                        .verticalScroll(verticalScrollState)
+                                        .clickable {
+                                            if (Desktop.isDesktopSupported()) {
+                                                fileUtils.createTempFile(it.html.toByteArray(), fileUtils.createRandomFileName("html"))?.let { path ->
+                                                    val desktop = Desktop.getDesktop()
+                                                    desktop.browse(path.toFile().toURI())
+                                                }
+                                            }
+                                        }
+                                ) {
+                                    Image(
+                                        painter = loadImageView.toPainterImage.toPainter(),
+                                        contentDescription = "Html 2 Image",
+                                        modifier = Modifier.wrapContentSize()
+                                    )
                                 }
                             }
-                    ) {
-                        Image(
-                            painter = html2ImagePainter,
-                            contentDescription = "Html 2 Image",
-                            modifier = Modifier.wrapContentSize()
-                        )
+
+                            else -> {
+                                Text(
+                                    text = clipHtml.html,
+                                    fontFamily = FontFamily.SansSerif,
+                                    maxLines = 4,
+                                    softWrap = true,
+                                    overflow = TextOverflow.Ellipsis,
+                                    style = TextStyle(
+                                        fontWeight = FontWeight.Normal,
+                                        color = MaterialTheme.colors.onBackground,
+                                        fontSize = 14.sp
+                                    )
+                                )
+                            }
+                        }
                     }
-                } else {
-                    Text(
-                        text = clipHtml.html,
-                        fontFamily = FontFamily.SansSerif,
-                        maxLines = 4,
-                        softWrap = true,
-                        overflow = TextOverflow.Ellipsis,
-                        style = TextStyle(
-                            fontWeight = FontWeight.Normal,
-                            color = MaterialTheme.colors.onBackground,
-                            fontSize = 14.sp
-                        )
-                    )
-                }
+                )
             }
         }, {
             Row(verticalAlignment = Alignment.CenterVertically) {
