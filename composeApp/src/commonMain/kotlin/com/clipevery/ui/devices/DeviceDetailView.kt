@@ -74,7 +74,9 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
             .background(MaterialTheme.colors.background)
         ) {
             Row(
-                modifier = Modifier.wrapContentSize().padding(horizontal = 12.dp),
+                modifier = Modifier.wrapContentSize()
+                    .padding(horizontal = 12.dp)
+                    .padding(vertical = 5.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(text = copywriter.getText("Allow_Send_to_this_device"),
@@ -85,7 +87,10 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
                     modifier = Modifier.weight(1f)
                 )
                 CustomSwitch(
-                    modifier = Modifier.align(Alignment.CenterVertically).padding(0.dp),
+                    modifier = Modifier.align(Alignment.CenterVertically)
+                        .width(32.dp)
+                        .height(20.dp)
+                        .padding(0.dp),
                     checked = syncRuntimeInfo.allowSend,
                     onCheckedChange = {
                         syncRuntimeInfoDao.update(syncRuntimeInfo) {
@@ -99,7 +104,9 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
             Divider(modifier = Modifier.padding(start = 15.dp), color = Color.Gray)
 
             Row(
-                modifier = Modifier.wrapContentSize().padding(horizontal = 12.dp),
+                modifier = Modifier.wrapContentSize()
+                    .padding(horizontal = 12.dp)
+                    .padding(vertical = 5.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(text = copywriter.getText("Allow_Receive_from_this_device"),
@@ -110,7 +117,10 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
                     modifier = Modifier.weight(1f)
                 )
                 CustomSwitch(
-                    modifier = Modifier.align(Alignment.CenterVertically).padding(0.dp),
+                    modifier = Modifier.align(Alignment.CenterVertically)
+                        .width(32.dp)
+                        .height(20.dp)
+                        .padding(0.dp),
                     checked = syncRuntimeInfo.allowReceive,
                     onCheckedChange = {
                         syncRuntimeInfoDao.update(syncRuntimeInfo) {

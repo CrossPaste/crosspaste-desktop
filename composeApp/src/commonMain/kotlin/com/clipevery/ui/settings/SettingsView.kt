@@ -190,16 +190,20 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
             }
         }
 
-        Row(modifier = Modifier.fillMaxWidth().height(40.dp).padding(20.dp, 5.dp, 0.dp, 5.dp),
+        Row(modifier = Modifier.fillMaxWidth().height(40.dp).padding(25.dp, 5.dp, 0.dp, 5.dp),
             verticalAlignment = Alignment.CenterVertically) {
             var isEncrypted by remember { mutableStateOf(configManager.config.isEncryptSync) }
             CustomSwitch(
+                modifier = Modifier.width(32.dp)
+                    .height(20.dp),
                 checked = isEncrypted,
                 onCheckedChange = { it ->
                     isEncrypted = it
                     configManager.updateConfig { it.copy(isEncryptSync = isEncrypted) }
                 }
             )
+
+            Spacer(modifier = Modifier.width(10.dp))
 
             Text(text = copywriter.getText("Encrypted_sync"),
                 color = MaterialTheme.colors.onBackground,
@@ -208,14 +212,18 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                 style = TextStyle(fontWeight = FontWeight.Light))
         }
 
-        Row(modifier = Modifier.fillMaxWidth().height(40.dp).padding(20.dp, 5.dp, 0.dp, 5.dp),
+        Row(modifier = Modifier.fillMaxWidth().height(40.dp).padding(25.dp, 5.dp, 0.dp, 5.dp),
             verticalAlignment = Alignment.CenterVertically) {
             var isChecked by remember { mutableStateOf(false) }
             // TODO: Boot_start_up
             CustomSwitch(
+                modifier = Modifier.width(32.dp)
+                    .height(20.dp),
                 checked = isChecked,
                 onCheckedChange = { isChecked = it }
             )
+
+            Spacer(modifier = Modifier.width(10.dp))
 
             Text(text = copywriter.getText("Boot_start_up"),
                 color = MaterialTheme.colors.onBackground,
@@ -224,14 +232,18 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                 style = TextStyle(fontWeight = FontWeight.Light))
         }
 
-        Row(modifier = Modifier.fillMaxWidth().height(40.dp).padding(20.dp, 5.dp, 0.dp, 5.dp),
+        Row(modifier = Modifier.fillMaxWidth().height(40.dp).padding(25.dp, 5.dp, 0.dp, 5.dp),
             verticalAlignment = Alignment.CenterVertically) {
             var isChecked by remember { mutableStateOf(false) }
             // TODO: AutomaticUpdate
             CustomSwitch(
+                modifier = Modifier.width(32.dp)
+                    .height(20.dp),
                 checked = isChecked,
                 onCheckedChange = { isChecked = it }
             )
+
+            Spacer(modifier = Modifier.width(10.dp))
 
             Text(text = copywriter.getText("AutomaticUpdate"),
                 color = MaterialTheme.colors.onBackground,
