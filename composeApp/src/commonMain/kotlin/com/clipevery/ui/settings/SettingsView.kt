@@ -97,14 +97,11 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
     WindowDecoration(currentPageViewContext, "Settings")
 
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize()
+        .background(MaterialTheme.colors.surface)) {
         Row(modifier = Modifier.fillMaxWidth().padding(25.dp, 5.dp, 0.dp, 5.dp),
             verticalAlignment = Alignment.CenterVertically) {
-            Text(text = "${copywriter.getText("Language")}:",
-                color = MaterialTheme.colors.onBackground,
-                fontSize = 14.sp,
-                fontFamily = FontFamily.SansSerif,
-                style = TextStyle(fontWeight = FontWeight.Light))
+            settingsText("${copywriter.getText("Language")}:")
             Row(modifier = Modifier.padding(6.dp).wrapContentSize()
                 .combinedClickable(interactionSource = MutableInteractionSource(),
                     indication = null,
@@ -120,12 +117,8 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                     languageSize = coordinates.size.toSize()
                 },
                 verticalAlignment = Alignment.CenterVertically) {
-                Text(text = copywriter.getText("CurrentLanguage"),
-                    color = MaterialTheme.colors.onBackground,
-                    fontSize = 14.sp,
-                    fontFamily = FontFamily.SansSerif,
-                    style = TextStyle(fontWeight = FontWeight.Light)
-                )
+                settingsText(copywriter.getText("CurrentLanguage"))
+
                 Icon(
                     modifier = Modifier
                         .padding(5.dp, 0.dp, 5.dp, 0.dp)
@@ -180,11 +173,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
 
         Row(modifier = Modifier.fillMaxWidth().padding(25.dp, 5.dp, 0.dp, 5.dp),
             verticalAlignment = Alignment.CenterVertically) {
-            Text(text = "${copywriter.getText("Theme")}:",
-                color = MaterialTheme.colors.onBackground,
-                fontSize = 14.sp,
-                fontFamily = FontFamily.SansSerif,
-                style = TextStyle(fontWeight = FontWeight.Light))
+            settingsText(copywriter.getText("Theme"))
             Row(Modifier.padding(5.dp, 0.dp, 0.dp, 0.dp)) {
                 ThemeSegmentedControl()
             }
@@ -205,11 +194,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
 
             Spacer(modifier = Modifier.width(10.dp))
 
-            Text(text = copywriter.getText("Encrypted_sync"),
-                color = MaterialTheme.colors.onBackground,
-                fontSize = 14.sp,
-                fontFamily = FontFamily.SansSerif,
-                style = TextStyle(fontWeight = FontWeight.Light))
+            settingsText(copywriter.getText("Encrypted_sync"))
         }
 
         Row(modifier = Modifier.fillMaxWidth().height(40.dp).padding(25.dp, 5.dp, 0.dp, 5.dp),
@@ -225,11 +210,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
 
             Spacer(modifier = Modifier.width(10.dp))
 
-            Text(text = copywriter.getText("Boot_start_up"),
-                color = MaterialTheme.colors.onBackground,
-                fontSize = 14.sp,
-                fontFamily = FontFamily.SansSerif,
-                style = TextStyle(fontWeight = FontWeight.Light))
+            settingsText(copywriter.getText("Boot_start_up"))
         }
 
         Row(modifier = Modifier.fillMaxWidth().height(40.dp).padding(25.dp, 5.dp, 0.dp, 5.dp),
@@ -245,11 +226,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
 
             Spacer(modifier = Modifier.width(10.dp))
 
-            Text(text = copywriter.getText("AutomaticUpdate"),
-                color = MaterialTheme.colors.onBackground,
-                fontSize = 14.sp,
-                fontFamily = FontFamily.SansSerif,
-                style = TextStyle(fontWeight = FontWeight.Light))
+            settingsText(copywriter.getText("AutomaticUpdate"))
         }
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -266,14 +243,17 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
         }
         Spacer(modifier = Modifier.height(10.dp))
         SettingsItemView("Store") {
-            Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                Text(text = copywriter.getText("Store"),
-                    color = MaterialTheme.colors.onBackground,
-                    fontSize = 14.sp,
-                    fontFamily = FontFamily.SansSerif,
-                    style = TextStyle(fontWeight = FontWeight.Light)
-                )
-            }
+            StoreSettingsView()
         }
     }
+}
+
+@Composable
+fun settingsText(text: String) {
+    Text(text = text,
+        color = MaterialTheme.colors.onBackground,
+        fontSize = 14.sp,
+        fontFamily = FontFamily.SansSerif,
+        style = TextStyle(fontWeight = FontWeight.Light)
+    )
 }

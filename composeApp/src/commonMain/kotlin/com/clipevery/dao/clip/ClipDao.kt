@@ -16,6 +16,8 @@ interface ClipDao {
 
     suspend fun deleteClipData(id: ObjectId)
 
+    fun getClipResourceInfo(): ClipResourceInfo
+
     fun getClipData(appInstanceId: String? = null,
                     limit: Int): RealmResults<ClipData>
 
