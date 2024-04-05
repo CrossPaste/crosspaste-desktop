@@ -16,7 +16,6 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,19 +58,8 @@ fun HtmlToImagePreviewView(clipData: ClipData) {
 
         var existFile by remember { mutableStateOf(filePath.toFile().exists()) }
 
-
-        LaunchedEffect(Unit) {
-            if (!existFile) {
-                chromeService.html2Image(clipHtml.html)?.let { bytes ->
-                    filePersist.createOneFilePersist(filePath).saveBytes(bytes)
-                    existFile = true
-                }
-            }
-        }
-
         ClipSpecificPreviewContentView(it, {
             Row {
-
                 AsyncView(
                     load = {
                         if (!existFile) {
