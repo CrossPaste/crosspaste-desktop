@@ -65,6 +65,17 @@ class ClipRealm(private val realm: Realm,
         }
     }
 
+    override fun getClipResourceInfo(): ClipResourceInfo {
+        val number = realm.query(ClipData::class).count().find()
+        var imagesSize: Long = 0
+        var fileSize: Long = 0
+        realm.query(ClipResource::class).find().forEach {
+            imagesSize += it.imageSize
+            fileSize += it.fileSize
+        }
+        return ClipResourceInfo(number, imagesSize, fileSize)
+    }
+
     private suspend fun doDeleteClipData(queryToDelete: MutableRealm.() -> List<ClipData>) {
         realm.write {
             for (clipData in queryToDelete.invoke(this)) {
