@@ -54,3 +54,28 @@ fun network(): Painter {
 fun towerBroadcast(): Painter {
     return painterResource("icon/base/tower_broadcast.svg")
 }
+
+@Composable
+fun language(): Painter {
+    return painterResource("icon/base/language.svg")
+}
+
+@Composable
+fun palette(): Painter {
+    return painterResource("icon/base/palette.svg")
+}
+
+@Composable
+fun shield(): Painter {
+    return painterResource("icon/base/shield.svg")
+}
+
+@Composable
+fun bolt(): Painter {
+    return painterResource("icon/base/bolt.svg")
+}
+
+@Composable
+fun rocket(): Painter {
+    return painterResource("icon/base/rocket.svg")
+}

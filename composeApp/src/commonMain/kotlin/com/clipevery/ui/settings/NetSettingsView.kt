@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.Divider
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -90,6 +91,8 @@ fun NetSettingsView() {
                 CircularProgressIndicator(modifier = Modifier.size(25.dp))
             }
         }
+
+        Divider(modifier = Modifier.padding(start = 35.dp))
 
         Row(modifier = Modifier.fillMaxWidth()
             .height(40.dp)
