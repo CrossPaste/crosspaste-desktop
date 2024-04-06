@@ -10,7 +10,7 @@ class ClipTask: RealmObject {
     var taskId: ObjectId = ObjectId()
 
     @Index
-    var clipDataId: ObjectId = ObjectId()
+    var clipDataId: ObjectId? = null
 
     @Index
     var taskType: Int = TaskType.UNKNOWN_TASK

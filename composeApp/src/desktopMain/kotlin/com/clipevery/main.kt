@@ -15,6 +15,7 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.clipevery.app.AppFileType
 import com.clipevery.app.AppUI
+import com.clipevery.clean.CleanClipScheduler
 import com.clipevery.clip.ClipSearchService
 import com.clipevery.clip.ClipboardService
 import com.clipevery.listen.GlobalListener
@@ -47,6 +48,7 @@ fun initInject(koinApplication: KoinApplication) {
     koinApplication.koin.get<ClipClient>()
     koinApplication.koin.get<ClipboardService>()
     koinApplication.koin.get<ClipBonjourService>()
+    koinApplication.koin.get<CleanClipScheduler>()
 }
 
 fun exitClipEveryApplication(exitApplication: () -> Unit) {
@@ -54,6 +56,7 @@ fun exitClipEveryApplication(exitApplication: () -> Unit) {
     koinApplication.koin.get<ClipSearchService>().stop()
     koinApplication.koin.get<ClipBonjourService>().unregisterService()
     koinApplication.koin.get<ClipServer>().stop()
+    koinApplication.koin.get<CleanClipScheduler>().stop()
     exitApplication()
 }
 
@@ -69,6 +72,9 @@ fun main() {
 
     val clipboardService = koinApplication.koin.get<ClipboardService>()
     clipboardService.start()
+
+    val cleanClipScheduler = koinApplication.koin.get<CleanClipScheduler>()
+    cleanClipScheduler.start()
 
     application {
         val ioScope = rememberCoroutineScope { ioDispatcher }

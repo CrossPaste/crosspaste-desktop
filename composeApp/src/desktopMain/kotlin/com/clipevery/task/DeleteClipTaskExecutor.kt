@@ -14,7 +14,7 @@ class DeleteClipTaskExecutor(private val clipDao: ClipDao): SingleTypeTaskExecut
 
     override suspend fun doExecuteTask(clipTask: ClipTask): ClipTaskResult {
         try {
-            clipDao.deleteClipData(clipTask.clipDataId)
+            clipDao.deleteClipData(clipTask.clipDataId!!)
             return SuccessClipTaskResult()
         } catch (e: Throwable) {
             logger.error(e) { "delete clip data error: $clipTask" }

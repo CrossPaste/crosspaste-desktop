@@ -6,6 +6,8 @@ import com.clipevery.app.AppFileType
 import com.clipevery.app.AppInfo
 import com.clipevery.app.AppUI
 import com.clipevery.app.DesktopAppInfoFactory
+import com.clipevery.clean.CleanClipScheduler
+import com.clipevery.clean.DesktopCleanClipScheduler
 import com.clipevery.clip.CacheManager
 import com.clipevery.clip.CacheManagerImpl
 import com.clipevery.clip.ChromeService
@@ -69,6 +71,7 @@ import com.clipevery.signal.DesktopSignedPreKeyStore
 import com.clipevery.signal.getClipIdentityKeyStoreFactory
 import com.clipevery.sync.DesktopSyncManager
 import com.clipevery.sync.SyncManager
+import com.clipevery.task.CleanClipTaskExecutor
 import com.clipevery.task.DeleteClipTaskExecutor
 import com.clipevery.task.DesktopTaskExecutor
 import com.clipevery.task.PullFileTaskExecutor
@@ -170,10 +173,12 @@ object Dependencies {
             single<TransferableProducer> { DesktopTransferableProducer() }
             single<ChromeService> { DesktopChromeService }
             single<ClipSearchService> { DesktopClipSearchService(get()) }
+            single<CleanClipScheduler> { DesktopCleanClipScheduler(get(), get(), get()) }
             single<TaskExecutor> { DesktopTaskExecutor(listOf(
                 SyncClipTaskExecutor(get(), get(), get()),
                 DeleteClipTaskExecutor(get()),
-                PullFileTaskExecutor(get(), get(), get(), get(), get())
+                PullFileTaskExecutor(get(), get(), get(), get(), get()),
+                CleanClipTaskExecutor(get(), get())
             ), get()) }
 
             // ui component
