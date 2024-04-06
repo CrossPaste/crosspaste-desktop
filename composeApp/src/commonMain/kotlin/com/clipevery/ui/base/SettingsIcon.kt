@@ -39,3 +39,8 @@ fun clock(): Painter {
 fun trash(): Painter {
     return painterResource("icon/base/trash.svg")
 }
+
+@Composable
+fun anglesUpDown(): Painter {
+    return painterResource("icon/base/angles_up_down.svg")
+}

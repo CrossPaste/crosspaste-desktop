@@ -13,7 +13,10 @@ data class AppConfig(
     val isFollowSystemTheme: Boolean = true,
     val isDarkTheme: Boolean = false,
     val port: Int = 13129,
-    val isEncryptSync: Boolean = true
+    val isEncryptSync: Boolean = false,
+    val isAutoCleaning: Boolean = true,
+    val imageCleanTimeIndex: Int = 6,
+    val fileCleanTimeIndex:Int = 6
 ) {
 
     constructor(other: AppConfig, appEnv: AppEnv) : this(
