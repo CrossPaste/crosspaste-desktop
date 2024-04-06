@@ -30,10 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -103,7 +100,7 @@ fun StoreSettingsView() {
 
             settingsText(copywriter.getText("Number_of_pasteboards"))
 
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.weight(1f))
 
             if (clipNumber != null) {
                 settingsText("${clipNumber!!}")
@@ -130,7 +127,7 @@ fun StoreSettingsView() {
 
             settingsText(copywriter.getText("Size_of_images"))
 
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.weight(1f))
 
             if (clipImageSize != null) {
                 settingsText("${clipImageSize!!}")
@@ -157,7 +154,7 @@ fun StoreSettingsView() {
 
             settingsText(copywriter.getText("Size_of_files"))
 
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.weight(1f))
 
             if (clipFileSize != null) {
                 settingsText("${clipFileSize!!}")
@@ -166,14 +163,6 @@ fun StoreSettingsView() {
             }
         }
     }
-
-    val textStyle = TextStyle(
-        textAlign = TextAlign.End,
-        fontWeight = FontWeight.Light,
-        fontSize = 14.sp,
-        fontFamily = FontFamily.SansSerif,
-        color = MaterialTheme.colors.onBackground
-    )
 
     Text( modifier = Modifier.wrapContentSize()
         .padding(start = 32.dp, top = 5.dp, bottom = 5.dp),
@@ -243,7 +232,7 @@ fun StoreSettingsView() {
             val imageCleanTime = CleanTime.entries[selectImageCleanTimeIndex]
 
             var imageCleanTimeValue by remember { mutableStateOf("${imageCleanTime.quantity} ${copywriter.getText(imageCleanTime.unit)}") }
-            val imageCleanTimeWidth = measureTextWidth(imageCleanTimeValue, textStyle)
+            val imageCleanTimeWidth = measureTextWidth(imageCleanTimeValue, SettingsTextStyle())
 
             var showImageCleanTimeMenu by remember { mutableStateOf(false) }
 
@@ -258,7 +247,7 @@ fun StoreSettingsView() {
                 Text(
                     modifier = Modifier.width(imageCleanTimeWidth),
                     text = imageCleanTimeValue,
-                    style = textStyle
+                    style = SettingsTextStyle()
                 )
 
                 Spacer(modifier = Modifier.width(5.dp))
@@ -323,7 +312,7 @@ fun StoreSettingsView() {
             val fileCleanTime = CleanTime.entries[selectFileCleanTimeIndex]
 
             var fileCleanTimeValue by remember { mutableStateOf("${fileCleanTime.quantity} ${copywriter.getText(fileCleanTime.unit)}") }
-            val fileCleanTimeWidth = measureTextWidth(fileCleanTimeValue, textStyle)
+            val fileCleanTimeWidth = measureTextWidth(fileCleanTimeValue, SettingsTextStyle())
 
             var showFileCleanTimeMenu by remember { mutableStateOf(false) }
 
@@ -338,7 +327,7 @@ fun StoreSettingsView() {
                 Text(
                     modifier = Modifier.width(fileCleanTimeWidth),
                     text = fileCleanTimeValue,
-                    style = textStyle
+                    style = SettingsTextStyle()
                 )
 
                 Spacer(modifier = Modifier.width(5.dp))
