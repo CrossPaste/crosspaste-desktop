@@ -1,16 +1,14 @@
 package com.clipevery.endpoint
 
-import com.clipevery.dao.sync.HostInfo
-import com.clipevery.os.macos.api.MacosApi
 import com.clipevery.net.ClipServer
+import com.clipevery.os.macos.api.MacosApi
 import com.clipevery.platform.Platform
 import com.clipevery.platform.currentPlatform
+import com.clipevery.utils.DesktopNetUtils
 import com.sun.jna.platform.win32.Kernel32Util
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
-import java.net.NetworkInterface
-import java.util.Collections
 
 class DesktopEndpointInfoFactory(private val clipServer: Lazy<ClipServer>): EndpointInfoFactory {
     override fun createEndpointInfo(): EndpointInfo {
@@ -33,7 +31,7 @@ private fun getMacEndpointInfo(port: Int, platform: Platform): EndpointInfo {
         deviceId = deviceId,
         deviceName = deviceName,
         platform = platform,
-        hostInfoList = getHostInfoList(),
+        hostInfoList = DesktopNetUtils.getHostInfoList(),
         port = port
     )
 }
@@ -45,7 +43,7 @@ private fun getWindowEndpointInfo(port: Int, platform: Platform): EndpointInfo {
         deviceId = deviceId,
         deviceName = deviceName,
         platform = platform,
-        hostInfoList = getHostInfoList(),
+        hostInfoList = DesktopNetUtils.getHostInfoList(),
         port = port
     )
 }
@@ -65,25 +63,4 @@ fun getWindowDeviceId(): String {
         e.printStackTrace()
     }
     return "Unknown"
-}
-
-
-private fun getHostInfoList(): List<HostInfo> {
-    val nets = NetworkInterface.getNetworkInterfaces()
-
-    return buildList {
-        for (netInterface in Collections.list(nets)) {
-            val inetAddresses = netInterface.inetAddresses
-            for (inetAddress in Collections.list(inetAddresses)) {
-                if (inetAddress.isSiteLocalAddress) {
-                    add(
-                        HostInfo().apply {
-                            this.hostName = inetAddress.hostName
-                            this.hostAddress = inetAddress.hostAddress
-                        }
-                    )
-                }
-            }
-        }
-    }
 }

@@ -44,3 +44,13 @@ fun trash(): Painter {
 fun anglesUpDown(): Painter {
     return painterResource("icon/base/angles_up_down.svg")
 }
+
+@Composable
+fun network(): Painter {
+    return painterResource("icon/base/network.svg")
+}
+
+@Composable
+fun towerBroadcast(): Painter {
+    return painterResource("icon/base/tower_broadcast.svg")
+}

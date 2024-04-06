@@ -41,7 +41,7 @@ fun SettingsItemView(title: String,
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     var hover by remember { mutableStateOf(false) }
-    val backgroundColor = if (hover) MaterialTheme.colors.secondaryVariant else MaterialTheme.colors.background
+    val backgroundColor = if (hover) MaterialTheme.colors.background else MaterialTheme.colors.surface
 
     var openSettings by remember { mutableStateOf(false) }
 

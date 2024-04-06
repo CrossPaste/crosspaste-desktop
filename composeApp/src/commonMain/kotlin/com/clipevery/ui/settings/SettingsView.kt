@@ -52,6 +52,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
@@ -74,6 +75,15 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+@Composable
+fun SettingsTextStyle() = TextStyle(
+    textAlign = TextAlign.Start,
+    fontWeight = FontWeight.Light,
+    fontSize = 14.sp,
+    fontFamily = FontFamily.SansSerif,
+    color = MaterialTheme.colors.onBackground
+)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -282,15 +292,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
             Spacer(modifier = Modifier.height(10.dp))
 
             SettingsItemView("Network") {
-                Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                    Text(
-                        text = copywriter.getText("Network"),
-                        color = MaterialTheme.colors.onBackground,
-                        fontSize = 14.sp,
-                        fontFamily = FontFamily.SansSerif,
-                        style = TextStyle(fontWeight = FontWeight.Light)
-                    )
-                }
+                NetSettingsView()
             }
             Spacer(modifier = Modifier.height(10.dp))
             SettingsItemView("Store") {

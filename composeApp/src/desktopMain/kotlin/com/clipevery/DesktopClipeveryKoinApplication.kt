@@ -82,11 +82,13 @@ import com.clipevery.ui.resource.ClipResourceLoader
 import com.clipevery.ui.resource.DesktopAbsoluteClipResourceLoader
 import com.clipevery.utils.DesktopDeviceUtils
 import com.clipevery.utils.DesktopFileUtils
+import com.clipevery.utils.DesktopNetUtils
 import com.clipevery.utils.DesktopQRCodeGenerator
 import com.clipevery.utils.DeviceUtils
 import com.clipevery.utils.FileUtils
 import com.clipevery.utils.IDGenerator
 import com.clipevery.utils.IDGeneratorFactory
+import com.clipevery.utils.NetUtils
 import com.clipevery.utils.QRCodeGenerator
 import com.clipevery.utils.TelnetUtils
 import org.koin.core.KoinApplication
@@ -119,6 +121,7 @@ object Dependencies {
             single<IDGenerator> { IDGeneratorFactory(get()).createIDGenerator() }
             single<FileUtils> { DesktopFileUtils }
             single<DeviceUtils> { DesktopDeviceUtils }
+            single<NetUtils> { DesktopNetUtils }
             single<CacheManager> { CacheManagerImpl(get()) }
 
             // realm component
