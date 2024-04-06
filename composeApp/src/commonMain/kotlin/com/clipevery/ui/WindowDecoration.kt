@@ -107,7 +107,5 @@ fun DecorationUI(currentPageViewContext: MutableState<PageViewContext>, title: S
                 )
             }
         }
-
-
     }
 }
