@@ -44,4 +44,6 @@ interface ClipDao {
     fun getClipDataLessThan(appInstanceId: String? = null,
                             limit: Int,
                             createTime: RealmInstant): RealmResults<ClipData>
+
+    suspend fun getMarkDeleteByCleanTime(cleanTime: RealmInstant, clipType: Int)
 }

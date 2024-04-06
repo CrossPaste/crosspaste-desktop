@@ -6,4 +6,5 @@ object TaskType {
     const val SYNC_CLIP_TASK = 0
     const val DELETE_CLIP_TASK = 1
     const val PULL_FILE_TASK = 2
+    const val CLEAN_CLIP_TASK = 3
 }

@@ -43,7 +43,7 @@ class PullFileTaskExecutor(private val clipDao: ClipDao,
     override suspend fun doExecuteTask(clipTask: ClipTask): ClipTaskResult {
         val pullExtraInfo: PullExtraInfo = TaskUtils.getExtraInfo(clipTask, PullExtraInfo::class)
 
-        clipDao.getClipData(clipTask.clipDataId)?.let { clipData ->
+        clipDao.getClipData(clipTask.clipDataId!!)?.let { clipData ->
             val fileItems = clipData.getClipAppearItems().filter { it is ClipFiles }
             val appInstanceId = clipData.appInstanceId
             val dateString = DateUtils.getYYYYMMDD(

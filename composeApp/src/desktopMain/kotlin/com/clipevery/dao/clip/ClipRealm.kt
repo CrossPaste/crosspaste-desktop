@@ -6,7 +6,6 @@ import com.clipevery.task.TaskExecutor
 import com.clipevery.task.extra.SyncExtraInfo
 import com.clipevery.utils.DateUtils
 import com.clipevery.utils.TaskUtils.createTask
-import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.Realm
 import io.realm.kotlin.query.RealmResults
@@ -19,8 +18,6 @@ import org.mongodb.kbson.ObjectId
 
 class ClipRealm(private val realm: Realm,
                 private val lazyTaskExecutor: Lazy<TaskExecutor>) : ClipDao {
-
-    private val logger = KotlinLogging.logger {}
 
     private val taskExecutor by lazy { lazyTaskExecutor.value }
 
@@ -214,5 +211,13 @@ class ClipRealm(private val realm: Realm,
                 appInstanceId, createTime, ClipState.DELETED)
         } ?: realm.query(ClipData::class, "createTime <= $0 AND clipState != $1", createTime, ClipState.DELETED)
         return query.sort("createTime", Sort.DESCENDING).limit(limit).find()
+    }
+
+    override suspend fun getMarkDeleteByCleanTime(cleanTime: RealmInstant, clipType: Int) {
+        val taskIds = realm.write {
+            doMarkDeleteClipData(query(ClipData::class, "createTime < $0 AND clipType == $1 AND clipState != $2",
+                cleanTime, clipType, ClipState.DELETED).find())
+        }
+        taskExecutor.submitTasks(taskIds)
     }
 }

@@ -17,7 +17,7 @@ import kotlin.reflect.KClass
 
 object TaskUtils {
 
-    fun createTask(clipDataId: ObjectId, taskType: Int, extraInfo: ClipTaskExtraInfo = BaseExtraInfo()): ClipTask {
+    fun createTask(clipDataId: ObjectId?, taskType: Int, extraInfo: ClipTaskExtraInfo = BaseExtraInfo()): ClipTask {
         return ClipTask().apply {
             this.clipDataId = clipDataId
             this.taskType = taskType

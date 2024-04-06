@@ -22,6 +22,15 @@ object DateUtils {
         return RealmInstant.from(epochSeconds, 0)
     }
 
+    fun getRealmInstant(days: Int): RealmInstant {
+        val calendar = Calendar.getInstance()
+        calendar.add(Calendar.DAY_OF_MONTH, days)
+        // Convert milliseconds to seconds for the epochSeconds parameter
+        val epochSeconds = calendar.timeInMillis / 1000
+        // The nanosecondAdjustment parameter is 0 as we're not adjusting nanoseconds here
+        return RealmInstant.from(epochSeconds, 0)
+    }
+
     fun getDateText(date: LocalDateTime): String? {
         val now = LocalDateTime.now()
 

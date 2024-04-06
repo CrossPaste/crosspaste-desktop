@@ -5,6 +5,13 @@ import org.mongodb.kbson.ObjectId
 
 class ClipTaskRealm(private val realm: Realm): ClipTaskDao {
 
+    override suspend fun createTask(clipTask: ClipTask): ObjectId {
+        realm.write {
+            copyToRealm(clipTask)
+        }
+        return clipTask.taskId
+    }
+
     override suspend fun update(taskId: ObjectId, copeFromRealm: Boolean, block: ClipTask.() -> Unit): ClipTask? {
         return realm.write {
             query(ClipTask::class, "taskId = $0", taskId).first().find()?.let {
