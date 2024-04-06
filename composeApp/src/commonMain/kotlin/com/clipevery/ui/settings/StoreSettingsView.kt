@@ -231,7 +231,7 @@ fun StoreSettingsView() {
 
             val imageCleanTime = CleanTime.entries[selectImageCleanTimeIndex]
 
-            var imageCleanTimeValue by remember { mutableStateOf("${imageCleanTime.quantity} ${copywriter.getText(imageCleanTime.unit)}") }
+            var imageCleanTimeValue by remember(copywriter.language()) { mutableStateOf("${imageCleanTime.quantity} ${copywriter.getText(imageCleanTime.unit)}") }
             val imageCleanTimeWidth = measureTextWidth(imageCleanTimeValue, SettingsTextStyle())
 
             var showImageCleanTimeMenu by remember { mutableStateOf(false) }
@@ -311,7 +311,7 @@ fun StoreSettingsView() {
 
             val fileCleanTime = CleanTime.entries[selectFileCleanTimeIndex]
 
-            var fileCleanTimeValue by remember { mutableStateOf("${fileCleanTime.quantity} ${copywriter.getText(fileCleanTime.unit)}") }
+            var fileCleanTimeValue by remember(copywriter.language()) { mutableStateOf("${fileCleanTime.quantity} ${copywriter.getText(fileCleanTime.unit)}") }
             val fileCleanTimeWidth = measureTextWidth(fileCleanTimeValue, SettingsTextStyle())
 
             var showFileCleanTimeMenu by remember { mutableStateOf(false) }
