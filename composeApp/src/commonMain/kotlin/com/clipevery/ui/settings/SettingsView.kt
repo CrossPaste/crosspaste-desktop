@@ -27,6 +27,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Divider
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -70,7 +71,12 @@ import com.clipevery.ui.base.arrowDown
 import com.clipevery.ui.base.arrowLeft
 import com.clipevery.ui.base.arrowRight
 import com.clipevery.ui.base.arrowUp
+import com.clipevery.ui.base.bolt
 import com.clipevery.ui.base.getMenWidth
+import com.clipevery.ui.base.language
+import com.clipevery.ui.base.palette
+import com.clipevery.ui.base.rocket
+import com.clipevery.ui.base.shield
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -145,148 +151,217 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                 .fillMaxSize()
                 .background(MaterialTheme.colors.surface)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(25.dp, 5.dp, 0.dp, 5.dp),
-                verticalAlignment = Alignment.CenterVertically
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Column(modifier = Modifier.wrapContentSize()
+                .padding(horizontal = 16.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colors.background)
             ) {
-                settingsText("${copywriter.getText("Language")}:")
-                Row(modifier = Modifier.padding(6.dp).wrapContentSize()
-                    .combinedClickable(interactionSource = MutableInteractionSource(),
-                        indication = null,
-                        onClick = {
-                            val currentTimeMillis = System.currentTimeMillis()
-                            if (currentTimeMillis - languageOnDismissTime > 500) {
-                                showMoreLanguage = !showMoreLanguage
-                                hasBeenClicked = true
-                            }
-                        }
-                    ).onGloballyPositioned { coordinates ->
-                        languagePosition = coordinates.localToWindow(Offset.Zero)
-                        languageSize = coordinates.size.toSize()
-                    },
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    settingsText(copywriter.getText("CurrentLanguage"))
+                Row(modifier = Modifier.fillMaxWidth()
+                    .height(40.dp)
+                    .padding(horizontal = 12.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
 
                     Icon(
-                        modifier = Modifier
-                            .padding(5.dp, 0.dp, 5.dp, 0.dp)
-                            .size(15.dp),
-                        painter = languageArrow,
-                        contentDescription = null,
-                        tint = MaterialTheme.colors.onBackground
+                        modifier = Modifier.size(15.dp),
+                        painter = language(),
+                        contentDescription = "language",
+                        tint = MaterialTheme.colors.primary
                     )
-                }
 
-                if (showMoreLanguage) {
-                    Popup(
-                        offset = IntOffset(
-                            with(density) { ((20).dp).roundToPx() },
-                            with(density) { (30.dp).roundToPx() },
-                        ),
-                        onDismissRequest = {
-                            if (showMoreLanguage) {
-                                showMoreLanguage = false
-                                languageOnDismissTime = System.currentTimeMillis()
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    settingsText(copywriter.getText("Language"))
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Row(modifier = Modifier.padding(6.dp).wrapContentSize()
+                        .combinedClickable(interactionSource = MutableInteractionSource(),
+                            indication = null,
+                            onClick = {
+                                val currentTimeMillis = System.currentTimeMillis()
+                                if (currentTimeMillis - languageOnDismissTime > 500) {
+                                    showMoreLanguage = !showMoreLanguage
+                                    hasBeenClicked = true
+                                }
                             }
-                        }
+                        ).onGloballyPositioned { coordinates ->
+                            languagePosition = coordinates.localToWindow(Offset.Zero)
+                            languageSize = coordinates.size.toSize()
+                        },
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(
+                        settingsText(copywriter.getText("CurrentLanguage"))
+
+                        Icon(
                             modifier = Modifier
-                                .wrapContentSize()
-                                .background(Color.Transparent)
-                                .shadow(15.dp)
+                                .padding(5.dp, 0.dp, 5.dp, 0.dp)
+                                .size(15.dp),
+                            painter = languageArrow,
+                            contentDescription = null,
+                            tint = MaterialTheme.colors.onBackground
+                        )
+                    }
+
+                    if (showMoreLanguage) {
+                        Popup(
+                            alignment = Alignment.TopEnd,
+                            offset = IntOffset(
+                                with(density) { ((20).dp).roundToPx() },
+                                with(density) { (30.dp).roundToPx() },
+                            ),
+                            onDismissRequest = {
+                                if (showMoreLanguage) {
+                                    showMoreLanguage = false
+                                    languageOnDismissTime = System.currentTimeMillis()
+                                }
+                            }
                         ) {
-
-                            val maxWidth = max(
-                                150.dp,
-                                getMenWidth(copywriter.getAllLanguages().map { it.name }.toTypedArray())
-                            )
-
-                            Column(
+                            Box(
                                 modifier = Modifier
-                                    .width(maxWidth)
-                                    .wrapContentHeight()
-                                    .clip(RoundedCornerShape(5.dp))
-                                    .background(MaterialTheme.colors.surface)
+                                    .wrapContentSize()
+                                    .background(Color.Transparent)
+                                    .shadow(15.dp)
                             ) {
-                                val allLanguages = copywriter.getAllLanguages()
-                                allLanguages.forEachIndexed { _, language ->
-                                    MenuItem(language.name) {
-                                        copywriter.switchLanguage(language.abridge)
-                                        showMoreLanguage = false
+
+                                val maxWidth = max(
+                                    150.dp,
+                                    getMenWidth(copywriter.getAllLanguages().map { it.name }.toTypedArray())
+                                )
+
+                                Column(
+                                    modifier = Modifier
+                                        .width(maxWidth)
+                                        .wrapContentHeight()
+                                        .clip(RoundedCornerShape(5.dp))
+                                        .background(MaterialTheme.colors.surface)
+                                ) {
+                                    val allLanguages = copywriter.getAllLanguages()
+                                    allLanguages.forEachIndexed { _, language ->
+                                        MenuItem(language.name) {
+                                            copywriter.switchLanguage(language.abridge)
+                                            showMoreLanguage = false
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(25.dp, 5.dp, 0.dp, 5.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                settingsText(copywriter.getText("Theme"))
-                Row(Modifier.padding(5.dp, 0.dp, 0.dp, 0.dp)) {
+                Divider(modifier = Modifier.padding(start = 35.dp))
+
+                Row(modifier = Modifier.fillMaxWidth()
+                    .height(40.dp)
+                    .padding(horizontal = 12.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        modifier = Modifier.size(15.dp),
+                        painter = palette(),
+                        contentDescription = "theme",
+                        tint = Color(0xFFFFC94A)
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    settingsText(copywriter.getText("Theme"))
+
+                    Spacer(modifier = Modifier.weight(1f))
+
                     ThemeSegmentedControl()
                 }
-            }
 
-            Row(
-                modifier = Modifier.fillMaxWidth().height(40.dp).padding(25.dp, 5.dp, 0.dp, 5.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                var isEncrypted by remember { mutableStateOf(configManager.config.isEncryptSync) }
-                CustomSwitch(
-                    modifier = Modifier.width(32.dp)
-                        .height(20.dp),
-                    checked = isEncrypted,
-                    onCheckedChange = { it ->
-                        isEncrypted = it
-                        configManager.updateConfig { it.copy(isEncryptSync = isEncrypted) }
-                    }
-                )
+                Divider(modifier = Modifier.padding(start = 35.dp))
 
-                Spacer(modifier = Modifier.width(10.dp))
+                Row(modifier = Modifier.fillMaxWidth()
+                    .height(40.dp)
+                    .padding(horizontal = 12.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
 
-                settingsText(copywriter.getText("Encrypted_sync"))
-            }
+                    Icon(
+                        modifier = Modifier.size(15.dp),
+                        painter = shield(),
+                        contentDescription = "Encrypted sync",
+                        tint = Color(0xFF41C9E2)
+                    )
 
-            Row(
-                modifier = Modifier.fillMaxWidth().height(40.dp).padding(25.dp, 5.dp, 0.dp, 5.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                var isChecked by remember { mutableStateOf(false) }
-                // TODO: Boot_start_up
-                CustomSwitch(
-                    modifier = Modifier.width(32.dp)
-                        .height(20.dp),
-                    checked = isChecked,
-                    onCheckedChange = { isChecked = it }
-                )
+                    Spacer(modifier = Modifier.width(8.dp))
 
-                Spacer(modifier = Modifier.width(10.dp))
+                    settingsText(copywriter.getText("Encrypted_sync"))
 
-                settingsText(copywriter.getText("Boot_start_up"))
-            }
+                    Spacer(modifier = Modifier.weight(1f))
 
-            Row(
-                modifier = Modifier.fillMaxWidth().height(40.dp).padding(25.dp, 5.dp, 0.dp, 5.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                var isChecked by remember { mutableStateOf(false) }
-                // TODO: AutomaticUpdate
-                CustomSwitch(
-                    modifier = Modifier.width(32.dp)
-                        .height(20.dp),
-                    checked = isChecked,
-                    onCheckedChange = { isChecked = it }
-                )
+                    var isEncrypted by remember { mutableStateOf(configManager.config.isEncryptSync) }
+                    CustomSwitch(
+                        modifier = Modifier.width(32.dp)
+                            .height(20.dp),
+                        checked = isEncrypted,
+                        onCheckedChange = { it ->
+                            isEncrypted = it
+                            configManager.updateConfig { it.copy(isEncryptSync = isEncrypted) }
+                        }
+                    )
+                }
 
-                Spacer(modifier = Modifier.width(10.dp))
+                Divider(modifier = Modifier.padding(start = 35.dp))
 
-                settingsText(copywriter.getText("AutomaticUpdate"))
+                Row(modifier = Modifier.fillMaxWidth()
+                    .height(40.dp)
+                    .padding(horizontal = 12.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+
+                    Icon(
+                        modifier = Modifier.size(15.dp),
+                        painter = bolt(),
+                        contentDescription = "Boot start up",
+                        tint = Color(0xFF90D26D)
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    settingsText(copywriter.getText("Boot_start_up"))
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    var isChecked by remember { mutableStateOf(false) }
+                    CustomSwitch(
+                        modifier = Modifier.width(32.dp)
+                            .height(20.dp),
+                        checked = isChecked,
+                        onCheckedChange = { isChecked = it }
+                    )
+                }
+
+                Divider(modifier = Modifier.padding(start = 35.dp))
+
+                Row(modifier = Modifier.fillMaxWidth()
+                    .height(40.dp)
+                    .padding(horizontal = 12.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+
+                    Icon(
+                        modifier = Modifier.size(15.dp),
+                        painter = rocket(),
+                        contentDescription = "Automatic Update",
+                        tint = Color(0xFFFB6D48)
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    settingsText(copywriter.getText("AutomaticUpdate"))
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    var isChecked by remember { mutableStateOf(false) }
+                    CustomSwitch(
+                        modifier = Modifier.width(32.dp)
+                            .height(20.dp),
+                        checked = isChecked,
+                        onCheckedChange = { isChecked = it }
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(10.dp))
