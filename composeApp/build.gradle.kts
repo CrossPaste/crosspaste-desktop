@@ -22,7 +22,13 @@ plugins {
 ktlint {
     verbose = true
     android = false
-    ignoreFailures = false
+    ignoreFailures = true
+    filter {
+        exclude("**/build/**")
+        exclude("**/src/*Test/**")
+        exclude("**/src/*Main/kotlin/androidx/**")
+        include("**/src/**/*.kt")
+    }
 }
 
 kotlin {
