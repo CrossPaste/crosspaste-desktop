@@ -38,5 +38,5 @@ enum class PageViewType {
     QR_CODE,
     SETTINGS,
     ABOUT,
-    DEBUG
+    DEBUG,
 }

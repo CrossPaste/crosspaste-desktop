@@ -8,9 +8,15 @@ interface SyncRuntimeInfoDao {
 
     fun getSyncRuntimeInfo(appInstanceId: String): SyncRuntimeInfo?
 
-    fun update(syncRuntimeInfo: SyncRuntimeInfo, block: SyncRuntimeInfo.() -> Unit): SyncRuntimeInfo?
+    fun update(
+        syncRuntimeInfo: SyncRuntimeInfo,
+        block: SyncRuntimeInfo.() -> Unit,
+    ): SyncRuntimeInfo?
 
-    suspend fun suspendUpdate(syncRuntimeInfo: SyncRuntimeInfo, block: SyncRuntimeInfo.() -> Unit): SyncRuntimeInfo?
+    suspend fun suspendUpdate(
+        syncRuntimeInfo: SyncRuntimeInfo,
+        block: SyncRuntimeInfo.() -> Unit,
+    ): SyncRuntimeInfo?
 
     fun inertOrUpdate(syncInfo: SyncInfo)
 

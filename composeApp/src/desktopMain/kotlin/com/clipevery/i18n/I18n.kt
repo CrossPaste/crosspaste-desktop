@@ -26,12 +26,14 @@ fun getText(id: String): String {
     return languageMap.computeIfAbsent(en) { CopywriterImpl(en) }.getText(id)
 }
 
-open class GlobalCopywriterImpl(private val configManager: ConfigManager): GlobalCopywriter {
+open class GlobalCopywriterImpl(private val configManager: ConfigManager) : GlobalCopywriter {
 
-    private var copywriter: Copywriter by mutableStateOf(languageMap
-        .computeIfAbsent(configManager.config.language) {
-        CopywriterImpl(configManager.config.language)
-    })
+    private var copywriter: Copywriter by mutableStateOf(
+        languageMap
+            .computeIfAbsent(configManager.config.language) {
+                CopywriterImpl(configManager.config.language)
+            },
+    )
 
     override fun language(): String {
         return copywriter.language()
@@ -65,34 +67,38 @@ open class GlobalCopywriterImpl(private val configManager: ConfigManager): Globa
     }
 }
 
-
 class CopywriterImpl(private val language: String) : Copywriter {
 
     private val properties: Properties = loadProperties()
 
     private var currentLanguage: String = en
 
-
-    private fun load(properties: Properties, language: String) {
-        properties.load(CopywriterImpl::class.java.getResourceAsStream("/i18n/${language}.properties")
-            ?.let {
-                InputStreamReader(
-                    it,
-                    StandardCharsets.UTF_8
-                )
-            } ?: (throw FileNotFoundException("No properties for $language")) )
+    private fun load(
+        properties: Properties,
+        language: String,
+    ) {
+        properties.load(
+            CopywriterImpl::class.java.getResourceAsStream("/i18n/$language.properties")
+                ?.let {
+                    InputStreamReader(
+                        it,
+                        StandardCharsets.UTF_8,
+                    )
+                } ?: (throw FileNotFoundException("No properties for $language")),
+        )
     }
 
     private fun loadProperties(): Properties {
         val properties = Properties()
-        currentLanguage = try {
-            load(properties, language)
-            language
-        } catch (e: Exception) {
-            logger.error(e) { "Error loading $language properties: ${e.message}" }
-            load(properties, en)
-            en
-        }
+        currentLanguage =
+            try {
+                load(properties, language)
+                language
+            } catch (e: Exception) {
+                logger.error(e) { "Error loading $language properties: ${e.message}" }
+                load(properties, en)
+                en
+            }
         return properties
     }
 
@@ -111,27 +117,27 @@ class CopywriterImpl(private val language: String) : Copywriter {
     }
 
     override fun getDate(date: LocalDateTime): String {
-        val locale = when (language) {
-            "zh" -> Locale.SIMPLIFIED_CHINESE
-            "en" -> Locale.US
-            "jp" -> Locale.JAPAN
-            "es" -> Locale("es", "ES")
-            else -> Locale.getDefault()
-        }
+        val locale =
+            when (language) {
+                "zh" -> Locale.SIMPLIFIED_CHINESE
+                "en" -> Locale.US
+                "jp" -> Locale.JAPAN
+                "es" -> Locale("es", "ES")
+                else -> Locale.getDefault()
+            }
 
-        val pattern = when (language) {
-            "en" -> "MM/dd/yyyy"
-            "es" -> "dd/MM/yyyy"
-            "jp" -> "yyyy/MM/dd"
-            "zh" -> "yyyy年MM月dd日"
-            else -> "MM/dd/yyyy"
-        }
+        val pattern =
+            when (language) {
+                "en" -> "MM/dd/yyyy"
+                "es" -> "dd/MM/yyyy"
+                "jp" -> "yyyy/MM/dd"
+                "zh" -> "yyyy年MM月dd日"
+                else -> "MM/dd/yyyy"
+            }
         return DateUtils.getDateText(date, pattern, locale)
     }
 
     override fun getAbridge(): String {
         return language
     }
-
-
 }

@@ -5,7 +5,7 @@ import java.net.InetAddress
 import java.net.NetworkInterface
 import java.util.Collections
 
-object DesktopNetUtils: NetUtils {
+object DesktopNetUtils : NetUtils {
     override fun getHostInfoList(): List<HostInfo> {
         val nets = NetworkInterface.getNetworkInterfaces()
 
@@ -18,7 +18,7 @@ object DesktopNetUtils: NetUtils {
                             HostInfo().apply {
                                 this.hostName = inetAddress.hostName
                                 this.hostAddress = inetAddress.hostAddress
-                            }
+                            },
                         )
                     }
                 }
@@ -48,6 +48,4 @@ object DesktopNetUtils: NetUtils {
         }
         return null
     }
-
-
 }

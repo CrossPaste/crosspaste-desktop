@@ -18,22 +18,28 @@ import kotlinx.serialization.Transient
 import org.mongodb.kbson.ObjectId
 
 @Serializable(with = ClipDataSerializer::class)
-class ClipData: RealmObject {
+class ClipData : RealmObject {
     @PrimaryKey
     var id: ObjectId = ObjectId()
+
     @Index
     var clipId: Long = 0
     var clipAppearContent: RealmAny? = null
     var clipContent: ClipContent? = null
+
     @Index
     var clipType: Int = ClipType.INVALID
+
     @FullText
     @Transient
     var clipSearchContent: String? = null
+
     @Index
     var md5: String = ""
+
     @Index
     var appInstanceId: String = ""
+
     @Index
     @Transient
     var createTime: RealmInstant = RealmInstant.now()
@@ -47,7 +53,10 @@ class ClipData: RealmObject {
     var labels: RealmSet<ClipLabel> = realmSetOf()
 
     // must be called in writeBlocking
-    fun clear(realm: MutableRealm, clearResource: Boolean = true) {
+    fun clear(
+        realm: MutableRealm,
+        clearResource: Boolean = true,
+    ) {
         getClipItem(clipAppearContent)?.clear(realm, clearResource)
         clipContent?.clear(realm, clearResource)
         realm.delete(this)
@@ -60,9 +69,10 @@ class ClipData: RealmObject {
     fun getClipAppearItems(): List<ClipAppearItem> {
         val appearItem: ClipAppearItem? = getClipItem(this.clipAppearContent)
 
-        val otherAppearItems: List<ClipAppearItem>? = this.clipContent?.clipAppearItems?.mapNotNull {
-            getClipItem(it)
-        }
+        val otherAppearItems: List<ClipAppearItem>? =
+            this.clipContent?.clipAppearItems?.mapNotNull {
+                getClipItem(it)
+            }
 
         val mutableList: MutableList<ClipAppearItem> = mutableListOf()
 

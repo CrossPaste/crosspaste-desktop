@@ -73,86 +73,104 @@ fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
 }
 
 @Composable
-fun DeviceNoteNameEditView(syncRuntimeInfo: SyncRuntimeInfo, onComplete: () -> Unit) {
+fun DeviceNoteNameEditView(
+    syncRuntimeInfo: SyncRuntimeInfo,
+    onComplete: () -> Unit,
+) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val syncRuntimeInfoDao = current.koin.get<SyncRuntimeInfoDao>()
     var inputNoteName by remember { mutableStateOf("") }
     var isError by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize().graphicsLayer {
-        alpha = 0.8f
-    }.background(Color.White.copy(alpha = 0.2f))
-        .pointerInput(Unit) {
-            awaitPointerEventScope {
-                while (true) {
-                    awaitPointerEvent()
-                }
-            }
-        },
-        contentAlignment = Alignment.Center) {
+    Box(
+        modifier =
+            Modifier.fillMaxSize().graphicsLayer {
+                alpha = 0.8f
+            }.background(Color.White.copy(alpha = 0.2f))
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            awaitPointerEvent()
+                        }
+                    }
+                },
+        contentAlignment = Alignment.Center,
+    ) {
         Box(modifier = Modifier.shadow(5.dp, RoundedCornerShape(5.dp))) {
-            Column(modifier = Modifier.width(260.dp)
-                .wrapContentHeight()
-                .clip(RoundedCornerShape(8.dp))
-                .background(color = MaterialTheme.colors.background)
-                .padding(horizontal = 10.dp)
-                .padding(top = 10.dp, bottom = 6.dp)
+            Column(
+                modifier =
+                    Modifier.width(260.dp)
+                        .wrapContentHeight()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(color = MaterialTheme.colors.background)
+                        .padding(horizontal = 10.dp)
+                        .padding(top = 10.dp, bottom = 6.dp),
             ) {
                 Row(horizontalArrangement = Arrangement.Start) {
-                    Text(text = copywriter.getText("Input_Note_Name"),
+                    Text(
+                        text = copywriter.getText("Input_Note_Name"),
                         style = MaterialTheme.typography.h6,
-                        color = MaterialTheme.colors.onBackground)
+                        color = MaterialTheme.colors.onBackground,
+                    )
                 }
                 TextField(
                     modifier = Modifier.wrapContentSize(),
                     value = inputNoteName,
                     onValueChange = { inputNoteName = it },
-                    placeholder = { Text(
-                        modifier = Modifier.wrapContentSize(),
-                        text = syncRuntimeInfo.noteName ?: syncRuntimeInfo.deviceName,
-                        style = TextStyle(
-                            fontWeight = FontWeight.Light,
-                            color = MaterialTheme.colors.onBackground.copy(alpha = 0.5f),
-                            fontSize = 15.sp
-                        ),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis)
+                    placeholder = {
+                        Text(
+                            modifier = Modifier.wrapContentSize(),
+                            text = syncRuntimeInfo.noteName ?: syncRuntimeInfo.deviceName,
+                            style =
+                                TextStyle(
+                                    fontWeight = FontWeight.Light,
+                                    color = MaterialTheme.colors.onBackground.copy(alpha = 0.5f),
+                                    fontSize = 15.sp,
+                                ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     },
                     isError = isError,
                     singleLine = true,
-                    colors = TextFieldDefaults.textFieldColors(
-                        textColor = MaterialTheme.colors.onBackground,
-                        disabledTextColor = Color.Transparent,
-                        backgroundColor = Color.Transparent,
-                        cursorColor = MaterialTheme.colors.primary,
-                        errorCursorColor = Color.Red,
-                        focusedIndicatorColor = MaterialTheme.colors.primary,
-                        unfocusedIndicatorColor = MaterialTheme.colors.secondaryVariant,
-                        disabledIndicatorColor = Color.Transparent,
-                    ),
-                    textStyle =  TextStyle(
-                        fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colors.onBackground,
-                        fontSize = 15.sp,
-                        lineHeight = 5.sp
-                    )
+                    colors =
+                        TextFieldDefaults.textFieldColors(
+                            textColor = MaterialTheme.colors.onBackground,
+                            disabledTextColor = Color.Transparent,
+                            backgroundColor = Color.Transparent,
+                            cursorColor = MaterialTheme.colors.primary,
+                            errorCursorColor = Color.Red,
+                            focusedIndicatorColor = MaterialTheme.colors.primary,
+                            unfocusedIndicatorColor = MaterialTheme.colors.secondaryVariant,
+                            disabledIndicatorColor = Color.Transparent,
+                        ),
+                    textStyle =
+                        TextStyle(
+                            fontWeight = FontWeight.Light,
+                            color = MaterialTheme.colors.onBackground,
+                            fontSize = 15.sp,
+                            lineHeight = 5.sp,
+                        ),
                 )
                 Divider()
                 Row {
-                    Button(modifier = Modifier.width(115.dp),
+                    Button(
+                        modifier = Modifier.width(115.dp),
                         onClick = {
                             onComplete()
                         },
-                        colors = ButtonDefaults.buttonColors(
-                            backgroundColor = MaterialTheme.colors.secondaryVariant,
-                            contentColor = MaterialTheme.colors.onBackground
-                        )
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                backgroundColor = MaterialTheme.colors.secondaryVariant,
+                                contentColor = MaterialTheme.colors.onBackground,
+                            ),
                     ) {
                         Text(text = copywriter.getText("Cancel"))
                     }
                     Spacer(modifier = Modifier.width(10.dp))
-                    Button(modifier = Modifier.width(115.dp),
+                    Button(
+                        modifier = Modifier.width(115.dp),
                         onClick = {
                             if (inputNoteName == "") {
                                 isError = true
@@ -163,10 +181,11 @@ fun DeviceNoteNameEditView(syncRuntimeInfo: SyncRuntimeInfo, onComplete: () -> U
                                 onComplete()
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(
-                            backgroundColor = MaterialTheme.colors.primary,
-                            contentColor = MaterialTheme.colors.onBackground
-                        )
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                backgroundColor = MaterialTheme.colors.primary,
+                                contentColor = MaterialTheme.colors.onBackground,
+                            ),
                     ) {
                         Text(text = copywriter.getText("Confirm"))
                     }
@@ -177,7 +196,10 @@ fun DeviceNoteNameEditView(syncRuntimeInfo: SyncRuntimeInfo, onComplete: () -> U
 }
 
 @Composable
-fun DevicesListView(currentPageViewContext: MutableState<PageViewContext>, onEdit: (SyncRuntimeInfo) -> Unit) {
+fun DevicesListView(
+    currentPageViewContext: MutableState<PageViewContext>,
+    onEdit: (SyncRuntimeInfo) -> Unit,
+) {
     val current = LocalKoinApplication.current
     val syncManager = current.koin.get<SyncManager>()
     val rememberSyncRuntimeInfos = remember { syncManager.realTimeSyncRuntimeInfos }
@@ -205,19 +227,24 @@ fun DevicesRefreshView() {
         while (isRefreshing) {
             rotationDegrees.animateTo(
                 targetValue = rotationDegrees.value + 360,
-                animationSpec = tween(
-                    durationMillis = 1000,
-                    easing = LinearEasing
-                )
+                animationSpec =
+                    tween(
+                        durationMillis = 1000,
+                        easing = LinearEasing,
+                    ),
             )
         }
         rotationDegrees.snapTo(0f)
     }
 
-    Column(modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Bottom) {
-        Row(modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Bottom,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+        ) {
             ClipIconButton(
                 radius = 18.dp,
                 onClick = {
@@ -225,23 +252,24 @@ fun DevicesRefreshView() {
                         syncRefresher.refresh(true)
                     }
                 },
-                modifier = Modifier
-                    .padding(30.dp)
-                    .background(
-                        MaterialTheme.colors.primary,
-                        CircleShape
-                    )
+                modifier =
+                    Modifier
+                        .padding(30.dp)
+                        .background(
+                            MaterialTheme.colors.primary,
+                            CircleShape,
+                        ),
             ) {
                 Icon(
                     Icons.Outlined.Refresh,
                     contentDescription = "info",
-                    modifier = Modifier.padding(3.dp)
-                        .size(25.dp)
-                        .graphicsLayer(rotationZ = rotationDegrees.value ),
-                    tint = Color.White
+                    modifier =
+                        Modifier.padding(3.dp)
+                            .size(25.dp)
+                            .graphicsLayer(rotationZ = rotationDegrees.value),
+                    tint = Color.White,
                 )
             }
         }
     }
 }
-

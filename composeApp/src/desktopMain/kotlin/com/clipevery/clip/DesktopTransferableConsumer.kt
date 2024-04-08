@@ -7,19 +7,22 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 
-open class DesktopTransferableConsumer(private val appInfo: AppInfo,
-                                       private val clipDao: ClipDao,
-                                       private val idGenerator: IDGenerator,
-                                       private val itemServices: List<ClipItemService>,
-                                       private val clipPlugins: List<ClipPlugin>): TransferableConsumer {
+open class DesktopTransferableConsumer(
+    private val appInfo: AppInfo,
+    private val clipDao: ClipDao,
+    private val idGenerator: IDGenerator,
+    private val itemServices: List<ClipItemService>,
+    private val clipPlugins: List<ClipPlugin>,
+) : TransferableConsumer {
 
     private val logger = KotlinLogging.logger {}
 
-    private val clipItemServiceMap: Map<String, ClipItemService> = itemServices.flatMap { service ->
-        service.getIdentifiers().map { it to service }
-    }.toMap()
+    private val clipItemServiceMap: Map<String, ClipItemService> =
+        itemServices.flatMap { service ->
+            service.getIdentifiers().map { it to service }
+        }.toMap()
 
-    private fun createDataFlavorMap(transferable: Transferable): LinkedHashMap<String, MutableList<DataFlavor>>{
+    private fun createDataFlavorMap(transferable: Transferable): LinkedHashMap<String, MutableList<DataFlavor>>  {
         val dataFlavorMap = LinkedHashMap<String, MutableList<DataFlavor>>()
 
         for (flavor in transferable.transferDataFlavors) {
@@ -32,7 +35,10 @@ open class DesktopTransferableConsumer(private val appInfo: AppInfo,
         return dataFlavorMap
     }
 
-    override suspend fun consume(transferable: Transferable, isRemote: Boolean) {
+    override suspend fun consume(
+        transferable: Transferable,
+        isRemote: Boolean,
+    ) {
         val clipId = idGenerator.nextID()
 
         val dataFlavorMap: Map<String, List<DataFlavor>> = createDataFlavorMap(transferable)
@@ -55,10 +61,12 @@ open class DesktopTransferableConsumer(private val appInfo: AppInfo,
         }
     }
 
-    private fun preCollect(clipId: Long,
-                           dataFlavorMap: Map<String, List<DataFlavor>>,
-                           transferable: Transferable,
-                           clipCollector: ClipCollector) {
+    private fun preCollect(
+        clipId: Long,
+        dataFlavorMap: Map<String, List<DataFlavor>>,
+        transferable: Transferable,
+        clipCollector: ClipCollector,
+    ) {
         var itemIndex = 0
         for (entry in dataFlavorMap) {
             val identifier = entry.key
@@ -72,18 +80,21 @@ open class DesktopTransferableConsumer(private val appInfo: AppInfo,
                         } else {
                             true
                         }
-                    } == true) {
+                    } == true
+                ) {
                     break
                 }
             }
-            itemIndex ++
+            itemIndex++
         }
     }
 
-    private fun updateClipData(clipId: Long,
-                               dataFlavorMap: Map<String, List<DataFlavor>>,
-                               transferable: Transferable,
-                               clipCollector: ClipCollector) {
+    private fun updateClipData(
+        clipId: Long,
+        dataFlavorMap: Map<String, List<DataFlavor>>,
+        transferable: Transferable,
+        clipCollector: ClipCollector,
+    ) {
         var itemIndex = 0
         for (entry in dataFlavorMap) {
             val identifier = entry.key
@@ -96,11 +107,12 @@ open class DesktopTransferableConsumer(private val appInfo: AppInfo,
                         } else {
                             true
                         }
-                    } == true) {
+                    } == true
+                ) {
                     break
                 }
             }
-            itemIndex ++
+            itemIndex++
         }
     }
 }

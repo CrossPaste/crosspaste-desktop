@@ -5,7 +5,7 @@ import org.signal.libsignal.protocol.SignalProtocolAddress
 import org.signal.libsignal.protocol.state.SessionRecord
 import org.signal.libsignal.protocol.state.SessionStore
 
-class DesktopSessionStore(private val signalDao: SignalDao): SessionStore {
+class DesktopSessionStore(private val signalDao: SignalDao) : SessionStore {
 
     override fun loadSession(address: SignalProtocolAddress): SessionRecord? {
         return signalDao.loadSession(address.name)?.let {
@@ -26,7 +26,10 @@ class DesktopSessionStore(private val signalDao: SignalDao): SessionStore {
         } ?: return mutableListOf()
     }
 
-    override fun storeSession(address: SignalProtocolAddress, record: SessionRecord) {
+    override fun storeSession(
+        address: SignalProtocolAddress,
+        record: SessionRecord,
+    ) {
         signalDao.storeSession(address.name, record.serialize())
     }
 

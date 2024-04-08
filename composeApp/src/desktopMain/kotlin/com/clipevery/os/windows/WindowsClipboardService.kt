@@ -27,10 +27,11 @@ import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.Transferable
 import kotlin.math.min
 
-
-class WindowsClipboardService(override val clipDao: ClipDao,
-                              override val clipConsumer: TransferableConsumer,
-                              override val clipProducer: TransferableProducer) : ClipboardService, User32.WNDPROC {
+class WindowsClipboardService(
+    override val clipDao: ClipDao,
+    override val clipConsumer: TransferableConsumer,
+    override val clipProducer: TransferableProducer,
+) : ClipboardService, User32.WNDPROC {
     override val logger: KLogger = KotlinLogging.logger {}
 
     @Volatile
@@ -50,10 +51,13 @@ class WindowsClipboardService(override val clipDao: ClipDao,
     private var job: Job? = null
     private var viewer: HWND? = null
     private var nextViewer: HWND? = null
-    private val event = Kernel32.INSTANCE.CreateEvent(
-        null, false,
-        false, null
-    )
+    private val event =
+        Kernel32.INSTANCE.CreateEvent(
+            null,
+            false,
+            false,
+            null,
+        )
 
     init {
         serviceConsumerScope.launch {
@@ -64,10 +68,11 @@ class WindowsClipboardService(override val clipDao: ClipDao,
     }
 
     private fun run() {
-        viewer = User32.INSTANCE.CreateWindowEx(
-            0, "STATIC", "", 0, 0, 0, 0, 0,
-            null, 0, 0, null
-        )
+        viewer =
+            User32.INSTANCE.CreateWindowEx(
+                0, "STATIC", "", 0, 0, 0, 0, 0,
+                null, 0, 0, null,
+            )
         nextViewer = User32.INSTANCE.SetClipboardViewer(viewer)
         val currentPlatform = currentPlatform()
         if (currentPlatform.is64bit()) {
@@ -78,10 +83,14 @@ class WindowsClipboardService(override val clipDao: ClipDao,
         val msg = MSG()
         val handles = arrayOf(event)
         while (true) {
-            val result: Int = User32.INSTANCE.MsgWaitForMultipleObjects(
-                handles.size, handles, false, Kernel32.INFINITE,
-                User32.QS_ALLINPUT
-            )
+            val result: Int =
+                User32.INSTANCE.MsgWaitForMultipleObjects(
+                    handles.size,
+                    handles,
+                    false,
+                    Kernel32.INFINITE,
+                    User32.QS_ALLINPUT,
+                )
             if (result == Kernel32.WAIT_OBJECT_0) {
                 User32.INSTANCE.DestroyWindow(viewer)
                 return
@@ -91,8 +100,12 @@ class WindowsClipboardService(override val clipDao: ClipDao,
                 break
             }
             while (User32.INSTANCE.PeekMessage(
-                    msg, null, 0, 0,
-                    User32.PM_REMOVE)
+                    msg,
+                    null,
+                    0,
+                    0,
+                    User32.PM_REMOVE,
+                )
             ) {
                 User32.INSTANCE.TranslateMessage(msg)
                 User32.INSTANCE.DispatchMessage(msg)
@@ -100,15 +113,19 @@ class WindowsClipboardService(override val clipDao: ClipDao,
         }
     }
 
-    override fun lostOwnership(clipboard: Clipboard?, contents: Transferable?) {
+    override fun lostOwnership(
+        clipboard: Clipboard?,
+        contents: Transferable?,
+    ) {
         owner = false
     }
 
     override fun start() {
         if (job?.isActive != true) {
-            job = serviceScope.launch(CoroutineName("WindowsClipboardService")) {
-                run()
-            }
+            job =
+                serviceScope.launch(CoroutineName("WindowsClipboardService")) {
+                    run()
+                }
         }
     }
 
@@ -147,14 +164,20 @@ class WindowsClipboardService(override val clipDao: ClipDao,
         }
     }
 
-    override fun callback(hWnd: HWND?, uMsg: Int, uParam: WPARAM?, lParam: LPARAM?): Int {
+    override fun callback(
+        hWnd: HWND?,
+        uMsg: Int,
+        uParam: WPARAM?,
+        lParam: LPARAM?,
+    ): Int {
         when (uMsg) {
             User32.WM_CHANGECBCHAIN -> {
                 // If the next window is closing, repair the chain.
                 if (nextViewer!!.toNative() == uParam!!.toNative()) {
-                    nextViewer = HWND(
-                        Pointer.createConstant(lParam!!.toLong())
-                    )
+                    nextViewer =
+                        HWND(
+                            Pointer.createConstant(lParam!!.toLong()),
+                        )
                 } // Otherwise, pass the message to the next link.
                 else if (nextViewer != null) {
                     User32.INSTANCE.SendMessage(nextViewer, uMsg, uParam, lParam)

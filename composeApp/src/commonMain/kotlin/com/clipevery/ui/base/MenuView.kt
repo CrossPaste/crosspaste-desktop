@@ -22,14 +22,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.ui.devices.measureTextWidth
 
-val menuItemTextStyle = TextStyle(
-    fontSize = 12.sp,
-    fontWeight = FontWeight.Light,
-    fontFamily = FontFamily.SansSerif
-)
+val menuItemTextStyle =
+    TextStyle(
+        fontSize = 12.sp,
+        fontWeight = FontWeight.Light,
+        fontFamily = FontFamily.SansSerif,
+    )
 
 @Composable
-fun MenuItem(text: String, onClick: () -> Unit) {
+fun MenuItem(
+    text: String,
+    onClick: () -> Unit,
+) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
     val backgroundColor = if (isHovered) MaterialTheme.colors.secondaryVariant else Color.Transparent
@@ -38,12 +42,13 @@ fun MenuItem(text: String, onClick: () -> Unit) {
         text = text,
         color = MaterialTheme.colors.onBackground,
         style = menuItemTextStyle,
-        modifier = Modifier
-            .fillMaxWidth()
-            .hoverable(interactionSource = interactionSource)
-            .background(backgroundColor)
-            .clickable(onClick = onClick)
-            .padding(16.dp, 8.dp, 16.dp, 8.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .hoverable(interactionSource = interactionSource)
+                .background(backgroundColor)
+                .clickable(onClick = onClick)
+                .padding(16.dp, 8.dp, 16.dp, 8.dp),
     )
 }
 

@@ -10,7 +10,7 @@ import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 
-class DesktopEndpointInfoFactory(private val clipServer: Lazy<ClipServer>): EndpointInfoFactory {
+class DesktopEndpointInfoFactory(private val clipServer: Lazy<ClipServer>) : EndpointInfoFactory {
     override fun createEndpointInfo(): EndpointInfo {
         val platform = currentPlatform()
         val port = clipServer.value.port()
@@ -24,7 +24,10 @@ class DesktopEndpointInfoFactory(private val clipServer: Lazy<ClipServer>): Endp
     }
 }
 
-private fun getMacEndpointInfo(port: Int, platform: Platform): EndpointInfo {
+private fun getMacEndpointInfo(
+    port: Int,
+    platform: Platform,
+): EndpointInfo {
     val deviceName = MacosApi.INSTANCE.getComputerName() ?: "Unknown"
     val deviceId = MacosApi.INSTANCE.getHardwareUUID() ?: "Unknown"
     return EndpointInfo(
@@ -32,11 +35,14 @@ private fun getMacEndpointInfo(port: Int, platform: Platform): EndpointInfo {
         deviceName = deviceName,
         platform = platform,
         hostInfoList = DesktopNetUtils.getHostInfoList(),
-        port = port
+        port = port,
     )
 }
 
-private fun getWindowEndpointInfo(port: Int, platform: Platform): EndpointInfo {
+private fun getWindowEndpointInfo(
+    port: Int,
+    platform: Platform,
+): EndpointInfo {
     val deviceName = Kernel32Util.getComputerName()
     val deviceId = getWindowDeviceId()
     return EndpointInfo(
@@ -44,7 +50,7 @@ private fun getWindowEndpointInfo(port: Int, platform: Platform): EndpointInfo {
         deviceName = deviceName,
         platform = platform,
         hostInfoList = DesktopNetUtils.getHostInfoList(),
-        port = port
+        port = port,
     )
 }
 

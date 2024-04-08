@@ -14,8 +14,10 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.launch
 import org.mongodb.kbson.ObjectId
 
-class DesktopTaskExecutor(singleTypeTaskExecutors: List<SingleTypeTaskExecutor>,
-                          private val clipTaskDao: ClipTaskDao): TaskExecutor {
+class DesktopTaskExecutor(
+    singleTypeTaskExecutors: List<SingleTypeTaskExecutor>,
+    private val clipTaskDao: ClipTaskDao,
+) : TaskExecutor {
 
     private val logger = KotlinLogging.logger {}
 
@@ -54,7 +56,7 @@ class DesktopTaskExecutor(singleTypeTaskExecutors: List<SingleTypeTaskExecutor>,
                     clipTaskDao.update(taskId) {
                         status = TaskStatus.SUCCESS
                         modifyTime = System.currentTimeMillis()
-                        it?.let {  newExtraInfo ->
+                        it?.let { newExtraInfo ->
                             extraInfo = newExtraInfo
                         }
                     }

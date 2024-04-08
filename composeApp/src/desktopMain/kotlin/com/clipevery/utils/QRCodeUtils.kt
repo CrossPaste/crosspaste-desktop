@@ -15,8 +15,10 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 
-class DesktopQRCodeGenerator(private val appInfo: AppInfo,
-                             private val endpointInfoFactory: EndpointInfoFactory): QRCodeGenerator {
+class DesktopQRCodeGenerator(
+    private val appInfo: AppInfo,
+    private val endpointInfoFactory: EndpointInfoFactory,
+) : QRCodeGenerator {
 
     private fun buildQRCode(token: CharArray): String {
         val endpointInfo = endpointInfoFactory.createEndpointInfo()
@@ -25,7 +27,11 @@ class DesktopQRCodeGenerator(private val appInfo: AppInfo,
         return buildQRCode(syncInfo, token)
     }
 
-    override fun generateQRCode(width: Int, height: Int, token: CharArray): ImageBitmap {
+    override fun generateQRCode(
+        width: Int,
+        height: Int,
+        token: CharArray,
+    ): ImageBitmap {
         val writer = QRCodeWriter()
         val bitMatrix = writer.encode(buildQRCode(token), BarcodeFormat.QR_CODE, width, height)
         val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
@@ -37,13 +43,19 @@ class DesktopQRCodeGenerator(private val appInfo: AppInfo,
         return image.toComposeImageBitmap()
     }
 
-    private fun buildQRCode(syncInfo: SyncInfo, token: CharArray): String {
+    private fun buildQRCode(
+        syncInfo: SyncInfo,
+        token: CharArray,
+    ): String {
         val syncInfoJson = Json.encodeToString(syncInfo)
         val syncInfoBytes = syncInfoJson.toByteArray()
         return encodeSyncInfo(syncInfoBytes, String(token).toInt())
     }
 
-    private fun encodeSyncInfo(syncInfoBytes: ByteArray, token: Int): String {
+    private fun encodeSyncInfo(
+        syncInfoBytes: ByteArray,
+        token: Int,
+    ): String {
         val size = syncInfoBytes.size
         val offset = token % size
         val byteArrayRotate = syncInfoBytes.rotate(offset)

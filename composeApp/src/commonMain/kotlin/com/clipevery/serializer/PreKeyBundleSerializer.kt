@@ -11,13 +11,16 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import org.signal.libsignal.protocol.state.PreKeyBundle
 
-object PreKeyBundleSerializer: KSerializer<PreKeyBundle> {
+object PreKeyBundleSerializer : KSerializer<PreKeyBundle> {
 
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PreKeyBundle") {
+    override val descriptor: SerialDescriptor =
+        buildClassSerialDescriptor("PreKeyBundle") {
+        }
 
-    }
-
-    override fun serialize(encoder: Encoder, value: PreKeyBundle) {
+    override fun serialize(
+        encoder: Encoder,
+        value: PreKeyBundle,
+    ) {
         val byteArray = encodePreKeyBundle(value)
         encoder.encodeString(base64Encode(byteArray))
     }

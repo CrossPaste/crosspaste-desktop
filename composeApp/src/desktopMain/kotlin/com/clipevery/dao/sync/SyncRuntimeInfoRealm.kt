@@ -7,7 +7,7 @@ import io.realm.kotlin.query.RealmResults
 import io.realm.kotlin.query.Sort
 import io.realm.kotlin.types.RealmInstant
 
-class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
+class SyncRuntimeInfoRealm(private val realm: Realm) : SyncRuntimeInfoDao {
 
     override fun getAllSyncRuntimeInfos(): RealmResults<SyncRuntimeInfo> {
         return realm.query(SyncRuntimeInfo::class).sort("createTime", Sort.DESCENDING).find()
@@ -17,7 +17,10 @@ class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
         return realm.query(SyncRuntimeInfo::class, "appInstanceId == $0", appInstanceId).first().find()
     }
 
-    override fun update(syncRuntimeInfo: SyncRuntimeInfo, block: SyncRuntimeInfo.() -> Unit): SyncRuntimeInfo? {
+    override fun update(
+        syncRuntimeInfo: SyncRuntimeInfo,
+        block: SyncRuntimeInfo.() -> Unit,
+    ): SyncRuntimeInfo? {
         return realm.writeBlocking {
             findLatest(syncRuntimeInfo)?.let {
                 return@writeBlocking it.apply(block)
@@ -29,7 +32,10 @@ class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
         }
     }
 
-    override suspend fun suspendUpdate(syncRuntimeInfo: SyncRuntimeInfo, block: SyncRuntimeInfo.() -> Unit): SyncRuntimeInfo? {
+    override suspend fun suspendUpdate(
+        syncRuntimeInfo: SyncRuntimeInfo,
+        block: SyncRuntimeInfo.() -> Unit,
+    ): SyncRuntimeInfo? {
         return realm.write {
             findLatest(syncRuntimeInfo)?.let {
                 return@write it.apply(block)
@@ -41,7 +47,10 @@ class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
         }
     }
 
-    private fun updateSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo, syncInfo: SyncInfo) {
+    private fun updateSyncRuntimeInfo(
+        syncRuntimeInfo: SyncRuntimeInfo,
+        syncInfo: SyncInfo,
+    ) {
         var hasModify = false
         if (syncRuntimeInfo.appVersion != syncInfo.appInfo.appVersion) {
             syncRuntimeInfo.appVersion = syncInfo.appInfo.appVersion
@@ -122,8 +131,8 @@ class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
                 .find()?.let {
                     updateSyncRuntimeInfo(it, syncInfo)
                 } ?: run {
-                    copyToRealm(createSyncRuntimeInfo(syncInfo))
-                }
+                copyToRealm(createSyncRuntimeInfo(syncInfo))
+            }
         }
     }
 
@@ -134,14 +143,14 @@ class SyncRuntimeInfoRealm(private val realm: Realm): SyncRuntimeInfoDao {
                     query(
                         SyncRuntimeInfo::class,
                         "appInstanceId == $0",
-                        syncInfo.appInfo.appInstanceId
+                        syncInfo.appInfo.appInstanceId,
                     )
                         .first()
                         .find()?.let {
                             updateSyncRuntimeInfo(it, syncInfo)
                         } ?: run {
-                            copyToRealm(createSyncRuntimeInfo(syncInfo))
-                            add(syncInfo.appInfo.appInstanceId)
+                        copyToRealm(createSyncRuntimeInfo(syncInfo))
+                        add(syncInfo.appInfo.appInstanceId)
                     }
                 }
             }

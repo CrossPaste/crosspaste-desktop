@@ -4,5 +4,5 @@ enum class SyncState {
     ONLINE,
     OFFLINE,
     UNVERIFIED,
-    UNKNOWN
+    UNKNOWN,
 }

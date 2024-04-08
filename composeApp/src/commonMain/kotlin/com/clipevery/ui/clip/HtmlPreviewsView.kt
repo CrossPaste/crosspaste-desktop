@@ -52,25 +52,27 @@ val logger = KotlinLogging.logger {}
 @Composable
 fun HtmlPreviewView(clipData: ClipData) {
     clipData.getClipItem(ClipHtml::class)?.let {
-
         val current = LocalKoinApplication.current
         val copywriter = current.koin.get<GlobalCopywriter>()
 
-        val textStyle = TextStyle(
-            fontWeight = FontWeight.Light,
-            color = MaterialTheme.colors.onBackground,
-            fontSize = 10.sp
-        )
+        val textStyle =
+            TextStyle(
+                fontWeight = FontWeight.Light,
+                color = MaterialTheme.colors.onBackground,
+                fontSize = 10.sp,
+            )
 
         val webWidth = 387.dp - measureTextWidth(copywriter.getText("Html"), textStyle)
 
         Column(
-            modifier = Modifier.fillMaxWidth()
-                .padding(8.dp)
+            modifier =
+                Modifier.fillMaxWidth()
+                    .padding(8.dp),
         ) {
-            val webViewState = rememberWebViewStateWithHTMLData(
-                data = it.html
-            )
+            val webViewState =
+                rememberWebViewStateWithHTMLData(
+                    data = it.html,
+                )
             val webViewNavigator: WebViewNavigator = rememberWebViewNavigator()
             val jsBridge = rememberWebViewJsBridge(webViewNavigator)
 
@@ -82,7 +84,7 @@ fun HtmlPreviewView(clipData: ClipData) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+                verticalAlignment = Alignment.Top,
             ) {
                 Box(modifier = Modifier.width(webWidth)) {
                     WebView(
@@ -94,30 +96,30 @@ fun HtmlPreviewView(clipData: ClipData) {
                 }
 
                 Row(
-                    modifier = Modifier.fillMaxWidth()
-                        .wrapContentWidth()
-                        .weight(1f)
-                        .padding(start = 5.dp, end = 8.dp),
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .wrapContentWidth()
+                            .weight(1f)
+                            .padding(start = 5.dp, end = 8.dp),
                     horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
                         html(),
                         contentDescription = "Html",
                         modifier = Modifier.padding(3.dp).size(14.dp),
-                        tint = MaterialTheme.colors.onBackground
+                        tint = MaterialTheme.colors.onBackground,
                     )
 
                     Text(
                         modifier = Modifier.weight(1f),
                         text = copywriter.getText("Html"),
                         fontFamily = FontFamily.SansSerif,
-                        style = textStyle
+                        style = textStyle,
                     )
                 }
             }
         }
-
     }
 }
 
@@ -146,8 +148,11 @@ suspend fun initJsBridge(webViewJsBridge: WebViewJsBridge) {
 
 class HoverScrollJsMessageHandler : IJsMessageHandler {
 
-
-    override fun handle(message: JsMessage, navigator: WebViewNavigator?, callback: (String) -> Unit) {
+    override fun handle(
+        message: JsMessage,
+        navigator: WebViewNavigator?,
+        callback: (String) -> Unit,
+    ) {
         logger.info {
             "Received message: $message"
         }

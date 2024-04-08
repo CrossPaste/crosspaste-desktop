@@ -4,5 +4,4 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.res.ResourceLoader
 
 @OptIn(ExperimentalComposeUiApi::class)
-interface ClipResourceLoader: ResourceLoader {
-}
+interface ClipResourceLoader : ResourceLoader

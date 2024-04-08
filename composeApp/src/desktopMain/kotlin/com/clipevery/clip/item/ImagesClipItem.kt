@@ -26,7 +26,7 @@ import java.nio.file.Paths
 
 @Serializable
 @SerialName("images")
-class ImagesClipItem: RealmObject, ClipAppearItem, ClipFiles {
+class ImagesClipItem : RealmObject, ClipAppearItem, ClipFiles {
 
     @PrimaryKey
     @Transient
@@ -83,9 +83,15 @@ class ImagesClipItem: RealmObject, ClipAppearItem, ClipFiles {
         }.joinToString(separator = " ")
     }
 
-    override fun update(data: Any, md5: String) {}
+    override fun update(
+        data: Any,
+        md5: String,
+    ) {}
 
-    override fun clear(realm: MutableRealm, clearResource: Boolean) {
+    override fun clear(
+        realm: MutableRealm,
+        clearResource: Boolean,
+    ) {
         if (clearResource) {
             for (path in getFilePaths()) {
                 DesktopOneFilePersist(path).delete()

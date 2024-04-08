@@ -71,9 +71,10 @@ fun HomeWindowDecoration(currentPage: MutableState<PageViewContext>) {
     TitleView(currentPage)
 }
 
-val customFontFamily = FontFamily(
-    Font(resource = "font/BebasNeue.otf", FontWeight.Normal)
-)
+val customFontFamily =
+    FontFamily(
+        Font(resource = "font/BebasNeue.otf", FontWeight.Normal),
+    )
 
 @Preview
 @Composable
@@ -89,117 +90,133 @@ fun TitleView(currentPage: MutableState<PageViewContext>) {
     val density = LocalDensity.current
 
     Box(
-        modifier = Modifier.background(Color(0xFF121314))
-            .border(0.dp, Color.Transparent)
-
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color.White.copy(alpha = 0.6f),
-                        Color.Transparent
-                    ),
-                    startY = 0.0f,
-                    endY = 3.0f
-                )
-            ),
+        modifier =
+            Modifier.background(Color(0xFF121314))
+                .border(0.dp, Color.Transparent)
+                .background(
+                    brush =
+                        Brush.verticalGradient(
+                            colors =
+                                listOf(
+                                    Color.White.copy(alpha = 0.6f),
+                                    Color.Transparent,
+                                ),
+                            startY = 0.0f,
+                            endY = 3.0f,
+                        ),
+                ),
     ) {
-        Row(modifier = Modifier.align(Alignment.CenterStart)
-            .wrapContentWidth(),
-            horizontalArrangement = Arrangement.Center) {
+        Row(
+            modifier =
+                Modifier.align(Alignment.CenterStart)
+                    .wrapContentWidth(),
+            horizontalArrangement = Arrangement.Center,
+        ) {
             Image(
-                modifier = Modifier.padding(13.dp, 13.dp, 13.dp, 13.dp)
-                    .align(Alignment.CenterVertically)
-                    .clip(RoundedCornerShape(3.dp))
-                    .size(36.dp),
+                modifier =
+                    Modifier.padding(13.dp, 13.dp, 13.dp, 13.dp)
+                        .align(Alignment.CenterVertically)
+                        .clip(RoundedCornerShape(3.dp))
+                        .size(36.dp),
                 painter = painterResource("clipevery_icon.png"),
                 contentDescription = "clipevery icon",
             )
-            Column(Modifier.wrapContentWidth()
-                .align(Alignment.CenterVertically)
-                .offset(y = 2.dp),
-                horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(modifier = Modifier.align(Alignment.Start),
+            Column(
+                Modifier.wrapContentWidth()
+                    .align(Alignment.CenterVertically)
+                    .offset(y = 2.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    modifier = Modifier.align(Alignment.Start),
                     text = "Compile Future",
                     color = Color.White,
                     style = TextStyle(fontWeight = FontWeight.Light),
                     fontSize = 11.sp,
-                    )
-                Text(modifier = Modifier.align(Alignment.Start),
+                )
+                Text(
+                    modifier = Modifier.align(Alignment.Start),
                     text = "Clipevery",
                     color = Color.White,
                     fontSize = 25.sp,
                     style = TextStyle(fontWeight = FontWeight.Bold),
                     fontFamily = customFontFamily,
-                    )
+                )
             }
-            Column(Modifier.fillMaxWidth()
-                .align(Alignment.CenterVertically)
-                .offset(y = 2.dp),
-                horizontalAlignment = Alignment.CenterHorizontally) {
-
-
+            Column(
+                Modifier.fillMaxWidth()
+                    .align(Alignment.CenterVertically)
+                    .offset(y = 2.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 ClipIconButton(
                     radius = 18.dp,
                     onClick = {
                         showPopup = !showPopup
                     },
-                    modifier = Modifier
-                        .padding(13.dp)
-                        .align(Alignment.End)
-                        .background(Color.Transparent, CircleShape) // Set the background to blue and shape to circle
-                        .onGloballyPositioned { coordinates ->
-                            buttonPosition = coordinates.localToWindow(Offset.Zero)
-                            buttonSize = coordinates.size.toSize()
-                        }
-
+                    modifier =
+                        Modifier
+                            .padding(13.dp)
+                            .align(Alignment.End)
+                            .background(Color.Transparent, CircleShape) // Set the background to blue and shape to circle
+                            .onGloballyPositioned { coordinates ->
+                                buttonPosition = coordinates.localToWindow(Offset.Zero)
+                                buttonSize = coordinates.size.toSize()
+                            },
                 ) {
                     Icon(
                         Icons.Outlined.Settings,
                         contentDescription = "info",
                         modifier = Modifier.padding(3.dp).size(30.dp),
-                        tint = Color.White
+                        tint = Color.White,
                     )
                 }
 
                 if (showPopup) {
                     Popup(
                         alignment = Alignment.TopEnd,
-                        offset = IntOffset(
-                            with(density) { ((-14).dp).roundToPx() },
-                            with(density) { (60.dp).roundToPx() },
-                        ),
+                        offset =
+                            IntOffset(
+                                with(density) { ((-14).dp).roundToPx() },
+                                with(density) { (60.dp).roundToPx() },
+                            ),
                         onDismissRequest = {
                             if (showPopup) {
                                 showPopup = false
                             }
                         },
-                        properties = PopupProperties(
-                            focusable = true,
-                            dismissOnBackPress = true,
-                            dismissOnClickOutside = true
-
-                        )
+                        properties =
+                            PopupProperties(
+                                focusable = true,
+                                dismissOnBackPress = true,
+                                dismissOnClickOutside = true,
+                            ),
                     ) {
-                        Box(modifier = Modifier
-                            .wrapContentSize()
-                            .background(Color.Transparent)
-                            .shadow(15.dp)) {
-
-                            val menuTexts = arrayOf(copywriter.getText("Check_for_updates"),
-                                copywriter.getText("Settings"),
-                                copywriter.getText("About"),
-                                copywriter.getText("FQA"),
-                                copywriter.getText("Quit")
-                            )
+                        Box(
+                            modifier =
+                                Modifier
+                                    .wrapContentSize()
+                                    .background(Color.Transparent)
+                                    .shadow(15.dp),
+                        ) {
+                            val menuTexts =
+                                arrayOf(
+                                    copywriter.getText("Check_for_updates"),
+                                    copywriter.getText("Settings"),
+                                    copywriter.getText("About"),
+                                    copywriter.getText("FQA"),
+                                    copywriter.getText("Quit"),
+                                )
 
                             val maxWidth = max(150.dp, getMenWidth(menuTexts))
 
                             Column(
-                                modifier = Modifier
-                                    .width(maxWidth)
-                                    .wrapContentHeight()
-                                    .clip(RoundedCornerShape(5.dp))
-                                    .background(MaterialTheme.colors.surface)
+                                modifier =
+                                    Modifier
+                                        .width(maxWidth)
+                                        .wrapContentHeight()
+                                        .clip(RoundedCornerShape(5.dp))
+                                        .background(MaterialTheme.colors.surface),
                             ) {
                                 MenuItem(copywriter.getText("Check_for_updates")) {
                                     // TODO: check for updates

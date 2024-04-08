@@ -13,13 +13,15 @@ import org.mongodb.kbson.ObjectId
 
 @Serializable
 @SerialName("label")
-class ClipLabel: RealmObject {
+class ClipLabel : RealmObject {
     @PrimaryKey
     @Transient
     var id: ObjectId = ObjectId()
     var color: Int = 0
+
     @Index
     var text: String = ""
+
     @Transient
     var createTime: RealmInstant = RealmInstant.now()
 

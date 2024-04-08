@@ -26,7 +26,6 @@ import com.clipevery.ui.base.image
 @Composable
 fun ImagesPreviewView(clipData: ClipData) {
     clipData.getClipItem()?.let {
-
         val current = LocalKoinApplication.current
         val copywriter = current.koin.get<GlobalCopywriter>()
         val clipFiles = it as ClipFiles
@@ -47,17 +46,18 @@ fun ImagesPreviewView(clipData: ClipData) {
                     painter = image(),
                     contentDescription = "Image",
                     modifier = Modifier.padding(3.dp).size(14.dp),
-                    tint = MaterialTheme.colors.onBackground
+                    tint = MaterialTheme.colors.onBackground,
                 )
                 Spacer(modifier = Modifier.size(3.dp))
                 Text(
                     text = copywriter.getText("Image"),
                     fontFamily = FontFamily.SansSerif,
-                    style = TextStyle(
-                        fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colors.onBackground,
-                        fontSize = 10.sp
-                    )
+                    style =
+                        TextStyle(
+                            fontWeight = FontWeight.Light,
+                            color = MaterialTheme.colors.onBackground,
+                            fontSize = 10.sp,
+                        ),
                 )
             }
         })

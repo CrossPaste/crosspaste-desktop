@@ -5,7 +5,7 @@ import org.signal.libsignal.protocol.InvalidKeyIdException
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord
 import org.signal.libsignal.protocol.state.SignedPreKeyStore
 
-class DesktopSignedPreKeyStore(private val signalDao: SignalDao): SignedPreKeyStore {
+class DesktopSignedPreKeyStore(private val signalDao: SignalDao) : SignedPreKeyStore {
     override fun loadSignedPreKey(signedPreKeyId: Int): SignedPreKeyRecord {
         signalDao.loadSignedPreKey(signedPreKeyId)?.let {
             return SignedPreKeyRecord(it)
@@ -16,7 +16,10 @@ class DesktopSignedPreKeyStore(private val signalDao: SignalDao): SignedPreKeySt
         return signalDao.loadSignedPreKeys().map { SignedPreKeyRecord(it) }.toMutableList()
     }
 
-    override fun storeSignedPreKey(signedPreKeyId: Int, record: SignedPreKeyRecord) {
+    override fun storeSignedPreKey(
+        signedPreKeyId: Int,
+        record: SignedPreKeyRecord,
+    ) {
         signalDao.storeSignedPreKey(signedPreKeyId, record.serialize())
     }
 

@@ -17,7 +17,10 @@ object StringRealmListSerializer : KSerializer<RealmList<String>> {
 
     override val descriptor: SerialDescriptor = delegateSerializer.descriptor
 
-    override fun serialize(encoder: Encoder, value: RealmList<String>) {
+    override fun serialize(
+        encoder: Encoder,
+        value: RealmList<String>,
+    ) {
         encoder.encodeSerializableValue(delegateSerializer, value)
     }
 
@@ -32,8 +35,11 @@ object PathStringRealmListSerializer : KSerializer<RealmList<String>> {
 
     override val descriptor: SerialDescriptor = delegateSerializer.descriptor
 
-    override fun serialize(encoder: Encoder, value: RealmList<String>) {
-        val pathsList: List<List<String>> = value.map { it.split( File.separator) }
+    override fun serialize(
+        encoder: Encoder,
+        value: RealmList<String>,
+    ) {
+        val pathsList: List<List<String>> = value.map { it.split(File.separator) }
         encoder.encodeSerializableValue(delegateSerializer, pathsList)
     }
 
@@ -48,7 +54,10 @@ object RealmAnyRealmListSerializer : KSerializer<RealmList<RealmAny>> {
 
     override val descriptor: SerialDescriptor = delegateSerializer.descriptor
 
-    override fun serialize(encoder: Encoder, value: RealmList<RealmAny>) {
+    override fun serialize(
+        encoder: Encoder,
+        value: RealmList<RealmAny>,
+    ) {
         encoder.encodeSerializableValue(delegateSerializer, value.toList())
     }
 
@@ -57,5 +66,3 @@ object RealmAnyRealmListSerializer : KSerializer<RealmList<RealmAny>> {
         return realmListOf(*list.toTypedArray())
     }
 }
-
-

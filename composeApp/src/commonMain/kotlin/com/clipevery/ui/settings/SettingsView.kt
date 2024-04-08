@@ -83,13 +83,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsTextStyle() = TextStyle(
-    textAlign = TextAlign.Start,
-    fontWeight = FontWeight.Light,
-    fontSize = 14.sp,
-    fontFamily = FontFamily.SansSerif,
-    color = MaterialTheme.colors.onBackground
-)
+fun SettingsTextStyle() =
+    TextStyle(
+        textAlign = TextAlign.Start,
+        fontWeight = FontWeight.Light,
+        fontSize = 14.sp,
+        fontFamily = FontFamily.SansSerif,
+        color = MaterialTheme.colors.onBackground,
+    )
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -106,14 +107,14 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
     var languageSize by remember { mutableStateOf(Size(0.0f, 0.0f)) }
     var languageOnDismissTime by remember { mutableStateOf(0L) }
 
-
-    val languageArrow: Painter = when (animationPhase) {
-        0 -> arrowDown()
-        1 -> arrowLeft()
-        2 -> arrowUp()
-        3 -> arrowRight()
-        else -> arrowDown()
-    }
+    val languageArrow: Painter =
+        when (animationPhase) {
+            0 -> arrowDown()
+            1 -> arrowLeft()
+            2 -> arrowUp()
+            3 -> arrowRight()
+            else -> arrowDown()
+        }
 
     val density = LocalDensity.current
 
@@ -137,38 +138,46 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
         snapshotFlow { scrollState.value }.collect {
             isScrolling = true
             scrollJob?.cancel()
-            scrollJob = coroutineScope.launch(CoroutineName("HiddenScroll")) {
-                delay(500)
-                isScrolling = false
-            }
+            scrollJob =
+                coroutineScope.launch(CoroutineName("HiddenScroll")) {
+                    delay(500)
+                    isScrolling = false
+                }
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()
-        .background(MaterialTheme.colors.surface)) {
+    Box(
+        modifier =
+            Modifier.fillMaxSize()
+                .background(MaterialTheme.colors.surface),
+    ) {
         Column(
-            modifier = Modifier.verticalScroll(scrollState)
-                .fillMaxSize()
-                .background(MaterialTheme.colors.surface)
+            modifier =
+                Modifier.verticalScroll(scrollState)
+                    .fillMaxSize()
+                    .background(MaterialTheme.colors.surface),
         ) {
-
             Spacer(modifier = Modifier.height(20.dp))
 
-            Column(modifier = Modifier.wrapContentSize()
-                .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colors.background)
+            Column(
+                modifier =
+                    Modifier.wrapContentSize()
+                        .padding(horizontal = 16.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colors.background),
             ) {
-                Row(modifier = Modifier.fillMaxWidth()
-                    .height(40.dp)
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically) {
-
+                Row(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(40.dp)
+                            .padding(horizontal = 12.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Icon(
                         modifier = Modifier.size(15.dp),
                         painter = language(),
                         contentDescription = "language",
-                        tint = MaterialTheme.colors.primary
+                        tint = MaterialTheme.colors.primary,
                     )
 
                     Spacer(modifier = Modifier.width(8.dp))
@@ -177,66 +186,73 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
 
                     Spacer(modifier = Modifier.weight(1f))
 
-                    Row(modifier = Modifier.padding(6.dp).wrapContentSize()
-                        .combinedClickable(interactionSource = MutableInteractionSource(),
-                            indication = null,
-                            onClick = {
-                                val currentTimeMillis = System.currentTimeMillis()
-                                if (currentTimeMillis - languageOnDismissTime > 500) {
-                                    showMoreLanguage = !showMoreLanguage
-                                    hasBeenClicked = true
-                                }
-                            }
-                        ).onGloballyPositioned { coordinates ->
-                            languagePosition = coordinates.localToWindow(Offset.Zero)
-                            languageSize = coordinates.size.toSize()
-                        },
-                        verticalAlignment = Alignment.CenterVertically
+                    Row(
+                        modifier =
+                            Modifier.padding(6.dp).wrapContentSize()
+                                .combinedClickable(
+                                    interactionSource = MutableInteractionSource(),
+                                    indication = null,
+                                    onClick = {
+                                        val currentTimeMillis = System.currentTimeMillis()
+                                        if (currentTimeMillis - languageOnDismissTime > 500) {
+                                            showMoreLanguage = !showMoreLanguage
+                                            hasBeenClicked = true
+                                        }
+                                    },
+                                ).onGloballyPositioned { coordinates ->
+                                    languagePosition = coordinates.localToWindow(Offset.Zero)
+                                    languageSize = coordinates.size.toSize()
+                                },
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         settingsText(copywriter.getText("CurrentLanguage"))
 
                         Icon(
-                            modifier = Modifier
-                                .padding(5.dp, 0.dp, 5.dp, 0.dp)
-                                .size(15.dp),
+                            modifier =
+                                Modifier
+                                    .padding(5.dp, 0.dp, 5.dp, 0.dp)
+                                    .size(15.dp),
                             painter = languageArrow,
                             contentDescription = null,
-                            tint = MaterialTheme.colors.onBackground
+                            tint = MaterialTheme.colors.onBackground,
                         )
                     }
 
                     if (showMoreLanguage) {
                         Popup(
                             alignment = Alignment.TopEnd,
-                            offset = IntOffset(
-                                with(density) { ((20).dp).roundToPx() },
-                                with(density) { (30.dp).roundToPx() },
-                            ),
+                            offset =
+                                IntOffset(
+                                    with(density) { ((20).dp).roundToPx() },
+                                    with(density) { (30.dp).roundToPx() },
+                                ),
                             onDismissRequest = {
                                 if (showMoreLanguage) {
                                     showMoreLanguage = false
                                     languageOnDismissTime = System.currentTimeMillis()
                                 }
-                            }
+                            },
                         ) {
                             Box(
-                                modifier = Modifier
-                                    .wrapContentSize()
-                                    .background(Color.Transparent)
-                                    .shadow(15.dp)
+                                modifier =
+                                    Modifier
+                                        .wrapContentSize()
+                                        .background(Color.Transparent)
+                                        .shadow(15.dp),
                             ) {
-
-                                val maxWidth = max(
-                                    150.dp,
-                                    getMenWidth(copywriter.getAllLanguages().map { it.name }.toTypedArray())
-                                )
+                                val maxWidth =
+                                    max(
+                                        150.dp,
+                                        getMenWidth(copywriter.getAllLanguages().map { it.name }.toTypedArray()),
+                                    )
 
                                 Column(
-                                    modifier = Modifier
-                                        .width(maxWidth)
-                                        .wrapContentHeight()
-                                        .clip(RoundedCornerShape(5.dp))
-                                        .background(MaterialTheme.colors.surface)
+                                    modifier =
+                                        Modifier
+                                            .width(maxWidth)
+                                            .wrapContentHeight()
+                                            .clip(RoundedCornerShape(5.dp))
+                                            .background(MaterialTheme.colors.surface),
                                 ) {
                                     val allLanguages = copywriter.getAllLanguages()
                                     allLanguages.forEachIndexed { _, language ->
@@ -253,15 +269,18 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
 
                 Divider(modifier = Modifier.padding(start = 35.dp))
 
-                Row(modifier = Modifier.fillMaxWidth()
-                    .height(40.dp)
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(40.dp)
+                            .padding(horizontal = 12.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Icon(
                         modifier = Modifier.size(15.dp),
                         painter = palette(),
                         contentDescription = "theme",
-                        tint = Color(0xFFFFC94A)
+                        tint = Color(0xFFFFC94A),
                     )
 
                     Spacer(modifier = Modifier.width(8.dp))
@@ -275,16 +294,18 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
 
                 Divider(modifier = Modifier.padding(start = 35.dp))
 
-                Row(modifier = Modifier.fillMaxWidth()
-                    .height(40.dp)
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically) {
-
+                Row(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(40.dp)
+                            .padding(horizontal = 12.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Icon(
                         modifier = Modifier.size(15.dp),
                         painter = shield(),
                         contentDescription = "Encrypted sync",
-                        tint = Color(0xFF41C9E2)
+                        tint = Color(0xFF41C9E2),
                     )
 
                     Spacer(modifier = Modifier.width(8.dp))
@@ -295,28 +316,31 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
 
                     var isEncrypted by remember { mutableStateOf(configManager.config.isEncryptSync) }
                     CustomSwitch(
-                        modifier = Modifier.width(32.dp)
-                            .height(20.dp),
+                        modifier =
+                            Modifier.width(32.dp)
+                                .height(20.dp),
                         checked = isEncrypted,
                         onCheckedChange = { it ->
                             isEncrypted = it
                             configManager.updateConfig { it.copy(isEncryptSync = isEncrypted) }
-                        }
+                        },
                     )
                 }
 
                 Divider(modifier = Modifier.padding(start = 35.dp))
 
-                Row(modifier = Modifier.fillMaxWidth()
-                    .height(40.dp)
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically) {
-
+                Row(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(40.dp)
+                            .padding(horizontal = 12.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Icon(
                         modifier = Modifier.size(15.dp),
                         painter = bolt(),
                         contentDescription = "Boot start up",
-                        tint = Color(0xFF90D26D)
+                        tint = Color(0xFF90D26D),
                     )
 
                     Spacer(modifier = Modifier.width(8.dp))
@@ -327,25 +351,28 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
 
                     var isChecked by remember { mutableStateOf(false) }
                     CustomSwitch(
-                        modifier = Modifier.width(32.dp)
-                            .height(20.dp),
+                        modifier =
+                            Modifier.width(32.dp)
+                                .height(20.dp),
                         checked = isChecked,
-                        onCheckedChange = { isChecked = it }
+                        onCheckedChange = { isChecked = it },
                     )
                 }
 
                 Divider(modifier = Modifier.padding(start = 35.dp))
 
-                Row(modifier = Modifier.fillMaxWidth()
-                    .height(40.dp)
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically) {
-
+                Row(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(40.dp)
+                            .padding(horizontal = 12.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Icon(
                         modifier = Modifier.size(15.dp),
                         painter = rocket(),
                         contentDescription = "Automatic Update",
-                        tint = Color(0xFFFB6D48)
+                        tint = Color(0xFFFB6D48),
                     )
 
                     Spacer(modifier = Modifier.width(8.dp))
@@ -356,10 +383,11 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
 
                     var isChecked by remember { mutableStateOf(false) }
                     CustomSwitch(
-                        modifier = Modifier.width(32.dp)
-                            .height(20.dp),
+                        modifier =
+                            Modifier.width(32.dp)
+                                .height(20.dp),
                         checked = isChecked,
-                        onCheckedChange = { isChecked = it }
+                        onCheckedChange = { isChecked = it },
                     )
                 }
             }
@@ -378,35 +406,39 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
         }
 
         VerticalScrollbar(
-            modifier = Modifier.background(color = Color.Transparent)
-                .fillMaxHeight().align(Alignment.CenterEnd)
-                .draggable(
-                    orientation = Orientation.Vertical,
-                    state = rememberDraggableState { delta ->
-                        coroutineScope.launch(CoroutineName("ScrollClip")) {
-                            scrollState.scrollBy(-delta)
-                        }
-                    },
-                ),
+            modifier =
+                Modifier.background(color = Color.Transparent)
+                    .fillMaxHeight().align(Alignment.CenterEnd)
+                    .draggable(
+                        orientation = Orientation.Vertical,
+                        state =
+                            rememberDraggableState { delta ->
+                                coroutineScope.launch(CoroutineName("ScrollClip")) {
+                                    scrollState.scrollBy(-delta)
+                                }
+                            },
+                    ),
             adapter = rememberScrollbarAdapter(scrollState),
-            style = ScrollbarStyle(
-                minimalHeight = 16.dp,
-                thickness = 8.dp,
-                shape = RoundedCornerShape(4.dp),
-                hoverDurationMillis = 300,
-                unhoverColor = if (isScrolling) MaterialTheme.colors.onBackground.copy(alpha = 0.48f) else Color.Transparent,
-                hoverColor = MaterialTheme.colors.onBackground
-            )
+            style =
+                ScrollbarStyle(
+                    minimalHeight = 16.dp,
+                    thickness = 8.dp,
+                    shape = RoundedCornerShape(4.dp),
+                    hoverDurationMillis = 300,
+                    unhoverColor = if (isScrolling) MaterialTheme.colors.onBackground.copy(alpha = 0.48f) else Color.Transparent,
+                    hoverColor = MaterialTheme.colors.onBackground,
+                ),
         )
     }
 }
 
 @Composable
 fun settingsText(text: String) {
-    Text(text = text,
+    Text(
+        text = text,
         color = MaterialTheme.colors.onBackground,
         fontSize = 14.sp,
         fontFamily = FontFamily.SansSerif,
-        style = TextStyle(fontWeight = FontWeight.Light)
+        style = TextStyle(fontWeight = FontWeight.Light),
     )
 }

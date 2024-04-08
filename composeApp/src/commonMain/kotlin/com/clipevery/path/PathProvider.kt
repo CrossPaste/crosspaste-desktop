@@ -11,19 +11,23 @@ import com.clipevery.utils.FileUtils
 import java.nio.file.Path
 
 interface PathProvider {
-    fun resolve(fileName: String? = null, appFileType: AppFileType): Path {
-        val path = when (appFileType) {
-            AppFileType.APP -> clipAppPath
-            AppFileType.USER -> clipUserPath
-            AppFileType.LOG -> clipLogPath.resolve("logs")
-            AppFileType.ENCRYPT -> clipEncryptPath.resolve("encrypt")
-            AppFileType.DATA -> clipDataPath.resolve("data")
-            AppFileType.HTML -> clipUserPath.resolve("html")
-            AppFileType.IMAGE -> clipUserPath.resolve("images")
-            AppFileType.VIDEO -> clipUserPath.resolve("videos")
-            AppFileType.FILE -> clipUserPath.resolve("files")
-            AppFileType.KCEF -> clipUserPath.resolve("kcef")
-        }
+    fun resolve(
+        fileName: String? = null,
+        appFileType: AppFileType,
+    ): Path {
+        val path =
+            when (appFileType) {
+                AppFileType.APP -> clipAppPath
+                AppFileType.USER -> clipUserPath
+                AppFileType.LOG -> clipLogPath.resolve("logs")
+                AppFileType.ENCRYPT -> clipEncryptPath.resolve("encrypt")
+                AppFileType.DATA -> clipDataPath.resolve("data")
+                AppFileType.HTML -> clipUserPath.resolve("html")
+                AppFileType.IMAGE -> clipUserPath.resolve("images")
+                AppFileType.VIDEO -> clipUserPath.resolve("videos")
+                AppFileType.FILE -> clipUserPath.resolve("files")
+                AppFileType.KCEF -> clipUserPath.resolve("kcef")
+            }
 
         autoCreateDir(path)
 
@@ -32,10 +36,12 @@ interface PathProvider {
         } ?: path
     }
 
-    fun resolve(basePath: Path,
-                path: String,
-                autoCreate: Boolean = true,
-                isFile: Boolean = false): Path {
+    fun resolve(
+        basePath: Path,
+        path: String,
+        autoCreate: Boolean = true,
+        isFile: Boolean = false,
+    ): Path {
         val newPath = basePath.resolve(path)
         if (autoCreate) {
             if (isFile) {
@@ -47,16 +53,19 @@ interface PathProvider {
         return newPath
     }
 
-    fun resolve(appInstanceId: String,
-                dateString: String,
-                clipId: Long,
-                clipFiles: ClipFiles,
-                isPull: Boolean,
-                filesIndexBuilder: FilesIndexBuilder? = null) {
+    fun resolve(
+        appInstanceId: String,
+        dateString: String,
+        clipId: Long,
+        clipFiles: ClipFiles,
+        isPull: Boolean,
+        filesIndexBuilder: FilesIndexBuilder? = null,
+    ) {
         val basePath = resolve(appFileType = clipFiles.getAppFileType())
-        val clipIdPath = basePath.resolve(appInstanceId)
-            .resolve(dateString)
-            .resolve(clipId.toString())
+        val clipIdPath =
+            basePath.resolve(appInstanceId)
+                .resolve(dateString)
+                .resolve(clipId.toString())
         if (isPull) {
             autoCreateDir(clipIdPath)
         }
@@ -67,18 +76,20 @@ interface PathProvider {
         }
     }
 
-    private fun resolveFileInfoTree(basePath: Path,
-                                    name: String,
-                                    fileInfoTree: FileInfoTree,
-                                    isPull: Boolean,
-                                    filesIndexBuilder: FilesIndexBuilder?) {
+    private fun resolveFileInfoTree(
+        basePath: Path,
+        name: String,
+        fileInfoTree: FileInfoTree,
+        isPull: Boolean,
+        filesIndexBuilder: FilesIndexBuilder?,
+    ) {
         if (fileInfoTree.isFile()) {
             val filePath = basePath.resolve(name)
             if (isPull) {
                 if (!fileUtils.createEmptyClipFile(filePath, fileInfoTree.size)) {
                     throw ClipException(
                         StandardErrorCode.CANT_CREATE_FILE.toErrorCode(),
-                        "Failed to create file: $filePath"
+                        "Failed to create file: $filePath",
                     )
                 }
             }
@@ -86,8 +97,8 @@ interface PathProvider {
         } else {
             val dirPath = basePath.resolve(name)
             if (isPull) {
-            autoCreateDir(dirPath)
-                }
+                autoCreateDir(dirPath)
+            }
             val dirFileInfoTree = fileInfoTree as DirFileInfoTree
             dirFileInfoTree.getTree().forEach { (subName, subFileInfoTree) ->
                 resolveFileInfoTree(dirPath, subName, subFileInfoTree, isPull, filesIndexBuilder)

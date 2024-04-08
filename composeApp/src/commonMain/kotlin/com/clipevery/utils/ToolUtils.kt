@@ -16,21 +16,27 @@ class OnceFunction<T>(private val function: () -> T) {
 }
 
 object Memoize {
-    fun <R, T> memoize(vararg inputs: T, function: () -> R): () -> R {
+    fun <R, T> memoize(
+        vararg inputs: T,
+        function: () -> R,
+    ): () -> R {
         val cache = mutableMapOf<List<T>, R>()
         return {
             val key = inputs.toList()
             cache.getOrPut(key) { function() }
         }
     }
-
 }
 
 object Retry {
 
     val logger = KotlinLogging.logger {}
 
-    fun <T> retry(maxAttempts: Int, action: () -> T, cleanUp: () -> Unit = {}): T {
+    fun <T> retry(
+        maxAttempts: Int,
+        action: () -> T,
+        cleanUp: () -> Unit = {},
+    ): T {
         var lastException: Exception? = null
         for (attempt in 1..maxAttempts) {
             try {

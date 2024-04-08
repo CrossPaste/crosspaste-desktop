@@ -49,12 +49,15 @@ fun SingleImagePreviewView(imagePath: Path) {
 
     val existFile by remember { mutableStateOf(imagePath.exists()) }
 
-    Row(modifier = Modifier.clickable {
-        if (Desktop.isDesktopSupported() && existFile) {
-            val desktop = Desktop.getDesktop()
-            desktop.open(imagePath.toFile())
-        }
-    }) {
+    Row(
+        modifier =
+            Modifier.clickable {
+                if (Desktop.isDesktopSupported() && existFile) {
+                    val desktop = Desktop.getDesktop()
+                    desktop.open(imagePath.toFile())
+                }
+            },
+    ) {
         AsyncView(
             load = {
                 val thumbnailPath = getThumbnailPath(imagePath)
@@ -67,43 +70,49 @@ fun SingleImagePreviewView(imagePath: Path) {
                 if (loadImageView.isSuccess()) {
                     ShowImageView(
                         painter = (loadImageView as LoadImageData).toPainterImage.toPainter(),
-                        contentDescription = "${imagePath.fileName}"
+                        contentDescription = "${imagePath.fileName}",
                     )
                 } else if (loadImageView.isLoading()) {
-                    ShowImageView(painter = image(),
-                        contentDescription = "${imagePath.fileName}"
+                    ShowImageView(
+                        painter = image(),
+                        contentDescription = "${imagePath.fileName}",
                     )
                 } else {
-                    ShowImageView(painter = imageSlash(),
-                        contentDescription = "${imagePath.fileName}"
+                    ShowImageView(
+                        painter = imageSlash(),
+                        contentDescription = "${imagePath.fileName}",
                     )
                 }
 
                 Column(
-                    modifier = Modifier.fillMaxHeight()
-                        .wrapContentWidth()
-                        .padding(horizontal = 8.dp),
-                    verticalArrangement = Arrangement.Bottom
+                    modifier =
+                        Modifier.fillMaxHeight()
+                            .wrapContentWidth()
+                            .padding(horizontal = 8.dp),
+                    verticalArrangement = Arrangement.Bottom,
                 ) {
                     Text(
                         text = "${copywriter.getText("File_Name")}: ${imagePath.fileName}",
                         color = MaterialTheme.colors.onBackground,
-                        style = TextStyle(
-                            fontWeight = FontWeight.Light,
-                            fontSize = 10.sp
-                        )
+                        style =
+                            TextStyle(
+                                fontWeight = FontWeight.Light,
+                                fontSize = 10.sp,
+                            ),
                     )
 
                     if (loadImageView is LoadImageData) {
                         val painter = loadImageView.toPainterImage.toPainter()
                         Text(
-                            text = "${copywriter.getText("Dimensions")}: " +
+                            text =
+                                "${copywriter.getText("Dimensions")}: " +
                                     "${painter.intrinsicSize.width} x ${painter.intrinsicSize.height}",
                             color = MaterialTheme.colors.onBackground,
-                            style = TextStyle(
-                                fontWeight = FontWeight.Light,
-                                fontSize = 10.sp
-                            )
+                            style =
+                                TextStyle(
+                                    fontWeight = FontWeight.Light,
+                                    fontSize = 10.sp,
+                                ),
                         )
                     }
 
@@ -111,35 +120,41 @@ fun SingleImagePreviewView(imagePath: Path) {
                         Text(
                             text = "${copywriter.getText("Size")}: ${fileUtils.getFileSize(imagePath)}",
                             color = MaterialTheme.colors.onBackground,
-                            style = TextStyle(
-                                fontWeight = FontWeight.Light,
-                                fontSize = 10.sp
-                            )
+                            style =
+                                TextStyle(
+                                    fontWeight = FontWeight.Light,
+                                    fontSize = 10.sp,
+                                ),
                         )
                     } else {
                         Text(
                             text = copywriter.getText("Missing_File"),
                             color = MaterialTheme.colors.error,
-                            style = TextStyle(
-                                fontWeight = FontWeight.Normal,
-                                color = Color.Red,
-                                fontSize = 10.sp
-                            )
+                            style =
+                                TextStyle(
+                                    fontWeight = FontWeight.Normal,
+                                    color = Color.Red,
+                                    fontSize = 10.sp,
+                                ),
                         )
                     }
                 }
-            }
+            },
         )
     }
 }
 
 @Composable
-fun ShowImageView(painter: Painter,
-                  contentDescription: String) {
-    Image(painter = painter,
+fun ShowImageView(
+    painter: Painter,
+    contentDescription: String,
+) {
+    Image(
+        painter = painter,
         contentDescription = contentDescription,
         contentScale = ContentScale.Crop,
-        modifier = Modifier.size(100.dp)
-            .clip(RoundedCornerShape(5.dp))
+        modifier =
+            Modifier.size(100.dp)
+                .clip(RoundedCornerShape(5.dp)),
     )
 }

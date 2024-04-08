@@ -12,15 +12,19 @@ import kotlinx.coroutines.sync.withPermit
 class TaskSemaphore(limit: Int) {
     private val semaphore = Semaphore(limit)
 
-    suspend fun <T> withTaskLimit(tasks: List<suspend () -> T>, scope: CoroutineScope): List<T> = scope.async {
-        semaphore.withPermit {
-            tasks.map { task ->
-                async {
-                    task()
-                }
-            }.awaitAll()
-        }
-    }.await()
+    suspend fun <T> withTaskLimit(
+        tasks: List<suspend () -> T>,
+        scope: CoroutineScope,
+    ): List<T> =
+        scope.async {
+            semaphore.withPermit {
+                tasks.map { task ->
+                    async {
+                        task()
+                    }
+                }.awaitAll()
+            }
+        }.await()
 
     companion object {
 
@@ -28,12 +32,18 @@ class TaskSemaphore(limit: Int) {
 
         private val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
-        suspend fun <T> withCpuTaskLimit(limit: Int, tasks: List<suspend () -> T>): List<T> {
+        suspend fun <T> withCpuTaskLimit(
+            limit: Int,
+            tasks: List<suspend () -> T>,
+        ): List<T> {
             val taskSemaphore = TaskSemaphore(limit)
             return taskSemaphore.withTaskLimit(tasks, cpuScope)
         }
 
-        suspend fun <T> withIoTaskLimit(limit: Int, tasks: List<suspend () -> T>): List<T> {
+        suspend fun <T> withIoTaskLimit(
+            limit: Int,
+            tasks: List<suspend () -> T>,
+        ): List<T> {
             val taskSemaphore = TaskSemaphore(limit)
             return taskSemaphore.withTaskLimit(tasks, ioScope)
         }

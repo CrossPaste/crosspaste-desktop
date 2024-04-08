@@ -43,7 +43,10 @@ object EncryptUtils {
         return Base64.getMimeDecoder().decode(string)
     }
 
-    fun encryptData(key: SecretKey, data: ByteArray): ByteArray {
+    fun encryptData(
+        key: SecretKey,
+        data: ByteArray,
+    ): ByteArray {
         val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
         val ivBytes = ByteArray(cipher.blockSize)
         SecureRandom().nextBytes(ivBytes)
@@ -54,7 +57,10 @@ object EncryptUtils {
         return ivBytes + encrypted
     }
 
-    fun decryptData(key: SecretKey, encryptedData: ByteArray): ByteArray {
+    fun decryptData(
+        key: SecretKey,
+        encryptedData: ByteArray,
+    ): ByteArray {
         val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
         val ivBytes = encryptedData.copyOfRange(0, 16)
         val actualEncryptedData = encryptedData.copyOfRange(16, encryptedData.size)

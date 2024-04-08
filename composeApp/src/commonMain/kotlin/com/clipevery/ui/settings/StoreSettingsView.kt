@@ -70,29 +70,36 @@ fun StoreSettingsView() {
         clipFileSize = clipResourceInfo.fileSize
     }
 
-    Text( modifier = Modifier.wrapContentSize()
-        .padding(start = 32.dp, top = 5.dp, bottom = 5.dp),
+    Text(
+        modifier =
+            Modifier.wrapContentSize()
+                .padding(start = 32.dp, top = 5.dp, bottom = 5.dp),
         text = copywriter.getText("Store_Info"),
         color = MaterialTheme.colors.onBackground,
         style = MaterialTheme.typography.h6,
         fontFamily = FontFamily.SansSerif,
-        fontSize = 12.sp)
+        fontSize = 12.sp,
+    )
 
-    Column(modifier = Modifier.wrapContentSize()
-        .padding(horizontal = 16.dp)
-        .clip(RoundedCornerShape(8.dp))
-        .background(MaterialTheme.colors.background)
+    Column(
+        modifier =
+            Modifier.wrapContentSize()
+                .padding(horizontal = 16.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colors.background),
     ) {
-        Row(modifier = Modifier.fillMaxWidth()
-            .height(40.dp)
-            .padding(horizontal = 12.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically) {
-
+        Row(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(40.dp)
+                    .padding(horizontal = 12.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Icon(
                 modifier = Modifier.size(15.dp),
                 painter = hashtag(),
                 contentDescription = "number of pasteboards",
-                tint = MaterialTheme.colors.onBackground
+                tint = MaterialTheme.colors.onBackground,
             )
 
             Spacer(modifier = Modifier.width(8.dp))
@@ -110,16 +117,18 @@ fun StoreSettingsView() {
 
         Divider(modifier = Modifier.padding(start = 35.dp))
 
-        Row(modifier = Modifier.fillMaxWidth()
-            .height(40.dp)
-            .padding(horizontal = 12.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically) {
-
+        Row(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(40.dp)
+                    .padding(horizontal = 12.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Icon(
                 modifier = Modifier.size(15.dp),
                 painter = image(),
                 contentDescription = "size of images",
-                tint = MaterialTheme.colors.onBackground
+                tint = MaterialTheme.colors.onBackground,
             )
 
             Spacer(modifier = Modifier.width(8.dp))
@@ -137,16 +146,18 @@ fun StoreSettingsView() {
 
         Divider(modifier = Modifier.padding(start = 35.dp))
 
-        Row(modifier = Modifier.fillMaxWidth()
-            .height(40.dp)
-            .padding(horizontal = 12.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically) {
-
+        Row(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(40.dp)
+                    .padding(horizontal = 12.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Icon(
                 modifier = Modifier.size(15.dp),
                 painter = file(),
                 contentDescription = "size of files",
-                tint = MaterialTheme.colors.onBackground
+                tint = MaterialTheme.colors.onBackground,
             )
 
             Spacer(modifier = Modifier.width(8.dp))
@@ -163,29 +174,36 @@ fun StoreSettingsView() {
         }
     }
 
-    Text( modifier = Modifier.wrapContentSize()
-        .padding(start = 32.dp, top = 5.dp, bottom = 5.dp),
+    Text(
+        modifier =
+            Modifier.wrapContentSize()
+                .padding(start = 32.dp, top = 5.dp, bottom = 5.dp),
         text = copywriter.getText("Clean_Up_Settings"),
         color = MaterialTheme.colors.onBackground,
         style = MaterialTheme.typography.h6,
         fontFamily = FontFamily.SansSerif,
-        fontSize = 12.sp)
+        fontSize = 12.sp,
+    )
 
-    Column(modifier = Modifier.wrapContentSize()
-        .padding(horizontal = 16.dp)
-        .clip(RoundedCornerShape(8.dp))
-        .background(MaterialTheme.colors.background)
+    Column(
+        modifier =
+            Modifier.wrapContentSize()
+                .padding(horizontal = 16.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colors.background),
     ) {
-        Row(modifier = Modifier.fillMaxWidth()
-            .height(40.dp)
-            .padding(horizontal = 12.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically) {
-
+        Row(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(40.dp)
+                    .padding(horizontal = 12.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Icon(
                 modifier = Modifier.size(15.dp),
                 painter = trash(),
                 contentDescription = "Image expiration time",
-                tint = MaterialTheme.colors.onBackground
+                tint = MaterialTheme.colors.onBackground,
             )
 
             Spacer(modifier = Modifier.width(8.dp))
@@ -197,27 +215,31 @@ fun StoreSettingsView() {
             Spacer(modifier = Modifier.weight(1f))
 
             CustomSwitch(
-                modifier = Modifier.width(32.dp)
-                    .height(20.dp),
+                modifier =
+                    Modifier.width(32.dp)
+                        .height(20.dp),
                 checked = isAutoCleaning,
                 onCheckedChange = { newIsAutoCleaning ->
                     configManager.updateConfig { it.copy(isAutoCleaning = newIsAutoCleaning) }
                     isAutoCleaning = configManager.config.isAutoCleaning
-                }
+                },
             )
         }
 
         Divider(modifier = Modifier.padding(start = 35.dp))
 
-        Row(modifier = Modifier.fillMaxWidth()
-            .height(40.dp)
-            .padding(horizontal = 12.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(40.dp)
+                    .padding(horizontal = 12.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Icon(
                 modifier = Modifier.size(15.dp),
                 painter = clock(),
                 contentDescription = "Image expiration time",
-                tint = MaterialTheme.colors.onBackground
+                tint = MaterialTheme.colors.onBackground,
             )
 
             Spacer(modifier = Modifier.width(8.dp))
@@ -230,23 +252,26 @@ fun StoreSettingsView() {
 
             val imageCleanTime = CleanTime.entries[selectImageCleanTimeIndex]
 
-            var imageCleanTimeValue by remember(copywriter.language()) { mutableStateOf("${imageCleanTime.quantity} ${copywriter.getText(imageCleanTime.unit)}") }
+            var imageCleanTimeValue by remember(copywriter.language()) {
+                mutableStateOf("${imageCleanTime.quantity} ${copywriter.getText(imageCleanTime.unit)}")
+            }
             val imageCleanTimeWidth = measureTextWidth(imageCleanTimeValue, SettingsTextStyle())
 
             var showImageCleanTimeMenu by remember { mutableStateOf(false) }
 
             Row(
-                modifier = Modifier.wrapContentWidth()
-                    .clickable {
-                        showImageCleanTimeMenu = !showImageCleanTimeMenu
-                    },
+                modifier =
+                    Modifier.wrapContentWidth()
+                        .clickable {
+                            showImageCleanTimeMenu = !showImageCleanTimeMenu
+                        },
                 horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     modifier = Modifier.width(imageCleanTimeWidth),
                     text = imageCleanTimeValue,
-                    style = SettingsTextStyle()
+                    style = SettingsTextStyle(),
                 )
 
                 Spacer(modifier = Modifier.width(5.dp))
@@ -254,27 +279,29 @@ fun StoreSettingsView() {
                     modifier = Modifier.size(15.dp),
                     painter = anglesUpDown(),
                     contentDescription = "File expiration time",
-                    tint = MaterialTheme.colors.onBackground
+                    tint = MaterialTheme.colors.onBackground,
                 )
             }
 
             if (showImageCleanTimeMenu) {
-                Popup(alignment = Alignment.BottomEnd,
-                    offset = IntOffset(
-                        with(density) { (-(imageCleanTimeWidth + 30.dp)).roundToPx() },
-                        with(density) { (0.dp).roundToPx() },
-                    ),
+                Popup(
+                    alignment = Alignment.BottomEnd,
+                    offset =
+                        IntOffset(
+                            with(density) { (-(imageCleanTimeWidth + 30.dp)).roundToPx() },
+                            with(density) { (0.dp).roundToPx() },
+                        ),
                     onDismissRequest = {
                         if (showImageCleanTimeMenu) {
                             showImageCleanTimeMenu = false
                         }
                     },
-                    properties = PopupProperties(
-                        focusable = true,
-                        dismissOnBackPress = true,
-                        dismissOnClickOutside = true
-
-                    )
+                    properties =
+                        PopupProperties(
+                            focusable = true,
+                            dismissOnBackPress = true,
+                            dismissOnClickOutside = true,
+                        ),
                 ) {
                     CleanTimeMenuView(selectImageCleanTimeIndex) { index ->
                         configManager.updateConfig { it.copy(imageCleanTimeIndex = index) }
@@ -289,15 +316,18 @@ fun StoreSettingsView() {
 
         Divider(modifier = Modifier.padding(start = 35.dp))
 
-        Row(modifier = Modifier.fillMaxWidth()
-            .height(40.dp)
-            .padding(horizontal = 12.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(40.dp)
+                    .padding(horizontal = 12.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Icon(
                 modifier = Modifier.size(15.dp),
                 painter = clock(),
                 contentDescription = "File expiration time",
-                tint = MaterialTheme.colors.onBackground
+                tint = MaterialTheme.colors.onBackground,
             )
 
             Spacer(modifier = Modifier.width(8.dp))
@@ -310,23 +340,26 @@ fun StoreSettingsView() {
 
             val fileCleanTime = CleanTime.entries[selectFileCleanTimeIndex]
 
-            var fileCleanTimeValue by remember(copywriter.language()) { mutableStateOf("${fileCleanTime.quantity} ${copywriter.getText(fileCleanTime.unit)}") }
+            var fileCleanTimeValue by remember(copywriter.language()) {
+                mutableStateOf("${fileCleanTime.quantity} ${copywriter.getText(fileCleanTime.unit)}")
+            }
             val fileCleanTimeWidth = measureTextWidth(fileCleanTimeValue, SettingsTextStyle())
 
             var showFileCleanTimeMenu by remember { mutableStateOf(false) }
 
             Row(
-                modifier = Modifier.wrapContentWidth()
-                    .clickable {
-                        showFileCleanTimeMenu = !showFileCleanTimeMenu
-                    },
+                modifier =
+                    Modifier.wrapContentWidth()
+                        .clickable {
+                            showFileCleanTimeMenu = !showFileCleanTimeMenu
+                        },
                 horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     modifier = Modifier.width(fileCleanTimeWidth),
                     text = fileCleanTimeValue,
-                    style = SettingsTextStyle()
+                    style = SettingsTextStyle(),
                 )
 
                 Spacer(modifier = Modifier.width(5.dp))
@@ -334,27 +367,29 @@ fun StoreSettingsView() {
                     modifier = Modifier.size(15.dp),
                     painter = anglesUpDown(),
                     contentDescription = "File expiration time",
-                    tint = MaterialTheme.colors.onBackground
+                    tint = MaterialTheme.colors.onBackground,
                 )
             }
 
             if (showFileCleanTimeMenu) {
-                Popup(alignment = Alignment.BottomEnd,
-                    offset = IntOffset(
-                        with(density) { (-(fileCleanTimeWidth + 30.dp)).roundToPx() },
-                        with(density) { (0.dp).roundToPx() },
-                    ),
+                Popup(
+                    alignment = Alignment.BottomEnd,
+                    offset =
+                        IntOffset(
+                            with(density) { (-(fileCleanTimeWidth + 30.dp)).roundToPx() },
+                            with(density) { (0.dp).roundToPx() },
+                        ),
                     onDismissRequest = {
                         if (showFileCleanTimeMenu) {
                             showFileCleanTimeMenu = false
                         }
                     },
-                    properties = PopupProperties(
-                        focusable = true,
-                        dismissOnBackPress = true,
-                        dismissOnClickOutside = true
-
-                    )
+                    properties =
+                        PopupProperties(
+                            focusable = true,
+                            dismissOnBackPress = true,
+                            dismissOnClickOutside = true,
+                        ),
                 ) {
                     CleanTimeMenuView(selectFileCleanTimeIndex) { index ->
                         configManager.updateConfig { it.copy(fileCleanTimeIndex = index) }
@@ -367,8 +402,4 @@ fun StoreSettingsView() {
             }
         }
     }
-
-
-
 }
-

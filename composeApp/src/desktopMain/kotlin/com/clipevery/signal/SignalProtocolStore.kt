@@ -21,12 +21,14 @@ import org.signal.libsignal.protocol.state.SignedPreKeyStore
 import org.signal.libsignal.protocol.state.impl.InMemoryKyberPreKeyStore
 import java.util.UUID
 
-class DesktopSignalProtocolStore(private val identityKeyStore: IdentityKeyStore,
-                                 private val preKeyStore: PreKeyStore,
-                                 private val sessionStore: SessionStore,
-                                 private val signedPreKeyStore: SignedPreKeyStore,
-                                 private val senderKeyStore: SenderKeyStore = InMemorySenderKeyStore(),
-                                 private val kyberPreKeyStore: KyberPreKeyStore = InMemoryKyberPreKeyStore()): SignalProtocolStore {
+class DesktopSignalProtocolStore(
+    private val identityKeyStore: IdentityKeyStore,
+    private val preKeyStore: PreKeyStore,
+    private val sessionStore: SessionStore,
+    private val signedPreKeyStore: SignedPreKeyStore,
+    private val senderKeyStore: SenderKeyStore = InMemorySenderKeyStore(),
+    private val kyberPreKeyStore: KyberPreKeyStore = InMemoryKyberPreKeyStore(),
+) : SignalProtocolStore {
 
     override fun getIdentityKeyPair(): IdentityKeyPair {
         return identityKeyStore.getIdentityKeyPair()
@@ -36,14 +38,17 @@ class DesktopSignalProtocolStore(private val identityKeyStore: IdentityKeyStore,
         return identityKeyStore.getLocalRegistrationId()
     }
 
-    override fun saveIdentity(address: SignalProtocolAddress?, identityKey: IdentityKey?): Boolean {
+    override fun saveIdentity(
+        address: SignalProtocolAddress?,
+        identityKey: IdentityKey?,
+    ): Boolean {
         return identityKeyStore.saveIdentity(address, identityKey)
     }
 
     override fun isTrustedIdentity(
         address: SignalProtocolAddress?,
         identityKey: IdentityKey?,
-        direction: IdentityKeyStore.Direction?
+        direction: IdentityKeyStore.Direction?,
     ): Boolean {
         return identityKeyStore.isTrustedIdentity(address, identityKey, direction)
     }
@@ -57,7 +62,10 @@ class DesktopSignalProtocolStore(private val identityKeyStore: IdentityKeyStore,
         return preKeyStore.loadPreKey(preKeyId)
     }
 
-    override fun storePreKey(preKeyId: Int, record: PreKeyRecord?) {
+    override fun storePreKey(
+        preKeyId: Int,
+        record: PreKeyRecord?,
+    ) {
         preKeyStore.storePreKey(preKeyId, record)
     }
 
@@ -82,7 +90,10 @@ class DesktopSignalProtocolStore(private val identityKeyStore: IdentityKeyStore,
         return sessionStore.getSubDeviceSessions(name)
     }
 
-    override fun storeSession(address: SignalProtocolAddress?, record: SessionRecord?) {
+    override fun storeSession(
+        address: SignalProtocolAddress?,
+        record: SessionRecord?,
+    ) {
         sessionStore.storeSession(address, record)
     }
 
@@ -107,7 +118,10 @@ class DesktopSignalProtocolStore(private val identityKeyStore: IdentityKeyStore,
         return signedPreKeyStore.loadSignedPreKeys()
     }
 
-    override fun storeSignedPreKey(signedPreKeyId: Int, record: SignedPreKeyRecord?) {
+    override fun storeSignedPreKey(
+        signedPreKeyId: Int,
+        record: SignedPreKeyRecord?,
+    ) {
         signedPreKeyStore.storeSignedPreKey(signedPreKeyId, record)
     }
 
@@ -120,14 +134,16 @@ class DesktopSignalProtocolStore(private val identityKeyStore: IdentityKeyStore,
     }
 
     override fun storeSenderKey(
-        sender: SignalProtocolAddress?, distributionId: UUID?, record: SenderKeyRecord?
+        sender: SignalProtocolAddress?,
+        distributionId: UUID?,
+        record: SenderKeyRecord?,
     ) {
         senderKeyStore.storeSenderKey(sender, distributionId, record)
     }
 
     override fun loadSenderKey(
         sender: SignalProtocolAddress?,
-        distributionId: UUID?
+        distributionId: UUID?,
     ): SenderKeyRecord {
         return senderKeyStore.loadSenderKey(sender, distributionId)
     }
@@ -141,7 +157,10 @@ class DesktopSignalProtocolStore(private val identityKeyStore: IdentityKeyStore,
         return kyberPreKeyStore.loadKyberPreKeys()
     }
 
-    override fun storeKyberPreKey(kyberPreKeyId: Int, record: KyberPreKeyRecord?) {
+    override fun storeKyberPreKey(
+        kyberPreKeyId: Int,
+        record: KyberPreKeyRecord?,
+    ) {
         kyberPreKeyStore.storeKyberPreKey(kyberPreKeyId, record)
     }
 

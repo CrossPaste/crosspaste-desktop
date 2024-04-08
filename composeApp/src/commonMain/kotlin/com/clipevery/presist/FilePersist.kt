@@ -8,7 +8,10 @@ interface FilePersist {
 
     val pathProvider: PathProvider
 
-    fun getPersist(configName: String, appFileType: AppFileType): OneFilePersist {
+    fun getPersist(
+        configName: String,
+        appFileType: AppFileType,
+    ): OneFilePersist {
         return createOneFilePersist(pathProvider.resolve(configName, appFileType))
     }
 

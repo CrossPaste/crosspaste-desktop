@@ -10,9 +10,10 @@ import java.net.InetAddress
 import javax.jmdns.JmDNS
 import javax.jmdns.ServiceInfo
 
-
-class DesktopClipBonjourService(private val appInfo: AppInfo,
-                                private val endpointInfoFactory: EndpointInfoFactory): ClipBonjourService {
+class DesktopClipBonjourService(
+    private val appInfo: AppInfo,
+    private val endpointInfoFactory: EndpointInfoFactory,
+) : ClipBonjourService {
 
     private val jmdnsMap: MutableMap<String, JmDNS> = mutableMapOf()
 
@@ -25,14 +26,15 @@ class DesktopClipBonjourService(private val appInfo: AppInfo,
         for (hostInfo in endpointInfo.hostInfoList) {
             val jmDNS: JmDNS = JmDNS.create(InetAddress.getByName(hostInfo.hostAddress))
             jmdnsMap.putIfAbsent(hostInfo.hostAddress, jmDNS)
-            val serviceInfo = ServiceInfo.create(
-                "_clipeveryService._tcp.local.",
-                "clipevery@${appInfo.appInstanceId}@${hostInfo.hostAddress.replace(".", "_")}",
-                endpointInfo.port,
-                0,
-                0,
-                syncInfoJson.toByteArray()
-            )
+            val serviceInfo =
+                ServiceInfo.create(
+                    "_clipeveryService._tcp.local.",
+                    "clipevery@${appInfo.appInstanceId}@${hostInfo.hostAddress.replace(".", "_")}",
+                    endpointInfo.port,
+                    0,
+                    0,
+                    syncInfoJson.toByteArray(),
+                )
             jmDNS.registerService(serviceInfo)
         }
         return this

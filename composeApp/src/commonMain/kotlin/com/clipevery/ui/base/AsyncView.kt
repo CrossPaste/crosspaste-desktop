@@ -9,28 +9,30 @@ import kotlinx.coroutines.withContext
 @Composable
 fun AsyncView(
     load: suspend () -> LoadStateData,
-    loadFor: @Composable (LoadStateData) -> Unit) {
+    loadFor: @Composable (LoadStateData) -> Unit,
+) {
     val state: LoadStateData by produceState(LoadingStateData as LoadStateData) {
-        value = withContext(ioDispatcher) {
-            try {
-                load()
-            } catch (e: Throwable) {
-                e.printStackTrace()
-                ErrorStateData(e)
+        value =
+            withContext(ioDispatcher) {
+                try {
+                    load()
+                } catch (e: Throwable) {
+                    e.printStackTrace()
+                    ErrorStateData(e)
+                }
             }
-        }
     }
 
     loadFor(state)
 }
 
-object LoadingStateData: LoadStateData {
+object LoadingStateData : LoadStateData {
     override fun getLoadState(): LoadState {
         return LoadState.Loading
     }
 }
 
-class ErrorStateData(val throwable: Throwable): LoadStateData {
+class ErrorStateData(val throwable: Throwable) : LoadStateData {
     override fun getLoadState(): LoadState {
         return LoadState.Error
     }
@@ -56,5 +58,5 @@ interface LoadStateData {
 enum class LoadState {
     Loading,
     Success,
-    Error
+    Error,
 }

@@ -34,7 +34,7 @@ enum class ToastStyle(val iconFileName: String, val toastColor: Color) {
     error("icon/toast/error.svg", Color.Red),
     info("icon/toast/info.svg", Color.Blue),
     success("icon/toast/success.svg", Color.Green),
-    warning("icon/toast/warning.svg", Color.Yellow)
+    warning("icon/toast/warning.svg", Color.Yellow),
 }
 
 data class Toast(val toastStyle: ToastStyle, val message: String, val duration: Long = 3000)
@@ -42,7 +42,7 @@ data class Toast(val toastStyle: ToastStyle, val message: String, val duration: 
 @Composable
 fun ToastView(
     toast: Toast,
-    onCancelTapped: () -> Unit
+    onCancelTapped: () -> Unit,
 ) {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
@@ -54,45 +54,54 @@ fun ToastView(
             toastManager.cancel()
         }
     }
-    Popup (alignment = Alignment.TopCenter,
-        offset = IntOffset(
-            with(density) { (0.dp).roundToPx() },
-            with(density) { (50.dp).roundToPx() },
-        ),
-        properties = PopupProperties(clippingEnabled = false)) {
-        Box(modifier = Modifier
-            .wrapContentSize()
-            .background(Color.Transparent)
-            .shadow(15.dp)) {
+    Popup(
+        alignment = Alignment.TopCenter,
+        offset =
+            IntOffset(
+                with(density) { (0.dp).roundToPx() },
+                with(density) { (50.dp).roundToPx() },
+            ),
+        properties = PopupProperties(clippingEnabled = false),
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .wrapContentSize()
+                    .background(Color.Transparent)
+                    .shadow(15.dp),
+        ) {
             Row(
-                modifier = Modifier
-                    .background(MaterialTheme.colors.surface, shape = RoundedCornerShape(8.dp))
-                    .padding(all = 8.dp)
-                    .width(280.dp)
-                    .padding(horizontal = 12.dp),
-                verticalAlignment = Alignment.CenterVertically) {
+                modifier =
+                    Modifier
+                        .background(MaterialTheme.colors.surface, shape = RoundedCornerShape(8.dp))
+                        .padding(all = 8.dp)
+                        .width(280.dp)
+                        .padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Icon(
                     painter = painterResource(toast.toastStyle.iconFileName),
                     contentDescription = "toast icon",
-                    tint = toast.toastStyle.toastColor
+                    tint = toast.toastStyle.toastColor,
                 )
                 Spacer(Modifier.width(12.dp))
-                Text(text = toast.message,
-                    style = TextStyle(
-                        fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colors.onSurface,
-                        fontSize = 16.sp
-                    )
+                Text(
+                    text = toast.message,
+                    style =
+                        TextStyle(
+                            fontWeight = FontWeight.Light,
+                            color = MaterialTheme.colors.onSurface,
+                            fontSize = 16.sp,
+                        ),
                 )
                 Spacer(Modifier.weight(1f))
                 Icon(
                     modifier = Modifier.clickable { onCancelTapped() },
                     painter = painterResource("icon/toast/close.svg"),
                     contentDescription = "Cancel",
-                    tint = toast.toastStyle.toastColor
+                    tint = toast.toastStyle.toastColor,
                 )
             }
         }
     }
-
 }

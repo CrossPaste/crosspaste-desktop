@@ -20,7 +20,7 @@ fun syncAlt(): ImageVector {
             defaultWidth = 24.dp,
             defaultHeight = 24.dp,
             viewportWidth = 24f,
-            viewportHeight = 24f
+            viewportHeight = 24f,
         ).apply {
             group {
                 path(
@@ -32,7 +32,7 @@ fun syncAlt(): ImageVector {
                     strokeLineCap = StrokeCap.Butt,
                     strokeLineJoin = StrokeJoin.Miter,
                     strokeLineMiter = 1.0f,
-                    pathFillType = PathFillType.NonZero
+                    pathFillType = PathFillType.NonZero,
                 ) {
                     moveTo(0f, 0f)
                     horizontalLineTo(24f)
@@ -53,7 +53,7 @@ fun syncAlt(): ImageVector {
                         strokeLineCap = StrokeCap.Butt,
                         strokeLineJoin = StrokeJoin.Miter,
                         strokeLineMiter = 1.0f,
-                        pathFillType = PathFillType.NonZero
+                        pathFillType = PathFillType.NonZero,
                     ) {
                         moveTo(7.41f, 13.41f)
                         lineTo(6f, 12f)
@@ -75,7 +75,7 @@ fun syncAlt(): ImageVector {
                         strokeLineCap = StrokeCap.Butt,
                         strokeLineJoin = StrokeJoin.Miter,
                         strokeLineMiter = 1.0f,
-                        pathFillType = PathFillType.NonZero
+                        pathFillType = PathFillType.NonZero,
                     ) {
                         moveTo(16.59f, 10.59f)
                         lineTo(18f, 12f)
@@ -97,12 +97,23 @@ fun syncAlt(): ImageVector {
 @Composable
 fun arrowLeftIcon(): ImageVector {
     return remember {
-        ImageVector.Builder(name = "Arrowleft", defaultWidth = 244.0.dp, defaultHeight = 183.0.dp,
-            viewportWidth = 244.0f, viewportHeight = 183.0f).apply {
+        ImageVector.Builder(
+            name = "Arrowleft",
+            defaultWidth = 244.0.dp,
+            defaultHeight = 183.0.dp,
+            viewportWidth = 244.0f,
+            viewportHeight = 183.0f,
+        ).apply {
             group {
-                path(fill = SolidColor(Color(0xFF000000)), stroke = null, fillAlpha = 0.0f,
-                    strokeLineWidth = 0.0f, strokeLineCap = StrokeCap.Butt, strokeLineJoin = StrokeJoin.Miter,
-                    strokeLineMiter = 4.0f, pathFillType = PathFillType.NonZero
+                path(
+                    fill = SolidColor(Color(0xFF000000)),
+                    stroke = null,
+                    fillAlpha = 0.0f,
+                    strokeLineWidth = 0.0f,
+                    strokeLineCap = StrokeCap.Butt,
+                    strokeLineJoin = StrokeJoin.Miter,
+                    strokeLineMiter = 4.0f,
+                    pathFillType = PathFillType.NonZero,
                 ) {
                     moveTo(0.0f, 0.0f)
                     horizontalLineToRelative(244.0f)
@@ -110,9 +121,14 @@ fun arrowLeftIcon(): ImageVector {
                     horizontalLineToRelative(-244.0f)
                     close()
                 }
-                path(fill = SolidColor(Color(0xFF000000)), stroke = null, strokeLineWidth = 0.0f,
-                    strokeLineCap = StrokeCap.Butt, strokeLineJoin = StrokeJoin.Miter, strokeLineMiter = 4.0f,
-                    pathFillType = PathFillType.NonZero
+                path(
+                    fill = SolidColor(Color(0xFF000000)),
+                    stroke = null,
+                    strokeLineWidth = 0.0f,
+                    strokeLineCap = StrokeCap.Butt,
+                    strokeLineJoin = StrokeJoin.Miter,
+                    strokeLineMiter = 4.0f,
+                    pathFillType = PathFillType.NonZero,
                 ) {
                     moveTo(81.002f, 71.751f)
                     lineTo(66.667f, 61.0f)
@@ -135,12 +151,24 @@ fun arrowLeftIcon(): ImageVector {
 @Composable
 fun arrowRightIcon(): ImageVector {
     return remember {
-        ImageVector.Builder(name = "Arrowright", defaultWidth = 244.0.dp, defaultHeight =
-        183.0.dp, viewportWidth = 244.0f, viewportHeight = 183.0f).apply {
+        ImageVector.Builder(
+            name = "Arrowright",
+            defaultWidth = 244.0.dp,
+            defaultHeight =
+                183.0.dp,
+            viewportWidth = 244.0f,
+            viewportHeight = 183.0f,
+        ).apply {
             group {
-                path(fill = SolidColor(Color(0xFF000000)), stroke = null, fillAlpha = 0.0f,
-                    strokeLineWidth = 0.0f, strokeLineCap = StrokeCap.Butt, strokeLineJoin = StrokeJoin.Miter,
-                    strokeLineMiter = 4.0f, pathFillType = PathFillType.NonZero
+                path(
+                    fill = SolidColor(Color(0xFF000000)),
+                    stroke = null,
+                    fillAlpha = 0.0f,
+                    strokeLineWidth = 0.0f,
+                    strokeLineCap = StrokeCap.Butt,
+                    strokeLineJoin = StrokeJoin.Miter,
+                    strokeLineMiter = 4.0f,
+                    pathFillType = PathFillType.NonZero,
                 ) {
                     moveTo(0.0f, 0.0f)
                     horizontalLineToRelative(244.0f)
@@ -148,9 +176,14 @@ fun arrowRightIcon(): ImageVector {
                     horizontalLineToRelative(-244.0f)
                     close()
                 }
-                path(fill = SolidColor(Color(0xFF000000)), stroke = null, strokeLineWidth = 0.0f,
-                    strokeLineCap = StrokeCap.Butt, strokeLineJoin = StrokeJoin.Miter, strokeLineMiter = 4.0f,
-                    pathFillType = PathFillType.NonZero
+                path(
+                    fill = SolidColor(Color(0xFF000000)),
+                    stroke = null,
+                    strokeLineWidth = 0.0f,
+                    strokeLineCap = StrokeCap.Butt,
+                    strokeLineJoin = StrokeJoin.Miter,
+                    strokeLineMiter = 4.0f,
+                    pathFillType = PathFillType.NonZero,
                 ) {
                     moveTo(169.165f, 111.249f)
                     lineTo(183.5f, 122.0f)
@@ -173,11 +206,21 @@ fun arrowRightIcon(): ImageVector {
 @Composable
 fun block(): ImageVector {
     return remember {
-        ImageVector.Builder(name = "Block", defaultWidth = 24.0.dp, defaultHeight = 24.0.dp,
-            viewportWidth = 960.0f, viewportHeight = 960.0f).apply {
-            path(fill = SolidColor(Color(0xFF000000)), stroke = null, strokeLineWidth = 0.0f,
-                strokeLineCap = StrokeCap.Butt, strokeLineJoin = StrokeJoin.Miter, strokeLineMiter = 4.0f,
-                pathFillType = PathFillType.NonZero
+        ImageVector.Builder(
+            name = "Block",
+            defaultWidth = 24.0.dp,
+            defaultHeight = 24.0.dp,
+            viewportWidth = 960.0f,
+            viewportHeight = 960.0f,
+        ).apply {
+            path(
+                fill = SolidColor(Color(0xFF000000)),
+                stroke = null,
+                strokeLineWidth = 0.0f,
+                strokeLineCap = StrokeCap.Butt,
+                strokeLineJoin = StrokeJoin.Miter,
+                strokeLineMiter = 4.0f,
+                pathFillType = PathFillType.NonZero,
             ) {
                 moveTo(480.0f, 880.0f)
                 quadToRelative(-83.0f, 0.0f, -156.0f, -31.5f)

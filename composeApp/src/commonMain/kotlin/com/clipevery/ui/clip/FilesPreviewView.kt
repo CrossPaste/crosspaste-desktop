@@ -53,17 +53,18 @@ fun FilesPreviewView(clipData: ClipData) {
                     file(),
                     contentDescription = "File",
                     modifier = Modifier.padding(3.dp).size(14.dp),
-                    tint = MaterialTheme.colors.onBackground
+                    tint = MaterialTheme.colors.onBackground,
                 )
                 Spacer(modifier = Modifier.size(3.dp))
                 Text(
                     text = copywriter.getText("File"),
                     fontFamily = FontFamily.SansSerif,
-                    style = TextStyle(
-                        fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colors.onBackground,
-                        fontSize = 10.sp
-                    )
+                    style =
+                        TextStyle(
+                            fontWeight = FontWeight.Light,
+                            color = MaterialTheme.colors.onBackground,
+                            fontSize = 10.sp,
+                        ),
                 )
             }
         })

@@ -5,7 +5,8 @@ import io.ktor.http.*
 
 interface PullFileClientApi {
 
-    suspend fun pullFile(pullFileRequest: PullFileRequest,
-                         toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult
-
+    suspend fun pullFile(
+        pullFileRequest: PullFileRequest,
+        toUrl: URLBuilder.(URLBuilder) -> Unit,
+    ): ClientApiResult
 }

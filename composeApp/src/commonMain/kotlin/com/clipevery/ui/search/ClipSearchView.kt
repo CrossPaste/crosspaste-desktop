@@ -43,18 +43,19 @@ import org.koin.core.KoinApplication
 import java.awt.event.WindowEvent
 import java.awt.event.WindowFocusListener
 
-
-fun createSearchWindow(clipSearchService: ClipSearchService,
-                       koinApplication: KoinApplication) {
+fun createSearchWindow(
+    clipSearchService: ClipSearchService,
+    koinApplication: KoinApplication,
+) {
     val appUI = clipSearchService.getAppUI()
     if (clipSearchService.tryStart()) {
         application {
-
-            val windowState = rememberWindowState(
-                placement = WindowPlacement.Floating,
-                position = WindowPosition.Aligned(Alignment.Center),
-                size = DpSize(800.dp, 80.dp)
-            )
+            val windowState =
+                rememberWindowState(
+                    placement = WindowPlacement.Floating,
+                    position = WindowPosition.Aligned(Alignment.Center),
+                    size = DpSize(800.dp, 80.dp),
+                )
 
             Window(
                 onCloseRequest = ::exitApplication,
@@ -64,25 +65,25 @@ fun createSearchWindow(clipSearchService: ClipSearchService,
                 alwaysOnTop = true,
                 undecorated = true,
                 transparent = true,
-                resizable = false
-                ) {
-
+                resizable = false,
+            ) {
                 LaunchedEffect(Unit) {
-                    window.addWindowFocusListener(object : WindowFocusListener {
-                        override fun windowGainedFocus(e: WindowEvent?) {
-                            appUI.showSearchWindow = true
-                        }
+                    window.addWindowFocusListener(
+                        object : WindowFocusListener {
+                            override fun windowGainedFocus(e: WindowEvent?) {
+                                appUI.showSearchWindow = true
+                            }
 
-                        override fun windowLostFocus(e: WindowEvent?) {
-                            appUI.showSearchWindow = false
-                        }
-                    })
-
+                            override fun windowLostFocus(e: WindowEvent?) {
+                                appUI.showSearchWindow = false
+                            }
+                        },
+                    )
                 }
 
                 ClipeveryAppSearchView(
                     koinApplication,
-                    hideWindow = { appUI.showSearchWindow = false }
+                    hideWindow = { appUI.showSearchWindow = false },
                 )
             }
         }
@@ -92,9 +93,10 @@ fun createSearchWindow(clipSearchService: ClipSearchService,
 }
 
 @Composable
-fun ClipeveryAppSearchView(koinApplication: KoinApplication,
-                            hideWindow: () -> Unit,
-                           ) {
+fun ClipeveryAppSearchView(
+    koinApplication: KoinApplication,
+    hideWindow: () -> Unit,
+) {
     CompositionLocalProvider(
         LocalKoinApplication provides koinApplication,
     ) {
@@ -104,60 +106,67 @@ fun ClipeveryAppSearchView(koinApplication: KoinApplication,
 
 @Composable
 fun ClipeverySearchWindow(hideWindow: () -> Unit) {
-
     var inputSearch by remember { mutableStateOf("") }
 
-
     ClipeveryTheme {
-        Box(modifier = Modifier
-            .background(Color.Transparent)
-            .clip(RoundedCornerShape(10.dp))
-            .width(800.dp)
-            .height(80.dp)
-            .padding(10.dp),
-            contentAlignment = Alignment.Center
+        Box(
+            modifier =
+                Modifier
+                    .background(Color.Transparent)
+                    .clip(RoundedCornerShape(10.dp))
+                    .width(800.dp)
+                    .height(80.dp)
+                    .padding(10.dp),
+            contentAlignment = Alignment.Center,
         ) {
-            Box(modifier = Modifier
-                .shadow(5.dp, RoundedCornerShape(10.dp))
-                .width(780.dp)
-                .height(60.dp)
-                .background(MaterialTheme.colors.background),
-                contentAlignment = Alignment.Center
+            Box(
+                modifier =
+                    Modifier
+                        .shadow(5.dp, RoundedCornerShape(10.dp))
+                        .width(780.dp)
+                        .height(60.dp)
+                        .background(MaterialTheme.colors.background),
+                contentAlignment = Alignment.Center,
             ) {
                 Row {
                     TextField(
                         modifier = Modifier.fillMaxSize(),
                         value = inputSearch,
                         onValueChange = { inputSearch = it },
-                        placeholder = { Text(
-                            modifier = Modifier.wrapContentSize(),
-                            text = "please input search",
-                            style = TextStyle(
-                                fontWeight = FontWeight.Light,
-                                color = MaterialTheme.colors.onBackground.copy(alpha = 0.5f),
-                                fontSize = 15.sp
-                            ),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis)
+                        placeholder = {
+                            Text(
+                                modifier = Modifier.wrapContentSize(),
+                                text = "please input search",
+                                style =
+                                    TextStyle(
+                                        fontWeight = FontWeight.Light,
+                                        color = MaterialTheme.colors.onBackground.copy(alpha = 0.5f),
+                                        fontSize = 15.sp,
+                                    ),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
                         },
                         isError = false,
                         singleLine = true,
-                        colors = TextFieldDefaults.textFieldColors(
-                            textColor = MaterialTheme.colors.onBackground,
-                            disabledTextColor = Color.Transparent,
-                            backgroundColor = Color.Transparent,
-                            cursorColor = MaterialTheme.colors.primary,
-                            errorCursorColor = Color.Red,
-                            focusedIndicatorColor = MaterialTheme.colors.primary,
-                            unfocusedIndicatorColor = MaterialTheme.colors.secondaryVariant,
-                            disabledIndicatorColor = Color.Transparent,
-                        ),
-                        textStyle =  TextStyle(
-                            fontWeight = FontWeight.Light,
-                            color = MaterialTheme.colors.onBackground,
-                            fontSize = 15.sp,
-                            lineHeight = 5.sp
-                        )
+                        colors =
+                            TextFieldDefaults.textFieldColors(
+                                textColor = MaterialTheme.colors.onBackground,
+                                disabledTextColor = Color.Transparent,
+                                backgroundColor = Color.Transparent,
+                                cursorColor = MaterialTheme.colors.primary,
+                                errorCursorColor = Color.Red,
+                                focusedIndicatorColor = MaterialTheme.colors.primary,
+                                unfocusedIndicatorColor = MaterialTheme.colors.secondaryVariant,
+                                disabledIndicatorColor = Color.Transparent,
+                            ),
+                        textStyle =
+                            TextStyle(
+                                fontWeight = FontWeight.Light,
+                                color = MaterialTheme.colors.onBackground,
+                                fontSize = 15.sp,
+                                lineHeight = 5.sp,
+                            ),
                     )
                 }
             }

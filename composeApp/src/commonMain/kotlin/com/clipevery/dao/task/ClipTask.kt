@@ -5,7 +5,7 @@ import io.realm.kotlin.types.annotations.Index
 import io.realm.kotlin.types.annotations.PrimaryKey
 import org.mongodb.kbson.ObjectId
 
-class ClipTask: RealmObject {
+class ClipTask : RealmObject {
     @PrimaryKey
     var taskId: ObjectId = ObjectId()
 
@@ -25,5 +25,4 @@ class ClipTask: RealmObject {
     var modifyTime: Long = 0
 
     var extraInfo: String = ""
-
 }

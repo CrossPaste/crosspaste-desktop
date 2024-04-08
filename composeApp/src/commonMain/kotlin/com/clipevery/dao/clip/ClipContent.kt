@@ -13,15 +13,18 @@ import java.io.IOException
 
 @Serializable
 @SerialName("content")
-class ClipContent: RealmObject {
+class ClipContent : RealmObject {
 
     @Serializable(with = RealmAnyRealmListSerializer::class)
     var clipAppearItems: RealmList<RealmAny?> = realmListOf()
 
     @Throws(IOException::class)
-    fun clear(realm: MutableRealm, clearResource: Boolean = true) {
+    fun clear(
+        realm: MutableRealm,
+        clearResource: Boolean = true,
+    ) {
         val iterator = clipAppearItems.iterator()
-        while(iterator.hasNext()) {
+        while (iterator.hasNext()) {
             val clipAppearItem = iterator.next()
             iterator.remove()
             getClipItem(clipAppearItem)?.clear(realm, clearResource)
@@ -47,4 +50,3 @@ class ClipContent: RealmObject {
         }
     }
 }
-

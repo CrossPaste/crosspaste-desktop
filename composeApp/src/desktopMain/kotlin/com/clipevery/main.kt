@@ -85,23 +85,26 @@ fun main() {
 
         val appUI = koinApplication.koin.get<AppUI>()
 
-        val trayIcon = if (currentPlatform().isMacos()) {
-            painterResource("clipevery_mac_tray.png")
-        } else {
-            painterResource("clipevery_icon.png")
-        }
+        val trayIcon =
+            if (currentPlatform().isMacos()) {
+                painterResource("clipevery_mac_tray.png")
+            } else {
+                painterResource("clipevery_icon.png")
+            }
 
-        val windowState = rememberWindowState(
-            placement = WindowPlacement.Floating,
-            position = WindowPosition.PlatformDefault,
-            size = getPreferredWindowSize(appUI)
-        )
+        val windowState =
+            rememberWindowState(
+                placement = WindowPlacement.Floating,
+                position = WindowPosition.PlatformDefault,
+                size = getPreferredWindowSize(appUI),
+            )
 
         Tray(
             icon = trayIcon,
-            mouseListener = getTrayMouseAdapter(windowState) {
-                appUI.showMainWindow = !appUI.showMainWindow
-            },
+            mouseListener =
+                getTrayMouseAdapter(windowState) {
+                    appUI.showMainWindow = !appUI.showMainWindow
+                },
         )
 
         val exitApplication: () -> Unit = {
@@ -120,21 +123,20 @@ fun main() {
             alwaysOnTop = true,
             undecorated = true,
             transparent = true,
-            resizable = false
+            resizable = false,
         ) {
-
             LaunchedEffect(Unit) {
-                window.addWindowFocusListener(object : java.awt.event.WindowFocusListener {
-                    override fun windowGainedFocus(e: java.awt.event.WindowEvent?) {
-                        appUI.showMainWindow = true
-                    }
+                window.addWindowFocusListener(
+                    object : java.awt.event.WindowFocusListener {
+                        override fun windowGainedFocus(e: java.awt.event.WindowEvent?) {
+                            appUI.showMainWindow = true
+                        }
 
-                    override fun windowLostFocus(e: java.awt.event.WindowEvent?) {
-                        appUI.showMainWindow = false
-                    }
-                })
-
-
+                        override fun windowLostFocus(e: java.awt.event.WindowEvent?) {
+                            appUI.showMainWindow = false
+                        }
+                    },
+                )
 
                 val kcefBundleDir = DesktopPathProvider.resolve("kcef-bundle", AppFileType.KCEF).toFile()
                 val kcefCacheDir = DesktopPathProvider.resolve("kcef-cache", AppFileType.KCEF).toFile()
@@ -163,7 +165,7 @@ fun main() {
             ClipeveryApp(
                 koinApplication,
                 hideWindow = { appUI.showMainWindow = false },
-                exitApplication = exitApplication
+                exitApplication = exitApplication,
             )
         }
     }

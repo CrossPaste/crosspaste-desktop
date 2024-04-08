@@ -12,12 +12,15 @@ import io.ktor.util.*
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.toRealmList
 
-object FilesToImagesPlugin: ClipPlugin {
+object FilesToImagesPlugin : ClipPlugin {
 
     private val fileBasePath = DesktopPathProvider.resolve(appFileType = AppFileType.FILE)
     private val imageBasePath = DesktopPathProvider.resolve(appFileType = AppFileType.IMAGE)
 
-    override fun pluginProcess(clipAppearItems: List<ClipAppearItem>, realm: MutableRealm): List<ClipAppearItem> {
+    override fun pluginProcess(
+        clipAppearItems: List<ClipAppearItem>,
+        realm: MutableRealm,
+    ): List<ClipAppearItem> {
         return clipAppearItems.map { clipAppearItem ->
             if (clipAppearItem is FilesClipItem) {
                 if (clipAppearItem.getFilePaths().map { path -> path.extension }.all { canPreviewImage(it) }) {

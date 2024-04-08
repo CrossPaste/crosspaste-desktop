@@ -7,10 +7,9 @@ import java.io.IOException
 import java.nio.file.Paths
 import java.util.Properties
 
-
 val logger = KotlinLogging.logger {}
 
-class DesktopAppInfoFactory(private val configManager: ConfigManager): AppInfoFactory {
+class DesktopAppInfoFactory(private val configManager: ConfigManager) : AppInfoFactory {
     override fun createAppInfo(): AppInfo {
         val appInstanceId = configManager.config.appInstanceId
         return getAppInfoFactory(appInstanceId).createAppInfo()
@@ -28,13 +27,13 @@ fun getAppInfoFactory(appInstanceId: String): AppInfoFactory {
     }
 }
 
-class MacosAppInfoFactory(private val appInstanceId: String): AppInfoFactory {
+class MacosAppInfoFactory(private val appInstanceId: String) : AppInfoFactory {
     override fun createAppInfo(): AppInfo {
         return AppInfo(appInstanceId = appInstanceId, appVersion = getVersion(), userName = getUserName())
     }
 }
 
-class WindowsAppInfoFactory(private val appInstanceId: String): AppInfoFactory {
+class WindowsAppInfoFactory(private val appInstanceId: String) : AppInfoFactory {
     override fun createAppInfo(): AppInfo {
         return AppInfo(appInstanceId = appInstanceId, appVersion = getVersion(), userName = getUserName())
     }
@@ -43,8 +42,10 @@ class WindowsAppInfoFactory(private val appInstanceId: String): AppInfoFactory {
 fun getVersion(): String {
     val properties = Properties()
     try {
-        properties.load( Thread.currentThread().contextClassLoader
-            .getResourceAsStream("version.properties"))
+        properties.load(
+            Thread.currentThread().contextClassLoader
+                .getResourceAsStream("version.properties"),
+        )
         return properties.getProperty("version", "Unknown")
     } catch (e: IOException) {
         logger.error(e) { "Failed to read version" }

@@ -3,7 +3,7 @@ package com.clipevery.dao.signal
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
 
-class ClipSignedPreKey: RealmObject {
+class ClipSignedPreKey : RealmObject {
     @PrimaryKey
     var id: Int = 0
     var serialized: ByteArray = ByteArray(0)
@@ -14,5 +14,4 @@ class ClipSignedPreKey: RealmObject {
         this.id = id
         this.serialized = serialized
     }
-
 }

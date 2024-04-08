@@ -31,41 +31,41 @@ import org.signal.libsignal.protocol.state.PreKeyBundle
 
 object JsonUtils {
 
-    val JSON: Json = Json {
-        ignoreUnknownKeys = true
-        serializersModule = SerializersModule {
-            // use in http request
-            serializersModuleOf(ByteArray::class, Base64ByteArraySerializer)
-            serializersModuleOf(PreKeyBundle::class, PreKeyBundleSerializer)
-            serializersModuleOf(IdentityKey::class, IdentityKeySerializer)
+    val JSON: Json =
+        Json {
+            ignoreUnknownKeys = true
+            serializersModule =
+                SerializersModule {
+                    // use in http request
+                    serializersModuleOf(ByteArray::class, Base64ByteArraySerializer)
+                    serializersModuleOf(PreKeyBundle::class, PreKeyBundleSerializer)
+                    serializersModuleOf(IdentityKey::class, IdentityKeySerializer)
 
-            // use in clip data
-            serializersModuleOf(MutableRealmIntKSerializer)
-            serializersModuleOf(RealmAnyKSerializer)
-            serializersModuleOf(RealmInstantSerializer)
-            polymorphic(RealmObject::class) {
-                subclass(FilesClipItem::class)
-                subclass(HtmlClipItem::class)
-                subclass(ImagesClipItem::class)
-                subclass(TextClipItem::class)
-                subclass(UrlClipItem::class)
-                subclass(ClipLabel::class)
-                subclass(ClipContent::class)
-            }
+                    // use in clip data
+                    serializersModuleOf(MutableRealmIntKSerializer)
+                    serializersModuleOf(RealmAnyKSerializer)
+                    serializersModuleOf(RealmInstantSerializer)
+                    polymorphic(RealmObject::class) {
+                        subclass(FilesClipItem::class)
+                        subclass(HtmlClipItem::class)
+                        subclass(ImagesClipItem::class)
+                        subclass(TextClipItem::class)
+                        subclass(UrlClipItem::class)
+                        subclass(ClipLabel::class)
+                        subclass(ClipContent::class)
+                    }
 
-            polymorphic(FileInfoTree::class) {
-                subclass(SingleFileInfoTree::class)
-                subclass(DirFileInfoTree::class)
-            }
+                    polymorphic(FileInfoTree::class) {
+                        subclass(SingleFileInfoTree::class)
+                        subclass(DirFileInfoTree::class)
+                    }
 
-            // use in clip task
-            polymorphic(ClipTaskExtraInfo::class) {
-                subclass(BaseExtraInfo::class)
-                subclass(SyncExtraInfo::class)
-                subclass(PullExtraInfo::class)
-            }
-
+                    // use in clip task
+                    polymorphic(ClipTaskExtraInfo::class) {
+                        subclass(BaseExtraInfo::class)
+                        subclass(SyncExtraInfo::class)
+                        subclass(PullExtraInfo::class)
+                    }
+                }
         }
-    }
-
 }

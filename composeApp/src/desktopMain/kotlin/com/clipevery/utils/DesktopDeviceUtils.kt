@@ -7,7 +7,7 @@ import java.io.IOException
 import java.io.InputStreamReader
 import java.util.UUID
 
-object DesktopDeviceUtils: DeviceUtils {
+object DesktopDeviceUtils : DeviceUtils {
 
     override fun createAppInstanceId(): String {
         return if (currentPlatform().isWindows()) {
@@ -22,7 +22,7 @@ object DesktopDeviceUtils: DeviceUtils {
     }
 }
 
-object WindowsDeviceUtils: DeviceUtils {
+object WindowsDeviceUtils : DeviceUtils {
 
     override fun createAppInstanceId(): String {
         try {
@@ -42,18 +42,16 @@ object WindowsDeviceUtils: DeviceUtils {
     }
 }
 
-object MacosDeviceUtils: DeviceUtils {
+object MacosDeviceUtils : DeviceUtils {
 
     override fun createAppInstanceId(): String {
         return MacosApi.INSTANCE.getHardwareUUID() ?: UUID.randomUUID().toString()
     }
 }
 
-object LinuxDeviceUtils: DeviceUtils {
+object LinuxDeviceUtils : DeviceUtils {
 
     override fun createAppInstanceId(): String {
         return UUID.randomUUID().toString()
     }
 }
-
-

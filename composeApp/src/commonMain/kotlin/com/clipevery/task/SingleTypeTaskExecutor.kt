@@ -6,10 +6,12 @@ interface SingleTypeTaskExecutor {
 
     val taskType: Int
 
-    suspend fun executeTask(clipTask: ClipTask,
-                            success: suspend (String?) -> Unit,
-                            fail: suspend (String, Boolean) -> Unit,
-                            retry: suspend () -> Unit) {
+    suspend fun executeTask(
+        clipTask: ClipTask,
+        success: suspend (String?) -> Unit,
+        fail: suspend (String, Boolean) -> Unit,
+        retry: suspend () -> Unit,
+    ) {
         val result = doExecuteTask(clipTask)
 
         if (result is SuccessClipTaskResult) {
@@ -30,6 +32,6 @@ interface SingleTypeTaskExecutor {
 
 interface ClipTaskResult
 
-data class SuccessClipTaskResult(val newExtraInfo: String? = null): ClipTaskResult
+data class SuccessClipTaskResult(val newExtraInfo: String? = null) : ClipTaskResult
 
-data class FailureClipTaskResult(val newExtraInfo: String, val needRetry: Boolean = false): ClipTaskResult
+data class FailureClipTaskResult(val newExtraInfo: String, val needRetry: Boolean = false) : ClipTaskResult

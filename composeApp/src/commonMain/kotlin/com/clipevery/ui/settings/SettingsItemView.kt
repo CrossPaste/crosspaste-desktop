@@ -36,8 +36,10 @@ import com.clipevery.ui.base.arrowLeft
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
-fun SettingsItemView(title: String,
-                     content: @Composable () -> Unit) {
+fun SettingsItemView(
+    title: String,
+    content: @Composable () -> Unit,
+) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     var hover by remember { mutableStateOf(false) }
@@ -45,50 +47,59 @@ fun SettingsItemView(title: String,
 
     var openSettings by remember { mutableStateOf(false) }
 
-    val languageArrow: Painter = if (openSettings) {
-        arrowDown()
-    } else {
-        arrowLeft()
-    }
+    val languageArrow: Painter =
+        if (openSettings) {
+            arrowDown()
+        } else {
+            arrowLeft()
+        }
 
-    Column(modifier = Modifier.fillMaxWidth()
-        .wrapContentHeight()) {
-        Row(modifier = Modifier.fillMaxWidth()
-            .background(backgroundColor)
-            .padding(0.dp, 10.dp, 0.dp, 10.dp)
-            .combinedClickable(interactionSource = MutableInteractionSource(),
-                indication = null,
-                onClick = {
-                    openSettings = !openSettings
-                }
-            )
-            .onPointerEvent(
-                eventType = PointerEventType.Enter,
-                onEvent = {
-                    hover = true
-                }
-            )
-            .onPointerEvent(
-                eventType = PointerEventType.Exit,
-                onEvent = {
-                    hover = false
-                }
-            )
-            ,
-            verticalAlignment = Alignment.CenterVertically) {
+    Column(
+        modifier =
+            Modifier.fillMaxWidth()
+                .wrapContentHeight(),
+    ) {
+        Row(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .background(backgroundColor)
+                    .padding(0.dp, 10.dp, 0.dp, 10.dp)
+                    .combinedClickable(
+                        interactionSource = MutableInteractionSource(),
+                        indication = null,
+                        onClick = {
+                            openSettings = !openSettings
+                        },
+                    )
+                    .onPointerEvent(
+                        eventType = PointerEventType.Enter,
+                        onEvent = {
+                            hover = true
+                        },
+                    )
+                    .onPointerEvent(
+                        eventType = PointerEventType.Exit,
+                        onEvent = {
+                            hover = false
+                        },
+                    ),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Icon(
-                modifier = Modifier
-                    .padding(5.dp, 0.dp, 5.dp, 0.dp)
-                    .size(15.dp),
+                modifier =
+                    Modifier
+                        .padding(5.dp, 0.dp, 5.dp, 0.dp)
+                        .size(15.dp),
                 painter = languageArrow,
                 contentDescription = null,
-                tint = MaterialTheme.colors.onBackground
-                )
-            Text(text = copywriter.getText(title),
+                tint = MaterialTheme.colors.onBackground,
+            )
+            Text(
+                text = copywriter.getText(title),
                 color = MaterialTheme.colors.onBackground,
                 fontSize = 14.sp,
                 fontFamily = FontFamily.SansSerif,
-                style = TextStyle(fontWeight = FontWeight.Light)
+                style = TextStyle(fontWeight = FontWeight.Light),
             )
         }
 

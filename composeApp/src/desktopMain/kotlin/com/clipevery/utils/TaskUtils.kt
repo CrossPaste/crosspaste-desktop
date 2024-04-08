@@ -17,7 +17,11 @@ import kotlin.reflect.KClass
 
 object TaskUtils {
 
-    fun createTask(clipDataId: ObjectId?, taskType: Int, extraInfo: ClipTaskExtraInfo = BaseExtraInfo()): ClipTask {
+    fun createTask(
+        clipDataId: ObjectId?,
+        taskType: Int,
+        extraInfo: ClipTaskExtraInfo = BaseExtraInfo(),
+    ): ClipTask {
         return ClipTask().apply {
             this.clipDataId = clipDataId
             this.taskType = taskType
@@ -29,17 +33,26 @@ object TaskUtils {
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <T: ClipTaskExtraInfo> getExtraInfo(clipTask: ClipTask, kclass: KClass<T>): T {
+    fun <T : ClipTaskExtraInfo> getExtraInfo(
+        clipTask: ClipTask,
+        kclass: KClass<T>,
+    ): T {
         val serializer = Json.serializersModule.serializer(kclass.java)
         return JsonUtils.JSON.decodeFromString(serializer, clipTask.extraInfo) as T
     }
 
-    fun createFailExtraInfo(clipTask: ClipTask, throwable: Throwable): String {
+    fun createFailExtraInfo(
+        clipTask: ClipTask,
+        throwable: Throwable,
+    ): String {
         val currentTime = System.currentTimeMillis()
-        val executionHistory = ExecutionHistory(startTime = clipTask.modifyTime,
-            endTime = currentTime,
-            status = TaskStatus.FAILURE,
-            message = throwable.message ?: "Unknown error")
+        val executionHistory =
+            ExecutionHistory(
+                startTime = clipTask.modifyTime,
+                endTime = currentTime,
+                status = TaskStatus.FAILURE,
+                message = throwable.message ?: "Unknown error",
+            )
         val jsonObject = JsonUtils.JSON.decodeFromString<JsonObject>(clipTask.extraInfo)
 
         val mutableJsonObject = jsonObject.toMutableMap()
@@ -55,10 +68,12 @@ object TaskUtils {
         return JsonUtils.JSON.encodeToString(JsonObject(mutableJsonObject))
     }
 
-    fun createFailureClipTaskResult(retryHandler: () -> Boolean,
-                                    startTime: Long,
-                                    failMessage: String,
-                                    extraInfo: ClipTaskExtraInfo): FailureClipTaskResult {
+    fun createFailureClipTaskResult(
+        retryHandler: () -> Boolean,
+        startTime: Long,
+        failMessage: String,
+        extraInfo: ClipTaskExtraInfo,
+    ): FailureClipTaskResult {
         val needRetry = retryHandler()
         extraInfo.executionHistories.add(ExecutionHistory(startTime, System.currentTimeMillis(), TaskStatus.FAILURE, failMessage))
         return FailureClipTaskResult(JsonUtils.JSON.encodeToString(extraInfo), needRetry)

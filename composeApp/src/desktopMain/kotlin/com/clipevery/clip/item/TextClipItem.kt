@@ -14,7 +14,7 @@ import java.awt.datatransfer.DataFlavor
 
 @Serializable
 @SerialName("text")
-class TextClipItem: RealmObject, ClipAppearItem, ClipText {
+class TextClipItem : RealmObject, ClipAppearItem, ClipText {
 
     @PrimaryKey
     @Transient
@@ -35,14 +35,20 @@ class TextClipItem: RealmObject, ClipAppearItem, ClipText {
         return text
     }
 
-    override fun update(data: Any, md5: String) {
+    override fun update(
+        data: Any,
+        md5: String,
+    ) {
         (data as? String)?.let { text ->
             this.text = text
             this.md5 = md5
         }
     }
 
-    override fun clear(realm: MutableRealm, clearResource: Boolean) {
+    override fun clear(
+        realm: MutableRealm,
+        clearResource: Boolean,
+    ) {
         realm.delete(this)
     }
 

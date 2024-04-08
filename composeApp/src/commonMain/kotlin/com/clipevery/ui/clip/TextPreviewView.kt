@@ -34,25 +34,28 @@ fun TextPreviewView(clipData: ClipData) {
         val fileUtils = current.koin.get<FileUtils>()
         ClipSpecificPreviewContentView(it, {
             Text(
-                modifier = Modifier.fillMaxSize()
-                    .clickable {
-                        if (Desktop.isDesktopSupported()) {
-                            val desktop = Desktop.getDesktop()
-                            fileUtils.createTempFile((it as ClipText).text.toByteArray(), fileUtils.createRandomFileName("txt"))?.let { path ->
-                                desktop.open(path.toFile())
+                modifier =
+                    Modifier.fillMaxSize()
+                        .clickable {
+                            if (Desktop.isDesktopSupported()) {
+                                val desktop = Desktop.getDesktop()
+                                fileUtils.createTempFile((it as ClipText).text.toByteArray(), fileUtils.createRandomFileName("txt"))?.let {
+                                        path ->
+                                    desktop.open(path.toFile())
+                                }
                             }
-                        }
-                    },
+                        },
                 text = (it as ClipText).text,
                 fontFamily = FontFamily.SansSerif,
                 maxLines = 4,
                 softWrap = true,
                 overflow = TextOverflow.Ellipsis,
-                style = TextStyle(
-                    fontWeight = FontWeight.Normal,
-                    color = MaterialTheme.colors.onBackground,
-                    fontSize = 14.sp
-                )
+                style =
+                    TextStyle(
+                        fontWeight = FontWeight.Normal,
+                        color = MaterialTheme.colors.onBackground,
+                        fontSize = 14.sp,
+                    ),
             )
         }, {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -60,17 +63,18 @@ fun TextPreviewView(clipData: ClipData) {
                     feed(),
                     contentDescription = "Text",
                     modifier = Modifier.padding(3.dp).size(14.dp),
-                    tint = MaterialTheme.colors.onBackground
+                    tint = MaterialTheme.colors.onBackground,
                 )
                 Spacer(modifier = Modifier.size(3.dp))
                 Text(
                     text = copywriter.getText("Text"),
                     fontFamily = FontFamily.SansSerif,
-                    style = TextStyle(
-                        fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colors.onBackground,
-                        fontSize = 10.sp
-                    )
+                    style =
+                        TextStyle(
+                            fontWeight = FontWeight.Light,
+                            color = MaterialTheme.colors.onBackground,
+                            fontSize = 10.sp,
+                        ),
                 )
             }
         })

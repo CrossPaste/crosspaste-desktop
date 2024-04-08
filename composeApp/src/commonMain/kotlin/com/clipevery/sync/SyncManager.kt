@@ -8,7 +8,10 @@ interface SyncManager {
 
     fun resolveSyncs(force: Boolean)
 
-    fun resolveSync(id: String, force: Boolean)
+    fun resolveSync(
+        id: String,
+        force: Boolean,
+    )
 
     fun getSyncHandlers(): Map<String, SyncHandler>
 }

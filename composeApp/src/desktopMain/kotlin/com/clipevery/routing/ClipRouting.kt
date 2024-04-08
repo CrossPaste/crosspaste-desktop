@@ -15,7 +15,6 @@ import io.ktor.server.routing.*
 import kotlinx.coroutines.launch
 
 fun Routing.clipRouting() {
-
     val logger = KotlinLogging.logger {}
 
     val koinApplication = Dependencies.koinApplication

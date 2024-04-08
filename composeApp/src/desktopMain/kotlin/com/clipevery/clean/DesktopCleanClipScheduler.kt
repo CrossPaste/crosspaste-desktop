@@ -13,9 +13,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
-class DesktopCleanClipScheduler(private val taskDao: ClipTaskDao,
-                                private val taskExecutor: TaskExecutor,
-                                private val configManager: ConfigManager): CleanClipScheduler {
+class DesktopCleanClipScheduler(
+    private val taskDao: ClipTaskDao,
+    private val taskExecutor: TaskExecutor,
+    private val configManager: ConfigManager,
+) : CleanClipScheduler {
 
     private val logger = KotlinLogging.logger {}
 

@@ -57,10 +57,15 @@ object DateUtils {
         return dateFormatter.format(date)
     }
 
-    fun getDateText(date: LocalDateTime, pattern: String, locale: Locale): String {
-        val formatter: DateTimeFormatter  = Memoize.memoize(pattern, locale) {
-            DateTimeFormatter.ofPattern(pattern, locale)
-        }()
+    fun getDateText(
+        date: LocalDateTime,
+        pattern: String,
+        locale: Locale,
+    ): String {
+        val formatter: DateTimeFormatter =
+            Memoize.memoize(pattern, locale) {
+                DateTimeFormatter.ofPattern(pattern, locale)
+            }()
         return formatter.format(date)
     }
 

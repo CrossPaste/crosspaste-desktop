@@ -7,9 +7,7 @@ import com.clipevery.ui.search.createSearchWindow
 import com.clipevery.utils.ioDispatcher
 import com.github.kwhat.jnativehook.GlobalScreen
 import com.github.kwhat.jnativehook.NativeHookException
-
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
-
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
@@ -18,8 +16,10 @@ import kotlinx.coroutines.launch
 
 val logger = KotlinLogging.logger {}
 
-class GlobalListener(private val configManager: ConfigManager,
-                     private val clipSearchService: ClipSearchService) {
+class GlobalListener(
+    private val configManager: ConfigManager,
+    private val clipSearchService: ClipSearchService,
+) {
 
     init {
         if (System.getProperty("supportShortcutKey", false.toString()).toBoolean()) {
@@ -32,9 +32,7 @@ class GlobalListener(private val configManager: ConfigManager,
             GlobalScreen.addNativeKeyListener(OpenSearchListener(clipSearchService))
         }
     }
-
 }
-
 
 class OpenSearchListener(private val clipSearchService: ClipSearchService) : NativeKeyListener {
 
@@ -43,7 +41,6 @@ class OpenSearchListener(private val clipSearchService: ClipSearchService) : Nat
     private val dispatcher = CoroutineScope(ioDispatcher)
 
     override fun nativeKeyPressed(e: NativeKeyEvent) {
-
         val isCmdOrCtrlPressed = (e.modifiers and NativeKeyEvent.META_MASK) != 0
         val isShiftPressed = (e.modifiers and NativeKeyEvent.SHIFT_MASK) != 0
         val isSpacePressed = e.keyCode == NativeKeyEvent.VC_SPACE

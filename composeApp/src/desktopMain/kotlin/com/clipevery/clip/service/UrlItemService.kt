@@ -25,7 +25,7 @@ class UrlItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
         itemIndex: Int,
         identifier: String,
         transferable: Transferable,
-        clipCollector: ClipCollector
+        clipCollector: ClipCollector,
     ) {
         UrlClipItem().apply {
             this.identifier = identifier
@@ -41,7 +41,7 @@ class UrlItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
         dataFlavor: DataFlavor,
         dataFlavorMap: Map<String, List<DataFlavor>>,
         transferable: Transferable,
-        clipCollector: ClipCollector
+        clipCollector: ClipCollector,
     ) {
         if (transferData is String) {
             val md5 = md5ByString(transferData)

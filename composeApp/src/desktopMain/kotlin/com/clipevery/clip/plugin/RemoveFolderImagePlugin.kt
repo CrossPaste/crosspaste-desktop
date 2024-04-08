@@ -7,8 +7,11 @@ import com.clipevery.dao.clip.ClipType
 import io.realm.kotlin.MutableRealm
 import kotlin.io.path.isDirectory
 
-object RemoveFolderImagePlugin: ClipPlugin {
-    override fun pluginProcess(clipAppearItems: List<ClipAppearItem>, realm: MutableRealm): List<ClipAppearItem> {
+object RemoveFolderImagePlugin : ClipPlugin {
+    override fun pluginProcess(
+        clipAppearItems: List<ClipAppearItem>,
+        realm: MutableRealm,
+    ): List<ClipAppearItem> {
         clipAppearItems.firstOrNull { it.getClipType() == ClipType.IMAGE }?.let { imageItem ->
             val files = imageItem as ClipFiles
             if (files.getFilePaths().size == 1) {

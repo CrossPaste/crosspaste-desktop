@@ -39,7 +39,7 @@ class SessionBuilderTest {
         DuplicateMessageException::class,
         LegacyMessageException::class,
         UntrustedIdentityException::class,
-        NoSessionException::class
+        NoSessionException::class,
     )
     fun testBasicPreKey() {
         var aliceStore: SignalProtocolStore = TestInMemorySignalProtocolStore()
@@ -60,7 +60,7 @@ class SessionBuilderTest {
         Assert.assertTrue(bobStore.containsSession(ALICE_ADDRESS))
         Assert.assertEquals(
             bobStore.loadSession(ALICE_ADDRESS).sessionVersion.toLong(),
-            3.toLong()
+            3.toLong(),
         )
         Assert.assertNotNull(bobStore.loadSession(ALICE_ADDRESS).aliceBaseKey)
         Assert.assertTrue(originalMessage == String(plaintext!!))
@@ -82,22 +82,23 @@ class SessionBuilderTest {
         } catch (uie: UntrustedIdentityException) {
             bobStore.saveIdentity(
                 ALICE_ADDRESS,
-                PreKeySignalMessage(outgoingMessage.serialize()).identityKey
+                PreKeySignalMessage(outgoingMessage.serialize()).identityKey,
             )
         }
         plaintext = bobSessionCipher.decrypt(PreKeySignalMessage(outgoingMessage.serialize()))
         Assert.assertTrue(String(plaintext) == originalMessage)
         val random = Random()
-        val badIdentityBundle = PreKeyBundle(
-            bobStore.localRegistrationId,
-            1,
-            random.nextInt(Medium.MAX_VALUE),
-            Curve.generateKeyPair().publicKey,
-            random.nextInt(Medium.MAX_VALUE),
-            bobPreKey.signedPreKey,
-            bobPreKey.signedPreKeySignature,
-            aliceStore.identityKeyPair.publicKey
-        )
+        val badIdentityBundle =
+            PreKeyBundle(
+                bobStore.localRegistrationId,
+                1,
+                random.nextInt(Medium.MAX_VALUE),
+                Curve.generateKeyPair().publicKey,
+                random.nextInt(Medium.MAX_VALUE),
+                bobPreKey.signedPreKey,
+                bobPreKey.signedPreKeySignature,
+                aliceStore.identityKeyPair.publicKey,
+            )
         try {
             aliceSessionBuilder.process(badIdentityBundle)
             Assert.fail("shoulnd't be trusted!")
@@ -113,9 +114,12 @@ class SessionBuilderTest {
         InvalidVersionException::class,
         InvalidKeyException::class,
         NoSessionException::class,
-        UntrustedIdentityException::class
+        UntrustedIdentityException::class,
     )
-    private fun runInteraction(aliceStore: SignalProtocolStore, bobStore: SignalProtocolStore) {
+    private fun runInteraction(
+        aliceStore: SignalProtocolStore,
+        bobStore: SignalProtocolStore,
+    ) {
         val aliceSessionCipher = SessionCipher(aliceStore, BOB_ADDRESS)
         val bobSessionCipher = SessionCipher(bobStore, ALICE_ADDRESS)
         val originalMessage = "smert ze smert"
@@ -128,20 +132,24 @@ class SessionBuilderTest {
         plaintext = aliceSessionCipher.decrypt(SignalMessage(bobMessage.serialize()))
         Assert.assertTrue(String(plaintext) == originalMessage)
         for (i in 0..9) {
-            val loopingMessage = ("What do we mean by saying that existence precedes essence? "
-                    + "We mean that man first of all exists, encounters himself, "
-                    + "surges up in the world--and defines himself aftward. "
-                    + i)
+            val loopingMessage = (
+                "What do we mean by saying that existence precedes essence? " +
+                    "We mean that man first of all exists, encounters himself, " +
+                    "surges up in the world--and defines himself aftward. " +
+                    i
+            )
             val aliceLoopingMessage = aliceSessionCipher.encrypt(loopingMessage.toByteArray())
             val loopingPlaintext =
                 bobSessionCipher.decrypt(SignalMessage(aliceLoopingMessage.serialize()))
             Assert.assertTrue(String(loopingPlaintext) == loopingMessage)
         }
         for (i in 0..9) {
-            val loopingMessage = ("What do we mean by saying that existence precedes essence? "
-                    + "We mean that man first of all exists, encounters himself, "
-                    + "surges up in the world--and defines himself aftward. "
-                    + i)
+            val loopingMessage = (
+                "What do we mean by saying that existence precedes essence? " +
+                    "We mean that man first of all exists, encounters himself, " +
+                    "surges up in the world--and defines himself aftward. " +
+                    i
+            )
             val bobLoopingMessage = bobSessionCipher.encrypt(loopingMessage.toByteArray())
             val loopingPlaintext =
                 aliceSessionCipher.decrypt(SignalMessage(bobLoopingMessage.serialize()))
@@ -149,18 +157,22 @@ class SessionBuilderTest {
         }
         val aliceOutOfOrderMessages: MutableSet<Pair<String, CiphertextMessage>> = HashSet()
         for (i in 0..9) {
-            val loopingMessage = ("What do we mean by saying that existence precedes essence? "
-                    + "We mean that man first of all exists, encounters himself, "
-                    + "surges up in the world--and defines himself aftward. "
-                    + i)
+            val loopingMessage = (
+                "What do we mean by saying that existence precedes essence? " +
+                    "We mean that man first of all exists, encounters himself, " +
+                    "surges up in the world--and defines himself aftward. " +
+                    i
+            )
             val aliceLoopingMessage = aliceSessionCipher.encrypt(loopingMessage.toByteArray())
             aliceOutOfOrderMessages.add(Pair(loopingMessage, aliceLoopingMessage))
         }
         for (i in 0..9) {
-            val loopingMessage = ("What do we mean by saying that existence precedes essence? "
-                    + "We mean that man first of all exists, encounters himself, "
-                    + "surges up in the world--and defines himself aftward. "
-                    + i)
+            val loopingMessage = (
+                "What do we mean by saying that existence precedes essence? " +
+                    "We mean that man first of all exists, encounters himself, " +
+                    "surges up in the world--and defines himself aftward. " +
+                    i
+            )
             val aliceLoopingMessage = aliceSessionCipher.encrypt(loopingMessage.toByteArray())
             val loopingPlaintext =
                 bobSessionCipher.decrypt(SignalMessage(aliceLoopingMessage.serialize()))
@@ -186,16 +198,16 @@ interface BundleFactory {
     fun createBundle(store: SignalProtocolStore): PreKeyBundle
 }
 
-
 class X3DHBundleFactory : BundleFactory {
     @Throws(InvalidKeyException::class)
     override fun createBundle(store: SignalProtocolStore): PreKeyBundle {
         val preKeyPair = Curve.generateKeyPair()
         val signedPreKeyPair = Curve.generateKeyPair()
-        val signedPreKeySignature = Curve.calculateSignature(
-            store.identityKeyPair.privateKey,
-            signedPreKeyPair.publicKey.serialize()
-        )
+        val signedPreKeySignature =
+            Curve.calculateSignature(
+                store.identityKeyPair.privateKey,
+                signedPreKeyPair.publicKey.serialize(),
+            )
         val random = Random()
         val preKeyId = random.nextInt(Medium.MAX_VALUE)
         val signedPreKeyId = random.nextInt(Medium.MAX_VALUE)
@@ -203,8 +215,11 @@ class X3DHBundleFactory : BundleFactory {
         store.storeSignedPreKey(
             signedPreKeyId,
             SignedPreKeyRecord(
-                signedPreKeyId, System.currentTimeMillis(), signedPreKeyPair, signedPreKeySignature
-            )
+                signedPreKeyId,
+                System.currentTimeMillis(),
+                signedPreKeyPair,
+                signedPreKeySignature,
+            ),
         )
         return PreKeyBundle(
             store.localRegistrationId,
@@ -214,7 +229,7 @@ class X3DHBundleFactory : BundleFactory {
             signedPreKeyId,
             signedPreKeyPair.publicKey,
             signedPreKeySignature,
-            store.identityKeyPair.publicKey
+            store.identityKeyPair.publicKey,
         )
     }
 }

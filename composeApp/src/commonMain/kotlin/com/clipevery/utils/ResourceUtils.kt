@@ -8,9 +8,11 @@ object ResourceUtils {
 
     fun loadImageBitmap(resourcePath: String): ImageBitmap {
         // Assuming `resourcePath` is a valid path for an image file within your resources directory.
-        val image = org.jetbrains.skia.Image.makeFromEncoded(
-            Thread.currentThread().contextClassLoader.getResourceAsStream(resourcePath)
-                ?.readBytes()!!)
+        val image =
+            org.jetbrains.skia.Image.makeFromEncoded(
+                Thread.currentThread().contextClassLoader.getResourceAsStream(resourcePath)
+                    ?.readBytes()!!,
+            )
         return image.toComposeImageBitmap()
     }
 

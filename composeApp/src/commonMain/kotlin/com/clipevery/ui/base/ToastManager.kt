@@ -9,5 +9,4 @@ interface ToastManager {
     fun setToast(toast: Toast)
 
     fun cancel()
-
 }

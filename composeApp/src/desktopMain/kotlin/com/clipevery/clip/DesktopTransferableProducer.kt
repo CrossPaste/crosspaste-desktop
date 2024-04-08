@@ -5,8 +5,12 @@ import com.clipevery.dao.clip.ClipData
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 
-class DesktopTransferableProducer: TransferableProducer {
-    override fun produce(clipData: ClipData, localOnly: Boolean, filterFile: Boolean): Transferable? {
+class DesktopTransferableProducer : TransferableProducer {
+    override fun produce(
+        clipData: ClipData,
+        localOnly: Boolean,
+        filterFile: Boolean,
+    ): Transferable? {
         val map = LinkedHashMap<DataFlavor, Any>()
 
         val clipAppearItems = clipData.getClipAppearItems()
@@ -33,6 +37,6 @@ class DesktopTransferableProducer: TransferableProducer {
     }
 }
 
-object LocalOnlyFlavor: DataFlavor("application/x-local-only-flavor;class=java.lang.Boolean", "Local Only Flavor") {
+object LocalOnlyFlavor : DataFlavor("application/x-local-only-flavor;class=java.lang.Boolean", "Local Only Flavor") {
     private fun readResolve(): Any = LocalOnlyFlavor
 }

@@ -33,7 +33,7 @@ class HtmlItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
         itemIndex: Int,
         identifier: String,
         transferable: Transferable,
-        clipCollector: ClipCollector
+        clipCollector: ClipCollector,
     ) {
         HtmlClipItem().apply {
             this.identifier = identifier
@@ -42,21 +42,24 @@ class HtmlItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
         }
     }
 
-    override fun doLoadRepresentation(transferData: Any,
-                                      clipId: Long,
-                                      itemIndex: Int,
-                                      dataFlavor: DataFlavor,
-                                      dataFlavorMap: Map<String, List<DataFlavor>>,
-                                      transferable: Transferable,
-                                      clipCollector: ClipCollector) {
+    override fun doLoadRepresentation(
+        transferData: Any,
+        clipId: Long,
+        itemIndex: Int,
+        dataFlavor: DataFlavor,
+        dataFlavorMap: Map<String, List<DataFlavor>>,
+        transferable: Transferable,
+        clipCollector: ClipCollector,
+    ) {
         if (transferData is String) {
             val html = extractHtml(transferData)
             val md5 = md5ByString(html)
-            val relativePath = DesktopFileUtils.createClipRelativePath(
-                appInstanceId = appInfo.appInstanceId,
-                clipId = clipId,
-                fileName = "html2Image.png"
-            )
+            val relativePath =
+                DesktopFileUtils.createClipRelativePath(
+                    appInstanceId = appInfo.appInstanceId,
+                    clipId = clipId,
+                    fileName = "html2Image.png",
+                )
             val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
                 realm.query(HtmlClipItem::class, "id == $0", clipItem.id).first().find()?.apply {
                     this.html = html

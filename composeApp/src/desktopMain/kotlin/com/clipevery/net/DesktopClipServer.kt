@@ -21,7 +21,7 @@ import io.ktor.server.routing.*
 import kotlinx.coroutines.runBlocking
 import java.net.BindException
 
-class DesktopClipServer(private val configManager: ConfigManager): ClipServer {
+class DesktopClipServer(private val configManager: ConfigManager) : ClipServer {
 
     private val logger = KotlinLogging.logger {}
 
@@ -42,10 +42,9 @@ class DesktopClipServer(private val configManager: ConfigManager): ClipServer {
                 signalExceptionHandler()
             }
             install(SignalServerDecryption) {
-
             }
             intercept(ApplicationCallPipeline.Setup) {
-                logger.info {"Received request: ${call.request.httpMethod.value} ${call.request.uri} ${call.request.contentType()}" }
+                logger.info { "Received request: ${call.request.httpMethod.value} ${call.request.uri} ${call.request.contentType()}" }
             }
             routing {
                 syncRouting()

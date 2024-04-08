@@ -19,28 +19,32 @@ import java.nio.file.Path
 
 @Serializable
 @SerialName("html")
-class HtmlClipItem: RealmObject, ClipAppearItem, ClipHtml {
+class HtmlClipItem : RealmObject, ClipAppearItem, ClipHtml {
 
     @PrimaryKey
     @Transient
     override var id: ObjectId = BsonObjectId()
     var identifier: String = ""
+
     @Transient
     var relativePath: String = ""
     override var html: String = ""
-
 
     override fun getHtmlImagePath(): Path {
         val basePath = DesktopPathProvider.resolve(appFileType = AppFileType.HTML)
         return DesktopPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
     }
 
-    override fun init(appInstanceId: String, clipId: Long) {
-        relativePath = DesktopFileUtils.createClipRelativePath(
-            appInstanceId = appInstanceId,
-            clipId = clipId,
-            fileName = "html2Image.png"
-        )
+    override fun init(
+        appInstanceId: String,
+        clipId: Long,
+    ) {
+        relativePath =
+            DesktopFileUtils.createClipRelativePath(
+                appInstanceId = appInstanceId,
+                clipId = clipId,
+                fileName = "html2Image.png",
+            )
     }
 
     override var md5: String = ""
@@ -57,14 +61,20 @@ class HtmlClipItem: RealmObject, ClipAppearItem, ClipHtml {
         return html
     }
 
-    override fun update(data: Any, md5: String) {
+    override fun update(
+        data: Any,
+        md5: String,
+    ) {
         (data as? String)?.let { html ->
             this.html = html
             this.md5 = md5
         }
     }
 
-    override fun clear(realm: MutableRealm, clearResource: Boolean) {
+    override fun clear(
+        realm: MutableRealm,
+        clearResource: Boolean,
+    ) {
         if (clearResource) {
             DesktopOneFilePersist(getHtmlImagePath()).delete()
         }

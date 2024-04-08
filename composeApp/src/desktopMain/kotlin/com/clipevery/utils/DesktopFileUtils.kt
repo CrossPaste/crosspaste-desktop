@@ -21,8 +21,7 @@ import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.pathString
 
-
-object DesktopFileUtils: FileUtils {
+object DesktopFileUtils : FileUtils {
 
     private val logger = KotlinLogging.logger {}
 
@@ -59,15 +58,21 @@ object DesktopFileUtils: FileUtils {
         }
     }
 
-    override fun createClipRelativePath(appInstanceId: String,
-                                        date: LocalDateTime,
-                                        clipId: Long,
-                                        fileName: String): String {
+    override fun createClipRelativePath(
+        appInstanceId: String,
+        date: LocalDateTime,
+        clipId: Long,
+        fileName: String,
+    ): String {
         val dateYYYYMMDD = DateUtils.getYYYYMMDD(date)
         return Paths.get(appInstanceId, dateYYYYMMDD, clipId.toString(), fileName).pathString
     }
 
-    override fun createClipPath(fileRelativePath: String, isFile: Boolean, appFileType: AppFileType): Path {
+    override fun createClipPath(
+        fileRelativePath: String,
+        isFile: Boolean,
+        appFileType: AppFileType,
+    ): Path {
         val basePath = DesktopPathProvider.resolve(appFileType = appFileType)
         return DesktopPathProvider.resolve(basePath, fileRelativePath, isFile = isFile)
     }
@@ -108,7 +113,10 @@ object DesktopFileUtils: FileUtils {
         return hc.toString()
     }
 
-    override fun copyPath(src: Path, dest: Path): Boolean {
+    override fun copyPath(
+        src: Path,
+        dest: Path,
+    ): Boolean {
         return if (src.isDirectory()) {
             copyDir(src, dest)
         } else {
@@ -116,7 +124,10 @@ object DesktopFileUtils: FileUtils {
         }
     }
 
-    private fun copyFile(src: Path, dest: Path): Boolean {
+    private fun copyFile(
+        src: Path,
+        dest: Path,
+    ): Boolean {
         return try {
             Files.copy(src.toFile(), dest.toFile())
             true
@@ -126,11 +137,14 @@ object DesktopFileUtils: FileUtils {
         }
     }
 
-    private fun copyDir(src: Path, dest: Path): Boolean {
+    private fun copyDir(
+        src: Path,
+        dest: Path,
+    ): Boolean {
         val newDirFile = dest.toFile()
         return if (newDirFile.mkdirs()) {
             src.toFile().listFiles()?.forEach {
-                if(!copyPath(it.toPath(), dest.resolve(it.name))) {
+                if (!copyPath(it.toPath(), dest.resolve(it.name))) {
                     return false
                 }
             }
@@ -139,10 +153,12 @@ object DesktopFileUtils: FileUtils {
             logger.warn { "Failed to create directory: $newDirFile" }
             false
         }
-
     }
 
-    override fun moveFile(src: Path, dest: Path): Boolean {
+    override fun moveFile(
+        src: Path,
+        dest: Path,
+    ): Boolean {
         return try {
             Files.move(src.toFile(), dest.toFile())
             true
@@ -151,7 +167,10 @@ object DesktopFileUtils: FileUtils {
         }
     }
 
-    override fun createTempFile(src: Path, name: String): Path? {
+    override fun createTempFile(
+        src: Path,
+        name: String,
+    ): Path? {
         val tempFile = tempDirectory.resolve(name)
         return if (copyFile(src, tempFile)) {
             tempFile
@@ -160,7 +179,10 @@ object DesktopFileUtils: FileUtils {
         }
     }
 
-    override fun createTempFile(srcBytes: ByteArray, name: String): Path? {
+    override fun createTempFile(
+        srcBytes: ByteArray,
+        name: String,
+    ): Path? {
         val tempFile = tempDirectory.resolve(name)
         return try {
             Files.write(srcBytes, tempFile.toFile())
@@ -170,7 +192,10 @@ object DesktopFileUtils: FileUtils {
         }
     }
 
-    override fun createSymbolicLink(src: Path, name: String): Path? {
+    override fun createSymbolicLink(
+        src: Path,
+        name: String,
+    ): Path? {
         try {
             val path = tempDirectory.resolve(name)
             if (path.exists()) {
@@ -183,7 +208,10 @@ object DesktopFileUtils: FileUtils {
         }
     }
 
-    override fun createEmptyClipFile(path: Path, length: Long): Boolean {
+    override fun createEmptyClipFile(
+        path: Path,
+        length: Long,
+    ): Boolean {
         try {
             RandomAccessFile(path.toFile(), "rw").use { file ->
                 file.setLength(length)
@@ -194,7 +222,10 @@ object DesktopFileUtils: FileUtils {
         }
     }
 
-    override suspend fun writeFilesChunk(filesChunk: FilesChunk, byteReadChannel: ByteReadChannel) {
+    override suspend fun writeFilesChunk(
+        filesChunk: FilesChunk,
+        byteReadChannel: ByteReadChannel,
+    ) {
         filesChunk.fileChunks.forEach { fileChunk ->
             val file = fileChunk.path.toFile()
             val offset = fileChunk.offset
@@ -216,7 +247,10 @@ object DesktopFileUtils: FileUtils {
         }
     }
 
-    override suspend fun readFilesChunk(filesChunk: FilesChunk, byteWriteChannel: ByteWriteChannel) {
+    override suspend fun readFilesChunk(
+        filesChunk: FilesChunk,
+        byteWriteChannel: ByteWriteChannel,
+    ) {
         filesChunk.fileChunks.forEach { fileChunk ->
             val file = fileChunk.path.toFile()
             val offset = fileChunk.offset

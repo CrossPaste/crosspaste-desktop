@@ -13,7 +13,7 @@ abstract class ClipItemService(protected val appInfo: AppInfo) {
         itemIndex: Int,
         identifier: String,
         transferable: Transferable,
-        clipCollector: ClipCollector
+        clipCollector: ClipCollector,
     )
 
     fun loadRepresentation(
@@ -22,7 +22,7 @@ abstract class ClipItemService(protected val appInfo: AppInfo) {
         dataFlavor: DataFlavor,
         dataFlavorMap: Map<String, List<DataFlavor>>,
         transferable: Transferable,
-        clipCollector: ClipCollector
+        clipCollector: ClipCollector,
     ) {
         try {
             val transferData = transferable.getTransferData(dataFlavor)
@@ -32,18 +32,22 @@ abstract class ClipItemService(protected val appInfo: AppInfo) {
         }
     }
 
-    abstract fun doLoadRepresentation(transferData: Any,
-                                      clipId: Long,
-                                      itemIndex: Int,
-                                      dataFlavor: DataFlavor,
-                                      dataFlavorMap: Map<String, List<DataFlavor>>,
-                                      transferable: Transferable,
-                                      clipCollector: ClipCollector)
+    abstract fun doLoadRepresentation(
+        transferData: Any,
+        clipId: Long,
+        itemIndex: Int,
+        dataFlavor: DataFlavor,
+        dataFlavorMap: Map<String, List<DataFlavor>>,
+        transferable: Transferable,
+        clipCollector: ClipCollector,
+    )
 
-    fun collectError(error: Exception,
-                     clipId: Long,
-                     itemIndex: Int,
-                     clipCollector: ClipCollector) {
+    fun collectError(
+        error: Exception,
+        clipId: Long,
+        itemIndex: Int,
+        clipCollector: ClipCollector,
+    ) {
         clipCollector.collectError(clipId, itemIndex, error)
     }
 }

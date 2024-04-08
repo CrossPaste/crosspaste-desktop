@@ -3,7 +3,7 @@ package com.clipevery.dao.task
 import io.realm.kotlin.Realm
 import org.mongodb.kbson.ObjectId
 
-class ClipTaskRealm(private val realm: Realm): ClipTaskDao {
+class ClipTaskRealm(private val realm: Realm) : ClipTaskDao {
 
     override suspend fun createTask(clipTask: ClipTask): ObjectId {
         realm.write {
@@ -12,7 +12,11 @@ class ClipTaskRealm(private val realm: Realm): ClipTaskDao {
         return clipTask.taskId
     }
 
-    override suspend fun update(taskId: ObjectId, copeFromRealm: Boolean, block: ClipTask.() -> Unit): ClipTask? {
+    override suspend fun update(
+        taskId: ObjectId,
+        copeFromRealm: Boolean,
+        block: ClipTask.() -> Unit,
+    ): ClipTask? {
         return realm.write {
             query(ClipTask::class, "taskId = $0", taskId).first().find()?.let {
                 it.apply(block)

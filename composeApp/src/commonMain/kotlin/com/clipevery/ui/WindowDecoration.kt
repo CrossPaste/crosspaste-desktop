@@ -33,65 +33,84 @@ import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.arrowBack
 
 @Composable
-fun WindowDecoration(currentPageViewContext: MutableState<PageViewContext>, title: String) {
+fun WindowDecoration(
+    currentPageViewContext: MutableState<PageViewContext>,
+    title: String,
+) {
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(62.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(62.dp),
         color = MaterialTheme.colors.background,
-        shape = RoundedCornerShape(
-            topStart = 10.dp,
-            topEnd = 10.dp,
-            bottomEnd = 0.dp,
-            bottomStart = 0.dp
-        )
+        shape =
+            RoundedCornerShape(
+                topStart = 10.dp,
+                topEnd = 10.dp,
+                bottomEnd = 0.dp,
+                bottomStart = 0.dp,
+            ),
     ) {
         DecorationUI(currentPageViewContext, title)
     }
 }
 
 @Composable
-fun DecorationUI(currentPageViewContext: MutableState<PageViewContext>, title: String) {
+fun DecorationUI(
+    currentPageViewContext: MutableState<PageViewContext>,
+    title: String,
+) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
 
     Box(
-        modifier = Modifier
-            .background(Color(0xFF121314))
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color.White.copy(alpha = 0.6f),
-                        Color.Transparent
-                    ),
-                    startY = 0.0f,
-                    endY = 3.0f
-                )
-            ),
+        modifier =
+            Modifier
+                .background(Color(0xFF121314))
+                .background(
+                    brush =
+                        Brush.verticalGradient(
+                            colors =
+                                listOf(
+                                    Color.White.copy(alpha = 0.6f),
+                                    Color.Transparent,
+                                ),
+                            startY = 0.0f,
+                            endY = 3.0f,
+                        ),
+                ),
     ) {
-
-        Column(modifier = Modifier.wrapContentSize()
-            .padding(horizontal = 20.dp)) {
-            Row(modifier = Modifier.fillMaxSize(),
-                verticalAlignment = Alignment.CenterVertically) {
-                Row(modifier = Modifier.wrapContentSize()
-                    .clickable { currentPageViewContext.value = currentPageViewContext.value.returnNext() },
-                    verticalAlignment = Alignment.CenterVertically) {
+        Column(
+            modifier =
+                Modifier.wrapContentSize()
+                    .padding(horizontal = 20.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(
+                    modifier =
+                        Modifier.wrapContentSize()
+                            .clickable { currentPageViewContext.value = currentPageViewContext.value.returnNext() },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Icon(
                         painter = arrowBack(),
                         contentDescription = "return",
                         modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colors.primary
+                        tint = MaterialTheme.colors.primary,
                     )
 
                     Text(
                         text = copywriter.getText("Return"),
-                        style = TextStyle(
-                            fontWeight = FontWeight.Light,
-                            color = MaterialTheme.colors.primary,
-                            fontFamily = FontFamily.SansSerif,
-                            fontSize = 22.sp
-                        )
+                        style =
+                            TextStyle(
+                                fontWeight = FontWeight.Light,
+                                color = MaterialTheme.colors.primary,
+                                fontFamily = FontFamily.SansSerif,
+                                fontSize = 22.sp,
+                            ),
                     )
                 }
 
@@ -103,7 +122,7 @@ fun DecorationUI(currentPageViewContext: MutableState<PageViewContext>, title: S
                     color = Color.White,
                     fontSize = 22.sp,
                     style = TextStyle(fontWeight = FontWeight.Bold),
-                    fontFamily = FontFamily.SansSerif
+                    fontFamily = FontFamily.SansSerif,
                 )
             }
         }

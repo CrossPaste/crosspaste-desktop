@@ -34,12 +34,14 @@ import com.clipevery.ui.settings.SettingsView
 import org.koin.core.KoinApplication
 
 @Composable
-fun ClipeveryApp(koinApplication: KoinApplication,
-                 hideWindow: () -> Unit,
-                 exitApplication: () -> Unit) {
+fun ClipeveryApp(
+    koinApplication: KoinApplication,
+    hideWindow: () -> Unit,
+    exitApplication: () -> Unit,
+) {
     CompositionLocalProvider(
         LocalKoinApplication provides koinApplication,
-        LocalExitApplication provides exitApplication
+        LocalExitApplication provides exitApplication,
     ) {
         ClipeveryWindow(hideWindow)
     }
@@ -53,45 +55,51 @@ fun ClipeveryWindow(hideWindow: () -> Unit) {
     val toast by toastManager.toast
 
     ClipeveryTheme {
-        Box(modifier = Modifier
-            .background(Color.Transparent)
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onDoubleTap = {
-                        hideWindow()
-                    },
-                    onTap = {
-                        hideWindow()
-                    },
-                    onLongPress = {
-                        hideWindow()
-                    },
-                    onPress = {},
-                )
-            }
-            .clip(RoundedCornerShape(10.dp))
-            .fillMaxSize()
-            .padding(10.dp, 0.dp, 10.dp, 10.dp),
-            contentAlignment = Alignment.Center) {
-            Box(
-                modifier = Modifier
-                    .shadow(5.dp, RoundedCornerShape(10.dp), false)
-                    .fillMaxSize()
+        Box(
+            modifier =
+                Modifier
+                    .background(Color.Transparent)
                     .pointerInput(Unit) {
                         detectTapGestures(
-                            onDoubleTap = {},
-                            onTap = {},
-                            onLongPress = {},
+                            onDoubleTap = {
+                                hideWindow()
+                            },
+                            onTap = {
+                                hideWindow()
+                            },
+                            onLongPress = {
+                                hideWindow()
+                            },
                             onPress = {},
                         )
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Column(Modifier
+                    }
                     .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colors.background)
-                    .fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally) {
+                    .fillMaxSize()
+                    .padding(10.dp, 0.dp, 10.dp, 10.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .shadow(5.dp, RoundedCornerShape(10.dp), false)
+                        .fillMaxSize()
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onDoubleTap = {},
+                                onTap = {},
+                                onLongPress = {},
+                                onPress = {},
+                            )
+                        },
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(
+                    Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colors.background)
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
                     ClipeveryContent()
                 }
                 toast?.let {
@@ -112,7 +120,8 @@ fun ClipeveryContent() {
         PageViewType.CLIP_PREVIEW,
         PageViewType.DEVICE_PREVIEW,
         PageViewType.QR_CODE,
-        PageViewType.DEBUG -> {
+        PageViewType.DEBUG,
+        -> {
             HomeView(currentPageViewContext)
         }
         PageViewType.SETTINGS -> {

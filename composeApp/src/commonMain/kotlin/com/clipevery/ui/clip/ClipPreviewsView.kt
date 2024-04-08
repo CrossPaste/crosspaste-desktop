@@ -51,12 +51,11 @@ fun ClipPreviewsView() {
     val current = LocalKoinApplication.current
     val clipDao = current.koin.get<ClipDao>()
 
-
     val listState = rememberLazyListState()
     var isScrolling by remember { mutableStateOf(false) }
     var scrollJob: Job? by remember { mutableStateOf(null) }
     val coroutineScope = rememberCoroutineScope()
-    val rememberClipDataList = remember { mutableStateListOf<ClipData>()}
+    val rememberClipDataList = remember { mutableStateListOf<ClipData>() }
 
     LaunchedEffect(Unit) {
         val clipDataList: RealmResults<ClipData> = clipDao.getClipData(limit = 20)
@@ -126,17 +125,18 @@ fun ClipPreviewsView() {
                 }
                 isScrolling = true
                 scrollJob?.cancel()
-                scrollJob = coroutineScope.launch(CoroutineName("HiddenScroll")) {
-                    delay(500)
-                    isScrolling = false
-                }
+                scrollJob =
+                    coroutineScope.launch(CoroutineName("HiddenScroll")) {
+                        delay(500)
+                        isScrolling = false
+                    }
             }
     }
 
     Box(modifier = Modifier.fillMaxWidth()) {
         LazyColumn(
             state = listState,
-            modifier = Modifier.wrapContentHeight()
+            modifier = Modifier.wrapContentHeight(),
         ) {
             itemsIndexed(rememberClipDataList) { index, clipData ->
                 ClipPreviewItemView(clipData) {
@@ -145,32 +145,35 @@ fun ClipPreviewsView() {
                 if (index != rememberClipDataList.size - 1) {
                     Divider(
                         color = MaterialTheme.colors.onBackground,
-                        thickness = 2.dp
+                        thickness = 2.dp,
                     )
                 }
             }
         }
 
         VerticalScrollbar(
-            modifier = Modifier.background(color = Color.Transparent)
-                .fillMaxHeight().align(Alignment.CenterEnd)
-                .draggable(
-                orientation = Orientation.Vertical,
-                state = rememberDraggableState { delta ->
-                    coroutineScope.launch(CoroutineName("ScrollClip")) {
-                        listState.scrollBy(-delta)
-                    }
-                },
-            ),
+            modifier =
+                Modifier.background(color = Color.Transparent)
+                    .fillMaxHeight().align(Alignment.CenterEnd)
+                    .draggable(
+                        orientation = Orientation.Vertical,
+                        state =
+                            rememberDraggableState { delta ->
+                                coroutineScope.launch(CoroutineName("ScrollClip")) {
+                                    listState.scrollBy(-delta)
+                                }
+                            },
+                    ),
             adapter = rememberScrollbarAdapter(scrollState = listState),
-            style = ScrollbarStyle(
-                minimalHeight = 16.dp,
-                thickness = 8.dp,
-                shape = RoundedCornerShape(4.dp),
-                hoverDurationMillis = 300,
-                unhoverColor = if (isScrolling) MaterialTheme.colors.onBackground.copy(alpha = 0.48f) else Color.Transparent,
-                hoverColor = MaterialTheme.colors.onBackground
-            )
+            style =
+                ScrollbarStyle(
+                    minimalHeight = 16.dp,
+                    thickness = 8.dp,
+                    shape = RoundedCornerShape(4.dp),
+                    hoverDurationMillis = 300,
+                    unhoverColor = if (isScrolling) MaterialTheme.colors.onBackground.copy(alpha = 0.48f) else Color.Transparent,
+                    hoverColor = MaterialTheme.colors.onBackground,
+                ),
         )
     }
 }

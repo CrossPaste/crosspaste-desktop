@@ -25,11 +25,13 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import io.ktor.utils.io.*
 
-class PullFileTaskExecutor(private val clipDao: ClipDao,
-                           private val pullFileClientApi: PullFileClientApi,
-                           private val fileUtils: FileUtils,
-                           private val syncManager: SyncManager,
-                           private val clipboardService: ClipboardService): SingleTypeTaskExecutor {
+class PullFileTaskExecutor(
+    private val clipDao: ClipDao,
+    private val pullFileClientApi: PullFileClientApi,
+    private val fileUtils: FileUtils,
+    private val syncManager: SyncManager,
+    private val clipboardService: ClipboardService,
+) : SingleTypeTaskExecutor {
 
     companion object PullFileTaskExecutor {
 
@@ -46,9 +48,10 @@ class PullFileTaskExecutor(private val clipDao: ClipDao,
         clipDao.getClipData(clipTask.clipDataId!!)?.let { clipData ->
             val fileItems = clipData.getClipAppearItems().filter { it is ClipFiles }
             val appInstanceId = clipData.appInstanceId
-            val dateString = DateUtils.getYYYYMMDD(
-                DateUtils.convertRealmInstantToLocalDateTime(clipData.createTime)
-            )
+            val dateString =
+                DateUtils.getYYYYMMDD(
+                    DateUtils.convertRealmInstantToLocalDateTime(clipData.createTime),
+                )
             val clipId = clipData.clipId
             val filesIndexBuilder = FilesIndexBuilder(CHUNK_SIZE)
             for (clipAppearItem in fileItems) {
@@ -77,7 +80,7 @@ class PullFileTaskExecutor(private val clipDao: ClipDao,
                         retryHandler = { pullExtraInfo.executionHistories.size < 3 },
                         startTime = clipTask.modifyTime,
                         failMessage = "Failed to get connect host address by $appInstanceId",
-                        extraInfo = pullExtraInfo
+                        extraInfo = pullExtraInfo,
                     )
                 }
             } ?: run {
@@ -85,7 +88,7 @@ class PullFileTaskExecutor(private val clipDao: ClipDao,
                     retryHandler = { pullExtraInfo.executionHistories.size < 3 },
                     startTime = clipTask.modifyTime,
                     failMessage = "Failed to get sync handler by $appInstanceId",
-                    extraInfo = pullExtraInfo
+                    extraInfo = pullExtraInfo,
                 )
             }
         } ?: run {
@@ -93,36 +96,38 @@ class PullFileTaskExecutor(private val clipDao: ClipDao,
         }
     }
 
-    private suspend fun pullFiles(clipData: ClipData,
-                                  host: String,
-                                  port: Int,
-                                  filesIndex: FilesIndex,
-                                  pullExtraInfo: PullExtraInfo,
-                                  concurrencyLevel: Int): ClipTaskResult {
+    private suspend fun pullFiles(
+        clipData: ClipData,
+        host: String,
+        port: Int,
+        filesIndex: FilesIndex,
+        pullExtraInfo: PullExtraInfo,
+        concurrencyLevel: Int,
+    ): ClipTaskResult {
         val toUrl: URLBuilder.(URLBuilder) -> Unit = { urlBuilder: URLBuilder ->
             buildUrl(urlBuilder, host, port, "pull", "file")
         }
 
-
-        val tasks: List<suspend () -> Pair<Int, ClientApiResult>> = (0..<filesIndex.getChunkCount())
-            .filter { !pullExtraInfo.pullChunks[it] }
-            .map { chunkIndex ->
-            {
-                try {
-                    filesIndex.getChunk(chunkIndex)?.let { filesChunk ->
-                        val pullFileRequest = PullFileRequest(clipData.appInstanceId, clipData.clipId, chunkIndex)
-                        val result = pullFileClientApi.pullFile(pullFileRequest, toUrl)
-                        if (result is SuccessResult) {
-                            val byteReadChannel = result.getResult<ByteReadChannel>()
-                            fileUtils.writeFilesChunk(filesChunk, byteReadChannel)
+        val tasks: List<suspend () -> Pair<Int, ClientApiResult>> =
+            (0..<filesIndex.getChunkCount())
+                .filter { !pullExtraInfo.pullChunks[it] }
+                .map { chunkIndex ->
+                    {
+                        try {
+                            filesIndex.getChunk(chunkIndex)?.let { filesChunk ->
+                                val pullFileRequest = PullFileRequest(clipData.appInstanceId, clipData.clipId, chunkIndex)
+                                val result = pullFileClientApi.pullFile(pullFileRequest, toUrl)
+                                if (result is SuccessResult) {
+                                    val byteReadChannel = result.getResult<ByteReadChannel>()
+                                    fileUtils.writeFilesChunk(filesChunk, byteReadChannel)
+                                }
+                                Pair(chunkIndex, result)
+                            } ?: Pair(chunkIndex, FailureResult("chunkIndex $chunkIndex out of range"))
+                        } catch (e: Exception) {
+                            Pair(chunkIndex, FailureResult("pull chunk fail: ${e.message}"))
                         }
-                        Pair(chunkIndex, result)
-                    } ?: Pair(chunkIndex, FailureResult("chunkIndex $chunkIndex out of range"))
-                } catch (e: Exception) {
-                    Pair(chunkIndex, FailureResult("pull chunk fail: ${e.message}"))
+                    }
                 }
-            }
-        }
 
         val map = TaskSemaphore.withIoTaskLimit(concurrencyLevel, tasks).toMap()
 
@@ -148,7 +153,7 @@ class PullFileTaskExecutor(private val clipDao: ClipDao,
                 retryHandler = { needRetry },
                 startTime = System.currentTimeMillis(),
                 failMessage = "exist pull chunk fail",
-                extraInfo = pullExtraInfo
+                extraInfo = pullExtraInfo,
             )
         } else {
             clipboardService.tryWriteRemoteClipboardWithFile(clipData)

@@ -5,7 +5,6 @@ import kotlinx.serialization.Serializable
 interface ClipTaskExtraInfo {
 
     val executionHistories: MutableList<ExecutionHistory>
-
 }
 
 @Serializable

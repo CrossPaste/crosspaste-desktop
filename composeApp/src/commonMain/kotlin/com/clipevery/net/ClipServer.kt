@@ -7,4 +7,3 @@ interface ClipServer {
 
     fun port(): Int
 }
-

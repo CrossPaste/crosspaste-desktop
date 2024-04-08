@@ -9,7 +9,7 @@ import org.signal.libsignal.protocol.state.SignedPreKeyRecord
 import org.signal.libsignal.protocol.util.Medium
 import java.util.Random
 
-class SignalRealm(private val realm: Realm): SignalDao {
+class SignalRealm(private val realm: Realm) : SignalDao {
 
     @Synchronized
     override fun generatePreKeyPair(): ClipPreKey {
@@ -34,13 +34,15 @@ class SignalRealm(private val realm: Realm): SignalDao {
             return signedPreKey
         } ?: run {
             val signedPreKeyPair = Curve.generateKeyPair()
-            val signedPreKeySignature = Curve.calculateSignature(
-                privateKey,
-                signedPreKeyPair.publicKey.serialize()
-            )
-            val signedPreKeyRecord = SignedPreKeyRecord(
-                signedPreKeyId, System.currentTimeMillis(), signedPreKeyPair, signedPreKeySignature
-            )
+            val signedPreKeySignature =
+                Curve.calculateSignature(
+                    privateKey,
+                    signedPreKeyPair.publicKey.serialize(),
+                )
+            val signedPreKeyRecord =
+                SignedPreKeyRecord(
+                    signedPreKeyId, System.currentTimeMillis(), signedPreKeyPair, signedPreKeySignature,
+                )
             storeSignedPreKey(signedPreKeyId, signedPreKeyRecord.serialize())
             return ClipSignedPreKey(signedPreKeyId, signedPreKeyRecord.serialize())
         }
@@ -57,16 +59,20 @@ class SignalRealm(private val realm: Realm): SignalDao {
     override fun saveIdentities(identityKeys: List<ClipIdentityKey>) {
         realm.writeBlocking {
             identityKeys.forEach { identityKey ->
-                val newClipIdentityKey = ClipIdentityKey().apply {
-                    this.appInstanceId = identityKey.appInstanceId
-                    this.serialized = identityKey.serialized
-                }
+                val newClipIdentityKey =
+                    ClipIdentityKey().apply {
+                        this.appInstanceId = identityKey.appInstanceId
+                        this.serialized = identityKey.serialized
+                    }
                 copyToRealm(newClipIdentityKey, updatePolicy = UpdatePolicy.ALL)
             }
         }
     }
 
-    override fun saveIdentity(appInstanceId: String, serialized: ByteArray): Boolean {
+    override fun saveIdentity(
+        appInstanceId: String,
+        serialized: ByteArray,
+    ): Boolean {
         return realm.writeBlocking {
             val clipIdentityKey = query(ClipIdentityKey::class, "appInstanceId == $0", appInstanceId).first().find()
 
@@ -74,10 +80,11 @@ class SignalRealm(private val realm: Realm): SignalDao {
                 clipIdentityKey.serialized = serialized
                 return@writeBlocking true
             }
-            val newClipIdentityKey = ClipIdentityKey().apply {
-                this.appInstanceId = appInstanceId
-                this.serialized = serialized
-            }
+            val newClipIdentityKey =
+                ClipIdentityKey().apply {
+                    this.appInstanceId = appInstanceId
+                    this.serialized = serialized
+                }
             copyToRealm(newClipIdentityKey)
             return@writeBlocking false
         }
@@ -104,12 +111,16 @@ class SignalRealm(private val realm: Realm): SignalDao {
             .find()?.serialized
     }
 
-    override fun storePreKey(id: Int, serialized: ByteArray) {
+    override fun storePreKey(
+        id: Int,
+        serialized: ByteArray,
+    ) {
         realm.writeBlocking {
-            val newClipPreKey = ClipPreKey().apply {
-                this.id = id
-                this.serialized = serialized
-            }
+            val newClipPreKey =
+                ClipPreKey().apply {
+                    this.id = id
+                    this.serialized = serialized
+                }
             copyToRealm(newClipPreKey, updatePolicy = UpdatePolicy.ALL)
         }
     }
@@ -133,12 +144,16 @@ class SignalRealm(private val realm: Realm): SignalDao {
         return realm.query(ClipSession::class).find().map { it.sessionRecord }
     }
 
-    override fun storeSession(appInstanceId: String, sessionRecord: ByteArray) {
+    override fun storeSession(
+        appInstanceId: String,
+        sessionRecord: ByteArray,
+    ) {
         realm.writeBlocking {
-            val newClipSession = ClipSession().apply {
-                this.appInstanceId = appInstanceId
-                this.sessionRecord = sessionRecord
-            }
+            val newClipSession =
+                ClipSession().apply {
+                    this.appInstanceId = appInstanceId
+                    this.sessionRecord = sessionRecord
+                }
             copyToRealm(newClipSession, updatePolicy = UpdatePolicy.ALL)
         }
     }
@@ -175,12 +190,16 @@ class SignalRealm(private val realm: Realm): SignalDao {
         return realm.query(ClipSignedPreKey::class).find().map { it.serialized }
     }
 
-    override fun storeSignedPreKey(id: Int, serialized: ByteArray) {
+    override fun storeSignedPreKey(
+        id: Int,
+        serialized: ByteArray,
+    ) {
         realm.writeBlocking {
-            val newClipSignedPreKey = ClipSignedPreKey().apply {
-                this.id = id
-                this.serialized = serialized
-            }
+            val newClipSignedPreKey =
+                ClipSignedPreKey().apply {
+                    this.id = id
+                    this.serialized = serialized
+                }
             copyToRealm(newClipSignedPreKey, updatePolicy = UpdatePolicy.ALL)
         }
     }

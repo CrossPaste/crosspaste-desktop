@@ -18,32 +18,45 @@ interface ClipDao {
 
     fun getClipResourceInfo(): ClipResourceInfo
 
-    fun getClipData(appInstanceId: String? = null,
-                    limit: Int): RealmResults<ClipData>
+    fun getClipData(
+        appInstanceId: String? = null,
+        limit: Int,
+    ): RealmResults<ClipData>
 
     fun getClipData(id: ObjectId): ClipData?
 
-    fun getClipData(appInstanceId: String, clipId: Long): ClipData?
+    fun getClipData(
+        appInstanceId: String,
+        clipId: Long,
+    ): ClipData?
 
-    suspend fun releaseLocalClipData(id: ObjectId, clipPlugins: List<ClipPlugin>)
+    suspend fun releaseLocalClipData(
+        id: ObjectId,
+        clipPlugins: List<ClipPlugin>,
+    )
 
     suspend fun releaseRemoteClipData(
         clipData: ClipData,
-        tryWriteClipboard: (ClipData, Boolean) -> Unit
+        tryWriteClipboard: (ClipData, Boolean) -> Unit,
     )
 
     suspend fun releaseRemoteClipDataWithFile(
         id: ObjectId,
-        tryWriteClipboard: (ClipData) -> Unit
+        tryWriteClipboard: (ClipData) -> Unit,
     )
 
     fun update(update: (MutableRealm) -> Unit)
 
     suspend fun suspendUpdate(update: (MutableRealm) -> Unit)
 
-    fun getClipDataLessThan(appInstanceId: String? = null,
-                            limit: Int,
-                            createTime: RealmInstant): RealmResults<ClipData>
+    fun getClipDataLessThan(
+        appInstanceId: String? = null,
+        limit: Int,
+        createTime: RealmInstant,
+    ): RealmResults<ClipData>
 
-    suspend fun getMarkDeleteByCleanTime(cleanTime: RealmInstant, clipType: Int)
+    suspend fun getMarkDeleteByCleanTime(
+        cleanTime: RealmInstant,
+        clipType: Int,
+    )
 }
