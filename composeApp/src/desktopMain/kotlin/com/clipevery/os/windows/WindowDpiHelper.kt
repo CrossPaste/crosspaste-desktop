@@ -11,11 +11,15 @@ import com.sun.jna.ptr.IntByReference
 import com.sun.jna.win32.StdCallLibrary
 import kotlin.math.max
 
-
 object WindowDpiHelper {
 
     interface Shcore : StdCallLibrary {
-        fun GetDpiForMonitor(hMonitor: HMONITOR?, dpiType: Int, dpiX: IntByReference, dpiY: IntByReference): Int
+        fun GetDpiForMonitor(
+            hMonitor: HMONITOR?,
+            dpiType: Int,
+            dpiX: IntByReference,
+            dpiY: IntByReference,
+        ): Int
 
         companion object {
             val INSTANCE: Shcore = Native.load("shcore", Shcore::class.java)
@@ -24,25 +28,28 @@ object WindowDpiHelper {
 
     fun getMaxDpiForMonitor(): Int {
         var maxDpi = 0
-        val monitorEnumProc: MONITORENUMPROC = object : MONITORENUMPROC {
-            override fun apply(hMonitor: HMONITOR?, hdcMonitor: WinDef.HDC?, lprcMonitor: RECT?, dwData: LPARAM?): Int {
-                val dpiX = IntByReference()
-                val dpiY = IntByReference()
+        val monitorEnumProc: MONITORENUMPROC =
+            object : MONITORENUMPROC {
+                override fun apply(
+                    hMonitor: HMONITOR?,
+                    hdcMonitor: WinDef.HDC?,
+                    lprcMonitor: RECT?,
+                    dwData: LPARAM?,
+                ): Int {
+                    val dpiX = IntByReference()
+                    val dpiY = IntByReference()
 
-                Shcore.INSTANCE.GetDpiForMonitor(hMonitor, 0,  /* MDT_EFFECTIVE_DPI */dpiX, dpiY)
-                val currentDpiX = dpiX.getValue()
-                val currentDpiY = dpiY.getValue()
-                maxDpi = Math.max(maxDpi, max(currentDpiX, currentDpiY))
+                    Shcore.INSTANCE.GetDpiForMonitor(hMonitor, 0, /* MDT_EFFECTIVE_DPI */dpiX, dpiY)
+                    val currentDpiX = dpiX.getValue()
+                    val currentDpiY = dpiY.getValue()
+                    maxDpi = Math.max(maxDpi, max(currentDpiX, currentDpiY))
 
-                return 1 // continue enumeration
+                    return 1 // continue enumeration
+                }
             }
-
-
-        }
 
         User32.INSTANCE.EnumDisplayMonitors(null, null, monitorEnumProc, LPARAM(0))
 
         return maxDpi
     }
-
 }

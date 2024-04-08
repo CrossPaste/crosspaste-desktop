@@ -35,20 +35,22 @@ fun UrlPreviewView(clipData: ClipData) {
         val clipUrl = it as ClipUrl
         ClipSpecificPreviewContentView(it, {
             Text(
-                modifier = Modifier.fillMaxSize()
-                    .clickable {
-                        openUrlInBrowser(clipUrl.url)
-                    },
+                modifier =
+                    Modifier.fillMaxSize()
+                        .clickable {
+                            openUrlInBrowser(clipUrl.url)
+                        },
                 text = clipUrl.url,
                 textDecoration = TextDecoration.Underline,
                 fontFamily = FontFamily.SansSerif,
                 maxLines = 4,
                 overflow = TextOverflow.Ellipsis,
-                style = TextStyle(
-                    fontWeight = FontWeight.Normal,
-                    color = MaterialTheme.colors.primary,
-                    fontSize = 14.sp
-                )
+                style =
+                    TextStyle(
+                        fontWeight = FontWeight.Normal,
+                        color = MaterialTheme.colors.primary,
+                        fontSize = 14.sp,
+                    ),
             )
         }, {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -56,17 +58,18 @@ fun UrlPreviewView(clipData: ClipData) {
                     link(),
                     contentDescription = "Link",
                     modifier = Modifier.padding(3.dp).size(14.dp),
-                    tint = MaterialTheme.colors.onBackground
+                    tint = MaterialTheme.colors.onBackground,
                 )
                 Spacer(modifier = Modifier.size(3.dp))
                 Text(
                     text = copywriter.getText("Link"),
                     fontFamily = FontFamily.SansSerif,
-                    style = TextStyle(
-                        fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colors.onBackground,
-                        fontSize = 10.sp
-                    )
+                    style =
+                        TextStyle(
+                            fontWeight = FontWeight.Light,
+                            color = MaterialTheme.colors.onBackground,
+                            fontSize = 10.sp,
+                        ),
                 )
             }
         })

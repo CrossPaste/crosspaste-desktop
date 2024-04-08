@@ -20,26 +20,27 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import java.io.File
 
-class DesktopClipClient(private val appInfo: AppInfo): ClipClient {
+class DesktopClipClient(private val appInfo: AppInfo) : ClipClient {
 
-    private val client: HttpClient = HttpClient(CIO) {
-        install(HttpTimeout) {
-            requestTimeoutMillis = 1000
+    private val client: HttpClient =
+        HttpClient(CIO) {
+            install(HttpTimeout) {
+                requestTimeoutMillis = 1000
+            }
+            install(Logging)
+            install(ContentNegotiation) {
+                json(JsonUtils.JSON, ContentType.Application.Json)
+            }
+            install(SignalClientEncryption)
         }
-        install(Logging)
-        install(ContentNegotiation) {
-            json(JsonUtils.JSON, ContentType.Application.Json)
-        }
-        install(SignalClientEncryption)
-    }
 
-    override suspend fun <T: Any> post(
+    override suspend fun <T : Any> post(
         message: T,
         messageType: TypeInfo,
         targetAppInstanceId: String?,
         encrypt: Boolean,
         timeout: Long,
-        urlBuilder: URLBuilder.(URLBuilder) -> Unit
+        urlBuilder: URLBuilder.(URLBuilder) -> Unit,
     ): HttpResponse {
         return client.post {
             header("appInstanceId", appInfo.appInstanceId)
@@ -66,7 +67,7 @@ class DesktopClipClient(private val appInfo: AppInfo): ClipClient {
         messageType: TypeInfo,
         files: List<File>,
         timeout: Long,
-        urlBuilder: URLBuilder.(URLBuilder) -> Unit
+        urlBuilder: URLBuilder.(URLBuilder) -> Unit,
     ): HttpResponse {
         return client.post {
             header("appInstanceId", appInfo.appInstanceId)
@@ -77,22 +78,29 @@ class DesktopClipClient(private val appInfo: AppInfo): ClipClient {
             url {
                 urlBuilder(this)
             }
-            body = MultiPartFormDataContent(formData {
-                val serializer = Json.serializersModule.serializer(messageType.type.java)
-                append("json", JsonUtils.JSON.encodeToString(serializer, message), Headers.build {
-                    append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                })
-                files.forEachIndexed { index, file ->
-                    appendInput(
-                        key = "file$index",
-                        headers = Headers.build {
-                            append(HttpHeaders.ContentDisposition, file.name)
+            body =
+                MultiPartFormDataContent(
+                    formData {
+                        val serializer = Json.serializersModule.serializer(messageType.type.java)
+                        append(
+                            "json", JsonUtils.JSON.encodeToString(serializer, message),
+                            Headers.build {
+                                append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                            },
+                        )
+                        files.forEachIndexed { index, file ->
+                            appendInput(
+                                key = "file$index",
+                                headers =
+                                    Headers.build {
+                                        append(HttpHeaders.ContentDisposition, file.name)
+                                    },
+                            ) {
+                                file.inputStream().asInput()
+                            }
                         }
-                    ) {
-                        file.inputStream().asInput()
-                    }
-                }
-            })
+                    },
+                )
         }
     }
 

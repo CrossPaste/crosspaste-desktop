@@ -6,15 +6,33 @@ import com.sun.jna.ptr.IntByReference
 
 interface MacosApi : Library {
 
-    fun getClipboardChangeCount(currentChangeCount: Int, isRemote: IntByReference, isClipevery: IntByReference): Int
+    fun getClipboardChangeCount(
+        currentChangeCount: Int,
+        isRemote: IntByReference,
+        isClipevery: IntByReference,
+    ): Int
 
-    fun getPassword(service: String, account: String): String?
+    fun getPassword(
+        service: String,
+        account: String,
+    ): String?
 
-    fun setPassword(service: String, account: String, password: String): Boolean
+    fun setPassword(
+        service: String,
+        account: String,
+        password: String,
+    ): Boolean
 
-    fun updatePassword(service: String, account: String, password: String): Boolean
+    fun updatePassword(
+        service: String,
+        account: String,
+        password: String,
+    ): Boolean
 
-    fun deletePassword(service: String, account: String): Boolean
+    fun deletePassword(
+        service: String,
+        account: String,
+    ): Boolean
 
     fun getComputerName(): String?
 

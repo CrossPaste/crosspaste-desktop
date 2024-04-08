@@ -16,6 +16,5 @@ enum class CleanTime(val days: Int, val quantity: Int, val unit: String) {
     FOUR_MONTH(120, 4, "month"),
     FIVE_MONTH(150, 5, "month"),
     HALF_YEAR(182, 6, "month"),
-    ONE_YEAR(365, 1, "year")
-
+    ONE_YEAR(365, 1, "year"),
 }

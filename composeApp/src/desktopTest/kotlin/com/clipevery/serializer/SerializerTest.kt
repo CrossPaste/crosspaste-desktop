@@ -22,25 +22,28 @@ class SerializerTest {
 
     @Test
     fun testClipData() {
-        val textClipItem = TextClipItem().apply {
-            this.identifier = TextItemService.TEXT
-            this.text = "testClipData"
-            this.md5 = md5ByString(this.text)
-        }
-
-        val clipData = ClipData().apply {
-            this.clipId = 0
-            this.clipAppearContent = RealmAny.Companion.create(textClipItem)
-            this.clipContent = ClipContent().apply {
-                this.clipAppearItems = realmListOf()
+        val textClipItem =
+            TextClipItem().apply {
+                this.identifier = TextItemService.TEXT
+                this.text = "testClipData"
+                this.md5 = md5ByString(this.text)
             }
-            this.clipSearchContent = textClipItem.text
-            this.clipType = ClipType.TEXT
-            this.md5 = textClipItem.md5
-            this.clipState = ClipState.LOADED
-            this.createTime = RealmInstant.now()
-            this.appInstanceId = UUID.randomUUID().toString()
-        }
+
+        val clipData =
+            ClipData().apply {
+                this.clipId = 0
+                this.clipAppearContent = RealmAny.Companion.create(textClipItem)
+                this.clipContent =
+                    ClipContent().apply {
+                        this.clipAppearItems = realmListOf()
+                    }
+                this.clipSearchContent = textClipItem.text
+                this.clipType = ClipType.TEXT
+                this.md5 = textClipItem.md5
+                this.clipState = ClipState.LOADED
+                this.createTime = RealmInstant.now()
+                this.appInstanceId = UUID.randomUUID().toString()
+            }
 
         val json = JsonUtils.JSON.encodeToString(clipData)
         println(json)

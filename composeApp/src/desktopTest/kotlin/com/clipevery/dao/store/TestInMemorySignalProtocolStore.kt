@@ -6,15 +6,16 @@ import org.signal.libsignal.protocol.ecc.Curve
 import org.signal.libsignal.protocol.state.impl.InMemorySignalProtocolStore
 import org.signal.libsignal.protocol.util.KeyHelper
 
-
 class TestInMemorySignalProtocolStore(
     identityKeyPair: IdentityKeyPair = generateIdentityKeyPair(),
-    registrationId: Int = generateRegistrationId()) : InMemorySignalProtocolStore(identityKeyPair, registrationId) {}
+    registrationId: Int = generateRegistrationId(),
+) : InMemorySignalProtocolStore(identityKeyPair, registrationId)
 
 private fun generateIdentityKeyPair(): IdentityKeyPair {
     val identityKeyPairKeys = Curve.generateKeyPair()
     return IdentityKeyPair(
-        IdentityKey(identityKeyPairKeys.publicKey), identityKeyPairKeys.privateKey
+        IdentityKey(identityKeyPairKeys.publicKey),
+        identityKeyPairKeys.privateKey,
     )
 }
 

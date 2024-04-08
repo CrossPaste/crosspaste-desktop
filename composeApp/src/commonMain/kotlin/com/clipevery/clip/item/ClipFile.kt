@@ -9,7 +9,7 @@ interface ClipFile {
     fun getMd5(): String
 }
 
-class ClipFileImpl(private val path: Path, private val md5: String): ClipFile {
+class ClipFileImpl(private val path: Path, private val md5: String) : ClipFile {
 
     override fun getFilePath(): Path {
         return path

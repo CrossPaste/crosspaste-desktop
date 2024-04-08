@@ -22,9 +22,11 @@ interface FileInfoTree {
 
 @Serializable
 @SerialName("dir")
-class DirFileInfoTree(private val tree: Map<String, FileInfoTree>,
-                      override val size: Long,
-                      override val md5: String) : FileInfoTree {
+class DirFileInfoTree(
+    private val tree: Map<String, FileInfoTree>,
+    override val size: Long,
+    override val md5: String,
+) : FileInfoTree {
     @Transient
     private val sortTree: TreeMap<String, FileInfoTree> = TreeMap(tree)
 
@@ -45,8 +47,10 @@ class DirFileInfoTree(private val tree: Map<String, FileInfoTree>,
 
 @Serializable
 @SerialName("file")
-class SingleFileInfoTree(override val size: Long,
-                         override val md5: String) : FileInfoTree {
+class SingleFileInfoTree(
+    override val size: Long,
+    override val md5: String,
+) : FileInfoTree {
 
     override fun isFile(): Boolean {
         return true
@@ -65,19 +69,22 @@ class FileInfoTreeBuilder {
 
     private val md5List = mutableListOf<String>()
 
-    fun addFileInfoTree(name: String, fileInfoTree: FileInfoTree) {
+    fun addFileInfoTree(
+        name: String,
+        fileInfoTree: FileInfoTree,
+    ) {
         tree[name] = fileInfoTree
         size += fileInfoTree.size
         md5List.add(fileInfoTree.md5)
     }
 
     fun build(path: Path): FileInfoTree {
-        val md5 = if (md5List.isEmpty()) {
-            EncryptUtils.md5ByString(path.fileName.toString())
-        } else {
-            EncryptUtils.md5ByArray(md5List.toTypedArray())
-        }
+        val md5 =
+            if (md5List.isEmpty()) {
+                EncryptUtils.md5ByString(path.fileName.toString())
+            } else {
+                EncryptUtils.md5ByArray(md5List.toTypedArray())
+            }
         return DirFileInfoTree(tree, size, md5)
     }
-
 }

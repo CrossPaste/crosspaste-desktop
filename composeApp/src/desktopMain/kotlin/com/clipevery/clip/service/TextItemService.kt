@@ -28,7 +28,7 @@ class TextItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
         itemIndex: Int,
         identifier: String,
         transferable: Transferable,
-        clipCollector: ClipCollector
+        clipCollector: ClipCollector,
     ) {
         TextClipItem().apply {
             this.identifier = identifier
@@ -44,7 +44,7 @@ class TextItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
         dataFlavor: DataFlavor,
         dataFlavorMap: Map<String, List<DataFlavor>>,
         transferable: Transferable,
-        clipCollector: ClipCollector
+        clipCollector: ClipCollector,
     ) {
         if (transferData is String) {
             val md5 = md5ByString(transferData)

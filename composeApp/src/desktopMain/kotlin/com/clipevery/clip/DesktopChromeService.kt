@@ -15,7 +15,7 @@ import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.math.max
 
-object DesktopChromeService: ChromeService {
+object DesktopChromeService : ChromeService {
 
     private const val CHROME_DRIVER = "chromedriver"
 
@@ -23,33 +23,40 @@ object DesktopChromeService: ChromeService {
 
     private val currentPlatform = currentPlatform()
 
-    private val options: ChromeOptions = ChromeOptions()
-        .addArguments("--hide-scrollbars")
-        .addArguments("--disable-extensions")
-        .addArguments("--headless")
-        .addArguments("--disable-gpu")
-        .addArguments("--disable-software-rasterizer")
-        .addArguments("--no-sandbox")
+    private val options: ChromeOptions =
+        ChromeOptions()
+            .addArguments("--hide-scrollbars")
+            .addArguments("--disable-extensions")
+            .addArguments("--headless")
+            .addArguments("--disable-gpu")
+            .addArguments("--disable-software-rasterizer")
+            .addArguments("--no-sandbox")
 
     private val initChromeDriver: (String, String, String, Path) -> Unit = { chromeSuffix, driverName, headlessName, resourcesPath ->
-        System.setProperty("webdriver.chrome.driver", resourcesPath
-            .resolve("$CHROME_DRIVER-$chromeSuffix")
-            .resolve(driverName)
-            .absolutePathString())
-        options.setBinary(resourcesPath
-            .resolve("$CHROME_HEADLESS_SHELL-$chromeSuffix")
-            .resolve(headlessName)
-            .absolutePathString())
+        System.setProperty(
+            "webdriver.chrome.driver",
+            resourcesPath
+                .resolve("$CHROME_DRIVER-$chromeSuffix")
+                .resolve(driverName)
+                .absolutePathString(),
+        )
+        options.setBinary(
+            resourcesPath
+                .resolve("$CHROME_HEADLESS_SHELL-$chromeSuffix")
+                .resolve(headlessName)
+                .absolutePathString(),
+        )
     }
 
-    private val windowDimension: Dimension  = if (currentPlatform.isWindows()) {
-        val maxDpi: Int = WindowDpiHelper.getMaxDpiForMonitor()
-        val width: Int = ((340.0 * maxDpi) / 96.0).toInt()
-        val height: Int = ((100.0 * maxDpi) / 96.0).toInt()
-        Dimension(width, height)
-    } else {
-        Dimension(340, 100)
-    }
+    private val windowDimension: Dimension =
+        if (currentPlatform.isWindows()) {
+            val maxDpi: Int = WindowDpiHelper.getMaxDpiForMonitor()
+            val width: Int = ((340.0 * maxDpi) / 96.0).toInt()
+            val height: Int = ((100.0 * maxDpi) / 96.0).toInt()
+            Dimension(width, height)
+        } else {
+            Dimension(340, 100)
+        }
 
     private var chromeDriver: ChromeDriver? = null
 
@@ -78,9 +85,8 @@ object DesktopChromeService: ChromeService {
                 val win32ResourcesPath =
                     if (AppEnv.isDevelopment()) resourcesPath.resolve("windows-x86") else resourcesPath
                 initChromeDriver.invoke("win32", "chromedriver.exe", "chrome-headless-shell.exe", win32ResourcesPath)
-
             }
-        } else  if (currentPlatform.isLinux()) {
+        } else if (currentPlatform.isLinux()) {
             // todo linux init chrome driver
         }
 
@@ -98,7 +104,7 @@ object DesktopChromeService: ChromeService {
     }
 
     private fun doHtml2Image(html: String): ByteArray? {
-        chromeDriver?.let{ driver ->
+        chromeDriver?.let { driver ->
             driver.get(dataUrl(html))
             driver.manage().window().size = windowDimension
             val dimensions: List<Long> = driver.executeScript("return [document.body.scrollWidth, document.body.scrollHeight]") as List<Long>

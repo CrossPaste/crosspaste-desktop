@@ -5,17 +5,21 @@ import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipType
 import io.realm.kotlin.MutableRealm
 
-object DistinctPlugin: ClipPlugin {
+object DistinctPlugin : ClipPlugin {
 
-    private val childPlugins = mapOf(
-        Pair(ClipType.IMAGE, MultiImagesPlugin),
-        Pair(ClipType.FILE, MultFilesPlugin),
-        Pair(ClipType.TEXT, FirstPlugin),
-        Pair(ClipType.URL, FirstPlugin),
-        Pair(ClipType.HTML, FirstPlugin)
-    )
+    private val childPlugins =
+        mapOf(
+            Pair(ClipType.IMAGE, MultiImagesPlugin),
+            Pair(ClipType.FILE, MultFilesPlugin),
+            Pair(ClipType.TEXT, FirstPlugin),
+            Pair(ClipType.URL, FirstPlugin),
+            Pair(ClipType.HTML, FirstPlugin),
+        )
 
-    override fun pluginProcess(clipAppearItems: List<ClipAppearItem>, realm: MutableRealm): List<ClipAppearItem> {
+    override fun pluginProcess(
+        clipAppearItems: List<ClipAppearItem>,
+        realm: MutableRealm,
+    ): List<ClipAppearItem> {
         return clipAppearItems.groupBy { it.getClipType() }.map { (clipType, items) ->
             val plugin = childPlugins[clipType]
             plugin?.pluginProcess(items, realm) ?: items
@@ -23,8 +27,11 @@ object DistinctPlugin: ClipPlugin {
     }
 }
 
-object FirstPlugin: ClipPlugin {
-    override fun pluginProcess(clipAppearItems: List<ClipAppearItem>, realm: MutableRealm): List<ClipAppearItem> {
+object FirstPlugin : ClipPlugin {
+    override fun pluginProcess(
+        clipAppearItems: List<ClipAppearItem>,
+        realm: MutableRealm,
+    ): List<ClipAppearItem> {
         return if (clipAppearItems.isEmpty()) {
             listOf()
         } else {
@@ -34,5 +41,4 @@ object FirstPlugin: ClipPlugin {
             listOf(clipAppearItems.first())
         }
     }
-
 }

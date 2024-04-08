@@ -6,7 +6,7 @@ import io.realm.kotlin.types.RealmList
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
 
-class SyncRuntimeInfo: RealmObject {
+class SyncRuntimeInfo : RealmObject {
     @PrimaryKey
     var appInstanceId: String = ""
     var appVersion: String = ""
@@ -28,7 +28,10 @@ class SyncRuntimeInfo: RealmObject {
     var modifyTime: RealmInstant = RealmInstant.now()
 }
 
-fun hostInfoListEqual(hostInfoList: RealmList<HostInfo>, otherHostInfoList: RealmList<HostInfo>): Boolean {
+fun hostInfoListEqual(
+    hostInfoList: RealmList<HostInfo>,
+    otherHostInfoList: RealmList<HostInfo>,
+): Boolean {
     if (hostInfoList.size != otherHostInfoList.size) {
         return false
     }

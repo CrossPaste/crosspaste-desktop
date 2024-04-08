@@ -9,9 +9,7 @@ import org.signal.libsignal.protocol.InvalidKeyIdException
 import org.signal.libsignal.protocol.InvalidMessageException
 import org.signal.libsignal.protocol.UntrustedIdentityException
 
-
 fun StatusPagesConfig.signalExceptionHandler() {
-
     val logger = KotlinLogging.logger {}
 
     exception(InvalidMessageException::class) { call, invalidMessageException ->
@@ -34,4 +32,3 @@ fun StatusPagesConfig.signalExceptionHandler() {
         failResponse(call, StandardErrorCode.SIGNAL_UNTRUSTED_IDENTITY.toErrorCode())
     }
 }
-

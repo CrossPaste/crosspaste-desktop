@@ -8,21 +8,26 @@ import io.ktor.client.call.*
 import io.ktor.http.*
 import io.ktor.util.reflect.*
 
-class DesktopSendClipClientApi(private val clipClient: ClipClient,
-                               private val configManager: ConfigManager): SendClipClientApi {
+class DesktopSendClipClientApi(
+    private val clipClient: ClipClient,
+    private val configManager: ConfigManager,
+) : SendClipClientApi {
 
     private val logger = KotlinLogging.logger {}
 
     override suspend fun sendClip(
         clipData: ClipData,
         targetAppInstanceId: String,
-        toUrl: URLBuilder.(URLBuilder) -> Unit
+        toUrl: URLBuilder.(URLBuilder) -> Unit,
     ): ClientApiResult {
-        val response = clipClient.post(message = clipData,
-            messageType = typeInfo<ClipData>(),
-            targetAppInstanceId = targetAppInstanceId,
-            encrypt = configManager.config.isEncryptSync,
-            urlBuilder = toUrl)
+        val response =
+            clipClient.post(
+                message = clipData,
+                messageType = typeInfo<ClipData>(),
+                targetAppInstanceId = targetAppInstanceId,
+                encrypt = configManager.config.isEncryptSync,
+                urlBuilder = toUrl,
+            )
 
         // 422 is the status code for user not allow to receive clip
         return if (response.status.value == 422) {

@@ -2,9 +2,11 @@ package com.clipevery.exception
 
 import java.util.Objects
 
-class ErrorCode(code: Int,
-                name: String,
-                type: ErrorType) {
+class ErrorCode(
+    code: Int,
+    name: String,
+    type: ErrorType,
+) {
     val code: Int
     val name: String
     val type: ErrorType
@@ -32,13 +34,11 @@ class ErrorCode(code: Int,
     }
 }
 
-
 enum class ErrorType {
     EXTERNAL_ERROR,
     INTERNAL_ERROR,
-    USER_ERROR
+    USER_ERROR,
 }
-
 
 interface ErrorCodeSupplier {
     fun toErrorCode(): ErrorCode

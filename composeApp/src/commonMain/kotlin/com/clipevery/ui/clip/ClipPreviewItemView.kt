@@ -40,7 +40,7 @@ import io.realm.kotlin.types.RealmInstant
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
 
-fun <T: Any> ClipData.getClipItem(kclass: KClass<T>): T? {
+fun <T : Any> ClipData.getClipItem(kclass: KClass<T>): T? {
     return ClipContent.getClipItem(this.clipAppearContent)?.let {
         if (kclass.isInstance(it)) {
             kclass.cast(it)
@@ -56,69 +56,82 @@ fun ClipData.getClipItem(): ClipAppearItem? {
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun ClipPreviewItemView(clipData: ClipData, clipContent: @Composable ClipData.() -> Unit) {
+fun ClipPreviewItemView(
+    clipData: ClipData,
+    clipContent: @Composable ClipData.() -> Unit,
+) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
 
     var hover by remember { mutableStateOf(false) }
     val backgroundColor = if (hover) MaterialTheme.colors.secondaryVariant else MaterialTheme.colors.background
 
-    Row(modifier = Modifier
-        .fillMaxWidth()
-        .height(150.dp)
-        .onPointerEvent(
-            eventType = PointerEventType.Enter,
-            onEvent = {
-                hover = true
-            }
-        )
-        .onPointerEvent(
-            eventType = PointerEventType.Exit,
-            onEvent = {
-                hover = false
-            }
-        )
-        .background(backgroundColor)) {
-
-        Column(
-            modifier = Modifier.fillMaxWidth()
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
                 .height(150.dp)
+                .onPointerEvent(
+                    eventType = PointerEventType.Enter,
+                    onEvent = {
+                        hover = true
+                    },
+                )
+                .onPointerEvent(
+                    eventType = PointerEventType.Exit,
+                    onEvent = {
+                        hover = false
+                    },
+                )
+                .background(backgroundColor),
+    ) {
+        Column(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(150.dp),
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth()
-                    .height(120.dp)
-                    .padding(10.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .height(120.dp)
+                        .padding(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 clipData.clipContent()
             }
             Row(
-                modifier = Modifier.fillMaxWidth()
-                    .background(color = MaterialTheme.colors.surface)
-                    .height(30.dp)
-                    .padding(horizontal = 10.dp),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .background(color = MaterialTheme.colors.surface)
+                        .height(30.dp)
+                        .padding(horizontal = 10.dp),
                 horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(modifier = Modifier.width(340.dp)
-                    .padding(end = 10.dp)
+                Row(
+                    modifier =
+                        Modifier.width(340.dp)
+                            .padding(end = 10.dp),
                 ) {
                     // todo label list ui
                 }
-                Row(modifier = Modifier.width(70.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(color = MaterialTheme.colors.background)
-                    .padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.Center
+                Row(
+                    modifier =
+                        Modifier.width(70.dp)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(color = MaterialTheme.colors.background)
+                            .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.Center,
                 ) {
                     Text(
                         text = getDateText(clipData.createTime, copywriter),
                         fontFamily = FontFamily.SansSerif,
-                        style = TextStyle(
-                            fontWeight = FontWeight.Light,
-                            color = MaterialTheme.colors.onBackground,
-                            fontSize = 10.sp
-                        )
+                        style =
+                            TextStyle(
+                                fontWeight = FontWeight.Light,
+                                color = MaterialTheme.colors.onBackground,
+                                fontSize = 10.sp,
+                            ),
                     )
                 }
             }
@@ -126,7 +139,10 @@ fun ClipPreviewItemView(clipData: ClipData, clipContent: @Composable ClipData.()
     }
 }
 
-fun getDateText(createTime: RealmInstant, copywriter: Copywriter): String {
+fun getDateText(
+    createTime: RealmInstant,
+    copywriter: Copywriter,
+): String {
     val date = DateUtils.convertRealmInstantToLocalDateTime(createTime)
     DateUtils.getDateText(date)?.let {
         return copywriter.getText(it)
@@ -140,7 +156,7 @@ fun ClipSpecificPreviewView(clipData: ClipData) {
     if (clipData.clipState == ClipState.LOADING) {
         PrePreviewView(clipData)
     } else {
-        when(clipData.clipType) {
+        when (clipData.clipType) {
             ClipType.TEXT -> TextPreviewView(clipData)
             ClipType.URL -> UrlPreviewView(clipData)
             ClipType.HTML -> HtmlToImagePreviewView(clipData)
@@ -154,19 +170,21 @@ fun ClipSpecificPreviewView(clipData: ClipData) {
 fun ClipSpecificPreviewContentView(
     clipAppearItem: ClipAppearItem,
     clipLeftContent: @Composable ClipAppearItem.() -> Unit,
-    clipRightInfo: @Composable ClipAppearItem.() -> Unit
+    clipRightInfo: @Composable ClipAppearItem.() -> Unit,
 ) {
     Column(
-        modifier = Modifier.width(340.dp)
-            .height(100.dp)
+        modifier =
+            Modifier.width(340.dp)
+                .height(100.dp),
     ) {
         clipAppearItem.clipLeftContent()
     }
     Column(
-        modifier = Modifier.width(70.dp)
-            .height(100.dp)
-            .padding(start = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier =
+            Modifier.width(70.dp)
+                .height(100.dp)
+                .padding(start = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         clipAppearItem.clipRightInfo()
     }

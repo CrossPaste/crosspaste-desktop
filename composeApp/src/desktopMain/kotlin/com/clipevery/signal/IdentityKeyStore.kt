@@ -25,9 +25,11 @@ import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
 
-class DesktopIdentityKeyStore(private val signalDao: SignalDao,
-                              private val identityKeyPair: IdentityKeyPair,
-                              private val registrationId: Int): IdentityKeyStore {
+class DesktopIdentityKeyStore(
+    private val signalDao: SignalDao,
+    private val identityKeyPair: IdentityKeyPair,
+    private val registrationId: Int,
+) : IdentityKeyStore {
     override fun getIdentityKeyPair(): IdentityKeyPair {
         return identityKeyPair
     }
@@ -36,14 +38,17 @@ class DesktopIdentityKeyStore(private val signalDao: SignalDao,
         return registrationId
     }
 
-    override fun saveIdentity(address: SignalProtocolAddress, identityKey: IdentityKey): Boolean {
+    override fun saveIdentity(
+        address: SignalProtocolAddress,
+        identityKey: IdentityKey,
+    ): Boolean {
         return signalDao.saveIdentity(address.name, identityKey.serialize())
     }
 
     override fun isTrustedIdentity(
         address: SignalProtocolAddress,
         identityKey: IdentityKey,
-        direction: IdentityKeyStore.Direction
+        direction: IdentityKeyStore.Direction,
     ): Boolean {
         val identity: IdentityKey? = getIdentity(address)
         return identity?.let {
@@ -56,13 +61,14 @@ class DesktopIdentityKeyStore(private val signalDao: SignalDao,
             IdentityKey(it)
         }
     }
-
 }
 
 val logger = KotlinLogging.logger {}
 
-fun getClipIdentityKeyStoreFactory(appInfo: AppInfo,
-                                   signalDao: SignalDao): IdentityKeyStoreFactory {
+fun getClipIdentityKeyStoreFactory(
+    appInfo: AppInfo,
+    signalDao: SignalDao,
+): IdentityKeyStoreFactory {
     val currentPlatform = currentPlatform()
     return if (currentPlatform.isMacos()) {
         MacosIdentityKeyStoreFactory(appInfo, signalDao)
@@ -73,8 +79,10 @@ fun getClipIdentityKeyStoreFactory(appInfo: AppInfo,
     }
 }
 
-private data class IdentityKeyPairWithRegistrationId(val identityKeyPair: IdentityKeyPair,
-                                                     val registrationId: Int)
+private data class IdentityKeyPairWithRegistrationId(
+    val identityKeyPair: IdentityKeyPair,
+    val registrationId: Int,
+)
 
 private fun readIdentityKeyPairWithRegistrationId(data: ByteArray): IdentityKeyPairWithRegistrationId {
     val byteArrayInputStream = ByteArrayInputStream(data)
@@ -87,7 +95,10 @@ private fun readIdentityKeyPairWithRegistrationId(data: ByteArray): IdentityKeyP
     return IdentityKeyPairWithRegistrationId(identityKeyPair, registrationId)
 }
 
-private fun writeIdentityKeyPairWithRegistrationId(identityKeyPair: IdentityKeyPair, registrationId: Int): ByteArray {
+private fun writeIdentityKeyPairWithRegistrationId(
+    identityKeyPair: IdentityKeyPair,
+    registrationId: Int,
+): ByteArray {
     val byteArrayOutputStream = ByteArrayOutputStream()
     val dataOutputStream = DataOutputStream(byteArrayOutputStream)
     val identityKeyPairBytes = identityKeyPair.serialize()
@@ -97,11 +108,15 @@ private fun writeIdentityKeyPairWithRegistrationId(identityKeyPair: IdentityKeyP
     return byteArrayOutputStream.toByteArray()
 }
 
-class MacosIdentityKeyStoreFactory(private val appInfo: AppInfo,
-                                   private val signalDao: SignalDao): IdentityKeyStoreFactory {
+class MacosIdentityKeyStoreFactory(
+    private val appInfo: AppInfo,
+    private val signalDao: SignalDao,
+) : IdentityKeyStoreFactory {
 
-    private val filePersist = DesktopOneFilePersist(
-        DesktopPathProvider.resolve("signal.data", AppFileType.ENCRYPT))
+    private val filePersist =
+        DesktopOneFilePersist(
+            DesktopPathProvider.resolve("signal.data", AppFileType.ENCRYPT),
+        )
 
     override fun createIdentityKeyStore(): IdentityKeyStore {
         val service = "clipevery-${AppEnv.getAppEnv().name}-${appInfo.appInstanceId}"
@@ -126,9 +141,8 @@ class MacosIdentityKeyStoreFactory(private val appInfo: AppInfo,
             if (file.delete()) {
                 logger.info { "Delete ideIdentityKey encrypt file" }
             }
-
         } else {
-            logger.info { "No found ideIdentityKey encrypt file"  }
+            logger.info { "No found ideIdentityKey encrypt file" }
         }
 
         logger.info { "Creating new ideIdentityKey" }
@@ -137,15 +151,16 @@ class MacosIdentityKeyStoreFactory(private val appInfo: AppInfo,
         val data = writeIdentityKeyPairWithRegistrationId(identityKeyPair, registrationId)
         val password = MacosKeychainHelper.getPassword(service, appInfo.userName)
 
-        val secretKey = password?.let {
-            logger.info { "Found password in keychain by $service ${appInfo.userName}" }
-            stringToSecretKey(it)
-        } ?: run {
-            logger.info { "Generating new password in keychain by $service ${appInfo.userName}" }
-            val secretKey = generateAESKey()
-            MacosKeychainHelper.setPassword(service, appInfo.userName, secretKeyToString(secretKey))
-            secretKey
-        }
+        val secretKey =
+            password?.let {
+                logger.info { "Found password in keychain by $service ${appInfo.userName}" }
+                stringToSecretKey(it)
+            } ?: run {
+                logger.info { "Generating new password in keychain by $service ${appInfo.userName}" }
+                val secretKey = generateAESKey()
+                MacosKeychainHelper.setPassword(service, appInfo.userName, secretKeyToString(secretKey))
+                secretKey
+            }
 
         val encryptData = encryptData(secretKey, data)
         filePersist.saveBytes(encryptData)
@@ -153,12 +168,15 @@ class MacosIdentityKeyStoreFactory(private val appInfo: AppInfo,
     }
 }
 
+class WindowsIdentityKeyStoreFactory(
+    private val appInfo: AppInfo,
+    private val signalDao: SignalDao,
+) : IdentityKeyStoreFactory {
 
-class WindowsIdentityKeyStoreFactory(private val appInfo: AppInfo,
-                                     private val signalDao: SignalDao) : IdentityKeyStoreFactory {
-
-    private val filePersist = DesktopOneFilePersist(
-        DesktopPathProvider.resolve("signal.data", AppFileType.ENCRYPT))
+    private val filePersist =
+        DesktopOneFilePersist(
+            DesktopPathProvider.resolve("signal.data", AppFileType.ENCRYPT),
+        )
 
     override fun createIdentityKeyStore(): IdentityKeyStore {
         val file = filePersist.path.toFile()
@@ -179,7 +197,7 @@ class WindowsIdentityKeyStoreFactory(private val appInfo: AppInfo,
                 logger.info { "Delete ideIdentityKey encrypt file" }
             }
         } else {
-            logger.info { "No found ideIdentityKey encrypt file"  }
+            logger.info { "No found ideIdentityKey encrypt file" }
         }
 
         logger.info { "Creating new ideIdentityKey" }

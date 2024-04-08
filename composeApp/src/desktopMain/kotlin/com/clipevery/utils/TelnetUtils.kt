@@ -18,7 +18,11 @@ class TelnetUtils(private val clipClient: ClipClient) {
 
     private val logger = KotlinLogging.logger {}
 
-    suspend fun switchHost(hostInfoList: List<HostInfo>, port: Int, timeout: Long = 500L): HostInfo? {
+    suspend fun switchHost(
+        hostInfoList: List<HostInfo>,
+        port: Int,
+        timeout: Long = 500L,
+    ): HostInfo? {
         if (hostInfoList.isEmpty()) return null
 
         val result = CompletableDeferred<HostInfo?>()
@@ -35,7 +39,8 @@ class TelnetUtils(private val clipClient: ClipClient) {
                             }
                         }
                     }
-                } catch (ignore: Exception) { }
+                } catch (ignore: Exception) {
+                }
             }
         }
 
@@ -48,12 +53,16 @@ class TelnetUtils(private val clipClient: ClipClient) {
         }
     }
 
-
-    private suspend fun telnet(hostInfo: HostInfo, port: Int, timeout: Long): Boolean {
+    private suspend fun telnet(
+        hostInfo: HostInfo,
+        port: Int,
+        timeout: Long,
+    ): Boolean {
         return try {
-            val httpResponse = clipClient.get(timeout = timeout) { urlBuilder ->
-                buildUrl(urlBuilder, hostInfo.hostAddress, port, "sync", "telnet")
-            }
+            val httpResponse =
+                clipClient.get(timeout = timeout) { urlBuilder ->
+                    buildUrl(urlBuilder, hostInfo.hostAddress, port, "sync", "telnet")
+                }
             logger.info { "httpResponse.status = ${httpResponse.status.value} ${hostInfo.hostAddress}:$port" }
 
             httpResponse.status.value == 200

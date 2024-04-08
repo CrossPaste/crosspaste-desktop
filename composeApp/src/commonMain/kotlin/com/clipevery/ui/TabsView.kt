@@ -39,17 +39,20 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
     val appEnv = current.koin.get<AppEnv>()
     val copywriter = current.koin.get<GlobalCopywriter>()
 
-    val tabs = remember {
-        listOfNotNull(
-            Pair(PageViewType.CLIP_PREVIEW, "Clipboard"),
-            Pair(PageViewType.DEVICE_PREVIEW, "Devices"),
-            Pair(PageViewType.QR_CODE, "Scan"),
-            if (appEnv == AppEnv.DEVELOPMENT) Pair(PageViewType.DEBUG, "Debug") else null
-        )
-    }
-    Row(modifier = Modifier.padding(8.dp)
-        .wrapContentWidth()) {
-
+    val tabs =
+        remember {
+            listOfNotNull(
+                Pair(PageViewType.CLIP_PREVIEW, "Clipboard"),
+                Pair(PageViewType.DEVICE_PREVIEW, "Devices"),
+                Pair(PageViewType.QR_CODE, "Scan"),
+                if (appEnv == AppEnv.DEVELOPMENT) Pair(PageViewType.DEBUG, "Debug") else null,
+            )
+        }
+    Row(
+        modifier =
+            Modifier.padding(8.dp)
+                .wrapContentWidth(),
+    ) {
         tabs.forEach { pair ->
             TabView(currentPageViewContext, pair.first, copywriter.getText(pair.second))
         }
@@ -68,21 +71,27 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
     }
 }
 
-val bottomBorderShape = GenericShape { size, _ ->
-    moveTo(0f, size.height)
-    lineTo(size.width, size.height)
-    lineTo(size.width, size.height - 6)
-    lineTo(0f, size.height - 6)
-    close()
-}
+val bottomBorderShape =
+    GenericShape { size, _ ->
+        moveTo(0f, size.height)
+        lineTo(size.width, size.height)
+        lineTo(size.width, size.height - 6)
+        lineTo(0f, size.height - 6)
+        close()
+    }
 
 @Composable
-fun TabView(currentPageViewContext: MutableState<PageViewContext>, pageViewType: PageViewType, title: String) {
+fun TabView(
+    currentPageViewContext: MutableState<PageViewContext>,
+    pageViewType: PageViewType,
+    title: String,
+) {
     val textStyle: TextStyle
     val textUnit: TextUnit
-    var modifier: Modifier = Modifier.padding(2.dp)
-        .height(30.dp)
-        .wrapContentSize(Alignment.CenterStart)
+    var modifier: Modifier =
+        Modifier.padding(2.dp)
+            .height(30.dp)
+            .wrapContentSize(Alignment.CenterStart)
 
     if (currentPageViewContext.value.pageViewType == pageViewType) {
         textStyle = TextStyle(fontWeight = FontWeight.Bold)
@@ -93,17 +102,18 @@ fun TabView(currentPageViewContext: MutableState<PageViewContext>, pageViewType:
         textUnit = 12.sp
     }
 
-    Box(modifier = modifier)  {
+    Box(modifier = modifier) {
         Text(
             text = title,
             color = MaterialTheme.colors.onBackground,
             fontSize = textUnit,
             style = textStyle,
             fontFamily = FontFamily.SansSerif,
-            modifier = Modifier
-                .padding(8.dp, 0.dp, 8.dp, 8.dp)
-                .align(Alignment.BottomStart)
-                .clickable { currentPageViewContext.value = PageViewContext(pageViewType) }
+            modifier =
+                Modifier
+                    .padding(8.dp, 0.dp, 8.dp, 8.dp)
+                    .align(Alignment.BottomStart)
+                    .clickable { currentPageViewContext.value = PageViewContext(pageViewType) },
         )
     }
 }

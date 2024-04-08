@@ -10,7 +10,7 @@ const val AppName: String = "Clipevery"
 data class AppInfo(
     val appInstanceId: String,
     val appVersion: String,
-    val userName: String
+    val userName: String,
 ) {
 
     override fun toString(): String {

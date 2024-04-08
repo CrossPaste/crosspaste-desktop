@@ -3,7 +3,7 @@ package com.clipevery.presist
 import com.clipevery.clip.item.ClipFiles
 import com.clipevery.dao.clip.ClipData
 
-class ClipDataFilePersistIterable(private val clipData: ClipData): Iterable<OneFilePersist> {
+class ClipDataFilePersistIterable(private val clipData: ClipData) : Iterable<OneFilePersist> {
 
     override fun iterator(): Iterator<OneFilePersist> {
         val clipFiles = clipData.getClipAppearItems().filter { it is ClipFiles }.map { it as ClipFiles }
@@ -11,10 +11,11 @@ class ClipDataFilePersistIterable(private val clipData: ClipData): Iterable<OneF
     }
 }
 
-class ClipDataFilePersistIterator(clipAppearItems: List<ClipFiles>): Iterator<OneFilePersist> {
+class ClipDataFilePersistIterator(clipAppearItems: List<ClipFiles>) : Iterator<OneFilePersist> {
 
-    val iterator = clipAppearItems.flatMap { clipFiles -> clipFiles.getClipFiles() }
-        .listIterator()
+    val iterator =
+        clipAppearItems.flatMap { clipFiles -> clipFiles.getClipFiles() }
+            .listIterator()
 
     override fun hasNext(): Boolean {
         return iterator.hasNext()

@@ -17,9 +17,18 @@ interface FileUtils {
 
     fun getExtFromFileName(fileName: String): String?
 
-    fun createClipRelativePath(appInstanceId: String, date: LocalDateTime = LocalDateTime.now(), clipId: Long, fileName: String): String
+    fun createClipRelativePath(
+        appInstanceId: String,
+        date: LocalDateTime = LocalDateTime.now(),
+        clipId: Long,
+        fileName: String,
+    ): String
 
-    fun createClipPath(fileRelativePath: String, isFile: Boolean, appFileType: AppFileType): Path
+    fun createClipPath(
+        fileRelativePath: String,
+        isFile: Boolean,
+        appFileType: AppFileType,
+    ): Path
 
     fun getFileInfoTree(path: Path): FileInfoTree
 
@@ -27,19 +36,43 @@ interface FileUtils {
 
     fun getFileMd5(path: Path): String
 
-    fun copyPath(src: Path, dest: Path): Boolean
+    fun copyPath(
+        src: Path,
+        dest: Path,
+    ): Boolean
 
-    fun moveFile(src: Path, dest: Path): Boolean
+    fun moveFile(
+        src: Path,
+        dest: Path,
+    ): Boolean
 
-    fun createTempFile(src: Path, name: String): Path?
+    fun createTempFile(
+        src: Path,
+        name: String,
+    ): Path?
 
-    fun createTempFile(srcBytes: ByteArray, name: String): Path?
+    fun createTempFile(
+        srcBytes: ByteArray,
+        name: String,
+    ): Path?
 
-    fun createSymbolicLink(src: Path, name: String): Path?
+    fun createSymbolicLink(
+        src: Path,
+        name: String,
+    ): Path?
 
-    fun createEmptyClipFile(path: Path, length: Long): Boolean
+    fun createEmptyClipFile(
+        path: Path,
+        length: Long,
+    ): Boolean
 
-    suspend fun writeFilesChunk(filesChunk: FilesChunk, byteReadChannel: ByteReadChannel)
+    suspend fun writeFilesChunk(
+        filesChunk: FilesChunk,
+        byteReadChannel: ByteReadChannel,
+    )
 
-    suspend fun readFilesChunk(filesChunk: FilesChunk, byteWriteChannel: ByteWriteChannel)
+    suspend fun readFilesChunk(
+        filesChunk: FilesChunk,
+        byteWriteChannel: ByteWriteChannel,
+    )
 }

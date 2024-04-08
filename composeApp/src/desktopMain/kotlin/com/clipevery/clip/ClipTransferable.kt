@@ -4,7 +4,7 @@ import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import java.awt.datatransfer.UnsupportedFlavorException
 
-class ClipTransferable(private val map: LinkedHashMap<DataFlavor, Any>): Transferable {
+class ClipTransferable(private val map: LinkedHashMap<DataFlavor, Any>) : Transferable {
 
     private val dataFlavors = map.keys.toTypedArray()
 

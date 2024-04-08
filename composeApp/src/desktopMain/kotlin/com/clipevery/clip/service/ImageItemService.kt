@@ -26,7 +26,6 @@ import java.net.URL
 import java.nio.file.Path
 import javax.imageio.ImageIO
 
-
 class ImageItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
 
     companion object ImageItemService {
@@ -42,7 +41,7 @@ class ImageItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
         itemIndex: Int,
         identifier: String,
         transferable: Transferable,
-        clipCollector: ClipCollector
+        clipCollector: ClipCollector,
     ) {
         ImagesClipItem().apply {
             this.identifiers = realmListOf(identifier)
@@ -58,40 +57,45 @@ class ImageItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
         dataFlavor: DataFlavor,
         dataFlavorMap: Map<String, List<DataFlavor>>,
         transferable: Transferable,
-        clipCollector: ClipCollector
+        clipCollector: ClipCollector,
     ) {
         if (transferData is Image) {
-           val image: BufferedImage = toBufferedImage(transferData)
-           var name = tryGetImageName(dataFlavorMap, transferable) ?: createRandomFileName(ext = "png")
-           val ext = getExtFromFileName(name) ?: run {
-               name += ".png"
-               "png"
-           }
-           val relativePath = createClipRelativePath(
-               appInstanceId = appInfo.appInstanceId,
-               clipId = clipId,
-               fileName = name
-           )
-           val imagePath = createClipPath(relativePath, isFile = true, AppFileType.IMAGE)
-           if (writeImage(image, ext, imagePath)) {
+            val image: BufferedImage = toBufferedImage(transferData)
+            var name = tryGetImageName(dataFlavorMap, transferable) ?: createRandomFileName(ext = "png")
+            val ext =
+                getExtFromFileName(name) ?: run {
+                    name += ".png"
+                    "png"
+                }
+            val relativePath =
+                createClipRelativePath(
+                    appInstanceId = appInfo.appInstanceId,
+                    clipId = clipId,
+                    fileName = name,
+                )
+            val imagePath = createClipPath(relativePath, isFile = true, AppFileType.IMAGE)
+            if (writeImage(image, ext, imagePath)) {
+                val fileTree = DesktopFileUtils.getFileInfoTree(imagePath)
 
-               val fileTree = DesktopFileUtils.getFileInfoTree(imagePath)
+                val fileInfoTreeJsonString = JsonUtils.JSON.encodeToString(mapOf(name to fileTree))
 
-               val fileInfoTreeJsonString = JsonUtils.JSON.encodeToString(mapOf(name to fileTree))
-
-               val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
-                   realm.query(ImagesClipItem::class, "id == $0", clipItem.id).first().find()?.apply {
-                       this.relativePathList = realmListOf(relativePath)
-                       this.fileInfoTree = fileInfoTreeJsonString
-                       this.md5 = fileTree.md5
-                   }
-               }
-               clipCollector.updateCollectItem(itemIndex, this::class, update)
-           }
+                val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
+                    realm.query(ImagesClipItem::class, "id == $0", clipItem.id).first().find()?.apply {
+                        this.relativePathList = realmListOf(relativePath)
+                        this.fileInfoTree = fileInfoTreeJsonString
+                        this.md5 = fileTree.md5
+                    }
+                }
+                clipCollector.updateCollectItem(itemIndex, this::class, update)
+            }
         }
     }
 
-    private fun writeImage(image: BufferedImage, ext: String, imagePath: Path): Boolean {
+    private fun writeImage(
+        image: BufferedImage,
+        ext: String,
+        imagePath: Path,
+    ): Boolean {
         if (!ImageIO.write(image, ext, imagePath.toFile())) {
             val convertedImage =
                 BufferedImage(image.width, image.height, BufferedImage.TYPE_INT_RGB)
@@ -106,8 +110,10 @@ class ImageItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
         }
     }
 
-    private fun tryGetImageName(dataFlavorMap: Map<String, List<DataFlavor>>,
-                                transferable: Transferable): String? {
+    private fun tryGetImageName(
+        dataFlavorMap: Map<String, List<DataFlavor>>,
+        transferable: Transferable,
+    ): String? {
         dataFlavorMap[HTML_ID]?.let {
             for (dataFlavor in it) {
                 if (dataFlavor.representationClass == String::class.java) {

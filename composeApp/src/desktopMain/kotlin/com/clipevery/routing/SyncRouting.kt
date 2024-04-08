@@ -32,7 +32,6 @@ import org.signal.libsignal.protocol.state.SignedPreKeyRecord
 import java.util.Objects
 
 fun Routing.syncRouting() {
-
     val logger = KotlinLogging.logger {}
 
     val koinApplication = Dependencies.koinApplication
@@ -56,7 +55,7 @@ fun Routing.syncRouting() {
                 signalDao.saveIdentities(identityKeys)
                 logger.debug { "$appInstanceId sync info to ${appInfo.appInstanceId}:\n $syncInfos" }
                 successResponse(call)
-            } ?:  run {
+            } ?: run {
                 logger.debug { "${appInfo.appInstanceId} not trust $appInstanceId in /sync/syncInfos api" }
                 failResponse(call, StandardErrorCode.SIGNAL_UNTRUSTED_IDENTITY.toErrorCode(), "not trust $appInstanceId")
             }
@@ -91,16 +90,17 @@ fun Routing.syncRouting() {
             val signedPreKeyRecord = SignedPreKeyRecord(signedPreKey.serialized)
             val signedPreKeySignature = signedPreKeyRecord.signature
 
-            val preKeyBundle = PreKeyBundle(
-                registrationId,
-                deviceId,
-                preKeyId,
-                preKeyPairPublicKey,
-                signedPreKeyId,
-                signedPreKeyRecord.keyPair.publicKey,
-                signedPreKeySignature,
-                identityKeyPair.publicKey
-            )
+            val preKeyBundle =
+                PreKeyBundle(
+                    registrationId,
+                    deviceId,
+                    preKeyId,
+                    preKeyPairPublicKey,
+                    signedPreKeyId,
+                    signedPreKeyRecord.keyPair.publicKey,
+                    signedPreKeySignature,
+                    identityKeyPair.publicKey,
+                )
 
             val bytes = encodePreKeyBundle(preKeyBundle)
             logger.debug { "${appInfo.appInstanceId} create preKeyBundle for $appInstanceId:\n $preKeyBundle" }
@@ -121,7 +121,8 @@ fun Routing.syncRouting() {
                     val signalMessage = SignalMessage(bytes)
                     decrypt = sessionCipher.decrypt(signalMessage)
                 } catch (ignore: InvalidMessageException) {
-                } catch (ignore: NoSessionException) { }
+                } catch (ignore: NoSessionException) {
+                }
             }
 
             if (decrypt == null) {
@@ -132,7 +133,7 @@ fun Routing.syncRouting() {
                 if (signalProtocolStore.containsSignedPreKey(signedPreKeyId)) {
                     signalProtocolStore.saveIdentity(
                         signalProtocolAddress,
-                        preKeySignalMessage.identityKey
+                        preKeySignalMessage.identityKey,
                     )
                     decrypt = sessionCipher.decrypt(preKeySignalMessage)
                 } else {
@@ -183,7 +184,7 @@ fun Routing.syncRouting() {
                 val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
                 signalProtocolStore.saveIdentity(
                     signalProtocolAddress,
-                    requestTrust.identityKey
+                    requestTrust.identityKey,
                 )
                 appUI.showToken = false
                 logger.debug { "${appInfo.appInstanceId} to trust $appInstanceId" }
@@ -198,11 +199,11 @@ fun Routing.syncRouting() {
 
 fun PreKeyBundle.toString() {
     "PreKeyBundle(registrationId=$registrationId, " +
-            "deviceId=$deviceId, " +
-            "preKeyId=$preKeyId, " +
-            "preKey=$preKey, " +
-            "signedPreKeyId=$signedPreKeyId, " +
-            "signedPreKey=$signedPreKey, " +
-            "signedPreKeySignature=$signedPreKeySignature, " +
-            "identityKey=$identityKey)"
+        "deviceId=$deviceId, " +
+        "preKeyId=$preKeyId, " +
+        "preKey=$preKey, " +
+        "signedPreKeyId=$signedPreKeyId, " +
+        "signedPreKey=$signedPreKey, " +
+        "signedPreKeySignature=$signedPreKeySignature, " +
+        "identityKey=$identityKey)"
 }

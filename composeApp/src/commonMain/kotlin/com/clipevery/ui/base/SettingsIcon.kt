@@ -24,7 +24,6 @@ fun arrowDown(): Painter {
     return expandMore()
 }
 
-
 @Composable
 fun hashtag(): Painter {
     return painterResource("icon/base/hashtag.svg")

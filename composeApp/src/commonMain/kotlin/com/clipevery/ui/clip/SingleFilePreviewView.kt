@@ -45,79 +45,89 @@ fun SingleFilePreviewView(filePath: Path) {
 
     val existFile by remember { mutableStateOf(filePath.toFile().exists()) }
 
-    val optionPainter: Painter? = if (existFile) {
-        FileExtUtils.getExtPreviewImagePainter(filePath.extension)
-    } else {
-        fileSlash()
-    }
-
-    Row(modifier = Modifier.clickable {
-        if (Desktop.isDesktopSupported() && existFile) {
-            val desktop = Desktop.getDesktop()
-            desktop.browseFileDirectory(filePath.toFile())
+    val optionPainter: Painter? =
+        if (existFile) {
+            FileExtUtils.getExtPreviewImagePainter(filePath.extension)
+        } else {
+            fileSlash()
         }
-    }) {
+
+    Row(
+        modifier =
+            Modifier.clickable {
+                if (Desktop.isDesktopSupported() && existFile) {
+                    val desktop = Desktop.getDesktop()
+                    desktop.browseFileDirectory(filePath.toFile())
+                }
+            },
+    ) {
         Box(modifier = Modifier.size(100.dp)) {
             SketchBackground(100.dp, 100.dp, 5.dp, MaterialTheme.colors.primary)
             optionPainter?.let { painter ->
                 Image(
-                    modifier = Modifier.size(100.dp)
-                        .clip(RoundedCornerShape(5.dp)),
+                    modifier =
+                        Modifier.size(100.dp)
+                            .clip(RoundedCornerShape(5.dp)),
                     painter = painter,
-                    contentDescription = "fileType"
+                    contentDescription = "fileType",
                 )
             } ?: run {
-                val isFile: Boolean = remember(filePath) {
-                    filePath.toFile().isFile
-                }
+                val isFile: Boolean =
+                    remember(filePath) {
+                        filePath.toFile().isFile
+                    }
                 Icon(
                     modifier = Modifier.size(100.dp),
                     painter = if (isFile) file() else folder(),
                     contentDescription = "fileType",
-                    tint = MaterialTheme.colors.onBackground
+                    tint = MaterialTheme.colors.onBackground,
                 )
             }
         }
 
         Column(
-            modifier = Modifier.fillMaxHeight()
-                .wrapContentWidth()
-                .padding(horizontal = 8.dp),
-            verticalArrangement = Arrangement.Bottom
+            modifier =
+                Modifier.fillMaxHeight()
+                    .wrapContentWidth()
+                    .padding(horizontal = 8.dp),
+            verticalArrangement = Arrangement.Bottom,
         ) {
             Text(
                 text = "${copywriter.getText("File_Name")}: ${filePath.fileName}",
                 color = MaterialTheme.colors.onBackground,
-                style = TextStyle(
-                    fontWeight = FontWeight.Light,
-                    color = MaterialTheme.colors.onBackground,
-                    fontSize = 10.sp
-                )
+                style =
+                    TextStyle(
+                        fontWeight = FontWeight.Light,
+                        color = MaterialTheme.colors.onBackground,
+                        fontSize = 10.sp,
+                    ),
             )
 
             if (existFile) {
-
-                val fileSize = remember(filePath) {
-                    fileUtils.formatBytes(fileUtils.getFileSize(filePath))
-                }
+                val fileSize =
+                    remember(filePath) {
+                        fileUtils.formatBytes(fileUtils.getFileSize(filePath))
+                    }
 
                 Text(
                     text = "${copywriter.getText("Size")}: $fileSize",
                     color = MaterialTheme.colors.onBackground,
-                    style = TextStyle(
-                        fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colors.onBackground,
-                        fontSize = 10.sp
-                    )
+                    style =
+                        TextStyle(
+                            fontWeight = FontWeight.Light,
+                            color = MaterialTheme.colors.onBackground,
+                            fontSize = 10.sp,
+                        ),
                 )
             } else {
                 Text(
                     text = copywriter.getText("Missing_File"),
                     color = MaterialTheme.colors.error,
-                    style = TextStyle(
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 10.sp
-                    )
+                    style =
+                        TextStyle(
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 10.sp,
+                        ),
                 )
             }
         }

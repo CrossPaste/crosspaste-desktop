@@ -16,9 +16,15 @@ interface ClipAppearItem {
 
     var md5: String
 
-    fun update(data: Any, md5: String)
+    fun update(
+        data: Any,
+        md5: String,
+    )
 
-    fun clear(realm: MutableRealm, clearResource: Boolean = true)
+    fun clear(
+        realm: MutableRealm,
+        clearResource: Boolean = true,
+    )
 
     fun fillDataFlavor(map: MutableMap<DataFlavor, Any>)
 }

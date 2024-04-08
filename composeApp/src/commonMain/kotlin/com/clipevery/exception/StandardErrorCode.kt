@@ -1,6 +1,6 @@
 package com.clipevery.exception
 
-enum class StandardErrorCode(code: Int, errorType: ErrorType): ErrorCodeSupplier {
+enum class StandardErrorCode(code: Int, errorType: ErrorType) : ErrorCodeSupplier {
     UNKNOWN_ERROR(0, ErrorType.INTERNAL_ERROR),
     BOOTSTRAP_ERROR(1, ErrorType.INTERNAL_ERROR),
     INVALID_PARAMETER(2, ErrorType.USER_ERROR),
@@ -35,5 +35,4 @@ enum class StandardErrorCode(code: Int, errorType: ErrorType): ErrorCodeSupplier
     override fun toErrorCode(): ErrorCode {
         return errorCode
     }
-
 }

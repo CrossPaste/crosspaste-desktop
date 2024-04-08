@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 @SerialName("sync")
-class SyncExtraInfo: ClipTaskExtraInfo {
+class SyncExtraInfo : ClipTaskExtraInfo {
 
     @SerialName("executionHistories")
     override val executionHistories: MutableList<ExecutionHistory> = mutableListOf()

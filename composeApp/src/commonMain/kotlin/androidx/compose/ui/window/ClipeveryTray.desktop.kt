@@ -14,9 +14,6 @@ import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import com.clipevery.platform.currentPlatform
-import java.awt.PopupMenu
-import java.awt.SystemTray
-import java.awt.TrayIcon
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.launchIn
@@ -25,6 +22,9 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import java.awt.ComponentOrientation
 import java.awt.GraphicsConfiguration
 import java.awt.GraphicsEnvironment
+import java.awt.PopupMenu
+import java.awt.SystemTray
+import java.awt.TrayIcon
 import java.awt.event.MouseListener
 import java.util.Locale
 
@@ -33,26 +33,34 @@ import java.util.Locale
 // support DPI=2.0
 // Unfortunately I hadn't enough time to find sources from the official docs
 
-private val iconSize = run {
-    // https://doc.qt.io/qt-5/qtwidgets-desktop-systray-example.html (search 22x22)
-    if (currentPlatform().isWindows()) Size(22f, 22f)
-    // https://doc.qt.io/qt-5/qtwidgets-desktop-systray-example.html (search 16x16)
-    else if (currentPlatform().isLinux()) Size(16f, 16f)
-    // https://medium.com/@acwrightdesign/creating-a-macos-menu-bar-application-using-swiftui-54572a5d5f87
-    else if (currentPlatform().isMacos()) Size(22f, 22f)
-    else Size(32f, 32f)
-}
+private val iconSize =
+    run {
+        // https://doc.qt.io/qt-5/qtwidgets-desktop-systray-example.html (search 22x22)
+        if (currentPlatform().isWindows()) {
+            Size(22f, 22f)
+        } // https://doc.qt.io/qt-5/qtwidgets-desktop-systray-example.html (search 16x16)
+        else if (currentPlatform().isLinux()) {
+            Size(16f, 16f)
+        } // https://medium.com/@acwrightdesign/creating-a-macos-menu-bar-application-using-swiftui-54572a5d5f87
+        else if (currentPlatform().isMacos()) {
+            Size(22f, 22f)
+        } else {
+            Size(32f, 32f)
+        }
+    }
 
-internal val GlobalDensity get() = GraphicsEnvironment.getLocalGraphicsEnvironment()
-    .defaultScreenDevice
-    .defaultConfiguration
-    .density
+internal val GlobalDensity get() =
+    GraphicsEnvironment.getLocalGraphicsEnvironment()
+        .defaultScreenDevice
+        .defaultConfiguration
+        .density
 
 private val GraphicsConfiguration.density: Density
-    get() = Density(
-    defaultTransform.scaleX.toFloat(),
-    fontScale = 1f
-)
+    get() =
+        Density(
+            defaultTransform.scaleX.toFloat(),
+            fontScale = 1f,
+        )
 
 internal val GlobalLayoutDirection get() = Locale.getDefault().layoutDirection
 
@@ -60,12 +68,12 @@ internal val Locale.layoutDirection: LayoutDirection
     get() = ComponentOrientation.getOrientation(this).layoutDirection
 
 internal val ComponentOrientation.layoutDirection: LayoutDirection
-    get() = when {
-        isLeftToRight -> LayoutDirection.Ltr
-        isHorizontal -> LayoutDirection.Rtl
-        else -> LayoutDirection.Ltr
-    }
-
+    get() =
+        when {
+            isLeftToRight -> LayoutDirection.Ltr
+            isHorizontal -> LayoutDirection.Rtl
+            else -> LayoutDirection.Ltr
+        }
 
 /**
  * `true` if the platform supports tray icons in the taskbar
@@ -73,6 +81,7 @@ internal val ComponentOrientation.layoutDirection: LayoutDirection
 val isTraySupported: Boolean get() = SystemTray.isSupported()
 
 // TODO(demin): add mouse click/double-click/right click listeners (can we use PointerInputEvent?)
+
 /**
  * Adds tray icon to the platform taskbar if it is supported.
  *
@@ -99,7 +108,7 @@ fun ApplicationScope.Tray(
     tooltip: String? = null,
     onAction: () -> Unit = {},
     mouseListener: MouseListener,
-    menu: @Composable MenuScope.() -> Unit = {}
+    menu: @Composable MenuScope.() -> Unit = {},
 ) {
     if (!isTraySupported) {
         DisposableEffect(Unit) {
@@ -111,7 +120,7 @@ fun ApplicationScope.Tray(
             // code doesn't depend on something that is created/calculated in this function.
             System.err.println(
                 "Tray is not supported on the current platform. " +
-                        "Use the global property `isTraySupported` to check."
+                    "Use the global property `isTraySupported` to check.",
             )
             onDispose {}
         }
@@ -120,27 +129,29 @@ fun ApplicationScope.Tray(
 
     val currentOnAction by rememberUpdatedState(onAction)
 
-    val awtIcon = remember(icon) {
-        // We shouldn't use LocalDensity here because Tray's density doesn't equal it. It
-        // equals to the density of the screen on which it shows. Currently Swing doesn't
-        // provide us such information, it only requests an image with the desired width/height
-        // (see MultiResolutionImage.getResolutionVariant). Resources like svg/xml should look okay
-        // because they don't use absolute '.dp' values to draw, they use values which are
-        // relative to their viewport.
-        icon.toAwtImage(GlobalDensity, GlobalLayoutDirection, iconSize)
-    }
-
-    val tray = remember {
-        TrayIcon(awtIcon).apply {
-            isImageAutoSize = true
-
-            addActionListener {
-                currentOnAction()
-            }
-
-            addMouseListener(mouseListener)
+    val awtIcon =
+        remember(icon) {
+            // We shouldn't use LocalDensity here because Tray's density doesn't equal it. It
+            // equals to the density of the screen on which it shows. Currently Swing doesn't
+            // provide us such information, it only requests an image with the desired width/height
+            // (see MultiResolutionImage.getResolutionVariant). Resources like svg/xml should look okay
+            // because they don't use absolute '.dp' values to draw, they use values which are
+            // relative to their viewport.
+            icon.toAwtImage(GlobalDensity, GlobalLayoutDirection, iconSize)
         }
-    }
+
+    val tray =
+        remember {
+            TrayIcon(awtIcon).apply {
+                isImageAutoSize = true
+
+                addActionListener {
+                    currentOnAction()
+                }
+
+                addMouseListener(mouseListener)
+            }
+        }
     val popupMenu = remember { PopupMenu() }
     val currentMenu by rememberUpdatedState(menu)
 
@@ -155,9 +166,10 @@ fun ApplicationScope.Tray(
     DisposableEffect(Unit) {
         tray.popupMenu = popupMenu
 
-        val menuComposition = popupMenu.setContent(composition) {
-            currentMenu()
-        }
+        val menuComposition =
+            popupMenu.setContent(composition) {
+                currentMenu()
+            }
 
         SystemTray.getSystemTray().add(tray)
 
@@ -176,9 +188,10 @@ fun ApplicationScope.Tray(
  * Creates a [WindowState] that is remembered across compositions.
  */
 @Composable
-fun rememberTrayState() = remember {
-    TrayState()
-}
+fun rememberTrayState() =
+    remember {
+        TrayState()
+    }
 
 /**
  * A state object that can be hoisted to control tray and show notifications.
@@ -206,12 +219,13 @@ class TrayState {
 }
 
 private fun TrayIcon.displayMessage(notification: Notification) {
-    val messageType = when (notification.type) {
-        Notification.Type.None -> TrayIcon.MessageType.NONE
-        Notification.Type.Info -> TrayIcon.MessageType.INFO
-        Notification.Type.Warning -> TrayIcon.MessageType.WARNING
-        Notification.Type.Error -> TrayIcon.MessageType.ERROR
-    }
+    val messageType =
+        when (notification.type) {
+            Notification.Type.None -> TrayIcon.MessageType.NONE
+            Notification.Type.Info -> TrayIcon.MessageType.INFO
+            Notification.Type.Warning -> TrayIcon.MessageType.WARNING
+            Notification.Type.Error -> TrayIcon.MessageType.ERROR
+        }
 
     displayMessage(notification.title, notification.message, messageType)
 }

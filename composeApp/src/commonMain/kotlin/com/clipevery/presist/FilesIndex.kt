@@ -8,7 +8,10 @@ class FilesIndexBuilder(private val chunkSize: Long) {
 
     private var filesChunkBuilder = FilesChunkBuilder(chunkSize)
 
-    fun addFile(filePath: Path, size: Long) {
+    fun addFile(
+        filePath: Path,
+        size: Long,
+    ) {
         var remainingSize = size
         do {
             remainingSize = filesChunkBuilder.addFile(filePath, remainingSize, size)
@@ -16,7 +19,7 @@ class FilesIndexBuilder(private val chunkSize: Long) {
                 filesChunks.add(filesChunkBuilder.build())
                 filesChunkBuilder = FilesChunkBuilder(chunkSize)
             }
-        } while(remainingSize > 0)
+        } while (remainingSize > 0)
     }
 
     fun build(): FilesIndex {
@@ -25,7 +28,6 @@ class FilesIndexBuilder(private val chunkSize: Long) {
         }
         return FilesIndex(filesChunks.toList())
     }
-
 }
 
 class FilesIndex(private val filesChunks: List<FilesChunk>) {
@@ -43,7 +45,11 @@ class FilesChunkBuilder(private val chunkSize: Long) {
 
     private val fileChunks = mutableListOf<FileChunk>()
 
-    fun addFile(filePath: Path, remainingSize: Long, size: Long): Long {
+    fun addFile(
+        filePath: Path,
+        remainingSize: Long,
+        size: Long,
+    ): Long {
         val chunkSize = if (remainingSize > chunkSize) chunkSize else remainingSize
         fileChunks.add(FileChunk(size - remainingSize, chunkSize, filePath))
         return remainingSize - chunkSize

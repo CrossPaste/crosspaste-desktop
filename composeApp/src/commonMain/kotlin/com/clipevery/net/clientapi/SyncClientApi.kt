@@ -10,6 +10,6 @@ interface SyncClientApi {
 
     suspend fun exchangePreKey(
         sessionCipher: SessionCipher,
-        toUrl: URLBuilder.(URLBuilder) -> Unit
+        toUrl: URLBuilder.(URLBuilder) -> Unit,
     ): Boolean
 }

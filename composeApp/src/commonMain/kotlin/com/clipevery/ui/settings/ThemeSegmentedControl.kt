@@ -37,19 +37,29 @@ fun ThemeSegmentedControl() {
             // Apply the shape only to the left side for the first button
             shape = RoundedCornerShape(topStart = 4.dp, bottomStart = 4.dp, topEnd = 0.dp, bottomEnd = 0.dp),
             // Change the background and content colors based on selection
-            colors = if (!themeDetector.isFollowSystem() && !themeDetector.isCurrentThemeDark())
-                ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary)
-            else
-                ButtonDefaults.buttonColors(backgroundColor = Color.White),
+            colors =
+                if (!themeDetector.isFollowSystem() && !themeDetector.isCurrentThemeDark()) {
+                    ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary)
+                } else {
+                    ButtonDefaults.buttonColors(backgroundColor = Color.White)
+                },
             border = BorderStroke(1.dp, Color(0xFFAFCBE1)),
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-            elevation = ButtonDefaults.elevation(defaultElevation = 0.dp, pressedElevation = 0.dp, hoveredElevation = 0.dp, focusedElevation = 0.dp)
-            ) {
-            Text(copywriter.getText("Light"),
+            elevation =
+                ButtonDefaults.elevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 0.dp,
+                    hoveredElevation = 0.dp,
+                    focusedElevation = 0.dp,
+                ),
+        ) {
+            Text(
+                copywriter.getText("Light"),
                 fontSize = 14.sp,
                 fontFamily = FontFamily.SansSerif,
                 style = TextStyle(fontWeight = FontWeight.Light),
-                color = if (!themeDetector.isFollowSystem() && !themeDetector.isCurrentThemeDark()) Color.White else Color.Black)
+                color = if (!themeDetector.isFollowSystem() && !themeDetector.isCurrentThemeDark()) Color.White else Color.Black,
+            )
         }
 
         // System Button
@@ -58,19 +68,29 @@ fun ThemeSegmentedControl() {
             onClick = { themeDetector.setThemeConfig(isFollowSystem = true) },
             // No shape for the middle button to keep it rectangular
             shape = RoundedCornerShape(0.dp),
-            colors = if (themeDetector.isFollowSystem())
-                ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary)
-            else
-                ButtonDefaults.buttonColors(backgroundColor = Color.White),
+            colors =
+                if (themeDetector.isFollowSystem()) {
+                    ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary)
+                } else {
+                    ButtonDefaults.buttonColors(backgroundColor = Color.White)
+                },
             border = BorderStroke(1.dp, Color(0xFFAFCBE1)),
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-            elevation = ButtonDefaults.elevation(defaultElevation = 0.dp, pressedElevation = 0.dp, hoveredElevation = 0.dp, focusedElevation = 0.dp)
+            elevation =
+                ButtonDefaults.elevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 0.dp,
+                    hoveredElevation = 0.dp,
+                    focusedElevation = 0.dp,
+                ),
         ) {
-            Text(copywriter.getText("System"),
+            Text(
+                copywriter.getText("System"),
                 fontSize = 14.sp,
                 fontFamily = FontFamily.SansSerif,
                 style = TextStyle(fontWeight = FontWeight.Light),
-                color = if (themeDetector.isFollowSystem()) Color.White else Color.Black)
+                color = if (themeDetector.isFollowSystem()) Color.White else Color.Black,
+            )
         }
 
         // Dark Button
@@ -79,19 +99,29 @@ fun ThemeSegmentedControl() {
             onClick = { themeDetector.setThemeConfig(isFollowSystem = false, isUserInDark = true) },
             // Apply the shape only to the right side for the last button
             shape = RoundedCornerShape(topStart = 0.dp, bottomStart = 0.dp, topEnd = 4.dp, bottomEnd = 4.dp),
-            colors = if (!themeDetector.isFollowSystem() && themeDetector.isCurrentThemeDark())
-                ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary)
-            else
-                ButtonDefaults.buttonColors(backgroundColor = Color.White),
+            colors =
+                if (!themeDetector.isFollowSystem() && themeDetector.isCurrentThemeDark()) {
+                    ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary)
+                } else {
+                    ButtonDefaults.buttonColors(backgroundColor = Color.White)
+                },
             border = BorderStroke(1.dp, Color(0xFFAFCBE1)),
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-            elevation = ButtonDefaults.elevation(defaultElevation = 0.dp, pressedElevation = 0.dp, hoveredElevation = 0.dp, focusedElevation = 0.dp)
+            elevation =
+                ButtonDefaults.elevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 0.dp,
+                    hoveredElevation = 0.dp,
+                    focusedElevation = 0.dp,
+                ),
         ) {
-            Text(copywriter.getText("Dark"),
+            Text(
+                copywriter.getText("Dark"),
                 fontSize = 14.sp,
                 fontFamily = FontFamily.SansSerif,
                 style = TextStyle(fontWeight = FontWeight.Light),
-                color = if (!themeDetector.isFollowSystem() && themeDetector.isCurrentThemeDark()) Color.White else Color.Black)
+                color = if (!themeDetector.isFollowSystem() && themeDetector.isCurrentThemeDark()) Color.White else Color.Black,
+            )
         }
     }
 }

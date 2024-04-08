@@ -14,5 +14,5 @@ fun AboutView(currentPageViewContext: MutableState<PageViewContext>) {
 
 @Composable
 fun AboutContentView() {
-    Column(modifier = Modifier.fillMaxSize()) {  }
+    Column(modifier = Modifier.fillMaxSize()) { }
 }

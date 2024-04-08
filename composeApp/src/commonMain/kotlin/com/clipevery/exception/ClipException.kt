@@ -1,6 +1,6 @@
 package com.clipevery.exception
 
-class ClipException: RuntimeException {
+class ClipException : RuntimeException {
 
     private val errorCode: ErrorCode
 

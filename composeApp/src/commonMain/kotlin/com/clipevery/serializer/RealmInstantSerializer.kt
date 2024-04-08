@@ -9,11 +9,12 @@ import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-object RealmInstantSerializer: KSerializer<RealmInstant> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RealmInstant") {
-        element<Long>("epochSeconds")
-        element<Int>("nanosecondsOfSecond")
-    }
+object RealmInstantSerializer : KSerializer<RealmInstant> {
+    override val descriptor: SerialDescriptor =
+        buildClassSerialDescriptor("RealmInstant") {
+            element<Long>("epochSeconds")
+            element<Int>("nanosecondsOfSecond")
+        }
 
     override fun deserialize(decoder: Decoder): RealmInstant {
         val dec = decoder.beginStructure(descriptor)
@@ -30,7 +31,10 @@ object RealmInstantSerializer: KSerializer<RealmInstant> {
         return RealmInstantImpl(epochSeconds, nanosecondsOfSecond)
     }
 
-    override fun serialize(encoder: Encoder, value: RealmInstant) {
+    override fun serialize(
+        encoder: Encoder,
+        value: RealmInstant,
+    ) {
         val compositeOutput = encoder.beginStructure(descriptor)
         compositeOutput.encodeLongElement(descriptor, 0, value.epochSeconds)
         compositeOutput.encodeIntElement(descriptor, 1, value.nanosecondsOfSecond)

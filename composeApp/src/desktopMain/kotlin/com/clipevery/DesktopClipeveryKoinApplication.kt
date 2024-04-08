@@ -108,90 +108,105 @@ object Dependencies {
     val koinApplication: KoinApplication = initKoinApplication()
 
     private fun initKoinApplication(): KoinApplication {
-
         val appEnv = AppEnv.getAppEnv()
 
-        val appModule = module {
+        val appModule =
+            module {
+                // simple component
+                single<AppEnv> { appEnv }
+                single<AppInfo> { DesktopAppInfoFactory(get()).createAppInfo() }
+                single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<ClipServer>() }) }
+                single<PathProvider> { DesktopPathProvider }
+                single<FilePersist> { DesktopFilePersist }
+                single<ConfigManager> {
+                    DefaultConfigManager(
+                        get<FilePersist>().getPersist("appConfig.json", AppFileType.USER),
+                        get(),
+                        get(),
+                    )
+                }
+                single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
+                single<IDGenerator> { IDGeneratorFactory(get()).createIDGenerator() }
+                single<FileUtils> { DesktopFileUtils }
+                single<DeviceUtils> { DesktopDeviceUtils }
+                single<NetUtils> { DesktopNetUtils }
+                single<CacheManager> { CacheManagerImpl(get()) }
 
-            // simple component
-            single<AppEnv> { appEnv }
-            single<AppInfo> { DesktopAppInfoFactory(get()).createAppInfo() }
-            single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<ClipServer>() }) }
-            single<PathProvider> { DesktopPathProvider }
-            single<FilePersist> { DesktopFilePersist }
-            single<ConfigManager> { DefaultConfigManager(get<FilePersist>().getPersist("appConfig.json", AppFileType.USER), get(), get()) }
-            single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
-            single<IDGenerator> { IDGeneratorFactory(get()).createIDGenerator() }
-            single<FileUtils> { DesktopFileUtils }
-            single<DeviceUtils> { DesktopDeviceUtils }
-            single<NetUtils> { DesktopNetUtils }
-            single<CacheManager> { CacheManagerImpl(get()) }
+                // realm component
+                single<RealmManager> { RealmManagerImpl.createRealmManager(get()) }
+                single<SignalDao> { SignalRealm(get<RealmManager>().realm) }
+                single<SyncRuntimeInfoDao> { SyncRuntimeInfoRealm(get<RealmManager>().realm) }
+                single<ClipDao> { ClipRealm(get<RealmManager>().realm, lazy { get() }) }
+                single<ClipTaskDao> { ClipTaskRealm(get<RealmManager>().realm) }
 
-            // realm component
-            single<RealmManager> { RealmManagerImpl.createRealmManager(get()) }
-            single<SignalDao> { SignalRealm(get<RealmManager>().realm) }
-            single<SyncRuntimeInfoDao> { SyncRuntimeInfoRealm(get<RealmManager>().realm) }
-            single<ClipDao> { ClipRealm(get<RealmManager>().realm, lazy { get() }) }
-            single<ClipTaskDao> { ClipTaskRealm(get<RealmManager>().realm) }
+                // net component
+                single<ClipClient> { DesktopClipClient(get<AppInfo>()) }
+                single<ClipServer> { DesktopClipServer(get<ConfigManager>()).start() }
+                single<ClipBonjourService> { DesktopClipBonjourService(get(), get()).registerService() }
+                single<TelnetUtils> { TelnetUtils(get<ClipClient>()) }
+                single<SyncClientApi> { DesktopSyncClientApi(get()) }
+                single<SendClipClientApi> { DesktopSendClipClientApi(get(), get()) }
+                single<PullFileClientApi> { DesktopPullFileClientApi(get(), get()) }
+                single { DesktopSyncManager(get(), get(), get(), get()) }
+                single<SyncRefresher> { get<DesktopSyncManager>() }
+                single<SyncManager> { get<DesktopSyncManager>() }
 
-            // net component
-            single<ClipClient> { DesktopClipClient(get<AppInfo>()) }
-            single<ClipServer> { DesktopClipServer(get<ConfigManager>()).start() }
-            single<ClipBonjourService> { DesktopClipBonjourService(get(), get()).registerService() }
-            single<TelnetUtils> { TelnetUtils(get<ClipClient>()) }
-            single<SyncClientApi> { DesktopSyncClientApi(get()) }
-            single<SendClipClientApi> { DesktopSendClipClientApi(get(), get()) }
-            single<PullFileClientApi> { DesktopPullFileClientApi(get(), get()) }
-            single { DesktopSyncManager(get(), get(), get(), get()) }
-            single<SyncRefresher> { get<DesktopSyncManager>() }
-            single<SyncManager> { get<DesktopSyncManager>() }
+                // signal component
+                single<IdentityKeyStore> { getClipIdentityKeyStoreFactory(get(), get()).createIdentityKeyStore() }
+                single<SessionStore> { DesktopSessionStore(get()) }
+                single<PreKeyStore> { DesktopPreKeyStore(get()) }
+                single<SignedPreKeyStore> { DesktopSignedPreKeyStore(get()) }
+                single<SignalProtocolStore> { DesktopSignalProtocolStore(get(), get(), get(), get()) }
 
-            // signal component
-            single<IdentityKeyStore> { getClipIdentityKeyStoreFactory(get(), get()).createIdentityKeyStore() }
-            single<SessionStore> { DesktopSessionStore(get()) }
-            single<PreKeyStore> { DesktopPreKeyStore(get())  }
-            single<SignedPreKeyStore> { DesktopSignedPreKeyStore(get()) }
-            single<SignalProtocolStore> { DesktopSignalProtocolStore(get(), get(), get(), get()) }
+                // clip component
+                single<ClipboardService> { getDesktopClipboardService(get(), get(), get()) }
+                single<TransferableConsumer> {
+                    DesktopTransferableConsumer(
+                        get(),
+                        get(),
+                        get(),
+                        listOf(
+                            FilesItemService(appInfo = get()),
+                            HtmlItemService(appInfo = get()),
+                            ImageItemService(appInfo = get()),
+                            TextItemService(appInfo = get()),
+                            UrlItemService(appInfo = get()),
+                        ),
+                        listOf(
+                            DistinctPlugin,
+                            GenerateUrlPlugin,
+                            FilesToImagesPlugin,
+                            RemoveFolderImagePlugin,
+                            SortPlugin,
+                        ),
+                    )
+                }
+                single<TransferableProducer> { DesktopTransferableProducer() }
+                single<ChromeService> { DesktopChromeService }
+                single<ClipSearchService> { DesktopClipSearchService(get()) }
+                single<CleanClipScheduler> { DesktopCleanClipScheduler(get(), get(), get()) }
+                single<TaskExecutor> {
+                    DesktopTaskExecutor(
+                        listOf(
+                            SyncClipTaskExecutor(get(), get(), get()),
+                            DeleteClipTaskExecutor(get()),
+                            PullFileTaskExecutor(get(), get(), get(), get(), get()),
+                            CleanClipTaskExecutor(get(), get()),
+                        ),
+                        get(),
+                    )
+                }
 
-            // clip component
-            single<ClipboardService> { getDesktopClipboardService(get(), get(), get()) }
-            single<TransferableConsumer> { DesktopTransferableConsumer(
-                get(), get(), get(), listOf(
-                    FilesItemService(appInfo = get()),
-                    HtmlItemService(appInfo = get()),
-                    ImageItemService(appInfo = get()),
-                    TextItemService(appInfo = get()),
-                    UrlItemService(appInfo = get())
-                ), listOf(
-                    DistinctPlugin,
-                    GenerateUrlPlugin,
-                    FilesToImagesPlugin,
-                    RemoveFolderImagePlugin,
-                    SortPlugin
-                )
-            ) }
-            single<TransferableProducer> { DesktopTransferableProducer() }
-            single<ChromeService> { DesktopChromeService }
-            single<ClipSearchService> { DesktopClipSearchService(get()) }
-            single<CleanClipScheduler> { DesktopCleanClipScheduler(get(), get(), get()) }
-            single<TaskExecutor> { DesktopTaskExecutor(listOf(
-                SyncClipTaskExecutor(get(), get(), get()),
-                DeleteClipTaskExecutor(get()),
-                PullFileTaskExecutor(get(), get(), get(), get(), get()),
-                CleanClipTaskExecutor(get(), get())
-            ), get()) }
-
-            // ui component
-            single<AppUI> { AppUI(width = 460.dp, height = 710.dp) }
-            single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
-            single<GlobalListener> { GlobalListener(get(), get()) }
-            single<ThemeDetector> { DesktopThemeDetector(get()) }
-            single<ClipResourceLoader> { DesktopAbsoluteClipResourceLoader }
-            single<ToastManager> { DesktopToastManager() }
-        }
+                // ui component
+                single<AppUI> { AppUI(width = 460.dp, height = 710.dp) }
+                single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
+                single<GlobalListener> { GlobalListener(get(), get()) }
+                single<ThemeDetector> { DesktopThemeDetector(get()) }
+                single<ClipResourceLoader> { DesktopAbsoluteClipResourceLoader }
+                single<ToastManager> { DesktopToastManager() }
+            }
         return GlobalContext.startKoin {
             modules(appModule)
         }
     }
-
 }

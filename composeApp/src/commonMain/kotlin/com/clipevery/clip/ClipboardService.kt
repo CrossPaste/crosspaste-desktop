@@ -26,7 +26,11 @@ interface ClipboardService : ClipboardMonitor, ClipboardOwner {
 
     val clipboardChannel: Channel<suspend () -> Unit>
 
-    suspend fun tryWriteClipboard(clipData: ClipData, localOnly: Boolean = false, filterFile: Boolean = false) {
+    suspend fun tryWriteClipboard(
+        clipData: ClipData,
+        localOnly: Boolean = false,
+        filterFile: Boolean = false,
+    ) {
         try {
             clipProducer.produce(clipData, localOnly, filterFile)?.let {
                 ownerTransferable = it

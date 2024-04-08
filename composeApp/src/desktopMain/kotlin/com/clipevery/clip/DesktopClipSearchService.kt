@@ -2,7 +2,7 @@ package com.clipevery.clip
 
 import com.clipevery.app.AppUI
 
-class DesktopClipSearchService(private val appUI: AppUI): ClipSearchService {
+class DesktopClipSearchService(private val appUI: AppUI) : ClipSearchService {
 
     private var start: Boolean = false
 

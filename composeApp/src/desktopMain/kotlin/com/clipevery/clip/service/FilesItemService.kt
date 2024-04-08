@@ -36,7 +36,7 @@ class FilesItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
         itemIndex: Int,
         identifier: String,
         transferable: Transferable,
-        clipCollector: ClipCollector
+        clipCollector: ClipCollector,
     ) {
         FilesClipItem().apply {
             this.identifiers = realmListOf(identifier)
@@ -52,7 +52,7 @@ class FilesItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
         dataFlavor: DataFlavor,
         dataFlavorMap: Map<String, List<DataFlavor>>,
         transferable: Transferable,
-        clipCollector: ClipCollector
+        clipCollector: ClipCollector,
     ) {
         if (transferData is List<*>) {
             val files = transferData.filterIsInstance<File>()
@@ -61,11 +61,12 @@ class FilesItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
 
             for (file in files) {
                 val fileName = file.name
-                val relativePath = createClipRelativePath(
-                    appInstanceId = appInfo.appInstanceId,
-                    clipId = clipId,
-                    fileName = fileName
-                )
+                val relativePath =
+                    createClipRelativePath(
+                        appInstanceId = appInfo.appInstanceId,
+                        clipId = clipId,
+                        fileName = fileName,
+                    )
                 relativePathList.add(relativePath)
                 val filePath = DesktopFileUtils.createClipPath(relativePath, isFile = true, AppFileType.FILE)
                 if (copyPath(file.toPath(), filePath)) {
@@ -92,5 +93,4 @@ class FilesItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
             }
         }
     }
-
 }

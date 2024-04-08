@@ -10,7 +10,10 @@ interface SignalDao {
 
     fun saveIdentities(identityKeys: List<ClipIdentityKey>)
 
-    fun saveIdentity(appInstanceId: String, serialized: ByteArray): Boolean
+    fun saveIdentity(
+        appInstanceId: String,
+        serialized: ByteArray,
+    ): Boolean
 
     fun deleteIdentity(appInstanceId: String)
 
@@ -18,7 +21,10 @@ interface SignalDao {
 
     fun loadPreKey(id: Int): ByteArray?
 
-    fun storePreKey(id: Int, serialized: ByteArray)
+    fun storePreKey(
+        id: Int,
+        serialized: ByteArray,
+    )
 
     fun removePreKey(id: Int)
 
@@ -26,7 +32,10 @@ interface SignalDao {
 
     fun loadExistingSessions(): List<ByteArray>
 
-    fun storeSession(appInstanceId: String, sessionRecord: ByteArray)
+    fun storeSession(
+        appInstanceId: String,
+        sessionRecord: ByteArray,
+    )
 
     fun containSession(appInstanceId: String): Boolean
 
@@ -38,7 +47,10 @@ interface SignalDao {
 
     fun loadSignedPreKeys(): List<ByteArray>
 
-    fun storeSignedPreKey(id: Int, serialized: ByteArray)
+    fun storeSignedPreKey(
+        id: Int,
+        serialized: ByteArray,
+    )
 
     fun containsSignedPreKey(id: Int): Boolean
 

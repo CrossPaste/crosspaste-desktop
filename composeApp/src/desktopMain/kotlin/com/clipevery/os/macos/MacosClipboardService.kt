@@ -21,9 +21,11 @@ import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.Transferable
 
-class MacosClipboardService(override val clipDao: ClipDao,
-                            override val clipConsumer: TransferableConsumer,
-                            override val clipProducer: TransferableProducer): ClipboardService {
+class MacosClipboardService(
+    override val clipDao: ClipDao,
+    override val clipConsumer: TransferableConsumer,
+    override val clipProducer: TransferableProducer,
+) : ClipboardService {
     override val logger: KLogger = KotlinLogging.logger {}
 
     private var changeCount = 0
@@ -83,8 +85,10 @@ class MacosClipboardService(override val clipDao: ClipDao,
         }
     }
 
-
-    override fun lostOwnership(clipboard: Clipboard?, contents: Transferable?) {
+    override fun lostOwnership(
+        clipboard: Clipboard?,
+        contents: Transferable?,
+    ) {
         owner = false
     }
 

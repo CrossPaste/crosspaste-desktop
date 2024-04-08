@@ -10,19 +10,25 @@ import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.toRealmList
 import kotlinx.serialization.encodeToString
 
-object MultiImagesPlugin: ClipPlugin {
-    override fun pluginProcess(clipAppearItems: List<ClipAppearItem>, realm: MutableRealm): List<ClipAppearItem> {
+object MultiImagesPlugin : ClipPlugin {
+    override fun pluginProcess(
+        clipAppearItems: List<ClipAppearItem>,
+        realm: MutableRealm,
+    ): List<ClipAppearItem> {
         if (clipAppearItems.size <= 1) {
             return clipAppearItems
         } else {
-            val relativePathList = clipAppearItems.map { it as ImagesClipItem }.flatMap { it.relativePathList }
-                .toRealmList()
-            val fileInfoMap = clipAppearItems.map { it as ImagesClipItem }
-                .flatMap { it.getFileInfoTreeMap().entries }
-                .associate { it.key to it.value }
+            val relativePathList =
+                clipAppearItems.map { it as ImagesClipItem }.flatMap { it.relativePathList }
+                    .toRealmList()
+            val fileInfoMap =
+                clipAppearItems.map { it as ImagesClipItem }
+                    .flatMap { it.getFileInfoTreeMap().entries }
+                    .associate { it.key to it.value }
             val fileInfoMapJsonString = JsonUtils.JSON.encodeToString(fileInfoMap)
-            val md5 = clipAppearItems.map { it as FilesClipItem }.map { it.md5 }
-                .toTypedArray().let { md5ByArray(it) }
+            val md5 =
+                clipAppearItems.map { it as FilesClipItem }.map { it.md5 }
+                    .toTypedArray().let { md5ByArray(it) }
             clipAppearItems.forEach { it.clear(realm, clearResource = false) }
             return ImagesClipItem().apply {
                 this.relativePathList = relativePathList

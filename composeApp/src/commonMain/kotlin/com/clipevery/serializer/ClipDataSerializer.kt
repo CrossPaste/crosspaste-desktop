@@ -19,17 +19,18 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import org.mongodb.kbson.BsonObjectId
 
-object ClipDataSerializer: KSerializer<ClipData> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ClipData") {
-        element<String>("id")
-        element<Long>("clipId")
-        element<RealmAny?>("clipAppearContent")
-        element<ClipContent?>("clipContent")
-        element<Int>("clipType")
-        element<String>("md5")
-        element<String>("appInstanceId")
-        element<RealmSet<ClipLabel>>("labels")
-    }
+object ClipDataSerializer : KSerializer<ClipData> {
+    override val descriptor: SerialDescriptor =
+        buildClassSerialDescriptor("ClipData") {
+            element<String>("id")
+            element<Long>("clipId")
+            element<RealmAny?>("clipAppearContent")
+            element<ClipContent?>("clipContent")
+            element<Int>("clipType")
+            element<String>("md5")
+            element<String>("appInstanceId")
+            element<RealmSet<ClipLabel>>("labels")
+        }
 
     override fun deserialize(decoder: Decoder): ClipData {
         val dec = decoder.beginStructure(descriptor)
@@ -55,20 +56,21 @@ object ClipDataSerializer: KSerializer<ClipData> {
             }
         }
         dec.endStructure(descriptor)
-        val clipData = ClipData().apply {
-            this.id = BsonObjectId(id)
-            this.clipId = clipId
-            this.clipAppearContent = clipAppearContent
-            this.clipContent = clipContent
-            this.clipType = clipType
-            this.clipSearchContent = ClipContent.getClipItem(clipAppearContent)?.getSearchContent()
-            this.md5 = md5
-            this.appInstanceId = appInstanceId
-            this.createTime = RealmInstant.now()
-            this.labels = labels
-            this.clipState = ClipState.LOADING
-            this.isRemote = true
-        }
+        val clipData =
+            ClipData().apply {
+                this.id = BsonObjectId(id)
+                this.clipId = clipId
+                this.clipAppearContent = clipAppearContent
+                this.clipContent = clipContent
+                this.clipType = clipType
+                this.clipSearchContent = ClipContent.getClipItem(clipAppearContent)?.getSearchContent()
+                this.md5 = md5
+                this.appInstanceId = appInstanceId
+                this.createTime = RealmInstant.now()
+                this.labels = labels
+                this.clipState = ClipState.LOADING
+                this.isRemote = true
+            }
 
         for (clipInit in clipData.getClipAppearItems().filterIsInstance<ClipInit>()) {
             clipInit.init(clipData.appInstanceId, clipData.clipId)
@@ -77,7 +79,10 @@ object ClipDataSerializer: KSerializer<ClipData> {
         return clipData
     }
 
-    override fun serialize(encoder: Encoder, value: ClipData) {
+    override fun serialize(
+        encoder: Encoder,
+        value: ClipData,
+    ) {
         val compositeOutput = encoder.beginStructure(descriptor)
         compositeOutput.encodeStringElement(descriptor, 0, value.id.toHexString())
         compositeOutput.encodeLongElement(descriptor, 1, value.clipId)

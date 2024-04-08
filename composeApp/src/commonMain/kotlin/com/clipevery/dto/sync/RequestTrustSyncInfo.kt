@@ -7,6 +7,5 @@ import org.signal.libsignal.protocol.IdentityKey
 @Serializable
 data class RequestTrustSyncInfo(
     @Serializable(with = IdentityKeySerializer::class) val identityKey: IdentityKey,
-    val syncInfo: SyncInfo
+    val syncInfo: SyncInfo,
 )
-

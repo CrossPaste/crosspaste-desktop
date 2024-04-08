@@ -10,26 +10,32 @@ import java.awt.GraphicsEnvironment
 import java.awt.Toolkit
 import java.awt.event.MouseAdapter
 
-
-fun  getTrayMouseAdapter(windowState: WindowState, mouseClickedAction: () -> Unit): MouseAdapter {
-    return if(currentPlatform().isMacos()) {
+fun getTrayMouseAdapter(
+    windowState: WindowState,
+    mouseClickedAction: () -> Unit,
+): MouseAdapter {
+    return if (currentPlatform().isMacos()) {
         MacTrayMouseClicked(windowState, mouseClickedAction)
     } else {
         WindowsTrayMouseClicked(windowState, mouseClickedAction)
     }
 }
 
-class MacTrayMouseClicked(private val windowState: WindowState, private val mouseClickedAction: () -> Unit): MouseAdapter() {
+class MacTrayMouseClicked(private val windowState: WindowState, private val mouseClickedAction: () -> Unit) : MouseAdapter() {
 
     override fun mouseClicked(e: java.awt.event.MouseEvent) {
         mouseClickedAction()
-        windowState.position = WindowPosition.Absolute(
-            x = calculatePosition(e.x.dp, windowState.size.width),
-            y = 30.dp
-        )
+        windowState.position =
+            WindowPosition.Absolute(
+                x = calculatePosition(e.x.dp, windowState.size.width),
+                y = 30.dp,
+            )
     }
 
-    private fun calculatePosition(x: Dp, width: Dp): Dp {
+    private fun calculatePosition(
+        x: Dp,
+        width: Dp,
+    ): Dp {
         val fNum = x / 32.dp
         val iNum = fNum.toInt()
         return if (fNum - iNum < 0.5f) {
@@ -40,7 +46,7 @@ class MacTrayMouseClicked(private val windowState: WindowState, private val mous
     }
 }
 
-class WindowsTrayMouseClicked(private val windowState: WindowState, private val mouseClickedAction: () -> Unit): MouseAdapter() {
+class WindowsTrayMouseClicked(private val windowState: WindowState, private val mouseClickedAction: () -> Unit) : MouseAdapter() {
 
     override fun mouseClicked(e: java.awt.event.MouseEvent) {
         mouseClickedAction()
@@ -55,9 +61,10 @@ class WindowsTrayMouseClicked(private val windowState: WindowState, private val 
         val windowWidth = windowState.size.width
         val windowHeight = windowState.size.height
 
-        windowState.position = WindowPosition.Absolute(
-            x = usableWidth.dp - windowWidth - 32.dp,
-            y = usableHeight.dp - windowHeight - 32.dp
-        )
+        windowState.position =
+            WindowPosition.Absolute(
+                x = usableWidth.dp - windowWidth - 32.dp,
+                y = usableHeight.dp - windowHeight - 32.dp,
+            )
     }
 }

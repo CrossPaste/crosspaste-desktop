@@ -17,7 +17,6 @@ import io.ktor.server.routing.*
 import io.ktor.utils.io.*
 
 fun Routing.pullRouting() {
-
     val logger = KotlinLogging.logger {}
 
     val koinApplication = Dependencies.koinApplication
@@ -54,8 +53,10 @@ fun Routing.pullRouting() {
                     successResponse(call, producer)
                 } ?: run {
                     logger.error { "$fromAppInstanceId get $appInstanceId chunk out range: ${pullFileRequest.chunkIndex}" }
-                    failResponse(call, StandardErrorCode.OUT_RANGE_CHUNK_INDEX.toErrorCode(),
-                        "out range chunk index ${pullFileRequest.chunkIndex}")
+                    failResponse(
+                        call, StandardErrorCode.OUT_RANGE_CHUNK_INDEX.toErrorCode(),
+                        "out range chunk index ${pullFileRequest.chunkIndex}",
+                    )
                 }
             }
         }

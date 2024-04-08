@@ -23,10 +23,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.signal.libsignal.protocol.state.SignalProtocolStore
 
-class DesktopSyncManager(private val telnetUtils: TelnetUtils,
-                         private val syncClientApi: SyncClientApi,
-                         private val signalProtocolStore: SignalProtocolStore,
-                         private val syncRuntimeInfoDao: SyncRuntimeInfoDao): SyncManager, SyncRefresher {
+class DesktopSyncManager(
+    private val telnetUtils: TelnetUtils,
+    private val syncClientApi: SyncClientApi,
+    private val signalProtocolStore: SignalProtocolStore,
+    private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
+) : SyncManager, SyncRefresher {
 
     private val logger = KotlinLogging.logger {}
 
@@ -45,14 +47,18 @@ class DesktopSyncManager(private val telnetUtils: TelnetUtils,
     init {
         realTimeSyncScope.launch(CoroutineName("SyncManagerListenChanger")) {
             val syncRuntimeInfos = syncRuntimeInfoDao.getAllSyncRuntimeInfos()
-            internalSyncHandlers.putAll(syncRuntimeInfos.map { syncRuntimeInfo ->
-                syncRuntimeInfo.appInstanceId to DesktopSyncHandler(syncRuntimeInfo,
-                    telnetUtils,
-                    syncClientApi,
-                    signalProtocolStore,
-                    syncRuntimeInfoDao
-                )
-            })
+            internalSyncHandlers.putAll(
+                syncRuntimeInfos.map { syncRuntimeInfo ->
+                    syncRuntimeInfo.appInstanceId to
+                        DesktopSyncHandler(
+                            syncRuntimeInfo,
+                            telnetUtils,
+                            syncClientApi,
+                            signalProtocolStore,
+                            syncRuntimeInfoDao,
+                        )
+                },
+            )
             withContext(Dispatchers.Main) {
                 realTimeSyncRuntimeInfos.addAll(syncRuntimeInfos)
             }
@@ -69,11 +75,12 @@ class DesktopSyncManager(private val telnetUtils: TelnetUtils,
                         for (insertion in changes.insertions) {
                             val insertionSyncRuntimeInfo = changes.list[insertion]
                             internalSyncHandlers[insertionSyncRuntimeInfo.appInstanceId] =
-                                DesktopSyncHandler(insertionSyncRuntimeInfo,
+                                DesktopSyncHandler(
+                                    insertionSyncRuntimeInfo,
                                     telnetUtils,
                                     syncClientApi,
                                     signalProtocolStore,
-                                    syncRuntimeInfoDao
+                                    syncRuntimeInfoDao,
                                 )
                             resolveSync(insertionSyncRuntimeInfo.appInstanceId, true)
                         }
@@ -85,11 +92,11 @@ class DesktopSyncManager(private val telnetUtils: TelnetUtils,
                                 .updateSyncRuntimeInfo(changeSyncRuntimeInfo)
                             if (changeSyncRuntimeInfo.connectHostAddress == null ||
                                 changeSyncRuntimeInfo.port != oldSyncRuntimeInfo.port ||
-                                !hostInfoListEqual(changeSyncRuntimeInfo.hostInfoList, oldSyncRuntimeInfo.hostInfoList)) {
+                                !hostInfoListEqual(changeSyncRuntimeInfo.hostInfoList, oldSyncRuntimeInfo.hostInfoList)
+                            ) {
                                 resolveSync(changeSyncRuntimeInfo.appInstanceId, true)
                             }
                         }
-
 
                         withContext(Dispatchers.Main) {
                             realTimeSyncRuntimeInfos.clear()
@@ -112,7 +119,10 @@ class DesktopSyncManager(private val telnetUtils: TelnetUtils,
         }
     }
 
-    override fun resolveSync(id: String, force: Boolean) {
+    override fun resolveSync(
+        id: String,
+        force: Boolean,
+    ) {
         internalSyncHandlers[id]?.let { syncHandler ->
             realTimeSyncScope.launch(CoroutineName("SyncManagerResolve")) {
                 syncHandler.resolveSync(force)
@@ -138,5 +148,4 @@ class DesktopSyncManager(private val telnetUtils: TelnetUtils,
             _refreshing.value = false
         }
     }
-
 }

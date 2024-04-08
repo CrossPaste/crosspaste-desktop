@@ -13,8 +13,10 @@ import com.clipevery.utils.TaskUtils.createFailureClipTaskResult
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-class CleanClipTaskExecutor(private val clipDao: ClipDao,
-                            private val configManager: ConfigManager): SingleTypeTaskExecutor {
+class CleanClipTaskExecutor(
+    private val clipDao: ClipDao,
+    private val configManager: ConfigManager,
+) : SingleTypeTaskExecutor {
 
     override val taskType: Int = TaskType.CLEAN_CLIP_TASK
 
@@ -39,7 +41,8 @@ class CleanClipTaskExecutor(private val clipDao: ClipDao,
                     retryHandler = { baseExtraInfo.executionHistories.size < 2 },
                     startTime = clipTask.modifyTime,
                     failMessage = e.message ?: "Failed to clean clip data",
-                    extraInfo = baseExtraInfo)
+                    extraInfo = baseExtraInfo,
+                )
             }
         } else {
             return SuccessClipTaskResult()

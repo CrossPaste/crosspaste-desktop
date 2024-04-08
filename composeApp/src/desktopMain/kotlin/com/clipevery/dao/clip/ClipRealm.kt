@@ -15,9 +15,10 @@ import io.realm.kotlin.types.RealmInstant
 import io.realm.kotlin.types.RealmObject
 import org.mongodb.kbson.ObjectId
 
-
-class ClipRealm(private val realm: Realm,
-                private val lazyTaskExecutor: Lazy<TaskExecutor>) : ClipDao {
+class ClipRealm(
+    private val realm: Realm,
+    private val lazyTaskExecutor: Lazy<TaskExecutor>,
+) : ClipDao {
 
     private val taskExecutor by lazy { lazyTaskExecutor.value }
 
@@ -33,10 +34,12 @@ class ClipRealm(private val realm: Realm,
     }
 
     override suspend fun markDeleteClipData(id: ObjectId) {
-        taskExecutor.submitTasks(realm.write {
-            val markDeleteClipDatas = query(ClipData::class, "id == $0", id).first().find()?.let { listOf(it) } ?: emptyList()
-            doMarkDeleteClipData(markDeleteClipDatas)
-        })
+        taskExecutor.submitTasks(
+            realm.write {
+                val markDeleteClipDatas = query(ClipData::class, "id == $0", id).first().find()?.let { listOf(it) } ?: emptyList()
+                doMarkDeleteClipData(markDeleteClipDatas)
+            },
+        )
     }
 
     private fun MutableRealm.doMarkDeleteClipData(markDeleteClipDatas: List<ClipData>): List<ObjectId> {
@@ -46,10 +49,19 @@ class ClipRealm(private val realm: Realm,
         }
     }
 
-    private fun MutableRealm.markDeleteSameMd5(newClipDataId: ObjectId, newClipDataMd5: String): List<ObjectId> {
+    private fun MutableRealm.markDeleteSameMd5(
+        newClipDataId: ObjectId,
+        newClipDataMd5: String,
+    ): List<ObjectId> {
         val tasks = mutableListOf<ObjectId>()
-        query(ClipData::class, "md5 == $0 AND createTime > $1 AND id != $2 AND clipState != $3",
-            newClipDataMd5, DateUtils.getPrevDay(), newClipDataId, ClipState.DELETED)
+        query(
+            ClipData::class,
+            "md5 == $0 AND createTime > $1 AND id != $2 AND clipState != $3",
+            newClipDataMd5,
+            DateUtils.getPrevDay(),
+            newClipDataId,
+            ClipState.DELETED,
+        )
             .find().let { deleteClipDatas ->
                 tasks.addAll(doMarkDeleteClipData(deleteClipDatas))
             }
@@ -81,10 +93,14 @@ class ClipRealm(private val realm: Realm,
         }
     }
 
-    override fun getClipData(appInstanceId: String?, limit: Int): RealmResults<ClipData> {
-        val query = appInstanceId?.let {
-            realm.query(ClipData::class, "appInstanceId == $0 AND clipState != $1", appInstanceId, ClipState.DELETED)
-        } ?: realm.query(ClipData::class, "clipState != $0", ClipState.DELETED)
+    override fun getClipData(
+        appInstanceId: String?,
+        limit: Int,
+    ): RealmResults<ClipData> {
+        val query =
+            appInstanceId?.let {
+                realm.query(ClipData::class, "appInstanceId == $0 AND clipState != $1", appInstanceId, ClipState.DELETED)
+            } ?: realm.query(ClipData::class, "clipState != $0", ClipState.DELETED)
         return query.sort("createTime", Sort.DESCENDING).limit(limit).find()
     }
 
@@ -92,12 +108,23 @@ class ClipRealm(private val realm: Realm,
         return realm.query(ClipData::class, "id == $0 AND clipState != $1", id, ClipState.DELETED).first().find()
     }
 
-    override fun getClipData(appInstanceId: String, clipId: Long): ClipData? {
-        return realm.query(ClipData::class, "clipId == $0 AND appInstanceId == $1 AND clipState != $2",
-            clipId, appInstanceId, ClipState.DELETED).first().find()
+    override fun getClipData(
+        appInstanceId: String,
+        clipId: Long,
+    ): ClipData? {
+        return realm.query(
+            ClipData::class,
+            "clipId == $0 AND appInstanceId == $1 AND clipState != $2",
+            clipId,
+            appInstanceId,
+            ClipState.DELETED,
+        ).first().find()
     }
 
-    override suspend fun releaseLocalClipData(id: ObjectId, clipPlugins: List<ClipPlugin>) {
+    override suspend fun releaseLocalClipData(
+        id: ObjectId,
+        clipPlugins: List<ClipPlugin>,
+    ) {
         realm.write {
             query(ClipData::class, "id == $0 AND clipState == $1", id, ClipState.LOADING).first().find()?.let { clipData ->
                 clipData.clipContent?.let { clipContent ->
@@ -114,9 +141,10 @@ class ClipRealm(private val realm: Realm,
                     }
 
                     // use plugin to process clipAppearItems
-                    var clipAppearItems = clipContent.clipAppearItems.mapNotNull { anyValue ->
-                        ClipContent.getClipItem(anyValue)
-                    }
+                    var clipAppearItems =
+                        clipContent.clipAppearItems.mapNotNull { anyValue ->
+                            ClipContent.getClipItem(anyValue)
+                        }
                     assert(clipAppearItems.isNotEmpty())
                     clipContent.clipAppearItems.clear()
                     for (clipPlugin in clipPlugins) {
@@ -148,8 +176,10 @@ class ClipRealm(private val realm: Realm,
         }
     }
 
-    override suspend fun releaseRemoteClipData(clipData: ClipData,
-                                               tryWriteClipboard: (ClipData, Boolean) -> Unit) {
+    override suspend fun releaseRemoteClipData(
+        clipData: ClipData,
+        tryWriteClipboard: (ClipData, Boolean) -> Unit,
+    ) {
         val tasks = mutableListOf<ObjectId>()
         val existFile = clipData.existFileResource()
 
@@ -174,8 +204,10 @@ class ClipRealm(private val realm: Realm,
         }
     }
 
-    override suspend fun releaseRemoteClipDataWithFile(id: ObjectId,
-                                                       tryWriteClipboard: (ClipData) -> Unit) {
+    override suspend fun releaseRemoteClipDataWithFile(
+        id: ObjectId,
+        tryWriteClipboard: (ClipData) -> Unit,
+    ) {
         val tasks = mutableListOf<ObjectId>()
         realm.write {
             query(ClipData::class, "id == $0", id).first().find()?.let { clipData ->
@@ -204,20 +236,34 @@ class ClipRealm(private val realm: Realm,
     override fun getClipDataLessThan(
         appInstanceId: String?,
         limit: Int,
-        createTime: RealmInstant
+        createTime: RealmInstant,
     ): RealmResults<ClipData> {
-        val query = appInstanceId?.let {
-            realm.query(ClipData::class, "appInstanceId == $0 AND createTime <= $1 AND clipState != $2",
-                appInstanceId, createTime, ClipState.DELETED)
-        } ?: realm.query(ClipData::class, "createTime <= $0 AND clipState != $1", createTime, ClipState.DELETED)
+        val query =
+            appInstanceId?.let {
+                realm.query(
+                    ClipData::class, "appInstanceId == $0 AND createTime <= $1 AND clipState != $2",
+                    appInstanceId, createTime, ClipState.DELETED,
+                )
+            } ?: realm.query(ClipData::class, "createTime <= $0 AND clipState != $1", createTime, ClipState.DELETED)
         return query.sort("createTime", Sort.DESCENDING).limit(limit).find()
     }
 
-    override suspend fun getMarkDeleteByCleanTime(cleanTime: RealmInstant, clipType: Int) {
-        val taskIds = realm.write {
-            doMarkDeleteClipData(query(ClipData::class, "createTime < $0 AND clipType == $1 AND clipState != $2",
-                cleanTime, clipType, ClipState.DELETED).find())
-        }
+    override suspend fun getMarkDeleteByCleanTime(
+        cleanTime: RealmInstant,
+        clipType: Int,
+    ) {
+        val taskIds =
+            realm.write {
+                doMarkDeleteClipData(
+                    query(
+                        ClipData::class,
+                        "createTime < $0 AND clipType == $1 AND clipState != $2",
+                        cleanTime,
+                        clipType,
+                        ClipState.DELETED,
+                    ).find(),
+                )
+            }
         taskExecutor.submitTasks(taskIds)
     }
 }

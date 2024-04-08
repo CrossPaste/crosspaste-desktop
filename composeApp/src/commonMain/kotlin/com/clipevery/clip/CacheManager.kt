@@ -7,5 +7,4 @@ import com.google.common.cache.LoadingCache
 interface CacheManager {
 
     val filesIndexCache: LoadingCache<PullFilesKey, FilesIndex>
-
 }

@@ -5,8 +5,9 @@ import io.ktor.http.*
 
 interface SendClipClientApi {
 
-    suspend fun sendClip(clipData: ClipData,
-                         targetAppInstanceId: String,
-                         toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult
-
+    suspend fun sendClip(
+        clipData: ClipData,
+        targetAppInstanceId: String,
+        toUrl: URLBuilder.(URLBuilder) -> Unit,
+    ): ClientApiResult
 }

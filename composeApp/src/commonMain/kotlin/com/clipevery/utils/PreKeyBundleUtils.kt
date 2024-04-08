@@ -37,8 +37,16 @@ fun decodePreKeyBundle(encoded: ByteArray): PreKeyBundle {
     dataStream.read(identityKeyBytes)
     val identityKey = IdentityKey(ECPublicKey(identityKeyBytes))
 
-    return PreKeyBundle(registrationId, deviceId, preKeyId, preKeyPublic, signedPreKeyId,
-        signedPreKeyPublic, signedPreKeySignatureBytes, identityKey)
+    return PreKeyBundle(
+        registrationId,
+        deviceId,
+        preKeyId,
+        preKeyPublic,
+        signedPreKeyId,
+        signedPreKeyPublic,
+        signedPreKeySignatureBytes,
+        identityKey,
+    )
 }
 
 fun encodePreKeyBundle(preKeyBundle: PreKeyBundle): ByteArray {

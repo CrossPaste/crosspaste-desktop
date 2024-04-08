@@ -13,30 +13,32 @@ import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
 import java.util.concurrent.TimeUnit
 
-class CacheManagerImpl(private val clipDao: ClipDao): CacheManager {
+class CacheManagerImpl(private val clipDao: ClipDao) : CacheManager {
 
-    override val filesIndexCache: LoadingCache<PullFilesKey, FilesIndex> = CacheBuilder.newBuilder()
-        .maximumSize(1000)
-        .expireAfterWrite(5, TimeUnit.MINUTES)
-        .build(
-            object : CacheLoader<PullFilesKey, FilesIndex>() {
-                override fun load(key: PullFilesKey): FilesIndex {
-                    val appInstanceId = key.appInstanceId
-                    val clipId = key.clipId
-                    clipDao.getClipData(appInstanceId, clipId)?.let { clipData ->
-                        val dateString = DateUtils.getYYYYMMDD(
-                            DateUtils.convertRealmInstantToLocalDateTime(clipData.createTime)
-                        )
-                        val filesIndexBuilder = FilesIndexBuilder(PullFileTaskExecutor.CHUNK_SIZE)
-                        val fileItems = clipData.getClipAppearItems().filter { it is ClipFiles }
-                        for (clipAppearItem in fileItems) {
-                            val clipFiles = clipAppearItem as ClipFiles
-                            DesktopPathProvider.resolve(appInstanceId, dateString, clipId, clipFiles, false, filesIndexBuilder)
+    override val filesIndexCache: LoadingCache<PullFilesKey, FilesIndex> =
+        CacheBuilder.newBuilder()
+            .maximumSize(1000)
+            .expireAfterWrite(5, TimeUnit.MINUTES)
+            .build(
+                object : CacheLoader<PullFilesKey, FilesIndex>() {
+                    override fun load(key: PullFilesKey): FilesIndex {
+                        val appInstanceId = key.appInstanceId
+                        val clipId = key.clipId
+                        clipDao.getClipData(appInstanceId, clipId)?.let { clipData ->
+                            val dateString =
+                                DateUtils.getYYYYMMDD(
+                                    DateUtils.convertRealmInstantToLocalDateTime(clipData.createTime),
+                                )
+                            val filesIndexBuilder = FilesIndexBuilder(PullFileTaskExecutor.CHUNK_SIZE)
+                            val fileItems = clipData.getClipAppearItems().filter { it is ClipFiles }
+                            for (clipAppearItem in fileItems) {
+                                val clipFiles = clipAppearItem as ClipFiles
+                                DesktopPathProvider.resolve(appInstanceId, dateString, clipId, clipFiles, false, filesIndexBuilder)
+                            }
+                            return filesIndexBuilder.build()
                         }
-                        return filesIndexBuilder.build()
+                        throw IllegalStateException("clip data not found: $appInstanceId, $clipId")
                     }
-                    throw IllegalStateException("clip data not found: $appInstanceId, $clipId")
-                }
-            }
-        )
+                },
+            )
 }

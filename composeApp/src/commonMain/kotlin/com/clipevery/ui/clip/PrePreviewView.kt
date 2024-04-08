@@ -41,56 +41,63 @@ fun PrePreviewView(clipData: ClipData) {
     val copywriter = current.koin.get<GlobalCopywriter>()
     Row {
         Column(
-            modifier = Modifier.width(340.dp)
-                .height(100.dp)
+            modifier =
+                Modifier.width(340.dp)
+                    .height(100.dp),
         ) {
             Row(
-                modifier = Modifier
-                    .width(340.dp)
-                    .height(150.dp)
-                    .background(MaterialTheme.colors.background)
-                    .shimmer(),
-                verticalAlignment = Alignment.CenterVertically
+                modifier =
+                    Modifier
+                        .width(340.dp)
+                        .height(150.dp)
+                        .background(MaterialTheme.colors.background)
+                        .shimmer(),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
-                    modifier = Modifier
-                        .size(100.dp)
-                        .padding(10.dp)
-                        .background(Color.Gray)
+                    modifier =
+                        Modifier
+                            .size(100.dp)
+                            .padding(10.dp)
+                            .background(Color.Gray),
                 )
 
                 Column(
                     modifier = Modifier.height(100.dp).width(199.dp).padding(10.dp),
-                    verticalArrangement = Arrangement.Center
+                    verticalArrangement = Arrangement.Center,
                 ) {
                     Box(
-                        modifier = Modifier
-                            .height(26.dp)
-                            .width(199.dp)
-                            .padding(bottom = 5.dp)
-                            .background(Color.Gray)
+                        modifier =
+                            Modifier
+                                .height(26.dp)
+                                .width(199.dp)
+                                .padding(bottom = 5.dp)
+                                .background(Color.Gray),
                     )
                     Box(
-                        modifier = Modifier
-                            .height(26.dp)
-                            .width(160.dp)
-                            .padding(vertical = 5.dp)
-                            .background(Color.Gray)
+                        modifier =
+                            Modifier
+                                .height(26.dp)
+                                .width(160.dp)
+                                .padding(vertical = 5.dp)
+                                .background(Color.Gray),
                     )
                     Box(
-                        modifier = Modifier
-                            .height(26.dp)
-                            .width(199.dp).padding(top = 6.dp)
-                            .background(Color.Gray)
+                        modifier =
+                            Modifier
+                                .height(26.dp)
+                                .width(199.dp).padding(top = 6.dp)
+                                .background(Color.Gray),
                     )
                 }
             }
         }
         Column(
-            modifier = Modifier.width(70.dp)
-                .height(100.dp)
-                .padding(start = 10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier =
+                Modifier.width(70.dp)
+                    .height(100.dp)
+                    .padding(start = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 val typeInfo = getTypeInfo(clipData)
@@ -99,17 +106,18 @@ fun PrePreviewView(clipData: ClipData) {
                     typeInfo.painter,
                     contentDescription = "Text",
                     modifier = Modifier.padding(3.dp).size(14.dp),
-                    tint = MaterialTheme.colors.onBackground
+                    tint = MaterialTheme.colors.onBackground,
                 )
                 Spacer(modifier = Modifier.size(3.dp))
                 Text(
                     text = copywriter.getText(typeInfo.text),
                     fontFamily = FontFamily.SansSerif,
-                    style = TextStyle(
-                        fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colors.onBackground,
-                        fontSize = 10.sp
-                    )
+                    style =
+                        TextStyle(
+                            fontWeight = FontWeight.Light,
+                            color = MaterialTheme.colors.onBackground,
+                            fontSize = 10.sp,
+                        ),
                 )
             }
         }

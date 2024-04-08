@@ -77,23 +77,28 @@ fun HtmlToImagePreviewView(clipData: ClipData) {
                                 val verticalScrollState = rememberScrollState()
 
                                 BoxWithConstraints(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .horizontalScroll(horizontalScrollState)
-                                        .verticalScroll(verticalScrollState)
-                                        .clickable {
-                                            if (Desktop.isDesktopSupported()) {
-                                                fileUtils.createTempFile(it.html.toByteArray(), fileUtils.createRandomFileName("html"))?.let { path ->
-                                                    val desktop = Desktop.getDesktop()
-                                                    desktop.browse(path.toFile().toURI())
+                                    modifier =
+                                        Modifier
+                                            .fillMaxSize()
+                                            .horizontalScroll(horizontalScrollState)
+                                            .verticalScroll(verticalScrollState)
+                                            .clickable {
+                                                if (Desktop.isDesktopSupported()) {
+                                                    fileUtils.createTempFile(
+                                                        it.html.toByteArray(),
+                                                        fileUtils.createRandomFileName("html"),
+                                                    )?.let {
+                                                            path ->
+                                                        val desktop = Desktop.getDesktop()
+                                                        desktop.browse(path.toFile().toURI())
+                                                    }
                                                 }
-                                            }
-                                        }
+                                            },
                                 ) {
                                     Image(
                                         painter = loadImageView.toPainterImage.toPainter(),
                                         contentDescription = "Html 2 Image",
-                                        modifier = Modifier.wrapContentSize()
+                                        modifier = Modifier.wrapContentSize(),
                                     )
                                 }
                             }
@@ -105,15 +110,16 @@ fun HtmlToImagePreviewView(clipData: ClipData) {
                                     maxLines = 4,
                                     softWrap = true,
                                     overflow = TextOverflow.Ellipsis,
-                                    style = TextStyle(
-                                        fontWeight = FontWeight.Normal,
-                                        color = MaterialTheme.colors.onBackground,
-                                        fontSize = 14.sp
-                                    )
+                                    style =
+                                        TextStyle(
+                                            fontWeight = FontWeight.Normal,
+                                            color = MaterialTheme.colors.onBackground,
+                                            fontSize = 14.sp,
+                                        ),
                                 )
                             }
                         }
-                    }
+                    },
                 )
             }
         }, {
@@ -122,17 +128,18 @@ fun HtmlToImagePreviewView(clipData: ClipData) {
                     html(),
                     contentDescription = "Html",
                     modifier = Modifier.padding(3.dp).size(14.dp),
-                    tint = MaterialTheme.colors.onBackground
+                    tint = MaterialTheme.colors.onBackground,
                 )
                 Spacer(modifier = Modifier.size(3.dp))
                 Text(
                     text = copywriter.getText("Html"),
                     fontFamily = FontFamily.SansSerif,
-                    style = TextStyle(
-                        fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colors.onBackground,
-                        fontSize = 10.sp
-                    )
+                    style =
+                        TextStyle(
+                            fontWeight = FontWeight.Light,
+                            color = MaterialTheme.colors.onBackground,
+                            fontSize = 10.sp,
+                        ),
                 )
             }
         })

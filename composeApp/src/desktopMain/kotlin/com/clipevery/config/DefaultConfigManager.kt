@@ -7,9 +7,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 
-class DefaultConfigManager(private val configFilePersist: OneFilePersist,
-                           deviceUtils: DeviceUtils,
-                           appEnv: AppEnv) : ConfigManager(configFilePersist, deviceUtils, appEnv) {
+class DefaultConfigManager(
+    private val configFilePersist: OneFilePersist,
+    deviceUtils: DeviceUtils,
+    appEnv: AppEnv,
+) : ConfigManager(configFilePersist, deviceUtils, appEnv) {
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 

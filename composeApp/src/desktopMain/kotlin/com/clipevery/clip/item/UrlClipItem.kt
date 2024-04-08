@@ -15,7 +15,7 @@ import java.net.URL
 
 @Serializable
 @SerialName("url")
-class UrlClipItem: RealmObject, ClipAppearItem, ClipUrl {
+class UrlClipItem : RealmObject, ClipAppearItem, ClipUrl {
 
     @PrimaryKey
     @Transient
@@ -36,14 +36,20 @@ class UrlClipItem: RealmObject, ClipAppearItem, ClipUrl {
         return url
     }
 
-    override fun update(data: Any, md5: String) {
+    override fun update(
+        data: Any,
+        md5: String,
+    ) {
         (data as? String)?.let { url ->
             this.url = url
             this.md5 = md5
         }
     }
 
-    override fun clear(realm: MutableRealm, clearResource: Boolean) {
+    override fun clear(
+        realm: MutableRealm,
+        clearResource: Boolean,
+    ) {
         realm.delete(this)
     }
 

@@ -18,33 +18,34 @@ import org.signal.libsignal.protocol.message.SignalMessage
 import org.signal.libsignal.protocol.state.SignalProtocolStore
 import java.nio.ByteBuffer
 
-val SignalServerDecryption: ApplicationPlugin<SignalConfig> = createApplicationPlugin(
-    "SignalDecryption",
-    ::SignalConfig
-) {
+val SignalServerDecryption: ApplicationPlugin<SignalConfig> =
+    createApplicationPlugin(
+        "SignalDecryption",
+        ::SignalConfig,
+    ) {
 
-    val signalProtocolStore: SignalProtocolStore = pluginConfig.signalProtocolStore
+        val signalProtocolStore: SignalProtocolStore = pluginConfig.signalProtocolStore
 
-    on(ReceiveRequestBytes) { call, body ->
-        val headers = call.request.headers
-        headers["appInstanceId"]?.let { appInstanceId ->
-            headers["signal"]?.let { signal ->
-                if (signal == "1") {
-                    call.request.path()
-                    return@on application.writer {
-                        val encryptedContent = body.readRemaining().readBytes()
-                        val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
-                        val signalMessage = SignalMessage(encryptedContent)
-                        val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
-                        val decrypt = sessionCipher.decrypt(signalMessage)
-                        channel.writeFully(ByteBuffer.wrap(decrypt))
-                    }.channel
+        on(ReceiveRequestBytes) { call, body ->
+            val headers = call.request.headers
+            headers["appInstanceId"]?.let { appInstanceId ->
+                headers["signal"]?.let { signal ->
+                    if (signal == "1") {
+                        call.request.path()
+                        return@on application.writer {
+                            val encryptedContent = body.readRemaining().readBytes()
+                            val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
+                            val signalMessage = SignalMessage(encryptedContent)
+                            val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
+                            val decrypt = sessionCipher.decrypt(signalMessage)
+                            channel.writeFully(ByteBuffer.wrap(decrypt))
+                        }.channel
+                    }
                 }
             }
+            return@on body
         }
-        return@on body
     }
-}
 
 @KtorDsl
 class SignalConfig {
@@ -62,8 +63,10 @@ object SignalClientEncryption : HttpClientPlugin<SignalConfig, SignalClientEncry
     }
 
     @OptIn(InternalAPI::class)
-    override fun install(plugin: SignalClientEncryption, scope: HttpClient) {
-
+    override fun install(
+        plugin: SignalClientEncryption,
+        scope: HttpClient,
+    ) {
         scope.sendPipeline.intercept(HttpSendPipeline.State) {
             context.headers["appInstanceId"]?.let { appInstanceId ->
                 context.headers["signal"]?.let { signal ->

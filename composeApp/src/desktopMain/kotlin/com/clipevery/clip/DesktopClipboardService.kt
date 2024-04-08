@@ -5,9 +5,11 @@ import com.clipevery.os.macos.MacosClipboardService
 import com.clipevery.os.windows.WindowsClipboardService
 import com.clipevery.platform.currentPlatform
 
-fun getDesktopClipboardService(clipDao: ClipDao,
-                               clipConsumer: TransferableConsumer,
-                               clipProducer: TransferableProducer): ClipboardService {
+fun getDesktopClipboardService(
+    clipDao: ClipDao,
+    clipConsumer: TransferableConsumer,
+    clipProducer: TransferableProducer,
+): ClipboardService {
     val currentPlatform = currentPlatform()
     return if (currentPlatform.isMacos()) {
         MacosClipboardService(clipDao, clipConsumer, clipProducer)

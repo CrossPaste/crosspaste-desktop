@@ -52,23 +52,30 @@ fun TokenView() {
     val copywriter = current.koin.get<GlobalCopywriter>()
     val appUI = current.koin.get<AppUI>()
 
-    val offsetY = animateIntOffsetAsState(
-        targetValue = if (appUI.showToken) IntOffset(
-            with(density) { (0.dp).roundToPx() },
-            with(density) { (50.dp).roundToPx() },
-        ) else IntOffset(
-            with(density) { (0.dp).roundToPx() },
-            with(density) { ((-100).dp).roundToPx() },
-        ),
-        animationSpec = tween(durationMillis = 500)
-    )
+    val offsetY =
+        animateIntOffsetAsState(
+            targetValue =
+                if (appUI.showToken) {
+                    IntOffset(
+                        with(density) { (0.dp).roundToPx() },
+                        with(density) { (50.dp).roundToPx() },
+                    )
+                } else {
+                    IntOffset(
+                        with(density) { (0.dp).roundToPx() },
+                        with(density) { ((-100).dp).roundToPx() },
+                    )
+                },
+            animationSpec = tween(durationMillis = 500),
+        )
 
     val alpha by animateFloatAsState(
         targetValue = if (appUI.showToken) 1f else 0f,
-        animationSpec = tween(
-            durationMillis = 500,
-            easing = LinearOutSlowInEasing
-        )
+        animationSpec =
+            tween(
+                durationMillis = 500,
+                easing = LinearOutSlowInEasing,
+            ),
     )
 
     LaunchedEffect(appUI.showToken) {
@@ -84,23 +91,29 @@ fun TokenView() {
     Popup(
         alignment = Alignment.TopCenter,
         offset = offsetY.value,
-        properties = PopupProperties(clippingEnabled = false)
+        properties = PopupProperties(clippingEnabled = false),
     ) {
-        Box(modifier = Modifier
-            .alpha(alpha)
-            .wrapContentSize()
-            .background(Color.Transparent)
-            .shadow(15.dp)) {
-
-            Column(modifier = Modifier
-                .wrapContentSize()
-                .clip(RoundedCornerShape(5.dp))
-                .align(Alignment.Center)
-                .background(MaterialTheme.colors.surface)) {
+        Box(
+            modifier =
+                Modifier
+                    .alpha(alpha)
+                    .wrapContentSize()
+                    .background(Color.Transparent)
+                    .shadow(15.dp),
+        ) {
+            Column(
+                modifier =
+                    Modifier
+                        .wrapContentSize()
+                        .clip(RoundedCornerShape(5.dp))
+                        .align(Alignment.Center)
+                        .background(MaterialTheme.colors.surface),
+            ) {
                 Box(
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                        .padding(top = 8.dp)
-                        .width(320.dp)
+                    modifier =
+                        Modifier.align(Alignment.CenterHorizontally)
+                            .padding(top = 8.dp)
+                            .width(320.dp),
                 ) {
                     Text(
                         modifier = Modifier.align(Alignment.Center),
@@ -108,23 +121,31 @@ fun TokenView() {
                         color = MaterialTheme.colors.onBackground,
                         fontSize = 25.sp,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = customFontFamily
+                        fontFamily = customFontFamily,
                     )
                     IconButton(
                         onClick = { appUI.showToken = false },
-                        modifier = Modifier.align(Alignment.TopEnd)
-                            .offset(y = (-8).dp)
-                            .padding(0.dp)
-                            .size(16.dp)
+                        modifier =
+                            Modifier.align(Alignment.TopEnd)
+                                .offset(y = (-8).dp)
+                                .padding(0.dp)
+                                .size(16.dp),
                     ) {
-                        Icon(Icons.Filled.Close, contentDescription = "Close", modifier = Modifier
-                            .size(16.dp)
-                            .padding(0.dp)
+                        Icon(
+                            Icons.Filled.Close,
+                            contentDescription = "Close",
+                            modifier =
+                                Modifier
+                                    .size(16.dp)
+                                    .padding(0.dp),
                         )
                     }
                 }
-                Row(modifier = Modifier.align(Alignment.CenterHorizontally)
-                    .padding(12.dp)) {
+                Row(
+                    modifier =
+                        Modifier.align(Alignment.CenterHorizontally)
+                            .padding(12.dp),
+                ) {
                     OTPCodeBox(appUI)
                 }
             }
@@ -138,17 +159,18 @@ fun OTPCodeBox(appUI: AppUI) {
         appUI.token.forEach { char ->
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .background(MaterialTheme.colors.background, RoundedCornerShape(4.dp))
-                    .border(1.dp, MaterialTheme.colors.primary, RoundedCornerShape(4.dp))
-                    .padding(vertical = 8.dp, horizontal = 12.dp)
+                modifier =
+                    Modifier
+                        .background(MaterialTheme.colors.background, RoundedCornerShape(4.dp))
+                        .border(1.dp, MaterialTheme.colors.primary, RoundedCornerShape(4.dp))
+                        .padding(vertical = 8.dp, horizontal = 12.dp),
             ) {
                 Text(
                     text = char.toString(),
                     color = MaterialTheme.colors.primary,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace
+                    fontFamily = FontFamily.Monospace,
                 )
             }
         }

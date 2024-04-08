@@ -30,10 +30,11 @@ fun createThumbnail(path: Path) {
     val canvas = surface.canvas
 
     // 使用原始图片的宽高比来计算缩放比例
-    val scale = minOf(
-        thumbnailWidth.toFloat() / originalImage.width,
-        thumbnailHeight.toFloat() / originalImage.height
-    )
+    val scale =
+        minOf(
+            thumbnailWidth.toFloat() / originalImage.width,
+            thumbnailHeight.toFloat() / originalImage.height,
+        )
 
     // 计算绘制的起点，以便图像居中
     val dx = (thumbnailWidth - originalImage.width * scale) / 2
@@ -44,7 +45,7 @@ fun createThumbnail(path: Path) {
         originalImage,
         org.jetbrains.skia.Rect.makeWH(originalImage.width.toFloat(), originalImage.height.toFloat()),
         org.jetbrains.skia.Rect.makeXYWH(dx, dy, originalImage.width * scale, originalImage.height * scale),
-        null
+        null,
     )
 
     val thumbnailPath = getThumbnailPath(path)

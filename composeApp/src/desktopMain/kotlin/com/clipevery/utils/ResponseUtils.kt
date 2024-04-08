@@ -10,31 +10,45 @@ import io.ktor.server.response.*
 import io.ktor.utils.io.*
 import kotlinx.serialization.Serializable
 
-
 suspend inline fun successResponse(call: ApplicationCall) {
     call.respond(status = HttpStatusCode.OK, message = "")
 }
 
-suspend inline fun <reified T : Any> successResponse(call: ApplicationCall, message: T) {
+suspend inline fun <reified T : Any> successResponse(
+    call: ApplicationCall,
+    message: T,
+) {
     call.respond(status = HttpStatusCode.OK, message = message)
 }
 
-suspend inline fun successResponse(call: ApplicationCall, noinline producer: suspend ByteWriteChannel.() -> Unit) {
+suspend inline fun successResponse(
+    call: ApplicationCall,
+    noinline producer: suspend ByteWriteChannel.() -> Unit,
+) {
     call.respondBytesWriter(contentType = OctetStream, status = HttpStatusCode.OK, producer = producer)
 }
 
-suspend inline fun failResponse(call: ApplicationCall, message: FailResponse, status: HttpStatusCode = HttpStatusCode.InternalServerError) {
+suspend inline fun failResponse(
+    call: ApplicationCall,
+    message: FailResponse,
+    status: HttpStatusCode = HttpStatusCode.InternalServerError,
+) {
     call.respond(status = status, message = message)
 }
 
-suspend inline fun failResponse(call: ApplicationCall, errorCode: ErrorCode, message: String? = null) {
+suspend inline fun failResponse(
+    call: ApplicationCall,
+    errorCode: ErrorCode,
+    message: String? = null,
+) {
     val code = errorCode.code
     val type = errorCode.type
-    val status = when (type) {
-        ErrorType.EXTERNAL_ERROR -> HttpStatusCode.BadRequest
-        ErrorType.INTERNAL_ERROR -> HttpStatusCode.InternalServerError
-        ErrorType.USER_ERROR -> HttpStatusCode.UnprocessableEntity
-    }
+    val status =
+        when (type) {
+            ErrorType.EXTERNAL_ERROR -> HttpStatusCode.BadRequest
+            ErrorType.INTERNAL_ERROR -> HttpStatusCode.InternalServerError
+            ErrorType.USER_ERROR -> HttpStatusCode.UnprocessableEntity
+        }
     val failMessage = FailResponse(code, message ?: errorCode.name)
     failResponse(call, failMessage, status)
 }
@@ -48,8 +62,10 @@ suspend inline fun getAppInstanceId(call: ApplicationCall): String? {
 }
 
 @Serializable
-data class FailResponse(val errorCode: Int,
-                        val message: String = "") {
+data class FailResponse(
+    val errorCode: Int,
+    val message: String = "",
+) {
 
     override fun toString(): String {
         return "FailResponse(errorCode=$errorCode, message='$message')"

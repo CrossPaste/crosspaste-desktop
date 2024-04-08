@@ -11,19 +11,26 @@ repositories {
 }
 
 plugins {
-    alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.jetbrainsCompose)
+    alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.ktlint)
     alias(libs.plugins.realmKotlin)
     alias(libs.plugins.download)
 }
 
+ktlint {
+    verbose = true
+    android = false
+    ignoreFailures = false
+}
+
 kotlin {
     jvm("desktop")
-    
+
     sourceSets {
         val desktopMain by getting
-        
+
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.compose.shimmer)
@@ -74,7 +81,6 @@ kotlin {
     }
 }
 
-
 compose.desktop {
     application {
 
@@ -124,11 +130,14 @@ compose.desktop {
 
                     when (result) {
                         "x86_64" -> getChromeDriver("mac-x64", properties, appResourcesRootDir.get().dir("macos-x64"))
-                        "arm64" -> getChromeDriver(
-                            "mac-arm64",
-                            properties,
-                            appResourcesRootDir.get().dir("macos-arm64")
-                        )
+                        "arm64" ->
+                            getChromeDriver(
+                                "mac-arm64",
+                                properties,
+                                appResourcesRootDir
+                                    .get()
+                                    .dir("macos-arm64"),
+                            )
                     }
                 }
 
@@ -159,7 +168,11 @@ compose.desktop {
     }
 }
 
-fun getChromeDriver(driverOsArch: String, properties: Properties, resourceDir: Directory) {
+fun getChromeDriver(
+    driverOsArch: String,
+    properties: Properties,
+    resourceDir: Directory,
+) {
     val chromeDriver = "chromedriver-$driverOsArch"
     val chromeHeadlessShell = "chrome-headless-shell-$driverOsArch"
 
@@ -167,7 +180,11 @@ fun getChromeDriver(driverOsArch: String, properties: Properties, resourceDir: D
     download(chromeHeadlessShell, properties, resourceDir)
 }
 
-fun download(name: String, properties: Properties, resourceDir: Directory) {
+fun download(
+    name: String,
+    properties: Properties,
+    resourceDir: Directory,
+) {
     if (resourceDir.dir(name).asFileTree.isEmpty) {
         val chromeHeadlessShellUrl = properties.getProperty(name)!!
         download.run {

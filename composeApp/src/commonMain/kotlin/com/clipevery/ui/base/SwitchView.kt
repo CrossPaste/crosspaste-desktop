@@ -14,24 +14,27 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun CustomSwitch(checked: Boolean,
-                 onCheckedChange: (Boolean) -> Unit,
-                 modifier: Modifier = Modifier,
-                 checkedThumbColor: Color = MaterialTheme.colors.primary,
-                 uncheckedThumbColor: Color = MaterialTheme.colors.background) {
-
+fun CustomSwitch(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    checkedThumbColor: Color = MaterialTheme.colors.primary,
+    uncheckedThumbColor: Color = MaterialTheme.colors.background,
+) {
     val trackColor = if (checked) checkedThumbColor else Color(0xFFAFCBE1)
 
-    Canvas(modifier = modifier
-        .onPointerEvent(PointerEventType.Press) {
-            onCheckedChange(!checked)
-        }
+    Canvas(
+        modifier =
+            modifier
+                .onPointerEvent(PointerEventType.Press) {
+                    onCheckedChange(!checked)
+                },
     ) {
         // Draw the track
         drawRoundRect(
             color = trackColor,
             size = size,
-            cornerRadius = CornerRadius(x = size.height / 2, y = size.height / 2)
+            cornerRadius = CornerRadius(x = size.height / 2, y = size.height / 2),
         )
 
         // Calculate the knob position
@@ -41,7 +44,7 @@ fun CustomSwitch(checked: Boolean,
         drawCircle(
             color = uncheckedThumbColor,
             radius = size.height / 2 - 2.dp.toPx(),
-            center = Offset(knobOffset + size.height / 2, size.height / 2)
+            center = Offset(knobOffset + size.height / 2, size.height / 2),
         )
     }
 }

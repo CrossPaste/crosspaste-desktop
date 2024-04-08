@@ -11,7 +11,7 @@ import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.message.SignalMessage
 import org.signal.libsignal.protocol.state.PreKeyBundle
 
-class DesktopSyncClientApi(private val clipClient: ClipClient): SyncClientApi {
+class DesktopSyncClientApi(private val clipClient: ClipClient) : SyncClientApi {
 
     private val logger = KotlinLogging.logger {}
 
@@ -28,14 +28,16 @@ class DesktopSyncClientApi(private val clipClient: ClipClient): SyncClientApi {
         return null
     }
 
-    override suspend fun exchangePreKey(sessionCipher: SessionCipher,
-                                        toUrl: URLBuilder.(URLBuilder) -> Unit): Boolean {
+    override suspend fun exchangePreKey(
+        sessionCipher: SessionCipher,
+        toUrl: URLBuilder.(URLBuilder) -> Unit,
+    ): Boolean {
         try {
             val ciphertextMessage = sessionCipher.encrypt("exchange".toByteArray(Charsets.UTF_8))
 
             val dataContent = DataContent(data = ciphertextMessage.serialize())
 
-            val response = clipClient.post(dataContent, typeInfo<DataContent>() , urlBuilder = toUrl)
+            val response = clipClient.post(dataContent, typeInfo<DataContent>(), urlBuilder = toUrl)
             if (response.status.value != 200) {
                 return false
             }

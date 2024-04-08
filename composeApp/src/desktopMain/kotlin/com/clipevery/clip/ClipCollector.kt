@@ -20,7 +20,8 @@ class ClipCollector(
     itemCount: Int,
     private val appInfo: AppInfo,
     private val clipDao: ClipDao,
-    private val clipPlugins: List<ClipPlugin>) {
+    private val clipPlugins: List<ClipPlugin>,
+) {
 
     private val logger = KotlinLogging.logger {}
 
@@ -32,19 +33,33 @@ class ClipCollector(
 
     private var existError = false
 
-    fun needPreCollectionItem(itemIndex: Int, kclass: KClass<out ClipItemService>): Boolean {
+    fun needPreCollectionItem(
+        itemIndex: Int,
+        kclass: KClass<out ClipItemService>,
+    ): Boolean {
         return !preCollectors[itemIndex].contains(kclass)
     }
 
-    fun needUpdateCollectItem(itemIndex: Int, kclass: KClass<out ClipItemService>): Boolean {
+    fun needUpdateCollectItem(
+        itemIndex: Int,
+        kclass: KClass<out ClipItemService>,
+    ): Boolean {
         return !updateCollectors[itemIndex].contains(kclass)
     }
 
-    fun preCollectItem(itemIndex: Int, kclass: KClass<out ClipItemService>, clipItem: ClipAppearItem) {
+    fun preCollectItem(
+        itemIndex: Int,
+        kclass: KClass<out ClipItemService>,
+        clipItem: ClipAppearItem,
+    ) {
         preCollectors[itemIndex][kclass] = clipItem
     }
 
-    fun updateCollectItem(itemIndex: Int, kclass: KClass<out ClipItemService>, update: (ClipAppearItem, MutableRealm) -> Unit) {
+    fun updateCollectItem(
+        itemIndex: Int,
+        kclass: KClass<out ClipItemService>,
+        update: (ClipAppearItem, MutableRealm) -> Unit,
+    ) {
         preCollectors[itemIndex][kclass]?.let {
             updateCollectors[itemIndex].add(kclass)
             val updateClipItem: (MutableRealm) -> Unit = { realm ->
@@ -54,33 +69,42 @@ class ClipCollector(
         }
     }
 
-    fun collectError(clipId: Long, itemIndex: Int, error: Exception) {
+    fun collectError(
+        clipId: Long,
+        itemIndex: Int,
+        error: Exception,
+    ) {
         logger.error(error) { "Failed to collect item $itemIndex of clip $clipId" }
         updateErrors[itemIndex] = error
         existError = true
     }
 
-    suspend fun createPreClipData(clipId: Long, isRemote: Boolean): ObjectId? {
+    suspend fun createPreClipData(
+        clipId: Long,
+        isRemote: Boolean,
+    ): ObjectId? {
         val collector = preCollectors.filter { it.isNotEmpty() }
         if (collector.isEmpty()) {
             return null
         }
         val clipAppearItems: List<ClipAppearItem> = preCollectors.flatMap { it.values }
 
-        val clipContent = ClipContent().apply {
-            this.clipAppearItems = clipAppearItems.map { RealmAny.create(it as RealmObject) }.toRealmList()
-        }
+        val clipContent =
+            ClipContent().apply {
+                this.clipAppearItems = clipAppearItems.map { RealmAny.create(it as RealmObject) }.toRealmList()
+            }
 
-        val clipData = ClipData().apply {
-            this.clipId = clipId
-            this.clipContent = clipContent
-            this.clipType =  ClipType.INVALID
-            this.md5 = ""
-            this.appInstanceId = appInfo.appInstanceId
-            this.createTime = RealmInstant.now()
-            this.clipState = ClipState.LOADING
-            this.isRemote = isRemote
-        }
+        val clipData =
+            ClipData().apply {
+                this.clipId = clipId
+                this.clipContent = clipContent
+                this.clipType = ClipType.INVALID
+                this.md5 = ""
+                this.appInstanceId = appInfo.appInstanceId
+                this.createTime = RealmInstant.now()
+                this.clipState = ClipState.LOADING
+                this.isRemote = isRemote
+            }
         return clipDao.createClipData(clipData)
     }
 

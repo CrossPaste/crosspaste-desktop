@@ -7,11 +7,13 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 @Serializable
-data class EndpointInfo(val deviceId: String,
-                        val deviceName: String,
-                        val platform: Platform,
-                        val hostInfoList: List<HostInfo>,
-                        val port: Int) {
+data class EndpointInfo(
+    val deviceId: String,
+    val deviceName: String,
+    val platform: Platform,
+    val hostInfoList: List<HostInfo>,
+    val port: Int,
+) {
     override fun toString(): String {
         return Json.encodeToString(this)
     }

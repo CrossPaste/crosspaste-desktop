@@ -3,7 +3,8 @@ package com.clipevery.app
 enum class AppEnv {
     PRODUCTION,
     DEVELOPMENT,
-    TEST;
+    TEST,
+    ;
 
     companion object {
         fun getAppEnv(): AppEnv {

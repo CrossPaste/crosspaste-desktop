@@ -13,17 +13,16 @@ interface Copywriter {
     fun getAbridge(): String
 }
 
-interface GlobalCopywriter: Copywriter {
+interface GlobalCopywriter : Copywriter {
 
     fun switchLanguage(language: String)
 
     fun getAllLanguages(): List<Language>
-
 }
 
 data class Language(val abridge: String, val name: String)
 
-class PreviewGlobalCopywriter: GlobalCopywriter {
+class PreviewGlobalCopywriter : GlobalCopywriter {
 
     override fun switchLanguage(language: String) {
         println("switchLanguage: $language")

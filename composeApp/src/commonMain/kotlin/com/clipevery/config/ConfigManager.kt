@@ -7,18 +7,21 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-abstract class ConfigManager(private val configFilePersist: OneFilePersist,
-                             deviceUtils: DeviceUtils,
-                             private val appEnv: AppEnv) {
+abstract class ConfigManager(
+    private val configFilePersist: OneFilePersist,
+    deviceUtils: DeviceUtils,
+    private val appEnv: AppEnv,
+) {
 
     var config: AppConfig
 
     init {
-        config = try {
-            loadConfig() ?: AppConfig(appEnv, deviceUtils.createAppInstanceId())
-        } catch (e: Exception) {
-            AppConfig(appEnv, deviceUtils.createAppInstanceId())
-        }
+        config =
+            try {
+                loadConfig() ?: AppConfig(appEnv, deviceUtils.createAppInstanceId())
+            } catch (e: Exception) {
+                AppConfig(appEnv, deviceUtils.createAppInstanceId())
+            }
     }
 
     private fun loadConfig(): AppConfig? {

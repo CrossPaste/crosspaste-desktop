@@ -6,7 +6,7 @@ import androidx.compose.runtime.setValue
 import com.clipevery.config.ConfigManager
 import com.jthemedetecor.OsThemeDetector
 
-class DesktopThemeDetector(private val configManager: ConfigManager): ThemeDetector {
+class DesktopThemeDetector(private val configManager: ConfigManager) : ThemeDetector {
 
     private val detector = OsThemeDetector.getDetector()
 
@@ -34,7 +34,10 @@ class DesktopThemeDetector(private val configManager: ConfigManager): ThemeDetec
         return _isUserInDark
     }
 
-    override fun setThemeConfig(isFollowSystem: Boolean, isUserInDark: Boolean) {
+    override fun setThemeConfig(
+        isFollowSystem: Boolean,
+        isUserInDark: Boolean,
+    ) {
         _isFollowSystem = isFollowSystem
         _isUserInDark = isUserInDark
         configManager.updateConfig { it.copy(isFollowSystemTheme = isFollowSystem, isDarkTheme = isUserInDark) }

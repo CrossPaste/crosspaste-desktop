@@ -48,7 +48,6 @@ import compose.icons.TablerIcons
 import compose.icons.tablericons.Scan
 import kotlinx.coroutines.withContext
 
-
 val qrSize: DpSize = DpSize(275.dp, 275.dp)
 
 @Composable
@@ -63,7 +62,7 @@ fun bindingQRCode() {
     val width = with(density) { qrSize.width.roundToPx() }
     val height = with(density) { qrSize.height.roundToPx() }
 
-    var qrImage: ImageBitmap? by remember { mutableStateOf(null)}
+    var qrImage: ImageBitmap? by remember { mutableStateOf(null) }
 
     LaunchedEffect(Unit) {
         appUI.startRefreshToken()
@@ -71,9 +70,10 @@ fun bindingQRCode() {
 
     LaunchedEffect(appUI.token) {
         // maybe slow (get host), we use ioDispatcher to avoid blocking the UI
-        qrImage = withContext(ioDispatcher) {
-            qrCodeGenerator.generateQRCode(width, height, appUI.token)
-        }
+        qrImage =
+            withContext(ioDispatcher) {
+                qrCodeGenerator.generateQRCode(width, height, appUI.token)
+            }
     }
 
     DisposableEffect(Unit) {
@@ -85,35 +85,41 @@ fun bindingQRCode() {
     Column(
         modifier = Modifier.fillMaxSize().padding(10.dp),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // This Box will be the 2:1 rectangle with the QR code and close button
         Box(
-            modifier = Modifier
-                .width(600.dp)
-                .height(600.dp)
-                .padding(10.dp),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .width(600.dp)
+                    .height(600.dp)
+                    .padding(10.dp),
+            contentAlignment = Alignment.Center,
         ) {
-            Column(modifier = Modifier.wrapContentSize(Alignment.Center),
-                horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                modifier = Modifier.wrapContentSize(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 Row(
-                    modifier = Modifier.wrapContentWidth()
-                        .padding(bottom = 30.dp),
+                    modifier =
+                        Modifier.wrapContentWidth()
+                            .padding(bottom = 30.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
+                    horizontalArrangement = Arrangement.Center,
                 ) {
-                    Text(copywriter.getText("Please_scan_the_binding_device"),
+                    Text(
+                        copywriter.getText("Please_scan_the_binding_device"),
                         modifier = Modifier.wrapContentWidth(),
                         fontSize = 24.sp,
                         softWrap = false,
-                        color = Color(red = 84, green = 135, blue = 237)
+                        color = Color(red = 84, green = 135, blue = 237),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Icon(imageVector = TablerIcons.Scan,
+                    Icon(
+                        imageVector = TablerIcons.Scan,
                         contentDescription = "Scan",
                         modifier = Modifier.size(28.dp),
-                        tint = Color(red = 84, green = 135, blue = 237)
+                        tint = Color(red = 84, green = 135, blue = 237),
                     )
                 }
                 qrImage?.let {
@@ -123,25 +129,28 @@ fun bindingQRCode() {
                         contentDescription = "QR Code",
                     )
                 } ?: run {
-
                     val infiniteTransition = rememberInfiniteTransition()
                     val rotation by infiniteTransition.animateFloat(
                         initialValue = 0f,
                         targetValue = 360f,
-                        animationSpec = infiniteRepeatable(
-                            animation = tween(durationMillis = 1000, easing = LinearEasing),
-                            repeatMode = RepeatMode.Restart
-                        )
+                        animationSpec =
+                            infiniteRepeatable(
+                                animation = tween(durationMillis = 1000, easing = LinearEasing),
+                                repeatMode = RepeatMode.Restart,
+                            ),
                     )
 
-                    Box(modifier = Modifier.size(qrSize.width),
-                        contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier.size(qrSize.width),
+                        contentAlignment = Alignment.Center,
+                    ) {
                         Icon(
-                            modifier = Modifier.size(100.dp)
-                                .graphicsLayer(rotationZ = rotation),
+                            modifier =
+                                Modifier.size(100.dp)
+                                    .graphicsLayer(rotationZ = rotation),
                             painter = autoRenew(),
                             contentDescription = "QR Code",
-                            tint = MaterialTheme.colors.onBackground
+                            tint = MaterialTheme.colors.onBackground,
                         )
                     }
                 }

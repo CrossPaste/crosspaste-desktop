@@ -21,37 +21,42 @@ import com.clipevery.ui.base.MenuItem
 import com.clipevery.ui.base.getMenWidth
 
 @Composable
-fun CleanTimeMenuView(selectIndex: Int, closeMenu: (Int) -> Unit) {
+fun CleanTimeMenuView(
+    selectIndex: Int,
+    closeMenu: (Int) -> Unit,
+) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
 
     Box(
-        modifier = Modifier
-            .wrapContentSize()
-            .background(Color.Transparent)
-            .shadow(15.dp)
+        modifier =
+            Modifier
+                .wrapContentSize()
+                .background(Color.Transparent)
+                .shadow(15.dp),
     ) {
-
-        val cleanTimeMenuTexts = CleanTime.entries.map { cleanTime ->
-            "${cleanTime.quantity} ${copywriter.getText(cleanTime.unit)}"
-        }.toTypedArray()
+        val cleanTimeMenuTexts =
+            CleanTime.entries.map { cleanTime ->
+                "${cleanTime.quantity} ${copywriter.getText(cleanTime.unit)}"
+            }.toTypedArray()
 
         val maxWidth = getMenWidth(cleanTimeMenuTexts)
 
         Column(
-            modifier = Modifier
-                .width(maxWidth + 20.dp)
-                .wrapContentHeight()
-                .clip(RoundedCornerShape(5.dp))
-                .background(MaterialTheme.colors.surface)
+            modifier =
+                Modifier
+                    .width(maxWidth + 20.dp)
+                    .wrapContentHeight()
+                    .clip(RoundedCornerShape(5.dp))
+                    .background(MaterialTheme.colors.surface),
         ) {
-
             cleanTimeMenuTexts.forEachIndexed { index, text ->
-                val menuText = if (index == selectIndex) {
-                    "$text ✔️"
-                } else {
-                    text
-                }
+                val menuText =
+                    if (index == selectIndex) {
+                        "$text ✔️"
+                    } else {
+                        text
+                    }
                 MenuItem(menuText) {
                     closeMenu(index)
                 }

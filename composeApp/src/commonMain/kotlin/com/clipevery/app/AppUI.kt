@@ -34,13 +34,14 @@ class AppUI(val width: Dp, val height: Dp) {
 
     @Synchronized
     fun startRefreshToken() {
-        if (startRefreshNumber ++ == 0) {
-            refreshTokenJob = scope.launch(CoroutineName("RefreshToken")) {
-                while (isActive) {
-                    refreshToken()
-                    delay(30000)
+        if (startRefreshNumber++ == 0) {
+            refreshTokenJob =
+                scope.launch(CoroutineName("RefreshToken")) {
+                    while (isActive) {
+                        refreshToken()
+                        delay(30000)
+                    }
                 }
-            }
         }
     }
 
@@ -51,5 +52,4 @@ class AppUI(val width: Dp, val height: Dp) {
             refreshTokenJob?.cancel()
         }
     }
-
 }

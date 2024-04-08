@@ -16,8 +16,8 @@ data class AppConfig(
     val isEncryptSync: Boolean = false,
     val isAutoCleaning: Boolean = true,
     val imageCleanTimeIndex: Int = 6,
-    val fileCleanTimeIndex:Int = 6,
-    val isAllowDiscovery: Boolean = true
+    val fileCleanTimeIndex: Int = 6,
+    val isAllowDiscovery: Boolean = true,
 ) {
 
     constructor(other: AppConfig, appEnv: AppEnv) : this(
@@ -27,6 +27,6 @@ data class AppConfig(
         isFollowSystemTheme = other.isFollowSystemTheme,
         isDarkTheme = other.isDarkTheme,
         port = other.port,
-        isEncryptSync = other.isEncryptSync
+        isEncryptSync = other.isEncryptSync,
     )
 }

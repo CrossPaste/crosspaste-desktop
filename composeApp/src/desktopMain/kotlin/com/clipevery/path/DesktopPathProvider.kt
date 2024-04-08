@@ -9,7 +9,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
-object DesktopPathProvider: PathProvider {
+object DesktopPathProvider : PathProvider {
 
     private val pathProvider = getPathProvider()
 
@@ -43,7 +43,7 @@ object DesktopPathProvider: PathProvider {
     }
 }
 
-class DevelopmentPathProvider:PathProvider {
+class DevelopmentPathProvider : PathProvider {
 
     private val composeAppDir = System.getProperty("user.dir")
 
@@ -80,10 +80,9 @@ class DevelopmentPathProvider:PathProvider {
             return Paths.get(composeAppDir).resolve(".user")
         }
     }
-
 }
 
-class WindowsPathProvider: PathProvider {
+class WindowsPathProvider : PathProvider {
 
     private val userHomePath = System.getProperty("user.home")
 
@@ -104,8 +103,7 @@ class WindowsPathProvider: PathProvider {
     }
 }
 
-
-class MacosPathProvider: PathProvider {
+class MacosPathProvider : PathProvider {
 
     /**
      * .
@@ -159,7 +157,7 @@ class MacosPathProvider: PathProvider {
     }
 }
 
-class LinuxPathProvider: PathProvider {
+class LinuxPathProvider : PathProvider {
     override val clipAppPath: Path
         get() = TODO("Not yet implemented")
     override val clipUserPath: Path

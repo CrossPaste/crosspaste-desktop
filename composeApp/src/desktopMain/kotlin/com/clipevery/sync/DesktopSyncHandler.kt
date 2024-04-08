@@ -14,11 +14,13 @@ import org.signal.libsignal.protocol.SignalProtocolAddress
 import org.signal.libsignal.protocol.state.SignalProtocolStore
 import java.util.concurrent.atomic.AtomicReference
 
-class DesktopSyncHandler(override var syncRuntimeInfo: SyncRuntimeInfo,
-                         private val telnetUtils: TelnetUtils,
-                         private val syncClientApi: SyncClientApi,
-                         private val signalProtocolStore: SignalProtocolStore,
-                         private val syncRuntimeInfoDao: SyncRuntimeInfoDao): SyncHandler {
+class DesktopSyncHandler(
+    override var syncRuntimeInfo: SyncRuntimeInfo,
+    private val telnetUtils: TelnetUtils,
+    private val syncClientApi: SyncClientApi,
+    private val signalProtocolStore: SignalProtocolStore,
+    private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
+) : SyncHandler {
 
     private val logger = KotlinLogging.logger {}
 
@@ -44,19 +46,21 @@ class DesktopSyncHandler(override var syncRuntimeInfo: SyncRuntimeInfo,
                 break
             } else {
                 when {
-                    force && resolveState.compareAndSet(null, true) -> try {
-                        doResolveSync(true)
-                        break
-                    } finally {
-                        resolveState.set(null)
-                    }
+                    force && resolveState.compareAndSet(null, true) ->
+                        try {
+                            doResolveSync(true)
+                            break
+                        } finally {
+                            resolveState.set(null)
+                        }
 
-                    !force && resolveState.compareAndSet(null, false) -> try {
-                        doResolveSync(false)
-                        break
-                    } finally {
-                        resolveState.set(null)
-                    }
+                    !force && resolveState.compareAndSet(null, false) ->
+                        try {
+                            doResolveSync(false)
+                            break
+                        } finally {
+                            resolveState.set(null)
+                        }
 
                     force -> while (resolveState.get() == false) {
                         delay(100)
@@ -136,7 +140,10 @@ class DesktopSyncHandler(override var syncRuntimeInfo: SyncRuntimeInfo,
         }
     }
 
-    private suspend fun useSession(host: String, port: Int): Boolean {
+    private suspend fun useSession(
+        host: String,
+        port: Int,
+    ): Boolean {
         try {
             return exchangePreKey(host, port)
         } catch (e: Exception) {
@@ -145,7 +152,10 @@ class DesktopSyncHandler(override var syncRuntimeInfo: SyncRuntimeInfo,
         return false
     }
 
-    private suspend fun createSession(host: String, port: Int) {
+    private suspend fun createSession(
+        host: String,
+        port: Int,
+    ) {
         try {
             syncClientApi.getPreKeyBundle { urlBuilder ->
                 buildUrl(urlBuilder, host, port, "sync", "preKeyBundle")
@@ -163,16 +173,20 @@ class DesktopSyncHandler(override var syncRuntimeInfo: SyncRuntimeInfo,
         } catch (e: Exception) {
             logger.warn(e) { "createSession getPreKeyBundle fail" }
         }
-        logger.info { "connect state to unmatched $host $port"}
+        logger.info { "connect state to unmatched $host $port" }
         update {
             this.connectState = SyncState.UNMATCHED
         }
     }
 
-    private suspend fun exchangePreKey(host: String, port: Int): Boolean {
+    private suspend fun exchangePreKey(
+        host: String,
+        port: Int,
+    ): Boolean {
         return if (syncClientApi.exchangePreKey(sessionCipher) { urlBuilder ->
                 buildUrl(urlBuilder, host, port, "sync", "exchangePreKey")
-            }) {
+            }
+        ) {
             update {
                 this.connectState = SyncState.CONNECTED
             }
@@ -193,5 +207,4 @@ class DesktopSyncHandler(override var syncRuntimeInfo: SyncRuntimeInfo,
     override fun clearContext() {
         // todo clear session
     }
-
 }

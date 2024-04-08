@@ -20,5 +20,4 @@ class WindowDapiHelperTest {
             assertEquals(str, String(decryptData!!))
         }
     }
-
 }

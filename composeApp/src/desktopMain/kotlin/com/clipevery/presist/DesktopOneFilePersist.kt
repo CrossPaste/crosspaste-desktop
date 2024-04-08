@@ -13,7 +13,7 @@ import kotlin.reflect.KClass
 
 @Suppress("UNCHECKED_CAST")
 class DesktopOneFilePersist(override val path: Path) : OneFilePersist {
-    override fun <T: Any> read(clazz: KClass<T>): T? {
+    override fun <T : Any> read(clazz: KClass<T>): T? {
         val file = path.toFile()
         return if (file.exists()) {
             val serializer = Json.serializersModule.serializer(clazz.java)

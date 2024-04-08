@@ -16,8 +16,10 @@ import java.nio.file.Path
 import kotlin.io.path.inputStream
 import kotlin.io.path.pathString
 
-
-fun loadImage(path: Path, density: Density): ToPainterImage {
+fun loadImage(
+    path: Path,
+    density: Density,
+): ToPainterImage {
     return when (path.pathString.substringAfterLast(".")) {
         "svg" -> SvgResourceToPainter(path.inputStream().buffered().use { loadSvgPainter(it, density) })
         "xml" -> XmlResourceToPainter(path.inputStream().buffered().use { loadXmlImageVector(InputSource(it), density) })
@@ -25,8 +27,10 @@ fun loadImage(path: Path, density: Density): ToPainterImage {
     }
 }
 
-class LoadImageData(val path: Path,
-                    val toPainterImage: ToPainterImage): LoadStateData {
+class LoadImageData(
+    val path: Path,
+    val toPainterImage: ToPainterImage,
+) : LoadStateData {
 
     override fun getLoadState(): LoadState {
         return LoadState.Success

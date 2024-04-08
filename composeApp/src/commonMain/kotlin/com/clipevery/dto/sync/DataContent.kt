@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class DataContent(
-    @Serializable(with = Base64ByteArraySerializer::class) val data: ByteArray
+    @Serializable(with = Base64ByteArraySerializer::class) val data: ByteArray,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

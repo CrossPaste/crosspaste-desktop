@@ -9,7 +9,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import org.signal.libsignal.protocol.IdentityKey
 
-object IdentityKeySerializer: KSerializer<IdentityKey> {
+object IdentityKeySerializer : KSerializer<IdentityKey> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("IdentityKey") {}
 
     override fun deserialize(decoder: Decoder): IdentityKey {
@@ -17,7 +17,10 @@ object IdentityKeySerializer: KSerializer<IdentityKey> {
         return IdentityKey(byteArray)
     }
 
-    override fun serialize(encoder: Encoder, value: IdentityKey) {
+    override fun serialize(
+        encoder: Encoder,
+        value: IdentityKey,
+    ) {
         encoder.encodeString(base64Encode(value.serialize()))
     }
 }

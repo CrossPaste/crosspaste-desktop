@@ -19,7 +19,10 @@ object ClipLabelRealmSetSerializer : KSerializer<RealmSet<ClipLabel>> {
         return realmSetOf(*set.toTypedArray())
     }
 
-    override fun serialize(encoder: Encoder, value: RealmSet<ClipLabel>) {
+    override fun serialize(
+        encoder: Encoder,
+        value: RealmSet<ClipLabel>,
+    ) {
         encoder.encodeSerializableValue(delegateSerializer, value.toSet())
     }
 }

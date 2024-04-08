@@ -5,7 +5,7 @@ import org.signal.libsignal.protocol.InvalidKeyIdException
 import org.signal.libsignal.protocol.state.PreKeyRecord
 import org.signal.libsignal.protocol.state.PreKeyStore
 
-class DesktopPreKeyStore(private val signalDao: SignalDao): PreKeyStore {
+class DesktopPreKeyStore(private val signalDao: SignalDao) : PreKeyStore {
 
     override fun loadPreKey(preKeyId: Int): PreKeyRecord {
         signalDao.loadPreKey(preKeyId)?.let {
@@ -13,7 +13,10 @@ class DesktopPreKeyStore(private val signalDao: SignalDao): PreKeyStore {
         } ?: throw InvalidKeyIdException("No such preKeyId: $preKeyId")
     }
 
-    override fun storePreKey(preKeyId: Int, record: PreKeyRecord) {
+    override fun storePreKey(
+        preKeyId: Int,
+        record: PreKeyRecord,
+    ) {
         signalDao.storePreKey(preKeyId, record.serialize())
     }
 

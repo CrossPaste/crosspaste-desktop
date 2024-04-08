@@ -8,5 +8,5 @@ enum class ClipItemType {
     Image,
     ImageFile,
     VideoFile,
-    Files
+    Files,
 }
