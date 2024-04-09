@@ -150,5 +150,4 @@ fun AboutContentView() {
             }
         }
     }
-
 }
