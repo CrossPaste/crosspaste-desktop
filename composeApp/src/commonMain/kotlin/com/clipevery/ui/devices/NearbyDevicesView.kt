@@ -40,10 +40,7 @@ fun NearbyDevicesView(currentPageViewContext: MutableState<PageViewContext>) {
     if (isSearching) {
         SearchNearByDevices()
     } else {
-
     }
-
-
 }
 
 @Composable
@@ -62,13 +59,13 @@ fun SearchNearByDevices() {
                 launch {
                     offsetX.animateTo(
                         targetValue = (-20..20).random().toFloat(),
-                        animationSpec = tween(durationMillis = 500)
+                        animationSpec = tween(durationMillis = 500),
                     )
                 }
                 launch {
                     offsetY.animateTo(
                         targetValue = (-20..20).random().toFloat(),
-                        animationSpec = tween(durationMillis = 500)
+                        animationSpec = tween(durationMillis = 500),
                     )
                 }
                 delay(500)
@@ -79,31 +76,34 @@ fun SearchNearByDevices() {
         }
     }
 
-
-    Box(contentAlignment = Alignment.Center,
-        modifier = Modifier.fillMaxSize()) {
-
-        Box(modifier = Modifier
-            .align(Alignment.Center)
-            .offset(x = offsetX.value.dp, y = offsetY.value.dp - 50.dp)) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .align(Alignment.Center)
+                    .offset(x = offsetX.value.dp, y = offsetY.value.dp - 48.dp),
+        ) {
             Icon(
                 painter = magnifying(),
                 contentDescription = "Searching",
                 tint = MaterialTheme.colors.primary,
-                modifier = Modifier.size(70.dp)
+                modifier = Modifier.size(70.dp),
             )
         }
 
         Column(
             modifier = Modifier.align(Alignment.Center),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(modifier = Modifier.height(80.dp)) // 根据需要调整间距，使文本不与图标重叠
             Text(
                 text = copywriter.getText("Searching_for_nearby_devices"), // 这里应用动态文本
                 color = MaterialTheme.colors.onBackground,
                 fontSize = 28.sp,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+                modifier = Modifier.align(Alignment.CenterHorizontally),
             )
         }
     }

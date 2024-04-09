@@ -76,7 +76,6 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.material.desktop)
             implementation(libs.realm.kotlin.base)
-            implementation(libs.tabler.icons)
         }
 
         val commonTest by getting {

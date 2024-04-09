@@ -23,3 +23,8 @@ fun arrowBack(): Painter {
 fun magnifying(): Painter {
     return painterResource("icon/base/magnifying.svg")
 }
+
+@Composable
+fun scan(): Painter {
+    return painterResource("icon/base/scan.svg")
+}

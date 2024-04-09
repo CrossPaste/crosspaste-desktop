@@ -21,7 +21,6 @@ logback = "1.5.3"
 realm = "1.14.1"
 selenium = "4.19.1"
 signal = "0.44.0"
-tabler-icons = "1.1.0"
 theme-detector = "3.8"
 zxing = "3.5.3"
 
@@ -57,7 +56,6 @@ material-desktop = { module = "org.jetbrains.compose.material:material-desktop",
 realm-kotlin-base = { module = "io.realm.kotlin:library-base", version.ref = "realm" }
 selenium-java = { module = "org.seleniumhq.selenium:selenium-java", version.ref = "selenium" }
 signal-client = { module = "org.signal:libsignal-client", version.ref = "signal" }
-tabler-icons = { module = "br.com.devsrsouza.compose.icons:tabler-icons-desktop", version.ref = "tabler-icons" }
 theme-detector = { module = "com.github.Dansoftowner:jSystemThemeDetector", version.ref = "theme-detector" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 zxing-javase = { module = "com.google.zxing:javase", version.ref = "zxing" }
