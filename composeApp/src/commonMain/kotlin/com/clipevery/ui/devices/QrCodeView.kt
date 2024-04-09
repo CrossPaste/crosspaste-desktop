@@ -14,11 +14,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -31,7 +30,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
@@ -42,10 +40,9 @@ import com.clipevery.LocalKoinApplication
 import com.clipevery.app.AppUI
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.autoRenew
+import com.clipevery.ui.base.scan
 import com.clipevery.utils.QRCodeGenerator
 import com.clipevery.utils.ioDispatcher
-import compose.icons.TablerIcons
-import compose.icons.tablericons.Scan
 import kotlinx.coroutines.withContext
 
 val qrSize: DpSize = DpSize(275.dp, 275.dp)
@@ -82,46 +79,44 @@ fun bindingQRCode() {
         }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(10.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
     ) {
-        // This Box will be the 2:1 rectangle with the QR code and close button
         Box(
             modifier =
                 Modifier
-                    .width(600.dp)
-                    .height(600.dp)
-                    .padding(10.dp),
-            contentAlignment = Alignment.Center,
+                    .align(Alignment.Center)
+                    .offset(y = (-48).dp),
         ) {
             Column(
-                modifier = Modifier.wrapContentSize(Alignment.Center),
+                modifier = Modifier.align(Alignment.Center),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Row(
                     modifier =
-                        Modifier.wrapContentWidth()
-                            .padding(bottom = 30.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                        Modifier.align(Alignment.CenterHorizontally)
+                            .width(275.dp),
                     horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        copywriter.getText("Please_scan_the_binding_device"),
-                        modifier = Modifier.wrapContentWidth(),
-                        fontSize = 24.sp,
-                        softWrap = false,
-                        color = Color(red = 84, green = 135, blue = 237),
+                        modifier = Modifier.weight(1f, fill = false).padding(end = 8.dp),
+                        text = copywriter.getText("Please_scan_the_binding_device"),
+                        color = MaterialTheme.colors.onBackground,
+                        fontSize = 28.sp,
+                        maxLines = 3,
+                        lineHeight = 32.sp,
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Icon(
-                        imageVector = TablerIcons.Scan,
+                        painter = scan(),
                         contentDescription = "Scan",
                         modifier = Modifier.size(28.dp),
-                        tint = Color(red = 84, green = 135, blue = 237),
+                        tint = MaterialTheme.colors.primary,
                     )
                 }
+                Spacer(modifier = Modifier.height(20.dp))
                 qrImage?.let {
                     Image(
                         modifier = Modifier.size(qrSize.width),
