@@ -85,7 +85,7 @@ fun SearchNearByDevices() {
 
         Box(modifier = Modifier
             .align(Alignment.Center)
-            .offset(x = offsetX.value.dp, y = offsetY.value.dp - 30.dp)) {
+            .offset(x = offsetX.value.dp, y = offsetY.value.dp - 50.dp)) {
             Icon(
                 painter = magnifying(),
                 contentDescription = "Searching",
@@ -98,7 +98,7 @@ fun SearchNearByDevices() {
             modifier = Modifier.align(Alignment.Center),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(100.dp)) // 根据需要调整间距，使文本不与图标重叠
+            Spacer(modifier = Modifier.height(80.dp)) // 根据需要调整间距，使文本不与图标重叠
             Text(
                 text = copywriter.getText("Searching_for_nearby_devices"), // 这里应用动态文本
                 color = MaterialTheme.colors.onBackground,
