@@ -69,7 +69,9 @@ import com.clipevery.signal.DesktopSessionStore
 import com.clipevery.signal.DesktopSignalProtocolStore
 import com.clipevery.signal.DesktopSignedPreKeyStore
 import com.clipevery.signal.getClipIdentityKeyStoreFactory
+import com.clipevery.sync.DesktopDeviceManager
 import com.clipevery.sync.DesktopSyncManager
+import com.clipevery.sync.DeviceManager
 import com.clipevery.sync.SyncManager
 import com.clipevery.task.CleanClipTaskExecutor
 import com.clipevery.task.DeleteClipTaskExecutor
@@ -150,6 +152,7 @@ object Dependencies {
                 single { DesktopSyncManager(get(), get(), get(), get()) }
                 single<SyncRefresher> { get<DesktopSyncManager>() }
                 single<SyncManager> { get<DesktopSyncManager>() }
+                single<DeviceManager> { DesktopDeviceManager() }
 
                 // signal component
                 single<IdentityKeyStore> { getClipIdentityKeyStoreFactory(get(), get()).createIdentityKeyStore() }

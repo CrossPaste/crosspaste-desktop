@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
@@ -54,10 +55,46 @@ import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.net.SyncRefresher
 import com.clipevery.sync.SyncManager
 import com.clipevery.ui.PageViewContext
+import com.clipevery.ui.PageViewType
+import com.clipevery.ui.TabView
 import com.clipevery.ui.base.ClipIconButton
 
 @Composable
 fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
+    val current = LocalKoinApplication.current
+    val copywriter = current.koin.get<GlobalCopywriter>()
+
+    val deviceTabs =
+        remember {
+            listOfNotNull(
+                Pair(PageViewType.MY_DEVICES, "MyDevices"),
+                Pair(PageViewType.NEARBY_DEVICES, "NearbyDevices"),
+            )
+        }
+
+    Row(
+        modifier =
+        Modifier.padding(8.dp)
+            .wrapContentWidth(),
+    ) {
+        deviceTabs.forEach { pair ->
+            TabView(currentPageViewContext, listOf(pair.first), copywriter.getText(pair.second))
+        }
+
+        Spacer(modifier = Modifier.fillMaxWidth())
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        when (currentPageViewContext.value.pageViewType) {
+            PageViewType.MY_DEVICES -> MyDevicesView(currentPageViewContext)
+            PageViewType.NEARBY_DEVICES -> NearbyDevicesView(currentPageViewContext)
+            else -> Unit
+        }
+    }
+}
+
+@Composable
+fun MyDevicesView(currentPageViewContext: MutableState<PageViewContext>) {
     var editSyncRuntimeInfo by remember { mutableStateOf<SyncRuntimeInfo?>(null) }
     Box(contentAlignment = Alignment.TopCenter) {
         DevicesListView(currentPageViewContext) {

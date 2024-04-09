@@ -42,10 +42,10 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
     val tabs =
         remember {
             listOfNotNull(
-                Pair(PageViewType.CLIP_PREVIEW, "Clipboard"),
-                Pair(PageViewType.DEVICE_PREVIEW, "Devices"),
-                Pair(PageViewType.QR_CODE, "Scan"),
-                if (appEnv == AppEnv.DEVELOPMENT) Pair(PageViewType.DEBUG, "Debug") else null,
+                Pair(listOf(PageViewType.CLIP_PREVIEW), "Clipboard"),
+                Pair(listOf(PageViewType.MY_DEVICES, PageViewType.NEARBY_DEVICES), "Devices"),
+                Pair(listOf(PageViewType.QR_CODE), "Scan"),
+                if (appEnv == AppEnv.DEVELOPMENT) Pair(listOf(PageViewType.DEBUG), "Debug") else null,
             )
         }
     Row(
@@ -63,7 +63,8 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
     Column(modifier = Modifier.fillMaxSize()) {
         when (currentPageViewContext.value.pageViewType) {
             PageViewType.CLIP_PREVIEW -> ClipPreviewsView()
-            PageViewType.DEVICE_PREVIEW -> DevicesView(currentPageViewContext)
+            PageViewType.MY_DEVICES,
+            PageViewType.NEARBY_DEVICES -> DevicesView(currentPageViewContext)
             PageViewType.QR_CODE -> bindingQRCode()
             PageViewType.DEBUG -> DebugView()
             else -> ClipPreviewsView()
@@ -83,7 +84,7 @@ val bottomBorderShape =
 @Composable
 fun TabView(
     currentPageViewContext: MutableState<PageViewContext>,
-    pageViewType: PageViewType,
+    pageViewTypes: List<PageViewType>,
     title: String,
 ) {
     val textStyle: TextStyle
@@ -93,7 +94,7 @@ fun TabView(
             .height(30.dp)
             .wrapContentSize(Alignment.CenterStart)
 
-    if (currentPageViewContext.value.pageViewType == pageViewType) {
+    if (pageViewTypes.contains(currentPageViewContext.value.pageViewType)) {
         textStyle = TextStyle(fontWeight = FontWeight.Bold)
         modifier = modifier.border(5.dp, MaterialTheme.colors.primary, bottomBorderShape)
         textUnit = 16.sp
@@ -113,7 +114,7 @@ fun TabView(
                 Modifier
                     .padding(8.dp, 0.dp, 8.dp, 8.dp)
                     .align(Alignment.BottomStart)
-                    .clickable { currentPageViewContext.value = PageViewContext(pageViewType) },
+                    .clickable { currentPageViewContext.value = PageViewContext(pageViewTypes[0]) },
         )
     }
 }
