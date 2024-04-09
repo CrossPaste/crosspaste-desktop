@@ -22,7 +22,7 @@ open class DesktopTransferableConsumer(
             service.getIdentifiers().map { it to service }
         }.toMap()
 
-    private fun createDataFlavorMap(transferable: Transferable): LinkedHashMap<String, MutableList<DataFlavor>>  {
+    private fun createDataFlavorMap(transferable: Transferable): LinkedHashMap<String, MutableList<DataFlavor>> {
         val dataFlavorMap = LinkedHashMap<String, MutableList<DataFlavor>>()
 
         for (flavor in transferable.transferDataFlavors) {

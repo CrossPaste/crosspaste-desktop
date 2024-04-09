@@ -18,3 +18,8 @@ fun autoRenew(): Painter {
 fun arrowBack(): Painter {
     return painterResource("icon/base/arrow_back.svg")
 }
+
+@Composable
+fun magnifying(): Painter {
+    return painterResource("icon/base/magnifying.svg")
+}
