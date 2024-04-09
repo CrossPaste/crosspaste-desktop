@@ -13,17 +13,29 @@ import androidx.compose.ui.res.loadXmlImageVector
 import androidx.compose.ui.unit.Density
 import org.xml.sax.InputSource
 import java.nio.file.Path
+import kotlin.io.path.exists
 import kotlin.io.path.inputStream
 import kotlin.io.path.pathString
 
 fun loadImage(
     path: Path,
     density: Density,
+    thumbnail: Boolean = false,
 ): ToPainterImage {
     return when (path.pathString.substringAfterLast(".")) {
         "svg" -> SvgResourceToPainter(path.inputStream().buffered().use { loadSvgPainter(it, density) })
         "xml" -> XmlResourceToPainter(path.inputStream().buffered().use { loadXmlImageVector(InputSource(it), density) })
-        else -> ImageBitmapToPainter(path.inputStream().use { it.buffered().use(::loadImageBitmap) })
+        else -> {
+            if (thumbnail) {
+                val thumbnailPath = getThumbnailPath(path)
+                if (!thumbnailPath.exists()) {
+                    createThumbnail(path)
+                }
+                ImageBitmapToPainter(thumbnailPath.inputStream().use { it.buffered().use(::loadImageBitmap) })
+            } else {
+                ImageBitmapToPainter(path.inputStream().use { it.buffered().use(::loadImageBitmap) })
+            }
+        }
     }
 }
 
