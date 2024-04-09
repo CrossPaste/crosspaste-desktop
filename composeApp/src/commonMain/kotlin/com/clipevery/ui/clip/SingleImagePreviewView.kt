@@ -30,8 +30,6 @@ import com.clipevery.LocalKoinApplication
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.AsyncView
 import com.clipevery.ui.base.LoadImageData
-import com.clipevery.ui.base.createThumbnail
-import com.clipevery.ui.base.getThumbnailPath
 import com.clipevery.ui.base.image
 import com.clipevery.ui.base.imageSlash
 import com.clipevery.ui.base.loadImage
@@ -60,11 +58,7 @@ fun SingleImagePreviewView(imagePath: Path) {
     ) {
         AsyncView(
             load = {
-                val thumbnailPath = getThumbnailPath(imagePath)
-                if (!thumbnailPath.exists()) {
-                    createThumbnail(imagePath)
-                }
-                LoadImageData(imagePath, loadImage(thumbnailPath, density))
+                LoadImageData(imagePath, loadImage(imagePath, density, thumbnail = false))
             },
             loadFor = { loadImageView ->
                 if (loadImageView.isSuccess()) {
