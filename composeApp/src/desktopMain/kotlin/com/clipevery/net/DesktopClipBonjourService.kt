@@ -4,8 +4,7 @@ import com.clipevery.app.AppInfo
 import com.clipevery.app.logger
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.endpoint.EndpointInfoFactory
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
+import com.clipevery.utils.TxtRecordUtils
 import java.net.InetAddress
 import javax.jmdns.JmDNS
 import javax.jmdns.ServiceInfo
@@ -20,8 +19,9 @@ class DesktopClipBonjourService(
     override fun registerService(): ClipBonjourService {
         val endpointInfo = endpointInfoFactory.createEndpointInfo()
         val syncInfo = SyncInfo(appInfo, endpointInfo)
-        val syncInfoJson = Json.encodeToString(syncInfo)
-        logger.debug { "Registering service: $syncInfoJson" }
+        logger.debug { "Registering service: $syncInfo" }
+
+        val txtRecordDict = TxtRecordUtils.encodeToTxtRecordDict(syncInfo)
 
         for (hostInfo in endpointInfo.hostInfoList) {
             val jmDNS: JmDNS = JmDNS.create(InetAddress.getByName(hostInfo.hostAddress))
@@ -33,7 +33,7 @@ class DesktopClipBonjourService(
                     endpointInfo.port,
                     0,
                     0,
-                    syncInfoJson.toByteArray(),
+                    txtRecordDict,
                 )
             jmDNS.registerService(serviceInfo)
         }
