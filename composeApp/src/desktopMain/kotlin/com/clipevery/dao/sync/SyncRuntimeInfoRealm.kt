@@ -107,23 +107,6 @@ class SyncRuntimeInfoRealm(private val realm: Realm) : SyncRuntimeInfoDao {
         }
     }
 
-    private fun createSyncRuntimeInfo(syncInfo: SyncInfo): SyncRuntimeInfo {
-        return SyncRuntimeInfo().apply {
-            appInstanceId = syncInfo.appInfo.appInstanceId
-            appVersion = syncInfo.appInfo.appVersion
-            userName = syncInfo.appInfo.userName
-            deviceId = syncInfo.endpointInfo.deviceId
-            deviceName = syncInfo.endpointInfo.deviceName
-            platformName = syncInfo.endpointInfo.platform.name
-            platformArch = syncInfo.endpointInfo.platform.arch
-            platformBitMode = syncInfo.endpointInfo.platform.bitMode
-            platformVersion = syncInfo.endpointInfo.platform.version
-            hostInfoList = syncInfo.endpointInfo.hostInfoList.toRealmList()
-            port = syncInfo.endpointInfo.port
-            createTime = RealmInstant.now()
-        }
-    }
-
     override fun inertOrUpdate(syncInfo: SyncInfo) {
         realm.writeBlocking {
             query(SyncRuntimeInfo::class, "appInstanceId == $0", syncInfo.appInfo.appInstanceId)
