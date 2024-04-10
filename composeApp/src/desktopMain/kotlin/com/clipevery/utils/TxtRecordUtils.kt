@@ -5,17 +5,18 @@ import kotlinx.serialization.encodeToString
 
 object TxtRecordUtils {
 
+    // Encodes an object to a map suitable for TXT records, splitting the base64 encoded string into chunks.
     inline fun <reified T: @Serializable Any> encodeToTxtRecordDict(obj: T, chunkSize: Int = 128): Map<String, String> {
-        // 将对象序列化为 JSON 字符串
+        // Serialize the object to a JSON string
         val jsonString = JsonUtils.JSON.encodeToString(obj)
 
-        // 将 JSON 字符串转换为 Base64 编码的字符串
+        // Convert the JSON string to a base64 encoded string
         val base64Encoded = EncryptUtils.base64Encode(jsonString.toByteArray(Charsets.UTF_8))
 
-        // 准备一个字典来存储分割后的数据
+        // Prepare a dictionary to store the split data
         val txtRecordDict = mutableMapOf<String, String>()
 
-        // 分割 Base64 编码的字符串
+        // Split the base64 encoded string into chunks
         var index = 0
         base64Encoded.chunked(chunkSize).forEach { chunk ->
             txtRecordDict[index.toString()] = chunk
@@ -25,16 +26,17 @@ object TxtRecordUtils {
         return txtRecordDict
     }
 
+    // Decodes an object from a map of strings, reassembling the base64 encoded string from chunks.
     inline fun <reified T: @Serializable Any> decodeFromTxtRecordDict(txtRecordDict: Map<String, ByteArray>): T {
-        // 将分割后的数据组合成一个完整的 Base64 编码的字符串
+        // Combine the split data into a complete base64 encoded string
         val base64Encoded = txtRecordDict.toSortedMap().values.joinToString(separator = "") { chunk ->
             String(chunk, Charsets.UTF_8)
         }
 
-        // 将 Base64 字符串解码为 JSON 字符串
+        // Decode the base64 string into a JSON string
         val jsonString = String(EncryptUtils.base64Decode(base64Encoded), Charsets.UTF_8)
 
-        // 从 JSON 字符串反序列化对象
+        // Deserialize the object from the JSON string
         return JsonUtils.JSON.decodeFromString(jsonString)
     }
 }
