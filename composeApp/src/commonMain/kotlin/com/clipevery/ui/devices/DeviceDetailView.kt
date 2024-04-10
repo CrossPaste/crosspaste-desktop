@@ -54,7 +54,7 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
 
     var syncRuntimeInfo by remember { mutableStateOf(currentPageViewContext.value.context as SyncRuntimeInfo) }
 
-    DeviceBarView(syncRuntimeInfo, currentPageViewContext, false) { }
+    DeviceConnectView(syncRuntimeInfo, currentPageViewContext, false) { }
 
     Column(
         modifier =

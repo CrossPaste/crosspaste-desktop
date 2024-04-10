@@ -243,7 +243,7 @@ fun DevicesListView(
 
     Column(modifier = Modifier.fillMaxWidth()) {
         for ((index, syncRuntimeInfo) in rememberSyncRuntimeInfos.withIndex()) {
-            DeviceBarView(syncRuntimeInfo, currentPageViewContext, true, onEdit)
+            DeviceConnectView(syncRuntimeInfo, currentPageViewContext, true, onEdit)
             if (index != rememberSyncRuntimeInfos.size - 1) {
                 Divider(modifier = Modifier.fillMaxWidth())
             }

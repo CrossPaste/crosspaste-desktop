@@ -18,6 +18,7 @@ data class AppConfig(
     val imageCleanTimeIndex: Int = 6,
     val fileCleanTimeIndex: Int = 6,
     val isAllowDiscovery: Boolean = true,
+    val blacklist: String = "[]",
 ) {
 
     constructor(other: AppConfig, appEnv: AppEnv) : this(

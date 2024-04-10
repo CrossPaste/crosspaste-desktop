@@ -152,7 +152,7 @@ object Dependencies {
                 single { DesktopSyncManager(get(), get(), get(), get()) }
                 single<SyncRefresher> { get<DesktopSyncManager>() }
                 single<SyncManager> { get<DesktopSyncManager>() }
-                single<DeviceManager> { DesktopDeviceManager() }
+                single<DeviceManager> { DesktopDeviceManager(get(), get(), get(), get()) }
 
                 // signal component
                 single<IdentityKeyStore> { getClipIdentityKeyStoreFactory(get(), get()).createIdentityKeyStore() }

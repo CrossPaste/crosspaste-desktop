@@ -1,6 +1,8 @@
 package com.clipevery.dao.sync
 
+import com.clipevery.dto.sync.SyncInfo
 import io.realm.kotlin.ext.realmListOf
+import io.realm.kotlin.ext.toRealmList
 import io.realm.kotlin.types.RealmInstant
 import io.realm.kotlin.types.RealmList
 import io.realm.kotlin.types.RealmObject
@@ -43,4 +45,21 @@ fun hostInfoListEqual(
         }
     }
     return true
+}
+
+fun createSyncRuntimeInfo(syncInfo: SyncInfo): SyncRuntimeInfo {
+    return SyncRuntimeInfo().apply {
+        appInstanceId = syncInfo.appInfo.appInstanceId
+        appVersion = syncInfo.appInfo.appVersion
+        userName = syncInfo.appInfo.userName
+        deviceId = syncInfo.endpointInfo.deviceId
+        deviceName = syncInfo.endpointInfo.deviceName
+        platformName = syncInfo.endpointInfo.platform.name
+        platformArch = syncInfo.endpointInfo.platform.arch
+        platformBitMode = syncInfo.endpointInfo.platform.bitMode
+        platformVersion = syncInfo.endpointInfo.platform.version
+        hostInfoList = syncInfo.endpointInfo.hostInfoList.toRealmList()
+        port = syncInfo.endpointInfo.port
+        createTime = RealmInstant.now()
+    }
 }
