@@ -35,6 +35,11 @@ fun add(): Painter {
 }
 
 @Composable
-fun noSign(): Painter {
-    return painterResource("icon/base/block.svg")
+fun warning(): Painter {
+    return painterResource("icon/base/warning.svg")
+}
+
+@Composable
+fun remove(): Painter {
+    return painterResource("icon/base/remove.svg")
 }

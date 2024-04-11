@@ -48,7 +48,7 @@ import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.base.ClipIconButton
 import com.clipevery.ui.base.add
 import com.clipevery.ui.base.magnifying
-import com.clipevery.ui.base.noSign
+import com.clipevery.ui.base.warning
 import com.clipevery.utils.JsonUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -190,13 +190,10 @@ fun ShowNearByDevices() {
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun NearbyDeviceView(syncInfo: SyncInfo) {
-    val current = LocalKoinApplication.current
-    val deviceManager = current.koin.get<DeviceManager>()
-    val syncRuntimeInfoDao = current.koin.get<SyncRuntimeInfoDao>()
-    val configManager = current.koin.get<ConfigManager>()
-    val jsonUtils = current.koin.get<JsonUtils>()
-
+fun SyncDeviceView(
+    syncInfo: SyncInfo,
+    action: @Composable () -> Unit,
+) {
     val syncRuntimeInfo = createSyncRuntimeInfo(syncInfo)
 
     var hover by remember { mutableStateOf(false) }
@@ -233,51 +230,63 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.End,
         ) {
-            ClipIconButton(
-                radius = 18.dp,
-                onClick = {
-                    syncRuntimeInfoDao.inertOrUpdate(syncInfo)
-                    deviceManager.removeSyncInfo(syncInfo.appInfo.appInstanceId)
-                },
-                modifier =
-                    Modifier
-                        .background(Color.Transparent, CircleShape),
-            ) {
-                Icon(
-                    painter = add(),
-                    contentDescription = "add",
-                    tint = Color.Green,
-                    modifier = Modifier.size(30.dp),
-                )
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-            ClipIconButton(
-                radius = 18.dp,
-                onClick = {
-                    val blackSyncInfos: MutableList<SyncInfo> = jsonUtils.JSON.decodeFromString(configManager.config.blacklist)
-                    for (blackSyncInfo in blackSyncInfos) {
-                        if (blackSyncInfo.appInfo.appInstanceId == syncInfo.appInfo.appInstanceId) {
-                            return@ClipIconButton
-                        }
-                    }
-                    blackSyncInfos.add(syncInfo)
-                    val newBlackList = jsonUtils.JSON.encodeToString(blackSyncInfos)
-                    configManager.updateConfig { it.copy(blacklist = newBlackList) }
-                    deviceManager.removeSyncInfo(syncInfo.appInfo.appInstanceId)
-                },
-                modifier =
-                    Modifier
-                        .background(Color.Transparent, CircleShape),
-            ) {
-                Icon(
-                    painter = noSign(),
-                    contentDescription = "remove blacklist",
-                    tint = Color.Red,
-                    modifier = Modifier.size(30.dp),
-                )
-            }
-            Spacer(modifier = Modifier.width(16.dp))
+            action()
         }
+    }
+}
+
+@Composable
+fun NearbyDeviceView(syncInfo: SyncInfo) {
+    val current = LocalKoinApplication.current
+    val deviceManager = current.koin.get<DeviceManager>()
+    val syncRuntimeInfoDao = current.koin.get<SyncRuntimeInfoDao>()
+    val configManager = current.koin.get<ConfigManager>()
+    val jsonUtils = current.koin.get<JsonUtils>()
+    SyncDeviceView(syncInfo = syncInfo) {
+        ClipIconButton(
+            radius = 18.dp,
+            onClick = {
+                syncRuntimeInfoDao.inertOrUpdate(syncInfo)
+                deviceManager.removeSyncInfo(syncInfo.appInfo.appInstanceId)
+            },
+            modifier =
+                Modifier
+                    .background(Color.Transparent, CircleShape),
+        ) {
+            Icon(
+                painter = add(),
+                contentDescription = "add",
+                tint = Color.Green,
+                modifier = Modifier.size(30.dp),
+            )
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+        ClipIconButton(
+            radius = 18.dp,
+            onClick = {
+                val blackSyncInfos: MutableList<SyncInfo> = jsonUtils.JSON.decodeFromString(configManager.config.blacklist)
+                for (blackSyncInfo in blackSyncInfos) {
+                    if (blackSyncInfo.appInfo.appInstanceId == syncInfo.appInfo.appInstanceId) {
+                        return@ClipIconButton
+                    }
+                }
+                blackSyncInfos.add(syncInfo)
+                val newBlackList = jsonUtils.JSON.encodeToString(blackSyncInfos)
+                configManager.updateConfig { it.copy(blacklist = newBlackList) }
+                deviceManager.removeSyncInfo(syncInfo.appInfo.appInstanceId)
+            },
+            modifier =
+                Modifier
+                    .background(Color.Transparent, CircleShape),
+        ) {
+            Icon(
+                painter = warning(),
+                contentDescription = "remove blacklist",
+                tint = Color.Yellow,
+                modifier = Modifier.size(30.dp),
+            )
+        }
+        Spacer(modifier = Modifier.width(16.dp))
     }
 }
