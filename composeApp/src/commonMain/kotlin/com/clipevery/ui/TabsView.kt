@@ -43,7 +43,7 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
         remember {
             listOfNotNull(
                 Pair(listOf(PageViewType.CLIP_PREVIEW), "Clipboard"),
-                Pair(listOf(PageViewType.MY_DEVICES, PageViewType.NEARBY_DEVICES), "Devices"),
+                Pair(listOf(PageViewType.DEVICES), "Devices"),
                 Pair(listOf(PageViewType.QR_CODE), "Scan"),
                 if (appEnv == AppEnv.DEVELOPMENT) Pair(listOf(PageViewType.DEBUG), "Debug") else null,
             )
@@ -63,9 +63,7 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
     Column(modifier = Modifier.fillMaxSize()) {
         when (currentPageViewContext.value.pageViewType) {
             PageViewType.CLIP_PREVIEW -> ClipPreviewsView()
-            PageViewType.MY_DEVICES,
-            PageViewType.NEARBY_DEVICES,
-            -> DevicesView(currentPageViewContext)
+            PageViewType.DEVICES -> DevicesView(currentPageViewContext)
             PageViewType.QR_CODE -> bindingQRCode()
             PageViewType.DEBUG -> DebugView()
             else -> ClipPreviewsView()
@@ -88,6 +86,51 @@ fun TabView(
     pageViewTypes: List<PageViewType>,
     title: String,
 ) {
+    SingleTabView(
+        title,
+        pageViewTypes.contains(currentPageViewContext.value.pageViewType),
+    ) {
+        currentPageViewContext.value = PageViewContext(pageViewTypes[0])
+    }
+
+//    val textStyle: TextStyle
+//    val textUnit: TextUnit
+//    var modifier: Modifier =
+//        Modifier.padding(2.dp)
+//            .height(30.dp)
+//            .wrapContentSize(Alignment.CenterStart)
+//
+//    if (pageViewTypes.contains(currentPageViewContext.value.pageViewType)) {
+//        textStyle = TextStyle(fontWeight = FontWeight.Bold)
+//        modifier = modifier.border(5.dp, MaterialTheme.colors.primary, bottomBorderShape)
+//        textUnit = 16.sp
+//    } else {
+//        textStyle = TextStyle(fontWeight = FontWeight.Normal)
+//        textUnit = 12.sp
+//    }
+//
+//    Box(modifier = modifier) {
+//        Text(
+//            text = title,
+//            color = MaterialTheme.colors.onBackground,
+//            fontSize = textUnit,
+//            style = textStyle,
+//            fontFamily = FontFamily.SansSerif,
+//            modifier =
+//                Modifier
+//                    .padding(8.dp, 0.dp, 8.dp, 8.dp)
+//                    .align(Alignment.BottomStart)
+//                    .clickable { currentPageViewContext.value = PageViewContext(pageViewTypes[0]) },
+//        )
+//    }
+}
+
+@Composable
+fun SingleTabView(
+    title: String,
+    selected: Boolean,
+    clickable: () -> Unit,
+) {
     val textStyle: TextStyle
     val textUnit: TextUnit
     var modifier: Modifier =
@@ -95,7 +138,7 @@ fun TabView(
             .height(30.dp)
             .wrapContentSize(Alignment.CenterStart)
 
-    if (pageViewTypes.contains(currentPageViewContext.value.pageViewType)) {
+    if (selected) {
         textStyle = TextStyle(fontWeight = FontWeight.Bold)
         modifier = modifier.border(5.dp, MaterialTheme.colors.primary, bottomBorderShape)
         textUnit = 16.sp
@@ -115,7 +158,7 @@ fun TabView(
                 Modifier
                     .padding(8.dp, 0.dp, 8.dp, 8.dp)
                     .align(Alignment.BottomStart)
-                    .clickable { currentPageViewContext.value = PageViewContext(pageViewTypes[0]) },
+                    .clickable { clickable() },
         )
     }
 }

@@ -29,9 +29,9 @@ import kotlinx.serialization.modules.subclass
 import org.signal.libsignal.protocol.IdentityKey
 import org.signal.libsignal.protocol.state.PreKeyBundle
 
-object JsonUtils {
+object DesktopJsonUtils : JsonUtils {
 
-    val JSON: Json =
+    override val JSON: Json =
         Json {
             ignoreUnknownKeys = true
             serializersModule =

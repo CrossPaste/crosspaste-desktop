@@ -29,5 +29,10 @@ data class AppConfig(
         isDarkTheme = other.isDarkTheme,
         port = other.port,
         isEncryptSync = other.isEncryptSync,
+        isAutoCleaning = other.isAutoCleaning,
+        imageCleanTimeIndex = other.imageCleanTimeIndex,
+        fileCleanTimeIndex = other.fileCleanTimeIndex,
+        isAllowDiscovery = other.isAllowDiscovery,
+        blacklist = other.blacklist,
     )
 }

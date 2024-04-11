@@ -8,7 +8,7 @@ import com.clipevery.presist.DesktopOneFilePersist
 import com.clipevery.presist.FileInfoTree
 import com.clipevery.serializer.PathStringRealmListSerializer
 import com.clipevery.serializer.StringRealmListSerializer
-import com.clipevery.utils.JsonUtils
+import com.clipevery.utils.DesktopJsonUtils
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.types.RealmList
@@ -58,7 +58,7 @@ class FilesClipItem : RealmObject, ClipAppearItem, ClipFiles {
     }
 
     override fun getFileInfoTreeMap(): Map<String, FileInfoTree> {
-        return JsonUtils.JSON.decodeFromString(fileInfoTree)
+        return DesktopJsonUtils.JSON.decodeFromString(fileInfoTree)
     }
 
     override fun getClipFiles(): List<ClipFile> {

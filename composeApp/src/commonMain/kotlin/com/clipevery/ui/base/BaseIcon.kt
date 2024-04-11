@@ -28,3 +28,13 @@ fun magnifying(): Painter {
 fun scan(): Painter {
     return painterResource("icon/base/scan.svg")
 }
+
+@Composable
+fun add(): Painter {
+    return painterResource("icon/base/add.svg")
+}
+
+@Composable
+fun noSign(): Painter {
+    return painterResource("icon/base/block.svg")
+}

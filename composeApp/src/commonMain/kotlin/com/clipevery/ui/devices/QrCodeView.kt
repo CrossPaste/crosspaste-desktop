@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -102,6 +103,7 @@ fun bindingQRCode() {
                 ) {
                     Text(
                         modifier = Modifier.weight(1f, fill = false).padding(end = 8.dp),
+                        textAlign = TextAlign.Center,
                         text = copywriter.getText("Please_scan_the_binding_device"),
                         color = MaterialTheme.colors.onBackground,
                         fontSize = 28.sp,

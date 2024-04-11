@@ -118,8 +118,7 @@ fun ClipeveryContent() {
     TokenView()
     when (currentPageViewContext.value.pageViewType) {
         PageViewType.CLIP_PREVIEW,
-        PageViewType.MY_DEVICES,
-        PageViewType.NEARBY_DEVICES,
+        PageViewType.DEVICES,
         PageViewType.QR_CODE,
         PageViewType.DEBUG,
         -> {

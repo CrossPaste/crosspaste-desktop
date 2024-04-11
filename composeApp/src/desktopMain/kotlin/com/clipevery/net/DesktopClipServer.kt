@@ -7,7 +7,7 @@ import com.clipevery.net.plugin.SignalServerDecryption
 import com.clipevery.routing.clipRouting
 import com.clipevery.routing.pullRouting
 import com.clipevery.routing.syncRouting
-import com.clipevery.utils.JsonUtils
+import com.clipevery.utils.DesktopJsonUtils
 import com.clipevery.utils.failResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.serialization.kotlinx.json.*
@@ -32,7 +32,7 @@ class DesktopClipServer(private val configManager: ConfigManager) : ClipServer {
     private fun createServer(port: Int): NettyApplicationEngine {
         return embeddedServer(Netty, port = port) {
             install(ContentNegotiation) {
-                json(JsonUtils.JSON)
+                json(DesktopJsonUtils.JSON)
             }
             install(StatusPages) {
                 exception(Exception::class) { call, cause ->

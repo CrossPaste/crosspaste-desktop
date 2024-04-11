@@ -1,6 +1,6 @@
 package com.clipevery.presist
 
-import com.clipevery.utils.JsonUtils
+import com.clipevery.utils.DesktopJsonUtils
 import com.clipevery.utils.ioDispatcher
 import io.ktor.utils.io.*
 import kotlinx.coroutines.withContext
@@ -17,7 +17,7 @@ class DesktopOneFilePersist(override val path: Path) : OneFilePersist {
         val file = path.toFile()
         return if (file.exists()) {
             val serializer = Json.serializersModule.serializer(clazz.java)
-            JsonUtils.JSON.decodeFromString(serializer, file.readText()) as T
+            DesktopJsonUtils.JSON.decodeFromString(serializer, file.readText()) as T
         } else {
             null
         }
@@ -35,7 +35,7 @@ class DesktopOneFilePersist(override val path: Path) : OneFilePersist {
     override fun <T> save(config: T) {
         val kClass = config!!::class
         val serializer = Json.serializersModule.serializer(kClass.java)
-        val json = JsonUtils.JSON.encodeToString(serializer, config)
+        val json = DesktopJsonUtils.JSON.encodeToString(serializer, config)
         val file = path.toFile()
         file.parentFile?.mkdirs()
         file.writeText(json)

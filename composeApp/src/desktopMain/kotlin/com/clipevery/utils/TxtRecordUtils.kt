@@ -11,7 +11,7 @@ object TxtRecordUtils {
         chunkSize: Int = 128,
     ): Map<String, String> {
         // Serialize the object to a JSON string
-        val jsonString = JsonUtils.JSON.encodeToString(obj)
+        val jsonString = DesktopJsonUtils.JSON.encodeToString(obj)
 
         // Convert the JSON string to a base64 encoded string
         val base64Encoded = EncryptUtils.base64Encode(jsonString.toByteArray(Charsets.UTF_8))
@@ -41,6 +41,6 @@ object TxtRecordUtils {
         val jsonString = String(EncryptUtils.base64Decode(base64Encoded), Charsets.UTF_8)
 
         // Deserialize the object from the JSON string
-        return JsonUtils.JSON.decodeFromString(jsonString)
+        return DesktopJsonUtils.JSON.decodeFromString(jsonString)
     }
 }

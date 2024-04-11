@@ -33,8 +33,7 @@ class PageViewContext(val pageViewType: PageViewType, val nextPageViewContext: P
 
 enum class PageViewType {
     CLIP_PREVIEW,
-    MY_DEVICES,
-    NEARBY_DEVICES,
+    DEVICES,
     DEVICE_DETAIL,
     QR_CODE,
     SETTINGS,
