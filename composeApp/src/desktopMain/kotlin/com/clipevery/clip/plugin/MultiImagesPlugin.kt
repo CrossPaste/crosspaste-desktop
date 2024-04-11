@@ -4,8 +4,8 @@ import com.clipevery.clip.ClipPlugin
 import com.clipevery.clip.item.FilesClipItem
 import com.clipevery.clip.item.ImagesClipItem
 import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.utils.DesktopJsonUtils
 import com.clipevery.utils.EncryptUtils.md5ByArray
-import com.clipevery.utils.JsonUtils
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.toRealmList
 import kotlinx.serialization.encodeToString
@@ -25,7 +25,7 @@ object MultiImagesPlugin : ClipPlugin {
                 clipAppearItems.map { it as ImagesClipItem }
                     .flatMap { it.getFileInfoTreeMap().entries }
                     .associate { it.key to it.value }
-            val fileInfoMapJsonString = JsonUtils.JSON.encodeToString(fileInfoMap)
+            val fileInfoMapJsonString = DesktopJsonUtils.JSON.encodeToString(fileInfoMap)
             val md5 =
                 clipAppearItems.map { it as FilesClipItem }.map { it.md5 }
                     .toTypedArray().let { md5ByArray(it) }

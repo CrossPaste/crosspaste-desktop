@@ -8,7 +8,7 @@ import com.clipevery.config.ConfigManager
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.net.ClipBonjourService
-import com.clipevery.utils.JsonUtils
+import com.clipevery.utils.DesktopJsonUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 class DesktopDeviceManager(
@@ -34,7 +34,7 @@ class DesktopDeviceManager(
 
     private val isBlackListed: (String) -> Boolean = { appInstanceId ->
         val blackSyncInfos: List<SyncInfo> =
-            JsonUtils.JSON.decodeFromString(
+            DesktopJsonUtils.JSON.decodeFromString(
                 configManager.config.blacklist,
             )
         blackSyncInfos.map { it.appInfo.appInstanceId }
@@ -78,5 +78,9 @@ class DesktopDeviceManager(
         } finally {
             _searching.value = false
         }
+    }
+
+    override fun removeSyncInfo(appInstanceId: String) {
+        _syncInfos.removeIf { it.appInfo.appInstanceId == appInstanceId }
     }
 }

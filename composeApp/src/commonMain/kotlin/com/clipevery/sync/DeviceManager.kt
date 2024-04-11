@@ -10,4 +10,6 @@ interface DeviceManager {
     val syncInfos: SnapshotStateList<SyncInfo>
 
     suspend fun toSearchNearBy()
+
+    fun removeSyncInfo(appInstanceId: String)
 }

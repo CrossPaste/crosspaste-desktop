@@ -8,7 +8,7 @@ import com.clipevery.net.clientapi.FailureResult
 import com.clipevery.net.clientapi.SendClipClientApi
 import com.clipevery.sync.SyncManager
 import com.clipevery.task.extra.SyncExtraInfo
-import com.clipevery.utils.JsonUtils
+import com.clipevery.utils.DesktopJsonUtils
 import com.clipevery.utils.TaskUtils
 import com.clipevery.utils.TaskUtils.createFailureClipTaskResult
 import com.clipevery.utils.buildUrl
@@ -77,7 +77,7 @@ class SyncClipTaskExecutor(
         syncExtraInfo.syncFails.clear()
 
         if (fails.isEmpty()) {
-            return SuccessClipTaskResult(JsonUtils.JSON.encodeToString(syncExtraInfo))
+            return SuccessClipTaskResult(DesktopJsonUtils.JSON.encodeToString(syncExtraInfo))
         } else {
             syncExtraInfo.syncFails.addAll(fails)
             return createFailureClipTaskResult(

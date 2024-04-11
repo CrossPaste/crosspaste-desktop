@@ -28,7 +28,7 @@ object TaskUtils {
             this.status = TaskStatus.PREPARING
             this.createTime = System.currentTimeMillis()
             this.modifyTime = System.currentTimeMillis()
-            this.extraInfo = JsonUtils.JSON.encodeToString(extraInfo)
+            this.extraInfo = DesktopJsonUtils.JSON.encodeToString(extraInfo)
         }
     }
 
@@ -38,7 +38,7 @@ object TaskUtils {
         kclass: KClass<T>,
     ): T {
         val serializer = Json.serializersModule.serializer(kclass.java)
-        return JsonUtils.JSON.decodeFromString(serializer, clipTask.extraInfo) as T
+        return DesktopJsonUtils.JSON.decodeFromString(serializer, clipTask.extraInfo) as T
     }
 
     fun createFailExtraInfo(
@@ -53,11 +53,11 @@ object TaskUtils {
                 status = TaskStatus.FAILURE,
                 message = throwable.message ?: "Unknown error",
             )
-        val jsonObject = JsonUtils.JSON.decodeFromString<JsonObject>(clipTask.extraInfo)
+        val jsonObject = DesktopJsonUtils.JSON.decodeFromString<JsonObject>(clipTask.extraInfo)
 
         val mutableJsonObject = jsonObject.toMutableMap()
 
-        val jsonElement = JsonUtils.JSON.encodeToJsonElement(ExecutionHistory.serializer(), executionHistory)
+        val jsonElement = DesktopJsonUtils.JSON.encodeToJsonElement(ExecutionHistory.serializer(), executionHistory)
         mutableJsonObject["executionHistories"]?.let {
             val list = it.jsonArray.toMutableList()
             list.add(jsonElement)
@@ -65,7 +65,7 @@ object TaskUtils {
         } ?: run {
             mutableJsonObject["executionHistories"] = JsonArray(listOf(jsonElement))
         }
-        return JsonUtils.JSON.encodeToString(JsonObject(mutableJsonObject))
+        return DesktopJsonUtils.JSON.encodeToString(JsonObject(mutableJsonObject))
     }
 
     fun createFailureClipTaskResult(
@@ -76,6 +76,6 @@ object TaskUtils {
     ): FailureClipTaskResult {
         val needRetry = retryHandler()
         extraInfo.executionHistories.add(ExecutionHistory(startTime, System.currentTimeMillis(), TaskStatus.FAILURE, failMessage))
-        return FailureClipTaskResult(JsonUtils.JSON.encodeToString(extraInfo), needRetry)
+        return FailureClipTaskResult(DesktopJsonUtils.JSON.encodeToString(extraInfo), needRetry)
     }
 }

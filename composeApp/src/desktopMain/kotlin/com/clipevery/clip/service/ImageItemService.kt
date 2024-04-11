@@ -12,7 +12,7 @@ import com.clipevery.utils.DesktopFileUtils.createClipPath
 import com.clipevery.utils.DesktopFileUtils.createClipRelativePath
 import com.clipevery.utils.DesktopFileUtils.createRandomFileName
 import com.clipevery.utils.DesktopFileUtils.getExtFromFileName
-import com.clipevery.utils.JsonUtils
+import com.clipevery.utils.DesktopJsonUtils
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
 import kotlinx.serialization.encodeToString
@@ -77,7 +77,7 @@ class ImageItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
             if (writeImage(image, ext, imagePath)) {
                 val fileTree = DesktopFileUtils.getFileInfoTree(imagePath)
 
-                val fileInfoTreeJsonString = JsonUtils.JSON.encodeToString(mapOf(name to fileTree))
+                val fileInfoTreeJsonString = DesktopJsonUtils.JSON.encodeToString(mapOf(name to fileTree))
 
                 val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
                     realm.query(ImagesClipItem::class, "id == $0", clipItem.id).first().find()?.apply {

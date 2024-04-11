@@ -87,12 +87,14 @@ import com.clipevery.ui.resource.ClipResourceLoader
 import com.clipevery.ui.resource.DesktopAbsoluteClipResourceLoader
 import com.clipevery.utils.DesktopDeviceUtils
 import com.clipevery.utils.DesktopFileUtils
+import com.clipevery.utils.DesktopJsonUtils
 import com.clipevery.utils.DesktopNetUtils
 import com.clipevery.utils.DesktopQRCodeGenerator
 import com.clipevery.utils.DeviceUtils
 import com.clipevery.utils.FileUtils
 import com.clipevery.utils.IDGenerator
 import com.clipevery.utils.IDGeneratorFactory
+import com.clipevery.utils.JsonUtils
 import com.clipevery.utils.NetUtils
 import com.clipevery.utils.QRCodeGenerator
 import com.clipevery.utils.TelnetUtils
@@ -129,6 +131,7 @@ object Dependencies {
                 }
                 single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
                 single<IDGenerator> { IDGeneratorFactory(get()).createIDGenerator() }
+                single<JsonUtils> { DesktopJsonUtils }
                 single<FileUtils> { DesktopFileUtils }
                 single<DeviceUtils> { DesktopDeviceUtils }
                 single<NetUtils> { DesktopNetUtils }

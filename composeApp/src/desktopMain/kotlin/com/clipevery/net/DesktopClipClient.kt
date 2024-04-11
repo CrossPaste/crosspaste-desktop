@@ -2,7 +2,7 @@ package com.clipevery.net
 
 import com.clipevery.app.AppInfo
 import com.clipevery.net.plugin.SignalClientEncryption
-import com.clipevery.utils.JsonUtils
+import com.clipevery.utils.DesktopJsonUtils
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.*
@@ -29,7 +29,7 @@ class DesktopClipClient(private val appInfo: AppInfo) : ClipClient {
             }
             install(Logging)
             install(ContentNegotiation) {
-                json(JsonUtils.JSON, ContentType.Application.Json)
+                json(DesktopJsonUtils.JSON, ContentType.Application.Json)
             }
             install(SignalClientEncryption)
         }
@@ -83,7 +83,7 @@ class DesktopClipClient(private val appInfo: AppInfo) : ClipClient {
                     formData {
                         val serializer = Json.serializersModule.serializer(messageType.type.java)
                         append(
-                            "json", JsonUtils.JSON.encodeToString(serializer, message),
+                            "json", DesktopJsonUtils.JSON.encodeToString(serializer, message),
                             Headers.build {
                                 append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                             },

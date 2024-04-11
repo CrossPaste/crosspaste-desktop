@@ -1,8 +1,5 @@
 package com.clipevery.ui.devices
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,25 +9,19 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Divider
-import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldDefaults
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,43 +43,37 @@ import com.clipevery.LocalKoinApplication
 import com.clipevery.dao.sync.SyncRuntimeInfo
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.i18n.GlobalCopywriter
-import com.clipevery.net.SyncRefresher
 import com.clipevery.sync.SyncManager
 import com.clipevery.ui.PageViewContext
-import com.clipevery.ui.PageViewType
-import com.clipevery.ui.TabView
-import com.clipevery.ui.base.ClipIconButton
+import com.clipevery.ui.SingleTabView
 
 @Composable
 fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
 
-    val deviceTabs =
-        remember {
-            listOfNotNull(
-                Pair(PageViewType.MY_DEVICES, "MyDevices"),
-                Pair(PageViewType.NEARBY_DEVICES, "NearbyDevices"),
-            )
-        }
-
-    Row(
-        modifier =
-            Modifier.padding(8.dp)
-                .wrapContentWidth(),
-    ) {
-        deviceTabs.forEach { pair ->
-            TabView(currentPageViewContext, listOf(pair.first), copywriter.getText(pair.second))
-        }
-
-        Spacer(modifier = Modifier.fillMaxWidth())
-    }
-
     Column(modifier = Modifier.fillMaxSize()) {
-        when (currentPageViewContext.value.pageViewType) {
-            PageViewType.MY_DEVICES -> MyDevicesView(currentPageViewContext)
-            PageViewType.NEARBY_DEVICES -> NearbyDevicesView(currentPageViewContext)
-            else -> Unit
+        Column(modifier = Modifier.fillMaxSize().weight(0.5f)) {
+            Row(
+                modifier =
+                    Modifier.padding(8.dp)
+                        .wrapContentWidth(),
+            ) {
+                SingleTabView(copywriter.getText("MyDevices"), true) {}
+                Spacer(modifier = Modifier.fillMaxWidth())
+            }
+            MyDevicesView(currentPageViewContext)
+        }
+        Column(modifier = Modifier.fillMaxSize().weight(0.5f)) {
+            Row(
+                modifier =
+                    Modifier.padding(8.dp)
+                        .wrapContentWidth(),
+            ) {
+                SingleTabView(copywriter.getText("NearbyDevices"), true) {}
+                Spacer(modifier = Modifier.fillMaxWidth())
+            }
+            NearbyDevicesView(currentPageViewContext)
         }
     }
 }
@@ -100,7 +85,6 @@ fun MyDevicesView(currentPageViewContext: MutableState<PageViewContext>) {
         DevicesListView(currentPageViewContext) {
             editSyncRuntimeInfo = it
         }
-        DevicesRefreshView()
         editSyncRuntimeInfo?.let { syncRuntimeInfo ->
             DeviceNoteNameEditView(syncRuntimeInfo) {
                 editSyncRuntimeInfo = null
@@ -246,66 +230,6 @@ fun DevicesListView(
             DeviceConnectView(syncRuntimeInfo, currentPageViewContext, true, onEdit)
             if (index != rememberSyncRuntimeInfos.size - 1) {
                 Divider(modifier = Modifier.fillMaxWidth())
-            }
-        }
-    }
-}
-
-@Composable
-fun DevicesRefreshView() {
-    val current = LocalKoinApplication.current
-    val syncRefresher = current.koin.get<SyncRefresher>()
-
-    val isRefreshing by syncRefresher.isRefreshing
-
-    val rotationDegrees = remember { Animatable(0f) }
-
-    LaunchedEffect(isRefreshing) {
-        while (isRefreshing) {
-            rotationDegrees.animateTo(
-                targetValue = rotationDegrees.value + 360,
-                animationSpec =
-                    tween(
-                        durationMillis = 1000,
-                        easing = LinearEasing,
-                    ),
-            )
-        }
-        rotationDegrees.snapTo(0f)
-    }
-
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Bottom,
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-        ) {
-            ClipIconButton(
-                radius = 18.dp,
-                onClick = {
-                    if (!isRefreshing) {
-                        syncRefresher.refresh(true)
-                    }
-                },
-                modifier =
-                    Modifier
-                        .padding(30.dp)
-                        .background(
-                            MaterialTheme.colors.primary,
-                            CircleShape,
-                        ),
-            ) {
-                Icon(
-                    Icons.Outlined.Refresh,
-                    contentDescription = "info",
-                    modifier =
-                        Modifier.padding(3.dp)
-                            .size(25.dp)
-                            .graphicsLayer(rotationZ = rotationDegrees.value),
-                    tint = Color.White,
-                )
             }
         }
     }

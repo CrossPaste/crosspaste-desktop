@@ -10,8 +10,8 @@ import com.clipevery.presist.FileInfoTree
 import com.clipevery.utils.DesktopFileUtils
 import com.clipevery.utils.DesktopFileUtils.copyPath
 import com.clipevery.utils.DesktopFileUtils.createClipRelativePath
+import com.clipevery.utils.DesktopJsonUtils
 import com.clipevery.utils.EncryptUtils.md5ByArray
-import com.clipevery.utils.JsonUtils
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.ext.toRealmList
@@ -77,7 +77,7 @@ class FilesItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
             }
 
             val relativePathRealmList = relativePathList.toRealmList()
-            val fileInfoTreeJsonString = JsonUtils.JSON.encodeToString(fileInfoTrees)
+            val fileInfoTreeJsonString = DesktopJsonUtils.JSON.encodeToString(fileInfoTrees)
             val md5 = md5ByArray(files.mapNotNull { fileInfoTrees[it.name]?.md5 }.toTypedArray())
 
             val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->

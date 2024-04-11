@@ -6,8 +6,8 @@ import com.clipevery.dao.clip.ClipContent
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.dao.clip.ClipState
 import com.clipevery.dao.clip.ClipType
+import com.clipevery.utils.DesktopJsonUtils
 import com.clipevery.utils.EncryptUtils.md5ByString
-import com.clipevery.utils.JsonUtils
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.types.RealmAny
 import io.realm.kotlin.types.RealmInstant
@@ -45,9 +45,9 @@ class SerializerTest {
                 this.appInstanceId = UUID.randomUUID().toString()
             }
 
-        val json = JsonUtils.JSON.encodeToString(clipData)
+        val json = DesktopJsonUtils.JSON.encodeToString(clipData)
         println(json)
-        val newClipData: ClipData = JsonUtils.JSON.decodeFromString(json)
+        val newClipData: ClipData = DesktopJsonUtils.JSON.decodeFromString(json)
         assertEquals(clipData.clipId, newClipData.clipId)
         val newTextClipItem = ClipContent.getClipItem(newClipData.clipAppearContent)
         assertTrue(newTextClipItem is TextClipItem)
