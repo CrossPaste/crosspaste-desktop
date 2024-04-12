@@ -149,7 +149,7 @@ object Dependencies {
                 single<ClipServer> { DesktopClipServer(get<ConfigManager>()).start() }
                 single<ClipBonjourService> { DesktopClipBonjourService(get(), get()).registerService() }
                 single<TelnetUtils> { TelnetUtils(get<ClipClient>()) }
-                single<SyncClientApi> { DesktopSyncClientApi(get()) }
+                single<SyncClientApi> { DesktopSyncClientApi(get(), get()) }
                 single<SendClipClientApi> { DesktopSendClipClientApi(get(), get()) }
                 single<PullFileClientApi> { DesktopPullFileClientApi(get(), get()) }
                 single { DesktopSyncManager(get(), get(), get(), get()) }
