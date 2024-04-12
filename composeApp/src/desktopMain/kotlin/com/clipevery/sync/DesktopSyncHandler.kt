@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 class DesktopSyncHandler(
     override var syncRuntimeInfo: SyncRuntimeInfo,
+    private val tokenCache: TokenCache,
     private val telnetUtils: TelnetUtils,
     private val syncClientApi: SyncClientApi,
     private val signalProtocolStore: SignalProtocolStore,
@@ -89,6 +90,15 @@ class DesktopSyncHandler(
                     SyncState.CONNECTING -> {
                         resolveConnecting()
                     }
+                    SyncState.UNVERIFIED -> {
+                        tokenCache.getToken(syncRuntimeInfo.appInstanceId)?.let { token ->
+                            trustByToken(token)
+                        }
+                        resolveConnecting()
+                    }
+                    else -> {
+                        logger.warn { "current state is ${syncRuntimeInfo.connectState}" }
+                    }
                 }
             } while (syncRuntimeInfo.connectState == SyncState.CONNECTING)
         }
@@ -156,26 +166,39 @@ class DesktopSyncHandler(
         host: String,
         port: Int,
     ) {
-        try {
-            syncClientApi.getPreKeyBundle { urlBuilder ->
-                buildUrl(urlBuilder, host, port, "sync", "preKeyBundle")
-            }?.let { preKeyBundle ->
-                val sessionBuilder = createSessionBuilder()
-                try {
-                    sessionBuilder.process(preKeyBundle)
-                    if (exchangePreKey(host, port)) {
-                        return
-                    }
-                } catch (e: Exception) {
-                    logger.warn(e) { "createSession exchangePreKey fail" }
-                }
+        if (syncClientApi.isTrust { urlBuilder ->
+                buildUrl(urlBuilder, host, port, "sync", "isTrust")
             }
-        } catch (e: Exception) {
-            logger.warn(e) { "createSession getPreKeyBundle fail" }
-        }
-        logger.info { "connect state to unmatched $host $port" }
-        update {
-            this.connectState = SyncState.UNMATCHED
+        ) {
+            try {
+                syncClientApi.getPreKeyBundle { urlBuilder ->
+                    buildUrl(urlBuilder, host, port, "sync", "preKeyBundle")
+                }?.let { preKeyBundle ->
+                    val sessionBuilder = createSessionBuilder()
+                    try {
+                        sessionBuilder.process(preKeyBundle)
+                        if (exchangePreKey(host, port)) {
+                            return
+                        }
+                    } catch (e: Exception) {
+                        logger.warn(e) { "createSession exchangePreKey fail" }
+                    }
+                }
+            } catch (e: Exception) {
+                logger.warn(e) { "createSession getPreKeyBundle fail" }
+            }
+            logger.info { "connect state to unmatched $host $port" }
+            update {
+                this.connectState = SyncState.UNMATCHED
+            }
+        } else {
+            logger.info { "connect state to unverified $host $port" }
+            update {
+                this.connectHostAddress = host
+                this.port = port
+                this.connectState = SyncState.UNVERIFIED
+                logger.info { "createSession ${syncRuntimeInfo.platformName} ${SyncState.UNVERIFIED}" }
+            }
         }
     }
 
@@ -193,6 +216,16 @@ class DesktopSyncHandler(
             true
         } else {
             false
+        }
+    }
+
+    override suspend fun trustByToken(token: Int) {
+        if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
+            syncRuntimeInfo.connectHostAddress?.let { host ->
+                syncClientApi.trust(token) { urlBuilder ->
+                    buildUrl(urlBuilder, host, syncRuntimeInfo.port, "sync", "trust")
+                }
+            }
         }
     }
 

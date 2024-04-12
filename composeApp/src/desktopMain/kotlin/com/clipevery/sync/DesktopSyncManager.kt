@@ -33,6 +33,8 @@ class DesktopSyncManager(
 
     private val logger = KotlinLogging.logger {}
 
+    private val tokenCache: TokenCache = TokenCache
+
     override var realTimeSyncRuntimeInfos: MutableList<SyncRuntimeInfo> = mutableStateListOf()
 
     private var internalSyncHandlers: MutableMap<String, SyncHandler> = ConcurrentMap()
@@ -53,6 +55,7 @@ class DesktopSyncManager(
                     syncRuntimeInfo.appInstanceId to
                         DesktopSyncHandler(
                             syncRuntimeInfo,
+                            tokenCache,
                             telnetUtils,
                             syncClientApi,
                             signalProtocolStore,
@@ -78,6 +81,7 @@ class DesktopSyncManager(
                             internalSyncHandlers[insertionSyncRuntimeInfo.appInstanceId] =
                                 DesktopSyncHandler(
                                     insertionSyncRuntimeInfo,
+                                    tokenCache,
                                     telnetUtils,
                                     syncClientApi,
                                     signalProtocolStore,
@@ -133,6 +137,16 @@ class DesktopSyncManager(
 
     override fun getSyncHandlers(): Map<String, SyncHandler> {
         return internalSyncHandlers
+    }
+
+    override suspend fun trustByToken(
+        appInstanceId: String,
+        token: Int,
+    ) {
+        internalSyncHandlers[appInstanceId]?.also {
+            it.trustByToken(token)
+            it.resolveSync(false)
+        }
     }
 
     override fun refresh(force: Boolean) {

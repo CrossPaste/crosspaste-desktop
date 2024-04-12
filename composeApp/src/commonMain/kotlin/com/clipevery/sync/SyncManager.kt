@@ -14,4 +14,9 @@ interface SyncManager {
     )
 
     fun getSyncHandlers(): Map<String, SyncHandler>
+
+    suspend fun trustByToken(
+        appInstanceId: String,
+        token: Int,
+    )
 }
