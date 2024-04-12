@@ -229,6 +229,16 @@ class DesktopSyncHandler(
         }
     }
 
+    override suspend fun showToken() {
+        if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
+            syncRuntimeInfo.connectHostAddress?.let { host ->
+                syncClientApi.showToken { urlBuilder ->
+                    buildUrl(urlBuilder, host, syncRuntimeInfo.port, "sync", "showToken")
+                }
+            }
+        }
+    }
+
     private fun isExistSession(): Boolean {
         return signalProtocolStore.loadSession(signalProtocolAddress) != null
     }

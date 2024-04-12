@@ -32,11 +32,7 @@ import com.clipevery.ui.base.question
 import com.clipevery.ui.base.windows
 
 @Composable
-fun DeviceBarView(
-    modifier: Modifier = Modifier,
-    syncRuntimeInfo: SyncRuntimeInfo,
-    deviceViewProvider: @Composable () -> Unit,
-) {
+fun PlatformPainter(syncRuntimeInfo: SyncRuntimeInfo): Painter {
     val platform =
         Platform(
             syncRuntimeInfo.platformName,
@@ -45,23 +41,29 @@ fun DeviceBarView(
             syncRuntimeInfo.platformVersion,
         )
 
-    val painter: Painter =
-        if (platform.isMacos()) {
-            macos()
-        } else if (platform.isWindows()) {
-            windows()
-        } else if (platform.isLinux()) {
-            linux()
-        } else if (platform.isIphone()) {
-            iphone()
-        } else if (platform.isIpad()) {
-            ipad()
-        } else if (platform.isAndroid()) {
-            android()
-        } else {
-            question()
-        }
+    return if (platform.isMacos()) {
+        macos()
+    } else if (platform.isWindows()) {
+        windows()
+    } else if (platform.isLinux()) {
+        linux()
+    } else if (platform.isIphone()) {
+        iphone()
+    } else if (platform.isIpad()) {
+        ipad()
+    } else if (platform.isAndroid()) {
+        android()
+    } else {
+        question()
+    }
+}
 
+@Composable
+fun DeviceBarView(
+    modifier: Modifier = Modifier,
+    syncRuntimeInfo: SyncRuntimeInfo,
+    deviceViewProvider: @Composable () -> Unit,
+) {
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
@@ -70,7 +72,7 @@ fun DeviceBarView(
         Row(modifier = Modifier.wrapContentSize()) {
             Icon(
                 modifier = Modifier.padding(12.dp).size(36.dp),
-                painter = painter,
+                painter = PlatformPainter(syncRuntimeInfo),
                 contentDescription = "OS Icon",
                 tint = MaterialTheme.colors.onBackground,
             )
@@ -81,7 +83,7 @@ fun DeviceBarView(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = platform.name,
+                        text = syncRuntimeInfo.platformName,
                         style =
                             TextStyle(
                                 fontWeight = FontWeight.Bold,
@@ -91,7 +93,7 @@ fun DeviceBarView(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = platform.version,
+                        text = syncRuntimeInfo.platformVersion,
                         style =
                             TextStyle(
                                 fontWeight = FontWeight.Light,
