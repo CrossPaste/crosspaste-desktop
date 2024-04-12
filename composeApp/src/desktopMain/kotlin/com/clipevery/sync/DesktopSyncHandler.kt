@@ -176,6 +176,7 @@ class DesktopSyncHandler(
                 }?.let { preKeyBundle ->
                     val sessionBuilder = createSessionBuilder()
                     try {
+                        signalProtocolStore.saveIdentity(signalProtocolAddress, preKeyBundle.identityKey)
                         sessionBuilder.process(preKeyBundle)
                         if (exchangePreKey(host, port)) {
                             return
