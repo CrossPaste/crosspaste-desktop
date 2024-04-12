@@ -80,4 +80,8 @@ class DesktopSyncClientApi(
             return false
         }
     }
+
+    override suspend fun showToken(toUrl: URLBuilder.(URLBuilder) -> Unit) {
+        clipClient.get(urlBuilder = toUrl)
+    }
 }

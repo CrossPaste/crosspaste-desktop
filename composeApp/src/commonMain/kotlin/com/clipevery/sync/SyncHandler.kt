@@ -18,4 +18,6 @@ interface SyncHandler {
     fun clearContext()
 
     suspend fun trustByToken(token: Int)
+
+    suspend fun showToken()
 }

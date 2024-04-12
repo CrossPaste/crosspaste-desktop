@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import com.clipevery.dao.sync.SyncRuntimeInfo
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
+import com.clipevery.dao.sync.SyncState
 import com.clipevery.dao.sync.hostInfoListEqual
 import com.clipevery.net.SyncRefresher
 import com.clipevery.net.clientapi.SyncClientApi
@@ -37,6 +38,10 @@ class DesktopSyncManager(
 
     override var realTimeSyncRuntimeInfos: MutableList<SyncRuntimeInfo> = mutableStateListOf()
 
+    private val ignoreVerifySet: MutableSet<String> = mutableSetOf()
+
+    override var waitToVerifySyncRuntimeInfo = mutableStateOf<SyncRuntimeInfo?>(null)
+
     private var internalSyncHandlers: MutableMap<String, SyncHandler> = ConcurrentMap()
 
     private val realTimeJob = SupervisorJob()
@@ -65,6 +70,7 @@ class DesktopSyncManager(
             )
             withContext(mainDispatcher) {
                 realTimeSyncRuntimeInfos.addAll(syncRuntimeInfos)
+                refreshWaitToVerifySyncRuntimeInfo()
             }
             val syncRuntimeInfosFlow = syncRuntimeInfos.asFlow()
             syncRuntimeInfosFlow.collect { changes: ResultsChange<SyncRuntimeInfo> ->
@@ -106,6 +112,7 @@ class DesktopSyncManager(
                         withContext(Dispatchers.Main) {
                             realTimeSyncRuntimeInfos.clear()
                             realTimeSyncRuntimeInfos.addAll(changes.list)
+                            refreshWaitToVerifySyncRuntimeInfo()
                         }
                     }
                     else -> {
@@ -114,6 +121,18 @@ class DesktopSyncManager(
                 }
             }
         }
+    }
+
+    override fun refreshWaitToVerifySyncRuntimeInfo() {
+        waitToVerifySyncRuntimeInfo.value =
+            realTimeSyncRuntimeInfos
+                .filter { !ignoreVerifySet.contains(it.appInstanceId) }
+                .firstOrNull { it.connectState == SyncState.UNVERIFIED }
+    }
+
+    override fun ignoreVerify(appInstanceId: String) {
+        ignoreVerifySet.add(appInstanceId)
+        refreshWaitToVerifySyncRuntimeInfo()
     }
 
     override fun resolveSyncs(force: Boolean) {

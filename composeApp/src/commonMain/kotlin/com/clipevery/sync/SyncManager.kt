@@ -1,5 +1,6 @@
 package com.clipevery.sync
 
+import androidx.compose.runtime.MutableState
 import com.clipevery.dao.sync.SyncRuntimeInfo
 
 interface SyncManager {
@@ -14,6 +15,12 @@ interface SyncManager {
     )
 
     fun getSyncHandlers(): Map<String, SyncHandler>
+
+    var waitToVerifySyncRuntimeInfo: MutableState<SyncRuntimeInfo?>
+
+    fun refreshWaitToVerifySyncRuntimeInfo()
+
+    fun ignoreVerify(appInstanceId: String)
 
     suspend fun trustByToken(
         appInstanceId: String,

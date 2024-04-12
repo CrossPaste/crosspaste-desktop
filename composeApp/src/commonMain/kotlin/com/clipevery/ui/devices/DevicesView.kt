@@ -51,29 +51,37 @@ import com.clipevery.ui.SingleTabView
 fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
+    val syncManager = current.koin.get<SyncManager>()
+    val waitToVerifySyncRuntimeInfo by remember { syncManager.waitToVerifySyncRuntimeInfo }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize().weight(0.5f)) {
-            Row(
-                modifier =
-                    Modifier.padding(8.dp)
-                        .wrapContentWidth(),
-            ) {
-                SingleTabView(copywriter.getText("MyDevices"), true) {}
-                Spacer(modifier = Modifier.fillMaxWidth())
+    Box(contentAlignment = Alignment.TopCenter) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize().weight(0.5f)) {
+                Row(
+                    modifier =
+                        Modifier.padding(8.dp)
+                            .wrapContentWidth(),
+                ) {
+                    SingleTabView(copywriter.getText("MyDevices"), true) {}
+                    Spacer(modifier = Modifier.fillMaxWidth())
+                }
+                MyDevicesView(currentPageViewContext)
             }
-            MyDevicesView(currentPageViewContext)
+            Column(modifier = Modifier.fillMaxSize().weight(0.5f)) {
+                Row(
+                    modifier =
+                        Modifier.padding(8.dp)
+                            .wrapContentWidth(),
+                ) {
+                    SingleTabView(copywriter.getText("NearbyDevices"), true) {}
+                    Spacer(modifier = Modifier.fillMaxWidth())
+                }
+                NearbyDevicesView(currentPageViewContext)
+            }
         }
-        Column(modifier = Modifier.fillMaxSize().weight(0.5f)) {
-            Row(
-                modifier =
-                    Modifier.padding(8.dp)
-                        .wrapContentWidth(),
-            ) {
-                SingleTabView(copywriter.getText("NearbyDevices"), true) {}
-                Spacer(modifier = Modifier.fillMaxWidth())
-            }
-            NearbyDevicesView(currentPageViewContext)
+
+        waitToVerifySyncRuntimeInfo?.let {
+            DeviceVerifyView(it)
         }
     }
 }
@@ -124,7 +132,7 @@ fun DeviceNoteNameEditView(
                     Modifier.width(260.dp)
                         .wrapContentHeight()
                         .clip(RoundedCornerShape(8.dp))
-                        .background(color = MaterialTheme.colors.background)
+                        .background(color = MaterialTheme.colors.surface)
                         .padding(horizontal = 10.dp)
                         .padding(top = 10.dp, bottom = 6.dp),
             ) {
