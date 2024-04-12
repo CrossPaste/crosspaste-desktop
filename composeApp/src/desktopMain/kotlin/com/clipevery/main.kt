@@ -1,11 +1,7 @@
 package com.clipevery
 
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
@@ -30,15 +26,11 @@ import com.clipevery.utils.FileUtils
 import com.clipevery.utils.QRCodeGenerator
 import com.clipevery.utils.getPreferredWindowSize
 import com.clipevery.utils.ioDispatcher
-import dev.datlag.kcef.KCEF
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.koin.core.KoinApplication
 import kotlin.io.path.pathString
-import kotlin.math.max
 
 fun initInject(koinApplication: KoinApplication) {
     koinApplication.koin.get<FileUtils>()
@@ -78,10 +70,6 @@ fun main() {
 
     application {
         val ioScope = rememberCoroutineScope { ioDispatcher }
-
-        var restartRequired by remember { mutableStateOf(false) }
-        var downloading by remember { mutableStateOf(0F) }
-        var initialized by remember { mutableStateOf(false) }
 
         val appUI = koinApplication.koin.get<AppUI>()
 
@@ -137,30 +125,6 @@ fun main() {
                         }
                     },
                 )
-
-                val kcefBundleDir = DesktopPathProvider.resolve("kcef-bundle", AppFileType.KCEF).toFile()
-                val kcefCacheDir = DesktopPathProvider.resolve("kcef-cache", AppFileType.KCEF).toFile()
-
-                withContext(Dispatchers.IO) {
-                    KCEF.init(builder = {
-                        installDir(kcefBundleDir)
-                        progress {
-                            onDownloading {
-                                downloading = max(it, 0F)
-                            }
-                            onInitialized {
-                                initialized = true
-                            }
-                        }
-                        settings {
-                            cachePath = kcefCacheDir.absolutePath
-                        }
-                    }, onError = {
-                        it?.printStackTrace()
-                    }, onRestartRequired = {
-                        restartRequired = true
-                    })
-                }
             }
             ClipeveryApp(
                 koinApplication,
