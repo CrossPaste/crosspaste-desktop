@@ -10,6 +10,7 @@ import com.clipevery.net.SyncRefresher
 import com.clipevery.net.clientapi.SyncClientApi
 import com.clipevery.utils.TelnetUtils
 import com.clipevery.utils.cpuDispatcher
+import com.clipevery.utils.mainDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.collections.*
 import io.realm.kotlin.notifications.ResultsChange
@@ -59,7 +60,7 @@ class DesktopSyncManager(
                         )
                 },
             )
-            withContext(Dispatchers.Main) {
+            withContext(mainDispatcher) {
                 realTimeSyncRuntimeInfos.addAll(syncRuntimeInfos)
             }
             val syncRuntimeInfosFlow = syncRuntimeInfos.asFlow()

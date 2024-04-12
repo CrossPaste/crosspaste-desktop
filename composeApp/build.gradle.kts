@@ -72,6 +72,7 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.kotlin.logging)
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.material.desktop)
             implementation(libs.realm.kotlin.base)
