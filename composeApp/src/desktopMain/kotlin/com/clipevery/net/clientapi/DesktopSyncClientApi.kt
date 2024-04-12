@@ -1,6 +1,7 @@
 package com.clipevery.net.clientapi
 
 import com.clipevery.dto.sync.DataContent
+import com.clipevery.dto.sync.RequestTrust
 import com.clipevery.net.ClipClient
 import com.clipevery.utils.decodePreKeyBundle
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -10,8 +11,12 @@ import io.ktor.util.reflect.*
 import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.message.SignalMessage
 import org.signal.libsignal.protocol.state.PreKeyBundle
+import org.signal.libsignal.protocol.state.SignalProtocolStore
 
-class DesktopSyncClientApi(private val clipClient: ClipClient) : SyncClientApi {
+class DesktopSyncClientApi(
+    private val clipClient: ClipClient,
+    private val signalProtocolStore: SignalProtocolStore,
+) : SyncClientApi {
 
     private val logger = KotlinLogging.logger {}
 
@@ -49,5 +54,30 @@ class DesktopSyncClientApi(private val clipClient: ClipClient) : SyncClientApi {
             logger.error(e) { "exchangePreKey error" }
         }
         return false
+    }
+
+    override suspend fun isTrust(toUrl: URLBuilder.(URLBuilder) -> Unit): Boolean {
+        try {
+            val response = clipClient.get(urlBuilder = toUrl)
+            return response.status.value == 200
+        } catch (e: Exception) {
+            logger.error(e) { "isTrust api fail" }
+            return false
+        }
+    }
+
+    override suspend fun trust(
+        token: Int,
+        toUrl: URLBuilder.(URLBuilder) -> Unit,
+    ): Boolean {
+        try {
+            val identityKey = signalProtocolStore.identityKeyPair.publicKey
+            val requestTrust = RequestTrust(identityKey, token)
+            val response = clipClient.post(requestTrust, typeInfo<RequestTrust>(), urlBuilder = toUrl)
+            return response.status.value == 200
+        } catch (e: Exception) {
+            logger.error(e) { "trust api fail" }
+            return false
+        }
     }
 }

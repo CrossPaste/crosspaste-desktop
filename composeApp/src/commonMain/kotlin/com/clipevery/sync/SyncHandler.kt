@@ -16,4 +16,6 @@ interface SyncHandler {
     fun updateSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo)
 
     fun clearContext()
+
+    suspend fun trustByToken(token: Int)
 }
