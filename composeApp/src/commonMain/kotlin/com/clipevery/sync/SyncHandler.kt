@@ -1,6 +1,7 @@
 package com.clipevery.sync
 
 import com.clipevery.dao.sync.SyncRuntimeInfo
+import com.clipevery.dto.sync.SyncInfo
 import org.signal.libsignal.protocol.SessionCipher
 
 interface SyncHandler {
@@ -11,7 +12,10 @@ interface SyncHandler {
 
     suspend fun getConnectHostAddress(): String?
 
-    suspend fun resolveSync(force: Boolean)
+    suspend fun resolveSync(
+        currentDeviceSyncInfo: SyncInfo,
+        force: Boolean,
+    )
 
     fun updateSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo)
 

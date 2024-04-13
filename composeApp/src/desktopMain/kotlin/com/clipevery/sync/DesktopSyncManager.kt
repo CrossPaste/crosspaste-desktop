@@ -7,6 +7,8 @@ import com.clipevery.dao.sync.SyncRuntimeInfo
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.dao.sync.SyncState
 import com.clipevery.dao.sync.hostInfoListEqual
+import com.clipevery.dto.sync.SyncInfo
+import com.clipevery.net.SyncInfoFactory
 import com.clipevery.net.SyncRefresher
 import com.clipevery.net.clientapi.SyncClientApi
 import com.clipevery.utils.TelnetUtils
@@ -27,6 +29,7 @@ import org.signal.libsignal.protocol.state.SignalProtocolStore
 
 class DesktopSyncManager(
     private val telnetUtils: TelnetUtils,
+    private val syncInfoFactory: SyncInfoFactory,
     private val syncClientApi: SyncClientApi,
     private val signalProtocolStore: SignalProtocolStore,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
@@ -62,6 +65,7 @@ class DesktopSyncManager(
                             syncRuntimeInfo,
                             tokenCache,
                             telnetUtils,
+                            syncInfoFactory,
                             syncClientApi,
                             signalProtocolStore,
                             syncRuntimeInfoDao,
@@ -89,6 +93,7 @@ class DesktopSyncManager(
                                     insertionSyncRuntimeInfo,
                                     tokenCache,
                                     telnetUtils,
+                                    syncInfoFactory,
                                     syncClientApi,
                                     signalProtocolStore,
                                     syncRuntimeInfoDao,
@@ -141,9 +146,10 @@ class DesktopSyncManager(
     }
 
     override fun resolveSyncs(force: Boolean) {
+        val syncInfo = syncInfoFactory.createSyncInfo()
         internalSyncHandlers.values.forEach { syncHandler ->
             realTimeSyncScope.launch {
-                syncHandler.resolveSync(force)
+                doResolveSync(syncHandler, syncInfo, force)
             }
         }
     }
@@ -154,8 +160,21 @@ class DesktopSyncManager(
     ) {
         internalSyncHandlers[id]?.let { syncHandler ->
             realTimeSyncScope.launch(CoroutineName("SyncManagerResolve")) {
-                syncHandler.resolveSync(force)
+                val syncInfo = syncInfoFactory.createSyncInfo()
+                doResolveSync(syncHandler, syncInfo, force)
             }
+        }
+    }
+
+    private suspend fun doResolveSync(
+        syncHandler: SyncHandler,
+        currentDeviceSyncInfo: SyncInfo,
+        force: Boolean,
+    ) {
+        try {
+            syncHandler.resolveSync(currentDeviceSyncInfo, force)
+        } catch (e: Exception) {
+            logger.error(e) { "resolve sync error" }
         }
     }
 
@@ -169,7 +188,8 @@ class DesktopSyncManager(
     ) {
         internalSyncHandlers[appInstanceId]?.also {
             it.trustByToken(token)
-            it.resolveSync(false)
+            val syncInfo = syncInfoFactory.createSyncInfo()
+            it.resolveSync(syncInfo, false)
         }
     }
 

@@ -1,5 +1,6 @@
 package com.clipevery.net.clientapi
 
+import com.clipevery.dto.sync.SyncInfo
 import io.ktor.http.*
 import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.state.PreKeyBundle
@@ -8,7 +9,8 @@ interface SyncClientApi {
 
     suspend fun getPreKeyBundle(toUrl: URLBuilder.(URLBuilder) -> Unit): PreKeyBundle?
 
-    suspend fun exchangePreKey(
+    suspend fun exchangeSyncInfo(
+        syncInfo: SyncInfo,
         sessionCipher: SessionCipher,
         toUrl: URLBuilder.(URLBuilder) -> Unit,
     ): Boolean

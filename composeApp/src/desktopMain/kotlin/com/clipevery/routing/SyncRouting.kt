@@ -3,14 +3,13 @@ package com.clipevery.routing
 import com.clipevery.Dependencies
 import com.clipevery.app.AppInfo
 import com.clipevery.app.AppUI
-import com.clipevery.dao.signal.ClipIdentityKey
 import com.clipevery.dao.signal.SignalDao
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.dto.sync.DataContent
 import com.clipevery.dto.sync.RequestTrust
-import com.clipevery.dto.sync.RequestTrustSyncInfo
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.exception.StandardErrorCode
+import com.clipevery.utils.DesktopJsonUtils
 import com.clipevery.utils.encodePreKeyBundle
 import com.clipevery.utils.failResponse
 import com.clipevery.utils.getAppInstanceId
@@ -29,7 +28,6 @@ import org.signal.libsignal.protocol.state.PreKeyBundle
 import org.signal.libsignal.protocol.state.PreKeyRecord
 import org.signal.libsignal.protocol.state.SignalProtocolStore
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord
-import java.util.Objects
 
 fun Routing.syncRouting() {
     val logger = KotlinLogging.logger {}
@@ -43,24 +41,6 @@ fun Routing.syncRouting() {
     val syncRuntimeInfoDao = koinApplication.koin.get<SyncRuntimeInfoDao>()
 
     val signalProtocolStore = koinApplication.koin.get<SignalProtocolStore>()
-
-    post("/sync/syncInfos") {
-        getAppInstanceId(call).let { appInstanceId ->
-            val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
-            signalProtocolStore.getIdentity(signalProtocolAddress)?.let {
-                val requestTrustSyncInfos: List<RequestTrustSyncInfo> = call.receive()
-                val syncInfos: List<SyncInfo> = requestTrustSyncInfos.map { it.syncInfo }
-                val identityKeys = requestTrustSyncInfos.map { ClipIdentityKey(it.syncInfo.appInfo.appInstanceId, it.identityKey.serialize()) }
-                syncRuntimeInfoDao.inertOrUpdate(syncInfos)
-                signalDao.saveIdentities(identityKeys)
-                logger.debug { "$appInstanceId sync info to ${appInfo.appInstanceId}:\n $syncInfos" }
-                successResponse(call)
-            } ?: run {
-                logger.debug { "${appInfo.appInstanceId} not trust $appInstanceId in /sync/syncInfos api" }
-                failResponse(call, StandardErrorCode.SIGNAL_UNTRUSTED_IDENTITY.toErrorCode(), "not trust $appInstanceId")
-            }
-        }
-    }
 
     get("/sync/telnet") {
         successResponse(call)
@@ -108,7 +88,7 @@ fun Routing.syncRouting() {
         }
     }
 
-    post("sync/exchangePreKey") {
+    post("sync/exchangeSyncInfo") {
         getAppInstanceId(call).let { appInstanceId ->
             val dataContent = call.receive(DataContent::class)
             val bytes = dataContent.data
@@ -143,12 +123,13 @@ fun Routing.syncRouting() {
                 }
             }
 
-            if (Objects.equals("exchange", String(decrypt!!, Charsets.UTF_8))) {
-                val ciphertextMessage = sessionCipher.encrypt("exchange".toByteArray(Charsets.UTF_8))
-                logger.debug { "$appInstanceId exchangePreKey to ${appInfo.appInstanceId} success" }
-                successResponse(call, DataContent(ciphertextMessage.serialize()))
-            } else {
-                logger.debug { "$appInstanceId exchangePreKey to ${appInfo.appInstanceId} fail" }
+            try {
+                val syncInfo = DesktopJsonUtils.JSON.decodeFromString<SyncInfo>(String(decrypt!!, Charsets.UTF_8))
+                syncRuntimeInfoDao.inertOrUpdate(syncInfo)
+                logger.debug { "$appInstanceId exchangeSyncInfo to ${appInfo.appInstanceId} success" }
+                successResponse(call)
+            } catch (e: Exception) {
+                logger.debug(e) { "$appInstanceId exchangeSyncInfo to ${appInfo.appInstanceId} fail" }
                 failResponse(call, StandardErrorCode.SIGNAL_EXCHANGE_FAIL.toErrorCode())
             }
         }
