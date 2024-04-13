@@ -49,7 +49,7 @@ class DesktopSyncClientApi(
             val response = clipClient.post(dataContent, typeInfo<DataContent>(), urlBuilder = toUrl)
             return response.status.value == 200
         } catch (e: Exception) {
-            logger.error(e) { "exchangePreKey error" }
+            logger.error(e) { "exchangeSyncInfo error" }
         }
         return false
     }

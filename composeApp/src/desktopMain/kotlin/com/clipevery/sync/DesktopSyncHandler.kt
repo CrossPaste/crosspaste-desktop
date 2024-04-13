@@ -168,7 +168,7 @@ class DesktopSyncHandler(
         try {
             return exchangeSyncInfo(host, port, syncInfo)
         } catch (e: Exception) {
-            logger.warn(e) { "useSession exchangePreKey fail" }
+            logger.warn(e) { "useSession exchangeSyncInfo fail" }
         }
         return false
     }
@@ -194,7 +194,7 @@ class DesktopSyncHandler(
                             return
                         }
                     } catch (e: Exception) {
-                        logger.warn(e) { "createSession exchangePreKey fail" }
+                        logger.warn(e) { "createSession exchangeSyncInfo fail" }
                     }
                 }
             } catch (e: Exception) {
@@ -224,7 +224,7 @@ class DesktopSyncHandler(
                 syncInfo,
                 sessionCipher,
             ) { urlBuilder ->
-                buildUrl(urlBuilder, host, port, "sync", "exchangePreKey")
+                buildUrl(urlBuilder, host, port, "sync", "exchangeSyncInfo")
             }
         ) {
             update {

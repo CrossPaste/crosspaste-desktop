@@ -117,7 +117,7 @@ fun Routing.syncRouting() {
                     )
                     decrypt = sessionCipher.decrypt(preKeySignalMessage)
                 } else {
-                    logger.debug { "$appInstanceId exchangePreKey to ${appInfo.appInstanceId}, not contain signedPreKeyId" }
+                    logger.debug { "$appInstanceId exchangeSyncInfo to ${appInfo.appInstanceId}, not contain signedPreKeyId" }
                     failResponse(call, StandardErrorCode.SIGNAL_INVALID_KEY_ID.toErrorCode())
                     return@let
                 }
