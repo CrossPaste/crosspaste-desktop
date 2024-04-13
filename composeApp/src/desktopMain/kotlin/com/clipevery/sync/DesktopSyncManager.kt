@@ -135,6 +135,11 @@ class DesktopSyncManager(
         refreshWaitToVerifySyncRuntimeInfo()
     }
 
+    override fun toVerify(appInstanceId: String) {
+        ignoreVerifySet.remove(appInstanceId)
+        refreshWaitToVerifySyncRuntimeInfo()
+    }
+
     override fun resolveSyncs(force: Boolean) {
         internalSyncHandlers.values.forEach { syncHandler ->
             realTimeSyncScope.launch {

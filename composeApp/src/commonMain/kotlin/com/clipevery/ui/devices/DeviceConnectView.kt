@@ -55,6 +55,7 @@ import com.clipevery.dao.sync.SyncRuntimeInfo
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.dao.sync.SyncState
 import com.clipevery.i18n.GlobalCopywriter
+import com.clipevery.sync.SyncManager
 import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.PageViewType
 import com.clipevery.ui.base.ClipIconButton
@@ -76,6 +77,7 @@ fun DeviceConnectView(
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
     val copywriter = current.koin.get<GlobalCopywriter>()
+    val syncManager = current.koin.get<SyncManager>()
     val syncRuntimeInfoDao = current.koin.get<SyncRuntimeInfoDao>()
     val signalDao = current.koin.get<SignalDao>()
 
@@ -110,12 +112,16 @@ fun DeviceConnectView(
                     hover = false
                 },
             ).clickable {
-                currentPageViewContext.value =
-                    PageViewContext(
-                        PageViewType.DEVICE_DETAIL,
-                        currentPageViewContext.value,
-                        syncRuntimeInfo,
-                    )
+                if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
+                    syncManager.toVerify(syncRuntimeInfo.appInstanceId)
+                } else {
+                    currentPageViewContext.value =
+                        PageViewContext(
+                            PageViewType.DEVICE_DETAIL,
+                            currentPageViewContext.value,
+                            syncRuntimeInfo,
+                        )
+                }
             }
     }
 

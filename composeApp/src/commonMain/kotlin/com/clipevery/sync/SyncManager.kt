@@ -22,6 +22,8 @@ interface SyncManager {
 
     fun ignoreVerify(appInstanceId: String)
 
+    fun toVerify(appInstanceId: String)
+
     suspend fun trustByToken(
         appInstanceId: String,
         token: Int,
