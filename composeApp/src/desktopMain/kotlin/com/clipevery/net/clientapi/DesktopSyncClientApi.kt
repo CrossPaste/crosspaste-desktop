@@ -2,14 +2,16 @@ package com.clipevery.net.clientapi
 
 import com.clipevery.dto.sync.DataContent
 import com.clipevery.dto.sync.RequestTrust
+import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.net.ClipClient
+import com.clipevery.utils.DesktopJsonUtils
 import com.clipevery.utils.decodePreKeyBundle
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.*
 import io.ktor.http.*
 import io.ktor.util.reflect.*
+import kotlinx.serialization.encodeToString
 import org.signal.libsignal.protocol.SessionCipher
-import org.signal.libsignal.protocol.message.SignalMessage
 import org.signal.libsignal.protocol.state.PreKeyBundle
 import org.signal.libsignal.protocol.state.SignalProtocolStore
 
@@ -33,25 +35,21 @@ class DesktopSyncClientApi(
         return null
     }
 
-    override suspend fun exchangePreKey(
+    override suspend fun exchangeSyncInfo(
+        syncInfo: SyncInfo,
         sessionCipher: SessionCipher,
         toUrl: URLBuilder.(URLBuilder) -> Unit,
     ): Boolean {
         try {
-            val ciphertextMessage = sessionCipher.encrypt("exchange".toByteArray(Charsets.UTF_8))
+            val data = DesktopJsonUtils.JSON.encodeToString(syncInfo).toByteArray()
+            val ciphertextMessage = sessionCipher.encrypt(data)
 
             val dataContent = DataContent(data = ciphertextMessage.serialize())
 
             val response = clipClient.post(dataContent, typeInfo<DataContent>(), urlBuilder = toUrl)
-            if (response.status.value != 200) {
-                return false
-            }
-            val getDataContent = response.body<DataContent>()
-            val signalMessage = SignalMessage(getDataContent.data)
-            val decrypt = sessionCipher.decrypt(signalMessage)
-            return String(decrypt, Charsets.UTF_8) == "exchange"
+            return response.status.value == 200
         } catch (e: Exception) {
-            logger.error(e) { "exchangePreKey error" }
+            logger.error(e) { "exchangeSyncInfo error" }
         }
         return false
     }

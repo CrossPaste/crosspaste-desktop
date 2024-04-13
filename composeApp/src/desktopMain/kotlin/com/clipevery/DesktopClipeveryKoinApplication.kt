@@ -51,6 +51,8 @@ import com.clipevery.net.ClipServer
 import com.clipevery.net.DesktopClipBonjourService
 import com.clipevery.net.DesktopClipClient
 import com.clipevery.net.DesktopClipServer
+import com.clipevery.net.DesktopSyncInfoFactory
+import com.clipevery.net.SyncInfoFactory
 import com.clipevery.net.SyncRefresher
 import com.clipevery.net.clientapi.DesktopPullFileClientApi
 import com.clipevery.net.clientapi.DesktopSendClipClientApi
@@ -120,6 +122,7 @@ object Dependencies {
                 single<AppEnv> { appEnv }
                 single<AppInfo> { DesktopAppInfoFactory(get()).createAppInfo() }
                 single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<ClipServer>() }) }
+                single<SyncInfoFactory> { DesktopSyncInfoFactory(get(), get()) }
                 single<PathProvider> { DesktopPathProvider }
                 single<FilePersist> { DesktopFilePersist }
                 single<ConfigManager> {
@@ -152,7 +155,7 @@ object Dependencies {
                 single<SyncClientApi> { DesktopSyncClientApi(get(), get()) }
                 single<SendClipClientApi> { DesktopSendClipClientApi(get(), get()) }
                 single<PullFileClientApi> { DesktopPullFileClientApi(get(), get()) }
-                single { DesktopSyncManager(get(), get(), get(), get()) }
+                single { DesktopSyncManager(get(), get(), get(), get(), get()) }
                 single<SyncRefresher> { get<DesktopSyncManager>() }
                 single<SyncManager> { get<DesktopSyncManager>() }
                 single<DeviceManager> { DesktopDeviceManager(get(), get(), get(), get()) }

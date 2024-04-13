@@ -3,6 +3,8 @@ package com.clipevery.sync
 import com.clipevery.dao.sync.SyncRuntimeInfo
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.dao.sync.SyncState
+import com.clipevery.dto.sync.SyncInfo
+import com.clipevery.net.SyncInfoFactory
 import com.clipevery.net.clientapi.SyncClientApi
 import com.clipevery.utils.TelnetUtils
 import com.clipevery.utils.buildUrl
@@ -18,6 +20,7 @@ class DesktopSyncHandler(
     override var syncRuntimeInfo: SyncRuntimeInfo,
     private val tokenCache: TokenCache,
     private val telnetUtils: TelnetUtils,
+    private val syncInfoFactory: SyncInfoFactory,
     private val syncClientApi: SyncClientApi,
     private val signalProtocolStore: SignalProtocolStore,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
@@ -35,12 +38,16 @@ class DesktopSyncHandler(
         syncRuntimeInfo.connectHostAddress?.let {
             return it
         } ?: run {
-            resolveSync(false)
+            val syncInfo = syncInfoFactory.createSyncInfo()
+            resolveSync(syncInfo, false)
             return syncRuntimeInfo.connectHostAddress
         }
     }
 
-    override suspend fun resolveSync(force: Boolean) {
+    override suspend fun resolveSync(
+        currentDeviceSyncInfo: SyncInfo,
+        force: Boolean,
+    ) {
         var delaySum = 0
         while (true) {
             if (delaySum >= 1000) {
@@ -49,7 +56,7 @@ class DesktopSyncHandler(
                 when {
                     force && resolveState.compareAndSet(null, true) ->
                         try {
-                            doResolveSync(true)
+                            doResolveSync(currentDeviceSyncInfo, true)
                             break
                         } finally {
                             resolveState.set(null)
@@ -57,7 +64,7 @@ class DesktopSyncHandler(
 
                     !force && resolveState.compareAndSet(null, false) ->
                         try {
-                            doResolveSync(false)
+                            doResolveSync(currentDeviceSyncInfo, false)
                             break
                         } finally {
                             resolveState.set(null)
@@ -72,7 +79,10 @@ class DesktopSyncHandler(
         }
     }
 
-    private suspend fun doResolveSync(force: Boolean) {
+    private suspend fun doResolveSync(
+        currentDeviceSyncInfo: SyncInfo,
+        force: Boolean,
+    ) {
         if (force && syncRuntimeInfo.connectHostAddress != null) {
             update {
                 this.connectState = SyncState.DISCONNECTED
@@ -88,13 +98,13 @@ class DesktopSyncHandler(
                         resolveDisconnected()
                     }
                     SyncState.CONNECTING -> {
-                        resolveConnecting()
+                        resolveConnecting(currentDeviceSyncInfo)
                     }
                     SyncState.UNVERIFIED -> {
                         tokenCache.getToken(syncRuntimeInfo.appInstanceId)?.let { token ->
                             trustByToken(token)
                         }
-                        resolveConnecting()
+                        resolveConnecting(currentDeviceSyncInfo)
                     }
                     else -> {
                         logger.warn { "current state is ${syncRuntimeInfo.connectState}" }
@@ -134,14 +144,14 @@ class DesktopSyncHandler(
         }
     }
 
-    private suspend fun resolveConnecting() {
+    private suspend fun resolveConnecting(currentDeviceSyncInfo: SyncInfo) {
         syncRuntimeInfo.connectHostAddress?.let { host ->
             if (isExistSession()) {
-                if (useSession(host, syncRuntimeInfo.port)) {
+                if (useSession(host, syncRuntimeInfo.port, currentDeviceSyncInfo)) {
                     return@resolveConnecting
                 }
             }
-            createSession(host, syncRuntimeInfo.port)
+            createSession(host, syncRuntimeInfo.port, currentDeviceSyncInfo)
         } ?: run {
             logger.info { "${syncRuntimeInfo.platformName} to disconnected" }
             update {
@@ -153,11 +163,12 @@ class DesktopSyncHandler(
     private suspend fun useSession(
         host: String,
         port: Int,
+        syncInfo: SyncInfo,
     ): Boolean {
         try {
-            return exchangePreKey(host, port)
+            return exchangeSyncInfo(host, port, syncInfo)
         } catch (e: Exception) {
-            logger.warn(e) { "useSession exchangePreKey fail" }
+            logger.warn(e) { "useSession exchangeSyncInfo fail" }
         }
         return false
     }
@@ -165,6 +176,7 @@ class DesktopSyncHandler(
     private suspend fun createSession(
         host: String,
         port: Int,
+        syncInfo: SyncInfo,
     ) {
         if (syncClientApi.isTrust { urlBuilder ->
                 buildUrl(urlBuilder, host, port, "sync", "isTrust")
@@ -178,11 +190,11 @@ class DesktopSyncHandler(
                     try {
                         signalProtocolStore.saveIdentity(signalProtocolAddress, preKeyBundle.identityKey)
                         sessionBuilder.process(preKeyBundle)
-                        if (exchangePreKey(host, port)) {
+                        if (exchangeSyncInfo(host, port, syncInfo)) {
                             return
                         }
                     } catch (e: Exception) {
-                        logger.warn(e) { "createSession exchangePreKey fail" }
+                        logger.warn(e) { "createSession exchangeSyncInfo fail" }
                     }
                 }
             } catch (e: Exception) {
@@ -203,12 +215,16 @@ class DesktopSyncHandler(
         }
     }
 
-    private suspend fun exchangePreKey(
+    private suspend fun exchangeSyncInfo(
         host: String,
         port: Int,
+        syncInfo: SyncInfo,
     ): Boolean {
-        return if (syncClientApi.exchangePreKey(sessionCipher) { urlBuilder ->
-                buildUrl(urlBuilder, host, port, "sync", "exchangePreKey")
+        return if (syncClientApi.exchangeSyncInfo(
+                syncInfo,
+                sessionCipher,
+            ) { urlBuilder ->
+                buildUrl(urlBuilder, host, port, "sync", "exchangeSyncInfo")
             }
         ) {
             update {
