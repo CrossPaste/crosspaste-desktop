@@ -158,7 +158,7 @@ fun TitleView(currentPage: MutableState<PageViewContext>) {
                         Modifier
                             .padding(13.dp)
                             .align(Alignment.End)
-                            .background(Color.Transparent, CircleShape) // Set the background to blue and shape to circle
+                            .background(Color.Transparent, CircleShape)
                             .onGloballyPositioned { coordinates ->
                                 buttonPosition = coordinates.localToWindow(Offset.Zero)
                                 buttonSize = coordinates.size.toSize()
