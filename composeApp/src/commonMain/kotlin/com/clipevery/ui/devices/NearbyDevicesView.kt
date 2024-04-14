@@ -81,13 +81,13 @@ fun NotFoundNearByDevices() {
         contentAlignment = Alignment.Center,
         modifier = Modifier.fillMaxSize(),
     ) {
-        Column(
-            modifier = Modifier.align(Alignment.Center),
-            horizontalAlignment = Alignment.CenterHorizontally,
+        Box(
+            modifier = Modifier.wrapContentSize().align(Alignment.Center),
+            contentAlignment = Alignment.Center,
         ) {
             Text(
                 modifier =
-                    Modifier.align(Alignment.CenterHorizontally)
+                    Modifier
                         .fillMaxWidth(0.8f),
                 textAlign = TextAlign.Center,
                 text = copywriter.getText("No_other_devices_found_with_Clipevery_enabled"),
