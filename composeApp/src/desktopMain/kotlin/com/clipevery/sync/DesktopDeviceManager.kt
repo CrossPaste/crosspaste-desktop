@@ -68,7 +68,7 @@ class DesktopDeviceManager(
                                 isNew(it.appInfo.appInstanceId) &&
                                     !isBlackListed(it.appInfo.appInstanceId)
                             }
-                } while (newSyncInfos.isEmpty() && tryNum < 3)
+                } while (newSyncInfos.isEmpty() && tryNum < 2)
             } catch (e: Exception) {
                 logger.error(e) { "search fail" }
             }
