@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -43,6 +44,7 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.mongodb.kbson.ObjectId
 
 val clipDataComparator = compareByDescending<ClipData> { it.getClipDataSortObject() }
 
@@ -56,6 +58,7 @@ fun ClipPreviewsView() {
     var scrollJob: Job? by remember { mutableStateOf(null) }
     val coroutineScope = rememberCoroutineScope()
     val rememberClipDataList = remember { mutableStateListOf<ClipData>() }
+    val rememberObjetIdMap = remember { mutableStateMapOf<ObjectId, ClipData>() }
 
     LaunchedEffect(Unit) {
         val clipDataList: RealmResults<ClipData> = clipDao.getClipData(limit = 20)
@@ -67,10 +70,13 @@ fun ClipPreviewsView() {
                     if (changes.insertions.isNotEmpty()) {
                         for (i in changes.insertions.size - 1 downTo 0) {
                             val newClipData = changes.list[changes.insertions[i]]
-                            val insertionIndex = rememberClipDataList.binarySearch(newClipData, clipDataComparator)
+                            var insertionIndex = rememberClipDataList.binarySearch(newClipData, clipDataComparator)
                             if (insertionIndex < 0) {
-                                val index = -(insertionIndex + 1)
-                                rememberClipDataList.add(index, newClipData)
+                                insertionIndex = -(insertionIndex + 1)
+                            }
+                            if (!rememberObjetIdMap.keys.contains(newClipData.id)) {
+                                rememberClipDataList.add(insertionIndex, newClipData)
+                                rememberObjetIdMap[newClipData.id] = newClipData
                             }
                         }
                     }
@@ -99,11 +105,16 @@ fun ClipPreviewsView() {
                             }
                         }
                     }
+
+                    if (listState.firstVisibleItemIndex == 0) {
+                        listState.scrollToItem(0)
+                    }
                     // changes.deletions handle separately
                 }
                 is InitialResults -> {
                     val initList = changes.list.sortedWith(clipDataComparator)
                     rememberClipDataList.addAll(initList)
+                    rememberObjetIdMap.putAll(initList.map { it.id to it })
                 }
             }
         }
@@ -118,7 +129,10 @@ fun ClipPreviewsView() {
                         val newClipDataList = clipDao.getClipDataLessThan(createTime = it.createTime, limit = 20)
                         for (clipData in newClipDataList) {
                             if (clipDataComparator.compare(clipData, lastClipData) > 0) {
-                                rememberClipDataList.add(clipData)
+                                if (!rememberObjetIdMap.keys.contains(clipData.id)) {
+                                    rememberClipDataList.add(clipData)
+                                    rememberObjetIdMap[clipData.id] = clipData
+                                }
                             }
                         }
                     }
@@ -138,13 +152,15 @@ fun ClipPreviewsView() {
             state = listState,
             modifier = Modifier.wrapContentHeight(),
         ) {
-            itemsIndexed(rememberClipDataList) { index, clipData ->
+            itemsIndexed(
+                rememberClipDataList,
+                key = { _, item -> item.id },
+            ) { index, clipData ->
                 ClipPreviewItemView(clipData) {
                     ClipSpecificPreviewView(this)
                 }
                 if (index != rememberClipDataList.size - 1) {
                     Divider(
-                        color = MaterialTheme.colors.onBackground,
                         thickness = 2.dp,
                     )
                 }
