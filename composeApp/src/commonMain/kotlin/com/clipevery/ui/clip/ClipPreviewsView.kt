@@ -67,11 +67,11 @@ fun ClipPreviewsView() {
                     if (changes.insertions.isNotEmpty()) {
                         for (i in changes.insertions.size - 1 downTo 0) {
                             val newClipData = changes.list[changes.insertions[i]]
-                            val insertionIndex = rememberClipDataList.binarySearch(newClipData, clipDataComparator)
+                            var insertionIndex = rememberClipDataList.binarySearch(newClipData, clipDataComparator)
                             if (insertionIndex < 0) {
-                                val index = -(insertionIndex + 1)
-                                rememberClipDataList.add(index, newClipData)
+                                insertionIndex = -(insertionIndex + 1)
                             }
+                            rememberClipDataList.add(insertionIndex, newClipData)
                         }
                     }
 
@@ -98,6 +98,10 @@ fun ClipPreviewsView() {
                                 iterator.remove()
                             }
                         }
+                    }
+
+                    if (listState.firstVisibleItemIndex == 0) {
+                        listState.scrollToItem(0)
                     }
                     // changes.deletions handle separately
                 }
@@ -138,13 +142,15 @@ fun ClipPreviewsView() {
             state = listState,
             modifier = Modifier.wrapContentHeight(),
         ) {
-            itemsIndexed(rememberClipDataList) { index, clipData ->
+            itemsIndexed(
+                rememberClipDataList,
+                key = { _, item -> item.id },
+            ) { index, clipData ->
                 ClipPreviewItemView(clipData) {
                     ClipSpecificPreviewView(this)
                 }
                 if (index != rememberClipDataList.size - 1) {
                     Divider(
-                        color = MaterialTheme.colors.onBackground,
                         thickness = 2.dp,
                     )
                 }
