@@ -92,37 +92,6 @@ fun TabView(
     ) {
         currentPageViewContext.value = PageViewContext(pageViewTypes[0])
     }
-
-//    val textStyle: TextStyle
-//    val textUnit: TextUnit
-//    var modifier: Modifier =
-//        Modifier.padding(2.dp)
-//            .height(30.dp)
-//            .wrapContentSize(Alignment.CenterStart)
-//
-//    if (pageViewTypes.contains(currentPageViewContext.value.pageViewType)) {
-//        textStyle = TextStyle(fontWeight = FontWeight.Bold)
-//        modifier = modifier.border(5.dp, MaterialTheme.colors.primary, bottomBorderShape)
-//        textUnit = 16.sp
-//    } else {
-//        textStyle = TextStyle(fontWeight = FontWeight.Normal)
-//        textUnit = 12.sp
-//    }
-//
-//    Box(modifier = modifier) {
-//        Text(
-//            text = title,
-//            color = MaterialTheme.colors.onBackground,
-//            fontSize = textUnit,
-//            style = textStyle,
-//            fontFamily = FontFamily.SansSerif,
-//            modifier =
-//                Modifier
-//                    .padding(8.dp, 0.dp, 8.dp, 8.dp)
-//                    .align(Alignment.BottomStart)
-//                    .clickable { currentPageViewContext.value = PageViewContext(pageViewTypes[0]) },
-//        )
-//    }
 }
 
 @Composable
