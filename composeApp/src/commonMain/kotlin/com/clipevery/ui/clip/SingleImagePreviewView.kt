@@ -58,7 +58,7 @@ fun SingleImagePreviewView(imagePath: Path) {
     ) {
         AsyncView(
             load = {
-                LoadImageData(imagePath, loadImage(imagePath, density, thumbnail = false))
+                LoadImageData(imagePath, loadImage(imagePath, density, thumbnail = true))
             },
             loadFor = { loadImageView ->
                 if (loadImageView.isSuccess()) {
