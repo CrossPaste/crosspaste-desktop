@@ -47,6 +47,7 @@ fun Routing.pullRouting() {
 
             cacheManager.filesIndexCache.get(PullFilesKey(appInstanceId, clipId)).let { filesIndex ->
                 filesIndex.getChunk(pullFileRequest.chunkIndex)?.let { chunk ->
+                    logger.info { "filesIndex ${pullFileRequest.chunkIndex} $chunk" }
                     val producer: suspend ByteWriteChannel.() -> Unit = {
                         fileUtils.readFilesChunk(chunk, this)
                     }
