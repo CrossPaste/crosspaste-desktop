@@ -9,6 +9,7 @@ import com.clipevery.presist.FileInfoTree
 import com.clipevery.presist.FilesIndexBuilder
 import com.clipevery.utils.FileUtils
 import java.nio.file.Path
+import kotlin.io.path.name
 
 interface PathProvider {
     fun resolve(
@@ -71,8 +72,11 @@ interface PathProvider {
         }
 
         val fileInfoTreeMap = clipFiles.getFileInfoTreeMap()
-        for (fileInfoTreeEntry in fileInfoTreeMap) {
-            resolveFileInfoTree(clipIdPath, fileInfoTreeEntry.key, fileInfoTreeEntry.value, isPull, filesIndexBuilder)
+
+        for (filePath in clipFiles.getFilePaths()) {
+            fileInfoTreeMap[filePath.fileName.name]?.let {
+                resolveFileInfoTree(clipIdPath, filePath.fileName.name, it, isPull, filesIndexBuilder)
+            }
         }
     }
 

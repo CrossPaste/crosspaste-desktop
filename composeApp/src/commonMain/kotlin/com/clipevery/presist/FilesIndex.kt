@@ -64,10 +64,19 @@ class FilesChunkBuilder(private val chunkSize: Long) {
     }
 }
 
-data class FilesChunk(val fileChunks: List<FileChunk>)
+data class FilesChunk(val fileChunks: List<FileChunk>) {
+    override fun toString(): String {
+        val fileChunksToString = fileChunks.map { return it.toString() }.joinToString { ", " }
+        return "FilesChunk(chunks: [$fileChunksToString])"
+    }
+}
 
 data class FileChunk(val offset: Long, val size: Long, val path: Path) {
     fun getEndOffset(): Long {
         return offset + size
+    }
+
+    override fun toString(): String {
+        return "FileChunk(path: ${path.fileName}, offset: $offset, size: $size)"
     }
 }

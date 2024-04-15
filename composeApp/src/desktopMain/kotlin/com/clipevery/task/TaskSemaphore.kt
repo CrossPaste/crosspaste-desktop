@@ -17,13 +17,13 @@ class TaskSemaphore(limit: Int) {
         scope: CoroutineScope,
     ): List<T> =
         scope.async {
-            semaphore.withPermit {
-                tasks.map { task ->
-                    async {
+            tasks.map { task ->
+                async {
+                    semaphore.withPermit {
                         task()
                     }
-                }.awaitAll()
-            }
+                }
+            }.awaitAll()
         }.await()
 
     companion object {
