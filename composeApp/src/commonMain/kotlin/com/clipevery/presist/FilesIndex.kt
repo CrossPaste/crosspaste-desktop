@@ -41,18 +41,21 @@ class FilesIndex(private val filesChunks: List<FilesChunk>) {
     }
 }
 
-class FilesChunkBuilder(private val chunkSize: Long) {
+class FilesChunkBuilder(chunkSize: Long) {
 
     private val fileChunks = mutableListOf<FileChunk>()
+
+    private var remainingChunkSize = chunkSize
 
     fun addFile(
         filePath: Path,
         remainingSize: Long,
         size: Long,
     ): Long {
-        val chunkSize = if (remainingSize > chunkSize) chunkSize else remainingSize
-        fileChunks.add(FileChunk(size - remainingSize, chunkSize, filePath))
-        return remainingSize - chunkSize
+        val addNewChunkSize = if (remainingSize > remainingChunkSize) remainingChunkSize else remainingSize
+        fileChunks.add(FileChunk(size - remainingSize, addNewChunkSize, filePath))
+        remainingChunkSize -= addNewChunkSize
+        return remainingSize - addNewChunkSize
     }
 
     fun isNotEmpty(): Boolean {
@@ -66,7 +69,7 @@ class FilesChunkBuilder(private val chunkSize: Long) {
 
 data class FilesChunk(val fileChunks: List<FileChunk>) {
     override fun toString(): String {
-        val fileChunksToString = fileChunks.map { return it.toString() }.joinToString { ", " }
+        val fileChunksToString = fileChunks.joinToString(", ") { it.toString() }
         return "FilesChunk(chunks: [$fileChunksToString])"
     }
 }
