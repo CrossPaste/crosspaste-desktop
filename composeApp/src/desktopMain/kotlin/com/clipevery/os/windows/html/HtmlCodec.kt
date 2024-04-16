@@ -324,6 +324,27 @@ internal class HTMLCodec(
             return string
         }
 
+        fun replaceFromIndex(
+            input: String,
+            index: Int,
+            oldValue: String,
+            newValue: String,
+        ): String {
+            // 检查索引是否在字符串范围内
+            if (index !in 0..input.length) {
+                throw IllegalArgumentException("Index out of bounds")
+            }
+
+            // 截取从索引开始到字符串末尾的部分
+            val substring = input.substring(index)
+
+            // 在截取的部分中进行替换
+            val replacedSubstring = substring.replace(oldValue, newValue)
+
+            // 将替换后的部分与原始字符串的前半部分拼接
+            return input.substring(0, index) + replacedSubstring
+        }
+
         /**
          * convertToHTMLFormat adds the MS HTML clipboard header to byte array that
          * contains the parameters pairs.
@@ -351,24 +372,30 @@ internal class HTMLCodec(
          * <HTML>......<BODY>...</BODY><HTML>
          * are vailid too.
          </HTML></HTML></HTML></HTML></HTML></HTML> */
-        fun convertToHTMLFormat(bytes: ByteArray): ByteArray {
+        fun convertToHTMLFormat(html: String): ByteArray {
             // Calculate section offsets
             var htmlPrefix = ""
             var htmlSuffix = ""
-            run {
-                // we have extend the fragment to full HTML document correctly
-                // to avoid HTML and BODY tags doubling
-                val stContext: String = String(bytes)
-                val stUpContext: String = stContext.uppercase(Locale.getDefault())
-                if (-1 == stUpContext.indexOf("<HTML")) {
-                    htmlPrefix = "<HTML>"
-                    htmlSuffix = "</HTML>"
-                    if (-1 == stUpContext.indexOf("<BODY")) {
-                        htmlPrefix = htmlPrefix + "<BODY>"
-                        htmlSuffix = "</BODY>" + htmlSuffix
-                    }
+
+            // we have extend the fragment to full HTML document correctly
+            // to avoid HTML and BODY tags doubling
+            var stContext: String = html
+            val stUpContext: String = stContext.uppercase(Locale.getDefault())
+
+            val htmlIndex = stUpContext.indexOf("<HTML")
+            if (-1 == htmlIndex) {
+                htmlPrefix = "<HTML>"
+                htmlSuffix = "</HTML>"
+                if (-1 == stUpContext.indexOf("<BODY")) {
+                    htmlPrefix = htmlPrefix + "<BODY>"
+                    htmlSuffix = "</BODY>" + htmlSuffix
                 }
+            } else {
+                // Eliminate line breaks in html to avoid lag in word copy
+                stContext = replaceFromIndex(stContext, htmlIndex, "\n", "")
             }
+
+            val bytes = stContext.toByteArray()
 
             val searchStartFragment = kmpSearch(bytes, START_FRAGMENT_CMT.toByteArray())
 
