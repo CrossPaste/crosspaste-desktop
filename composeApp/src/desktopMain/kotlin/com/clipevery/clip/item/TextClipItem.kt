@@ -19,9 +19,14 @@ class TextClipItem : RealmObject, ClipAppearItem, ClipText {
     @PrimaryKey
     @Transient
     override var id: ObjectId = BsonObjectId()
+
     var identifier: String = ""
+
     override var text: String = ""
+
     override var md5: String = ""
+
+    override var extraInfo: String? = null
 
     override fun getIdentifierList(): List<String> {
         return listOf(identifier)
