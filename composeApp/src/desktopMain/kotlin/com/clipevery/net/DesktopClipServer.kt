@@ -14,10 +14,12 @@ import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
+import io.netty.channel.ChannelOption
 import kotlinx.coroutines.runBlocking
 import java.net.BindException
 
@@ -30,7 +32,25 @@ class DesktopClipServer(private val configManager: ConfigManager) : ClipServer {
     private var server: NettyApplicationEngine = createServer(port = configManager.config.port)
 
     private fun createServer(port: Int): NettyApplicationEngine {
-        return embeddedServer(Netty, port = port) {
+        return embeddedServer(
+            factory = Netty,
+            port = port,
+            configure = {
+                configureBootstrap = {
+                    childOption(ChannelOption.TCP_NODELAY, true)
+                    childOption(ChannelOption.SO_KEEPALIVE, true)
+                }
+            },
+        ) {
+            install(Compression) {
+                gzip {
+                    priority = 1.0
+                }
+                deflate {
+                    priority = 10.0
+                    minimumSize(1024)
+                }
+            }
             install(ContentNegotiation) {
                 json(DesktopJsonUtils.JSON)
             }
