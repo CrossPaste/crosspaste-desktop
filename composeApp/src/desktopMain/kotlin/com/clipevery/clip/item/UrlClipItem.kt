@@ -20,9 +20,14 @@ class UrlClipItem : RealmObject, ClipAppearItem, ClipUrl {
     @PrimaryKey
     @Transient
     override var id: ObjectId = BsonObjectId()
+
     var identifier: String = ""
+
     override var url: String = ""
+
     override var md5: String = ""
+
+    override var extraInfo: String? = null
 
     override fun getIdentifierList(): List<String> {
         return listOf(identifier)

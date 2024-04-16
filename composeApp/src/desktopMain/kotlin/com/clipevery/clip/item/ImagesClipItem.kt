@@ -42,6 +42,8 @@ class ImagesClipItem : RealmObject, ClipAppearItem, ClipFiles {
 
     override var md5: String = ""
 
+    override var extraInfo: String? = null
+
     override fun getAppFileType(): AppFileType {
         return AppFileType.IMAGE
     }

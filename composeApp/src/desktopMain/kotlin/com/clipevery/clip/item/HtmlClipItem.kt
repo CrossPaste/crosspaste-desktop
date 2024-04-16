@@ -24,11 +24,15 @@ class HtmlClipItem : RealmObject, ClipAppearItem, ClipHtml {
     @PrimaryKey
     @Transient
     override var id: ObjectId = BsonObjectId()
+
     var identifier: String = ""
 
     @Transient
     var relativePath: String = ""
+
     override var html: String = ""
+
+    override var extraInfo: String? = null
 
     override fun getHtmlImagePath(): Path {
         val basePath = DesktopPathProvider.resolve(appFileType = AppFileType.HTML)

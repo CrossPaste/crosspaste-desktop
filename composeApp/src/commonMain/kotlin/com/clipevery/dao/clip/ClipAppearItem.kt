@@ -16,6 +16,8 @@ interface ClipAppearItem {
 
     var md5: String
 
+    var extraInfo: String?
+
     fun update(
         data: Any,
         md5: String,
