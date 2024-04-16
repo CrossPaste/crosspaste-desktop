@@ -385,7 +385,7 @@ internal class HTMLCodec(
                         SOURCE_URL.length + stBaseUrl.length + EOLN.length
                 )
 
-            val nStartFragment = nStartHTML + htmlPrefix.length + (if (searchStartFragment > 0) searchStartFragment else 0)
+            val nStartFragment = nStartHTML + htmlPrefix.length + (if (searchStartFragment > 0) searchStartFragment + START_FRAGMENT_CMT.length else 0)
             val nEndFragment =
                 if (searchEndFragment > 0) {
                     nStartHTML + htmlPrefix.length + searchEndFragment
