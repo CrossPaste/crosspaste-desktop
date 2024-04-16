@@ -3,7 +3,9 @@ package com.clipevery.clip.item
 import com.clipevery.app.AppFileType
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipType
+import com.clipevery.os.windows.html.HTMLCodec
 import com.clipevery.path.DesktopPathProvider
+import com.clipevery.platform.currentPlatform
 import com.clipevery.presist.DesktopOneFilePersist
 import com.clipevery.utils.DesktopFileUtils
 import io.realm.kotlin.MutableRealm
@@ -86,8 +88,12 @@ class HtmlClipItem : RealmObject, ClipAppearItem, ClipHtml {
     }
 
     override fun fillDataFlavor(map: MutableMap<DataFlavor, Any>) {
-        map[DataFlavor.selectionHtmlFlavor] = html
-        map[DataFlavor.fragmentHtmlFlavor] = html
-        map[DataFlavor.allHtmlFlavor] = html
+        var currentHtml = this.html
+        if (currentPlatform().isWindows()) {
+            currentHtml = String(HTMLCodec.convertToHTMLFormat(currentHtml.toByteArray()))
+        }
+        map[DataFlavor.selectionHtmlFlavor] = currentHtml
+        map[DataFlavor.fragmentHtmlFlavor] = currentHtml
+        map[DataFlavor.allHtmlFlavor] = currentHtml
     }
 }
