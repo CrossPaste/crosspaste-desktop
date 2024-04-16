@@ -260,6 +260,56 @@ internal class HTMLCodec(
         private val VERSION_NUM = "1.0"
         private val PADDED_WIDTH = 10
 
+        fun kmpSearch(
+            textBytes: ByteArray,
+            patternBytes: ByteArray,
+        ): Int {
+            val lps = computeLPSArray(patternBytes)
+
+            var i = 0 // index for textBytes
+            var j = 0 // index for patternBytes
+            while (i < textBytes.size) {
+                if (patternBytes[j] == textBytes[i]) {
+                    i++
+                    j++
+                }
+                if (j == patternBytes.size) {
+                    return i - j // Found pattern at index (i - j)
+                } else if (i < textBytes.size && patternBytes[j] != textBytes[i]) {
+                    if (j != 0) {
+                        j = lps[j - 1]
+                    } else {
+                        i++
+                    }
+                }
+            }
+            return -1 // Pattern not found
+        }
+
+        // Function to compute the LPS (Longest Prefix which is also Suffix) array
+        fun computeLPSArray(patternBytes: ByteArray): IntArray {
+            val lps = IntArray(patternBytes.size)
+            var length = 0
+            var i = 1
+            lps[0] = 0 // lps[0] is always 0
+
+            while (i < patternBytes.size) {
+                if (patternBytes[i] == patternBytes[length]) {
+                    length++
+                    lps[i] = length
+                    i++
+                } else {
+                    if (length != 0) {
+                        length = lps[length - 1]
+                    } else {
+                        lps[i] = 0
+                        i++
+                    }
+                }
+            }
+            return lps
+        }
+
         private fun toPaddedString(
             n: Int,
             width: Int,
@@ -320,6 +370,10 @@ internal class HTMLCodec(
                 }
             }
 
+            val searchStartFragment = kmpSearch(bytes, START_FRAGMENT_CMT.toByteArray())
+
+            val searchEndFragment = kmpSearch(bytes, END_FRAGMENT_CMT.toByteArray())
+
             val stBaseUrl = DEF_SOURCE_URL
             val nStartHTML =
                 (
@@ -331,8 +385,14 @@ internal class HTMLCodec(
                         SOURCE_URL.length + stBaseUrl.length + EOLN.length
                 )
 
-            val nStartFragment = nStartHTML + htmlPrefix.length
-            val nEndFragment = nStartFragment + bytes.size - 1
+            val nStartFragment = nStartHTML + htmlPrefix.length + (if (searchStartFragment > 0) searchStartFragment else 0)
+            val nEndFragment =
+                if (searchEndFragment > 0) {
+                    nStartHTML + htmlPrefix.length + searchEndFragment
+                } else {
+                    nStartFragment + bytes.size - 1
+                }
+
             val nEndHTML = nEndFragment + htmlSuffix.length
 
             val header =
