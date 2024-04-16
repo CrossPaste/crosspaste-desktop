@@ -90,7 +90,7 @@ class HtmlClipItem : RealmObject, ClipAppearItem, ClipHtml {
     override fun fillDataFlavor(map: MutableMap<DataFlavor, Any>) {
         var currentHtml = this.html
         if (currentPlatform().isWindows()) {
-            currentHtml = String(HTMLCodec.convertToHTMLFormat(currentHtml.replace("\n", "\r\n").toByteArray()))
+            currentHtml = String(HTMLCodec.convertToHTMLFormat(currentHtml))
         }
         map[DataFlavor.selectionHtmlFlavor] = currentHtml
         map[DataFlavor.fragmentHtmlFlavor] = currentHtml
