@@ -2,15 +2,18 @@ package com.clipevery.ui.clip
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -23,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.text.TextStyle
@@ -34,6 +38,7 @@ import com.clipevery.LocalKoinApplication
 import com.clipevery.clip.ClipboardService
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipContent
+import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.dao.clip.ClipState
 import com.clipevery.dao.clip.ClipType
@@ -42,6 +47,8 @@ import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.Toast
 import com.clipevery.ui.base.ToastManager
 import com.clipevery.ui.base.ToastStyle
+import com.clipevery.ui.base.starRegular
+import com.clipevery.ui.base.starSolid
 import com.clipevery.utils.DateUtils
 import io.realm.kotlin.types.RealmInstant
 import kotlinx.coroutines.launch
@@ -69,6 +76,7 @@ fun ClipPreviewItemView(
     clipContent: @Composable ClipData.() -> Unit,
 ) {
     val current = LocalKoinApplication.current
+    val clipDao = current.koin.get<ClipDao>()
     val clipboardService = current.koin.get<ClipboardService>()
     val copywriter = current.koin.get<GlobalCopywriter>()
     val toastManager = current.koin.get<ToastManager>()
@@ -138,10 +146,23 @@ fun ClipPreviewItemView(
             ) {
                 Row(
                     modifier =
-                        Modifier.width(340.dp)
-                            .padding(end = 10.dp),
+                        Modifier.width(350.dp)
+                            .padding(start = 0.dp, end = 10.dp)
+                            .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // todo label list ui
+                    Icon(
+                        modifier =
+                            Modifier.padding(0.dp)
+                                .clickable {
+                                    clipDao.setFavorite(clipData.id, !clipData.isFavorite)
+                                },
+                        painter = if (clipData.isFavorite) starSolid() else starRegular(),
+                        contentDescription = "Favorite",
+                        tint = if (clipData.isFavorite) Color(0xFFFFCE34) else MaterialTheme.colors.onSurface,
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
                 }
                 Row(
                     modifier =
