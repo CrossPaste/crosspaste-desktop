@@ -23,6 +23,9 @@ class ClipData : RealmObject {
     var id: ObjectId = ObjectId()
 
     @Index
+    var appInstanceId: String = ""
+
+    @Index
     var clipId: Long = 0
     var clipAppearContent: RealmAny? = null
     var clipContent: ClipContent? = null
@@ -36,9 +39,6 @@ class ClipData : RealmObject {
 
     @Index
     var md5: String = ""
-
-    @Index
-    var appInstanceId: String = ""
 
     @Index
     @Transient
