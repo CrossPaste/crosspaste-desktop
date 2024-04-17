@@ -6,9 +6,7 @@ import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.endpoint.EndpointInfoFactory
 import com.clipevery.utils.TxtRecordUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
+import io.ktor.util.collections.*
 import java.net.InetAddress
 import javax.jmdns.JmDNS
 import javax.jmdns.ServiceEvent
@@ -26,6 +24,8 @@ class DesktopClipBonjourService(
     }
 
     private val jmdnsMap: MutableMap<String, JmDNS> = mutableMapOf()
+
+    private val searchSyncInfoListener = SearchSyncInfoListener(appInfo.appInstanceId)
 
     override fun registerService(): ClipBonjourService {
         val endpointInfo = endpointInfoFactory.createEndpointInfo()
@@ -46,6 +46,7 @@ class DesktopClipBonjourService(
                     0,
                     txtRecordDict,
                 )
+            jmDNS.addServiceListener(SERVICE_TYPE, searchSyncInfoListener)
             jmDNS.registerService(serviceInfo)
         }
         return this
@@ -64,15 +65,7 @@ class DesktopClipBonjourService(
     }
 
     override suspend fun search(timeMillis: Long): List<SyncInfo> {
-        return withContext(Dispatchers.IO) {
-            val jmdns = JmDNS.create("0.0.0.0")
-            jmdns.use {
-                val searchSyncInfoListener = SearchSyncInfoListener(appInfo.appInstanceId)
-                it.addServiceListener(SERVICE_TYPE, searchSyncInfoListener)
-                delay(timeMillis)
-                searchSyncInfoListener.getSyncInfoList()
-            }
-        }
+        return searchSyncInfoListener.getSyncInfoList()
     }
 }
 
@@ -80,7 +73,7 @@ class SearchSyncInfoListener(val appInstanceId: String) : ServiceListener {
 
     val logger = KotlinLogging.logger {}
 
-    private val syncInfoMap: MutableMap<String, SyncInfo> = mutableMapOf()
+    private val syncInfoMap: MutableMap<String, SyncInfo> = ConcurrentMap()
 
     override fun serviceAdded(event: ServiceEvent) {
         logger.info { "Service added: " + event.info }
