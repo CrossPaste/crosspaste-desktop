@@ -26,6 +26,17 @@ class ClipRealm(
         return realm.query(ClipData::class).sort("clipId", Sort.DESCENDING).first().find()?.clipId ?: 0L
     }
 
+    override fun setFavorite(
+        id: ObjectId,
+        isFavorite: Boolean,
+    ) {
+        realm.writeBlocking {
+            query(ClipData::class, "id == $0", id).first().find()?.let {
+                it.isFavorite = isFavorite
+            }
+        }
+    }
+
     override suspend fun createClipData(clipData: ClipData): ObjectId {
         realm.write {
             copyToRealm(clipData)

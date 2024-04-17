@@ -23,6 +23,9 @@ class ClipData : RealmObject {
     var id: ObjectId = ObjectId()
 
     @Index
+    var appInstanceId: String = ""
+
+    @Index
     var clipId: Long = 0
     var clipAppearContent: RealmAny? = null
     var clipContent: ClipContent? = null
@@ -38,9 +41,6 @@ class ClipData : RealmObject {
     var md5: String = ""
 
     @Index
-    var appInstanceId: String = ""
-
-    @Index
     @Transient
     var createTime: RealmInstant = RealmInstant.now()
 
@@ -48,6 +48,8 @@ class ClipData : RealmObject {
     var clipState: Int = ClipState.LOADING
 
     var isRemote: Boolean = false
+
+    var isFavorite: Boolean = false
 
     @Serializable(with = ClipLabelRealmSetSerializer::class)
     var labels: RealmSet<ClipLabel> = realmSetOf()

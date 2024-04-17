@@ -43,3 +43,13 @@ fun warning(): Painter {
 fun remove(): Painter {
     return painterResource("icon/base/remove.svg")
 }
+
+@Composable
+fun starRegular(): Painter {
+    return painterResource("icon/base/star-regular.svg")
+}
+
+@Composable
+fun starSolid(): Painter {
+    return painterResource("icon/base/star-solid.svg")
+}
