@@ -226,11 +226,11 @@ object DesktopFileUtils : FileUtils {
         filesChunk: FilesChunk,
         byteReadChannel: ByteReadChannel,
     ) {
+        val buffer = ByteArray(8192 * 10)
         filesChunk.fileChunks.forEach { fileChunk ->
             val file = fileChunk.path.toFile()
             val offset = fileChunk.offset
             val size = fileChunk.size
-            val buffer = ByteArray(8192)
             RandomAccessFile(file, "rw").use { randomAccessFile ->
                 randomAccessFile.seek(offset)
                 var remaining = size
@@ -251,13 +251,13 @@ object DesktopFileUtils : FileUtils {
         filesChunk: FilesChunk,
         byteWriteChannel: ByteWriteChannel,
     ) {
+        val buffer = ByteArray(8192 * 10)
         filesChunk.fileChunks.forEach { fileChunk ->
             val file = fileChunk.path.toFile()
             val offset = fileChunk.offset
             val size = fileChunk.size
             RandomAccessFile(file, "r").use { randomAccessFile ->
                 randomAccessFile.seek(offset)
-                val buffer = ByteArray(8192)
                 var remaining = size
                 while (remaining > 0) {
                     val toRead = minOf(buffer.size, remaining.toInt())
