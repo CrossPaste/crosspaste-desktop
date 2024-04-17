@@ -5,10 +5,10 @@ import io.ktor.client.*
 import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.content.ByteArrayContent
+import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.application.*
 import io.ktor.server.application.hooks.*
-import io.ktor.server.request.*
 import io.ktor.util.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
@@ -31,7 +31,6 @@ val SignalServerDecryption: ApplicationPlugin<SignalConfig> =
             headers["appInstanceId"]?.let { appInstanceId ->
                 headers["signal"]?.let { signal ->
                     if (signal == "1") {
-                        call.request.path()
                         return@on application.writer {
                             val encryptedContent = body.readRemaining().readBytes()
                             val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
@@ -79,7 +78,7 @@ object SignalClientEncryption : HttpClientPlugin<SignalConfig, SignalClientEncry
                                 val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
                                 val ciphertextMessage = sessionCipher.encrypt(it.bytes())
                                 val encryptedData = ciphertextMessage.serialize()
-                                context.body = ByteArrayContent(encryptedData)
+                                context.body = ByteArrayContent(encryptedData, contentType = ContentType.Application.Json)
                                 proceedWith(context.body)
                             } ?: run {
                                 throw IllegalStateException("targetAppInstanceId is null")
