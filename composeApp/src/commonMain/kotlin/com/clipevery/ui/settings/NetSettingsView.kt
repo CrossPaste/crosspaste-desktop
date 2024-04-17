@@ -238,8 +238,8 @@ fun NetSettingsView() {
 
                             val newBlackList = jsonUtils.JSON.encodeToString(blackSyncInfos)
                             configManager.updateConfig { it.copy(blacklist = newBlackList) }
-                            deviceManager.removeSyncInfo(syncInfo.appInfo.appInstanceId)
                             blacklist.remove(syncInfo)
+                            deviceManager.refresh()
                         }
                         if (index != blacklist.size - 1) {
                             Divider(modifier = Modifier.fillMaxWidth())

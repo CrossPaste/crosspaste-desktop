@@ -1,15 +1,14 @@
 package com.clipevery.sync
 
 import androidx.compose.runtime.State
-import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import com.clipevery.dto.sync.SyncInfo
 
 interface DeviceManager {
 
     val isSearching: State<Boolean>
-    val syncInfos: SnapshotStateList<SyncInfo>
 
-    suspend fun toSearchNearBy()
+    val syncInfos: SnapshotStateMap<String, SyncInfo>
 
-    fun removeSyncInfo(appInstanceId: String)
+    fun refresh()
 }
