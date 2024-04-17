@@ -60,10 +60,6 @@ fun NearbyDevicesView(currentPageViewContext: MutableState<PageViewContext>) {
     val deviceManager = current.koin.get<DeviceManager>()
     val isSearching by deviceManager.isSearching
 
-    LaunchedEffect(Unit) {
-        deviceManager.toSearchNearBy()
-    }
-
     if (isSearching) {
         SearchNearByDevices()
     } else if (deviceManager.syncInfos.isEmpty()) {
@@ -179,8 +175,8 @@ fun ShowNearByDevices() {
     val syncInfos = deviceManager.syncInfos
 
     Column(modifier = Modifier.fillMaxSize()) {
-        for ((index, syncInfo) in syncInfos.withIndex()) {
-            NearbyDeviceView(syncInfo)
+        for ((index, entry) in syncInfos.entries.withIndex()) {
+            NearbyDeviceView(entry.value)
             if (index != syncInfos.size - 1) {
                 Divider(modifier = Modifier.fillMaxWidth())
             }
@@ -247,7 +243,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
             radius = 18.dp,
             onClick = {
                 syncRuntimeInfoDao.inertOrUpdate(syncInfo)
-                deviceManager.removeSyncInfo(syncInfo.appInfo.appInstanceId)
+                deviceManager.refresh()
             },
             modifier =
                 Modifier
@@ -274,7 +270,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
                 blackSyncInfos.add(syncInfo)
                 val newBlackList = jsonUtils.JSON.encodeToString(blackSyncInfos)
                 configManager.updateConfig { it.copy(blacklist = newBlackList) }
-                deviceManager.removeSyncInfo(syncInfo.appInfo.appInstanceId)
+                deviceManager.refresh()
             },
             modifier =
                 Modifier
