@@ -10,17 +10,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Divider
-import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
@@ -30,7 +27,6 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,22 +44,16 @@ import com.clipevery.LocalKoinApplication
 import com.clipevery.dao.sync.SyncRuntimeInfo
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.i18n.GlobalCopywriter
-import com.clipevery.sync.DeviceManager
 import com.clipevery.sync.SyncManager
 import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.SingleTabView
-import com.clipevery.ui.base.ClipIconButton
-import com.clipevery.ui.base.magnifying
-import kotlinx.coroutines.launch
 
 @Composable
 fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val syncManager = current.koin.get<SyncManager>()
-    val deviceManager = current.koin.get<DeviceManager>()
-    val isSearching by deviceManager.isSearching
-    val scope = rememberCoroutineScope()
+
     val waitToVerifySyncRuntimeInfo by remember { syncManager.waitToVerifySyncRuntimeInfo }
 
     Box(contentAlignment = Alignment.TopCenter) {
@@ -87,28 +77,6 @@ fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     SingleTabView(copywriter.getText("NearbyDevices"), true) {}
-                    if (!isSearching) {
-                        ClipIconButton(
-                            radius = 18.dp,
-                            onClick = {
-                                scope.launch {
-                                    deviceManager.toSearchNearBy()
-                                }
-                            },
-                            modifier =
-                                Modifier
-                                    .padding(13.dp)
-                                    .background(Color.Transparent, CircleShape),
-                        ) {
-                            Icon(
-                                painter = magnifying(),
-                                contentDescription = "Searching",
-                                tint = MaterialTheme.colors.primary,
-                                modifier = Modifier.padding(3.dp).size(20.dp),
-                            )
-                        }
-                    }
-
                     Spacer(modifier = Modifier.fillMaxWidth())
                 }
                 NearbyDevicesView(currentPageViewContext)

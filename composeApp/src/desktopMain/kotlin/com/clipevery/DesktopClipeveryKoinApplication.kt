@@ -150,7 +150,7 @@ object Dependencies {
                 // net component
                 single<ClipClient> { DesktopClipClient(get<AppInfo>()) }
                 single<ClipServer> { DesktopClipServer(get<ConfigManager>()).start() }
-                single<ClipBonjourService> { DesktopClipBonjourService(get(), get()).registerService() }
+                single<ClipBonjourService> { DesktopClipBonjourService(get(), get(), get()).registerService() }
                 single<TelnetUtils> { TelnetUtils(get<ClipClient>()) }
                 single<SyncClientApi> { DesktopSyncClientApi(get(), get()) }
                 single<SendClipClientApi> { DesktopSendClipClientApi(get(), get()) }
