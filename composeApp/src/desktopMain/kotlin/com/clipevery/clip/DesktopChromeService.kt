@@ -103,11 +103,12 @@ object DesktopChromeService : ChromeService {
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun doHtml2Image(html: String): ByteArray? {
         chromeDriver?.let { driver ->
             driver.get(dataUrl(html))
             driver.manage().window().size = windowDimension
-            val dimensions: List<Long> = driver.executeScript("return [document.body.scrollWidth, document.body.scrollHeight]") as List<Long>
+            val dimensions: List<Long> = driver.executeScript(JsCode.CODE) as List<Long>
             val pageWidth = max(dimensions[0].toInt(), windowDimension.width)
             val pageHeight = max(dimensions[1].toInt(), windowDimension.height)
             driver.manage().window().size = Dimension(pageWidth, pageHeight)
@@ -116,4 +117,19 @@ object DesktopChromeService : ChromeService {
             return null
         }
     }
+}
+
+object JsCode {
+    const val CODE: String = """
+    const body = document.body;
+    const firstChild = body.firstElementChild;
+    if (body.children.length === 1 && firstChild) {
+        const firstChildStyle = getComputedStyle(firstChild);
+        if (firstChildStyle.backgroundColor && firstChildStyle.color) {
+            body.style.backgroundColor = firstChildStyle.backgroundColor;
+            body.style.color = firstChildStyle.color;
+        }
+    }
+    return [document.body.scrollWidth, document.body.scrollHeight]
+    """
 }
