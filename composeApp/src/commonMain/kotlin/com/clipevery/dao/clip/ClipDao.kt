@@ -59,4 +59,9 @@ interface ClipDao {
         cleanTime: RealmInstant,
         clipType: Int,
     )
+
+    fun setFavorite(
+        id: ObjectId,
+        isFavorite: Boolean,
+    )
 }
