@@ -123,6 +123,9 @@ compose.desktop {
             packageName = "Clipevery"
             packageVersion = "1.0.0"
 
+            // If we want to use arthas attach application in production environment,
+            // we need to use
+            // includeAllModules = true
             modules("jdk.charsets")
 
             val properties = Properties()

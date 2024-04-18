@@ -59,21 +59,24 @@ fun main() {
     val logger = KotlinLogging.logger {}
 
     logger.info { "Starting Clipevery" }
+    try {
+        val koinApplication = Dependencies.koinApplication
 
-    val koinApplication = Dependencies.koinApplication
+        initInject(koinApplication)
 
-    initInject(koinApplication)
+        val clipboardService = koinApplication.koin.get<ClipboardService>()
+        clipboardService.start()
 
-    val clipboardService = koinApplication.koin.get<ClipboardService>()
-    clipboardService.start()
-
-    val cleanClipScheduler = koinApplication.koin.get<CleanClipScheduler>()
-    cleanClipScheduler.start()
+        val cleanClipScheduler = koinApplication.koin.get<CleanClipScheduler>()
+        cleanClipScheduler.start()
+    } catch (throwable: Throwable) {
+        logger.error(throwable) { "cant start clipevery" }
+    }
 
     application {
         val ioScope = rememberCoroutineScope { ioDispatcher }
 
-        val appUI = koinApplication.koin.get<AppUI>()
+        val appUI = Dependencies.koinApplication.koin.get<AppUI>()
 
         val trayIcon =
             if (currentPlatform().isMacos()) {
@@ -129,7 +132,7 @@ fun main() {
                 )
             }
             ClipeveryApp(
-                koinApplication,
+                Dependencies.koinApplication,
                 hideWindow = { appUI.showMainWindow = false },
                 exitApplication = exitApplication,
             )

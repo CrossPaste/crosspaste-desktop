@@ -11,6 +11,7 @@ import org.openqa.selenium.Dimension
 import org.openqa.selenium.OutputType
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
+import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.math.max
@@ -50,19 +51,35 @@ object DesktopChromeService : ChromeService {
         }
 
     private val initChromeDriver: (String, String, String, Path) -> Unit = { chromeSuffix, driverName, headlessName, resourcesPath ->
+        val chromeDriverFile =
+            File(
+                resourcesPath
+                    .resolve("$CHROME_DRIVER-$chromeSuffix")
+                    .resolve(driverName)
+                    .absolutePathString(),
+            )
+
+        val chromeHeadlessShellFile =
+            File(
+                resourcesPath
+                    .resolve("$CHROME_HEADLESS_SHELL-$chromeSuffix")
+                    .resolve(headlessName)
+                    .absolutePathString(),
+            )
+
+        if (!chromeDriverFile.canExecute()) {
+            chromeDriverFile.setExecutable(true)
+        }
+
+        if (!chromeHeadlessShellFile.canExecute()) {
+            chromeHeadlessShellFile.setExecutable(true)
+        }
+
         System.setProperty(
             "webdriver.chrome.driver",
-            resourcesPath
-                .resolve("$CHROME_DRIVER-$chromeSuffix")
-                .resolve(driverName)
-                .absolutePathString(),
+            chromeDriverFile.absolutePath,
         )
-        options.setBinary(
-            resourcesPath
-                .resolve("$CHROME_HEADLESS_SHELL-$chromeSuffix")
-                .resolve(headlessName)
-                .absolutePathString(),
-        )
+        options.setBinary(chromeHeadlessShellFile.absolutePath)
     }
 
     private val windowDimension: Dimension =
