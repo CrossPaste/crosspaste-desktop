@@ -126,7 +126,7 @@ compose.desktop {
             // If we want to use arthas attach application in production environment,
             // we need to use
             // includeAllModules = true
-            modules("jdk.charsets")
+            modules("jdk.charsets", "java.net.http")
 
             val properties = Properties()
             val webDriverFile = project.projectDir.toPath().resolve("webDriver.properties").toFile()
