@@ -35,6 +35,9 @@ class WindowsClipboardService(
     override val logger: KLogger = KotlinLogging.logger {}
 
     @Volatile
+    private var existNew = false
+
+    @Volatile
     override var owner = false
 
     @Volatile
@@ -91,6 +94,9 @@ class WindowsClipboardService(
                     Kernel32.INFINITE,
                     User32.QS_ALLINPUT,
                 )
+
+            existNew = true
+
             if (result == Kernel32.WAIT_OBJECT_0) {
                 User32.INSTANCE.DestroyWindow(viewer)
                 return
@@ -186,10 +192,13 @@ class WindowsClipboardService(
             }
 
             User32.WM_DRAWCLIPBOARD -> {
-                try {
-                    onChange()
-                } finally {
-                    User32.INSTANCE.SendMessage(nextViewer, uMsg, uParam, lParam)
+                if (existNew) {
+                    existNew = false
+                    try {
+                        onChange()
+                    } finally {
+                        User32.INSTANCE.SendMessage(nextViewer, uMsg, uParam, lParam)
+                    }
                 }
                 return 0
             }
