@@ -23,7 +23,15 @@ object DesktopChromeService : ChromeService {
 
     private val currentPlatform = currentPlatform()
 
-    private val options: ChromeOptions =
+    private val scale: Double =
+        if (currentPlatform.isWindows()) {
+            val maxDpi: Int = WindowDpiHelper.getMaxDpiForMonitor()
+            maxDpi / 96.0
+        } else {
+            1.0
+        }
+
+    private val baseOptions: ChromeOptions =
         ChromeOptions()
             .addArguments("--hide-scrollbars")
             .addArguments("--disable-extensions")
@@ -31,6 +39,15 @@ object DesktopChromeService : ChromeService {
             .addArguments("--disable-gpu")
             .addArguments("--disable-software-rasterizer")
             .addArguments("--no-sandbox")
+
+    private val options: ChromeOptions =
+        if (currentPlatform.isWindows()) {
+            baseOptions
+                .addArguments("--force-device-scale-factor=$scale")
+                .addArguments("--high-dpi-support=$scale")
+        } else {
+            baseOptions
+        }
 
     private val initChromeDriver: (String, String, String, Path) -> Unit = { chromeSuffix, driverName, headlessName, resourcesPath ->
         System.setProperty(
@@ -50,9 +67,8 @@ object DesktopChromeService : ChromeService {
 
     private val windowDimension: Dimension =
         if (currentPlatform.isWindows()) {
-            val maxDpi: Int = WindowDpiHelper.getMaxDpiForMonitor()
-            val width: Int = ((340.0 * maxDpi) / 96.0).toInt()
-            val height: Int = ((100.0 * maxDpi) / 96.0).toInt()
+            val width: Int = (340.0 * scale).toInt()
+            val height: Int = (100.0 * scale).toInt()
             Dimension(width, height)
         } else {
             Dimension(340, 100)
