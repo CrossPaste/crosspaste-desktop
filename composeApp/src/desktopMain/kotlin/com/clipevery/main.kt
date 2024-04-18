@@ -12,6 +12,7 @@ import androidx.compose.ui.window.rememberWindowState
 import com.clipevery.app.AppFileType
 import com.clipevery.app.AppUI
 import com.clipevery.clean.CleanClipScheduler
+import com.clipevery.clip.ChromeService
 import com.clipevery.clip.ClipSearchService
 import com.clipevery.clip.ClipboardService
 import com.clipevery.listen.GlobalListener
@@ -49,6 +50,7 @@ fun exitClipEveryApplication(exitApplication: () -> Unit) {
     koinApplication.koin.get<ClipBonjourService>().unregisterService()
     koinApplication.koin.get<ClipServer>().stop()
     koinApplication.koin.get<CleanClipScheduler>().stop()
+    koinApplication.koin.get<ChromeService>().quit()
     exitApplication()
 }
 

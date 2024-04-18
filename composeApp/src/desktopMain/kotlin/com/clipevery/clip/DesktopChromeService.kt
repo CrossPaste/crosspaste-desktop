@@ -119,6 +119,10 @@ object DesktopChromeService : ChromeService {
         }
     }
 
+    override fun quit() {
+        chromeDriver?.quit()
+    }
+
     @Suppress("UNCHECKED_CAST")
     private fun doHtml2Image(html: String): ByteArray? {
         chromeDriver?.let { driver ->
