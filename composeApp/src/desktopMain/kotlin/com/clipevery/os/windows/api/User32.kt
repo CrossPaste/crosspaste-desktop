@@ -109,6 +109,8 @@ interface User32 : StdCallLibrary {
         dwData: LPARAM?,
     ): Boolean
 
+    fun GetClipboardSequenceNumber(): Int
+
     companion object {
         val INSTANCE =
             Native.load(

@@ -19,6 +19,7 @@ data class AppConfig(
     val fileCleanTimeIndex: Int = 6,
     val isAllowDiscovery: Boolean = true,
     val blacklist: String = "[]",
+    val lastClipboardChangeCount: Int = -1,
 ) {
 
     constructor(other: AppConfig, appEnv: AppEnv) : this(
@@ -34,5 +35,6 @@ data class AppConfig(
         fileCleanTimeIndex = other.fileCleanTimeIndex,
         isAllowDiscovery = other.isAllowDiscovery,
         blacklist = other.blacklist,
+        lastClipboardChangeCount = other.lastClipboardChangeCount,
     )
 }

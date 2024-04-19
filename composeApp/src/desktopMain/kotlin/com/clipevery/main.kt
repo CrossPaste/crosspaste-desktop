@@ -46,6 +46,7 @@ fun initInject(koinApplication: KoinApplication) {
 
 fun exitClipEveryApplication(exitApplication: () -> Unit) {
     val koinApplication = Dependencies.koinApplication
+    koinApplication.koin.get<ClipboardService>().stop()
     koinApplication.koin.get<ClipSearchService>().stop()
     koinApplication.koin.get<ClipBonjourService>().unregisterService()
     koinApplication.koin.get<ClipServer>().stop()
