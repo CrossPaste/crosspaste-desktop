@@ -26,6 +26,8 @@ object MultiImagesPlugin : ClipPlugin {
                     .flatMap { it.getFileInfoTreeMap().entries }
                     .associate { it.key to it.value }
             val fileInfoMapJsonString = DesktopJsonUtils.JSON.encodeToString(fileInfoMap)
+            val count = fileInfoMap.map { it.value.getCount() }.sum()
+            val size = fileInfoMap.map { it.value.size }.sum()
             val md5 =
                 clipAppearItems.map { it as FilesClipItem }.map { it.md5 }
                     .toTypedArray().let { md5ByArray(it) }
@@ -33,6 +35,8 @@ object MultiImagesPlugin : ClipPlugin {
             return ImagesClipItem().apply {
                 this.relativePathList = relativePathList
                 this.fileInfoTree = fileInfoMapJsonString
+                this.count = count
+                this.size = size
                 this.md5 = md5
             }.let { listOf(it) }
         }

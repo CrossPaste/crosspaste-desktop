@@ -78,12 +78,17 @@ class ImageItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
                 val fileTree = DesktopFileUtils.getFileInfoTree(imagePath)
 
                 val fileInfoTreeJsonString = DesktopJsonUtils.JSON.encodeToString(mapOf(name to fileTree))
+                val count = fileTree.getCount()
+                val size = fileTree.size
+                val md5 = fileTree.md5
 
                 val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
                     realm.query(ImagesClipItem::class, "id == $0", clipItem.id).first().find()?.apply {
                         this.relativePathList = realmListOf(relativePath)
                         this.fileInfoTree = fileInfoTreeJsonString
-                        this.md5 = fileTree.md5
+                        this.count = count
+                        this.size = size
+                        this.md5 = md5
                     }
                 }
                 clipCollector.updateCollectItem(itemIndex, this::class, update)

@@ -18,6 +18,8 @@ interface FileInfoTree {
     fun isFile(): Boolean
 
     fun getClipFileList(path: Path): List<ClipFile>
+
+    fun getCount(): Long
 }
 
 @Serializable
@@ -43,6 +45,10 @@ class DirFileInfoTree(
             fileTree.getClipFileList(path.resolve(name))
         }.flatten()
     }
+
+    override fun getCount(): Long {
+        return tree.values.sumOf { it.getCount() }
+    }
 }
 
 @Serializable
@@ -58,6 +64,10 @@ class SingleFileInfoTree(
 
     override fun getClipFileList(path: Path): List<ClipFile> {
         return listOf(ClipFileImpl(path, md5))
+    }
+
+    override fun getCount(): Long {
+        return 1L
     }
 }
 

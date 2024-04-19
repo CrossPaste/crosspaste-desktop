@@ -16,6 +16,8 @@ interface ClipAppearItem {
 
     var md5: String
 
+    var size: Long
+
     var extraInfo: String?
 
     fun update(

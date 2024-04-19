@@ -34,6 +34,10 @@ class HtmlClipItem : RealmObject, ClipAppearItem, ClipHtml {
 
     override var html: String = ""
 
+    override var md5: String = ""
+
+    override var size: Long = 0L
+
     override var extraInfo: String? = null
 
     override fun getHtmlImagePath(): Path {
@@ -52,8 +56,6 @@ class HtmlClipItem : RealmObject, ClipAppearItem, ClipHtml {
                 fileName = "html2Image.png",
             )
     }
-
-    override var md5: String = ""
 
     override fun getIdentifierList(): List<String> {
         return listOf(identifier)

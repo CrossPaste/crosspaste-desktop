@@ -1,6 +1,11 @@
 package com.clipevery.dao.clip
 
 import com.clipevery.clip.ClipPlugin
+import com.clipevery.clip.item.FilesClipItem
+import com.clipevery.clip.item.HtmlClipItem
+import com.clipevery.clip.item.ImagesClipItem
+import com.clipevery.clip.item.TextClipItem
+import com.clipevery.clip.item.UrlClipItem
 import com.clipevery.dao.task.TaskType
 import com.clipevery.task.TaskExecutor
 import com.clipevery.task.extra.SyncExtraInfo
@@ -10,6 +15,7 @@ import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.Realm
 import io.realm.kotlin.query.RealmResults
 import io.realm.kotlin.query.Sort
+import io.realm.kotlin.query.sum
 import io.realm.kotlin.types.RealmAny
 import io.realm.kotlin.types.RealmInstant
 import io.realm.kotlin.types.RealmObject
@@ -86,14 +92,39 @@ class ClipRealm(
     }
 
     override fun getClipResourceInfo(): ClipResourceInfo {
-        val number = realm.query(ClipData::class).count().find()
-        var imagesSize: Long = 0
-        var fileSize: Long = 0
-        realm.query(ClipResource::class).find().forEach {
-            imagesSize += it.imageSize
-            fileSize += it.fileSize
-        }
-        return ClipResourceInfo(number, imagesSize, fileSize)
+        val query = realm.query(ClipData::class)
+        val size = query.sum<Long>("size").find()
+
+        val textQuery = realm.query(TextClipItem::class)
+        val textCount = textQuery.count().find()
+        val textSize = textQuery.sum<Long>("size").find()
+
+        val urlQuery = realm.query(UrlClipItem::class)
+        val urlCount = urlQuery.count().find()
+        val urlSize = urlQuery.sum<Long>("size").find()
+
+        val htmlQuery = realm.query(HtmlClipItem::class)
+        val htmlCount = htmlQuery.count().find()
+        val htmlSize = htmlQuery.sum<Long>("size").find()
+
+        val imageQuery = realm.query(ImagesClipItem::class)
+        val imageCount = imageQuery.sum<Long>("count").find()
+        val imageSize = imageQuery.sum<Long>("size").find()
+
+        val fileQuery = realm.query(FilesClipItem::class)
+        val fileCount = fileQuery.sum<Long>("count").find()
+        val fileSize = fileQuery.sum<Long>("size").find()
+
+        val count = textCount + urlCount + htmlCount + imageCount + fileCount
+
+        return ClipResourceInfo(
+            count, size,
+            textCount, textSize,
+            urlCount, urlSize,
+            htmlCount, htmlSize,
+            imageCount, imageSize,
+            fileCount, fileSize,
+        )
     }
 
     private suspend fun doDeleteClipData(queryToDelete: MutableRealm.() -> List<ClipData>) {
@@ -162,6 +193,8 @@ class ClipRealm(
                         clipAppearItems = clipPlugin.pluginProcess(clipAppearItems, this)
                     }
 
+                    val size = clipAppearItems.map { it.size }.sum()
+
                     // first appearItem as clipAppearContent
                     // remaining appearItems as clipContent
                     val firstItem: ClipAppearItem = clipAppearItems.first()
@@ -174,6 +207,7 @@ class ClipRealm(
                     clipData.clipType = firstItem.getClipType()
                     clipData.clipSearchContent = firstItem.getSearchContent()
                     clipData.md5 = firstItem.md5
+                    clipData.size = size
                     clipData.clipState = ClipState.LOADED
 
                     val tasks = mutableListOf<ObjectId>()

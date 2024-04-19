@@ -3,11 +3,10 @@ package com.clipevery.clip.service
 import com.clipevery.app.AppInfo
 import com.clipevery.clip.ClipCollector
 import com.clipevery.clip.ClipItemService
-import com.clipevery.clip.DesktopChromeService
 import com.clipevery.clip.item.HtmlClipItem
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.utils.DesktopFileUtils
-import com.clipevery.utils.EncryptUtils.md5ByString
+import com.clipevery.utils.EncryptUtils.md5
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
 import java.awt.datatransfer.DataFlavor
@@ -18,8 +17,6 @@ class HtmlItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
     companion object HtmlItemService {
 
         const val HTML_ID = "text/html"
-
-        val chromeService = DesktopChromeService
     }
 
     val logger = KotlinLogging.logger {}
@@ -53,7 +50,8 @@ class HtmlItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
     ) {
         if (transferData is String) {
             val html = extractHtml(transferData)
-            val md5 = md5ByString(html)
+            val htmlBytes = html.toByteArray()
+            val md5 = md5(htmlBytes)
             val relativePath =
                 DesktopFileUtils.createClipRelativePath(
                     appInstanceId = appInfo.appInstanceId,
@@ -64,6 +62,7 @@ class HtmlItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
                 realm.query(HtmlClipItem::class, "id == $0", clipItem.id).first().find()?.apply {
                     this.html = html
                     this.relativePath = relativePath
+                    this.size = htmlBytes.size.toLong()
                     this.md5 = md5
                 }
             }

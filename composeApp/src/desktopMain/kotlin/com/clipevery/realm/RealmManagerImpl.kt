@@ -9,7 +9,6 @@ import com.clipevery.clip.item.UrlClipItem
 import com.clipevery.dao.clip.ClipContent
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.dao.clip.ClipLabel
-import com.clipevery.dao.clip.ClipResource
 import com.clipevery.dao.signal.ClipIdentityKey
 import com.clipevery.dao.signal.ClipPreKey
 import com.clipevery.dao.signal.ClipSession
@@ -45,7 +44,6 @@ class RealmManagerImpl private constructor(private val config: RealmConfiguratio
 
         private val CLIP_TYPES: Set<KClass<out TypedRealmObject>> =
             setOf(
-                ClipResource::class,
                 ClipData::class,
                 ClipContent::class,
                 ClipLabel::class,

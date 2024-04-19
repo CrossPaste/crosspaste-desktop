@@ -21,6 +21,7 @@ object GenerateUrlPlugin : ClipPlugin {
                         UrlClipItem().apply {
                             this.identifier = it.identifier
                             this.url = it.text
+                            this.size = it.size
                             this.md5 = it.md5
                         }
                 }
