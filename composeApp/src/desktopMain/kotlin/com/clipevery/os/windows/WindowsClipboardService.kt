@@ -3,6 +3,7 @@ package com.clipevery.os.windows
 import com.clipevery.clip.ClipboardService
 import com.clipevery.clip.TransferableConsumer
 import com.clipevery.clip.TransferableProducer
+import com.clipevery.config.ConfigManager
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.os.windows.api.User32
 import com.clipevery.platform.currentPlatform
@@ -29,6 +30,7 @@ import kotlin.math.min
 
 class WindowsClipboardService(
     override val clipDao: ClipDao,
+    override val configManager: ConfigManager,
     override val clipConsumer: TransferableConsumer,
     override val clipProducer: TransferableProducer,
 ) : ClipboardService, User32.WNDPROC {
@@ -36,6 +38,8 @@ class WindowsClipboardService(
 
     @Volatile
     private var existNew = false
+
+    private var changeCount = configManager.config.lastClipboardChangeCount
 
     @Volatile
     override var owner = false
@@ -138,6 +142,7 @@ class WindowsClipboardService(
     override fun stop() {
         Kernel32.INSTANCE.SetEvent(event)
         job?.cancel()
+        configManager.updateConfig { it.copy(lastClipboardChangeCount = changeCount) }
     }
 
     private fun onChange() {
@@ -195,7 +200,11 @@ class WindowsClipboardService(
                 if (existNew) {
                     existNew = false
                     try {
-                        onChange()
+                        val clipboardSequenceNumber = User32.INSTANCE.GetClipboardSequenceNumber()
+                        if (changeCount != clipboardSequenceNumber) {
+                            changeCount = clipboardSequenceNumber
+                            onChange()
+                        }
                     } finally {
                         User32.INSTANCE.SendMessage(nextViewer, uMsg, uParam, lParam)
                     }

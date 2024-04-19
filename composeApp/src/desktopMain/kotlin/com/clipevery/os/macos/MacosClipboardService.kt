@@ -3,6 +3,7 @@ package com.clipevery.os.macos
 import com.clipevery.clip.ClipboardService
 import com.clipevery.clip.TransferableConsumer
 import com.clipevery.clip.TransferableProducer
+import com.clipevery.config.ConfigManager
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.os.macos.api.MacosApi
 import com.clipevery.utils.cpuDispatcher
@@ -23,12 +24,13 @@ import java.awt.datatransfer.Transferable
 
 class MacosClipboardService(
     override val clipDao: ClipDao,
+    override val configManager: ConfigManager,
     override val clipConsumer: TransferableConsumer,
     override val clipProducer: TransferableProducer,
 ) : ClipboardService {
     override val logger: KLogger = KotlinLogging.logger {}
 
-    private var changeCount = 0
+    private var changeCount = configManager.config.lastClipboardChangeCount
 
     @Volatile
     override var owner = false
@@ -61,6 +63,7 @@ class MacosClipboardService(
                     MacosApi.INSTANCE.getClipboardChangeCount(changeCount, isRemote, isClipevery)
                         .let { currentChangeCount ->
                             if (changeCount != currentChangeCount) {
+                                logger.info { "currentChangeCount $currentChangeCount changeCount $changeCount" }
                                 changeCount = currentChangeCount
                                 if (isClipevery.value != 0) {
                                     logger.debug { "Ignoring clipevery change" }
@@ -100,5 +103,6 @@ class MacosClipboardService(
 
     override fun stop() {
         job?.cancel()
+        configManager.updateConfig { it.copy(lastClipboardChangeCount = changeCount) }
     }
 }

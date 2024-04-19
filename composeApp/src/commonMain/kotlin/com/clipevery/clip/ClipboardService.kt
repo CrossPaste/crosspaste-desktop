@@ -1,5 +1,6 @@
 package com.clipevery.clip
 
+import com.clipevery.config.ConfigManager
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipData
 import io.github.oshai.kotlinlogging.KLogger
@@ -19,6 +20,8 @@ interface ClipboardService : ClipboardMonitor, ClipboardOwner {
     val systemClipboard: Clipboard
 
     val clipDao: ClipDao
+
+    val configManager: ConfigManager
 
     val clipConsumer: TransferableConsumer
 
