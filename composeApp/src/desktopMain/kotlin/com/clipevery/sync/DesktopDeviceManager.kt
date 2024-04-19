@@ -1,12 +1,10 @@
 package com.clipevery.sync
 
 import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.snapshots.SnapshotStateMap
 import com.clipevery.app.AppInfo
 import com.clipevery.config.ConfigManager
-import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.utils.DesktopJsonUtils
 import com.clipevery.utils.TxtRecordUtils
@@ -18,7 +16,6 @@ import javax.jmdns.impl.util.ByteWrangler
 
 class DesktopDeviceManager(
     private val appInfo: AppInfo,
-    private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
     private val configManager: ConfigManager,
     private val syncManager: SyncManager,
 ) : DeviceManager, ServiceListener {
@@ -29,9 +26,9 @@ class DesktopDeviceManager(
 
     override val isSearching: State<Boolean> get() = _searching
 
-    private var _syncInfos: SnapshotStateMap<String, SyncInfo> = mutableStateMapOf()
+    private val allSyncInfos: MutableMap<String, SyncInfo> = mutableMapOf()
 
-    override val syncInfos: SnapshotStateMap<String, SyncInfo> get() = _syncInfos
+    override var syncInfos: MutableList<SyncInfo> = mutableStateListOf()
 
     private val isSelf: (String) -> Boolean = { appInstanceId ->
         appInstanceId == appInfo.appInstanceId
@@ -54,11 +51,10 @@ class DesktopDeviceManager(
 
     override fun refresh() {
         lock.lock()
+        _searching.value = true
         try {
-            _searching.value = true
-            val newSyncInfos = _syncInfos.filter { isNew(it.key) && !isBlackListed(it.key) }
-            _syncInfos.clear()
-            _syncInfos.putAll(newSyncInfos)
+            syncInfos.clear()
+            syncInfos.addAll(allSyncInfos.filter { isNew(it.key) && !isBlackListed(it.key) }.values)
         } finally {
             _searching.value = false
             lock.unlock()
@@ -77,10 +73,9 @@ class DesktopDeviceManager(
         val appInstanceId = syncInfo.appInfo.appInstanceId
         lock.lock()
         try {
-            _searching.value = true
-            _syncInfos.remove(appInstanceId)
+            allSyncInfos.remove(appInstanceId)
+            refresh()
         } finally {
-            _searching.value = false
             lock.unlock()
         }
     }
@@ -93,19 +88,11 @@ class DesktopDeviceManager(
         val appInstanceId = syncInfo.appInfo.appInstanceId
         lock.lock()
         try {
-            _searching.value = true
             if (!isSelf(appInstanceId)) {
-                if (isNew(appInstanceId)) {
-                    val isBlackListed = isBlackListed(appInstanceId)
-                    if (!isBlackListed) {
-                        _syncInfos[appInstanceId] = syncInfo
-                    }
-                } else {
-                    syncRuntimeInfoDao.inertOrUpdate(syncInfo)
-                }
+                allSyncInfos[appInstanceId] = syncInfo
+                refresh()
             }
         } finally {
-            _searching.value = false
             lock.unlock()
         }
     }
