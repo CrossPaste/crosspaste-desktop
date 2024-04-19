@@ -33,6 +33,7 @@ class DesktopSyncManager(
     private val syncClientApi: SyncClientApi,
     private val signalProtocolStore: SignalProtocolStore,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
+    lazyDeviceManager: Lazy<DeviceManager>,
 ) : SyncManager, SyncRefresher {
 
     private val logger = KotlinLogging.logger {}
@@ -50,6 +51,8 @@ class DesktopSyncManager(
     private val realTimeJob = SupervisorJob()
 
     private val realTimeSyncScope = CoroutineScope(cpuDispatcher + realTimeJob)
+
+    private val deviceManager: DeviceManager by lazyDeviceManager
 
     private var _refreshing = mutableStateOf(false)
 
@@ -75,6 +78,7 @@ class DesktopSyncManager(
             withContext(mainDispatcher) {
                 realTimeSyncRuntimeInfos.addAll(syncRuntimeInfos)
                 refreshWaitToVerifySyncRuntimeInfo()
+                deviceManager.refresh()
             }
             val syncRuntimeInfosFlow = syncRuntimeInfos.asFlow()
             syncRuntimeInfosFlow.collect { changes: ResultsChange<SyncRuntimeInfo> ->
@@ -118,6 +122,7 @@ class DesktopSyncManager(
                             realTimeSyncRuntimeInfos.clear()
                             realTimeSyncRuntimeInfos.addAll(changes.list)
                             refreshWaitToVerifySyncRuntimeInfo()
+                            deviceManager.refresh()
                         }
                     }
                     else -> {

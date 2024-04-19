@@ -60,12 +60,21 @@ fun NearbyDevicesView(currentPageViewContext: MutableState<PageViewContext>) {
     val deviceManager = current.koin.get<DeviceManager>()
     val isSearching by deviceManager.isSearching
 
+    val nearbyDevicesList = remember { deviceManager.syncInfos }
+
     if (isSearching) {
         SearchNearByDevices()
-    } else if (deviceManager.syncInfos.isEmpty()) {
+    } else if (nearbyDevicesList.isEmpty()) {
         NotFoundNearByDevices()
     } else {
-        ShowNearByDevices()
+        Column(modifier = Modifier.fillMaxSize()) {
+            for ((index, syncInfo) in nearbyDevicesList.withIndex()) {
+                NearbyDeviceView(syncInfo)
+                if (index != nearbyDevicesList.size - 1) {
+                    Divider(modifier = Modifier.fillMaxWidth())
+                }
+            }
+        }
     }
 }
 
@@ -167,23 +176,6 @@ fun SearchNearByDevices() {
     }
 }
 
-@Composable
-fun ShowNearByDevices() {
-    val current = LocalKoinApplication.current
-    val deviceManager = current.koin.get<DeviceManager>()
-
-    val syncInfos = deviceManager.syncInfos
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        for ((index, entry) in syncInfos.entries.withIndex()) {
-            NearbyDeviceView(entry.value)
-            if (index != syncInfos.size - 1) {
-                Divider(modifier = Modifier.fillMaxWidth())
-            }
-        }
-    }
-}
-
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun SyncDeviceView(
@@ -243,7 +235,6 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
             radius = 18.dp,
             onClick = {
                 syncRuntimeInfoDao.inertOrUpdate(syncInfo)
-                deviceManager.refresh()
             },
             modifier =
                 Modifier
