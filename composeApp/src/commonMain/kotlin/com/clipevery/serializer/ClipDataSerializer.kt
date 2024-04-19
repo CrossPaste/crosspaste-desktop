@@ -28,6 +28,7 @@ object ClipDataSerializer : KSerializer<ClipData> {
             element<RealmAny?>("clipAppearContent")
             element<ClipContent?>("clipContent")
             element<Int>("clipType")
+            element<Long>("size")
             element<String>("md5")
             element<Boolean>("isFavorite")
             element<RealmSet<ClipLabel>>("labels")
@@ -41,6 +42,7 @@ object ClipDataSerializer : KSerializer<ClipData> {
         var clipAppearContent: RealmAny? = null
         var clipContent: ClipContent? = null
         var clipType = 0
+        var size = 0L
         var md5 = ""
         var isFavorite = false
         var labels: RealmSet<ClipLabel> = realmSetOf()
@@ -52,9 +54,10 @@ object ClipDataSerializer : KSerializer<ClipData> {
                 3 -> clipAppearContent = dec.decodeSerializableElement(descriptor, index, RealmAnyKSerializer)
                 4 -> clipContent = dec.decodeSerializableElement(descriptor, index, ClipContent.serializer())
                 5 -> clipType = dec.decodeIntElement(descriptor, index)
-                6 -> md5 = dec.decodeStringElement(descriptor, index)
-                7 -> isFavorite = dec.decodeBooleanElement(descriptor, index)
-                8 -> labels = dec.decodeSerializableElement(descriptor, index, RealmSetKSerializer(ClipLabel.serializer()))
+                6 -> size = dec.decodeLongElement(descriptor, index)
+                7 -> md5 = dec.decodeStringElement(descriptor, index)
+                8 -> isFavorite = dec.decodeBooleanElement(descriptor, index)
+                9 -> labels = dec.decodeSerializableElement(descriptor, index, RealmSetKSerializer(ClipLabel.serializer()))
                 else -> break@loop
             }
         }
@@ -69,6 +72,7 @@ object ClipDataSerializer : KSerializer<ClipData> {
                 this.clipType = clipType
                 this.clipSearchContent = ClipContent.getClipItem(clipAppearContent)?.getSearchContent()
                 this.md5 = md5
+                this.size = size
                 this.createTime = RealmInstant.now()
                 this.clipState = ClipState.LOADING
                 this.isRemote = true
@@ -99,9 +103,10 @@ object ClipDataSerializer : KSerializer<ClipData> {
             compositeOutput.encodeSerializableElement(descriptor, 4, ClipContent.serializer(), it)
         }
         compositeOutput.encodeIntElement(descriptor, 5, value.clipType)
-        compositeOutput.encodeStringElement(descriptor, 6, value.md5)
-        compositeOutput.encodeBooleanElement(descriptor, 7, value.isFavorite)
-        compositeOutput.encodeSerializableElement(descriptor, 8, RealmSetKSerializer(ClipLabel.serializer()), value.labels)
+        compositeOutput.encodeLongElement(descriptor, 6, value.size)
+        compositeOutput.encodeStringElement(descriptor, 7, value.md5)
+        compositeOutput.encodeBooleanElement(descriptor, 8, value.isFavorite)
+        compositeOutput.encodeSerializableElement(descriptor, 9, RealmSetKSerializer(ClipLabel.serializer()), value.labels)
         compositeOutput.endStructure(descriptor)
     }
 }
