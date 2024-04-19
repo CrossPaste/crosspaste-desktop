@@ -40,6 +40,8 @@ class ClipData : RealmObject {
     @Index
     var md5: String = ""
 
+    var size: Long = 0
+
     @Index
     @Transient
     var createTime: RealmInstant = RealmInstant.now()

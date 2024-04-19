@@ -28,8 +28,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,11 +46,16 @@ import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.CustomSwitch
 import com.clipevery.ui.base.anglesUpDown
 import com.clipevery.ui.base.clock
+import com.clipevery.ui.base.feed
 import com.clipevery.ui.base.file
 import com.clipevery.ui.base.hashtag
+import com.clipevery.ui.base.html
 import com.clipevery.ui.base.image
+import com.clipevery.ui.base.link
 import com.clipevery.ui.base.trash
 import com.clipevery.ui.devices.measureTextWidth
+import com.clipevery.utils.FileUtils
+import com.clipevery.utils.Quadruple
 
 @Composable
 fun StoreSettingsView() {
@@ -56,18 +64,45 @@ fun StoreSettingsView() {
     val configManager = current.koin.get<ConfigManager>()
     val clipDao = current.koin.get<ClipDao>()
     val copywriter = current.koin.get<GlobalCopywriter>()
+    val fileUtils = current.koin.get<FileUtils>()
 
-    var clipNumber: Long? by remember { mutableStateOf(null) }
+    var clipCount: Long? by remember { mutableStateOf(null) }
+    var clipFormatSize: String? by remember { mutableStateOf(null) }
 
-    var clipImageSize: Long? by remember { mutableStateOf(null) }
+    var textCount: Long? by remember { mutableStateOf(null) }
+    var textFormatSize: String? by remember { mutableStateOf(null) }
 
-    var clipFileSize: Long? by remember { mutableStateOf(null) }
+    var urlCount: Long? by remember { mutableStateOf(null) }
+    var urlFormatSize: String? by remember { mutableStateOf(null) }
+
+    var htmlCount: Long? by remember { mutableStateOf(null) }
+    var htmlFormatSize: String? by remember { mutableStateOf(null) }
+
+    var imageCount: Long? by remember { mutableStateOf(null) }
+    var imageFormatSize: String? by remember { mutableStateOf(null) }
+
+    var fileCount: Long? by remember { mutableStateOf(null) }
+    var fileFormatSize: String? by remember { mutableStateOf(null) }
 
     LaunchedEffect(Unit) {
         val clipResourceInfo = clipDao.getClipResourceInfo()
-        clipNumber = clipResourceInfo.clipNumber
-        clipImageSize = clipResourceInfo.imageSize
-        clipFileSize = clipResourceInfo.fileSize
+        clipCount = clipResourceInfo.clipCount
+        clipFormatSize = fileUtils.formatBytes(clipResourceInfo.clipSize)
+
+        textCount = clipResourceInfo.textCount
+        textFormatSize = fileUtils.formatBytes(clipResourceInfo.textSize)
+
+        urlCount = clipResourceInfo.urlCount
+        urlFormatSize = fileUtils.formatBytes(clipResourceInfo.urlSize)
+
+        htmlCount = clipResourceInfo.htmlCount
+        htmlFormatSize = fileUtils.formatBytes(clipResourceInfo.htmlSize)
+
+        imageCount = clipResourceInfo.imageCount
+        imageFormatSize = fileUtils.formatBytes(clipResourceInfo.imageSize)
+
+        fileCount = clipResourceInfo.fileCount
+        fileFormatSize = fileUtils.formatBytes(clipResourceInfo.fileSize)
     }
 
     Text(
@@ -80,6 +115,29 @@ fun StoreSettingsView() {
         fontFamily = FontFamily.SansSerif,
         fontSize = 12.sp,
     )
+
+    var nameMaxWidth by remember { mutableStateOf(0.dp) }
+
+    val clipTypes: Array<Quadruple<String, Painter, Long?, String?>> =
+        arrayOf(
+            Quadruple("Pasteboard", hashtag(), clipCount, clipFormatSize),
+            Quadruple("Text", feed(), textCount, textFormatSize),
+            Quadruple("Link", link(), urlCount, urlFormatSize),
+            Quadruple("Html", html(), htmlCount, htmlFormatSize),
+            Quadruple("Image", image(), imageCount, imageFormatSize),
+            Quadruple("File", file(), fileCount, fileFormatSize),
+        )
+
+    val textStyle =
+        TextStyle(
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Light,
+            fontFamily = FontFamily.SansSerif,
+        )
+
+    for (property in clipTypes) {
+        nameMaxWidth = maxOf(nameMaxWidth, measureTextWidth(copywriter.getText(property.first), textStyle))
+    }
 
     Column(
         modifier =
@@ -95,81 +153,71 @@ fun StoreSettingsView() {
                     .padding(horizontal = 12.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                modifier = Modifier.size(15.dp),
-                painter = hashtag(),
-                contentDescription = "number of pasteboards",
-                tint = MaterialTheme.colors.onBackground,
-            )
+            Spacer(modifier = Modifier.width(nameMaxWidth + 23.dp))
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Row(
+                modifier = Modifier.weight(0.25f),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                settingsText(copywriter.getText("Count"))
+            }
 
-            settingsText(copywriter.getText("Number_of_pasteboards"))
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            if (clipNumber != null) {
-                settingsText("${clipNumber!!}")
-            } else {
-                CircularProgressIndicator(modifier = Modifier.size(25.dp))
+            Row(
+                modifier = Modifier.weight(0.3f),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                settingsText(copywriter.getText("Size"))
             }
         }
 
         Divider(modifier = Modifier.padding(start = 35.dp))
 
-        Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .height(40.dp)
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                modifier = Modifier.size(15.dp),
-                painter = image(),
-                contentDescription = "size of images",
-                tint = MaterialTheme.colors.onBackground,
-            )
+        clipTypes.forEachIndexed { index, quadruple ->
+            Row(
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .height(40.dp)
+                        .padding(horizontal = 12.dp, vertical = 5.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    modifier = Modifier.size(15.dp),
+                    painter = quadruple.second,
+                    contentDescription = "pasteboard",
+                    tint = MaterialTheme.colors.onBackground,
+                )
+                Spacer(modifier = Modifier.width(8.dp))
 
-            Spacer(modifier = Modifier.width(8.dp))
+                settingsText(
+                    copywriter.getText(quadruple.first),
+                    modifier = Modifier.width(nameMaxWidth),
+                )
 
-            settingsText(copywriter.getText("Size_of_images"))
+                Row(
+                    modifier = Modifier.weight(0.25f),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    if (quadruple.third != null) {
+                        settingsText("${quadruple.third}")
+                    } else {
+                        CircularProgressIndicator(modifier = Modifier.size(25.dp))
+                    }
+                }
 
-            Spacer(modifier = Modifier.weight(1f))
-
-            if (clipImageSize != null) {
-                settingsText("${clipImageSize!!}")
-            } else {
-                CircularProgressIndicator(modifier = Modifier.size(25.dp))
+                Row(
+                    modifier = Modifier.weight(0.3f),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    if (quadruple.fourth != null) {
+                        settingsText(quadruple.fourth)
+                    } else {
+                        CircularProgressIndicator(modifier = Modifier.size(25.dp))
+                    }
+                }
             }
-        }
 
-        Divider(modifier = Modifier.padding(start = 35.dp))
-
-        Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .height(40.dp)
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                modifier = Modifier.size(15.dp),
-                painter = file(),
-                contentDescription = "size of files",
-                tint = MaterialTheme.colors.onBackground,
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            settingsText(copywriter.getText("Size_of_files"))
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            if (clipFileSize != null) {
-                settingsText("${clipFileSize!!}")
-            } else {
-                CircularProgressIndicator(modifier = Modifier.size(25.dp))
+            if (index != clipTypes.size - 1) {
+                Divider(modifier = Modifier.padding(start = 35.dp))
             }
         }
     }

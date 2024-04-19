@@ -40,6 +40,10 @@ class ImagesClipItem : RealmObject, ClipAppearItem, ClipFiles {
 
     var fileInfoTree: String = ""
 
+    override var count: Long = 0L
+
+    override var size: Long = 0L
+
     override var md5: String = ""
 
     override var extraInfo: String? = null

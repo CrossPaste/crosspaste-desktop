@@ -433,12 +433,19 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
 }
 
 @Composable
-fun settingsText(text: String) {
+fun settingsText(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
     Text(
+        modifier = modifier,
         text = text,
         color = MaterialTheme.colors.onBackground,
-        fontSize = 14.sp,
-        fontFamily = FontFamily.SansSerif,
-        style = TextStyle(fontWeight = FontWeight.Light),
+        style =
+            TextStyle(
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Light,
+                fontFamily = FontFamily.SansSerif,
+            ),
     )
 }

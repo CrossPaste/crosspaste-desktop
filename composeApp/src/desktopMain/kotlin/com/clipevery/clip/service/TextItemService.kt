@@ -5,7 +5,7 @@ import com.clipevery.clip.ClipCollector
 import com.clipevery.clip.ClipItemService
 import com.clipevery.clip.item.TextClipItem
 import com.clipevery.dao.clip.ClipAppearItem
-import com.clipevery.utils.EncryptUtils.md5ByString
+import com.clipevery.utils.EncryptUtils.md5
 import io.realm.kotlin.MutableRealm
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
@@ -47,10 +47,12 @@ class TextItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
         clipCollector: ClipCollector,
     ) {
         if (transferData is String) {
-            val md5 = md5ByString(transferData)
+            val textBytes = transferData.toByteArray()
+            val md5 = md5(textBytes)
             val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
                 realm.query(TextClipItem::class, "id == $0", clipItem.id).first().find()?.apply {
                     this.text = transferData
+                    this.size = textBytes.size.toLong()
                     this.md5 = md5
                 }
             }
