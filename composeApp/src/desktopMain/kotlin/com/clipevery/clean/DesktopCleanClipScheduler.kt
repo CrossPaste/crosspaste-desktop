@@ -26,7 +26,7 @@ class DesktopCleanClipScheduler(
     override fun start() {
         coroutineScope.launch {
             while (isActive) {
-                if (configManager.config.isAutoCleaning) {
+                if (configManager.config.isExpirationCleanup) {
                     val taskId = taskDao.createTask(TaskUtils.createTask(null, TaskType.CLEAN_CLIP_TASK))
                     taskExecutor.submitTask(taskId)
                     logger.info { "submit clean clip task: $taskId" }

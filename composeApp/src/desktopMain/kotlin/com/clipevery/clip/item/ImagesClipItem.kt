@@ -13,6 +13,7 @@ import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.types.RealmList
 import io.realm.kotlin.types.RealmObject
+import io.realm.kotlin.types.annotations.Index
 import io.realm.kotlin.types.annotations.PrimaryKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -39,6 +40,9 @@ class ImagesClipItem : RealmObject, ClipAppearItem, ClipFiles {
     var relativePathList: RealmList<String> = realmListOf()
 
     var fileInfoTree: String = ""
+
+    @Index
+    override var isFavorite: Boolean = false
 
     override var count: Long = 0L
 

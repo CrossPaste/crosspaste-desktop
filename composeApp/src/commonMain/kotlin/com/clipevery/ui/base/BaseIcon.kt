@@ -53,3 +53,13 @@ fun starRegular(): Painter {
 fun starSolid(): Painter {
     return painterResource("icon/base/star-solid.svg")
 }
+
+@Composable
+fun database(): Painter {
+    return painterResource("icon/base/database.svg")
+}
+
+@Composable
+fun percent(): Painter {
+    return painterResource("icon/base/percent.svg")
+}

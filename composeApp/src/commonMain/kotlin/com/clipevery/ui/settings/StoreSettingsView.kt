@@ -43,15 +43,19 @@ import com.clipevery.clean.CleanTime
 import com.clipevery.config.ConfigManager
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.i18n.GlobalCopywriter
+import com.clipevery.ui.base.Counter
+import com.clipevery.ui.base.CustomRectangleSwitch
 import com.clipevery.ui.base.CustomSwitch
 import com.clipevery.ui.base.anglesUpDown
 import com.clipevery.ui.base.clock
+import com.clipevery.ui.base.database
 import com.clipevery.ui.base.feed
 import com.clipevery.ui.base.file
 import com.clipevery.ui.base.hashtag
 import com.clipevery.ui.base.html
 import com.clipevery.ui.base.image
 import com.clipevery.ui.base.link
+import com.clipevery.ui.base.percent
 import com.clipevery.ui.base.trash
 import com.clipevery.ui.devices.measureTextWidth
 import com.clipevery.utils.FileUtils
@@ -84,8 +88,10 @@ fun StoreSettingsView() {
     var fileCount: Long? by remember { mutableStateOf(null) }
     var fileFormatSize: String? by remember { mutableStateOf(null) }
 
-    LaunchedEffect(Unit) {
-        val clipResourceInfo = clipDao.getClipResourceInfo()
+    var allOrFavorite by remember { mutableStateOf(true) }
+
+    val refresh: (Boolean) -> Unit = {
+        val clipResourceInfo = clipDao.getClipResourceInfo(it)
         clipCount = clipResourceInfo.clipCount
         clipFormatSize = fileUtils.formatBytes(clipResourceInfo.clipSize)
 
@@ -105,6 +111,10 @@ fun StoreSettingsView() {
         fileFormatSize = fileUtils.formatBytes(clipResourceInfo.fileSize)
     }
 
+    LaunchedEffect(Unit) {
+        refresh(allOrFavorite)
+    }
+
     Text(
         modifier =
             Modifier.wrapContentSize()
@@ -116,7 +126,7 @@ fun StoreSettingsView() {
         fontSize = 12.sp,
     )
 
-    var nameMaxWidth by remember { mutableStateOf(0.dp) }
+    var nameMaxWidth by remember { mutableStateOf(96.dp) }
 
     val clipTypes: Array<Quadruple<String, Painter, Long?, String?>> =
         arrayOf(
@@ -153,7 +163,28 @@ fun StoreSettingsView() {
                     .padding(horizontal = 12.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Spacer(modifier = Modifier.width(nameMaxWidth + 23.dp))
+            Row(
+                modifier = Modifier.wrapContentSize(),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CustomRectangleSwitch(
+                    modifier = Modifier.width(96.dp).height(30.dp),
+                    checked = allOrFavorite,
+                    onCheckedChange = { newAllOrFavorite ->
+                        allOrFavorite = newAllOrFavorite
+                        refresh(allOrFavorite)
+                    },
+                    textStyle =
+                        TextStyle(
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Light,
+                            fontFamily = FontFamily.SansSerif,
+                        ),
+                    checkedText = copywriter.getText("All_Storage"),
+                    uncheckedText = copywriter.getText("Favorite_Storage"),
+                )
+            }
 
             Row(
                 modifier = Modifier.weight(0.25f),
@@ -194,7 +225,7 @@ fun StoreSettingsView() {
                 )
 
                 Row(
-                    modifier = Modifier.weight(0.25f),
+                    modifier = Modifier.weight(0.2f),
                     horizontalArrangement = Arrangement.End,
                 ) {
                     if (quadruple.third != null) {
@@ -226,7 +257,7 @@ fun StoreSettingsView() {
         modifier =
             Modifier.wrapContentSize()
                 .padding(start = 32.dp, top = 5.dp, bottom = 5.dp),
-        text = copywriter.getText("Clean_Up_Settings"),
+        text = copywriter.getText("Auto_Cleanup_Settings"),
         color = MaterialTheme.colors.onBackground,
         style = MaterialTheme.typography.h6,
         fontFamily = FontFamily.SansSerif,
@@ -250,15 +281,15 @@ fun StoreSettingsView() {
             Icon(
                 modifier = Modifier.size(15.dp),
                 painter = trash(),
-                contentDescription = "Image expiration time",
+                contentDescription = "trash",
                 tint = MaterialTheme.colors.onBackground,
             )
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            settingsText(copywriter.getText("Automatic_cleaning"))
+            settingsText(copywriter.getText("Expiration_Cleanup"))
 
-            var isAutoCleaning by remember { mutableStateOf(configManager.config.isAutoCleaning) }
+            var isExpirationCleanup by remember { mutableStateOf(configManager.config.isExpirationCleanup) }
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -266,10 +297,10 @@ fun StoreSettingsView() {
                 modifier =
                     Modifier.width(32.dp)
                         .height(20.dp),
-                checked = isAutoCleaning,
-                onCheckedChange = { newIsAutoCleaning ->
-                    configManager.updateConfig { it.copy(isAutoCleaning = newIsAutoCleaning) }
-                    isAutoCleaning = configManager.config.isAutoCleaning
+                checked = isExpirationCleanup,
+                onCheckedChange = { newIsExpirationCleanup ->
+                    configManager.updateConfig { it.copy(isExpirationCleanup = newIsExpirationCleanup) }
+                    isExpirationCleanup = configManager.config.isExpirationCleanup
                 },
             )
         }
@@ -286,13 +317,13 @@ fun StoreSettingsView() {
             Icon(
                 modifier = Modifier.size(15.dp),
                 painter = clock(),
-                contentDescription = "Image expiration time",
+                contentDescription = "Image Expiry Period",
                 tint = MaterialTheme.colors.onBackground,
             )
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            settingsText(copywriter.getText("Image_expiration_time"))
+            settingsText(copywriter.getText("Image_Expiry_Period"))
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -326,7 +357,7 @@ fun StoreSettingsView() {
                 Icon(
                     modifier = Modifier.size(15.dp),
                     painter = anglesUpDown(),
-                    contentDescription = "File expiration time",
+                    contentDescription = "Image expiration time",
                     tint = MaterialTheme.colors.onBackground,
                 )
             }
@@ -355,7 +386,8 @@ fun StoreSettingsView() {
                         configManager.updateConfig { it.copy(imageCleanTimeIndex = index) }
                         selectImageCleanTimeIndex = configManager.config.imageCleanTimeIndex
                         val currentImageCleanTime = CleanTime.entries[selectImageCleanTimeIndex]
-                        imageCleanTimeValue = "${currentImageCleanTime.quantity} ${copywriter.getText(currentImageCleanTime.unit)}"
+                        imageCleanTimeValue =
+                            "${currentImageCleanTime.quantity} ${copywriter.getText(currentImageCleanTime.unit)}"
                         showImageCleanTimeMenu = false
                     }
                 }
@@ -374,13 +406,13 @@ fun StoreSettingsView() {
             Icon(
                 modifier = Modifier.size(15.dp),
                 painter = clock(),
-                contentDescription = "File expiration time",
+                contentDescription = "File Expiry Period",
                 tint = MaterialTheme.colors.onBackground,
             )
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            settingsText(copywriter.getText("File_expiration_time"))
+            settingsText(copywriter.getText("File_Expiry_Period"))
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -414,7 +446,7 @@ fun StoreSettingsView() {
                 Icon(
                     modifier = Modifier.size(15.dp),
                     painter = anglesUpDown(),
-                    contentDescription = "File expiration time",
+                    contentDescription = "File Expiry Period",
                     tint = MaterialTheme.colors.onBackground,
                 )
             }
@@ -443,9 +475,128 @@ fun StoreSettingsView() {
                         configManager.updateConfig { it.copy(fileCleanTimeIndex = index) }
                         selectFileCleanTimeIndex = configManager.config.fileCleanTimeIndex
                         val currentFileCleanTime = CleanTime.entries[selectFileCleanTimeIndex]
-                        fileCleanTimeValue = "${currentFileCleanTime.quantity} ${copywriter.getText(currentFileCleanTime.unit)}"
+                        fileCleanTimeValue =
+                            "${currentFileCleanTime.quantity} ${copywriter.getText(currentFileCleanTime.unit)}"
                         showFileCleanTimeMenu = false
                     }
+                }
+            }
+        }
+    }
+
+    Spacer(modifier = Modifier.height(10.dp))
+
+    Column(
+        modifier =
+            Modifier.wrapContentSize()
+                .padding(horizontal = 16.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colors.background),
+    ) {
+        Row(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(40.dp)
+                    .padding(horizontal = 12.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                modifier = Modifier.size(15.dp),
+                painter = trash(),
+                contentDescription = "trash",
+                tint = MaterialTheme.colors.onBackground,
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            settingsText(copywriter.getText("Threshold_Cleanup"))
+
+            var isThresholdCleanup by remember { mutableStateOf(configManager.config.isThresholdCleanup) }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            CustomSwitch(
+                modifier =
+                    Modifier.width(32.dp)
+                        .height(20.dp),
+                checked = isThresholdCleanup,
+                onCheckedChange = { newIsThresholdCleanup ->
+                    configManager.updateConfig { it.copy(isThresholdCleanup = newIsThresholdCleanup) }
+                    isThresholdCleanup = configManager.config.isThresholdCleanup
+                },
+            )
+        }
+
+        Divider(modifier = Modifier.padding(start = 35.dp))
+
+        Row(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(40.dp)
+                    .padding(horizontal = 12.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                modifier = Modifier.size(15.dp),
+                painter = database(),
+                contentDescription = "Maximum Storage",
+                tint = MaterialTheme.colors.onBackground,
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            settingsText(copywriter.getText("Maximum_Storage"))
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            val maxStorage by remember { mutableStateOf(configManager.config.maxStorage) }
+
+            Row(
+                modifier =
+                    Modifier.wrapContentWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Counter(defaultValue = maxStorage, unit = "MB", rule = {
+                    it >= 256
+                }) { currentMaxStorage ->
+                    configManager.updateConfig { it.copy(maxStorage = currentMaxStorage) }
+                }
+            }
+        }
+
+        Row(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(40.dp)
+                    .padding(horizontal = 12.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                modifier = Modifier.size(15.dp),
+                painter = percent(),
+                contentDescription = "Cleanup Percentage",
+                tint = MaterialTheme.colors.onBackground,
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            settingsText(copywriter.getText("Cleanup_Percentage"))
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            val cleanupPercentage by remember { mutableStateOf(configManager.config.cleanupPercentage) }
+
+            Row(
+                modifier =
+                    Modifier.wrapContentWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Counter(defaultValue = cleanupPercentage, unit = "%", rule = {
+                    it in 10..50
+                }) { currentCleanupPercentage ->
+                    configManager.updateConfig { it.copy(cleanupPercentage = currentCleanupPercentage) }
                 }
             }
         }

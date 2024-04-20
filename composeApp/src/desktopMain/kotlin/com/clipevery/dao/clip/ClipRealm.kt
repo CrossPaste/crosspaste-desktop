@@ -39,6 +39,9 @@ class ClipRealm(
         realm.writeBlocking {
             query(ClipData::class, "id == $0", id).first().find()?.let {
                 it.isFavorite = isFavorite
+                for (clipAppearItem in it.getClipAppearItems()) {
+                    clipAppearItem.isFavorite = isFavorite
+                }
             }
         }
     }
@@ -91,7 +94,39 @@ class ClipRealm(
         }
     }
 
-    override fun getClipResourceInfo(): ClipResourceInfo {
+    override fun getSize(allOrFavorite: Boolean): Long {
+        return if (allOrFavorite) {
+            realm.query(ClipData::class, "clipState = $0 AND clipState != $1", ClipState.LOADED, ClipState.DELETED)
+                .sum<Long>("size").find()
+        } else {
+            realm.query(
+                ClipData::class,
+                "clipState = $0 AND isFavorite == $1 AND clipState != $2",
+                ClipState.LOADED,
+                true,
+                ClipState.DELETED,
+            ).sum<Long>("size").find()
+        }
+    }
+
+    override fun getClipResourceInfo(allOrFavorite: Boolean): ClipResourceInfo {
+        return if (allOrFavorite) {
+            getAllClipResourceInfo()
+        } else {
+            getFavoriteClipResourceInfo()
+        }
+    }
+
+    override fun getSizeByTimeLessThan(time: RealmInstant): Long {
+        return realm.query(ClipData::class, "createTime < $0 AND clipState != $1", time, ClipState.DELETED)
+            .sum<Long>("size").find()
+    }
+
+    override fun getMinClipDataCreateTime(): RealmInstant? {
+        return realm.query(ClipData::class).sort("createTime", Sort.ASCENDING).first().find()?.createTime
+    }
+
+    private fun getAllClipResourceInfo(): ClipResourceInfo {
         val query = realm.query(ClipData::class)
         val size = query.sum<Long>("size").find()
 
@@ -112,6 +147,42 @@ class ClipRealm(
         val imageSize = imageQuery.sum<Long>("size").find()
 
         val fileQuery = realm.query(FilesClipItem::class)
+        val fileCount = fileQuery.sum<Long>("count").find()
+        val fileSize = fileQuery.sum<Long>("size").find()
+
+        val count = textCount + urlCount + htmlCount + imageCount + fileCount
+
+        return ClipResourceInfo(
+            count, size,
+            textCount, textSize,
+            urlCount, urlSize,
+            htmlCount, htmlSize,
+            imageCount, imageSize,
+            fileCount, fileSize,
+        )
+    }
+
+    private fun getFavoriteClipResourceInfo(): ClipResourceInfo {
+        val query = realm.query(ClipData::class, "isFavorite == $0", true)
+        val size = query.sum<Long>("size").find()
+
+        val textQuery = realm.query(TextClipItem::class, "isFavorite == $0", true)
+        val textCount = textQuery.count().find()
+        val textSize = textQuery.sum<Long>("size").find()
+
+        val urlQuery = realm.query(UrlClipItem::class, "isFavorite == $0", true)
+        val urlCount = urlQuery.count().find()
+        val urlSize = urlQuery.sum<Long>("size").find()
+
+        val htmlQuery = realm.query(HtmlClipItem::class, "isFavorite == $0", true)
+        val htmlCount = htmlQuery.count().find()
+        val htmlSize = htmlQuery.sum<Long>("size").find()
+
+        val imageQuery = realm.query(ImagesClipItem::class, "isFavorite == $0", true)
+        val imageCount = imageQuery.sum<Long>("count").find()
+        val imageSize = imageQuery.sum<Long>("size").find()
+
+        val fileQuery = realm.query(FilesClipItem::class, "isFavorite == $0", true)
         val fileCount = fileQuery.sum<Long>("count").find()
         val fileSize = fileQuery.sum<Long>("size").find()
 
@@ -293,21 +364,25 @@ class ClipRealm(
         return query.sort("createTime", Sort.DESCENDING).limit(limit).find()
     }
 
-    override suspend fun getMarkDeleteByCleanTime(
+    override suspend fun markDeleteByCleanTime(
         cleanTime: RealmInstant,
-        clipType: Int,
+        clipType: Int?,
     ) {
         val taskIds =
             realm.write {
-                doMarkDeleteClipData(
+                var query =
                     query(
                         ClipData::class,
-                        "createTime < $0 AND clipType == $1 AND clipState != $2",
+                        "createTime < $0 AND clipState != $1",
                         cleanTime,
-                        clipType,
                         ClipState.DELETED,
-                    ).find(),
-                )
+                    )
+
+                clipType?.let {
+                    query = query.query("clipType == $0", it)
+                }
+
+                doMarkDeleteClipData(query.find())
             }
         taskExecutor.submitTasks(taskIds)
     }

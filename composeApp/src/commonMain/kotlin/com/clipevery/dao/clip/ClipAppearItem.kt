@@ -14,6 +14,8 @@ interface ClipAppearItem {
 
     fun getSearchContent(): String?
 
+    var isFavorite: Boolean
+
     var md5: String
 
     var size: Long
