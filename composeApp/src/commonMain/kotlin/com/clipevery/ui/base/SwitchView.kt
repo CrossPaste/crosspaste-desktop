@@ -76,8 +76,6 @@ fun CustomRectangleSwitch(
 
     val maxWidth = max(measureTextWidth(checkedText, textStyle), measureTextWidth(uncheckedText, textStyle))
 
-    println("maxWidth = $maxWidth")
-
     Box(modifier = modifier) {
         Canvas(
             modifier =
