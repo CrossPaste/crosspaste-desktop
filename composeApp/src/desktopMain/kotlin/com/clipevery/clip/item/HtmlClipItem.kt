@@ -10,6 +10,7 @@ import com.clipevery.presist.DesktopOneFilePersist
 import com.clipevery.utils.DesktopFileUtils
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.types.RealmObject
+import io.realm.kotlin.types.annotations.Index
 import io.realm.kotlin.types.annotations.PrimaryKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -34,9 +35,12 @@ class HtmlClipItem : RealmObject, ClipAppearItem, ClipHtml {
 
     override var html: String = ""
 
-    override var md5: String = ""
+    @Index
+    override var isFavorite: Boolean = false
 
     override var size: Long = 0L
+
+    override var md5: String = ""
 
     override var extraInfo: String? = null
 

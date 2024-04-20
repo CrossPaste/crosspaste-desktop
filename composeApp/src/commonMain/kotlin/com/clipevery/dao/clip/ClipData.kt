@@ -51,6 +51,7 @@ class ClipData : RealmObject {
 
     var isRemote: Boolean = false
 
+    @Index
     var isFavorite: Boolean = false
 
     @Serializable(with = ClipLabelRealmSetSerializer::class)

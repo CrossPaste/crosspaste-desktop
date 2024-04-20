@@ -16,7 +16,13 @@ interface ClipDao {
 
     suspend fun deleteClipData(id: ObjectId)
 
-    fun getClipResourceInfo(): ClipResourceInfo
+    fun getSize(allOrFavorite: Boolean = false): Long
+
+    fun getClipResourceInfo(allOrFavorite: Boolean = false): ClipResourceInfo
+
+    fun getSizeByTimeLessThan(time: RealmInstant): Long
+
+    fun getMinClipDataCreateTime(): RealmInstant?
 
     fun getClipData(
         appInstanceId: String? = null,
@@ -55,9 +61,9 @@ interface ClipDao {
         createTime: RealmInstant,
     ): RealmResults<ClipData>
 
-    suspend fun getMarkDeleteByCleanTime(
+    suspend fun markDeleteByCleanTime(
         cleanTime: RealmInstant,
-        clipType: Int,
+        clipType: Int? = null,
     )
 
     fun setFavorite(
