@@ -68,6 +68,6 @@ interface ClipDao {
 
     fun setFavorite(
         id: ObjectId,
-        isFavorite: Boolean,
+        favorite: Boolean,
     )
 }

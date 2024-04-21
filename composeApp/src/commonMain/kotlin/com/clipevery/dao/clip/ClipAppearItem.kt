@@ -14,11 +14,13 @@ interface ClipAppearItem {
 
     fun getSearchContent(): String?
 
-    var isFavorite: Boolean
+    var favorite: Boolean
 
     var md5: String
 
     var size: Long
+
+    var clipState: Int
 
     var extraInfo: String?
 

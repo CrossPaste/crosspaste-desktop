@@ -87,13 +87,20 @@ class CleanClipTaskExecutor(
         var right = currentTime
         var targetTime = estimatedTargetTime
 
+        var size = clipDao.getSizeByTimeLessThan(targetTime)
+        if (size > minSize) {
+            right = targetTime
+        } else if (size < minSize) {
+            left = targetTime
+        }
+
         while (left <= right) {
             val mid =
                 RealmInstant.from(
                     (left.epochSeconds + right.epochSeconds) / 2,
                     (left.nanosecondsOfSecond + right.nanosecondsOfSecond) / 2,
                 )
-            val size = clipDao.getSizeByTimeLessThan(mid)
+            size = clipDao.getSizeByTimeLessThan(mid)
 
             if (size >= minSize) {
                 targetTime = mid

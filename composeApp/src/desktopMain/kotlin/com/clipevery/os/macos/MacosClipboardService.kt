@@ -58,9 +58,9 @@ class MacosClipboardService(
         return serviceScope.launch(CoroutineName("MacClipboardService")) {
             while (isActive) {
                 try {
-                    val isRemote = IntByReference()
+                    val remote = IntByReference()
                     val isClipevery = IntByReference()
-                    MacosApi.INSTANCE.getClipboardChangeCount(changeCount, isRemote, isClipevery)
+                    MacosApi.INSTANCE.getClipboardChangeCount(changeCount, remote, isClipevery)
                         .let { currentChangeCount ->
                             if (changeCount != currentChangeCount) {
                                 logger.info { "currentChangeCount $currentChangeCount changeCount $changeCount" }
@@ -73,7 +73,7 @@ class MacosClipboardService(
                                     if (contents != ownerTransferable) {
                                         contents?.let {
                                             launch(CoroutineName("MacClipboardServiceConsumer")) {
-                                                clipConsumer.consume(it, isRemote.value != 0)
+                                                clipConsumer.consume(it, remote.value != 0)
                                             }
                                         }
                                     }

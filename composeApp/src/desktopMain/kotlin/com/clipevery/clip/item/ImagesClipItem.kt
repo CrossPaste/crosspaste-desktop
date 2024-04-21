@@ -2,6 +2,7 @@ package com.clipevery.clip.item
 
 import com.clipevery.app.AppFileType
 import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.dao.clip.ClipState
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.presist.DesktopOneFilePersist
@@ -42,13 +43,17 @@ class ImagesClipItem : RealmObject, ClipAppearItem, ClipFiles {
     var fileInfoTree: String = ""
 
     @Index
-    override var isFavorite: Boolean = false
+    override var favorite: Boolean = false
 
     override var count: Long = 0L
 
     override var size: Long = 0L
 
     override var md5: String = ""
+
+    @Index
+    @Transient
+    override var clipState: Int = ClipState.LOADING
 
     override var extraInfo: String? = null
 

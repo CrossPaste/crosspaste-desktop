@@ -46,13 +46,14 @@ class ClipData : RealmObject {
     @Transient
     var createTime: RealmInstant = RealmInstant.now()
 
+    @Index
     @Transient
     var clipState: Int = ClipState.LOADING
 
-    var isRemote: Boolean = false
+    var remote: Boolean = false
 
     @Index
-    var isFavorite: Boolean = false
+    var favorite: Boolean = false
 
     @Serializable(with = ClipLabelRealmSetSerializer::class)
     var labels: RealmSet<ClipLabel> = realmSetOf()
@@ -94,6 +95,13 @@ class ClipData : RealmObject {
 
     fun existFileResource(): Boolean {
         return getClipAppearItems().any { it is ClipFiles }
+    }
+
+    fun updateClipState(clipState: Int) {
+        this.clipState = clipState
+        for (clipAppearItem in this.getClipAppearItems()) {
+            clipAppearItem.clipState = ClipState.LOADED
+        }
     }
 }
 

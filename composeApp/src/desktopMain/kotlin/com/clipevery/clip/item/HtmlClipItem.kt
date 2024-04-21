@@ -2,6 +2,7 @@ package com.clipevery.clip.item
 
 import com.clipevery.app.AppFileType
 import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.dao.clip.ClipState
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.os.windows.html.HTMLCodec
 import com.clipevery.path.DesktopPathProvider
@@ -36,11 +37,15 @@ class HtmlClipItem : RealmObject, ClipAppearItem, ClipHtml {
     override var html: String = ""
 
     @Index
-    override var isFavorite: Boolean = false
+    override var favorite: Boolean = false
 
     override var size: Long = 0L
 
     override var md5: String = ""
+
+    @Index
+    @Transient
+    override var clipState: Int = ClipState.LOADING
 
     override var extraInfo: String? = null
 

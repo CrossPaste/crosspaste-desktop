@@ -156,11 +156,11 @@ fun ClipPreviewItemView(
                         modifier =
                             Modifier.padding(0.dp)
                                 .clickable {
-                                    clipDao.setFavorite(clipData.id, !clipData.isFavorite)
+                                    clipDao.setFavorite(clipData.id, !clipData.favorite)
                                 },
-                        painter = if (clipData.isFavorite) starSolid() else starRegular(),
+                        painter = if (clipData.favorite) starSolid() else starRegular(),
                         contentDescription = "Favorite",
-                        tint = if (clipData.isFavorite) Color(0xFFFFCE34) else MaterialTheme.colors.onSurface,
+                        tint = if (clipData.favorite) Color(0xFFFFCE34) else MaterialTheme.colors.onSurface,
                     )
                     Spacer(modifier = Modifier.weight(1f))
                 }

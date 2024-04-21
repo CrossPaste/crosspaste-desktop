@@ -30,7 +30,7 @@ object ClipDataSerializer : KSerializer<ClipData> {
             element<Int>("clipType")
             element<Long>("size")
             element<String>("md5")
-            element<Boolean>("isFavorite")
+            element<Boolean>("favorite")
             element<RealmSet<ClipLabel>>("labels")
         }
 
@@ -44,7 +44,7 @@ object ClipDataSerializer : KSerializer<ClipData> {
         var clipType = 0
         var size = 0L
         var md5 = ""
-        var isFavorite = false
+        var favorite = false
         var labels: RealmSet<ClipLabel> = realmSetOf()
         loop@ while (true) {
             when (val index = dec.decodeElementIndex(descriptor)) {
@@ -56,7 +56,7 @@ object ClipDataSerializer : KSerializer<ClipData> {
                 5 -> clipType = dec.decodeIntElement(descriptor, index)
                 6 -> size = dec.decodeLongElement(descriptor, index)
                 7 -> md5 = dec.decodeStringElement(descriptor, index)
-                8 -> isFavorite = dec.decodeBooleanElement(descriptor, index)
+                8 -> favorite = dec.decodeBooleanElement(descriptor, index)
                 9 -> labels = dec.decodeSerializableElement(descriptor, index, RealmSetKSerializer(ClipLabel.serializer()))
                 else -> break@loop
             }
@@ -75,8 +75,8 @@ object ClipDataSerializer : KSerializer<ClipData> {
                 this.size = size
                 this.createTime = RealmInstant.now()
                 this.clipState = ClipState.LOADING
-                this.isRemote = true
-                this.isFavorite = isFavorite
+                this.remote = true
+                this.favorite = favorite
                 this.labels = labels
             }
 
@@ -105,7 +105,7 @@ object ClipDataSerializer : KSerializer<ClipData> {
         compositeOutput.encodeIntElement(descriptor, 5, value.clipType)
         compositeOutput.encodeLongElement(descriptor, 6, value.size)
         compositeOutput.encodeStringElement(descriptor, 7, value.md5)
-        compositeOutput.encodeBooleanElement(descriptor, 8, value.isFavorite)
+        compositeOutput.encodeBooleanElement(descriptor, 8, value.favorite)
         compositeOutput.encodeSerializableElement(descriptor, 9, RealmSetKSerializer(ClipLabel.serializer()), value.labels)
         compositeOutput.endStructure(descriptor)
     }

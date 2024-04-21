@@ -33,6 +33,7 @@ object DesktopJsonUtils : JsonUtils {
 
     override val JSON: Json =
         Json {
+            encodeDefaults = true
             ignoreUnknownKeys = true
             serializersModule =
                 SerializersModule {

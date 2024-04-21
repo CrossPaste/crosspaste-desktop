@@ -38,6 +38,7 @@ data class AppConfig(
         fileCleanTimeIndex = other.fileCleanTimeIndex,
         isThresholdCleanup = other.isThresholdCleanup,
         maxStorage = other.maxStorage,
+        cleanupPercentage = other.cleanupPercentage,
         isAllowDiscovery = other.isAllowDiscovery,
         blacklist = other.blacklist,
         lastClipboardChangeCount = other.lastClipboardChangeCount,

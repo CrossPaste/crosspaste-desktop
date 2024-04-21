@@ -37,7 +37,7 @@ open class DesktopTransferableConsumer(
 
     override suspend fun consume(
         transferable: Transferable,
-        isRemote: Boolean,
+        remote: Boolean,
     ) {
         val clipId = idGenerator.nextID()
 
@@ -52,7 +52,7 @@ open class DesktopTransferableConsumer(
 
         try {
             preCollect(clipId, dataFlavorMap, transferable, clipCollector)
-            clipCollector.createPreClipData(clipId, isRemote = isRemote)?.let {
+            clipCollector.createPreClipData(clipId, remote = remote)?.let {
                 updateClipData(clipId, dataFlavorMap, transferable, clipCollector)
                 clipCollector.completeCollect(it)
             }
