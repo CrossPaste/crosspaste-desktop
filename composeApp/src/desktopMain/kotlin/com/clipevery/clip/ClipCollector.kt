@@ -81,7 +81,7 @@ class ClipCollector(
 
     suspend fun createPreClipData(
         clipId: Long,
-        isRemote: Boolean,
+        remote: Boolean,
     ): ObjectId? {
         val collector = preCollectors.filter { it.isNotEmpty() }
         if (collector.isEmpty()) {
@@ -103,7 +103,7 @@ class ClipCollector(
                 this.appInstanceId = appInfo.appInstanceId
                 this.createTime = RealmInstant.now()
                 this.clipState = ClipState.LOADING
-                this.isRemote = isRemote
+                this.remote = remote
             }
         return clipDao.createClipData(clipData)
     }

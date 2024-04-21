@@ -60,6 +60,6 @@ class SerializerTest {
         assertEquals(ClipState.LOADING, newClipData.clipState)
         assertNotEquals(clipData.createTime, newClipData.createTime)
         assertEquals(clipData.appInstanceId, newClipData.appInstanceId)
-        assertTrue(newClipData.isRemote)
+        assertTrue(newClipData.remote)
     }
 }

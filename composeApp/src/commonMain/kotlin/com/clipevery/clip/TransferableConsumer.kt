@@ -6,6 +6,6 @@ interface TransferableConsumer {
 
     suspend fun consume(
         transferable: Transferable,
-        isRemote: Boolean,
+        remote: Boolean,
     )
 }

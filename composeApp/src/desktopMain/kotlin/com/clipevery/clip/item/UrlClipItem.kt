@@ -1,6 +1,7 @@
 package com.clipevery.clip.item
 
 import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.dao.clip.ClipState
 import com.clipevery.dao.clip.ClipType
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.types.RealmObject
@@ -27,11 +28,15 @@ class UrlClipItem : RealmObject, ClipAppearItem, ClipUrl {
     override var url: String = ""
 
     @Index
-    override var isFavorite: Boolean = false
+    override var favorite: Boolean = false
 
     override var size: Long = 0L
 
     override var md5: String = ""
+
+    @Index
+    @Transient
+    override var clipState: Int = ClipState.LOADING
 
     override var extraInfo: String? = null
 

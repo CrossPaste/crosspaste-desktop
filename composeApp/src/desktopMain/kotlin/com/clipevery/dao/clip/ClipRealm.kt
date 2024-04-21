@@ -15,6 +15,7 @@ import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.Realm
 import io.realm.kotlin.query.RealmResults
 import io.realm.kotlin.query.Sort
+import io.realm.kotlin.query.min
 import io.realm.kotlin.query.sum
 import io.realm.kotlin.types.RealmAny
 import io.realm.kotlin.types.RealmInstant
@@ -34,13 +35,13 @@ class ClipRealm(
 
     override fun setFavorite(
         id: ObjectId,
-        isFavorite: Boolean,
+        favorite: Boolean,
     ) {
         realm.writeBlocking {
             query(ClipData::class, "id == $0", id).first().find()?.let {
-                it.isFavorite = isFavorite
+                it.favorite = favorite
                 for (clipAppearItem in it.getClipAppearItems()) {
-                    clipAppearItem.isFavorite = isFavorite
+                    clipAppearItem.favorite = favorite
                 }
             }
         }
@@ -64,7 +65,7 @@ class ClipRealm(
 
     private fun MutableRealm.doMarkDeleteClipData(markDeleteClipDatas: List<ClipData>): List<ObjectId> {
         return markDeleteClipDatas.map {
-            it.clipState = ClipState.DELETED
+            it.updateClipState(ClipState.DELETED)
             copyToRealm(createTask(it.id, TaskType.DELETE_CLIP_TASK)).taskId
         }
     }
@@ -101,7 +102,7 @@ class ClipRealm(
         } else {
             realm.query(
                 ClipData::class,
-                "clipState = $0 AND isFavorite == $1 AND clipState != $2",
+                "clipState = $0 AND favorite == $1 AND clipState != $2",
                 ClipState.LOADED,
                 true,
                 ClipState.DELETED,
@@ -123,30 +124,30 @@ class ClipRealm(
     }
 
     override fun getMinClipDataCreateTime(): RealmInstant? {
-        return realm.query(ClipData::class).sort("createTime", Sort.ASCENDING).first().find()?.createTime
+        return realm.query(ClipData::class).min<RealmInstant>("createTime").find()
     }
 
     private fun getAllClipResourceInfo(): ClipResourceInfo {
-        val query = realm.query(ClipData::class)
+        val query = realm.query(ClipData::class, "clipState != $0", ClipState.DELETED)
         val size = query.sum<Long>("size").find()
 
-        val textQuery = realm.query(TextClipItem::class)
+        val textQuery = realm.query(TextClipItem::class, "clipState != $0", ClipState.DELETED)
         val textCount = textQuery.count().find()
         val textSize = textQuery.sum<Long>("size").find()
 
-        val urlQuery = realm.query(UrlClipItem::class)
+        val urlQuery = realm.query(UrlClipItem::class, "clipState != $0", ClipState.DELETED)
         val urlCount = urlQuery.count().find()
         val urlSize = urlQuery.sum<Long>("size").find()
 
-        val htmlQuery = realm.query(HtmlClipItem::class)
+        val htmlQuery = realm.query(HtmlClipItem::class, "clipState != $0", ClipState.DELETED)
         val htmlCount = htmlQuery.count().find()
         val htmlSize = htmlQuery.sum<Long>("size").find()
 
-        val imageQuery = realm.query(ImagesClipItem::class)
+        val imageQuery = realm.query(ImagesClipItem::class, "clipState != $0", ClipState.DELETED)
         val imageCount = imageQuery.sum<Long>("count").find()
         val imageSize = imageQuery.sum<Long>("size").find()
 
-        val fileQuery = realm.query(FilesClipItem::class)
+        val fileQuery = realm.query(FilesClipItem::class, "clipState != $0", ClipState.DELETED)
         val fileCount = fileQuery.sum<Long>("count").find()
         val fileSize = fileQuery.sum<Long>("size").find()
 
@@ -163,26 +164,26 @@ class ClipRealm(
     }
 
     private fun getFavoriteClipResourceInfo(): ClipResourceInfo {
-        val query = realm.query(ClipData::class, "isFavorite == $0", true)
+        val query = realm.query(ClipData::class, "favorite == $0 AND clipState != $1", true, ClipState.DELETED)
         val size = query.sum<Long>("size").find()
 
-        val textQuery = realm.query(TextClipItem::class, "isFavorite == $0", true)
+        val textQuery = realm.query(TextClipItem::class, "favorite == $0 AND clipState != $1", true, ClipState.DELETED)
         val textCount = textQuery.count().find()
         val textSize = textQuery.sum<Long>("size").find()
 
-        val urlQuery = realm.query(UrlClipItem::class, "isFavorite == $0", true)
+        val urlQuery = realm.query(UrlClipItem::class, "favorite == $0 AND clipState != $1", true, ClipState.DELETED)
         val urlCount = urlQuery.count().find()
         val urlSize = urlQuery.sum<Long>("size").find()
 
-        val htmlQuery = realm.query(HtmlClipItem::class, "isFavorite == $0", true)
+        val htmlQuery = realm.query(HtmlClipItem::class, "favorite == $0 AND clipState != $1", true, ClipState.DELETED)
         val htmlCount = htmlQuery.count().find()
         val htmlSize = htmlQuery.sum<Long>("size").find()
 
-        val imageQuery = realm.query(ImagesClipItem::class, "isFavorite == $0", true)
+        val imageQuery = realm.query(ImagesClipItem::class, "favorite == $0 AND clipState != $1", true, ClipState.DELETED)
         val imageCount = imageQuery.sum<Long>("count").find()
         val imageSize = imageQuery.sum<Long>("size").find()
 
-        val fileQuery = realm.query(FilesClipItem::class, "isFavorite == $0", true)
+        val fileQuery = realm.query(FilesClipItem::class, "favorite == $0 AND clipState != $1", true, ClipState.DELETED)
         val fileCount = fileQuery.sum<Long>("count").find()
         val fileSize = fileQuery.sum<Long>("size").find()
 
@@ -264,7 +265,10 @@ class ClipRealm(
                         clipAppearItems = clipPlugin.pluginProcess(clipAppearItems, this)
                     }
 
-                    val size = clipAppearItems.map { it.size }.sum()
+                    val size = clipAppearItems.sumOf { it.size }
+                    for (clipAppearItem in clipAppearItems) {
+                        clipAppearItem.clipState = ClipState.LOADED
+                    }
 
                     // first appearItem as clipAppearContent
                     // remaining appearItems as clipContent
@@ -304,7 +308,7 @@ class ClipRealm(
                 return@write null
             }
             if (!existFile) {
-                clipData.clipState = ClipState.LOADED
+                clipData.updateClipState(ClipState.LOADED)
                 copyToRealm(clipData)
                 tasks.addAll(markDeleteSameMd5(clipData.id, clipData.md5))
             } else {
@@ -327,7 +331,7 @@ class ClipRealm(
         val tasks = mutableListOf<ObjectId>()
         realm.write {
             query(ClipData::class, "id == $0", id).first().find()?.let { clipData ->
-                clipData.clipState = ClipState.LOADED
+                clipData.updateClipState(ClipState.LOADED)
                 tasks.addAll(markDeleteSameMd5(clipData.id, clipData.md5))
                 return@write clipData
             }

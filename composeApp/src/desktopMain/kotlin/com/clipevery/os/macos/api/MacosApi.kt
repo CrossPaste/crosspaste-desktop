@@ -8,7 +8,7 @@ interface MacosApi : Library {
 
     fun getClipboardChangeCount(
         currentChangeCount: Int,
-        isRemote: IntByReference,
+        remote: IntByReference,
         isClipevery: IntByReference,
     ): Int
 
