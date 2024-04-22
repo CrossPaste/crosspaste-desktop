@@ -19,7 +19,7 @@ ktor = "2.3.10"
 logback = "1.5.6"
 realm = "1.15.0"
 selenium = "4.19.1"
-signal = "0.44.0"
+signal = "0.45.0"
 theme-detector = "3.8"
 zxing = "3.5.3"
 
