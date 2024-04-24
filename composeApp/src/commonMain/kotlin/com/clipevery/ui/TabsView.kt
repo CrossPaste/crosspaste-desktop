@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.app.AppEnv
 import com.clipevery.i18n.GlobalCopywriter
-import com.clipevery.ui.clip.ClipPreviewsView
+import com.clipevery.ui.clip.preview.ClipPreviewsView
 import com.clipevery.ui.devices.DevicesView
 import com.clipevery.ui.devices.bindingQRCode
 

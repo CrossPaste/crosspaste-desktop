@@ -23,7 +23,7 @@ fun loadImage(
     thumbnail: Boolean = false,
 ): ToPainterImage {
     return when (path.pathString.substringAfterLast(".")) {
-        "svg" -> SvgResourceToPainter(path.inputStream().buffered().use { loadSvgPainter(it, density) })
+        "svg" -> SvgResourceToPainter(path, path.inputStream().buffered().use { loadSvgPainter(it, density) })
         "xml" -> XmlResourceToPainter(path.inputStream().buffered().use { loadXmlImageVector(InputSource(it), density) })
         else -> {
             if (thumbnail) {
@@ -31,9 +31,9 @@ fun loadImage(
                 if (!thumbnailPath.exists()) {
                     createThumbnail(path)
                 }
-                ImageBitmapToPainter(thumbnailPath.inputStream().use { it.buffered().use(::loadImageBitmap) })
+                ImageBitmapToPainter(path, thumbnailPath.inputStream().use { it.buffered().use(::loadImageBitmap) })
             } else {
-                ImageBitmapToPainter(path.inputStream().use { it.buffered().use(::loadImageBitmap) })
+                ImageBitmapToPainter(path, path.inputStream().use { it.buffered().use(::loadImageBitmap) })
             }
         }
     }
@@ -54,17 +54,23 @@ interface ToPainterImage {
     fun toPainter(): Painter
 }
 
-class ImageBitmapToPainter(private val imageBitmap: ImageBitmap) : ToPainterImage {
+class ImageBitmapToPainter(
+    private val path: Path,
+    private val imageBitmap: ImageBitmap,
+) : ToPainterImage {
     @Composable
     override fun toPainter(): Painter {
-        return remember { BitmapPainter(imageBitmap) }
+        return remember(path) { BitmapPainter(imageBitmap) }
     }
 }
 
-class SvgResourceToPainter(private val painter: Painter) : ToPainterImage {
+class SvgResourceToPainter(
+    private val path: Path,
+    private val painter: Painter,
+) : ToPainterImage {
     @Composable
     override fun toPainter(): Painter {
-        return remember { painter }
+        return remember(path) { painter }
     }
 }
 

@@ -1,6 +1,7 @@
 package com.clipevery.listen
 
 import com.clipevery.Dependencies
+import com.clipevery.app.AppUI
 import com.clipevery.clip.ClipSearchService
 import com.clipevery.config.ConfigManager
 import com.clipevery.ui.search.createSearchWindow
@@ -17,8 +18,9 @@ import kotlinx.coroutines.launch
 val logger = KotlinLogging.logger {}
 
 class GlobalListener(
-    private val configManager: ConfigManager,
-    private val clipSearchService: ClipSearchService,
+    appUI: AppUI,
+    configManager: ConfigManager,
+    clipSearchService: ClipSearchService,
 ) {
 
     init {
@@ -29,12 +31,15 @@ class GlobalListener(
                 logger.error { "There was a problem registering the native hook." }
                 logger.error { "ex.message" }
             }
-            GlobalScreen.addNativeKeyListener(OpenSearchListener(clipSearchService))
+            GlobalScreen.addNativeKeyListener(OpenSearchListener(appUI, clipSearchService))
         }
     }
 }
 
-class OpenSearchListener(private val clipSearchService: ClipSearchService) : NativeKeyListener {
+class OpenSearchListener(
+    private val appUI: AppUI,
+    private val clipSearchService: ClipSearchService,
+) : NativeKeyListener {
 
     private val logger = KotlinLogging.logger {}
 
@@ -49,6 +54,18 @@ class OpenSearchListener(private val clipSearchService: ClipSearchService) : Nat
             dispatcher.launch(CoroutineName("CrateSearchWindow")) {
                 logger.info { "Open search window" }
                 createSearchWindow(clipSearchService, Dependencies.koinApplication)
+            }
+        }
+
+        if (e.keyCode == NativeKeyEvent.VC_ESCAPE) {
+            clipSearchService.getAppUI().showSearchWindow = false
+        } else if (e.keyCode == NativeKeyEvent.VC_UP) {
+            if (appUI.showSearchWindow) {
+                clipSearchService.upSelectedIndex()
+            }
+        } else if (e.keyCode == NativeKeyEvent.VC_DOWN) {
+            if (appUI.showSearchWindow) {
+                clipSearchService.downSelectedIndex()
             }
         }
     }
