@@ -70,4 +70,13 @@ interface ClipDao {
         id: ObjectId,
         favorite: Boolean,
     )
+
+    fun searchClipData(
+        inputSearch: String,
+        favorite: Boolean? = null,
+        appInstanceId: String? = null,
+        clipType: Int? = null,
+        sort: Boolean = true, // sort createTime, true: desc, false: asc
+        limit: Int,
+    ): RealmResults<ClipData>
 }

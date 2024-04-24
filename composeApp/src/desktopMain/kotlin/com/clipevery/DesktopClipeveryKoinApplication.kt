@@ -209,7 +209,7 @@ object Dependencies {
                 // ui component
                 single<AppUI> { AppUI(width = 460.dp, height = 710.dp) }
                 single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
-                single<GlobalListener> { GlobalListener(get(), get()) }
+                single<GlobalListener> { GlobalListener(get(), get(), get()) }
                 single<ThemeDetector> { DesktopThemeDetector(get()) }
                 single<ClipResourceLoader> { DesktopAbsoluteClipResourceLoader }
                 single<ToastManager> { DesktopToastManager() }

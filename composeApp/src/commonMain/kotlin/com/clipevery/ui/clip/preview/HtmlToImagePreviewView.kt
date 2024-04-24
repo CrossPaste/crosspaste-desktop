@@ -1,4 +1,4 @@
-package com.clipevery.ui.clip
+package com.clipevery.ui.clip.preview
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -56,13 +56,14 @@ fun HtmlToImagePreviewView(clipData: ClipData) {
 
         val clipHtml = it as ClipHtml
 
-        val filePath by remember { mutableStateOf(clipHtml.getHtmlImagePath()) }
+        val filePath by remember(clipData.id) { mutableStateOf(clipHtml.getHtmlImagePath()) }
 
-        var existFile by remember { mutableStateOf(filePath.toFile().exists()) }
+        var existFile by remember(clipData.id) { mutableStateOf(filePath.toFile().exists()) }
 
         ClipSpecificPreviewContentView(it, {
             Row {
                 AsyncView(
+                    key = clipData.id,
                     load = {
                         if (!existFile) {
                             chromeService.html2Image(clipHtml.html)?.let { bytes ->

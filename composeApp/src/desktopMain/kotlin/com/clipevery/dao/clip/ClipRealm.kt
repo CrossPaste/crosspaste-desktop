@@ -11,6 +11,7 @@ import com.clipevery.task.TaskExecutor
 import com.clipevery.task.extra.SyncExtraInfo
 import com.clipevery.utils.DateUtils
 import com.clipevery.utils.TaskUtils.createTask
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.Realm
 import io.realm.kotlin.query.RealmResults
@@ -26,6 +27,8 @@ class ClipRealm(
     private val realm: Realm,
     private val lazyTaskExecutor: Lazy<TaskExecutor>,
 ) : ClipDao {
+
+    val logger = KotlinLogging.logger {}
 
     private val taskExecutor by lazy { lazyTaskExecutor.value }
 
@@ -389,5 +392,37 @@ class ClipRealm(
                 doMarkDeleteClipData(query.find())
             }
         taskExecutor.submitTasks(taskIds)
+    }
+
+    override fun searchClipData(
+        inputSearch: String,
+        favorite: Boolean?,
+        appInstanceId: String?,
+        clipType: Int?,
+        sort: Boolean,
+        limit: Int,
+    ): RealmResults<ClipData> {
+        val searchTerms = inputSearch.trim().split("\\s+".toRegex()).filterNot { it.isEmpty() }.distinct()
+        logger.info { "Performing search for: $searchTerms" }
+        var query = realm.query(ClipData::class, "clipState != $0", ClipState.DELETED)
+
+        if (searchTerms.isNotEmpty()) {
+            query = query.query("clipSearchContent LIKE $0", "*${searchTerms[0]}*")
+            for (i in 1 until searchTerms.size) {
+                query = query.query("clipSearchContent LIKE $0", "*${searchTerms[i]}*")
+            }
+        }
+
+        if (favorite != null) {
+            query = query.query("favorite == $0", favorite)
+        }
+        if (appInstanceId != null) {
+            query = query.query("appInstanceId == $0", appInstanceId)
+        }
+        if (clipType != null) {
+            query = query.query("clipType == $0", clipType)
+        }
+
+        return query.sort("createTime", if (sort) Sort.DESCENDING else Sort.ASCENDING).limit(limit).find()
     }
 }

@@ -1,4 +1,4 @@
-package com.clipevery.ui.clip
+package com.clipevery.ui.clip.preview
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -57,6 +57,7 @@ fun SingleImagePreviewView(imagePath: Path) {
             },
     ) {
         AsyncView(
+            key = imagePath,
             load = {
                 LoadImageData(imagePath, loadImage(imagePath, density, thumbnail = true))
             },

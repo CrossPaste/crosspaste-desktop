@@ -1,4 +1,4 @@
-package com.clipevery.ui.clip
+package com.clipevery.ui.clip.preview
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
