@@ -59,6 +59,10 @@ fun main() {
     initLogger(DesktopPathProvider.resolve("clipevery.log", AppFileType.LOG).pathString)
     val logger = KotlinLogging.logger {}
 
+    Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+        logger.error(throwable) { "Uncaught exception in thread: $thread" }
+    }
+
     logger.info { "Starting Clipevery" }
     try {
         val koinApplication = Dependencies.koinApplication
