@@ -1,6 +1,6 @@
 package com.clipevery
 
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Tray
@@ -20,6 +20,7 @@ import com.clipevery.log.initLogger
 import com.clipevery.net.ClipBonjourService
 import com.clipevery.net.ClipClient
 import com.clipevery.net.ClipServer
+import com.clipevery.os.macos.api.MacosApi
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.platform.currentPlatform
 import com.clipevery.ui.getTrayMouseAdapter
@@ -31,6 +32,8 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch
 import org.koin.core.KoinApplication
+import java.awt.event.WindowAdapter
+import java.awt.event.WindowEvent
 import kotlin.io.path.pathString
 
 class Clipevery {
@@ -106,7 +109,19 @@ class Clipevery {
                     icon = trayIcon,
                     mouseListener =
                         getTrayMouseAdapter(windowState) {
-                            appUI.showMainWindow = !appUI.showMainWindow
+                            if (appUI.showMainWindow) {
+                                if (currentPlatform().isMacos()) {
+                                    logger.info { "bringToBack Clipevery" }
+                                    MacosApi.INSTANCE.bringToBack("Clipevery")
+                                }
+                                appUI.showMainWindow = false
+                            } else {
+                                if (currentPlatform().isMacos()) {
+                                    logger.info { "bringToFront Clipevery" }
+                                    MacosApi.INSTANCE.bringToFront("Clipevery")
+                                }
+                                appUI.showMainWindow = true
+                            }
                         },
                 )
 
@@ -128,18 +143,26 @@ class Clipevery {
                     transparent = true,
                     resizable = false,
                 ) {
-                    LaunchedEffect(Unit) {
-                        window.addWindowFocusListener(
-                            object : java.awt.event.WindowFocusListener {
-                                override fun windowGainedFocus(e: java.awt.event.WindowEvent?) {
+                    DisposableEffect(Unit) {
+                        val windowListener =
+                            object : WindowAdapter() {
+                                override fun windowGainedFocus(e: WindowEvent?) {
                                     appUI.showMainWindow = true
                                 }
 
-                                override fun windowLostFocus(e: java.awt.event.WindowEvent?) {
+                                override fun windowLostFocus(e: WindowEvent?) {
                                     appUI.showMainWindow = false
                                 }
-                            },
-                        )
+                            }
+
+                        window.addWindowFocusListener(windowListener)
+
+                        if (currentPlatform().isMacos()) {
+                            MacosApi.INSTANCE.bringToFront("Clipevery")
+                        }
+                        onDispose {
+                            window.removeWindowFocusListener(windowListener)
+                        }
                     }
                     ClipeveryApp(
                         Dependencies.koinApplication,
