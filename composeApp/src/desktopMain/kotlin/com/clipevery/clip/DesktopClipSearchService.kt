@@ -5,6 +5,8 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import com.clipevery.app.AppUI
 import com.clipevery.dao.clip.ClipData
+import com.clipevery.os.macos.api.MacosApi
+import com.clipevery.platform.currentPlatform
 
 class DesktopClipSearchService(private val appUI: AppUI) : ClipSearchService {
 
@@ -72,6 +74,17 @@ class DesktopClipSearchService(private val appUI: AppUI) : ClipSearchService {
         if (_selectedIndex.value < searchResult.size - 1) {
             _selectedIndex.value++
             setCurrentClipData()
+        }
+    }
+
+    override fun activeWindow() {
+        val currentPlatform = currentPlatform()
+        if (currentPlatform.isMacos()) {
+            MacosApi.INSTANCE.bringToFront("Clipevery Search")
+        } else if (currentPlatform.isWindows()) {
+            // todo windows
+        } else if (currentPlatform.isLinux()) {
+            // todo linux
         }
     }
 }
