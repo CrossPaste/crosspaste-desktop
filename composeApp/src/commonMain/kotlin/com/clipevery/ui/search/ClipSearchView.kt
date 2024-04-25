@@ -96,7 +96,7 @@ fun createSearchWindow(
                         }
 
                     window.addWindowFocusListener(windowListener)
-
+                    clipSearchService.activeWindow()
                     onDispose {
                         window.removeWindowFocusListener(windowListener)
                     }
@@ -109,6 +109,7 @@ fun createSearchWindow(
             }
         }
     } else {
+        clipSearchService.activeWindow()
         appUI.showSearchWindow = true
     }
 }
