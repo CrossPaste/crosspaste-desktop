@@ -38,7 +38,9 @@ interface MacosApi : Library {
 
     fun getHardwareUUID(): String?
 
-    fun bringToFront(windowTitle: String)
+    fun bringToFront(windowTitle: String): String
+
+    fun activeApp(appName: String)
 
     companion object {
         val INSTANCE: MacosApi = Native.load("MacosApi", MacosApi::class.java)

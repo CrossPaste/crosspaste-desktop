@@ -7,8 +7,11 @@ import com.clipevery.app.AppUI
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.os.macos.api.MacosApi
 import com.clipevery.platform.currentPlatform
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 class DesktopClipSearchService(private val appUI: AppUI) : ClipSearchService {
+
+    private val logger = KotlinLogging.logger {}
 
     private var start: Boolean = false
 
@@ -21,6 +24,8 @@ class DesktopClipSearchService(private val appUI: AppUI) : ClipSearchService {
     override val currentClipData: State<ClipData?> get() = _currentClipData
 
     private var _currentClipData = mutableStateOf<ClipData?>(null)
+
+    private var prevAppName: String? = null
 
     @Synchronized
     override fun tryStart(): Boolean {
@@ -80,11 +85,20 @@ class DesktopClipSearchService(private val appUI: AppUI) : ClipSearchService {
     override fun activeWindow() {
         val currentPlatform = currentPlatform()
         if (currentPlatform.isMacos()) {
-            MacosApi.INSTANCE.bringToFront("Clipevery Search")
+            prevAppName = MacosApi.INSTANCE.bringToFront("Clipevery Search")
+            logger.info { "save prevAppName is ${prevAppName ?: "null"}" }
         } else if (currentPlatform.isWindows()) {
             // todo windows
         } else if (currentPlatform.isLinux()) {
             // todo linux
+        }
+    }
+
+    override fun unActiveWindow() {
+        appUI.showSearchWindow = false
+        prevAppName?.let {
+            MacosApi.INSTANCE.activeApp(it)
+            logger.info { "unActiveWindow return to app $it" }
         }
     }
 }

@@ -96,7 +96,7 @@ fun createSearchWindow(
                         }
 
                     window.addWindowFocusListener(windowListener)
-
+                    clipSearchService.activeWindow()
                     onDispose {
                         window.removeWindowFocusListener(windowListener)
                     }
@@ -109,6 +109,7 @@ fun createSearchWindow(
             }
         }
     } else {
+        clipSearchService.activeWindow()
         appUI.showSearchWindow = true
     }
 }
@@ -141,8 +142,11 @@ fun ClipeverySearchWindow(hideWindow: () -> Unit) {
 
     LaunchedEffect(appUI.showSearchWindow) {
         if (appUI.showSearchWindow) {
+            delay(200)
             inputModeManager.requestInputMode(InputMode.Keyboard)
             focusRequester.requestFocus()
+        } else {
+            focusRequester.freeFocus()
         }
     }
 
