@@ -176,23 +176,23 @@ public func activeApp(appName: UnsafePointer<CChar>, toPaste: Bool) {
 func simulatePasteCommand() {
     let source = CGEventSource(stateID: .combinedSessionState)
 
-    // 创建按下 Command 键的事件
+    // Create an event for pressing the Command key
     let commandDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(55), keyDown: true)
     commandDown?.flags = .maskCommand
 
-    // 创建按下 'V' 键的事件
+    // Create an event for pressing the 'V' key
     let vKeyDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(9), keyDown: true)
     vKeyDown?.flags = .maskCommand
 
-    // 创建释放 'V' 键的事件
+    // Create an event for releasing the 'V' key
     let vKeyUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(9), keyDown: false)
     vKeyUp?.flags = .maskCommand
 
-    // 创建释放 Command 键的事件
+    // Create an event for releasing the Command key
     let commandUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(55), keyDown: false)
     commandUp?.flags = .maskCommand
 
-    // 发送事件模拟粘贴
+    // Send events to simulate pasting
     commandDown?.post(tap: .cghidEventTap)
     vKeyDown?.post(tap: .cghidEventTap)
     vKeyUp?.post(tap: .cghidEventTap)
