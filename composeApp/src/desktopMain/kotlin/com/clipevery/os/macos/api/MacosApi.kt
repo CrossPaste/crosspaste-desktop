@@ -40,7 +40,10 @@ interface MacosApi : Library {
 
     fun bringToFront(windowTitle: String): String
 
-    fun activeApp(appName: String)
+    fun activeApp(
+        appName: String,
+        toPaste: Boolean,
+    )
 
     companion object {
         val INSTANCE: MacosApi = Native.load("MacosApi", MacosApi::class.java)

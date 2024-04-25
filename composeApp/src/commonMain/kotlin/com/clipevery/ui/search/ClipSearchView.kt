@@ -38,6 +38,9 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -59,6 +62,7 @@ import com.clipevery.ui.ClipeveryTheme
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.delay
 import org.koin.core.KoinApplication
+import java.awt.event.KeyEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 
@@ -185,7 +189,10 @@ fun ClipeverySearchWindow(hideWindow: () -> Unit) {
                         .shadow(5.dp, RoundedCornerShape(10.dp))
                         .width(780.dp)
                         .height(460.dp)
-                        .background(MaterialTheme.colors.background),
+                        .background(MaterialTheme.colors.background)
+                        .onPreviewKeyEvent {
+                            it.key == Key(KeyEvent.VK_UP) || it.key == Key(KeyEvent.VK_DOWN)
+                        },
                 contentAlignment = Alignment.Center,
             ) {
                 Column {

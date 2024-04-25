@@ -195,7 +195,7 @@ object Dependencies {
                 }
                 single<TransferableProducer> { DesktopTransferableProducer() }
                 single<ChromeService> { DesktopChromeService }
-                single<ClipSearchService> { DesktopClipSearchService(get()) }
+                single<ClipSearchService> { DesktopClipSearchService(get(), get()) }
                 single<CleanClipScheduler> { DesktopCleanClipScheduler(get(), get(), get()) }
                 single<TaskExecutor> {
                     DesktopTaskExecutor(
