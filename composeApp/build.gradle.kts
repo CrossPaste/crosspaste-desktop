@@ -96,7 +96,7 @@ compose.desktop {
             configurationFiles.from("compose-desktop.pro")
         }
 
-        mainClass = "com.clipevery.MainKt"
+        mainClass = "com.clipevery.Clipevery"
 
         jvmArgs("--add-opens", "java.desktop/sun.awt=ALL-UNNAMED")
         jvmArgs("--add-opens", "java.desktop/java.awt.peer=ALL-UNNAMED")
