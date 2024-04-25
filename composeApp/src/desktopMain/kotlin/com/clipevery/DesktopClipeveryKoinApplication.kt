@@ -100,6 +100,8 @@ import com.clipevery.utils.JsonUtils
 import com.clipevery.utils.NetUtils
 import com.clipevery.utils.QRCodeGenerator
 import com.clipevery.utils.TelnetUtils
+import io.github.oshai.kotlinlogging.KLogger
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.koin.core.KoinApplication
 import org.koin.core.context.GlobalContext
 import org.koin.dsl.module
@@ -139,6 +141,7 @@ object Dependencies {
                 single<DeviceUtils> { DesktopDeviceUtils }
                 single<NetUtils> { DesktopNetUtils }
                 single<CacheManager> { CacheManagerImpl(get()) }
+                single<KLogger> { KotlinLogging.logger {} }
 
                 // realm component
                 single<RealmManager> { RealmManagerImpl.createRealmManager(get()) }
