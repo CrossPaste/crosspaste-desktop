@@ -58,7 +58,9 @@ class OpenSearchListener(
         }
 
         if (e.keyCode == NativeKeyEvent.VC_ESCAPE) {
-            clipSearchService.getAppUI().showSearchWindow = false
+            dispatcher.launch(CoroutineName("HideWindow")) {
+                clipSearchService.unActiveWindow()
+            }
         } else if (e.keyCode == NativeKeyEvent.VC_UP) {
             if (appUI.showSearchWindow) {
                 clipSearchService.upSelectedIndex()

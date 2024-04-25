@@ -140,7 +140,11 @@ private func IOPlatformUUID() -> String? {
 }
 
 @_cdecl("bringToFront")
-public func bringToFront(windowTitle: UnsafePointer<CChar>) {
+public func bringToFront(windowTitle: UnsafePointer<CChar>) -> UnsafePointer<CChar> {
+
+    let currentApp = NSWorkspace.shared.frontmostApplication
+    let currentAppName = currentApp?.bundleIdentifier ?? ""
+
     DispatchQueue.main.async {
         let title = String(cString: windowTitle)
         let windows = NSApplication.shared.windows
@@ -150,6 +154,18 @@ public func bringToFront(windowTitle: UnsafePointer<CChar>) {
                 NSApp.activate(ignoringOtherApps: true)
                 break
             }
+        }
+    }
+    return UnsafePointer<CChar>(strdup(currentAppName))
+}
+
+@_cdecl("activeApp")
+public func activeApp(appName: UnsafePointer<CChar>) {
+    DispatchQueue.main.async {
+        let appNameString = String(cString: appName)
+        let apps = NSRunningApplication.runningApplications(withBundleIdentifier: appNameString)
+        if let app = apps.first {
+            app.activate(options: [.activateIgnoringOtherApps])
         }
     }
 }

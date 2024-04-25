@@ -142,8 +142,11 @@ fun ClipeverySearchWindow(hideWindow: () -> Unit) {
 
     LaunchedEffect(appUI.showSearchWindow) {
         if (appUI.showSearchWindow) {
+            delay(200)
             inputModeManager.requestInputMode(InputMode.Keyboard)
             focusRequester.requestFocus()
+        } else {
+            focusRequester.freeFocus()
         }
     }
 
