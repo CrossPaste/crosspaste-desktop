@@ -6,17 +6,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.clipevery.LocalKoinApplication
 import com.clipevery.clip.ClipSearchService
-import com.clipevery.ui.clip.preview.ClipPreviewItemView
-import com.clipevery.ui.clip.preview.ClipSpecificPreviewView
+import com.clipevery.clip.item.ClipText
+import com.clipevery.ui.clip.detail.ClipDetailView
+import com.clipevery.ui.clip.detail.ClipTextDetailView
+import com.clipevery.ui.clip.preview.getClipItem
 
 @Composable
 fun DetialClipDataView() {
     val current = LocalKoinApplication.current
     val clipSearchService = current.koin.get<ClipSearchService>()
 
-    clipSearchService.currentClipData.value?.let {
-        ClipPreviewItemView(it) {
-            ClipSpecificPreviewView(this)
+    clipSearchService.currentClipData.value?.let { clipData ->
+        clipData.getClipItem()?.let {
+            ClipDetailView {
+                when (it) {
+                    is ClipText -> {
+                        ClipTextDetailView(it)
+                    }
+                    else -> {
+                    }
+                }
+            }
         }
     } ?: run {
         Spacer(modifier = Modifier.fillMaxSize())
