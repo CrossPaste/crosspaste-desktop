@@ -102,6 +102,29 @@ compose.desktop {
         jvmArgs("--add-opens", "java.desktop/java.awt.peer=ALL-UNNAMED")
 
         if (os.isMacOsX) {
+
+            tasks.register<Exec>("compileSwift") {
+                group = "build"
+                description = "Compile Swift code and output the dylib to the build directory."
+
+                // 定义编译命令
+                commandLine(
+                    "swiftc",
+                    "-emit-library",
+                    "src/desktopMain/swift/MacosApi.swift",
+                    "-target",
+                    "x86_64-apple-macos10.15",
+                    "-o",
+                    layout.buildDirectory.file("classes/kotlin/desktop/main/darwin-x86-64/libMacosApi.dylib").get().asFile.absolutePath,
+                )
+
+                outputs.file(layout.buildDirectory.file("classes/kotlin/desktop/main/darwin-x86-64/libMacosApi.dylib").get().asFile)
+            }
+
+            tasks.named("desktopJar") {
+                dependsOn("compileSwift")
+            }
+
             jvmArgs("--add-opens", "java.desktop/sun.lwawt=ALL-UNNAMED")
             jvmArgs("--add-opens", "java.desktop/sun.lwawt.macosx=ALL-UNNAMED")
         }
