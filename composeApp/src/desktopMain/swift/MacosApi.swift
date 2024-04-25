@@ -139,6 +139,23 @@ private func IOPlatformUUID() -> String? {
     return serialNumberAsCFString
 }
 
+@_cdecl("bringToBack")
+public func bringToBack(windowTitle: UnsafePointer<CChar>) {
+    DispatchQueue.main.async {
+        let title = String(cString: windowTitle)
+        let windows = NSApplication.shared.windows
+        for window in windows {
+            if window.title == title {
+                if (NSApp.isActive) {
+                    window.orderBack(nil)
+                    NSApp.hide(nil)
+                }
+                break
+            }
+        }
+    }
+}
+
 @_cdecl("bringToFront")
 public func bringToFront(windowTitle: UnsafePointer<CChar>) -> UnsafePointer<CChar> {
 
@@ -150,8 +167,10 @@ public func bringToFront(windowTitle: UnsafePointer<CChar>) -> UnsafePointer<CCh
         let windows = NSApplication.shared.windows
         for window in windows {
             if window.title == title {
-                window.makeKeyAndOrderFront(nil)
-                NSApp.activate(ignoringOtherApps: true)
+                if (!NSApp.isActive) {
+                    window.makeKeyAndOrderFront(nil)
+                    NSApp.activate(ignoringOtherApps: true)
+                }
                 break
             }
         }
