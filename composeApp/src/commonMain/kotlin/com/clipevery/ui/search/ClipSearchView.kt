@@ -34,6 +34,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.platform.LocalInputModeManager
@@ -54,6 +56,7 @@ import com.clipevery.app.AppUI
 import com.clipevery.clip.ClipSearchService
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.ui.ClipeveryTheme
+import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.delay
 import org.koin.core.KoinApplication
 import java.awt.event.WindowAdapter
@@ -134,6 +137,7 @@ fun ClipeverySearchWindow(hideWindow: () -> Unit) {
     val appUI = current.koin.get<AppUI>()
     val clipDao = current.koin.get<ClipDao>()
     val clipSearchService = current.koin.get<ClipSearchService>()
+    val logger = current.koin.get<KLogger>()
 
     var inputSearch by remember { mutableStateOf("") }
     var lastInputTime by remember { mutableStateOf(0L) }
@@ -190,6 +194,12 @@ fun ClipeverySearchWindow(hideWindow: () -> Unit) {
                             modifier =
                                 Modifier.focusTarget()
                                     .focusRequester(focusRequester)
+                                    .onFocusEvent {
+                                        logger.debug { "onFocusEvent $it" }
+                                    }
+                                    .onFocusChanged {
+                                        logger.debug { "onFocusChanged $it" }
+                                    }
                                     .fillMaxSize(),
                             value = inputSearch,
                             onValueChange = { inputSearch = it },
