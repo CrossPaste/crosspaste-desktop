@@ -20,18 +20,23 @@ import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
@@ -51,8 +56,8 @@ import com.clipevery.dao.clip.ClipDao
 import com.clipevery.ui.ClipeveryTheme
 import kotlinx.coroutines.delay
 import org.koin.core.KoinApplication
+import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
-import java.awt.event.WindowFocusListener
 
 fun createSearchWindow(
     clipSearchService: ClipSearchService,
@@ -78,9 +83,9 @@ fun createSearchWindow(
                 transparent = true,
                 resizable = false,
             ) {
-                LaunchedEffect(Unit) {
-                    window.addWindowFocusListener(
-                        object : WindowFocusListener {
+                DisposableEffect(Unit) {
+                    val windowListener =
+                        object : WindowAdapter() {
                             override fun windowGainedFocus(e: WindowEvent?) {
                                 appUI.showSearchWindow = true
                             }
@@ -88,8 +93,13 @@ fun createSearchWindow(
                             override fun windowLostFocus(e: WindowEvent?) {
                                 appUI.showSearchWindow = false
                             }
-                        },
-                    )
+                        }
+
+                    window.addWindowFocusListener(windowListener)
+
+                    onDispose {
+                        window.removeWindowFocusListener(windowListener)
+                    }
                 }
 
                 ClipeveryAppSearchView(
@@ -115,9 +125,11 @@ fun ClipeveryAppSearchView(
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ClipeverySearchWindow(hideWindow: () -> Unit) {
     val current = LocalKoinApplication.current
+    val inputModeManager = LocalInputModeManager.current
     val appUI = current.koin.get<AppUI>()
     val clipDao = current.koin.get<ClipDao>()
     val clipSearchService = current.koin.get<ClipSearchService>()
@@ -128,7 +140,10 @@ fun ClipeverySearchWindow(hideWindow: () -> Unit) {
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(appUI.showSearchWindow) {
-        focusRequester.requestFocus()
+        if (appUI.showSearchWindow) {
+            inputModeManager.requestInputMode(InputMode.Keyboard)
+            focusRequester.requestFocus()
+        }
     }
 
     LaunchedEffect(inputSearch) {
@@ -168,7 +183,10 @@ fun ClipeverySearchWindow(hideWindow: () -> Unit) {
                 Column {
                     Row(modifier = Modifier.height(60.dp).fillMaxWidth()) {
                         TextField(
-                            modifier = Modifier.focusRequester(focusRequester).fillMaxSize(),
+                            modifier =
+                                Modifier.focusTarget()
+                                    .focusRequester(focusRequester)
+                                    .fillMaxSize(),
                             value = inputSearch,
                             onValueChange = { inputSearch = it },
                             keyboardOptions = KeyboardOptions.Default.copy(autoCorrect = true),

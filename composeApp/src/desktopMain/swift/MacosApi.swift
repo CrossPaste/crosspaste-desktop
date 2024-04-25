@@ -138,3 +138,18 @@ private func IOPlatformUUID() -> String? {
                                                                        0).takeRetainedValue() as? String else { return nil }
     return serialNumberAsCFString
 }
+
+@_cdecl("bringToFront")
+public func bringToFront(windowTitle: UnsafePointer<CChar>) {
+    DispatchQueue.main.async {
+        let title = String(cString: windowTitle)
+        let windows = NSApplication.shared.windows
+        for window in windows {
+            if window.title == title {
+                window.makeKeyAndOrderFront(nil)
+                NSApp.activate(ignoringOtherApps: true)
+                break
+            }
+        }
+    }
+}

@@ -53,6 +53,7 @@ class OpenSearchListener(
         if (isCmdOrCtrlPressed && isShiftPressed && isSpacePressed) {
             dispatcher.launch(CoroutineName("CrateSearchWindow")) {
                 logger.info { "Open search window" }
+                clipSearchService.activeWindow()
                 createSearchWindow(clipSearchService, Dependencies.koinApplication)
             }
         }

@@ -25,4 +25,6 @@ interface ClipSearchService {
     fun upSelectedIndex()
 
     fun downSelectedIndex()
+
+    fun activeWindow()
 }
