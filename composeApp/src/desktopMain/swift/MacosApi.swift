@@ -160,12 +160,41 @@ public func bringToFront(windowTitle: UnsafePointer<CChar>) -> UnsafePointer<CCh
 }
 
 @_cdecl("activeApp")
-public func activeApp(appName: UnsafePointer<CChar>) {
+public func activeApp(appName: UnsafePointer<CChar>, toPaste: Bool) {
     DispatchQueue.main.async {
         let appNameString = String(cString: appName)
         let apps = NSRunningApplication.runningApplications(withBundleIdentifier: appNameString)
         if let app = apps.first {
             app.activate(options: [.activateIgnoringOtherApps])
+            if (toPaste) {
+                simulatePasteCommand()
+            }
         }
     }
+}
+
+func simulatePasteCommand() {
+    let source = CGEventSource(stateID: .combinedSessionState)
+
+    // 创建按下 Command 键的事件
+    let commandDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(55), keyDown: true)
+    commandDown?.flags = .maskCommand
+
+    // 创建按下 'V' 键的事件
+    let vKeyDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(9), keyDown: true)
+    vKeyDown?.flags = .maskCommand
+
+    // 创建释放 'V' 键的事件
+    let vKeyUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(9), keyDown: false)
+    vKeyUp?.flags = .maskCommand
+
+    // 创建释放 Command 键的事件
+    let commandUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(55), keyDown: false)
+    commandUp?.flags = .maskCommand
+
+    // 发送事件模拟粘贴
+    commandDown?.post(tap: .cghidEventTap)
+    vKeyDown?.post(tap: .cghidEventTap)
+    vKeyUp?.post(tap: .cghidEventTap)
+    commandUp?.post(tap: .cghidEventTap)
 }

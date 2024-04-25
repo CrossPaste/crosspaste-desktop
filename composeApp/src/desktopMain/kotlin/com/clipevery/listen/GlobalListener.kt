@@ -55,9 +55,11 @@ class OpenSearchListener(
                 logger.info { "Open search window" }
                 createSearchWindow(clipSearchService, Dependencies.koinApplication)
             }
-        }
-
-        if (e.keyCode == NativeKeyEvent.VC_ESCAPE) {
+        } else if (e.keyCode == NativeKeyEvent.VC_ENTER) {
+            dispatcher.launch(CoroutineName("Paste")) {
+                clipSearchService.toPaste()
+            }
+        } else if (e.keyCode == NativeKeyEvent.VC_ESCAPE) {
             dispatcher.launch(CoroutineName("HideWindow")) {
                 clipSearchService.unActiveWindow()
             }

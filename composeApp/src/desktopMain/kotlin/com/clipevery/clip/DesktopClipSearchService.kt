@@ -9,7 +9,10 @@ import com.clipevery.os.macos.api.MacosApi
 import com.clipevery.platform.currentPlatform
 import io.github.oshai.kotlinlogging.KotlinLogging
 
-class DesktopClipSearchService(private val appUI: AppUI) : ClipSearchService {
+class DesktopClipSearchService(
+    private val appUI: AppUI,
+    private val clipboardService: ClipboardService,
+) : ClipSearchService {
 
     private val logger = KotlinLogging.logger {}
 
@@ -95,10 +98,25 @@ class DesktopClipSearchService(private val appUI: AppUI) : ClipSearchService {
     }
 
     override fun unActiveWindow() {
-        appUI.showSearchWindow = false
-        prevAppName?.let {
-            MacosApi.INSTANCE.activeApp(it)
-            logger.info { "unActiveWindow return to app $it" }
+        if (appUI.showSearchWindow) {
+            appUI.showSearchWindow = false
+            prevAppName?.let {
+                MacosApi.INSTANCE.activeApp(it, false)
+                logger.info { "unActiveWindow return to app $it" }
+            }
+        }
+    }
+
+    override suspend fun toPaste() {
+        if (appUI.showSearchWindow) {
+            appUI.showSearchWindow = false
+            _currentClipData.value?.let {
+                clipboardService.tryWriteClipboard(it, localOnly = true)
+            }
+            prevAppName?.let {
+                MacosApi.INSTANCE.activeApp(it, true)
+                logger.info { "toPaste return to app $it" }
+            }
         }
     }
 }
