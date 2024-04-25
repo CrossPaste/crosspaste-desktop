@@ -175,7 +175,7 @@ fun ClipeverySearchWindow(hideWindow: () -> Unit) {
                     .background(Color.Transparent)
                     .clip(RoundedCornerShape(10.dp))
                     .width(800.dp)
-                    .height(600.dp)
+                    .height(480.dp)
                     .padding(10.dp),
             contentAlignment = Alignment.Center,
         ) {
@@ -184,7 +184,7 @@ fun ClipeverySearchWindow(hideWindow: () -> Unit) {
                     Modifier
                         .shadow(5.dp, RoundedCornerShape(10.dp))
                         .width(780.dp)
-                        .height(580.dp)
+                        .height(460.dp)
                         .background(MaterialTheme.colors.background),
                 contentAlignment = Alignment.Center,
             ) {

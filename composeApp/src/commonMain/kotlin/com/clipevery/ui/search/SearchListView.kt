@@ -48,7 +48,7 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
 
     LazyColumn(
         state = listState,
-        modifier = Modifier.width(280.dp).height(520.dp),
+        modifier = Modifier.width(280.dp).height(400.dp),
     ) {
         itemsIndexed(
             clipSearchService.searchResult,
