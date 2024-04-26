@@ -16,6 +16,9 @@ import com.sun.jna.platform.win32.WinUser.INPUT
 import com.sun.jna.platform.win32.WinUser.KEYBDINPUT.KEYEVENTF_KEYUP
 import com.sun.jna.platform.win32.WinUser.MONITORENUMPROC
 import com.sun.jna.platform.win32.WinUser.MSG
+import com.sun.jna.platform.win32.WinUser.SWP_NOMOVE
+import com.sun.jna.platform.win32.WinUser.SWP_NOSIZE
+import com.sun.jna.platform.win32.WinUser.SW_SHOWNORMAL
 import com.sun.jna.ptr.IntByReference
 import com.sun.jna.win32.StdCallLibrary
 import com.sun.jna.win32.StdCallLibrary.StdCallCallback
@@ -137,11 +140,29 @@ interface User32 : StdCallLibrary {
         lpdwProcessId: IntByReference,
     ): Int
 
+    fun GetCurrentThreadId(): Int
+
     fun SendInput(
         nInputs: DWORD?,
         pInputs: Array<INPUT?>?,
         cbSize: Int,
     ): Int
+
+    fun AttachThreadInput(
+        idAttach: DWORD,
+        idAttachTo: DWORD,
+        fAttach: Boolean,
+    ): Boolean
+
+    fun SetWindowPos(
+        hWnd: HWND,
+        hWndInsertAfter: Int,
+        X: Int,
+        Y: Int,
+        cx: Int,
+        cy: Int,
+        uFlags: UInt,
+    ): Boolean
 
     companion object {
         val INSTANCE =
@@ -205,14 +226,16 @@ interface User32 : StdCallLibrary {
             val previousHwnd = INSTANCE.GetForegroundWindow()
             val processIdRef = IntByReference()
             INSTANCE.GetWindowThreadProcessId(previousHwnd, processIdRef)
-
             val hWnd = INSTANCE.FindWindow(null, windowTitle)
             if (hWnd != null) {
-                logger.info { "Found window by $windowTitle" }
-                val currentProcessIdRef = IntByReference()
-                INSTANCE.GetWindowThreadProcessId(previousHwnd, currentProcessIdRef)
-                INSTANCE.AllowSetForegroundWindow(DWORD(currentProcessIdRef.value.toLong()))
+                val curThreadId = INSTANCE.GetCurrentThreadId()
+
+                INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processIdRef.value.toLong()), true)
+                INSTANCE.ShowWindow(hWnd, SW_SHOWNORMAL)
+                INSTANCE.SetWindowPos(hWnd, -1, 0, 0, 0, 0, (SWP_NOSIZE or SWP_NOMOVE).toUInt())
+                INSTANCE.SetWindowPos(hWnd, -2, 0, 0, 0, 0, (SWP_NOSIZE or SWP_NOMOVE).toUInt())
                 val result = INSTANCE.SetForegroundWindow(hWnd)
+                INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processIdRef.value.toLong()), false)
                 if (!result) {
                     logger.info { "Failed to set foreground window. Please switch manually" }
                 } else {
