@@ -20,6 +20,7 @@ import com.sun.jna.ptr.IntByReference
 import com.sun.jna.win32.StdCallLibrary
 import com.sun.jna.win32.StdCallLibrary.StdCallCallback
 import com.sun.jna.win32.W32APIOptions.DEFAULT_OPTIONS
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 interface User32 : StdCallLibrary {
     interface WNDPROC : StdCallCallback {
@@ -124,6 +125,8 @@ interface User32 : StdCallLibrary {
 
     fun SetForegroundWindow(hWnd: HWND): Boolean
 
+    fun AllowSetForegroundWindow(dwProcessId: DWORD): Boolean
+
     fun EnumWindows(
         lpEnumFunc: WinUser.WNDENUMPROC,
         lParam: Pointer?,
@@ -189,6 +192,8 @@ interface User32 : StdCallLibrary {
                 or QS_HOTKEY or QS_SENDMESSAGE
         )
 
+        private val logger = KotlinLogging.logger {}
+
         fun hideWindowByTitle(windowTitle: String) {
             val hWnd = INSTANCE.FindWindow(null, windowTitle)
             if (hWnd != null) {
@@ -203,7 +208,18 @@ interface User32 : StdCallLibrary {
 
             val hWnd = INSTANCE.FindWindow(null, windowTitle)
             if (hWnd != null) {
-                INSTANCE.SetForegroundWindow(hWnd)
+                logger.info { "Found window by $windowTitle" }
+                val currentProcessIdRef = IntByReference()
+                INSTANCE.GetWindowThreadProcessId(previousHwnd, currentProcessIdRef)
+                INSTANCE.AllowSetForegroundWindow(DWORD(currentProcessIdRef.value.toLong()))
+                val result = INSTANCE.SetForegroundWindow(hWnd)
+                if (!result) {
+                    logger.info { "Failed to set foreground window. Please switch manually" }
+                } else {
+                    logger.info { "Foreground window set successfully" }
+                }
+            } else {
+                logger.info { "Window not found" }
             }
 
             return processIdRef.value
