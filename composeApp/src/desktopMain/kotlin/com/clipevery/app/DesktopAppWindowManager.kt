@@ -3,7 +3,8 @@ package com.clipevery.app
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -13,27 +14,32 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
-class AppUI(val width: Dp, val height: Dp) {
+object DesktopAppWindowManager : AppWindowManager {
 
     private var startRefreshNumber: Int = 0
 
     private var refreshTokenJob: Job? = null
+
     private val scope = CoroutineScope(Dispatchers.IO)
 
-    var showMainWindow by mutableStateOf(false)
+    override var showMainWindow by mutableStateOf(false)
 
-    var showSearchWindow by mutableStateOf(true)
+    override val mainWindowDpSize = DpSize(width = 460.dp, height = 710.dp)
 
-    var showToken by mutableStateOf(false)
+    override var showSearchWindow by mutableStateOf(true)
 
-    var token by mutableStateOf(charArrayOf('0', '0', '0', '0', '0', '0'))
+    override val searchWindowDpSize = DpSize(width = 800.dp, height = 600.dp)
+
+    override var showToken by mutableStateOf(false)
+
+    override var token by mutableStateOf(charArrayOf('0', '0', '0', '0', '0', '0'))
 
     private fun refreshToken() {
         token = CharArray(6) { (Random.nextInt(10) + '0'.code).toChar() }
     }
 
     @Synchronized
-    fun startRefreshToken() {
+    override fun startRefreshToken() {
         if (startRefreshNumber++ == 0) {
             refreshTokenJob =
                 scope.launch(CoroutineName("RefreshToken")) {
@@ -46,7 +52,7 @@ class AppUI(val width: Dp, val height: Dp) {
     }
 
     @Synchronized
-    fun stopRefreshToken() {
+    override fun stopRefreshToken() {
         startRefreshNumber -= 1
         if (startRefreshNumber == 0) {
             refreshTokenJob?.cancel()

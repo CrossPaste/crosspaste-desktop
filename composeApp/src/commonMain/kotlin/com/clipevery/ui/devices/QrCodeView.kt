@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
-import com.clipevery.app.AppUI
+import com.clipevery.app.AppWindowManager
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.autoRenew
 import com.clipevery.ui.base.scan
@@ -52,7 +52,7 @@ val qrSize: DpSize = DpSize(275.dp, 275.dp)
 fun bindingQRCode() {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
-    val appUI = current.koin.get<AppUI>()
+    val appWindowManager = current.koin.get<AppWindowManager>()
     val qrCodeGenerator = current.koin.get<QRCodeGenerator>()
 
     val density = LocalDensity.current
@@ -63,20 +63,20 @@ fun bindingQRCode() {
     var qrImage: ImageBitmap? by remember { mutableStateOf(null) }
 
     LaunchedEffect(Unit) {
-        appUI.startRefreshToken()
+        appWindowManager.startRefreshToken()
     }
 
-    LaunchedEffect(appUI.token) {
+    LaunchedEffect(appWindowManager.token) {
         // maybe slow (get host), we use ioDispatcher to avoid blocking the UI
         qrImage =
             withContext(ioDispatcher) {
-                qrCodeGenerator.generateQRCode(width, height, appUI.token)
+                qrCodeGenerator.generateQRCode(width, height, appWindowManager.token)
             }
     }
 
     DisposableEffect(Unit) {
         onDispose {
-            appUI.stopRefreshToken()
+            appWindowManager.stopRefreshToken()
         }
     }
 

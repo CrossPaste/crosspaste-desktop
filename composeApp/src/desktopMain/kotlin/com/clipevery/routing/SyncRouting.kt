@@ -2,7 +2,7 @@ package com.clipevery.routing
 
 import com.clipevery.Dependencies
 import com.clipevery.app.AppInfo
-import com.clipevery.app.AppUI
+import com.clipevery.app.AppWindowManager
 import com.clipevery.dao.signal.SignalDao
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.dto.sync.DataContent
@@ -136,9 +136,9 @@ fun Routing.syncRouting() {
     }
 
     get("/sync/showToken") {
-        val appUI = koinApplication.koin.get<AppUI>()
-        appUI.showToken = true
-        appUI.showMainWindow = true
+        val appWindowManager = koinApplication.koin.get<AppWindowManager>()
+        appWindowManager.showToken = true
+        appWindowManager.showMainWindow = true
         logger.debug { "show token" }
     }
 
@@ -159,15 +159,15 @@ fun Routing.syncRouting() {
         getAppInstanceId(call).let { appInstanceId ->
             val requestTrust = call.receive(RequestTrust::class)
 
-            val appUI = koinApplication.koin.get<AppUI>()
+            val appWindowManager = koinApplication.koin.get<AppWindowManager>()
 
-            if (requestTrust.token == String(appUI.token).toInt()) {
+            if (requestTrust.token == String(appWindowManager.token).toInt()) {
                 val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
                 signalProtocolStore.saveIdentity(
                     signalProtocolAddress,
                     requestTrust.identityKey,
                 )
-                appUI.showToken = false
+                appWindowManager.showToken = false
                 logger.debug { "${appInfo.appInstanceId} to trust $appInstanceId" }
                 successResponse(call)
             } else {

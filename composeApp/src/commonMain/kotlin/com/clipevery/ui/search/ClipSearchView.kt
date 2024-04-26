@@ -46,7 +46,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Window
@@ -55,7 +54,6 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.clipevery.LocalKoinApplication
-import com.clipevery.app.AppUI
 import com.clipevery.clip.ClipSearchService
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.ui.ClipeveryTheme
@@ -70,19 +68,19 @@ fun createSearchWindow(
     clipSearchService: ClipSearchService,
     koinApplication: KoinApplication,
 ) {
-    val appUI = clipSearchService.getAppUI()
+    val appWindowManager = clipSearchService.appWindowManager
     if (clipSearchService.tryStart()) {
         application {
             val windowState =
                 rememberWindowState(
                     placement = WindowPlacement.Floating,
                     position = WindowPosition.Aligned(Alignment.Center),
-                    size = DpSize(800.dp, 600.dp),
+                    size = appWindowManager.searchWindowDpSize,
                 )
 
             Window(
                 onCloseRequest = ::exitApplication,
-                visible = appUI.showSearchWindow,
+                visible = appWindowManager.showSearchWindow,
                 state = windowState,
                 title = "Clipevery Search",
                 alwaysOnTop = true,
@@ -94,11 +92,11 @@ fun createSearchWindow(
                     val windowListener =
                         object : WindowAdapter() {
                             override fun windowGainedFocus(e: WindowEvent?) {
-                                appUI.showSearchWindow = true
+                                appWindowManager.showSearchWindow = true
                             }
 
                             override fun windowLostFocus(e: WindowEvent?) {
-                                appUI.showSearchWindow = false
+                                appWindowManager.showSearchWindow = false
                             }
                         }
 
@@ -111,13 +109,13 @@ fun createSearchWindow(
 
                 ClipeveryAppSearchView(
                     koinApplication,
-                    hideWindow = { appUI.showSearchWindow = false },
+                    hideWindow = { appWindowManager.showSearchWindow = false },
                 )
             }
         }
     } else {
         clipSearchService.activeWindow()
-        appUI.showSearchWindow = true
+        appWindowManager.showSearchWindow = true
     }
 }
 
@@ -138,9 +136,9 @@ fun ClipeveryAppSearchView(
 fun ClipeverySearchWindow(hideWindow: () -> Unit) {
     val current = LocalKoinApplication.current
     val inputModeManager = LocalInputModeManager.current
-    val appUI = current.koin.get<AppUI>()
     val clipDao = current.koin.get<ClipDao>()
     val clipSearchService = current.koin.get<ClipSearchService>()
+    val appWindowManager = clipSearchService.appWindowManager
     val logger = current.koin.get<KLogger>()
 
     var inputSearch by remember { mutableStateOf("") }
@@ -148,8 +146,8 @@ fun ClipeverySearchWindow(hideWindow: () -> Unit) {
 
     val focusRequester = remember { FocusRequester() }
 
-    LaunchedEffect(appUI.showSearchWindow) {
-        if (appUI.showSearchWindow) {
+    LaunchedEffect(appWindowManager.showSearchWindow) {
+        if (appWindowManager.showSearchWindow) {
             delay(200)
             inputModeManager.requestInputMode(InputMode.Keyboard)
             focusRequester.requestFocus()

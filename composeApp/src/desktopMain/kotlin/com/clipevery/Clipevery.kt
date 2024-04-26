@@ -10,7 +10,7 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.clipevery.app.AppFileType
-import com.clipevery.app.AppUI
+import com.clipevery.app.AppWindowManager
 import com.clipevery.clean.CleanClipScheduler
 import com.clipevery.clip.ChromeService
 import com.clipevery.clip.ClipSearchService
@@ -26,7 +26,6 @@ import com.clipevery.platform.currentPlatform
 import com.clipevery.ui.getTrayMouseAdapter
 import com.clipevery.utils.FileUtils
 import com.clipevery.utils.QRCodeGenerator
-import com.clipevery.utils.getPreferredWindowSize
 import com.clipevery.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
@@ -89,7 +88,7 @@ class Clipevery {
             application {
                 val ioScope = rememberCoroutineScope { ioDispatcher }
 
-                val appUI = Dependencies.koinApplication.koin.get<AppUI>()
+                val appWindowManager = Dependencies.koinApplication.koin.get<AppWindowManager>()
 
                 val trayIcon =
                     if (currentPlatform().isMacos()) {
@@ -102,31 +101,31 @@ class Clipevery {
                     rememberWindowState(
                         placement = WindowPlacement.Floating,
                         position = WindowPosition.PlatformDefault,
-                        size = getPreferredWindowSize(appUI),
+                        size = appWindowManager.mainWindowDpSize,
                     )
 
                 Tray(
                     icon = trayIcon,
                     mouseListener =
                         getTrayMouseAdapter(windowState) {
-                            if (appUI.showMainWindow) {
+                            if (appWindowManager.showMainWindow) {
                                 if (currentPlatform().isMacos()) {
                                     logger.info { "bringToBack Clipevery" }
                                     MacosApi.INSTANCE.bringToBack("Clipevery")
                                 }
-                                appUI.showMainWindow = false
+                                appWindowManager.showMainWindow = false
                             } else {
                                 if (currentPlatform().isMacos()) {
                                     logger.info { "bringToFront Clipevery" }
                                     MacosApi.INSTANCE.bringToFront("Clipevery")
                                 }
-                                appUI.showMainWindow = true
+                                appWindowManager.showMainWindow = true
                             }
                         },
                 )
 
                 val exitApplication: () -> Unit = {
-                    appUI.showMainWindow = false
+                    appWindowManager.showMainWindow = false
                     ioScope.launch(CoroutineName("ExitApplication")) {
                         exitClipEveryApplication { exitApplication() }
                     }
@@ -134,7 +133,7 @@ class Clipevery {
 
                 Window(
                     onCloseRequest = exitApplication,
-                    visible = appUI.showMainWindow,
+                    visible = appWindowManager.showMainWindow,
                     state = windowState,
                     title = "Clipevery",
                     icon = painterResource("clipevery_icon.png"),
@@ -147,11 +146,11 @@ class Clipevery {
                         val windowListener =
                             object : WindowAdapter() {
                                 override fun windowGainedFocus(e: WindowEvent?) {
-                                    appUI.showMainWindow = true
+                                    appWindowManager.showMainWindow = true
                                 }
 
                                 override fun windowLostFocus(e: WindowEvent?) {
-                                    appUI.showMainWindow = false
+                                    appWindowManager.showMainWindow = false
                                 }
                             }
 
@@ -166,7 +165,7 @@ class Clipevery {
                     }
                     ClipeveryApp(
                         Dependencies.koinApplication,
-                        hideWindow = { appUI.showMainWindow = false },
+                        hideWindow = { appWindowManager.showMainWindow = false },
                         exitApplication = exitApplication,
                     )
                 }

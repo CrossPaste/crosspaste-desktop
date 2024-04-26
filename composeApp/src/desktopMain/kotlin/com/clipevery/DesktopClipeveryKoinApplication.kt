@@ -1,11 +1,11 @@
 package com.clipevery
 
-import androidx.compose.ui.unit.dp
 import com.clipevery.app.AppEnv
 import com.clipevery.app.AppFileType
 import com.clipevery.app.AppInfo
-import com.clipevery.app.AppUI
+import com.clipevery.app.AppWindowManager
 import com.clipevery.app.DesktopAppInfoFactory
+import com.clipevery.app.DesktopAppWindowManager
 import com.clipevery.clean.CleanClipScheduler
 import com.clipevery.clean.DesktopCleanClipScheduler
 import com.clipevery.clip.CacheManager
@@ -210,7 +210,7 @@ object Dependencies {
                 }
 
                 // ui component
-                single<AppUI> { AppUI(width = 460.dp, height = 710.dp) }
+                single<AppWindowManager> { DesktopAppWindowManager }
                 single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
                 single<GlobalListener> { GlobalListener(get(), get(), get()) }
                 single<ThemeDetector> { DesktopThemeDetector(get()) }
