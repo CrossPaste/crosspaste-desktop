@@ -28,7 +28,7 @@ interface ClipSearchService {
 
     fun activeWindow()
 
-    fun unActiveWindow()
+    suspend fun unActiveWindow()
 
     suspend fun toPaste()
 }
