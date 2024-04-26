@@ -20,7 +20,6 @@ import com.clipevery.log.initLogger
 import com.clipevery.net.ClipBonjourService
 import com.clipevery.net.ClipClient
 import com.clipevery.net.ClipServer
-import com.clipevery.os.macos.api.MacosApi
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.platform.currentPlatform
 import com.clipevery.ui.getTrayMouseAdapter
@@ -109,17 +108,9 @@ class Clipevery {
                     mouseListener =
                         getTrayMouseAdapter(windowState) {
                             if (appWindowManager.showMainWindow) {
-                                if (currentPlatform().isMacos()) {
-                                    logger.info { "bringToBack Clipevery" }
-                                    MacosApi.INSTANCE.bringToBack("Clipevery")
-                                }
-                                appWindowManager.showMainWindow = false
+                                appWindowManager.unActiveMainWindow()
                             } else {
-                                if (currentPlatform().isMacos()) {
-                                    logger.info { "bringToFront Clipevery" }
-                                    MacosApi.INSTANCE.bringToFront("Clipevery")
-                                }
-                                appWindowManager.showMainWindow = true
+                                appWindowManager.activeMainWindow()
                             }
                         },
                 )
@@ -135,7 +126,7 @@ class Clipevery {
                     onCloseRequest = exitApplication,
                     visible = appWindowManager.showMainWindow,
                     state = windowState,
-                    title = "Clipevery",
+                    title = appWindowManager.mainWindowTitle,
                     icon = painterResource("clipevery_icon.png"),
                     alwaysOnTop = true,
                     undecorated = true,
@@ -156,16 +147,13 @@ class Clipevery {
 
                         window.addWindowFocusListener(windowListener)
 
-                        if (currentPlatform().isMacos()) {
-                            MacosApi.INSTANCE.bringToFront("Clipevery")
-                        }
                         onDispose {
                             window.removeWindowFocusListener(windowListener)
                         }
                     }
                     ClipeveryApp(
                         Dependencies.koinApplication,
-                        hideWindow = { appWindowManager.showMainWindow = false },
+                        hideWindow = { appWindowManager.unActiveMainWindow() },
                         exitApplication = exitApplication,
                     )
                 }

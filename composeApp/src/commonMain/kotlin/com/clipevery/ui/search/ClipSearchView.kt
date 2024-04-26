@@ -82,7 +82,7 @@ fun createSearchWindow(
                 onCloseRequest = ::exitApplication,
                 visible = appWindowManager.showSearchWindow,
                 state = windowState,
-                title = "Clipevery Search",
+                title = appWindowManager.searchWindowTitle,
                 alwaysOnTop = true,
                 undecorated = true,
                 transparent = true,
@@ -115,7 +115,6 @@ fun createSearchWindow(
         }
     } else {
         clipSearchService.activeWindow()
-        appWindowManager.showSearchWindow = true
     }
 }
 

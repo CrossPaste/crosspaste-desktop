@@ -6,9 +6,13 @@ interface AppWindowManager {
 
     var showMainWindow: Boolean
 
+    val mainWindowTitle: String
+
     val mainWindowDpSize: DpSize
 
     var showSearchWindow: Boolean
+
+    val searchWindowTitle: String
 
     val searchWindowDpSize: DpSize
 
@@ -19,4 +23,12 @@ interface AppWindowManager {
     fun startRefreshToken()
 
     fun stopRefreshToken()
+
+    fun activeMainWindow()
+
+    fun activeSearchWindow()
+
+    fun unActiveMainWindow()
+
+    suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean)
 }

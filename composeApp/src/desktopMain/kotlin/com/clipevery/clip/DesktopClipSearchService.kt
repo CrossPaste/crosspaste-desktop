@@ -5,16 +5,11 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import com.clipevery.app.AppWindowManager
 import com.clipevery.dao.clip.ClipData
-import com.clipevery.os.macos.api.MacosApi
-import com.clipevery.platform.currentPlatform
-import io.github.oshai.kotlinlogging.KotlinLogging
 
 class DesktopClipSearchService(
     override val appWindowManager: AppWindowManager,
     private val clipboardService: ClipboardService,
 ) : ClipSearchService {
-
-    private val logger = KotlinLogging.logger {}
 
     private var start: Boolean = false
 
@@ -27,8 +22,6 @@ class DesktopClipSearchService(
     override val currentClipData: State<ClipData?> get() = _currentClipData
 
     private var _currentClipData = mutableStateOf<ClipData?>(null)
-
-    private var prevAppName: String? = null
 
     @Synchronized
     override fun tryStart(): Boolean {
@@ -82,37 +75,19 @@ class DesktopClipSearchService(
     }
 
     override fun activeWindow() {
-        val currentPlatform = currentPlatform()
-        if (currentPlatform.isMacos()) {
-            prevAppName = MacosApi.INSTANCE.bringToFront("Clipevery Search")
-            logger.info { "save prevAppName is ${prevAppName ?: "null"}" }
-        } else if (currentPlatform.isWindows()) {
-            // todo windows
-        } else if (currentPlatform.isLinux()) {
-            // todo linux
-        }
+        appWindowManager.activeSearchWindow()
     }
 
-    override fun unActiveWindow() {
-        if (appWindowManager.showSearchWindow) {
-            appWindowManager.showSearchWindow = false
-            prevAppName?.let {
-                MacosApi.INSTANCE.activeApp(it, false)
-                logger.info { "unActiveWindow return to app $it" }
-            }
-        }
+    override suspend fun unActiveWindow() {
+        appWindowManager.unActiveSearchWindow { false }
     }
 
     override suspend fun toPaste() {
-        if (appWindowManager.showSearchWindow) {
-            appWindowManager.showSearchWindow = false
-            _currentClipData.value?.let {
-                clipboardService.tryWriteClipboard(it, localOnly = true)
-            }
-            prevAppName?.let {
-                MacosApi.INSTANCE.activeApp(it, true)
-                logger.info { "toPaste return to app $it" }
-            }
+        appWindowManager.unActiveSearchWindow {
+            _currentClipData.value?.let { clipData ->
+                clipboardService.tryWriteClipboard(clipData, localOnly = true)
+                true
+            } ?: false
         }
     }
 }
