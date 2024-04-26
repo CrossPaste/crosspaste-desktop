@@ -1,15 +1,22 @@
 package com.clipevery.os.windows.api
 
 import com.sun.jna.Native
+import com.sun.jna.Pointer
+import com.sun.jna.platform.win32.BaseTSD
+import com.sun.jna.platform.win32.WinDef
+import com.sun.jna.platform.win32.WinDef.DWORD
 import com.sun.jna.platform.win32.WinDef.HDC
-import com.sun.jna.platform.win32.WinDef.HRGN
 import com.sun.jna.platform.win32.WinDef.HWND
 import com.sun.jna.platform.win32.WinDef.LPARAM
 import com.sun.jna.platform.win32.WinDef.RECT
 import com.sun.jna.platform.win32.WinDef.WPARAM
 import com.sun.jna.platform.win32.WinNT.HANDLE
+import com.sun.jna.platform.win32.WinUser
+import com.sun.jna.platform.win32.WinUser.INPUT
+import com.sun.jna.platform.win32.WinUser.KEYBDINPUT.KEYEVENTF_KEYUP
 import com.sun.jna.platform.win32.WinUser.MONITORENUMPROC
 import com.sun.jna.platform.win32.WinUser.MSG
+import com.sun.jna.ptr.IntByReference
 import com.sun.jna.win32.StdCallLibrary
 import com.sun.jna.win32.StdCallLibrary.StdCallCallback
 import com.sun.jna.win32.W32APIOptions.DEFAULT_OPTIONS
@@ -94,14 +101,6 @@ interface User32 : StdCallLibrary {
         lParam: LPARAM?,
     ): Int
 
-    fun SetWindowRgn(
-        hWnd: HWND?,
-        hRgn: HRGN?,
-        bRedraw: Boolean,
-    ): Boolean
-
-    fun GetDpiForSystem(): Int
-
     fun EnumDisplayMonitors(
         hdc: HDC?,
         lprcClip: RECT?,
@@ -110,6 +109,36 @@ interface User32 : StdCallLibrary {
     ): Boolean
 
     fun GetClipboardSequenceNumber(): Int
+
+    fun FindWindow(
+        lpClassName: String?,
+        lpWindowName: String?,
+    ): HWND?
+
+    fun ShowWindow(
+        hWnd: HWND,
+        nCmdShow: Int,
+    ): Boolean
+
+    fun GetForegroundWindow(): HWND
+
+    fun SetForegroundWindow(hWnd: HWND): Boolean
+
+    fun EnumWindows(
+        lpEnumFunc: WinUser.WNDENUMPROC,
+        lParam: Pointer?,
+    ): Boolean
+
+    fun GetWindowThreadProcessId(
+        hWnd: HWND,
+        lpdwProcessId: IntByReference,
+    ): Int
+
+    fun SendInput(
+        nInputs: DWORD?,
+        pInputs: Array<INPUT?>?,
+        cbSize: Int,
+    ): Int
 
     companion object {
         val INSTANCE =
@@ -159,5 +188,84 @@ interface User32 : StdCallLibrary {
             QS_INPUT or QS_POSTMESSAGE or QS_TIMER or QS_PAINT
                 or QS_HOTKEY or QS_SENDMESSAGE
         )
+
+        fun hideWindowByTitle(windowTitle: String) {
+            val hWnd = INSTANCE.FindWindow(null, windowTitle)
+            if (hWnd != null) {
+                INSTANCE.ShowWindow(hWnd, 0) // 0 表示 SW_HIDE
+            }
+        }
+
+        fun bringToFrontAndReturnPreviousAppId(windowTitle: String): Int {
+            val previousHwnd = INSTANCE.GetForegroundWindow()
+            val processIdRef = IntByReference()
+            INSTANCE.GetWindowThreadProcessId(previousHwnd, processIdRef)
+
+            val hWnd = INSTANCE.FindWindow(null, windowTitle)
+            if (hWnd != null) {
+                INSTANCE.SetForegroundWindow(hWnd)
+            }
+
+            return processIdRef.value
+        }
+
+        fun activateAppAndPaste(
+            processId: Int,
+            toPaste: Boolean,
+        ) {
+            // 定义回调函数，用于查找与进程ID匹配的窗口
+            val callback =
+                WinUser.WNDENUMPROC { hWnd, _ ->
+                    val processIdRef = IntByReference()
+
+                    INSTANCE.GetWindowThreadProcessId(hWnd, processIdRef)
+                    if (processIdRef.value == processId) {
+                        INSTANCE.SetForegroundWindow(hWnd)
+                        INSTANCE.ShowWindow(hWnd, WinUser.SW_SHOW)
+                        if (toPaste) {
+                            simulatePaste()
+                        }
+                        false // 停止枚举
+                    } else {
+                        true // 继续枚举
+                    }
+                }
+
+            INSTANCE.EnumWindows(callback, null)
+        }
+
+        fun simulatePaste() {
+            val inputStructure =
+                INPUT().apply {
+                    input.setType("ki")
+                    input.ki.wVk = WinDef.WORD(0x56) // 'V' key
+                    input.ki.wScan = WinDef.WORD(0)
+                    input.ki.time = DWORD(0)
+                    input.ki.dwExtraInfo = BaseTSD.ULONG_PTR()
+                }
+
+            val ctrlDown =
+                inputStructure.apply {
+                    input.ki.wVk = WinDef.WORD(0x11)
+                } // CTRL key
+            val ctrlUp =
+                inputStructure.apply {
+                    input.ki.dwFlags = DWORD(KEYEVENTF_KEYUP.toLong())
+                }
+
+            // Send the key strokes
+            INSTANCE.SendInput(DWORD(1), arrayOf(ctrlDown), inputStructure.size())
+            INSTANCE.SendInput(DWORD(1), arrayOf(inputStructure), inputStructure.size()) // 'V'
+            INSTANCE.SendInput(
+                DWORD(1),
+                arrayOf(
+                    inputStructure.apply {
+                        input.ki.dwFlags = DWORD(KEYEVENTF_KEYUP.toLong())
+                    },
+                ),
+                inputStructure.size(),
+            ) // Release 'V'
+            INSTANCE.SendInput(DWORD(1), arrayOf(ctrlUp), inputStructure.size()) // Release CTRL
+        }
     }
 }
