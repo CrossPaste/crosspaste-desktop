@@ -157,7 +157,7 @@ interface User32 : StdCallLibrary {
         Y: Int,
         cx: Int,
         cy: Int,
-        uFlags: UInt,
+        uFlags: Int,
     ): Boolean
 
     companion object {
@@ -228,8 +228,8 @@ interface User32 : StdCallLibrary {
 
                 INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processIdRef.value.toLong()), true)
                 INSTANCE.ShowWindow(hWnd, SW_SHOWNORMAL)
-                INSTANCE.SetWindowPos(hWnd, -1, 0, 0, 0, 0, (SWP_NOSIZE or SWP_NOMOVE).toUInt())
-                INSTANCE.SetWindowPos(hWnd, -2, 0, 0, 0, 0, (SWP_NOSIZE or SWP_NOMOVE).toUInt())
+                INSTANCE.SetWindowPos(hWnd, -1, 0, 0, 0, 0, SWP_NOSIZE or SWP_NOMOVE)
+                INSTANCE.SetWindowPos(hWnd, -2, 0, 0, 0, 0, SWP_NOSIZE or SWP_NOMOVE)
                 val result = INSTANCE.SetForegroundWindow(hWnd)
                 INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processIdRef.value.toLong()), false)
                 if (!result) {
