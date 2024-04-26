@@ -16,6 +16,8 @@ import com.sun.jna.platform.win32.WinUser.INPUT
 import com.sun.jna.platform.win32.WinUser.KEYBDINPUT.KEYEVENTF_KEYUP
 import com.sun.jna.platform.win32.WinUser.MONITORENUMPROC
 import com.sun.jna.platform.win32.WinUser.MSG
+import com.sun.jna.platform.win32.WinUser.SM_CXSCREEN
+import com.sun.jna.platform.win32.WinUser.SM_CYSCREEN
 import com.sun.jna.platform.win32.WinUser.SW_RESTORE
 import com.sun.jna.ptr.IntByReference
 import com.sun.jna.win32.StdCallLibrary
@@ -166,6 +168,16 @@ interface User32 : StdCallLibrary {
         cbSize: Int,
     ): DWORD
 
+    fun GetSystemMetrics(nIndex: Int): Int
+
+    fun mouse_event(
+        dwFlags: DWORD,
+        dx: DWORD,
+        dy: DWORD,
+        dwData: DWORD,
+        dwExtraInfo: BaseTSD.ULONG_PTR,
+    )
+
     companion object {
         val INSTANCE =
             Native.load(
@@ -235,13 +247,24 @@ interface User32 : StdCallLibrary {
 
                 INSTANCE.ShowWindow(hWnd, SW_RESTORE)
 
-                val win = INSTANCE.SetActiveWindow(hWnd)
+                val screenWidth = User32.INSTANCE.GetSystemMetrics(SM_CXSCREEN)
+                val screenHeight = User32.INSTANCE.GetSystemMetrics(SM_CYSCREEN)
 
-                if (win != null) {
-                    logger.info { "Window activated" }
-                } else {
-                    logger.info { "Window not activated" }
-                }
+                INSTANCE.mouse_event(
+                    DWORD(0x0001),
+                    DWORD((screenWidth / 2).toLong()),
+                    DWORD((screenHeight / 2).toLong()),
+                    DWORD(0),
+                    BaseTSD.ULONG_PTR(0),
+                )
+
+//                val win = INSTANCE.SetActiveWindow(hWnd)
+//
+//                if (win != null) {
+//                    logger.info { "Window activated" }
+//                } else {
+//                    logger.info { "Window not activated" }
+//                }
 
 //                INSTANCE.SetWindowPos(hWnd, -1, 0, 0, 0, 0, SWP_NOSIZE or SWP_NOMOVE)
 //                INSTANCE.SetWindowPos(hWnd, -2, 0, 0, 0, 0, SWP_NOSIZE or SWP_NOMOVE)
