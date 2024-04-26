@@ -16,8 +16,6 @@ import com.sun.jna.platform.win32.WinUser.INPUT
 import com.sun.jna.platform.win32.WinUser.KEYBDINPUT.KEYEVENTF_KEYUP
 import com.sun.jna.platform.win32.WinUser.MONITORENUMPROC
 import com.sun.jna.platform.win32.WinUser.MSG
-import com.sun.jna.platform.win32.WinUser.SWP_NOMOVE
-import com.sun.jna.platform.win32.WinUser.SWP_NOSIZE
 import com.sun.jna.platform.win32.WinUser.SW_RESTORE
 import com.sun.jna.ptr.IntByReference
 import com.sun.jna.win32.StdCallLibrary
@@ -138,6 +136,8 @@ interface User32 : StdCallLibrary {
         lpdwProcessId: IntByReference,
     ): Int
 
+    fun SetActiveWindow(hWnd: HWND): HWND?
+
     fun SendInput(
         nInputs: DWORD?,
         pInputs: Array<INPUT?>?,
@@ -234,9 +234,17 @@ interface User32 : StdCallLibrary {
                 INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), true)
 
                 INSTANCE.ShowWindow(hWnd, SW_RESTORE)
-                sendAltKey()
-                INSTANCE.SetWindowPos(hWnd, -1, 0, 0, 0, 0, SWP_NOSIZE or SWP_NOMOVE)
-                INSTANCE.SetWindowPos(hWnd, -2, 0, 0, 0, 0, SWP_NOSIZE or SWP_NOMOVE)
+
+                val win = INSTANCE.SetActiveWindow(hWnd)
+
+                if (win != null) {
+                    logger.info { "Window activated" }
+                } else {
+                    logger.info { "Window not activated" }
+                }
+
+//                INSTANCE.SetWindowPos(hWnd, -1, 0, 0, 0, 0, SWP_NOSIZE or SWP_NOMOVE)
+//                INSTANCE.SetWindowPos(hWnd, -2, 0, 0, 0, 0, SWP_NOSIZE or SWP_NOMOVE)
                 val result = INSTANCE.SetForegroundWindow(hWnd)
                 INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), false)
                 if (!result) {
@@ -274,19 +282,6 @@ interface User32 : StdCallLibrary {
                 }
 
             INSTANCE.EnumWindows(callback, null)
-        }
-
-        fun sendAltKey() {
-            val input = INPUT.ByReference()
-            input.type = DWORD(INPUT.INPUT_KEYBOARD.toLong())
-            input.input.setType("ki")
-            input.input.ki.wVk = WinDef.WORD(WinUser.VK_MENU.toLong()) // Alt 键的虚拟键码
-            input.input.ki.dwFlags = DWORD(0) // 0 表示按下键
-
-            INSTANCE.SendInput(DWORD(1), input, input.size())
-
-            input.input.ki.dwFlags = DWORD(KEYEVENTF_KEYUP.toLong()) // 键释放
-            INSTANCE.SendInput(DWORD(1), input, input.size())
         }
 
         fun simulatePaste() {
