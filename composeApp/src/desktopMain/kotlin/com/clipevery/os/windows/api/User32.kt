@@ -3,7 +3,6 @@ package com.clipevery.os.windows.api
 import com.sun.jna.Native
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.BaseTSD
-import com.sun.jna.platform.win32.WinDef
 import com.sun.jna.platform.win32.WinDef.DWORD
 import com.sun.jna.platform.win32.WinDef.HDC
 import com.sun.jna.platform.win32.WinDef.HWND
@@ -13,7 +12,6 @@ import com.sun.jna.platform.win32.WinDef.WPARAM
 import com.sun.jna.platform.win32.WinNT.HANDLE
 import com.sun.jna.platform.win32.WinUser
 import com.sun.jna.platform.win32.WinUser.INPUT
-import com.sun.jna.platform.win32.WinUser.KEYBDINPUT.KEYEVENTF_KEYUP
 import com.sun.jna.platform.win32.WinUser.MONITORENUMPROC
 import com.sun.jna.platform.win32.WinUser.MSG
 import com.sun.jna.platform.win32.WinUser.SM_CXSCREEN
@@ -138,8 +136,6 @@ interface User32 : StdCallLibrary {
         lpdwProcessId: IntByReference,
     ): Int
 
-    fun SetActiveWindow(hWnd: HWND): HWND?
-
     fun SendInput(
         nInputs: DWORD?,
         pInputs: Array<INPUT?>?,
@@ -151,22 +147,6 @@ interface User32 : StdCallLibrary {
         idAttachTo: DWORD,
         fAttach: Boolean,
     ): Boolean
-
-    fun SetWindowPos(
-        hWnd: HWND,
-        hWndInsertAfter: Int,
-        X: Int,
-        Y: Int,
-        cx: Int,
-        cy: Int,
-        uFlags: Int,
-    ): Boolean
-
-    fun SendInput(
-        nInputs: DWORD,
-        pInputs: INPUT.ByReference,
-        cbSize: Int,
-    ): DWORD
 
     fun GetSystemMetrics(nIndex: Int): Int
 
@@ -247,8 +227,8 @@ interface User32 : StdCallLibrary {
 
                 INSTANCE.ShowWindow(hWnd, SW_RESTORE)
 
-                val screenWidth = User32.INSTANCE.GetSystemMetrics(SM_CXSCREEN)
-                val screenHeight = User32.INSTANCE.GetSystemMetrics(SM_CYSCREEN)
+                val screenWidth = INSTANCE.GetSystemMetrics(SM_CXSCREEN)
+                val screenHeight = INSTANCE.GetSystemMetrics(SM_CYSCREEN)
 
                 INSTANCE.mouse_event(
                     DWORD(0x0001),
@@ -258,16 +238,6 @@ interface User32 : StdCallLibrary {
                     BaseTSD.ULONG_PTR(0),
                 )
 
-//                val win = INSTANCE.SetActiveWindow(hWnd)
-//
-//                if (win != null) {
-//                    logger.info { "Window activated" }
-//                } else {
-//                    logger.info { "Window not activated" }
-//                }
-
-//                INSTANCE.SetWindowPos(hWnd, -1, 0, 0, 0, 0, SWP_NOSIZE or SWP_NOMOVE)
-//                INSTANCE.SetWindowPos(hWnd, -2, 0, 0, 0, 0, SWP_NOSIZE or SWP_NOMOVE)
                 val result = INSTANCE.SetForegroundWindow(hWnd)
                 INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), false)
                 if (!result) {
@@ -298,47 +268,13 @@ interface User32 : StdCallLibrary {
                         if (toPaste) {
                             INSTANCE.SendMessage(hWnd, 0x0302, null, null)
                         }
-                        false // 停止枚举
+                        false
                     } else {
                         true // 继续枚举
                     }
                 }
 
             INSTANCE.EnumWindows(callback, null)
-        }
-
-        fun simulatePaste() {
-            val inputStructure =
-                INPUT().apply {
-                    input.setType("ki")
-                    input.ki.wVk = WinDef.WORD(0x56) // 'V' key
-                    input.ki.wScan = WinDef.WORD(0)
-                    input.ki.time = DWORD(0)
-                    input.ki.dwExtraInfo = BaseTSD.ULONG_PTR()
-                }
-
-            val ctrlDown =
-                inputStructure.apply {
-                    input.ki.wVk = WinDef.WORD(0x11)
-                } // CTRL key
-            val ctrlUp =
-                inputStructure.apply {
-                    input.ki.dwFlags = DWORD(KEYEVENTF_KEYUP.toLong())
-                }
-
-            // Send the key strokes
-            INSTANCE.SendInput(DWORD(1), arrayOf(ctrlDown), inputStructure.size())
-            INSTANCE.SendInput(DWORD(1), arrayOf(inputStructure), inputStructure.size()) // 'V'
-            INSTANCE.SendInput(
-                DWORD(1),
-                arrayOf(
-                    inputStructure.apply {
-                        input.ki.dwFlags = DWORD(KEYEVENTF_KEYUP.toLong())
-                    },
-                ),
-                inputStructure.size(),
-            ) // Release 'V'
-            INSTANCE.SendInput(DWORD(1), arrayOf(ctrlUp), inputStructure.size()) // Release CTRL
         }
     }
 }
