@@ -18,7 +18,7 @@ import com.sun.jna.platform.win32.WinUser.MONITORENUMPROC
 import com.sun.jna.platform.win32.WinUser.MSG
 import com.sun.jna.platform.win32.WinUser.SWP_NOMOVE
 import com.sun.jna.platform.win32.WinUser.SWP_NOSIZE
-import com.sun.jna.platform.win32.WinUser.SW_SHOWNORMAL
+import com.sun.jna.platform.win32.WinUser.SW_RESTORE
 import com.sun.jna.ptr.IntByReference
 import com.sun.jna.win32.StdCallLibrary
 import com.sun.jna.win32.StdCallLibrary.StdCallCallback
@@ -160,6 +160,12 @@ interface User32 : StdCallLibrary {
         uFlags: Int,
     ): Boolean
 
+    fun SendInput(
+        nInputs: DWORD,
+        pInputs: INPUT.ByReference,
+        cbSize: Int,
+    ): DWORD
+
     companion object {
         val INSTANCE =
             Native.load(
@@ -221,17 +227,18 @@ interface User32 : StdCallLibrary {
         fun bringToFrontAndReturnPreviousAppId(windowTitle: String): Int {
             val previousHwnd = INSTANCE.GetForegroundWindow()
             val processIdRef = IntByReference()
-            INSTANCE.GetWindowThreadProcessId(previousHwnd, processIdRef)
+            val processThreadId = INSTANCE.GetWindowThreadProcessId(previousHwnd, processIdRef)
             val hWnd = INSTANCE.FindWindow(null, windowTitle)
             if (hWnd != null) {
                 val curThreadId = Kernel32.INSTANCE.GetCurrentThreadId()
+                INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), true)
 
-                INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processIdRef.value.toLong()), true)
-                INSTANCE.ShowWindow(hWnd, SW_SHOWNORMAL)
+                INSTANCE.ShowWindow(hWnd, SW_RESTORE)
+                sendAltKey()
                 INSTANCE.SetWindowPos(hWnd, -1, 0, 0, 0, 0, SWP_NOSIZE or SWP_NOMOVE)
                 INSTANCE.SetWindowPos(hWnd, -2, 0, 0, 0, 0, SWP_NOSIZE or SWP_NOMOVE)
                 val result = INSTANCE.SetForegroundWindow(hWnd)
-                INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processIdRef.value.toLong()), false)
+                INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), false)
                 if (!result) {
                     logger.info { "Failed to set foreground window. Please switch manually" }
                 } else {
@@ -267,6 +274,19 @@ interface User32 : StdCallLibrary {
                 }
 
             INSTANCE.EnumWindows(callback, null)
+        }
+
+        fun sendAltKey() {
+            val input = INPUT.ByReference()
+            input.type = DWORD(INPUT.INPUT_KEYBOARD.toLong())
+            input.input.setType("ki")
+            input.input.ki.wVk = WinDef.WORD(WinUser.VK_MENU.toLong()) // Alt 键的虚拟键码
+            input.input.ki.dwFlags = DWORD(0) // 0 表示按下键
+
+            INSTANCE.SendInput(DWORD(1), input, input.size())
+
+            input.input.ki.dwFlags = DWORD(KEYEVENTF_KEYUP.toLong()) // 键释放
+            INSTANCE.SendInput(DWORD(1), input, input.size())
         }
 
         fun simulatePaste() {
