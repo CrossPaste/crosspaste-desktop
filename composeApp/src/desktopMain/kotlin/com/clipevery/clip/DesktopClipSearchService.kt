@@ -3,14 +3,14 @@ package com.clipevery.clip
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import com.clipevery.app.AppUI
+import com.clipevery.app.AppWindowManager
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.os.macos.api.MacosApi
 import com.clipevery.platform.currentPlatform
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 class DesktopClipSearchService(
-    private val appUI: AppUI,
+    override val appWindowManager: AppWindowManager,
     private val clipboardService: ClipboardService,
 ) : ClipSearchService {
 
@@ -45,10 +45,6 @@ class DesktopClipSearchService(
             start = false
             // todo stop
         }
-    }
-
-    override fun getAppUI(): AppUI {
-        return appUI
     }
 
     private fun setCurrentClipData() {
@@ -98,8 +94,8 @@ class DesktopClipSearchService(
     }
 
     override fun unActiveWindow() {
-        if (appUI.showSearchWindow) {
-            appUI.showSearchWindow = false
+        if (appWindowManager.showSearchWindow) {
+            appWindowManager.showSearchWindow = false
             prevAppName?.let {
                 MacosApi.INSTANCE.activeApp(it, false)
                 logger.info { "unActiveWindow return to app $it" }
@@ -108,8 +104,8 @@ class DesktopClipSearchService(
     }
 
     override suspend fun toPaste() {
-        if (appUI.showSearchWindow) {
-            appUI.showSearchWindow = false
+        if (appWindowManager.showSearchWindow) {
+            appWindowManager.showSearchWindow = false
             _currentClipData.value?.let {
                 clipboardService.tryWriteClipboard(it, localOnly = true)
             }

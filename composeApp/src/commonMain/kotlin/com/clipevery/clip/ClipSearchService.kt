@@ -1,7 +1,7 @@
 package com.clipevery.clip
 
 import androidx.compose.runtime.State
-import com.clipevery.app.AppUI
+import com.clipevery.app.AppWindowManager
 import com.clipevery.dao.clip.ClipData
 
 interface ClipSearchService {
@@ -12,11 +12,11 @@ interface ClipSearchService {
 
     val currentClipData: State<ClipData?>
 
+    val appWindowManager: AppWindowManager
+
     fun tryStart(): Boolean
 
     fun stop()
-
-    fun getAppUI(): AppUI
 
     fun setSelectedIndex(selectedIndex: Int)
 
