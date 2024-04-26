@@ -223,7 +223,7 @@ interface User32 : StdCallLibrary {
                         INSTANCE.SetForegroundWindow(hWnd)
                         INSTANCE.ShowWindow(hWnd, WinUser.SW_SHOW)
                         if (toPaste) {
-                            simulatePaste()
+                            INSTANCE.SendMessage(hWnd, 0x0302, null, null)
                         }
                         false // 停止枚举
                     } else {
