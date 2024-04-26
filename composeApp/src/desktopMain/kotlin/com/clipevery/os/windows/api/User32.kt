@@ -268,7 +268,7 @@ interface User32 : StdCallLibrary {
                         INSTANCE.SetForegroundWindow(hWnd)
                         INSTANCE.ShowWindow(hWnd, WinUser.SW_SHOW)
                         if (toPaste) {
-                            val inputs = arrayOf(INPUT(), INPUT())
+                            val inputs = INPUT().toArray(2) as Array<INPUT>
 
                             inputs[0].type = DWORD(INPUT.INPUT_KEYBOARD.toLong())
                             inputs[0].input.setType(
@@ -294,7 +294,7 @@ interface User32 : StdCallLibrary {
                             inputs[1].input.ki.wVk = WORD('V'.code.toLong())
                             inputs[1].input.ki.dwFlags = DWORD(0) // keydown
 
-                            INSTANCE.SendInput(DWORD(1), inputs, 2)
+                            INSTANCE.SendInput(DWORD(inputs.size.toLong()), inputs, inputs[0].size())
 
                             // ctrl
                             inputs[0].input.ki.wVk = WORD(0x11)
@@ -304,7 +304,7 @@ interface User32 : StdCallLibrary {
                             inputs[1].input.ki.wVk = WORD('V'.code.toLong())
                             inputs[1].input.ki.dwFlags = DWORD(2) // keydown
 
-                            INSTANCE.SendInput(DWORD(1), inputs, 2)
+                            INSTANCE.SendInput(DWORD(inputs.size.toLong()), inputs, inputs[0].size())
 
 //                            INSTANCE.SendMessage(hWnd, 0x0302, null, null)
                         }
