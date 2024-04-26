@@ -58,7 +58,10 @@ import com.clipevery.clip.ClipSearchService
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.ui.ClipeveryTheme
 import io.github.oshai.kotlinlogging.KLogger
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.koin.core.KoinApplication
 import java.awt.event.KeyEvent
 import java.awt.event.WindowAdapter
@@ -67,6 +70,7 @@ import java.awt.event.WindowEvent
 fun createSearchWindow(
     clipSearchService: ClipSearchService,
     koinApplication: KoinApplication,
+    coroutineScope: CoroutineScope,
 ) {
     val appWindowManager = clipSearchService.appWindowManager
     if (clipSearchService.tryStart()) {
@@ -101,7 +105,10 @@ fun createSearchWindow(
                         }
 
                     window.addWindowFocusListener(windowListener)
-                    clipSearchService.activeWindow()
+
+                    coroutineScope.launch(CoroutineName("ActiveSearchWindow")) {
+                        clipSearchService.activeWindow()
+                    }
                     onDispose {
                         window.removeWindowFocusListener(windowListener)
                     }
@@ -114,7 +121,9 @@ fun createSearchWindow(
             }
         }
     } else {
-        clipSearchService.activeWindow()
+        coroutineScope.launch(CoroutineName("ActiveSearchWindow")) {
+            clipSearchService.activeWindow()
+        }
     }
 }
 

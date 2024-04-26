@@ -74,17 +74,19 @@ object DesktopAppWindowManager : AppWindowManager {
     }
 
     override fun activeMainWindow() {
+        showMainWindow = true
         if (currentPlatform().isMacos()) {
             logger.info { "bringToFront Clipevery" }
             MacosApi.INSTANCE.bringToFront(mainWindowTitle)
         }
-        showMainWindow = true
     }
 
-    override fun activeSearchWindow() {
+    override suspend fun activeSearchWindow() {
+        showSearchWindow = true
         if (currentPlatform.isMacos()) {
             prevAppName = MacosApi.INSTANCE.bringToFront(searchWindowTitle)
         } else if (currentPlatform.isWindows()) {
+            delay(200)
             val prevAppId: Int = User32.bringToFrontAndReturnPreviousAppId(searchWindowTitle)
             if (prevAppId > 0) {
                 prevAppName = prevAppId.toString()
@@ -92,7 +94,6 @@ object DesktopAppWindowManager : AppWindowManager {
         } else if (currentPlatform.isLinux()) {
             // todo linux
         }
-        showSearchWindow = true
         logger.info { "save prevAppName is ${prevAppName ?: "null"}" }
     }
 

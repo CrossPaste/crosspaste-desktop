@@ -26,7 +26,7 @@ interface ClipSearchService {
 
     fun downSelectedIndex()
 
-    fun activeWindow()
+    suspend fun activeWindow()
 
     suspend fun unActiveWindow()
 
