@@ -128,8 +128,6 @@ interface User32 : StdCallLibrary {
 
     fun SetForegroundWindow(hWnd: HWND): Boolean
 
-    fun AllowSetForegroundWindow(dwProcessId: DWORD): Boolean
-
     fun EnumWindows(
         lpEnumFunc: WinUser.WNDENUMPROC,
         lParam: Pointer?,
@@ -139,8 +137,6 @@ interface User32 : StdCallLibrary {
         hWnd: HWND,
         lpdwProcessId: IntByReference,
     ): Int
-
-    fun GetCurrentThreadId(): Int
 
     fun SendInput(
         nInputs: DWORD?,
@@ -228,7 +224,7 @@ interface User32 : StdCallLibrary {
             INSTANCE.GetWindowThreadProcessId(previousHwnd, processIdRef)
             val hWnd = INSTANCE.FindWindow(null, windowTitle)
             if (hWnd != null) {
-                val curThreadId = INSTANCE.GetCurrentThreadId()
+                val curThreadId = Kernel32.INSTANCE.GetCurrentThreadId()
 
                 INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processIdRef.value.toLong()), true)
                 INSTANCE.ShowWindow(hWnd, SW_SHOWNORMAL)
