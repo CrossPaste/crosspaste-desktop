@@ -3,11 +3,13 @@ package com.clipevery.os.windows.api
 import com.sun.jna.Native
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.BaseTSD
+import com.sun.jna.platform.win32.BaseTSD.ULONG_PTR
 import com.sun.jna.platform.win32.WinDef.DWORD
 import com.sun.jna.platform.win32.WinDef.HDC
 import com.sun.jna.platform.win32.WinDef.HWND
 import com.sun.jna.platform.win32.WinDef.LPARAM
 import com.sun.jna.platform.win32.WinDef.RECT
+import com.sun.jna.platform.win32.WinDef.WORD
 import com.sun.jna.platform.win32.WinDef.WPARAM
 import com.sun.jna.platform.win32.WinNT.HANDLE
 import com.sun.jna.platform.win32.WinUser
@@ -138,7 +140,7 @@ interface User32 : StdCallLibrary {
 
     fun SendInput(
         nInputs: DWORD?,
-        pInputs: Array<INPUT?>?,
+        pInputs: Array<INPUT>?,
         cbSize: Int,
     ): Int
 
@@ -266,7 +268,45 @@ interface User32 : StdCallLibrary {
                         INSTANCE.SetForegroundWindow(hWnd)
                         INSTANCE.ShowWindow(hWnd, WinUser.SW_SHOW)
                         if (toPaste) {
-                            INSTANCE.SendMessage(hWnd, 0x0302, null, null)
+                            val inputs = arrayOf(INPUT(), INPUT())
+
+                            inputs[0].type = DWORD(INPUT.INPUT_KEYBOARD.toLong())
+                            inputs[0].input.setType(
+                                "ki",
+                            ) // Because setting INPUT_INPUT_KEYBOARD is not enough: https://groups.google.com/d/msg/jna-users/NDBGwC1VZbU/cjYCQ1CjBwAJ
+                            inputs[0].input.ki.wScan = WORD(0)
+                            inputs[0].input.ki.time = DWORD(0)
+                            inputs[0].input.ki.dwExtraInfo = ULONG_PTR(0)
+
+                            inputs[1].type = DWORD(INPUT.INPUT_KEYBOARD.toLong())
+                            inputs[1].input.setType(
+                                "ki",
+                            ) // Because setting INPUT_INPUT_KEYBOARD is not enough: https://groups.google.com/d/msg/jna-users/NDBGwC1VZbU/cjYCQ1CjBwAJ
+                            inputs[1].input.ki.wScan = WORD(0)
+                            inputs[1].input.ki.time = DWORD(0)
+                            inputs[1].input.ki.dwExtraInfo = ULONG_PTR(0)
+
+                            // ctrl
+                            inputs[0].input.ki.wVk = WORD(0x11)
+                            inputs[0].input.ki.dwFlags = DWORD(0) // keydown
+
+                            // Press "v"
+                            inputs[1].input.ki.wVk = WORD('V'.code.toLong())
+                            inputs[1].input.ki.dwFlags = DWORD(0) // keydown
+
+                            INSTANCE.SendInput(DWORD(1), inputs, 2)
+
+                            // ctrl
+                            inputs[0].input.ki.wVk = WORD(0x11)
+                            inputs[0].input.ki.dwFlags = DWORD(2) // keydown
+
+                            // Press "v"
+                            inputs[1].input.ki.wVk = WORD('V'.code.toLong())
+                            inputs[1].input.ki.dwFlags = DWORD(2) // keydown
+
+                            INSTANCE.SendInput(DWORD(1), inputs, 2)
+
+//                            INSTANCE.SendMessage(hWnd, 0x0302, null, null)
                         }
                         false
                     } else {
