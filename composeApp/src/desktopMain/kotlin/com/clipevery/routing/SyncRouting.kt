@@ -1,6 +1,6 @@
 package com.clipevery.routing
 
-import com.clipevery.Dependencies
+import com.clipevery.Clipevery
 import com.clipevery.app.AppInfo
 import com.clipevery.app.AppWindowManager
 import com.clipevery.dao.signal.SignalDao
@@ -32,7 +32,7 @@ import org.signal.libsignal.protocol.state.SignedPreKeyRecord
 fun Routing.syncRouting() {
     val logger = KotlinLogging.logger {}
 
-    val koinApplication = Dependencies.koinApplication
+    val koinApplication = Clipevery.koinApplication
 
     val appInfo = koinApplication.koin.get<AppInfo>()
 

@@ -1,6 +1,6 @@
 package com.clipevery.routing
 
-import com.clipevery.Dependencies
+import com.clipevery.Clipevery
 import com.clipevery.clip.ClipboardService
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.exception.StandardErrorCode
@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 fun Routing.clipRouting() {
     val logger = KotlinLogging.logger {}
 
-    val koinApplication = Dependencies.koinApplication
+    val koinApplication = Clipevery.koinApplication
 
     val syncManager = koinApplication.koin.get<SyncManager>()
 

@@ -1,6 +1,6 @@
 package com.clipevery.net.plugin
 
-import com.clipevery.Dependencies
+import com.clipevery.Clipevery
 import io.ktor.client.*
 import io.ktor.client.plugins.*
 import io.ktor.client.request.*
@@ -49,13 +49,13 @@ val SignalServerDecryption: ApplicationPlugin<SignalConfig> =
 @KtorDsl
 class SignalConfig {
 
-    val signalProtocolStore: SignalProtocolStore = Dependencies.koinApplication.koin.get()
+    val signalProtocolStore: SignalProtocolStore = Clipevery.koinApplication.koin.get()
 }
 
 object SignalClientEncryption : HttpClientPlugin<SignalConfig, SignalClientEncryption> {
     override val key = AttributeKey<SignalClientEncryption>("SignalClientEncryption")
 
-    val signalProtocolStore: SignalProtocolStore = Dependencies.koinApplication.koin.get()
+    val signalProtocolStore: SignalProtocolStore = Clipevery.koinApplication.koin.get()
 
     override fun prepare(block: SignalConfig.() -> Unit): SignalClientEncryption {
         return SignalClientEncryption
