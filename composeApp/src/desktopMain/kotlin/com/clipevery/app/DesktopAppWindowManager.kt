@@ -96,9 +96,9 @@ object DesktopAppWindowManager : AppWindowManager {
 
     override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
         if (showSearchWindow) {
-            showSearchWindow = false
             val toPaste = preparePaste()
             windowManager.bringToBack(searchWindowTitle, toPaste)
+            showSearchWindow = false
         }
     }
 }
