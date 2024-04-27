@@ -156,7 +156,20 @@ compose.desktop {
             properties.load(FileReader(webDriverFile))
 
             macOS {
+                iconFile = file("src/desktopMain/resources/icons/clipevery.icns")
+                bundleID = "com.clipevery.mac"
+                appCategory = "public.app-category.utilities"
+                infoPlist {
+                    dockName = "Clipevery"
+                    extraKeysRawXml = """
+                        <key>LSUIElement</key>
+                        <string>true</string>
+                    """
+                }
+
                 if (os.isMacOsX) {
+                    jvmArgs("-Dmac.bundleID=$bundleID")
+
                     val process = Runtime.getRuntime().exec("uname -m")
                     val result = process.inputStream.bufferedReader().use { it.readText() }.trim()
 
@@ -171,17 +184,6 @@ compose.desktop {
                                     .dir("macos-arm64"),
                             )
                     }
-                }
-
-                iconFile = file("src/desktopMain/resources/icons/clipevery.icns")
-                bundleID = "com.clipevery"
-                appCategory = "public.app-category.utilities"
-                infoPlist {
-                    dockName = "Clipevery"
-                    extraKeysRawXml = """
-                        <key>LSUIElement</key>
-                        <string>true</string>
-                    """
                 }
             }
             windows {

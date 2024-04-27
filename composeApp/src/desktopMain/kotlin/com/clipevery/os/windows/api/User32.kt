@@ -124,7 +124,7 @@ interface User32 : StdCallLibrary {
         nCmdShow: Int,
     ): Boolean
 
-    fun GetForegroundWindow(): HWND
+    fun GetForegroundWindow(): HWND?
 
     fun SetForegroundWindow(hWnd: HWND): Boolean
 
@@ -218,108 +218,106 @@ interface User32 : StdCallLibrary {
             }
         }
 
-        fun bringToFrontAndReturnPreviousAppId(windowTitle: String): Int {
-            val previousHwnd = INSTANCE.GetForegroundWindow()
-            val processIdRef = IntByReference()
-            val processThreadId = INSTANCE.GetWindowThreadProcessId(previousHwnd, processIdRef)
-            val hWnd = INSTANCE.FindWindow(null, windowTitle)
-            if (hWnd != null) {
-                val curThreadId = Kernel32.INSTANCE.GetCurrentThreadId()
-                INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), true)
+        fun bringToFront(windowTitle: String): HWND? {
+            INSTANCE.GetForegroundWindow()?.let { previousHwnd ->
+                val processIdRef = IntByReference()
+                val processThreadId = INSTANCE.GetWindowThreadProcessId(previousHwnd, processIdRef)
+                val hWnd = INSTANCE.FindWindow(null, windowTitle)
+                if (hWnd != null) {
+                    val curThreadId = Kernel32.INSTANCE.GetCurrentThreadId()
+                    INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), true)
 
-                INSTANCE.ShowWindow(hWnd, SW_RESTORE)
+                    INSTANCE.ShowWindow(hWnd, SW_RESTORE)
 
-                val screenWidth = INSTANCE.GetSystemMetrics(SM_CXSCREEN)
-                val screenHeight = INSTANCE.GetSystemMetrics(SM_CYSCREEN)
+                    val screenWidth = INSTANCE.GetSystemMetrics(SM_CXSCREEN)
+                    val screenHeight = INSTANCE.GetSystemMetrics(SM_CYSCREEN)
 
-                INSTANCE.mouse_event(
-                    DWORD(0x0001),
-                    DWORD((screenWidth / 2).toLong()),
-                    DWORD((screenHeight / 2).toLong()),
-                    DWORD(0),
-                    ULONG_PTR(0),
-                )
+                    INSTANCE.mouse_event(
+                        DWORD(0x0001),
+                        DWORD((screenWidth / 2).toLong()),
+                        DWORD((screenHeight / 2).toLong()),
+                        DWORD(0),
+                        ULONG_PTR(0),
+                    )
 
-                val result = INSTANCE.SetForegroundWindow(hWnd)
-                INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), false)
-                if (!result) {
-                    logger.info { "Failed to set foreground window. Please switch manually" }
+                    val result = INSTANCE.SetForegroundWindow(hWnd)
+                    INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), false)
+                    if (!result) {
+                        logger.info { "Failed to set foreground window. Please switch manually" }
+                    } else {
+                        logger.info { "Foreground window set successfully" }
+                    }
                 } else {
-                    logger.info { "Foreground window set successfully" }
+                    logger.info { "Window not found" }
                 }
-            } else {
-                logger.info { "Window not found" }
+                return previousHwnd
             }
-
-            return processIdRef.value
+            return null
         }
 
-        fun activateAppAndPaste(
+        fun bringToBack(
             windowTitle: String,
-            processId: Int,
+            previousHwnd: HWND?,
             toPaste: Boolean,
         ) {
-            hideWindowByTitle(windowTitle)
+            val hWnd = INSTANCE.FindWindow(null, windowTitle)
+            if (hWnd != null) {
+                INSTANCE.ShowWindow(hWnd, SW_HIDE)
+            }
 
-            val callback =
-                WinUser.WNDENUMPROC { hWnd, _ ->
-                    val processIdRef = IntByReference()
+            if (previousHwnd != null) {
+                INSTANCE.ShowWindow(previousHwnd, WinUser.SW_SHOW)
+                INSTANCE.SetForegroundWindow(previousHwnd)
+            }
 
-                    INSTANCE.GetWindowThreadProcessId(hWnd, processIdRef)
-                    if (processIdRef.value == processId) {
-                        INSTANCE.ShowWindow(hWnd, WinUser.SW_SHOW)
-                        INSTANCE.SetForegroundWindow(hWnd)
-                        if (toPaste) {
-                            val inputs: Array<INPUT> = INPUT().toArray(2) as Array<INPUT>
+            if (toPaste) {
+                paste()
+            }
+        }
 
-                            inputs[0].type = DWORD(INPUT.INPUT_KEYBOARD.toLong())
-                            inputs[0].input.setType(
-                                "ki",
-                            )
+        private fun paste() {
+            val inputs: Array<INPUT> = INPUT().toArray(2) as Array<INPUT>
 
-                            // Because setting INPUT_INPUT_KEYBOARD is not enough:
-                            // https://groups.google.com/d/msg/jna-users/NDBGwC1VZbU/cjYCQ1CjBwAJ
-                            inputs[0].input.ki.wScan = WORD(0)
-                            inputs[0].input.ki.time = DWORD(0)
-                            inputs[0].input.ki.dwExtraInfo = ULONG_PTR(0)
+            inputs[0].type = DWORD(INPUT.INPUT_KEYBOARD.toLong())
+            inputs[0].input.setType(
+                "ki",
+            )
 
-                            inputs[1].type = DWORD(INPUT.INPUT_KEYBOARD.toLong())
-                            inputs[1].input.setType(
-                                "ki",
-                            )
+            // Because setting INPUT_INPUT_KEYBOARD is not enough:
+            // https://groups.google.com/d/msg/jna-users/NDBGwC1VZbU/cjYCQ1CjBwAJ
+            inputs[0].input.ki.wScan = WORD(0)
+            inputs[0].input.ki.time = DWORD(0)
+            inputs[0].input.ki.dwExtraInfo = ULONG_PTR(0)
 
-                            // todo Support binding dynamic shortcut keys
-                            inputs[1].input.ki.wScan = WORD(0)
-                            inputs[1].input.ki.time = DWORD(0)
-                            inputs[1].input.ki.dwExtraInfo = ULONG_PTR(0)
+            inputs[1].type = DWORD(INPUT.INPUT_KEYBOARD.toLong())
+            inputs[1].input.setType(
+                "ki",
+            )
 
-                            // press ctrl
-                            inputs[0].input.ki.wVk = WORD(0x11)
-                            inputs[0].input.ki.dwFlags = DWORD(0) // keydown
+            // todo Support binding dynamic shortcut keys
+            inputs[1].input.ki.wScan = WORD(0)
+            inputs[1].input.ki.time = DWORD(0)
+            inputs[1].input.ki.dwExtraInfo = ULONG_PTR(0)
 
-                            // press v
-                            inputs[1].input.ki.wVk = WORD('V'.code.toLong())
-                            inputs[1].input.ki.dwFlags = DWORD(0) // keydown
+            // press ctrl
+            inputs[0].input.ki.wVk = WORD(0x11)
+            inputs[0].input.ki.dwFlags = DWORD(0) // keydown
 
-                            INSTANCE.SendInput(DWORD(inputs.size.toLong()), inputs, inputs[0].size())
+            // press v
+            inputs[1].input.ki.wVk = WORD('V'.code.toLong())
+            inputs[1].input.ki.dwFlags = DWORD(0) // keydown
 
-                            // release ctrl
-                            inputs[0].input.ki.wVk = WORD(0x11)
-                            inputs[0].input.ki.dwFlags = DWORD(2) // keyup
+            INSTANCE.SendInput(DWORD(inputs.size.toLong()), inputs, inputs[0].size())
 
-                            // release v
-                            inputs[1].input.ki.wVk = WORD('V'.code.toLong())
-                            inputs[1].input.ki.dwFlags = DWORD(2) // keyup
+            // release ctrl
+            inputs[0].input.ki.wVk = WORD(0x11)
+            inputs[0].input.ki.dwFlags = DWORD(2) // keyup
 
-                            INSTANCE.SendInput(DWORD(inputs.size.toLong()), inputs, inputs[0].size())
-                        }
-                        false
-                    } else {
-                        true
-                    }
-                }
+            // release v
+            inputs[1].input.ki.wVk = WORD('V'.code.toLong())
+            inputs[1].input.ki.dwFlags = DWORD(2) // keyup
 
-            INSTANCE.EnumWindows(callback, null)
+            INSTANCE.SendInput(DWORD(inputs.size.toLong()), inputs, inputs[0].size())
         }
     }
 }
