@@ -74,7 +74,7 @@ class DesktopClipSearchService(
         }
     }
 
-    override fun activeWindow() {
+    override suspend fun activeWindow() {
         appWindowManager.activeSearchWindow()
     }
 

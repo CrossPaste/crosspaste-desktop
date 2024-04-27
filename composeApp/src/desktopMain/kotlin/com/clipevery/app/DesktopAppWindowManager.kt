@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.clipevery.os.macos.api.MacosApi
+import com.clipevery.os.windows.api.User32
 import com.clipevery.platform.currentPlatform
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
@@ -20,6 +21,8 @@ import kotlin.random.Random
 object DesktopAppWindowManager : AppWindowManager {
 
     private val logger = KotlinLogging.logger {}
+
+    private val currentPlatform = currentPlatform()
 
     private var startRefreshNumber: Int = 0
 
@@ -71,30 +74,37 @@ object DesktopAppWindowManager : AppWindowManager {
     }
 
     override fun activeMainWindow() {
+        showMainWindow = true
         if (currentPlatform().isMacos()) {
             logger.info { "bringToFront Clipevery" }
             MacosApi.INSTANCE.bringToFront(mainWindowTitle)
         }
-        showMainWindow = true
     }
 
-    override fun activeSearchWindow() {
-        val currentPlatform = currentPlatform()
+    override suspend fun activeSearchWindow() {
+        showSearchWindow = true
         if (currentPlatform.isMacos()) {
             prevAppName = MacosApi.INSTANCE.bringToFront(searchWindowTitle)
         } else if (currentPlatform.isWindows()) {
-            // todo windows
+            delay(200)
+            val prevAppId: Int = User32.bringToFrontAndReturnPreviousAppId(searchWindowTitle)
+            if (prevAppId > 0) {
+                prevAppName = prevAppId.toString()
+            }
         } else if (currentPlatform.isLinux()) {
             // todo linux
         }
-        showSearchWindow = true
         logger.info { "save prevAppName is ${prevAppName ?: "null"}" }
     }
 
     override fun unActiveMainWindow() {
-        if (currentPlatform().isMacos()) {
-            logger.info { "bringToBack Clipevery" }
+        logger.info { "${currentPlatform.name} bringToBack Clipevery" }
+        if (currentPlatform.isMacos()) {
             MacosApi.INSTANCE.bringToBack(mainWindowTitle)
+        } else if (currentPlatform.isWindows()) {
+            User32.hideWindowByTitle(mainWindowTitle)
+        } else if (currentPlatform.isLinux()) {
+            // todo linux
         }
         showMainWindow = false
     }
@@ -104,8 +114,14 @@ object DesktopAppWindowManager : AppWindowManager {
             showSearchWindow = false
             val toPaste = preparePaste()
             prevAppName?.let {
-                MacosApi.INSTANCE.activeApp(it, toPaste)
-                logger.info { "unActiveWindow return to app $it" }
+                logger.info { "${currentPlatform.name} unActiveWindow return to app $it" }
+                if (currentPlatform.isMacos()) {
+                    MacosApi.INSTANCE.activeApp(it, toPaste)
+                } else if (currentPlatform.isWindows()) {
+                    User32.activateAppAndPaste(searchWindowTitle, it.toInt(), toPaste)
+                } else if (currentPlatform.isLinux()) {
+                    // todo linux
+                }
             }
         }
     }

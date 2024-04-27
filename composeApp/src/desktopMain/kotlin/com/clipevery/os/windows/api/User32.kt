@@ -1,18 +1,29 @@
 package com.clipevery.os.windows.api
 
 import com.sun.jna.Native
+import com.sun.jna.Pointer
+import com.sun.jna.platform.win32.BaseTSD.ULONG_PTR
+import com.sun.jna.platform.win32.WinDef.DWORD
 import com.sun.jna.platform.win32.WinDef.HDC
-import com.sun.jna.platform.win32.WinDef.HRGN
 import com.sun.jna.platform.win32.WinDef.HWND
 import com.sun.jna.platform.win32.WinDef.LPARAM
 import com.sun.jna.platform.win32.WinDef.RECT
+import com.sun.jna.platform.win32.WinDef.WORD
 import com.sun.jna.platform.win32.WinDef.WPARAM
 import com.sun.jna.platform.win32.WinNT.HANDLE
+import com.sun.jna.platform.win32.WinUser
+import com.sun.jna.platform.win32.WinUser.INPUT
 import com.sun.jna.platform.win32.WinUser.MONITORENUMPROC
 import com.sun.jna.platform.win32.WinUser.MSG
+import com.sun.jna.platform.win32.WinUser.SM_CXSCREEN
+import com.sun.jna.platform.win32.WinUser.SM_CYSCREEN
+import com.sun.jna.platform.win32.WinUser.SW_HIDE
+import com.sun.jna.platform.win32.WinUser.SW_RESTORE
+import com.sun.jna.ptr.IntByReference
 import com.sun.jna.win32.StdCallLibrary
 import com.sun.jna.win32.StdCallLibrary.StdCallCallback
 import com.sun.jna.win32.W32APIOptions.DEFAULT_OPTIONS
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 interface User32 : StdCallLibrary {
     interface WNDPROC : StdCallCallback {
@@ -94,14 +105,6 @@ interface User32 : StdCallLibrary {
         lParam: LPARAM?,
     ): Int
 
-    fun SetWindowRgn(
-        hWnd: HWND?,
-        hRgn: HRGN?,
-        bRedraw: Boolean,
-    ): Boolean
-
-    fun GetDpiForSystem(): Int
-
     fun EnumDisplayMonitors(
         hdc: HDC?,
         lprcClip: RECT?,
@@ -110,6 +113,52 @@ interface User32 : StdCallLibrary {
     ): Boolean
 
     fun GetClipboardSequenceNumber(): Int
+
+    fun FindWindow(
+        lpClassName: String?,
+        lpWindowName: String?,
+    ): HWND?
+
+    fun ShowWindow(
+        hWnd: HWND,
+        nCmdShow: Int,
+    ): Boolean
+
+    fun GetForegroundWindow(): HWND
+
+    fun SetForegroundWindow(hWnd: HWND): Boolean
+
+    fun EnumWindows(
+        lpEnumFunc: WinUser.WNDENUMPROC,
+        lParam: Pointer?,
+    ): Boolean
+
+    fun GetWindowThreadProcessId(
+        hWnd: HWND,
+        lpdwProcessId: IntByReference,
+    ): Int
+
+    fun SendInput(
+        nInputs: DWORD?,
+        pInputs: Array<INPUT>?,
+        cbSize: Int,
+    ): Int
+
+    fun AttachThreadInput(
+        idAttach: DWORD,
+        idAttachTo: DWORD,
+        fAttach: Boolean,
+    ): Boolean
+
+    fun GetSystemMetrics(nIndex: Int): Int
+
+    fun mouse_event(
+        dwFlags: DWORD,
+        dx: DWORD,
+        dy: DWORD,
+        dwData: DWORD,
+        dwExtraInfo: ULONG_PTR,
+    )
 
     companion object {
         val INSTANCE =
@@ -159,5 +208,118 @@ interface User32 : StdCallLibrary {
             QS_INPUT or QS_POSTMESSAGE or QS_TIMER or QS_PAINT
                 or QS_HOTKEY or QS_SENDMESSAGE
         )
+
+        private val logger = KotlinLogging.logger {}
+
+        fun hideWindowByTitle(windowTitle: String) {
+            val hWnd = INSTANCE.FindWindow(null, windowTitle)
+            if (hWnd != null) {
+                INSTANCE.ShowWindow(hWnd, SW_HIDE)
+            }
+        }
+
+        fun bringToFrontAndReturnPreviousAppId(windowTitle: String): Int {
+            val previousHwnd = INSTANCE.GetForegroundWindow()
+            val processIdRef = IntByReference()
+            val processThreadId = INSTANCE.GetWindowThreadProcessId(previousHwnd, processIdRef)
+            val hWnd = INSTANCE.FindWindow(null, windowTitle)
+            if (hWnd != null) {
+                val curThreadId = Kernel32.INSTANCE.GetCurrentThreadId()
+                INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), true)
+
+                INSTANCE.ShowWindow(hWnd, SW_RESTORE)
+
+                val screenWidth = INSTANCE.GetSystemMetrics(SM_CXSCREEN)
+                val screenHeight = INSTANCE.GetSystemMetrics(SM_CYSCREEN)
+
+                INSTANCE.mouse_event(
+                    DWORD(0x0001),
+                    DWORD((screenWidth / 2).toLong()),
+                    DWORD((screenHeight / 2).toLong()),
+                    DWORD(0),
+                    ULONG_PTR(0),
+                )
+
+                val result = INSTANCE.SetForegroundWindow(hWnd)
+                INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), false)
+                if (!result) {
+                    logger.info { "Failed to set foreground window. Please switch manually" }
+                } else {
+                    logger.info { "Foreground window set successfully" }
+                }
+            } else {
+                logger.info { "Window not found" }
+            }
+
+            return processIdRef.value
+        }
+
+        fun activateAppAndPaste(
+            windowTitle: String,
+            processId: Int,
+            toPaste: Boolean,
+        ) {
+            hideWindowByTitle(windowTitle)
+
+            val callback =
+                WinUser.WNDENUMPROC { hWnd, _ ->
+                    val processIdRef = IntByReference()
+
+                    INSTANCE.GetWindowThreadProcessId(hWnd, processIdRef)
+                    if (processIdRef.value == processId) {
+                        INSTANCE.ShowWindow(hWnd, WinUser.SW_SHOW)
+                        INSTANCE.SetForegroundWindow(hWnd)
+                        if (toPaste) {
+                            val inputs: Array<INPUT> = INPUT().toArray(2) as Array<INPUT>
+
+                            inputs[0].type = DWORD(INPUT.INPUT_KEYBOARD.toLong())
+                            inputs[0].input.setType(
+                                "ki",
+                            )
+
+                            // Because setting INPUT_INPUT_KEYBOARD is not enough:
+                            // https://groups.google.com/d/msg/jna-users/NDBGwC1VZbU/cjYCQ1CjBwAJ
+                            inputs[0].input.ki.wScan = WORD(0)
+                            inputs[0].input.ki.time = DWORD(0)
+                            inputs[0].input.ki.dwExtraInfo = ULONG_PTR(0)
+
+                            inputs[1].type = DWORD(INPUT.INPUT_KEYBOARD.toLong())
+                            inputs[1].input.setType(
+                                "ki",
+                            )
+
+                            // todo Support binding dynamic shortcut keys
+                            inputs[1].input.ki.wScan = WORD(0)
+                            inputs[1].input.ki.time = DWORD(0)
+                            inputs[1].input.ki.dwExtraInfo = ULONG_PTR(0)
+
+                            // press ctrl
+                            inputs[0].input.ki.wVk = WORD(0x11)
+                            inputs[0].input.ki.dwFlags = DWORD(0) // keydown
+
+                            // press v
+                            inputs[1].input.ki.wVk = WORD('V'.code.toLong())
+                            inputs[1].input.ki.dwFlags = DWORD(0) // keydown
+
+                            INSTANCE.SendInput(DWORD(inputs.size.toLong()), inputs, inputs[0].size())
+
+                            // release ctrl
+                            inputs[0].input.ki.wVk = WORD(0x11)
+                            inputs[0].input.ki.dwFlags = DWORD(2) // keyup
+
+                            // release v
+                            inputs[1].input.ki.wVk = WORD('V'.code.toLong())
+                            inputs[1].input.ki.dwFlags = DWORD(2) // keyup
+
+                            INSTANCE.SendInput(DWORD(inputs.size.toLong()), inputs, inputs[0].size())
+                        }
+                        false
+                    } else {
+                        true
+                    }
+                }
+
+            INSTANCE.EnumWindows(callback, null)
+        }
     }
 }

@@ -26,7 +26,7 @@ interface AppWindowManager {
 
     fun activeMainWindow()
 
-    fun activeSearchWindow()
+    suspend fun activeSearchWindow()
 
     fun unActiveMainWindow()
 

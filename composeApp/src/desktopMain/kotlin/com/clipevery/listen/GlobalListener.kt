@@ -51,9 +51,9 @@ class OpenSearchListener(
         val isSpacePressed = e.keyCode == NativeKeyEvent.VC_SPACE
 
         if (isCmdOrCtrlPressed && isShiftPressed && isSpacePressed) {
-            dispatcher.launch(CoroutineName("CrateSearchWindow")) {
-                logger.info { "Open search window" }
-                createSearchWindow(clipSearchService, Dependencies.koinApplication)
+            logger.info { "Open search window" }
+            dispatcher.launch(CoroutineName("OpenSearchWindow")) {
+                createSearchWindow(clipSearchService, Dependencies.koinApplication, dispatcher)
             }
         } else if (e.keyCode == NativeKeyEvent.VC_ENTER) {
             dispatcher.launch(CoroutineName("Paste")) {
