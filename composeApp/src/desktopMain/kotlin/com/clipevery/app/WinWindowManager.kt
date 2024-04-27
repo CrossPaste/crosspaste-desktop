@@ -3,6 +3,7 @@ package com.clipevery.app
 import com.clipevery.app.DesktopAppWindowManager.searchWindowTitle
 import com.clipevery.os.windows.api.User32
 import com.sun.jna.platform.win32.WinDef.HWND
+import kotlinx.coroutines.delay
 
 class WinWindowManager : WindowManager {
 
@@ -10,7 +11,11 @@ class WinWindowManager : WindowManager {
 
     override suspend fun bringToFront(windowTitle: String) {
         logger.info { "$windowTitle bringToFront Clipevery" }
-        prevHWND = User32.bringToFront(searchWindowTitle)
+        if (windowTitle == searchWindowTitle) {
+            // to wait for the search window to be ready
+            delay(500)
+        }
+        prevHWND = User32.bringToFront(windowTitle)
     }
 
     override suspend fun bringToBack(
@@ -18,6 +23,6 @@ class WinWindowManager : WindowManager {
         toPaste: Boolean,
     ) {
         logger.info { "$windowTitle bringToBack Clipevery" }
-        User32.bringToBack(searchWindowTitle, prevHWND, toPaste)
+        User32.bringToBack(windowTitle, prevHWND, toPaste)
     }
 }

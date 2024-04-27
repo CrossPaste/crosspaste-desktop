@@ -1,6 +1,7 @@
 package com.clipevery.os.windows.api
 
-import com.clipevery.app.DesktopAppWindowManager
+import com.clipevery.app.DesktopAppWindowManager.mainWindowTitle
+import com.clipevery.app.DesktopAppWindowManager.searchWindowTitle
 import com.sun.jna.Native
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.BaseTSD.ULONG_PTR
@@ -212,27 +213,25 @@ interface User32 : StdCallLibrary {
 
         private val logger = KotlinLogging.logger {}
 
-        private var mainHWND: HWND? = null
-
         private var searchHWND: HWND? = null
 
         @Synchronized
-        fun bringMainToFront() {
-        }
-
-        @Synchronized
-        fun bringSearchToFront(): HWND? {
+        fun bringToFront(windowTitle: String): HWND? {
             INSTANCE.GetForegroundWindow()?.let { previousHwnd ->
+                if (windowTitle == mainWindowTitle) {
+                    return@let previousHwnd
+                }
+
                 val processIdRef = IntByReference()
                 val processThreadId = INSTANCE.GetWindowThreadProcessId(previousHwnd, processIdRef)
 
                 if (searchHWND == null) {
-                    searchHWND = INSTANCE.FindWindow(null, DesktopAppWindowManager.searchWindowTitle)
+                    searchHWND = INSTANCE.FindWindow(null, searchWindowTitle)
                 }
 
                 if (searchHWND != null) {
-//                    val curThreadId = Kernel32.INSTANCE.GetCurrentThreadId()
-//                    INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), true)
+                    val curThreadId = Kernel32.INSTANCE.GetCurrentThreadId()
+                    INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), true)
 
                     INSTANCE.ShowWindow(searchHWND!!, SW_RESTORE)
 
@@ -248,7 +247,7 @@ interface User32 : StdCallLibrary {
                     )
 
                     val result = INSTANCE.SetForegroundWindow(searchHWND!!)
-//                    INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), false)
+                    INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), false)
                     if (!result) {
                         logger.info { "Failed to set foreground window. Please switch manually" }
                     } else {
@@ -282,6 +281,7 @@ interface User32 : StdCallLibrary {
             }
         }
 
+        @Suppress("UNCHECKED_CAST")
         private fun paste() {
             val inputs: Array<INPUT> = INPUT().toArray(2) as Array<INPUT>
 
