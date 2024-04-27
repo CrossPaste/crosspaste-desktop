@@ -38,14 +38,13 @@ interface MacosApi : Library {
 
     fun getHardwareUUID(): String?
 
-    fun bringToBack(windowTitle: String)
-
-    fun bringToFront(windowTitle: String): String
-
-    fun activeApp(
+    fun bringToBack(
+        windowTitle: String,
         appName: String,
         toPaste: Boolean,
     )
+
+    fun bringToFront(windowTitle: String): String
 
     companion object {
         val INSTANCE: MacosApi = Native.load("MacosApi", MacosApi::class.java)

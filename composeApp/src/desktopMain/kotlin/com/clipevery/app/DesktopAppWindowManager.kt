@@ -5,10 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import com.clipevery.os.macos.api.MacosApi
-import com.clipevery.os.windows.api.User32
 import com.clipevery.platform.currentPlatform
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,13 +13,20 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlin.random.Random
 
 object DesktopAppWindowManager : AppWindowManager {
 
-    private val logger = KotlinLogging.logger {}
-
-    private val currentPlatform = currentPlatform()
+    private val windowManager: WindowManager =
+        run {
+            val currentPlatform = currentPlatform()
+            when {
+                currentPlatform.isMacos() -> MacWindowManager()
+                currentPlatform.isWindows() -> WinWindowManager()
+                else -> throw IllegalStateException("Unsupported platform: $currentPlatform")
+            }
+        }
 
     private var startRefreshNumber: Int = 0
 
@@ -45,8 +49,6 @@ object DesktopAppWindowManager : AppWindowManager {
     override var showToken by mutableStateOf(false)
 
     override var token by mutableStateOf(charArrayOf('0', '0', '0', '0', '0', '0'))
-
-    private var prevAppName: String? = null
 
     private fun refreshToken() {
         token = CharArray(6) { (Random.nextInt(10) + '0'.code).toChar() }
@@ -75,54 +77,28 @@ object DesktopAppWindowManager : AppWindowManager {
 
     override fun activeMainWindow() {
         showMainWindow = true
-        if (currentPlatform().isMacos()) {
-            logger.info { "bringToFront Clipevery" }
-            MacosApi.INSTANCE.bringToFront(mainWindowTitle)
+        runBlocking {
+            windowManager.bringToFront(mainWindowTitle)
         }
     }
 
     override suspend fun activeSearchWindow() {
         showSearchWindow = true
-        if (currentPlatform.isMacos()) {
-            prevAppName = MacosApi.INSTANCE.bringToFront(searchWindowTitle)
-        } else if (currentPlatform.isWindows()) {
-            delay(200)
-            val prevAppId: Int = User32.bringToFrontAndReturnPreviousAppId(searchWindowTitle)
-            if (prevAppId > 0) {
-                prevAppName = prevAppId.toString()
-            }
-        } else if (currentPlatform.isLinux()) {
-            // todo linux
-        }
-        logger.info { "save prevAppName is ${prevAppName ?: "null"}" }
+        windowManager.bringToFront(searchWindowTitle)
     }
 
     override fun unActiveMainWindow() {
-        logger.info { "${currentPlatform.name} bringToBack Clipevery" }
-        if (currentPlatform.isMacos()) {
-            MacosApi.INSTANCE.bringToBack(mainWindowTitle)
-        } else if (currentPlatform.isWindows()) {
-            User32.hideWindowByTitle(mainWindowTitle)
-        } else if (currentPlatform.isLinux()) {
-            // todo linux
+        runBlocking {
+            windowManager.bringToBack(mainWindowTitle, false)
         }
         showMainWindow = false
     }
 
     override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
         if (showSearchWindow) {
-            showSearchWindow = false
             val toPaste = preparePaste()
-            prevAppName?.let {
-                logger.info { "${currentPlatform.name} unActiveWindow return to app $it" }
-                if (currentPlatform.isMacos()) {
-                    MacosApi.INSTANCE.activeApp(it, toPaste)
-                } else if (currentPlatform.isWindows()) {
-                    User32.activateAppAndPaste(searchWindowTitle, it.toInt(), toPaste)
-                } else if (currentPlatform.isLinux()) {
-                    // todo linux
-                }
-            }
+            windowManager.bringToBack(searchWindowTitle, toPaste)
+            showSearchWindow = false
         }
     }
 }

@@ -140,7 +140,7 @@ private func IOPlatformUUID() -> String? {
 }
 
 @_cdecl("bringToBack")
-public func bringToBack(windowTitle: UnsafePointer<CChar>) {
+public func bringToBack(windowTitle: UnsafePointer<CChar>, appName: UnsafePointer<CChar>, toPaste: Bool) {
     DispatchQueue.main.async {
         let title = String(cString: windowTitle)
         let windows = NSApplication.shared.windows
@@ -153,6 +153,16 @@ public func bringToBack(windowTitle: UnsafePointer<CChar>) {
                 break
             }
         }
+
+        let appNameString = String(cString: appName)
+        let apps = NSRunningApplication.runningApplications(withBundleIdentifier: appNameString)
+        if let app = apps.first {
+            app.activate(options: [.activateIgnoringOtherApps])
+            if (toPaste) {
+                simulatePasteCommand()
+            }
+        }
+
     }
 }
 
@@ -176,20 +186,6 @@ public func bringToFront(windowTitle: UnsafePointer<CChar>) -> UnsafePointer<CCh
         }
     }
     return UnsafePointer<CChar>(strdup(currentAppName))
-}
-
-@_cdecl("activeApp")
-public func activeApp(appName: UnsafePointer<CChar>, toPaste: Bool) {
-    DispatchQueue.main.async {
-        let appNameString = String(cString: appName)
-        let apps = NSRunningApplication.runningApplications(withBundleIdentifier: appNameString)
-        if let app = apps.first {
-            app.activate(options: [.activateIgnoringOtherApps])
-            if (toPaste) {
-                simulatePasteCommand()
-            }
-        }
-    }
 }
 
 func simulatePasteCommand() {
