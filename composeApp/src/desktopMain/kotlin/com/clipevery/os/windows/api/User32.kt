@@ -2,7 +2,6 @@ package com.clipevery.os.windows.api
 
 import com.sun.jna.Native
 import com.sun.jna.Pointer
-import com.sun.jna.platform.win32.BaseTSD
 import com.sun.jna.platform.win32.BaseTSD.ULONG_PTR
 import com.sun.jna.platform.win32.WinDef.DWORD
 import com.sun.jna.platform.win32.WinDef.HDC
@@ -18,6 +17,7 @@ import com.sun.jna.platform.win32.WinUser.MONITORENUMPROC
 import com.sun.jna.platform.win32.WinUser.MSG
 import com.sun.jna.platform.win32.WinUser.SM_CXSCREEN
 import com.sun.jna.platform.win32.WinUser.SM_CYSCREEN
+import com.sun.jna.platform.win32.WinUser.SW_HIDE
 import com.sun.jna.platform.win32.WinUser.SW_RESTORE
 import com.sun.jna.ptr.IntByReference
 import com.sun.jna.win32.StdCallLibrary
@@ -157,7 +157,7 @@ interface User32 : StdCallLibrary {
         dx: DWORD,
         dy: DWORD,
         dwData: DWORD,
-        dwExtraInfo: BaseTSD.ULONG_PTR,
+        dwExtraInfo: ULONG_PTR,
     )
 
     companion object {
@@ -214,7 +214,7 @@ interface User32 : StdCallLibrary {
         fun hideWindowByTitle(windowTitle: String) {
             val hWnd = INSTANCE.FindWindow(null, windowTitle)
             if (hWnd != null) {
-                INSTANCE.ShowWindow(hWnd, 0) // 0 表示 SW_HIDE
+                INSTANCE.ShowWindow(hWnd, SW_HIDE)
             }
         }
 
@@ -237,7 +237,7 @@ interface User32 : StdCallLibrary {
                     DWORD((screenWidth / 2).toLong()),
                     DWORD((screenHeight / 2).toLong()),
                     DWORD(0),
-                    BaseTSD.ULONG_PTR(0),
+                    ULONG_PTR(0),
                 )
 
                 val result = INSTANCE.SetForegroundWindow(hWnd)
@@ -255,25 +255,30 @@ interface User32 : StdCallLibrary {
         }
 
         fun activateAppAndPaste(
+            windowTitle: String,
             processId: Int,
             toPaste: Boolean,
         ) {
-            // 定义回调函数，用于查找与进程ID匹配的窗口
+            hideWindowByTitle(windowTitle)
+
             val callback =
                 WinUser.WNDENUMPROC { hWnd, _ ->
                     val processIdRef = IntByReference()
 
                     INSTANCE.GetWindowThreadProcessId(hWnd, processIdRef)
                     if (processIdRef.value == processId) {
-                        INSTANCE.SetForegroundWindow(hWnd)
                         INSTANCE.ShowWindow(hWnd, WinUser.SW_SHOW)
+                        INSTANCE.SetForegroundWindow(hWnd)
                         if (toPaste) {
-                            val inputs = INPUT().toArray(2) as Array<INPUT>
+                            val inputs: Array<INPUT> = INPUT().toArray(2) as Array<INPUT>
 
                             inputs[0].type = DWORD(INPUT.INPUT_KEYBOARD.toLong())
                             inputs[0].input.setType(
                                 "ki",
-                            ) // Because setting INPUT_INPUT_KEYBOARD is not enough: https://groups.google.com/d/msg/jna-users/NDBGwC1VZbU/cjYCQ1CjBwAJ
+                            )
+
+                            // Because setting INPUT_INPUT_KEYBOARD is not enough:
+                            // https://groups.google.com/d/msg/jna-users/NDBGwC1VZbU/cjYCQ1CjBwAJ
                             inputs[0].input.ki.wScan = WORD(0)
                             inputs[0].input.ki.time = DWORD(0)
                             inputs[0].input.ki.dwExtraInfo = ULONG_PTR(0)
@@ -281,36 +286,36 @@ interface User32 : StdCallLibrary {
                             inputs[1].type = DWORD(INPUT.INPUT_KEYBOARD.toLong())
                             inputs[1].input.setType(
                                 "ki",
-                            ) // Because setting INPUT_INPUT_KEYBOARD is not enough: https://groups.google.com/d/msg/jna-users/NDBGwC1VZbU/cjYCQ1CjBwAJ
+                            )
+
+                            // todo Support binding dynamic shortcut keys
                             inputs[1].input.ki.wScan = WORD(0)
                             inputs[1].input.ki.time = DWORD(0)
                             inputs[1].input.ki.dwExtraInfo = ULONG_PTR(0)
 
-                            // ctrl
+                            // press ctrl
                             inputs[0].input.ki.wVk = WORD(0x11)
                             inputs[0].input.ki.dwFlags = DWORD(0) // keydown
 
-                            // Press "v"
+                            // press v
                             inputs[1].input.ki.wVk = WORD('V'.code.toLong())
                             inputs[1].input.ki.dwFlags = DWORD(0) // keydown
 
                             INSTANCE.SendInput(DWORD(inputs.size.toLong()), inputs, inputs[0].size())
 
-                            // ctrl
+                            // release ctrl
                             inputs[0].input.ki.wVk = WORD(0x11)
-                            inputs[0].input.ki.dwFlags = DWORD(2) // keydown
+                            inputs[0].input.ki.dwFlags = DWORD(2) // keyup
 
-                            // Press "v"
+                            // release v
                             inputs[1].input.ki.wVk = WORD('V'.code.toLong())
-                            inputs[1].input.ki.dwFlags = DWORD(2) // keydown
+                            inputs[1].input.ki.dwFlags = DWORD(2) // keyup
 
                             INSTANCE.SendInput(DWORD(inputs.size.toLong()), inputs, inputs[0].size())
-
-//                            INSTANCE.SendMessage(hWnd, 0x0302, null, null)
                         }
                         false
                     } else {
-                        true // 继续枚举
+                        true
                     }
                 }
 

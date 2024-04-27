@@ -118,7 +118,7 @@ object DesktopAppWindowManager : AppWindowManager {
                 if (currentPlatform.isMacos()) {
                     MacosApi.INSTANCE.activeApp(it, toPaste)
                 } else if (currentPlatform.isWindows()) {
-                    User32.activateAppAndPaste(it.toInt(), toPaste)
+                    User32.activateAppAndPaste(searchWindowTitle, it.toInt(), toPaste)
                 } else if (currentPlatform.isLinux()) {
                     // todo linux
                 }
