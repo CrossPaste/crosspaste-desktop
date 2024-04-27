@@ -1,6 +1,5 @@
 package com.clipevery.app
 
-import com.clipevery.app.DesktopAppWindowManager.mainWindowTitle
 import com.clipevery.os.macos.api.MacosApi
 import io.github.oshai.kotlinlogging.KotlinLogging
 
@@ -27,6 +26,6 @@ class MacWindowManager : WindowManager {
         toPaste: Boolean,
     ) {
         logger.info { "$windowTitle bringToBack Clipevery" }
-        MacosApi.INSTANCE.bringToBack(mainWindowTitle, prevAppName ?: "", toPaste)
+        MacosApi.INSTANCE.bringToBack(windowTitle, prevAppName ?: "", toPaste)
     }
 }

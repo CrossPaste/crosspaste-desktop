@@ -181,7 +181,6 @@ public func bringToFront(windowTitle: UnsafePointer<CChar>) -> UnsafePointer<CCh
                     window.makeKeyAndOrderFront(nil)
                     NSApp.activate(ignoringOtherApps: true)
                 }
-                break
             }
         }
     }
