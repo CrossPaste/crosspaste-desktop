@@ -593,10 +593,10 @@ fun StoreSettingsView() {
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Counter(defaultValue = cleanupPercentage, unit = "%", rule = {
+                Counter(defaultValue = cleanupPercentage.toLong(), unit = "%", rule = {
                     it in 10..50
                 }) { currentCleanupPercentage ->
-                    configManager.updateConfig { it.copy(cleanupPercentage = currentCleanupPercentage) }
+                    configManager.updateConfig { it.copy(cleanupPercentage = currentCleanupPercentage.toInt()) }
                 }
             }
         }

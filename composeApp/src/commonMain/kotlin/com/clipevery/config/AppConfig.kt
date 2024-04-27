@@ -18,7 +18,7 @@ data class AppConfig(
     val imageCleanTimeIndex: Int = 6,
     val fileCleanTimeIndex: Int = 6,
     val isThresholdCleanup: Boolean = true,
-    val maxStorage: Int = 2048,
+    val maxStorage: Long = 2048,
     val cleanupPercentage: Int = 20,
     val isAllowDiscovery: Boolean = true,
     val blacklist: String = "[]",
