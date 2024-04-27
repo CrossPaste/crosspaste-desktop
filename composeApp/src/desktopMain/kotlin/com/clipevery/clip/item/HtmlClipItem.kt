@@ -75,7 +75,7 @@ class HtmlClipItem : RealmObject, ClipAppearItem, ClipHtml {
     }
 
     override fun getSearchContent(): String {
-        return html
+        return html.lowercase()
     }
 
     override fun update(

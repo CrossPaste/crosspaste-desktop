@@ -402,7 +402,7 @@ class ClipRealm(
         sort: Boolean,
         limit: Int,
     ): RealmResults<ClipData> {
-        val searchTerms = inputSearch.trim().split("\\s+".toRegex()).filterNot { it.isEmpty() }.distinct()
+        val searchTerms = inputSearch.trim().lowercase().split("\\s+".toRegex()).filterNot { it.isEmpty() }.distinct()
         logger.info { "Performing search for: $searchTerms" }
         var query = realm.query(ClipData::class, "clipState != $0", ClipState.DELETED)
 
