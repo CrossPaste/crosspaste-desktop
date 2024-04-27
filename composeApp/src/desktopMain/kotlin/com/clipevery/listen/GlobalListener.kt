@@ -24,7 +24,7 @@ class GlobalListener(
 ) {
 
     init {
-        if (System.getProperty("supportShortcutKey", false.toString()).toBoolean()) {
+        if (System.getProperty("globalListener", false.toString()).toBoolean()) {
             try {
                 GlobalScreen.registerNativeHook()
             } catch (ex: NativeHookException) {

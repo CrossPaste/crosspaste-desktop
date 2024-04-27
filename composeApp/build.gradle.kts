@@ -131,10 +131,11 @@ compose.desktop {
 
         val loggerLevel = project.findProperty("loggerLevel")?.toString() ?: "info"
         val appEnv = project.findProperty("appEnv")?.toString() ?: "DEVELOPMENT"
+        val globalListener = project.findProperty("globalListener")?.toString() ?: "true"
 
         jvmArgs("-DloggerLevel=$loggerLevel")
         jvmArgs("-DappEnv=$appEnv")
-        jvmArgs("-DsupportShortcutKey=true")
+        jvmArgs("-DglobalListener=$globalListener")
         jvmArgs("-Dcompose.interop.blending=true")
         jvmArgs("-Dio.netty.maxDirectMemory=268435456")
         jvmArgs("-DloggerDebugPackages=com.clipevery.routing,com.clipevery.net.clientapi")
