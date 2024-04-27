@@ -1,6 +1,6 @@
 package com.clipevery.listen
 
-import com.clipevery.Dependencies
+import com.clipevery.Clipevery
 import com.clipevery.app.AppWindowManager
 import com.clipevery.clip.ClipSearchService
 import com.clipevery.config.ConfigManager
@@ -53,7 +53,7 @@ class OpenSearchListener(
         if (isCmdOrCtrlPressed && isShiftPressed && isSpacePressed) {
             logger.info { "Open search window" }
             dispatcher.launch(CoroutineName("OpenSearchWindow")) {
-                createSearchWindow(clipSearchService, Dependencies.koinApplication, dispatcher)
+                createSearchWindow(clipSearchService, Clipevery.koinApplication, dispatcher)
             }
         } else if (e.keyCode == NativeKeyEvent.VC_ENTER) {
             dispatcher.launch(CoroutineName("Paste")) {

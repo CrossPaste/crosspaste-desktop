@@ -9,7 +9,7 @@ import ch.qos.logback.core.rolling.TimeBasedRollingPolicy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-actual fun initLogger(logPath: String) {
+actual fun initLogger(logPath: String): ClipeveryLogger {
     val logLevel = System.getProperty("loggerLevel") ?: "info"
 
     val context = LoggerFactory.getILoggerFactory() as LoggerContext
@@ -41,11 +41,19 @@ actual fun initLogger(logPath: String) {
     val jThemeLogger = context.getLogger("com.jthemedetecor") as ch.qos.logback.classic.Logger
     jThemeLogger.level = Level.OFF
 
-    System.getProperty("loggerDebugPackages")?.let { debugPackages ->
+    val loggerDebugPackages = System.getProperty("loggerDebugPackages")
+
+    loggerDebugPackages?.let { debugPackages ->
         for (packageName in debugPackages.split(",")) {
             val logger = context.getLogger(packageName) as ch.qos.logback.classic.Logger
             logger.level = Level.DEBUG
         }
+    }
+
+    return object : ClipeveryLogger {
+        override val logLevel: String = logLevel
+        override val logPath: String = logPath
+        override val loggerDebugPackages: String? = loggerDebugPackages
     }
 }
 

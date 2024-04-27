@@ -62,15 +62,15 @@ class DesktopDeviceManager(
     }
 
     override fun serviceAdded(event: ServiceEvent) {
-        logger.info { "Service added: " + event.info }
+        logger.debug { "Service added: " + event.info }
     }
 
     override fun serviceRemoved(event: ServiceEvent) {
-        logger.info { "Service removed: " + event.info }
         val map: Map<String, ByteArray> = mutableMapOf()
         ByteWrangler.readProperties(map, event.info.textBytes)
         val syncInfo = TxtRecordUtils.decodeFromTxtRecordDict<SyncInfo>(map)
         val appInstanceId = syncInfo.appInfo.appInstanceId
+        logger.debug { "Service removed: $syncInfo" }
         lock.lock()
         try {
             allSyncInfos.remove(appInstanceId)
@@ -81,11 +81,11 @@ class DesktopDeviceManager(
     }
 
     override fun serviceResolved(event: ServiceEvent) {
-        logger.info { "Service resolved: " + event.info }
         val map: Map<String, ByteArray> = mutableMapOf()
         ByteWrangler.readProperties(map, event.info.textBytes)
         val syncInfo = TxtRecordUtils.decodeFromTxtRecordDict<SyncInfo>(map)
         val appInstanceId = syncInfo.appInfo.appInstanceId
+        logger.debug { "Service resolved: $syncInfo" }
         lock.lock()
         try {
             if (!isSelf(appInstanceId)) {

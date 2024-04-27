@@ -1,6 +1,6 @@
 package com.clipevery.routing
 
-import com.clipevery.Dependencies
+import com.clipevery.Clipevery
 import com.clipevery.clip.CacheManager
 import com.clipevery.dto.pull.PullFileRequest
 import com.clipevery.dto.pull.PullFilesKey
@@ -19,7 +19,7 @@ import io.ktor.utils.io.*
 fun Routing.pullRouting() {
     val logger = KotlinLogging.logger {}
 
-    val koinApplication = Dependencies.koinApplication
+    val koinApplication = Clipevery.koinApplication
 
     val syncManager = koinApplication.koin.get<SyncManager>()
 
