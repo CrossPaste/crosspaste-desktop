@@ -84,11 +84,11 @@ object DesktopChromeService : ChromeService {
 
     private val windowDimension: Dimension =
         if (currentPlatform.isWindows()) {
-            val width: Int = (340.0 * scale).toInt()
-            val height: Int = (100.0 * scale).toInt()
+            val width: Int = (480.0 * scale).toInt()
+            val height: Int = (180.0 * scale).toInt()
             Dimension(width, height)
         } else {
-            Dimension(340, 100)
+            Dimension(480, 180)
         }
 
     private var chromeDriver: ChromeDriver? = null
