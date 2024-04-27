@@ -30,10 +30,10 @@ import com.clipevery.ui.devices.measureTextWidth
 
 @Composable
 fun Counter(
-    defaultValue: Int,
+    defaultValue: Long,
     unit: String = "",
-    rule: (Int) -> Boolean,
-    onChange: (Int) -> Unit,
+    rule: (Long) -> Boolean,
+    onChange: (Long) -> Unit,
 ) {
     var count by remember { mutableStateOf(defaultValue) }
 
@@ -82,7 +82,7 @@ fun Counter(
             value = "$count",
             onValueChange = {
                 if (it.matches(Regex("^\\d+$"))) {
-                    val newCount = it.toInt()
+                    val newCount = it.toLong()
                     if (rule(newCount)) {
                         count = newCount
                         onChange(newCount)
