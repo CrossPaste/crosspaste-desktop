@@ -48,7 +48,7 @@ class TextClipItem : RealmObject, ClipAppearItem, ClipText {
     }
 
     override fun getSearchContent(): String {
-        return text
+        return text.lowercase()
     }
 
     override fun update(

@@ -93,9 +93,9 @@ class ImagesClipItem : RealmObject, ClipAppearItem, ClipFiles {
     }
 
     override fun getSearchContent(): String {
-        return relativePathList.map { path ->
-            Paths.get(path).fileName
-        }.joinToString(separator = " ")
+        return relativePathList.joinToString(separator = " ") { path ->
+            Paths.get(path).fileName.toString().lowercase()
+        }
     }
 
     override fun update(

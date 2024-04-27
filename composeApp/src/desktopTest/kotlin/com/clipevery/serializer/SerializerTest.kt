@@ -37,7 +37,7 @@ class SerializerTest {
                     ClipContent().apply {
                         this.clipAppearItems = realmListOf()
                     }
-                this.clipSearchContent = textClipItem.text
+                this.clipSearchContent = textClipItem.text.lowercase()
                 this.clipType = ClipType.TEXT
                 this.md5 = textClipItem.md5
                 this.clipState = ClipState.LOADED

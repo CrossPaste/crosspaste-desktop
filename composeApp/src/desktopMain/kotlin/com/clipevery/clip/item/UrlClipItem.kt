@@ -49,7 +49,7 @@ class UrlClipItem : RealmObject, ClipAppearItem, ClipUrl {
     }
 
     override fun getSearchContent(): String {
-        return url
+        return url.lowercase()
     }
 
     override fun update(
