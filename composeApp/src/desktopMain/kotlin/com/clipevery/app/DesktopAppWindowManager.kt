@@ -6,7 +6,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.clipevery.platform.currentPlatform
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -18,8 +17,6 @@ import kotlinx.coroutines.runBlocking
 import kotlin.random.Random
 
 object DesktopAppWindowManager : AppWindowManager {
-
-    private val logger = KotlinLogging.logger {}
 
     private val windowManager: WindowManager =
         run {

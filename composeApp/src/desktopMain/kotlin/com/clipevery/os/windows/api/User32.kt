@@ -1,5 +1,6 @@
 package com.clipevery.os.windows.api
 
+import com.clipevery.app.DesktopAppWindowManager
 import com.sun.jna.Native
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.BaseTSD.ULONG_PTR
@@ -211,23 +212,29 @@ interface User32 : StdCallLibrary {
 
         private val logger = KotlinLogging.logger {}
 
-        fun hideWindowByTitle(windowTitle: String) {
-            val hWnd = INSTANCE.FindWindow(null, windowTitle)
-            if (hWnd != null) {
-                INSTANCE.ShowWindow(hWnd, SW_HIDE)
-            }
+        private var mainHWND: HWND? = null
+
+        private var searchHWND: HWND? = null
+
+        @Synchronized
+        fun bringMainToFront() {
         }
 
-        fun bringToFront(windowTitle: String): HWND? {
+        @Synchronized
+        fun bringSearchToFront(): HWND? {
             INSTANCE.GetForegroundWindow()?.let { previousHwnd ->
                 val processIdRef = IntByReference()
                 val processThreadId = INSTANCE.GetWindowThreadProcessId(previousHwnd, processIdRef)
-                val hWnd = INSTANCE.FindWindow(null, windowTitle)
-                if (hWnd != null) {
-                    val curThreadId = Kernel32.INSTANCE.GetCurrentThreadId()
-                    INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), true)
 
-                    INSTANCE.ShowWindow(hWnd, SW_RESTORE)
+                if (searchHWND == null) {
+                    searchHWND = INSTANCE.FindWindow(null, DesktopAppWindowManager.searchWindowTitle)
+                }
+
+                if (searchHWND != null) {
+//                    val curThreadId = Kernel32.INSTANCE.GetCurrentThreadId()
+//                    INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), true)
+
+                    INSTANCE.ShowWindow(searchHWND!!, SW_RESTORE)
 
                     val screenWidth = INSTANCE.GetSystemMetrics(SM_CXSCREEN)
                     val screenHeight = INSTANCE.GetSystemMetrics(SM_CYSCREEN)
@@ -240,8 +247,8 @@ interface User32 : StdCallLibrary {
                         ULONG_PTR(0),
                     )
 
-                    val result = INSTANCE.SetForegroundWindow(hWnd)
-                    INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), false)
+                    val result = INSTANCE.SetForegroundWindow(searchHWND!!)
+//                    INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), false)
                     if (!result) {
                         logger.info { "Failed to set foreground window. Please switch manually" }
                     } else {
