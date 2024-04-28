@@ -1,4 +1,5 @@
 [versions]
+conveyor = "1.9"
 compose = "1.6.6"
 compose-plugin = "1.6.2"
 compose-compiler = "1.5.8"
@@ -67,6 +68,7 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 
 
 [plugins]
+conveyor = { id = "dev.hydraulic.conveyor", version.ref = "conveyor" }
 download = { id = "de.undercouch.download", version.ref = "download" }
 jetbrainsCompose = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
