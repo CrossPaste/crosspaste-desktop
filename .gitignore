@@ -22,3 +22,5 @@ composeApp/docs
 chrome-headless-shell-*/
 chromedriver-*/
 /composeApp/.user/
+conveyor.conf
+/output/

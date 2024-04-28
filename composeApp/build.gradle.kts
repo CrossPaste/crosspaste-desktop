@@ -3,6 +3,9 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import java.io.FileReader
 import java.util.Properties
 
+group = "com.clipevery"
+version = "1.0"
+
 repositories {
     mavenCentral()
     google()
@@ -11,6 +14,7 @@ repositories {
 }
 
 plugins {
+    alias(libs.plugins.conveyor)
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.kotlinSerialization)
@@ -87,6 +91,12 @@ kotlin {
     }
 }
 
+dependencies {
+    // Use the configurations created by the Conveyor plugin to tell Gradle/Conveyor where to find the artifacts for each platform.
+    macAarch64(compose.desktop.macos_arm64)
+    windowsAmd64(compose.desktop.windows_x64)
+}
+
 compose.desktop {
     application {
 
@@ -144,7 +154,7 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
 
             appResourcesRootDir = project.layout.projectDirectory.dir("resources")
-            packageName = "Clipevery"
+            packageName = "clipevery"
             packageVersion = "1.0.0"
 
             // If we want to use arthas attach application in production environment,
@@ -165,6 +175,8 @@ compose.desktop {
                     extraKeysRawXml = """
                         <key>LSUIElement</key>
                         <string>true</string>
+                        <key>LSMinimumSystemVersion</key>
+                        <string>10.15.0</string>
                     """
                 }
 
@@ -200,6 +212,14 @@ compose.desktop {
                 iconFile = file("src/desktopMain/resources/icons/clipevery.ico")
             }
         }
+    }
+}
+
+// region Work around temporary Compose bugs.
+configurations.all {
+    attributes {
+        // https://github.com/JetBrains/compose-jb/issues/1404#issuecomment-1146894731
+        attribute(Attribute.of("ui", String::class.java), "awt")
     }
 }
 
