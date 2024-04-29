@@ -1,5 +1,6 @@
 package com.clipevery.utils
 
+import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 class OnceFunction<T>(private val function: () -> T) {
@@ -48,5 +49,32 @@ object Retry {
             }
         }
         throw lastException ?: IllegalStateException("Unknown retry failure.")
+    }
+}
+
+object LoggerExtension {
+
+    fun <T> logExecutionTime(
+        logger: KLogger,
+        message: String,
+        func: () -> T,
+    ): T {
+        val startTime = System.currentTimeMillis()
+        val result = func()
+        val endTime = System.currentTimeMillis()
+        logger.info { "$message Execution Time: ${endTime - startTime} ms" }
+        return result
+    }
+
+    suspend fun <T> logSuspendExecutionTime(
+        logger: KLogger,
+        message: String,
+        func: suspend () -> T,
+    ): T {
+        val startTime = System.currentTimeMillis()
+        val result = func()
+        val endTime = System.currentTimeMillis()
+        logger.info { "$message Execution Time: ${endTime - startTime} ms" }
+        return result
     }
 }

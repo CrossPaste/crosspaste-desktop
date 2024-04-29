@@ -3,6 +3,8 @@ package com.clipevery.clip
 import com.clipevery.app.AppInfo
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.utils.IDGenerator
+import com.clipevery.utils.LoggerExtension.logExecutionTime
+import com.clipevery.utils.LoggerExtension.logSuspendExecutionTime
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
@@ -39,25 +41,27 @@ open class DesktopTransferableConsumer(
         transferable: Transferable,
         remote: Boolean,
     ) {
-        val clipId = idGenerator.nextID()
+        logSuspendExecutionTime(logger, "consume") {
+            val clipId = idGenerator.nextID()
 
-        val dataFlavorMap: Map<String, List<DataFlavor>> = createDataFlavorMap(transferable)
+            val dataFlavorMap: Map<String, List<DataFlavor>> = createDataFlavorMap(transferable)
 
-        dataFlavorMap[LocalOnlyFlavor.humanPresentableName]?.let {
-            logger.info { "Ignoring local only flavor" }
-            return
-        }
-
-        val clipCollector = ClipCollector(dataFlavorMap.size, appInfo, clipDao, clipPlugins)
-
-        try {
-            preCollect(clipId, dataFlavorMap, transferable, clipCollector)
-            clipCollector.createPreClipData(clipId, remote = remote)?.let {
-                updateClipData(clipId, dataFlavorMap, transferable, clipCollector)
-                clipCollector.completeCollect(it)
+            dataFlavorMap[LocalOnlyFlavor.humanPresentableName]?.let {
+                logger.info { "Ignoring local only flavor" }
+                return@logSuspendExecutionTime
             }
-        } catch (e: Exception) {
-            logger.error(e) { "Failed to consume transferable" }
+
+            val clipCollector = ClipCollector(dataFlavorMap.size, appInfo, clipDao, clipPlugins)
+
+            try {
+                preCollect(clipId, dataFlavorMap, transferable, clipCollector)
+                clipCollector.createPreClipData(clipId, remote = remote)?.let {
+                    updateClipData(clipId, dataFlavorMap, transferable, clipCollector)
+                    clipCollector.completeCollect(it)
+                }
+            } catch (e: Exception) {
+                logger.error(e) { "Failed to consume transferable" }
+            }
         }
     }
 
@@ -67,25 +71,33 @@ open class DesktopTransferableConsumer(
         transferable: Transferable,
         clipCollector: ClipCollector,
     ) {
-        var itemIndex = 0
-        for (entry in dataFlavorMap) {
-            val identifier = entry.key
-            val flavors = entry.value
-            logger.info { "itemIndex: $itemIndex Transferable flavor: $identifier" }
-            for (flavor in flavors) {
-                if (clipItemServiceMap[identifier]?.let { clipItemService ->
-                        if (clipCollector.needPreCollectionItem(itemIndex, clipItemService::class)) {
-                            clipItemService.createPreClipItem(clipId, itemIndex, identifier, transferable, clipCollector)
-                            false
-                        } else {
-                            true
-                        }
-                    } == true
-                ) {
-                    break
+        logExecutionTime(logger, "preCollect") {
+            var itemIndex = 0
+            for (entry in dataFlavorMap) {
+                val identifier = entry.key
+                val flavors = entry.value
+                logger.info { "itemIndex: $itemIndex Transferable flavor: $identifier" }
+                for (flavor in flavors) {
+                    if (clipItemServiceMap[identifier]?.let { clipItemService ->
+                            if (clipCollector.needPreCollectionItem(itemIndex, clipItemService::class)) {
+                                clipItemService.createPreClipItem(
+                                    clipId,
+                                    itemIndex,
+                                    identifier,
+                                    transferable,
+                                    clipCollector,
+                                )
+                                false
+                            } else {
+                                true
+                            }
+                        } == true
+                    ) {
+                        break
+                    }
                 }
+                itemIndex++
             }
-            itemIndex++
         }
     }
 
@@ -95,24 +107,33 @@ open class DesktopTransferableConsumer(
         transferable: Transferable,
         clipCollector: ClipCollector,
     ) {
-        var itemIndex = 0
-        for (entry in dataFlavorMap) {
-            val identifier = entry.key
-            val flavors = entry.value
-            for (flavor in flavors) {
-                if (clipItemServiceMap[identifier]?.let { clipItemService ->
-                        if (clipCollector.needUpdateCollectItem(itemIndex, clipItemService::class)) {
-                            clipItemService.loadRepresentation(clipId, itemIndex, flavor, dataFlavorMap, transferable, clipCollector)
-                            false
-                        } else {
-                            true
-                        }
-                    } == true
-                ) {
-                    break
+        logExecutionTime(logger, "updateClipData") {
+            var itemIndex = 0
+            for (entry in dataFlavorMap) {
+                val identifier = entry.key
+                val flavors = entry.value
+                for (flavor in flavors) {
+                    if (clipItemServiceMap[identifier]?.let { clipItemService ->
+                            if (clipCollector.needUpdateCollectItem(itemIndex, clipItemService::class)) {
+                                clipItemService.loadRepresentation(
+                                    clipId,
+                                    itemIndex,
+                                    flavor,
+                                    dataFlavorMap,
+                                    transferable,
+                                    clipCollector,
+                                )
+                                false
+                            } else {
+                                true
+                            }
+                        } == true
+                    ) {
+                        break
+                    }
                 }
+                itemIndex++
             }
-            itemIndex++
         }
     }
 }

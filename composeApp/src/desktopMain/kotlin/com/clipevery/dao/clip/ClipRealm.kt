@@ -9,6 +9,7 @@ import com.clipevery.clip.item.UrlClipItem
 import com.clipevery.dao.task.TaskType
 import com.clipevery.task.TaskExecutor
 import com.clipevery.task.extra.SyncExtraInfo
+import com.clipevery.utils.LoggerExtension.logSuspendExecutionTime
 import com.clipevery.utils.TaskUtils.createTask
 import com.clipevery.utils.getDateUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -53,10 +54,12 @@ class ClipRealm(
     }
 
     override suspend fun createClipData(clipData: ClipData): ObjectId {
-        realm.write {
-            copyToRealm(clipData)
+        return logSuspendExecutionTime(logger, "createClipData") {
+            realm.write {
+                copyToRealm(clipData)
+            }
+            return@logSuspendExecutionTime clipData.id
         }
-        return clipData.id
     }
 
     override suspend fun markDeleteClipData(id: ObjectId) {
