@@ -37,7 +37,7 @@ fun DetialClipDataView() {
                         HtmlToImageDetailView(clipData, it as ClipHtml)
                     }
                     ClipType.IMAGE -> {
-                        ClipImagesDetailView(it as ClipFiles)
+                        ClipImagesDetailView(clipData, it as ClipFiles)
                     }
                     else -> {
                     }
