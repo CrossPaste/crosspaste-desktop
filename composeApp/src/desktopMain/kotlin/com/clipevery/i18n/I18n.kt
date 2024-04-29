@@ -4,7 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.clipevery.config.ConfigManager
-import com.clipevery.utils.DateUtils
+import com.clipevery.utils.getDateUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.FileNotFoundException
 import java.io.InputStreamReader
@@ -68,6 +68,8 @@ open class GlobalCopywriterImpl(private val configManager: ConfigManager) : Glob
 }
 
 class CopywriterImpl(private val language: String) : Copywriter {
+
+    private val dateUtils = getDateUtils()
 
     private val properties: Properties = loadProperties()
 
@@ -134,7 +136,7 @@ class CopywriterImpl(private val language: String) : Copywriter {
                 "zh" -> "yyyy年MM月dd日"
                 else -> "MM/dd/yyyy"
             }
-        return DateUtils.getDateText(date, pattern, locale)
+        return dateUtils.getDateText(date, pattern, locale)
     }
 
     override fun getAbridge(): String {

@@ -11,7 +11,7 @@ import com.clipevery.utils.DesktopFileUtils
 import com.clipevery.utils.DesktopFileUtils.copyPath
 import com.clipevery.utils.DesktopFileUtils.createClipRelativePath
 import com.clipevery.utils.DesktopJsonUtils
-import com.clipevery.utils.EncryptUtils.md5ByArray
+import com.clipevery.utils.getEncryptUtils
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.ext.toRealmList
@@ -25,6 +25,8 @@ class FilesItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
     companion object FilesItemService {
 
         const val FILE_LIST_ID = "application/x-java-file-list"
+
+        private val encryptUtils = getEncryptUtils()
     }
 
     override fun getIdentifiers(): List<String> {
@@ -78,7 +80,7 @@ class FilesItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
 
             val relativePathRealmList = relativePathList.toRealmList()
             val fileInfoTreeJsonString = DesktopJsonUtils.JSON.encodeToString(fileInfoTrees)
-            val md5 = md5ByArray(files.mapNotNull { fileInfoTrees[it.name]?.md5 }.toTypedArray())
+            val md5 = encryptUtils.md5ByArray(files.mapNotNull { fileInfoTrees[it.name]?.md5 }.toTypedArray())
             val count = fileInfoTrees.map { it.value.getCount() }.sum()
             val size = fileInfoTrees.map { it.value.size }.sum()
 

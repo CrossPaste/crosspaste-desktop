@@ -21,6 +21,8 @@ import com.clipevery.utils.FileUtils
 import com.clipevery.utils.TaskUtils
 import com.clipevery.utils.TaskUtils.createFailureClipTaskResult
 import com.clipevery.utils.buildUrl
+import com.clipevery.utils.getDateUtils
+import com.clipevery.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import io.ktor.utils.io.*
@@ -28,7 +30,6 @@ import io.ktor.utils.io.*
 class PullFileTaskExecutor(
     private val clipDao: ClipDao,
     private val pullFileClientApi: PullFileClientApi,
-    private val fileUtils: FileUtils,
     private val syncManager: SyncManager,
     private val clipboardService: ClipboardService,
 ) : SingleTypeTaskExecutor {
@@ -38,6 +39,10 @@ class PullFileTaskExecutor(
         private val logger = KotlinLogging.logger {}
 
         const val CHUNK_SIZE: Long = 1024 * 1024 // 1MB
+
+        private val dateUtils: DateUtils = getDateUtils()
+
+        private val fileUtils: FileUtils = getFileUtils()
     }
 
     override val taskType: Int = TaskType.PULL_FILE_TASK
@@ -49,8 +54,8 @@ class PullFileTaskExecutor(
             val fileItems = clipData.getClipAppearItems().filter { it is ClipFiles }
             val appInstanceId = clipData.appInstanceId
             val dateString =
-                DateUtils.getYYYYMMDD(
-                    DateUtils.convertRealmInstantToLocalDateTime(clipData.createTime),
+                dateUtils.getYYYYMMDD(
+                    dateUtils.convertRealmInstantToLocalDateTime(clipData.createTime),
                 )
             val clipId = clipData.clipId
             val filesIndexBuilder = FilesIndexBuilder(CHUNK_SIZE)

@@ -10,6 +10,7 @@ import com.clipevery.task.extra.BaseExtraInfo
 import com.clipevery.utils.DateUtils
 import com.clipevery.utils.TaskUtils
 import com.clipevery.utils.TaskUtils.createFailureClipTaskResult
+import com.clipevery.utils.getDateUtils
 import io.realm.kotlin.types.RealmInstant
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -18,6 +19,8 @@ class CleanClipTaskExecutor(
     private val clipDao: ClipDao,
     private val configManager: ConfigManager,
 ) : SingleTypeTaskExecutor {
+
+    private val dateUtils: DateUtils = getDateUtils()
 
     override val taskType: Int = TaskType.CLEAN_CLIP_TASK
 
@@ -29,11 +32,11 @@ class CleanClipTaskExecutor(
             try {
                 cleanLock.withLock {
                     val imageCleanTime = CleanTime.entries[configManager.config.imageCleanTimeIndex]
-                    val imageCleanTimeInstant = DateUtils.getRealmInstant(-imageCleanTime.days)
+                    val imageCleanTimeInstant = dateUtils.getRealmInstant(-imageCleanTime.days)
                     clipDao.markDeleteByCleanTime(imageCleanTimeInstant, ClipType.IMAGE)
 
                     val fileCleanTime = CleanTime.entries[configManager.config.fileCleanTimeIndex]
-                    val fileCleanTimeInstant = DateUtils.getRealmInstant(-fileCleanTime.days)
+                    val fileCleanTimeInstant = dateUtils.getRealmInstant(-fileCleanTime.days)
                     clipDao.markDeleteByCleanTime(fileCleanTimeInstant, ClipType.FILE)
                 }
             } catch (e: Throwable) {

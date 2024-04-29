@@ -41,7 +41,7 @@ import com.clipevery.ui.base.AsyncView
 import com.clipevery.ui.base.LoadImageData
 import com.clipevery.ui.base.html
 import com.clipevery.ui.base.loadImage
-import com.clipevery.utils.FileUtils
+import com.clipevery.utils.getFileUtils
 import java.awt.Desktop
 
 @Composable
@@ -50,9 +50,10 @@ fun HtmlToImagePreviewView(clipData: ClipData) {
         val current = LocalKoinApplication.current
         val density = LocalDensity.current
         val copywriter = current.koin.get<GlobalCopywriter>()
-        val fileUtils = current.koin.get<FileUtils>()
         val filePersist = current.koin.get<FilePersist>()
         val chromeService = current.koin.get<ChromeService>()
+
+        val fileUtils = getFileUtils()
 
         val clipHtml = it as ClipHtml
 

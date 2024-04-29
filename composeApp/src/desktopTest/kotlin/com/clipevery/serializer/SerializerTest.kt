@@ -7,7 +7,7 @@ import com.clipevery.dao.clip.ClipData
 import com.clipevery.dao.clip.ClipState
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.utils.DesktopJsonUtils
-import com.clipevery.utils.EncryptUtils.md5ByString
+import com.clipevery.utils.getEncryptUtils
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.types.RealmAny
 import io.realm.kotlin.types.RealmInstant
@@ -22,11 +22,12 @@ class SerializerTest {
 
     @Test
     fun testClipData() {
+        val encryptUtils = getEncryptUtils()
         val textClipItem =
             TextClipItem().apply {
                 this.identifier = TextItemService.TEXT
                 this.text = "testClipData"
-                this.md5 = md5ByString(this.text)
+                this.md5 = encryptUtils.md5ByString(this.text)
             }
 
         val clipData =

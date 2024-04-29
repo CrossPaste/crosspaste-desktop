@@ -1,11 +1,11 @@
 package com.clipevery.utils
 
-import java.util.Base64
-
 object HtmlUtils {
 
+    private val encryptUtils = getEncryptUtils()
+
     fun dataUrl(html: String): String {
-        val encodedContent = Base64.getEncoder().encodeToString(html.toByteArray())
+        val encodedContent = encryptUtils.base64Encode(html.toByteArray())
         return "data:text/html;charset=UTF-8;base64,$encodedContent"
     }
 }

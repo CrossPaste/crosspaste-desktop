@@ -5,6 +5,10 @@ import java.net.InetAddress
 import java.net.NetworkInterface
 import java.util.Collections
 
+actual fun getNetUtils(): NetUtils {
+    return DesktopNetUtils
+}
+
 object DesktopNetUtils : NetUtils {
     override fun getHostInfoList(): List<HostInfo> {
         val nets = NetworkInterface.getNetworkInterfaces()

@@ -49,7 +49,7 @@ import com.clipevery.ui.base.ToastManager
 import com.clipevery.ui.base.ToastStyle
 import com.clipevery.ui.base.starRegular
 import com.clipevery.ui.base.starSolid
-import com.clipevery.utils.DateUtils
+import com.clipevery.utils.getDateUtils
 import io.realm.kotlin.types.RealmInstant
 import kotlinx.coroutines.launch
 import kotlin.reflect.KClass
@@ -188,12 +188,14 @@ fun ClipPreviewItemView(
     }
 }
 
+val dateUtils = getDateUtils()
+
 fun getDateText(
     createTime: RealmInstant,
     copywriter: Copywriter,
 ): String {
-    val date = DateUtils.convertRealmInstantToLocalDateTime(createTime)
-    DateUtils.getDateText(date)?.let {
+    val date = dateUtils.convertRealmInstantToLocalDateTime(createTime)
+    dateUtils.getDateText(date)?.let {
         return copywriter.getText(it)
     } ?: run {
         return copywriter.getDate(date)

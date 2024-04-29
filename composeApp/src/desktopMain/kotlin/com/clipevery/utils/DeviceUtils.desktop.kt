@@ -7,6 +7,10 @@ import java.io.IOException
 import java.io.InputStreamReader
 import java.util.UUID
 
+actual fun getDeviceUtils(): DeviceUtils {
+    return DesktopDeviceUtils
+}
+
 object DesktopDeviceUtils : DeviceUtils {
 
     override fun createAppInstanceId(): String {

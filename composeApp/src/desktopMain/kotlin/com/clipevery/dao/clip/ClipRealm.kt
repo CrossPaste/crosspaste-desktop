@@ -9,8 +9,8 @@ import com.clipevery.clip.item.UrlClipItem
 import com.clipevery.dao.task.TaskType
 import com.clipevery.task.TaskExecutor
 import com.clipevery.task.extra.SyncExtraInfo
-import com.clipevery.utils.DateUtils
 import com.clipevery.utils.TaskUtils.createTask
+import com.clipevery.utils.getDateUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.Realm
@@ -29,6 +29,8 @@ class ClipRealm(
 ) : ClipDao {
 
     val logger = KotlinLogging.logger {}
+
+    private val dateUtils = getDateUtils()
 
     private val taskExecutor by lazy { lazyTaskExecutor.value }
 
@@ -82,7 +84,7 @@ class ClipRealm(
             ClipData::class,
             "md5 == $0 AND createTime > $1 AND id != $2 AND clipState != $3",
             newClipDataMd5,
-            DateUtils.getPrevDay(),
+            dateUtils.getPrevDay(),
             newClipDataId,
             ClipState.DELETED,
         )

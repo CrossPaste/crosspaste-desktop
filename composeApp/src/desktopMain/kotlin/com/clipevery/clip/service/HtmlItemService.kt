@@ -6,7 +6,7 @@ import com.clipevery.clip.ClipItemService
 import com.clipevery.clip.item.HtmlClipItem
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.utils.DesktopFileUtils
-import com.clipevery.utils.EncryptUtils.md5
+import com.clipevery.utils.getEncryptUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
 import java.awt.datatransfer.DataFlavor
@@ -17,6 +17,8 @@ class HtmlItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
     companion object HtmlItemService {
 
         const val HTML_ID = "text/html"
+
+        private val encryptUtils = getEncryptUtils()
     }
 
     val logger = KotlinLogging.logger {}
@@ -51,7 +53,7 @@ class HtmlItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
         if (transferData is String) {
             val html = extractHtml(transferData)
             val htmlBytes = html.toByteArray()
-            val md5 = md5(htmlBytes)
+            val md5 = encryptUtils.md5(htmlBytes)
             val relativePath =
                 DesktopFileUtils.createClipRelativePath(
                     appInstanceId = appInfo.appInstanceId,

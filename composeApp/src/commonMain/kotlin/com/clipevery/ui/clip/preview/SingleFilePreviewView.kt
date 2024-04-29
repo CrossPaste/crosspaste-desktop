@@ -32,7 +32,7 @@ import com.clipevery.ui.base.file
 import com.clipevery.ui.base.fileSlash
 import com.clipevery.ui.base.folder
 import com.clipevery.utils.FileExtUtils
-import com.clipevery.utils.FileUtils
+import com.clipevery.utils.getFileUtils
 import io.ktor.util.*
 import java.awt.Desktop
 import java.nio.file.Path
@@ -41,7 +41,7 @@ import java.nio.file.Path
 fun SingleFilePreviewView(filePath: Path) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
-    val fileUtils = current.koin.get<FileUtils>()
+    val fileUtils = getFileUtils()
 
     val existFile by remember { mutableStateOf(filePath.toFile().exists()) }
 

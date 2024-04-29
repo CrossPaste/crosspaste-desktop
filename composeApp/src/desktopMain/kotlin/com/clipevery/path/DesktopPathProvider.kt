@@ -2,9 +2,9 @@ package com.clipevery.path
 
 import com.clipevery.app.AppEnv
 import com.clipevery.platform.currentPlatform
-import com.clipevery.utils.DesktopFileUtils
 import com.clipevery.utils.FileUtils
-import com.clipevery.utils.ResourceUtils
+import com.clipevery.utils.getFileUtils
+import com.clipevery.utils.getResourceUtils
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -13,7 +13,7 @@ object DesktopPathProvider : PathProvider {
 
     private val pathProvider = getPathProvider()
 
-    override val fileUtils: FileUtils = DesktopFileUtils
+    override val fileUtils: FileUtils = getFileUtils()
 
     override val clipAppPath: Path = pathProvider.clipAppPath
 
@@ -47,13 +47,15 @@ class DevelopmentPathProvider : PathProvider {
 
     private val composeAppDir = System.getProperty("user.dir")
 
-    private val development = ResourceUtils.loadProperties("development.properties")
+    private val resourceUtils = getResourceUtils()
+
+    private val development = resourceUtils.loadProperties("development.properties")
 
     override val clipAppPath: Path = getAppPath()
 
     override val clipUserPath: Path = getUserPath()
 
-    override val fileUtils: FileUtils = DesktopFileUtils
+    override val fileUtils: FileUtils = getFileUtils()
 
     private fun getAppPath(): Path {
         development.getProperty("clipAppPath")?.let {
@@ -90,7 +92,7 @@ class WindowsPathProvider : PathProvider {
 
     override val clipUserPath: Path = Paths.get(userHomePath).resolve(".clipevery")
 
-    override val fileUtils: FileUtils = DesktopFileUtils
+    override val fileUtils: FileUtils = getFileUtils()
 
     private fun getAppPath(): Path {
         System.getProperty("compose.application.resources.dir")?.let {
@@ -124,7 +126,7 @@ class MacosPathProvider : PathProvider {
 
     override val clipLogPath: Path = getLogPath()
 
-    override val fileUtils: FileUtils = DesktopFileUtils
+    override val fileUtils: FileUtils = getFileUtils()
 
     private fun getAppSupportPath(): Path {
         val appSupportPath = Paths.get(userHome, "Library", "Application Support", "Clipevery")
@@ -163,5 +165,5 @@ class LinuxPathProvider : PathProvider {
     override val clipUserPath: Path
         get() = TODO("Not yet implemented")
 
-    override val fileUtils: FileUtils = DesktopFileUtils
+    override val fileUtils: FileUtils = getFileUtils()
 }

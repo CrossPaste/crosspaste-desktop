@@ -9,8 +9,8 @@ import com.clipevery.dto.sync.DataContent
 import com.clipevery.dto.sync.RequestTrust
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.exception.StandardErrorCode
+import com.clipevery.serializer.PreKeyBundleSerializer
 import com.clipevery.utils.DesktopJsonUtils
-import com.clipevery.utils.encodePreKeyBundle
 import com.clipevery.utils.failResponse
 import com.clipevery.utils.getAppInstanceId
 import com.clipevery.utils.successResponse
@@ -82,7 +82,7 @@ fun Routing.syncRouting() {
                     identityKeyPair.publicKey,
                 )
 
-            val bytes = encodePreKeyBundle(preKeyBundle)
+            val bytes = PreKeyBundleSerializer.encodePreKeyBundle(preKeyBundle)
             logger.debug { "${appInfo.appInstanceId} create preKeyBundle for $appInstanceId:\n $preKeyBundle" }
             successResponse(call, DataContent(bytes))
         }

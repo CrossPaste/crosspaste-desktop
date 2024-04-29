@@ -8,12 +8,15 @@ import com.clipevery.presist.FilesIndex
 import com.clipevery.presist.FilesIndexBuilder
 import com.clipevery.task.PullFileTaskExecutor
 import com.clipevery.utils.DateUtils
+import com.clipevery.utils.getDateUtils
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
 import java.util.concurrent.TimeUnit
 
 class CacheManagerImpl(private val clipDao: ClipDao) : CacheManager {
+
+    private val dateUtils: DateUtils = getDateUtils()
 
     override val filesIndexCache: LoadingCache<PullFilesKey, FilesIndex> =
         CacheBuilder.newBuilder()
@@ -26,8 +29,8 @@ class CacheManagerImpl(private val clipDao: ClipDao) : CacheManager {
                         val clipId = key.clipId
                         clipDao.getClipData(appInstanceId, clipId)?.let { clipData ->
                             val dateString =
-                                DateUtils.getYYYYMMDD(
-                                    DateUtils.convertRealmInstantToLocalDateTime(clipData.createTime),
+                                dateUtils.getYYYYMMDD(
+                                    dateUtils.convertRealmInstantToLocalDateTime(clipData.createTime),
                                 )
                             val filesIndexBuilder = FilesIndexBuilder(PullFileTaskExecutor.CHUNK_SIZE)
                             val fileItems = clipData.getClipAppearItems().filter { it is ClipFiles }

@@ -100,17 +100,9 @@ import com.clipevery.ui.base.ToastManager
 import com.clipevery.ui.getTrayMouseAdapter
 import com.clipevery.ui.resource.ClipResourceLoader
 import com.clipevery.ui.resource.DesktopAbsoluteClipResourceLoader
-import com.clipevery.utils.DesktopDeviceUtils
-import com.clipevery.utils.DesktopFileUtils
-import com.clipevery.utils.DesktopJsonUtils
-import com.clipevery.utils.DesktopNetUtils
 import com.clipevery.utils.DesktopQRCodeGenerator
-import com.clipevery.utils.DeviceUtils
-import com.clipevery.utils.FileUtils
 import com.clipevery.utils.IDGenerator
 import com.clipevery.utils.IDGeneratorFactory
-import com.clipevery.utils.JsonUtils
-import com.clipevery.utils.NetUtils
 import com.clipevery.utils.QRCodeGenerator
 import com.clipevery.utils.TelnetUtils
 import com.clipevery.utils.ioDispatcher
@@ -159,15 +151,10 @@ class Clipevery {
                         DefaultConfigManager(
                             get<FilePersist>().getPersist("appConfig.json", AppFileType.USER),
                             get(),
-                            get(),
                         )
                     }
                     single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
                     single<IDGenerator> { IDGeneratorFactory(get()).createIDGenerator() }
-                    single<JsonUtils> { DesktopJsonUtils }
-                    single<FileUtils> { DesktopFileUtils }
-                    single<DeviceUtils> { DesktopDeviceUtils }
-                    single<NetUtils> { DesktopNetUtils }
                     single<CacheManager> { CacheManagerImpl(get()) }
                     single<ClipeveryLogger> { clipLogger }
                     single<KLogger> { Clipevery.logger }
@@ -231,7 +218,7 @@ class Clipevery {
                             listOf(
                                 SyncClipTaskExecutor(get(), get(), get()),
                                 DeleteClipTaskExecutor(get()),
-                                PullFileTaskExecutor(get(), get(), get(), get(), get()),
+                                PullFileTaskExecutor(get(), get(), get(), get()),
                                 CleanClipTaskExecutor(get(), get()),
                             ),
                             get(),
@@ -252,7 +239,6 @@ class Clipevery {
         }
 
         private fun initInject() {
-            koinApplication.koin.get<FileUtils>()
             koinApplication.koin.get<GlobalListener>()
             koinApplication.koin.get<QRCodeGenerator>()
             koinApplication.koin.get<ClipServer>()
