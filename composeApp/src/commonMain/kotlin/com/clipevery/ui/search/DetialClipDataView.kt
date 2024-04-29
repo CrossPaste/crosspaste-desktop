@@ -8,8 +8,10 @@ import com.clipevery.LocalKoinApplication
 import com.clipevery.clip.ClipSearchService
 import com.clipevery.clip.item.ClipHtml
 import com.clipevery.clip.item.ClipText
+import com.clipevery.clip.item.ClipUrl
 import com.clipevery.ui.clip.detail.ClipDetailView
 import com.clipevery.ui.clip.detail.ClipTextDetailView
+import com.clipevery.ui.clip.detail.ClipUrlDetailView
 import com.clipevery.ui.clip.detail.HtmlToImageDetailView
 import com.clipevery.ui.clip.preview.getClipItem
 
@@ -24,6 +26,9 @@ fun DetialClipDataView() {
                 when (it) {
                     is ClipText -> {
                         ClipTextDetailView(it)
+                    }
+                    is ClipUrl -> {
+                        ClipUrlDetailView(it)
                     }
                     is ClipHtml -> {
                         HtmlToImageDetailView(clipData, it)
