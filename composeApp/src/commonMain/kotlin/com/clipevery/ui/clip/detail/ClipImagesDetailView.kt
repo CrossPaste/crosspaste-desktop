@@ -38,7 +38,6 @@ fun ClipImagesDetailView(clipFiles: ClipFiles) {
                 delay(2000)
                 val nextIndex = index + 1
                 if (nextIndex < clipFiles.count) {
-                    delay(1000)
                     index = nextIndex
                 } else {
                     index = 0
