@@ -6,9 +6,9 @@ import com.clipevery.dto.pull.PullFileRequest
 import com.clipevery.dto.pull.PullFilesKey
 import com.clipevery.exception.StandardErrorCode
 import com.clipevery.sync.SyncManager
-import com.clipevery.utils.FileUtils
 import com.clipevery.utils.failResponse
 import com.clipevery.utils.getAppInstanceId
+import com.clipevery.utils.getFileUtils
 import com.clipevery.utils.successResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.*
@@ -25,7 +25,7 @@ fun Routing.pullRouting() {
 
     val cacheManager = koinApplication.koin.get<CacheManager>()
 
-    val fileUtils = koinApplication.koin.get<FileUtils>()
+    val fileUtils = getFileUtils()
 
     post("/pull/file") {
         getAppInstanceId(call).let { fromAppInstanceId ->

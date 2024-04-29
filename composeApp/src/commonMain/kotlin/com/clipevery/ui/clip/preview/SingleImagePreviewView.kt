@@ -33,7 +33,7 @@ import com.clipevery.ui.base.LoadImageData
 import com.clipevery.ui.base.image
 import com.clipevery.ui.base.imageSlash
 import com.clipevery.ui.base.loadImage
-import com.clipevery.utils.FileUtils
+import com.clipevery.utils.getFileUtils
 import java.awt.Desktop
 import java.nio.file.Path
 import kotlin.io.path.exists
@@ -43,7 +43,7 @@ fun SingleImagePreviewView(imagePath: Path) {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
     val copywriter = current.koin.get<GlobalCopywriter>()
-    val fileUtils = current.koin.get<FileUtils>()
+    val fileUtils = getFileUtils()
 
     val existFile by remember { mutableStateOf(imagePath.exists()) }
 

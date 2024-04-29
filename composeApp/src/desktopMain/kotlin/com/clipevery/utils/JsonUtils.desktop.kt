@@ -14,7 +14,6 @@ import com.clipevery.presist.SingleFileInfoTree
 import com.clipevery.serializer.Base64ByteArraySerializer
 import com.clipevery.serializer.IdentityKeySerializer
 import com.clipevery.serializer.PreKeyBundleSerializer
-import com.clipevery.serializer.RealmInstantSerializer
 import com.clipevery.task.extra.BaseExtraInfo
 import com.clipevery.task.extra.PullExtraInfo
 import com.clipevery.task.extra.SyncExtraInfo
@@ -28,6 +27,10 @@ import kotlinx.serialization.modules.serializersModuleOf
 import kotlinx.serialization.modules.subclass
 import org.signal.libsignal.protocol.IdentityKey
 import org.signal.libsignal.protocol.state.PreKeyBundle
+
+actual fun getJsonUtils(): JsonUtils {
+    return DesktopJsonUtils
+}
 
 object DesktopJsonUtils : JsonUtils {
 
@@ -45,7 +48,6 @@ object DesktopJsonUtils : JsonUtils {
                     // use in clip data
                     serializersModuleOf(MutableRealmIntKSerializer)
                     serializersModuleOf(RealmAnyKSerializer)
-                    serializersModuleOf(RealmInstantSerializer)
                     polymorphic(RealmObject::class) {
                         subclass(FilesClipItem::class)
                         subclass(HtmlClipItem::class)

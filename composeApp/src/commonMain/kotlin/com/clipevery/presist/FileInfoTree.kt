@@ -2,7 +2,7 @@ package com.clipevery.presist
 
 import com.clipevery.clip.item.ClipFile
 import com.clipevery.clip.item.ClipFileImpl
-import com.clipevery.utils.EncryptUtils
+import com.clipevery.utils.getEncryptUtils
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -73,6 +73,8 @@ class SingleFileInfoTree(
 
 class FileInfoTreeBuilder {
 
+    private val encryptUtils = getEncryptUtils()
+
     private val tree = mutableMapOf<String, FileInfoTree>()
 
     private var size = 0L
@@ -91,9 +93,9 @@ class FileInfoTreeBuilder {
     fun build(path: Path): FileInfoTree {
         val md5 =
             if (md5List.isEmpty()) {
-                EncryptUtils.md5ByString(path.fileName.toString())
+                encryptUtils.md5ByString(path.fileName.toString())
             } else {
-                EncryptUtils.md5ByArray(md5List.toTypedArray())
+                encryptUtils.md5ByArray(md5List.toTypedArray())
             }
         return DirFileInfoTree(tree, size, md5)
     }

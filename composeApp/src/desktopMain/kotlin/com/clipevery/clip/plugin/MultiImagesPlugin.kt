@@ -5,12 +5,15 @@ import com.clipevery.clip.item.FilesClipItem
 import com.clipevery.clip.item.ImagesClipItem
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.utils.DesktopJsonUtils
-import com.clipevery.utils.EncryptUtils.md5ByArray
+import com.clipevery.utils.getEncryptUtils
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.toRealmList
 import kotlinx.serialization.encodeToString
 
 object MultiImagesPlugin : ClipPlugin {
+
+    private val encryptUtils = getEncryptUtils()
+
     override fun pluginProcess(
         clipAppearItems: List<ClipAppearItem>,
         realm: MutableRealm,
@@ -30,7 +33,7 @@ object MultiImagesPlugin : ClipPlugin {
             val size = fileInfoMap.map { it.value.size }.sum()
             val md5 =
                 clipAppearItems.map { it as FilesClipItem }.map { it.md5 }
-                    .toTypedArray().let { md5ByArray(it) }
+                    .toTypedArray().let { encryptUtils.md5ByArray(it) }
             clipAppearItems.forEach { it.clear(realm, clearResource = false) }
             return ImagesClipItem().apply {
                 this.relativePathList = relativePathList

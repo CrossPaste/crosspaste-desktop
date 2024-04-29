@@ -33,7 +33,7 @@ import com.clipevery.presist.FilePersist
 import com.clipevery.ui.base.AsyncView
 import com.clipevery.ui.base.LoadImageData
 import com.clipevery.ui.base.loadImage
-import com.clipevery.utils.FileUtils
+import com.clipevery.utils.getFileUtils
 import java.awt.Desktop
 
 @Composable
@@ -44,8 +44,9 @@ fun HtmlToImageDetailView(
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
     val filePersist = current.koin.get<FilePersist>()
-    val fileUtils = current.koin.get<FileUtils>()
     val chromeService = current.koin.get<ChromeService>()
+
+    val fileUtils = getFileUtils()
 
     val filePath by remember(clipData.id) { mutableStateOf(clipHtml.getHtmlImagePath()) }
 

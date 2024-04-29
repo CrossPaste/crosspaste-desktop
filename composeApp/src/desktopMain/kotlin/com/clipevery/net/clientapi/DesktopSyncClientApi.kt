@@ -4,8 +4,8 @@ import com.clipevery.dto.sync.DataContent
 import com.clipevery.dto.sync.RequestTrust
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.net.ClipClient
+import com.clipevery.serializer.PreKeyBundleSerializer
 import com.clipevery.utils.DesktopJsonUtils
-import com.clipevery.utils.decodePreKeyBundle
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.*
 import io.ktor.http.*
@@ -28,7 +28,7 @@ class DesktopSyncClientApi(
             if (response.status.value != 200) {
                 return null
             }
-            return decodePreKeyBundle(response.body<DataContent>().data)
+            return PreKeyBundleSerializer.decodePreKeyBundle(response.body<DataContent>().data)
         } catch (e: Exception) {
             logger.error(e) { "getPreKeyBundle error" }
         }

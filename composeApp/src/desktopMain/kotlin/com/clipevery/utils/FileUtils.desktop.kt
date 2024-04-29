@@ -21,9 +21,15 @@ import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.pathString
 
+actual fun getFileUtils(): FileUtils {
+    return DesktopFileUtils
+}
+
 object DesktopFileUtils : FileUtils {
 
     private val logger = KotlinLogging.logger {}
+
+    private val dateUtils = getDateUtils()
 
     override val tempDirectory: Path = java.nio.file.Files.createTempDirectory("clipevery")
 
@@ -64,7 +70,7 @@ object DesktopFileUtils : FileUtils {
         clipId: Long,
         fileName: String,
     ): String {
-        val dateYYYYMMDD = DateUtils.getYYYYMMDD(date)
+        val dateYYYYMMDD = dateUtils.getYYYYMMDD(date)
         return Paths.get(appInstanceId, dateYYYYMMDD, clipId.toString(), fileName).pathString
     }
 

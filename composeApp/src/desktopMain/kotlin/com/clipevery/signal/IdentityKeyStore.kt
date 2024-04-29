@@ -9,11 +9,7 @@ import com.clipevery.os.windows.WindowDapiHelper
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.platform.currentPlatform
 import com.clipevery.presist.DesktopOneFilePersist
-import com.clipevery.utils.EncryptUtils.decryptData
-import com.clipevery.utils.EncryptUtils.encryptData
-import com.clipevery.utils.EncryptUtils.generateAESKey
-import com.clipevery.utils.EncryptUtils.secretKeyToString
-import com.clipevery.utils.EncryptUtils.stringToSecretKey
+import com.clipevery.utils.getEncryptUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.signal.libsignal.protocol.IdentityKey
 import org.signal.libsignal.protocol.IdentityKeyPair
@@ -113,6 +109,8 @@ class MacosIdentityKeyStoreFactory(
     private val signalDao: SignalDao,
 ) : IdentityKeyStoreFactory {
 
+    private val encryptUtils = getEncryptUtils()
+
     private val filePersist =
         DesktopOneFilePersist(
             DesktopPathProvider.resolve("signal.data", AppFileType.ENCRYPT),
@@ -129,8 +127,8 @@ class MacosIdentityKeyStoreFactory(
             password?.let {
                 logger.info { "Found password in keychain by $service ${appInfo.userName}" }
                 try {
-                    val secretKey = stringToSecretKey(it)
-                    val decryptData = decryptData(secretKey, bytes)
+                    val secretKey = encryptUtils.stringToSecretKey(it)
+                    val decryptData = encryptUtils.decryptData(secretKey, bytes)
                     val (identityKeyPair, registrationId) = readIdentityKeyPairWithRegistrationId(decryptData)
                     return DesktopIdentityKeyStore(signalDao, identityKeyPair, registrationId)
                 } catch (e: Exception) {
@@ -154,15 +152,15 @@ class MacosIdentityKeyStoreFactory(
         val secretKey =
             password?.let {
                 logger.info { "Found password in keychain by $service ${appInfo.userName}" }
-                stringToSecretKey(it)
+                encryptUtils.stringToSecretKey(it)
             } ?: run {
                 logger.info { "Generating new password in keychain by $service ${appInfo.userName}" }
-                val secretKey = generateAESKey()
-                MacosKeychainHelper.setPassword(service, appInfo.userName, secretKeyToString(secretKey))
+                val secretKey = encryptUtils.generateAESKey()
+                MacosKeychainHelper.setPassword(service, appInfo.userName, encryptUtils.secretKeyToString(secretKey))
                 secretKey
             }
 
-        val encryptData = encryptData(secretKey, data)
+        val encryptData = encryptUtils.encryptData(secretKey, data)
         filePersist.saveBytes(encryptData)
         return DesktopIdentityKeyStore(signalDao, identityKeyPair, registrationId)
     }

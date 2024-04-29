@@ -5,7 +5,6 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.clipevery.app.AppInfo
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.endpoint.EndpointInfoFactory
-import com.clipevery.utils.EncryptUtils.base64Encode
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import kotlinx.serialization.encodeToString
@@ -19,6 +18,8 @@ class DesktopQRCodeGenerator(
     private val appInfo: AppInfo,
     private val endpointInfoFactory: EndpointInfoFactory,
 ) : QRCodeGenerator {
+
+    private val encryptUtils = getEncryptUtils()
 
     private fun buildQRCode(token: CharArray): String {
         val endpointInfo = endpointInfoFactory.createEndpointInfo()
@@ -63,7 +64,7 @@ class DesktopQRCodeGenerator(
         val saltDataStream = DataOutputStream(saltByteStream)
         saltDataStream.write(byteArrayRotate)
         saltDataStream.writeInt(token)
-        return base64Encode(saltByteStream.toByteArray())
+        return encryptUtils.base64Encode(saltByteStream.toByteArray())
     }
 
     private fun ByteArray.rotate(offset: Int): ByteArray {

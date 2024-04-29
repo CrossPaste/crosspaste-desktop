@@ -58,8 +58,8 @@ import com.clipevery.ui.base.link
 import com.clipevery.ui.base.percent
 import com.clipevery.ui.base.trash
 import com.clipevery.ui.devices.measureTextWidth
-import com.clipevery.utils.FileUtils
 import com.clipevery.utils.Quadruple
+import com.clipevery.utils.getFileUtils
 
 @Composable
 fun StoreSettingsView() {
@@ -68,7 +68,7 @@ fun StoreSettingsView() {
     val configManager = current.koin.get<ConfigManager>()
     val clipDao = current.koin.get<ClipDao>()
     val copywriter = current.koin.get<GlobalCopywriter>()
-    val fileUtils = current.koin.get<FileUtils>()
+    val fileUtils = getFileUtils()
 
     var clipCount: Long? by remember { mutableStateOf(null) }
     var clipFormatSize: String? by remember { mutableStateOf(null) }

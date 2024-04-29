@@ -5,7 +5,7 @@ import com.clipevery.clip.ClipCollector
 import com.clipevery.clip.ClipItemService
 import com.clipevery.clip.item.TextClipItem
 import com.clipevery.dao.clip.ClipAppearItem
-import com.clipevery.utils.EncryptUtils.md5
+import com.clipevery.utils.getEncryptUtils
 import io.realm.kotlin.MutableRealm
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
@@ -17,6 +17,8 @@ class TextItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
         const val UNICODE_STRING = "Unicode String"
         const val TEXT = "text/plain"
         const val PLAIN_TEXT = "Plain Text"
+
+        private val encryptUtils = getEncryptUtils()
     }
 
     override fun getIdentifiers(): List<String> {
@@ -48,7 +50,7 @@ class TextItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
     ) {
         if (transferData is String) {
             val textBytes = transferData.toByteArray()
-            val md5 = md5(textBytes)
+            val md5 = encryptUtils.md5(textBytes)
             val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
                 realm.query(TextClipItem::class, "id == $0", clipItem.id).first().find()?.apply {
                     this.text = transferData

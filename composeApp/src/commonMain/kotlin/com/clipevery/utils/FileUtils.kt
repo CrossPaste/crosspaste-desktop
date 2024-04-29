@@ -7,6 +7,8 @@ import io.ktor.utils.io.*
 import java.nio.file.Path
 import java.time.LocalDateTime
 
+expect fun getFileUtils(): FileUtils
+
 interface FileUtils {
 
     val tempDirectory: Path

@@ -49,7 +49,7 @@ import com.clipevery.ui.base.ClipIconButton
 import com.clipevery.ui.base.add
 import com.clipevery.ui.base.magnifying
 import com.clipevery.ui.base.warning
-import com.clipevery.utils.JsonUtils
+import com.clipevery.utils.getJsonUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
@@ -229,7 +229,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
     val deviceManager = current.koin.get<DeviceManager>()
     val syncRuntimeInfoDao = current.koin.get<SyncRuntimeInfoDao>()
     val configManager = current.koin.get<ConfigManager>()
-    val jsonUtils = current.koin.get<JsonUtils>()
+    val jsonUtils = getJsonUtils()
     SyncDeviceView(syncInfo = syncInfo) {
         ClipIconButton(
             radius = 18.dp,

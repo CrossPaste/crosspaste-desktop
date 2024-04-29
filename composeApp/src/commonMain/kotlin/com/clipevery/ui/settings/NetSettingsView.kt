@@ -44,8 +44,8 @@ import com.clipevery.ui.base.network
 import com.clipevery.ui.base.remove
 import com.clipevery.ui.base.towerBroadcast
 import com.clipevery.ui.devices.SyncDeviceView
-import com.clipevery.utils.JsonUtils
-import com.clipevery.utils.NetUtils
+import com.clipevery.utils.getJsonUtils
+import com.clipevery.utils.getNetUtils
 import kotlinx.serialization.encodeToString
 
 @Composable
@@ -54,8 +54,8 @@ fun NetSettingsView() {
     val configManager = current.koin.get<ConfigManager>()
     val deviceManager = current.koin.get<DeviceManager>()
     val copywriter = current.koin.get<GlobalCopywriter>()
-    val netUtils = current.koin.get<NetUtils>()
-    val jsonUtils = current.koin.get<JsonUtils>()
+    val netUtils = getNetUtils()
+    val jsonUtils = getJsonUtils()
 
     var ip: String? by remember { mutableStateOf(null) }
     var port: String? by remember { mutableStateOf(null) }

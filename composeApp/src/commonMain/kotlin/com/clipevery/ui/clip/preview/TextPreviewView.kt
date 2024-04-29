@@ -23,7 +23,7 @@ import com.clipevery.clip.item.ClipText
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.feed
-import com.clipevery.utils.FileUtils
+import com.clipevery.utils.getFileUtils
 import java.awt.Desktop
 
 @Composable
@@ -31,7 +31,7 @@ fun TextPreviewView(clipData: ClipData) {
     clipData.getClipItem()?.let {
         val current = LocalKoinApplication.current
         val copywriter = current.koin.get<GlobalCopywriter>()
-        val fileUtils = current.koin.get<FileUtils>()
+        val fileUtils = getFileUtils()
         ClipSpecificPreviewContentView(it, {
             Text(
                 modifier =
