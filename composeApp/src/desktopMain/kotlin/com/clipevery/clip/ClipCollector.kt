@@ -7,6 +7,7 @@ import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.dao.clip.ClipState
 import com.clipevery.dao.clip.ClipType
+import com.clipevery.utils.LoggerExtension.logSuspendExecutionTime
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.toRealmList
@@ -83,50 +84,54 @@ class ClipCollector(
         clipId: Long,
         remote: Boolean,
     ): ObjectId? {
-        val collector = preCollectors.filter { it.isNotEmpty() }
-        if (collector.isEmpty()) {
-            return null
+        return logSuspendExecutionTime(logger, "createPreClipData") {
+            val collector = preCollectors.filter { it.isNotEmpty() }
+            if (collector.isEmpty()) {
+                return@logSuspendExecutionTime null
+            }
+            val clipAppearItems: List<ClipAppearItem> = preCollectors.flatMap { it.values }
+
+            val clipContent =
+                ClipContent().apply {
+                    this.clipAppearItems = clipAppearItems.map { RealmAny.create(it as RealmObject) }.toRealmList()
+                }
+
+            val clipData =
+                ClipData().apply {
+                    this.clipId = clipId
+                    this.clipContent = clipContent
+                    this.clipType = ClipType.INVALID
+                    this.md5 = ""
+                    this.appInstanceId = appInfo.appInstanceId
+                    this.createTime = RealmInstant.now()
+                    this.clipState = ClipState.LOADING
+                    this.remote = remote
+                }
+            return@logSuspendExecutionTime clipDao.createClipData(clipData)
         }
-        val clipAppearItems: List<ClipAppearItem> = preCollectors.flatMap { it.values }
-
-        val clipContent =
-            ClipContent().apply {
-                this.clipAppearItems = clipAppearItems.map { RealmAny.create(it as RealmObject) }.toRealmList()
-            }
-
-        val clipData =
-            ClipData().apply {
-                this.clipId = clipId
-                this.clipContent = clipContent
-                this.clipType = ClipType.INVALID
-                this.md5 = ""
-                this.appInstanceId = appInfo.appInstanceId
-                this.createTime = RealmInstant.now()
-                this.clipState = ClipState.LOADING
-                this.remote = remote
-            }
-        return clipDao.createClipData(clipData)
     }
 
     suspend fun completeCollect(id: ObjectId) {
-        if (preCollectors.isEmpty() || (existError && updateErrors.all { it != null })) {
-            try {
-                clipDao.markDeleteClipData(id)
-            } catch (e: Exception) {
-                logger.error(e) { "Failed to mark delete clip $id" }
-            }
-        } else {
-            try {
-                clipDao.releaseLocalClipData(id, clipPlugins)
-            } catch (e: Exception) {
-                logger.error(e) { "Failed to release clip $id" }
-                // The following errors will be sent next
-                // [RLM_ERR_WRONG_TRANSACTION_STATE]: The Realm is already in a write transaction
-                // https://github.com/realm/realm-kotlin/pull/1621  wait new version release
+        logSuspendExecutionTime(logger, "completeCollect") {
+            if (preCollectors.isEmpty() || (existError && updateErrors.all { it != null })) {
                 try {
                     clipDao.markDeleteClipData(id)
                 } catch (e: Exception) {
                     logger.error(e) { "Failed to mark delete clip $id" }
+                }
+            } else {
+                try {
+                    clipDao.releaseLocalClipData(id, clipPlugins)
+                } catch (e: Exception) {
+                    logger.error(e) { "Failed to release clip $id" }
+                    // The following errors will be sent next
+                    // [RLM_ERR_WRONG_TRANSACTION_STATE]: The Realm is already in a write transaction
+                    // https://github.com/realm/realm-kotlin/pull/1621  wait new version release
+                    try {
+                        clipDao.markDeleteClipData(id)
+                    } catch (e: Exception) {
+                        logger.error(e) { "Failed to mark delete clip $id" }
+                    }
                 }
             }
         }
