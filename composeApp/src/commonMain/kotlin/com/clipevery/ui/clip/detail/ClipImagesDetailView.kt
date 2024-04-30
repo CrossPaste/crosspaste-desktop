@@ -90,6 +90,7 @@ fun ClipImagesDetailView(
                         eventType = PointerEventType.Enter,
                         onEvent = {
                             hover = true
+                            autoRoll = false
                         },
                     )
                     .onPointerEvent(
