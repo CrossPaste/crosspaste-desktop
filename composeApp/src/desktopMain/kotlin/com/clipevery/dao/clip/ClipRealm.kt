@@ -9,6 +9,7 @@ import com.clipevery.clip.item.UrlClipItem
 import com.clipevery.dao.task.TaskType
 import com.clipevery.task.TaskExecutor
 import com.clipevery.task.extra.SyncExtraInfo
+import com.clipevery.utils.LoggerExtension.logExecutionTime
 import com.clipevery.utils.LoggerExtension.logSuspendExecutionTime
 import com.clipevery.utils.TaskUtils.createTask
 import com.clipevery.utils.getDateUtils
@@ -407,27 +408,30 @@ class ClipRealm(
         sort: Boolean,
         limit: Int,
     ): RealmResults<ClipData> {
-        val searchTerms = inputSearch.trim().lowercase().split("\\s+".toRegex()).filterNot { it.isEmpty() }.distinct()
-        logger.info { "Performing search for: $searchTerms" }
-        var query = realm.query(ClipData::class, "clipState != $0", ClipState.DELETED)
+        return logExecutionTime(logger, "searchClipData") {
+            val searchTerms =
+                inputSearch.trim().lowercase().split("\\s+".toRegex()).filterNot { it.isEmpty() }.distinct()
+            logger.info { "Performing search for: $searchTerms" }
+            var query = realm.query(ClipData::class, "clipState != $0", ClipState.DELETED)
 
-        if (searchTerms.isNotEmpty()) {
-            query = query.query("clipSearchContent LIKE $0", "*${searchTerms[0]}*")
-            for (i in 1 until searchTerms.size) {
-                query = query.query("clipSearchContent LIKE $0", "*${searchTerms[i]}*")
+            if (searchTerms.isNotEmpty()) {
+                query = query.query("clipSearchContent LIKE $0", "*${searchTerms[0]}*")
+                for (i in 1 until searchTerms.size) {
+                    query = query.query("clipSearchContent LIKE $0", "*${searchTerms[i]}*")
+                }
             }
-        }
 
-        if (favorite != null) {
-            query = query.query("favorite == $0", favorite)
-        }
-        if (appInstanceId != null) {
-            query = query.query("appInstanceId == $0", appInstanceId)
-        }
-        if (clipType != null) {
-            query = query.query("clipType == $0", clipType)
-        }
+            if (favorite != null) {
+                query = query.query("favorite == $0", favorite)
+            }
+            if (appInstanceId != null) {
+                query = query.query("appInstanceId == $0", appInstanceId)
+            }
+            if (clipType != null) {
+                query = query.query("clipType == $0", clipType)
+            }
 
-        return query.sort("createTime", if (sort) Sort.DESCENDING else Sort.ASCENDING).limit(limit).find()
+            return@logExecutionTime query.sort("createTime", if (sort) Sort.DESCENDING else Sort.ASCENDING).limit(limit).find()
+        }
     }
 }

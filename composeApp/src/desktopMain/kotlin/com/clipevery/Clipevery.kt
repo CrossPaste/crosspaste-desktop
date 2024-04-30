@@ -211,7 +211,7 @@ class Clipevery {
                     }
                     single<TransferableProducer> { DesktopTransferableProducer() }
                     single<ChromeService> { DesktopChromeService }
-                    single<ClipSearchService> { DesktopClipSearchService(get(), get()) }
+                    single<ClipSearchService> { DesktopClipSearchService(get(), get(), get()) }
                     single<CleanClipScheduler> { DesktopCleanClipScheduler(get(), get(), get()) }
                     single<TaskExecutor> {
                         DesktopTaskExecutor(
@@ -239,7 +239,8 @@ class Clipevery {
         }
 
         private fun initInject() {
-            koinApplication.koin.get<GlobalListener>()
+            val globalListener = koinApplication.koin.get<GlobalListener>()
+            globalListener.initSearchWindow()
             koinApplication.koin.get<QRCodeGenerator>()
             koinApplication.koin.get<ClipServer>()
             koinApplication.koin.get<ClipClient>()

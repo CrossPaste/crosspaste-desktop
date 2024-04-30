@@ -23,6 +23,8 @@ class GlobalListener(
     clipSearchService: ClipSearchService,
 ) {
 
+    private val searchListener = SearchListener(appWindowManager, clipSearchService)
+
     init {
         if (System.getProperty("globalListener", false.toString()).toBoolean()) {
             try {
@@ -31,12 +33,16 @@ class GlobalListener(
                 logger.error { "There was a problem registering the native hook." }
                 logger.error { "ex.message" }
             }
-            GlobalScreen.addNativeKeyListener(OpenSearchListener(appWindowManager, clipSearchService))
+            GlobalScreen.addNativeKeyListener(searchListener)
         }
+    }
+
+    fun initSearchWindow() {
+        searchListener.initSearchWindow()
     }
 }
 
-class OpenSearchListener(
+class SearchListener(
     private val appWindowManager: AppWindowManager,
     private val clipSearchService: ClipSearchService,
 ) : NativeKeyListener {
@@ -44,6 +50,12 @@ class OpenSearchListener(
     private val logger = KotlinLogging.logger {}
 
     private val dispatcher = CoroutineScope(ioDispatcher)
+
+    fun initSearchWindow() {
+        dispatcher.launch(CoroutineName("OpenSearchWindow")) {
+            createSearchWindow(clipSearchService, Clipevery.koinApplication, dispatcher)
+        }
+    }
 
     override fun nativeKeyPressed(e: NativeKeyEvent) {
         val isCmdOrCtrlPressed = (e.modifiers and NativeKeyEvent.META_MASK) != 0

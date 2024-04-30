@@ -55,7 +55,6 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.clipevery.LocalKoinApplication
 import com.clipevery.clip.ClipSearchService
-import com.clipevery.dao.clip.ClipDao
 import com.clipevery.ui.ClipeveryTheme
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.CoroutineName
@@ -106,9 +105,6 @@ fun createSearchWindow(
 
                     window.addWindowFocusListener(windowListener)
 
-                    coroutineScope.launch(CoroutineName("ActiveSearchWindow")) {
-                        clipSearchService.activeWindow()
-                    }
                     onDispose {
                         window.removeWindowFocusListener(windowListener)
                     }
@@ -144,12 +140,10 @@ fun ClipeveryAppSearchView(
 fun ClipeverySearchWindow(hideWindow: () -> Unit) {
     val current = LocalKoinApplication.current
     val inputModeManager = LocalInputModeManager.current
-    val clipDao = current.koin.get<ClipDao>()
     val clipSearchService = current.koin.get<ClipSearchService>()
     val appWindowManager = clipSearchService.appWindowManager
     val logger = current.koin.get<KLogger>()
 
-    var inputSearch by remember { mutableStateOf("") }
     var lastInputTime by remember { mutableStateOf(0L) }
 
     val focusRequester = remember { FocusRequester() }
@@ -164,17 +158,14 @@ fun ClipeverySearchWindow(hideWindow: () -> Unit) {
         }
     }
 
-    LaunchedEffect(inputSearch) {
+    LaunchedEffect(clipSearchService.inputSearch.value) {
         val currentTime = System.currentTimeMillis()
         lastInputTime = currentTime
-        delay(500)
+        if (clipSearchService.inputSearch.value.trim().isNotEmpty()) {
+            delay(500)
+        }
         if (lastInputTime == currentTime) {
-            val searchClipData =
-                clipDao.searchClipData(
-                    inputSearch = inputSearch,
-                    limit = 10,
-                )
-            clipSearchService.updateSearchResult(searchClipData)
+            clipSearchService.search()
         }
     }
 
@@ -214,8 +205,8 @@ fun ClipeverySearchWindow(hideWindow: () -> Unit) {
                                         logger.debug { "onFocusChanged $it" }
                                     }
                                     .fillMaxSize(),
-                            value = inputSearch,
-                            onValueChange = { inputSearch = it },
+                            value = clipSearchService.inputSearch.value,
+                            onValueChange = { clipSearchService.updateInputSearch(it) },
                             keyboardOptions = KeyboardOptions.Default.copy(autoCorrect = true),
                             visualTransformation = VisualTransformation.None,
                             placeholder = {
