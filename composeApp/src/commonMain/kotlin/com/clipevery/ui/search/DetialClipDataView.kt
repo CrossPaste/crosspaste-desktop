@@ -12,6 +12,7 @@ import com.clipevery.clip.item.ClipText
 import com.clipevery.clip.item.ClipUrl
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.ui.clip.detail.ClipDetailView
+import com.clipevery.ui.clip.detail.ClipFilesDetailView
 import com.clipevery.ui.clip.detail.ClipImagesDetailView
 import com.clipevery.ui.clip.detail.ClipTextDetailView
 import com.clipevery.ui.clip.detail.ClipUrlDetailView
@@ -38,6 +39,9 @@ fun DetialClipDataView() {
                     }
                     ClipType.IMAGE -> {
                         ClipImagesDetailView(clipData, it as ClipFiles)
+                    }
+                    ClipType.FILE -> {
+                        ClipFilesDetailView(clipData, it as ClipFiles)
                     }
                     else -> {
                     }

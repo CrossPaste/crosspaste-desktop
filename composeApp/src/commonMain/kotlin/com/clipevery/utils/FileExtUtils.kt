@@ -1,8 +1,12 @@
 package com.clipevery.utils
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.ResourceLoader
+import androidx.compose.ui.res.loadImageBitmap
 
 object FileExtUtils {
 
@@ -27,6 +31,18 @@ object FileExtUtils {
 
     fun canPreviewImage(ext: String): Boolean = canPreviewImageMap.contains(ext.lowercase())
 
+    @OptIn(ExperimentalComposeUiApi::class)
+    fun getExtPreviewImage(ext: String): ImageBitmap? =
+        extIconImageMap[ext]?.let {
+            val fileName = "file-ext/$it.png"
+            val inputStream = ResourceLoader.Default.load(fileName)
+            inputStream.use { stream -> stream.buffered().use(::loadImageBitmap) }
+        }
+
     @Composable
-    fun getExtPreviewImagePainter(ext: String): Painter? = extIconImageMap[ext]?.let { painterResource("file-ext/$it.png") }
+    fun getExtPreviewImagePainter(ext: String): Painter? {
+        return getExtPreviewImage(ext)?.let { imageBitmap ->
+            BitmapPainter(imageBitmap)
+        }
+    }
 }
