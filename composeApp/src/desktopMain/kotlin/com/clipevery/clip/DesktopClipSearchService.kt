@@ -1,8 +1,10 @@
 package com.clipevery.clip
 
 import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.clipevery.app.AppWindowManager
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipData
@@ -32,15 +34,13 @@ class DesktopClipSearchService(
 
     private val mutex: Mutex = Mutex()
 
-    override val selectedIndex: State<Int> get() = _selectedIndex
+    override var selectedIndex by mutableStateOf(0)
 
     override val inputSearch: State<String> get() = _inputSearch
 
     private var _inputSearch = mutableStateOf("")
 
     override val searchResult: MutableList<ClipData> = mutableStateListOf()
-
-    private var _selectedIndex = mutableStateOf(0)
 
     override val currentClipData: State<ClipData?> get() = _currentClipData
 
@@ -93,14 +93,14 @@ class DesktopClipSearchService(
     }
 
     private fun setCurrentClipData() {
-        if (_selectedIndex.value >= 0 && _selectedIndex.value < searchResult.size) {
-            _currentClipData.value = searchResult[_selectedIndex.value]
+        if (selectedIndex >= 0 && selectedIndex < searchResult.size) {
+            _currentClipData.value = searchResult[selectedIndex]
         } else {
             _currentClipData.value = null
         }
     }
 
-    override fun setSelectedIndex(selectedIndex: Int) {
+    override fun clickSetSelectedIndex(selectedIndex: Int) {
         ioScope.launch {
             mutex.withLock {
                 innerSetSelectedIndex(selectedIndex)
@@ -109,7 +109,7 @@ class DesktopClipSearchService(
     }
 
     private fun innerSetSelectedIndex(selectedIndex: Int) {
-        _selectedIndex.value = selectedIndex
+        this.selectedIndex = selectedIndex
         setCurrentClipData()
     }
 
@@ -117,7 +117,7 @@ class DesktopClipSearchService(
         mutex.withLock {
             this.searchResult.clear()
             this.searchResult.addAll(searchResult)
-            _selectedIndex.value = 0
+            this.selectedIndex = 0
             setCurrentClipData()
         }
     }
@@ -130,12 +130,12 @@ class DesktopClipSearchService(
             prevSelectedId?.let { id ->
                 val newSelectedIndex = searchResult.indexOfFirst { it.id == id }
                 if (newSelectedIndex >= 0) {
-                    _selectedIndex.value = newSelectedIndex
+                    this.selectedIndex = newSelectedIndex
                 } else {
-                    _selectedIndex.value = 0
+                    this.selectedIndex = 0
                 }
             } ?: run {
-                _selectedIndex.value = 0
+                this.selectedIndex = 0
             }
             setCurrentClipData()
         }
@@ -144,8 +144,8 @@ class DesktopClipSearchService(
     override fun upSelectedIndex() {
         ioScope.launch {
             mutex.withLock {
-                if (_selectedIndex.value > 0) {
-                    _selectedIndex.value--
+                if (selectedIndex > 0) {
+                    selectedIndex--
                     setCurrentClipData()
                 }
             }
@@ -155,8 +155,8 @@ class DesktopClipSearchService(
     override fun downSelectedIndex() {
         ioScope.launch {
             mutex.withLock {
-                if (_selectedIndex.value < searchResult.size - 1) {
-                    _selectedIndex.value++
+                if (selectedIndex < searchResult.size - 1) {
+                    selectedIndex++
                     setCurrentClipData()
                 }
             }
