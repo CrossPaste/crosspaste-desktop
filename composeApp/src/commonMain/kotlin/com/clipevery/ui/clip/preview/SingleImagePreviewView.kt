@@ -32,7 +32,7 @@ import com.clipevery.ui.base.AsyncView
 import com.clipevery.ui.base.LoadImageData
 import com.clipevery.ui.base.image
 import com.clipevery.ui.base.imageSlash
-import com.clipevery.ui.base.loadImage
+import com.clipevery.ui.base.loadImageData
 import com.clipevery.utils.getFileUtils
 import java.awt.Desktop
 import java.nio.file.Path
@@ -59,7 +59,7 @@ fun SingleImagePreviewView(imagePath: Path) {
         AsyncView(
             key = imagePath,
             load = {
-                LoadImageData(imagePath, loadImage(imagePath, density, thumbnail = true))
+                loadImageData(imagePath, density, thumbnail = true)
             },
             loadFor = { loadImageView ->
                 if (loadImageView.isSuccess()) {

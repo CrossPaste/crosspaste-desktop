@@ -40,7 +40,7 @@ import com.clipevery.presist.FilePersist
 import com.clipevery.ui.base.AsyncView
 import com.clipevery.ui.base.LoadImageData
 import com.clipevery.ui.base.html
-import com.clipevery.ui.base.loadImage
+import com.clipevery.ui.base.loadImageData
 import com.clipevery.utils.getFileUtils
 import java.awt.Desktop
 
@@ -72,7 +72,7 @@ fun HtmlToImagePreviewView(clipData: ClipData) {
                                 existFile = true
                             }
                         }
-                        LoadImageData(filePath, loadImage(filePath, density))
+                        loadImageData(filePath, density)
                     },
                     loadFor = { loadImageView ->
                         when (loadImageView) {

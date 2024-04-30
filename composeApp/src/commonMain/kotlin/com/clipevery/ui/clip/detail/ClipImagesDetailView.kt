@@ -41,7 +41,7 @@ import com.clipevery.ui.base.chevronLeft
 import com.clipevery.ui.base.chevronRight
 import com.clipevery.ui.base.image
 import com.clipevery.ui.base.imageSlash
-import com.clipevery.ui.base.loadImage
+import com.clipevery.ui.base.loadImageData
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -108,7 +108,7 @@ fun ClipImagesDetailView(
                 AsyncView(
                     key = imagePath,
                     load = {
-                        LoadImageData(imagePath, loadImage(imagePath, density, thumbnail = false))
+                        loadImageData(imagePath, density, thumbnail = false)
                     },
                     loadFor = { loadImageView ->
                         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
