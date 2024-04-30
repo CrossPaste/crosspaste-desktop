@@ -40,7 +40,7 @@ object DesktopAppWindowManager : AppWindowManager {
 
     override val mainWindowDpSize = DpSize(width = 460.dp, height = 710.dp)
 
-    override var showSearchWindow by mutableStateOf(true)
+    override var showSearchWindow by mutableStateOf(false)
 
     override val searchWindowTitle: String = "Clipevery Search"
 

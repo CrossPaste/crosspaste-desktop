@@ -17,10 +17,6 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,8 +45,6 @@ fun ClipDetailInfoView(
 
     val listState = rememberLazyListState()
 
-    var favorite by remember(clipData.id) { mutableStateOf(clipData.favorite) }
-
     Row(
         modifier = Modifier.fillMaxWidth().height(30.dp),
         horizontalArrangement = Arrangement.Start,
@@ -70,12 +64,11 @@ fun ClipDetailInfoView(
         Icon(
             modifier =
                 Modifier.size(15.dp).clickable {
-                    favorite = !favorite
-                    clipDao.setFavorite(clipData.id, favorite)
+                    clipDao.setFavorite(clipData.id, !clipData.favorite)
                 },
-            painter = if (favorite) starSolid() else starRegular(),
+            painter = if (clipData.favorite) starSolid() else starRegular(),
             contentDescription = "Favorite",
-            tint = if (favorite) Color(0xFFFFCE34) else MaterialTheme.colors.onSurface,
+            tint = if (clipData.favorite) Color(0xFFFFCE34) else MaterialTheme.colors.onSurface,
         )
     }
     Spacer(modifier = Modifier.height(10.dp))
@@ -86,7 +79,7 @@ fun ClipDetailInfoView(
     ) {
         itemsIndexed(
             items = items,
-            key = { index, item -> item.key },
+            key = { _, item -> item.key },
         ) { index, item ->
             Row(
                 modifier = Modifier.fillMaxWidth().height(30.dp),

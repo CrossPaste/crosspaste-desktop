@@ -8,19 +8,23 @@ interface ClipSearchService {
 
     val selectedIndex: State<Int>
 
+    val inputSearch: State<String>
+
     val searchResult: MutableList<ClipData>
 
     val currentClipData: State<ClipData?>
 
     val appWindowManager: AppWindowManager
 
+    fun updateInputSearch(inputSearch: String)
+
+    suspend fun search()
+
     fun tryStart(): Boolean
 
     fun stop()
 
     fun setSelectedIndex(selectedIndex: Int)
-
-    fun updateSearchResult(searchResult: List<ClipData>)
 
     fun upSelectedIndex()
 
