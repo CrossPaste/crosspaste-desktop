@@ -1,7 +1,13 @@
 package com.clipevery.ui.search
 
+import androidx.compose.foundation.ScrollbarStyle
+import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -15,17 +21,22 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -38,26 +49,76 @@ import com.clipevery.clip.ClipSearchService
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.ui.clip.ClipTypeIconView
 import com.clipevery.ui.clip.title.getClipTitle
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.launch
 
 @Composable
 fun SearchListView(setSelectedIndex: (Int) -> Unit) {
     val current = LocalKoinApplication.current
     val clipSearchService = current.koin.get<ClipSearchService>()
 
-    val listState = rememberLazyListState()
+    val searchListState = rememberLazyListState()
+    val adapter = rememberScrollbarAdapter(scrollState = searchListState)
+    var showScrollbar by remember { mutableStateOf(false) }
 
-    LazyColumn(
-        state = listState,
-        modifier = Modifier.width(280.dp).height(400.dp),
-    ) {
-        itemsIndexed(
-            clipSearchService.searchResult,
-            key = { _, item -> item.id },
-        ) { index, clipData ->
-            ClipTitleView(clipData, index == clipSearchService.selectedIndex.value) {
-                setSelectedIndex(index)
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(clipSearchService.selectedIndex) {
+        val visibleItems = searchListState.layoutInfo.visibleItemsInfo
+        if (visibleItems.isNotEmpty()) {
+            if (visibleItems.last().index < clipSearchService.selectedIndex) {
+                searchListState.scrollToItem(clipSearchService.selectedIndex - 9)
+            } else if (visibleItems.first().index > clipSearchService.selectedIndex) {
+                searchListState.scrollToItem(clipSearchService.selectedIndex)
             }
         }
+    }
+
+    LaunchedEffect(clipSearchService.searchResult.size) {
+        if (clipSearchService.searchResult.size > 10) {
+            showScrollbar = true
+        }
+    }
+
+    Box(modifier = Modifier.width(280.dp).height(400.dp)) {
+        LazyColumn(
+            state = searchListState,
+            modifier = Modifier.width(280.dp).height(400.dp),
+        ) {
+            itemsIndexed(
+                clipSearchService.searchResult,
+                key = { _, item -> item.id },
+            ) { index, clipData ->
+                ClipTitleView(clipData, index == clipSearchService.selectedIndex) {
+                    setSelectedIndex(index)
+                }
+            }
+        }
+
+        VerticalScrollbar(
+            modifier =
+                Modifier.background(color = Color.Transparent)
+                    .fillMaxHeight().align(Alignment.CenterEnd)
+                    .draggable(
+                        orientation = Orientation.Vertical,
+                        state =
+                            rememberDraggableState { delta ->
+                                coroutineScope.launch(CoroutineName("ScrollClip")) {
+                                    searchListState.scrollBy(-delta)
+                                }
+                            },
+                    ),
+            adapter = adapter,
+            style =
+                ScrollbarStyle(
+                    minimalHeight = 16.dp,
+                    thickness = 8.dp,
+                    shape = RoundedCornerShape(4.dp),
+                    hoverDurationMillis = 300,
+                    unhoverColor = if (showScrollbar) MaterialTheme.colors.onBackground.copy(alpha = 0.48f) else Color.Transparent,
+                    hoverColor = MaterialTheme.colors.onBackground,
+                ),
+        )
     }
 }
 

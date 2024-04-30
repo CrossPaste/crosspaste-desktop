@@ -259,9 +259,9 @@ fun SearchResultView() {
     val current = LocalKoinApplication.current
     val clipSearchService = current.koin.get<ClipSearchService>()
 
-    Row {
+    Row(modifier = Modifier.fillMaxSize()) {
         SearchListView {
-            clipSearchService.setSelectedIndex(it)
+            clipSearchService.clickSetSelectedIndex(it)
         }
         Divider(
             modifier = Modifier.fillMaxHeight().width(1.dp),

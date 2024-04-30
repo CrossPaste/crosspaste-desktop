@@ -6,7 +6,7 @@ import com.clipevery.dao.clip.ClipData
 
 interface ClipSearchService {
 
-    val selectedIndex: State<Int>
+    var selectedIndex: Int
 
     val inputSearch: State<String>
 
@@ -24,7 +24,7 @@ interface ClipSearchService {
 
     fun stop()
 
-    fun setSelectedIndex(selectedIndex: Int)
+    fun clickSetSelectedIndex(selectedIndex: Int)
 
     fun upSelectedIndex()
 

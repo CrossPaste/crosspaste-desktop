@@ -137,6 +137,9 @@ fun ClipPreviewsView() {
                         }
                     }
                 }
+
+                println("clip isScrolling")
+
                 isScrolling = true
                 scrollJob?.cancel()
                 scrollJob =
