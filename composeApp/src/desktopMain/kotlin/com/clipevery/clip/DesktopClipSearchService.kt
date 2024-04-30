@@ -80,6 +80,8 @@ class DesktopClipSearchService(
 
     override suspend fun unActiveWindow() {
         appWindowManager.unActiveSearchWindow { false }
+        searchResult.clear()
+        setSelectedIndex(0)
     }
 
     override suspend fun toPaste() {
@@ -89,5 +91,7 @@ class DesktopClipSearchService(
                 true
             } ?: false
         }
+        searchResult.clear()
+        setSelectedIndex(0)
     }
 }

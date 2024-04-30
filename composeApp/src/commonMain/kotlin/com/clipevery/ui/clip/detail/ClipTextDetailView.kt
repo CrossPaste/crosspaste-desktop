@@ -13,23 +13,55 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.clipevery.LocalKoinApplication
 import com.clipevery.clip.item.ClipText
+import com.clipevery.dao.clip.ClipData
+import com.clipevery.i18n.GlobalCopywriter
+import com.clipevery.utils.getDateUtils
 
 @Composable
-fun ClipTextDetailView(clipText: ClipText) {
+fun ClipTextDetailView(
+    clipData: ClipData,
+    clipText: ClipText,
+) {
+    val current = LocalKoinApplication.current
+    val copywriter = current.koin.get<GlobalCopywriter>()
+    val dateUtils = getDateUtils()
     val text = clipText.text
-    Row(modifier = Modifier.fillMaxSize().padding(10.dp)) {
-        Text(
-            text = text,
-            modifier = Modifier.fillMaxSize(),
-            overflow = TextOverflow.Ellipsis,
-            style =
-                TextStyle(
-                    fontWeight = FontWeight.Normal,
-                    fontFamily = FontFamily.SansSerif,
-                    color = MaterialTheme.colors.onBackground,
-                    fontSize = 14.sp,
-                ),
-        )
-    }
+
+    ClipDetailView(
+        detailView = {
+            Row(modifier = Modifier.fillMaxSize().padding(10.dp)) {
+                Text(
+                    text = text,
+                    modifier = Modifier.fillMaxSize(),
+                    overflow = TextOverflow.Ellipsis,
+                    style =
+                        TextStyle(
+                            fontWeight = FontWeight.Normal,
+                            fontFamily = FontFamily.SansSerif,
+                            color = MaterialTheme.colors.onBackground,
+                            fontSize = 14.sp,
+                        ),
+                )
+            }
+        },
+        detailInfoView = {
+            ClipDetailInfoView(
+                clipData = clipData,
+                items =
+                    listOf(
+                        ClipDetailInfoItem("Type", copywriter.getText("Text")),
+                        ClipDetailInfoItem("Size", clipData.size.toString()),
+                        ClipDetailInfoItem("Remote", copywriter.getText(if (clipData.remote) "Yes" else "No")),
+                        ClipDetailInfoItem(
+                            "Date",
+                            copywriter.getDate(
+                                dateUtils.convertRealmInstantToLocalDateTime(clipData.createTime),
+                            ),
+                        ),
+                    ),
+            )
+        },
+    )
 }

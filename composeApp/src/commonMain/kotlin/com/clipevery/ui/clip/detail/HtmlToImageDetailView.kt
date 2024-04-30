@@ -26,10 +26,12 @@ import com.clipevery.LocalKoinApplication
 import com.clipevery.clip.ChromeService
 import com.clipevery.clip.item.ClipHtml
 import com.clipevery.dao.clip.ClipData
+import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.presist.FilePersist
 import com.clipevery.ui.base.AsyncView
 import com.clipevery.ui.base.LoadImageData
 import com.clipevery.ui.base.loadImageData
+import com.clipevery.utils.getDateUtils
 import com.clipevery.utils.getFileUtils
 import java.awt.Desktop
 
@@ -40,75 +42,98 @@ fun HtmlToImageDetailView(
 ) {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
+    val copywriter = current.koin.get<GlobalCopywriter>()
     val filePersist = current.koin.get<FilePersist>()
     val chromeService = current.koin.get<ChromeService>()
 
+    val dateUtils = getDateUtils()
     val fileUtils = getFileUtils()
 
     val filePath by remember(clipData.id) { mutableStateOf(clipHtml.getHtmlImagePath()) }
 
     var existFile by remember(clipData.id) { mutableStateOf(filePath.toFile().exists()) }
 
-    AsyncView(
-        key = clipData.id,
-        load = {
-            if (!existFile) {
-                chromeService.html2Image(clipHtml.html)?.let { bytes ->
-                    filePersist.createOneFilePersist(filePath).saveBytes(bytes)
-                    existFile = true
-                }
-            }
-            loadImageData(filePath, density)
-        },
-        loadFor = { loadImageView ->
-            when (loadImageView) {
-                is LoadImageData -> {
-                    val horizontalScrollState = rememberScrollState()
-                    val verticalScrollState = rememberScrollState()
-
-                    BoxWithConstraints(
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .horizontalScroll(horizontalScrollState)
-                                .verticalScroll(verticalScrollState)
-                                .clickable {
-                                    if (Desktop.isDesktopSupported()) {
-                                        fileUtils.createTempFile(
-                                            clipHtml.html.toByteArray(),
-                                            fileUtils.createRandomFileName("html"),
-                                        )?.let {
-                                                path ->
-                                            val desktop = Desktop.getDesktop()
-                                            desktop.browse(path.toFile().toURI())
-                                        }
-                                    }
-                                },
-                    ) {
-                        Image(
-                            painter = loadImageView.toPainterImage.toPainter(),
-                            contentDescription = "Html 2 Image",
-                            modifier = Modifier.wrapContentSize(),
-                        )
+    ClipDetailView(
+        detailView = {
+            AsyncView(
+                key = clipData.id,
+                load = {
+                    if (!existFile) {
+                        chromeService.html2Image(clipHtml.html)?.let { bytes ->
+                            filePersist.createOneFilePersist(filePath).saveBytes(bytes)
+                            existFile = true
+                        }
                     }
-                }
+                    loadImageData(filePath, density)
+                },
+                loadFor = { loadImageView ->
+                    when (loadImageView) {
+                        is LoadImageData -> {
+                            val horizontalScrollState = rememberScrollState()
+                            val verticalScrollState = rememberScrollState()
 
-                else -> {
-                    Text(
-                        text = clipHtml.html,
-                        fontFamily = FontFamily.SansSerif,
-                        maxLines = 4,
-                        softWrap = true,
-                        overflow = TextOverflow.Ellipsis,
-                        style =
-                            TextStyle(
-                                fontWeight = FontWeight.Normal,
-                                color = MaterialTheme.colors.onBackground,
-                                fontSize = 14.sp,
+                            BoxWithConstraints(
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .horizontalScroll(horizontalScrollState)
+                                        .verticalScroll(verticalScrollState)
+                                        .clickable {
+                                            if (Desktop.isDesktopSupported()) {
+                                                fileUtils.createTempFile(
+                                                    clipHtml.html.toByteArray(),
+                                                    fileUtils.createRandomFileName("html"),
+                                                )?.let {
+                                                        path ->
+                                                    val desktop = Desktop.getDesktop()
+                                                    desktop.browse(path.toFile().toURI())
+                                                }
+                                            }
+                                        },
+                            ) {
+                                Image(
+                                    painter = loadImageView.toPainterImage.toPainter(),
+                                    contentDescription = "Html 2 Image",
+                                    modifier = Modifier.wrapContentSize(),
+                                )
+                            }
+                        }
+
+                        else -> {
+                            Text(
+                                text = clipHtml.html,
+                                fontFamily = FontFamily.SansSerif,
+                                maxLines = 4,
+                                softWrap = true,
+                                overflow = TextOverflow.Ellipsis,
+                                style =
+                                    TextStyle(
+                                        fontWeight = FontWeight.Normal,
+                                        color = MaterialTheme.colors.onBackground,
+                                        fontSize = 14.sp,
+                                    ),
+                            )
+                        }
+                    }
+                },
+            )
+        },
+        detailInfoView = {
+            ClipDetailInfoView(
+                clipData = clipData,
+                items =
+                    listOf(
+                        ClipDetailInfoItem("Type", copywriter.getText("Html")),
+                        ClipDetailInfoItem("Size", clipData.size.toString()),
+                        ClipDetailInfoItem("Remote", copywriter.getText(if (clipData.remote) "Yes" else "No")),
+                        ClipDetailInfoItem(
+                            "Date",
+                            copywriter.getDate(
+                                dateUtils.convertRealmInstantToLocalDateTime(clipData.createTime),
                             ),
-                    )
-                }
-            }
+                        ),
+                    ),
+            )
         },
     )
 }

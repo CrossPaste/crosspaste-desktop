@@ -29,8 +29,10 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import com.clipevery.LocalKoinApplication
 import com.clipevery.clip.item.ClipFiles
 import com.clipevery.dao.clip.ClipData
+import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.AsyncView
 import com.clipevery.ui.base.ClipIconButton
 import com.clipevery.ui.base.LoadIconData
@@ -38,6 +40,7 @@ import com.clipevery.ui.base.LoadImageData
 import com.clipevery.ui.base.chevronLeft
 import com.clipevery.ui.base.chevronRight
 import com.clipevery.ui.base.loadIconData
+import com.clipevery.utils.getDateUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -52,7 +55,12 @@ fun ClipFilesDetailView(
 ) {
     val showFileCount = clipFiles.getFilePaths().size
     if (showFileCount > 0) {
+        val current = LocalKoinApplication.current
         val density = LocalDensity.current
+        val copywriter = current.koin.get<GlobalCopywriter>()
+
+        val dateUtils = getDateUtils()
+
         var index by remember(clipData.id) { mutableStateOf(0) }
 
         val mutex by remember(clipData.id) { mutableStateOf(Mutex()) }
@@ -83,110 +91,131 @@ fun ClipFilesDetailView(
 
         var hover by remember { mutableStateOf(false) }
 
-        Row(
-            modifier =
-                Modifier.fillMaxSize()
-                    .onPointerEvent(
-                        eventType = PointerEventType.Enter,
-                        onEvent = {
-                            hover = true
-                            autoRoll = false
-                        },
-                    )
-                    .onPointerEvent(
-                        eventType = PointerEventType.Exit,
-                        onEvent = {
-                            hover = false
-                        },
-                    ),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                AsyncView(
-                    key = filePath,
-                    load = {
-                        loadIconData(filePath, isFile, density)
-                    },
-                    loadFor = { loadStateData ->
-                        if (loadStateData.isSuccess()) {
-                            if (loadStateData is LoadImageData) {
-                                Image(
-                                    modifier = Modifier.size(150.dp),
-                                    painter = loadStateData.toPainterImage.toPainter(),
-                                    contentDescription = "${filePath.fileName}",
-                                )
-                            } else if (loadStateData is LoadIconData) {
-                                Icon(
-                                    modifier = Modifier.size(150.dp),
-                                    painter = loadStateData.toPainterImage.toPainter(),
-                                    contentDescription = "${filePath.fileName}",
-                                    tint = MaterialTheme.colors.onBackground,
-                                )
-                            }
-                        }
-                    },
-                )
+        ClipDetailView(
+            detailView = {
+                Row(
+                    modifier =
+                        Modifier.fillMaxSize()
+                            .onPointerEvent(
+                                eventType = PointerEventType.Enter,
+                                onEvent = {
+                                    hover = true
+                                    autoRoll = false
+                                },
+                            )
+                            .onPointerEvent(
+                                eventType = PointerEventType.Exit,
+                                onEvent = {
+                                    hover = false
+                                },
+                            ),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        AsyncView(
+                            key = filePath,
+                            load = {
+                                loadIconData(filePath, isFile, density)
+                            },
+                            loadFor = { loadStateData ->
+                                if (loadStateData.isSuccess()) {
+                                    if (loadStateData is LoadImageData) {
+                                        Image(
+                                            modifier = Modifier.size(150.dp),
+                                            painter = loadStateData.toPainterImage.toPainter(),
+                                            contentDescription = "${filePath.fileName}",
+                                        )
+                                    } else if (loadStateData is LoadIconData) {
+                                        Icon(
+                                            modifier = Modifier.size(150.dp),
+                                            painter = loadStateData.toPainterImage.toPainter(),
+                                            contentDescription = "${filePath.fileName}",
+                                            tint = MaterialTheme.colors.onBackground,
+                                        )
+                                    }
+                                }
+                            },
+                        )
 
-                if (showFileCount > 1 && hover) {
-                    Row(modifier = Modifier.fillMaxWidth().height(30.dp).padding(horizontal = 10.dp)) {
-                        ClipIconButton(
-                            radius = 18.dp,
-                            onClick = {
-                                coroutineScope.launch {
-                                    mutex.withLock {
-                                        val currentIndex = index - 1
-                                        index =
-                                            if (currentIndex < 0) {
-                                                clipFiles.count.toInt() - 1
-                                            } else {
-                                                currentIndex
+                        if (showFileCount > 1 && hover) {
+                            Row(modifier = Modifier.fillMaxWidth().height(30.dp).padding(horizontal = 10.dp)) {
+                                ClipIconButton(
+                                    radius = 18.dp,
+                                    onClick = {
+                                        coroutineScope.launch {
+                                            mutex.withLock {
+                                                val currentIndex = index - 1
+                                                index =
+                                                    if (currentIndex < 0) {
+                                                        clipFiles.count.toInt() - 1
+                                                    } else {
+                                                        currentIndex
+                                                    }
                                             }
-                                    }
+                                        }
+                                    },
+                                    modifier =
+                                        Modifier
+                                            .background(Color.Transparent, CircleShape),
+                                ) {
+                                    Icon(
+                                        painter = chevronLeft(),
+                                        contentDescription = "chevronLeft",
+                                        tint = MaterialTheme.colors.onBackground,
+                                    )
                                 }
-                            },
-                            modifier =
-                                Modifier
-                                    .background(Color.Transparent, CircleShape),
-                        ) {
-                            Icon(
-                                painter = chevronLeft(),
-                                contentDescription = "chevronLeft",
-                                tint = MaterialTheme.colors.onBackground,
-                            )
-                        }
-                        Spacer(modifier = Modifier.weight(1f))
-                        ClipIconButton(
-                            radius = 18.dp,
-                            onClick = {
-                                coroutineScope.launch {
-                                    mutex.withLock {
-                                        val currentIndex = index + 1
-                                        index =
-                                            if (currentIndex >= clipFiles.count) {
-                                                0
-                                            } else {
-                                                currentIndex
+                                Spacer(modifier = Modifier.weight(1f))
+                                ClipIconButton(
+                                    radius = 18.dp,
+                                    onClick = {
+                                        coroutineScope.launch {
+                                            mutex.withLock {
+                                                val currentIndex = index + 1
+                                                index =
+                                                    if (currentIndex >= clipFiles.count) {
+                                                        0
+                                                    } else {
+                                                        currentIndex
+                                                    }
                                             }
-                                    }
+                                        }
+                                    },
+                                    modifier =
+                                        Modifier
+                                            .background(Color.Transparent, CircleShape),
+                                ) {
+                                    Icon(
+                                        painter = chevronRight(),
+                                        contentDescription = "chevronRight",
+                                        tint = MaterialTheme.colors.onBackground,
+                                    )
                                 }
-                            },
-                            modifier =
-                                Modifier
-                                    .background(Color.Transparent, CircleShape),
-                        ) {
-                            Icon(
-                                painter = chevronRight(),
-                                contentDescription = "chevronRight",
-                                tint = MaterialTheme.colors.onBackground,
-                            )
+                            }
                         }
                     }
                 }
-            }
-        }
+            },
+            detailInfoView = {
+                ClipDetailInfoView(
+                    clipData = clipData,
+                    items =
+                        listOf(
+                            ClipDetailInfoItem("Type", copywriter.getText("File")),
+                            ClipDetailInfoItem("Size", clipData.size.toString()),
+                            ClipDetailInfoItem("Remote", copywriter.getText(if (clipData.remote) "Yes" else "No")),
+                            ClipDetailInfoItem(
+                                "Date",
+                                copywriter.getDate(
+                                    dateUtils.convertRealmInstantToLocalDateTime(clipData.createTime),
+                                ),
+                            ),
+                        ),
+                )
+            },
+        )
     }
 }
