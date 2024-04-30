@@ -56,10 +56,9 @@ fun loadIconData(
         } ?: run {
             return LoadIconData("file", getResourceUtils().loadPainter("icon/clip/file.svg", density))
         }
-    } else
-        {
-            return LoadIconData("dir", getResourceUtils().loadPainter("icon/clip/folder.svg", density))
-        }
+    } else {
+        return LoadIconData("dir", getResourceUtils().loadPainter("icon/clip/folder.svg", density))
+    }
 }
 
 class LoadImageData(
