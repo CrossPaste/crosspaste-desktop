@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.clip.ChromeService
 import com.clipevery.clip.item.ClipHtml
+import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.presist.FilePersist
@@ -45,6 +46,8 @@ fun HtmlToImageDetailView(
     val copywriter = current.koin.get<GlobalCopywriter>()
     val filePersist = current.koin.get<FilePersist>()
     val chromeService = current.koin.get<ChromeService>()
+
+    val clipAppearItem = clipHtml as ClipAppearItem
 
     val dateUtils = getDateUtils()
     val fileUtils = getFileUtils()
@@ -124,12 +127,13 @@ fun HtmlToImageDetailView(
                 items =
                     listOf(
                         ClipDetailInfoItem("Type", copywriter.getText("Html")),
-                        ClipDetailInfoItem("Size", clipData.size.toString()),
+                        ClipDetailInfoItem("Size", clipAppearItem.size.toString()),
                         ClipDetailInfoItem("Remote", copywriter.getText(if (clipData.remote) "Yes" else "No")),
                         ClipDetailInfoItem(
                             "Date",
                             copywriter.getDate(
                                 dateUtils.convertRealmInstantToLocalDateTime(clipData.createTime),
+                                true,
                             ),
                         ),
                     ),

@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.clip.item.ClipFiles
+import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.AsyncView
@@ -60,6 +61,8 @@ fun ClipImagesDetailView(
         val current = LocalKoinApplication.current
         val density = LocalDensity.current
         val copywriter = current.koin.get<GlobalCopywriter>()
+
+        val clipAppearItem = clipFiles as ClipAppearItem
 
         val dateUtils = getDateUtils()
 
@@ -227,16 +230,19 @@ fun ClipImagesDetailView(
             },
             detailInfoView = {
                 ClipDetailInfoView(
+                    indexInfo = "(${index + 1}/${clipFiles.count})",
                     clipData = clipData,
                     items =
                         listOf(
+                            ClipDetailInfoItem("File_Name", "${imagePath.fileName}"),
                             ClipDetailInfoItem("Type", copywriter.getText("Image")),
-                            ClipDetailInfoItem("Size", clipData.size.toString()),
+                            ClipDetailInfoItem("Size", clipAppearItem.size.toString()),
                             ClipDetailInfoItem("Remote", copywriter.getText(if (clipData.remote) "Yes" else "No")),
                             ClipDetailInfoItem(
                                 "Date",
                                 copywriter.getDate(
                                     dateUtils.convertRealmInstantToLocalDateTime(clipData.createTime),
+                                    true,
                                 ),
                             ),
                         ),

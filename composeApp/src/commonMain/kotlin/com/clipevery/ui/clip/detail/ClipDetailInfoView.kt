@@ -36,6 +36,7 @@ data class ClipDetailInfoItem(val key: String, val value: String)
 
 @Composable
 fun ClipDetailInfoView(
+    indexInfo: String? = null,
     clipData: ClipData,
     items: List<ClipDetailInfoItem>,
 ) {
@@ -51,7 +52,7 @@ fun ClipDetailInfoView(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = copywriter.getText("Information"),
+            text = copywriter.getText("Information") + (indexInfo?.let { " - $it" } ?: ""),
             style =
                 TextStyle(
                     fontWeight = FontWeight.Bold,
