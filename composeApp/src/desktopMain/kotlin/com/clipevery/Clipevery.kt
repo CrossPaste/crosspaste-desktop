@@ -2,6 +2,7 @@ package com.clipevery
 
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
@@ -100,6 +101,7 @@ import com.clipevery.ui.base.ToastManager
 import com.clipevery.ui.getTrayMouseAdapter
 import com.clipevery.ui.resource.ClipResourceLoader
 import com.clipevery.ui.resource.DesktopAbsoluteClipResourceLoader
+import com.clipevery.ui.search.ClipeveryAppSearchView
 import com.clipevery.utils.DesktopQRCodeGenerator
 import com.clipevery.utils.IDGenerator
 import com.clipevery.utils.IDGeneratorFactory
@@ -168,8 +170,8 @@ class Clipevery {
 
                     // net component
                     single<ClipClient> { DesktopClipClient(get<AppInfo>()) }
-                    single<ClipServer> { DesktopClipServer(get<ConfigManager>()).start() }
-                    single<ClipBonjourService> { DesktopClipBonjourService(get(), get(), get()).registerService() }
+                    single<ClipServer> { DesktopClipServer(get<ConfigManager>()) }
+                    single<ClipBonjourService> { DesktopClipBonjourService(get(), get(), get()) }
                     single<TelnetUtils> { TelnetUtils(get<ClipClient>()) }
                     single<SyncClientApi> { DesktopSyncClientApi(get(), get()) }
                     single<SendClipClientApi> { DesktopSendClipClientApi(get(), get()) }
@@ -238,24 +240,24 @@ class Clipevery {
             }
         }
 
+        @Throws(Exception::class)
         private fun initInject() {
-            val globalListener = koinApplication.koin.get<GlobalListener>()
-            globalListener.initSearchWindow()
+            koinApplication.koin.get<ClipboardService>().start()
+            koinApplication.koin.get<ClipBonjourService>().registerService()
             koinApplication.koin.get<QRCodeGenerator>()
-            koinApplication.koin.get<ClipServer>()
+            koinApplication.koin.get<ClipServer>().start()
             koinApplication.koin.get<ClipClient>()
-            koinApplication.koin.get<ClipboardService>()
-            koinApplication.koin.get<ClipBonjourService>()
-            koinApplication.koin.get<CleanClipScheduler>()
+            koinApplication.koin.get<CleanClipScheduler>().start()
+            koinApplication.koin.get<GlobalListener>().start()
         }
 
         private fun exitClipEveryApplication(exitApplication: () -> Unit) {
+            koinApplication.koin.get<ChromeService>().quit()
             koinApplication.koin.get<ClipboardService>().stop()
-            koinApplication.koin.get<ClipSearchService>().stop()
             koinApplication.koin.get<ClipBonjourService>().unregisterService()
             koinApplication.koin.get<ClipServer>().stop()
             koinApplication.koin.get<CleanClipScheduler>().stop()
-            koinApplication.koin.get<ChromeService>().quit()
+            koinApplication.koin.get<GlobalListener>().stop()
             exitApplication()
         }
 
@@ -268,12 +270,6 @@ class Clipevery {
             logger.info { "Starting Clipevery" }
             try {
                 initInject()
-
-                val clipboardService = koinApplication.koin.get<ClipboardService>()
-                clipboardService.start()
-
-                val cleanClipScheduler = koinApplication.koin.get<CleanClipScheduler>()
-                cleanClipScheduler.start()
             } catch (throwable: Throwable) {
                 logger.error(throwable) { "cant start clipevery" }
             }
@@ -349,6 +345,48 @@ class Clipevery {
                         koinApplication,
                         hideWindow = { appWindowManager.unActiveMainWindow() },
                         exitApplication = exitApplication,
+                    )
+                }
+
+                val searchWindowState =
+                    rememberWindowState(
+                        placement = WindowPlacement.Floating,
+                        position = WindowPosition.Aligned(Alignment.Center),
+                        size = appWindowManager.searchWindowDpSize,
+                    )
+
+                Window(
+                    onCloseRequest = ::exitApplication,
+                    visible = appWindowManager.showSearchWindow,
+                    state = searchWindowState,
+                    title = appWindowManager.searchWindowTitle,
+                    alwaysOnTop = true,
+                    undecorated = true,
+                    transparent = true,
+                    resizable = false,
+                ) {
+                    DisposableEffect(Unit) {
+                        val windowListener =
+                            object : WindowAdapter() {
+                                override fun windowGainedFocus(e: WindowEvent?) {
+                                    appWindowManager.showSearchWindow = true
+                                }
+
+                                override fun windowLostFocus(e: WindowEvent?) {
+                                    appWindowManager.showSearchWindow = false
+                                }
+                            }
+
+                        window.addWindowFocusListener(windowListener)
+
+                        onDispose {
+                            window.removeWindowFocusListener(windowListener)
+                        }
+                    }
+
+                    ClipeveryAppSearchView(
+                        koinApplication,
+                        hideWindow = { appWindowManager.showSearchWindow = false },
                     )
                 }
             }

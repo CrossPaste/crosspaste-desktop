@@ -26,8 +26,6 @@ class DesktopClipSearchService(
     private val clipDao: ClipDao,
 ) : ClipSearchService {
 
-    private var start: Boolean = false
-
     private var searchJob: Job? = null
 
     private val ioScope = CoroutineScope(ioDispatcher)
@@ -73,23 +71,6 @@ class DesktopClipSearchService(
                     }
                 }
             }
-    }
-
-    @Synchronized
-    override fun tryStart(): Boolean {
-        if (!start) {
-            start = true
-            return true
-        } else {
-            return false
-        }
-    }
-
-    override fun stop() {
-        if (start) {
-            start = false
-            // todo stop
-        }
     }
 
     private fun setCurrentClipData() {

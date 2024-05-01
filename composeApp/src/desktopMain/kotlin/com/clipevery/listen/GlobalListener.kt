@@ -1,10 +1,8 @@
 package com.clipevery.listen
 
-import com.clipevery.Clipevery
 import com.clipevery.app.AppWindowManager
 import com.clipevery.clip.ClipSearchService
 import com.clipevery.config.ConfigManager
-import com.clipevery.ui.search.createSearchWindow
 import com.clipevery.utils.ioDispatcher
 import com.github.kwhat.jnativehook.GlobalScreen
 import com.github.kwhat.jnativehook.NativeHookException
@@ -25,20 +23,26 @@ class GlobalListener(
 
     private val searchListener = SearchListener(appWindowManager, clipSearchService)
 
-    init {
+    fun start() {
         if (System.getProperty("globalListener", false.toString()).toBoolean()) {
             try {
                 GlobalScreen.registerNativeHook()
-            } catch (ex: NativeHookException) {
-                logger.error { "There was a problem registering the native hook." }
-                logger.error { "ex.message" }
+                GlobalScreen.addNativeKeyListener(searchListener)
+            } catch (e: NativeHookException) {
+                logger.error(e) { "There was a problem registering the native hook" }
             }
-            GlobalScreen.addNativeKeyListener(searchListener)
         }
     }
 
-    fun initSearchWindow() {
-        searchListener.initSearchWindow()
+    fun stop() {
+        if (System.getProperty("globalListener", false.toString()).toBoolean()) {
+            try {
+                GlobalScreen.removeNativeKeyListener(searchListener)
+                GlobalScreen.unregisterNativeHook()
+            } catch (e: NativeHookException) {
+                logger.error(e) { "There was a problem unregistering the native hook" }
+            }
+        }
     }
 }
 
@@ -51,12 +55,6 @@ class SearchListener(
 
     private val dispatcher = CoroutineScope(ioDispatcher)
 
-    fun initSearchWindow() {
-        dispatcher.launch(CoroutineName("OpenSearchWindow")) {
-            createSearchWindow(clipSearchService, Clipevery.koinApplication, dispatcher)
-        }
-    }
-
     override fun nativeKeyPressed(e: NativeKeyEvent) {
         val isCmdOrCtrlPressed = (e.modifiers and NativeKeyEvent.META_MASK) != 0
         val isShiftPressed = (e.modifiers and NativeKeyEvent.SHIFT_MASK) != 0
@@ -65,7 +63,7 @@ class SearchListener(
         if (isCmdOrCtrlPressed && isShiftPressed && isSpacePressed) {
             logger.info { "Open search window" }
             dispatcher.launch(CoroutineName("OpenSearchWindow")) {
-                createSearchWindow(clipSearchService, Clipevery.koinApplication, dispatcher)
+                clipSearchService.activeWindow()
             }
         } else if (e.keyCode == NativeKeyEvent.VC_ENTER) {
             dispatcher.launch(CoroutineName("Paste")) {
