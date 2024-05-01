@@ -20,7 +20,6 @@ import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,80 +47,13 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowPlacement
-import androidx.compose.ui.window.WindowPosition
-import androidx.compose.ui.window.application
-import androidx.compose.ui.window.rememberWindowState
 import com.clipevery.LocalKoinApplication
 import com.clipevery.clip.ClipSearchService
 import com.clipevery.ui.ClipeveryTheme
 import io.github.oshai.kotlinlogging.KLogger
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.koin.core.KoinApplication
 import java.awt.event.KeyEvent
-import java.awt.event.WindowAdapter
-import java.awt.event.WindowEvent
-
-fun createSearchWindow(
-    clipSearchService: ClipSearchService,
-    koinApplication: KoinApplication,
-    coroutineScope: CoroutineScope,
-) {
-    val appWindowManager = clipSearchService.appWindowManager
-    if (clipSearchService.tryStart()) {
-        application {
-            val windowState =
-                rememberWindowState(
-                    placement = WindowPlacement.Floating,
-                    position = WindowPosition.Aligned(Alignment.Center),
-                    size = appWindowManager.searchWindowDpSize,
-                )
-
-            Window(
-                onCloseRequest = ::exitApplication,
-                visible = appWindowManager.showSearchWindow,
-                state = windowState,
-                title = appWindowManager.searchWindowTitle,
-                alwaysOnTop = true,
-                undecorated = true,
-                transparent = true,
-                resizable = false,
-            ) {
-                DisposableEffect(Unit) {
-                    val windowListener =
-                        object : WindowAdapter() {
-                            override fun windowGainedFocus(e: WindowEvent?) {
-                                appWindowManager.showSearchWindow = true
-                            }
-
-                            override fun windowLostFocus(e: WindowEvent?) {
-                                appWindowManager.showSearchWindow = false
-                            }
-                        }
-
-                    window.addWindowFocusListener(windowListener)
-
-                    onDispose {
-                        window.removeWindowFocusListener(windowListener)
-                    }
-                }
-
-                ClipeveryAppSearchView(
-                    koinApplication,
-                    hideWindow = { appWindowManager.showSearchWindow = false },
-                )
-            }
-        }
-    } else {
-        coroutineScope.launch(CoroutineName("ActiveSearchWindow")) {
-            clipSearchService.activeWindow()
-        }
-    }
-}
 
 @Composable
 fun ClipeveryAppSearchView(

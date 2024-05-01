@@ -20,10 +20,6 @@ interface ClipSearchService {
 
     suspend fun search()
 
-    fun tryStart(): Boolean
-
-    fun stop()
-
     fun clickSetSelectedIndex(selectedIndex: Int)
 
     fun upSelectedIndex()
