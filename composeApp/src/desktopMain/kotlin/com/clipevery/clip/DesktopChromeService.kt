@@ -159,9 +159,13 @@ object DesktopChromeService : ChromeService {
 object JsCode {
     const val CODE: String = """
     const body = document.body;
-    const firstChild = body.firstElementChild;
-    if (body.children.length === 1 && firstChild) {
-        const firstChildStyle = getComputedStyle(firstChild);
+    const children = Array.from(body.children);
+    const backgroundColors = children.map(child => getComputedStyle(child).backgroundColor);
+    const allSameBackgroundColor = backgroundColors.every(color => color === backgroundColors[0]);
+    if (children.length > 1 && allSameBackgroundColor) {
+        body.style.backgroundColor = backgroundColors[0];
+    } else if (children.length === 1) {
+        const firstChildStyle = getComputedStyle(children[0]);
         if (firstChildStyle.backgroundColor && firstChildStyle.color) {
             body.style.backgroundColor = firstChildStyle.backgroundColor;
             body.style.color = firstChildStyle.color;
