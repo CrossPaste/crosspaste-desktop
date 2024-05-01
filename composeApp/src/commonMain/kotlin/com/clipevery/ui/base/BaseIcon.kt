@@ -73,3 +73,8 @@ fun expandCircleDown(): Painter {
 fun expandCircleUp(): Painter {
     return painterResource("icon/base/expand_circle_up.svg")
 }
+
+@Composable
+fun clipboard(): Painter {
+    return painterResource("icon/base/clipboard.svg")
+}
