@@ -63,3 +63,13 @@ fun database(): Painter {
 fun percent(): Painter {
     return painterResource("icon/base/percent.svg")
 }
+
+@Composable
+fun expandCircleDown(): Painter {
+    return painterResource("icon/base/expand_circle_down.svg")
+}
+
+@Composable
+fun expandCircleUp(): Painter {
+    return painterResource("icon/base/expand_circle_up.svg")
+}
