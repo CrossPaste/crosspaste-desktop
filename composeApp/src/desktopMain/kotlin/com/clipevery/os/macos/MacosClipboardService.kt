@@ -95,14 +95,29 @@ class MacosClipboardService(
         owner = false
     }
 
+    @Synchronized
     override fun start() {
-        if (job?.isActive != true) {
-            job = run()
+        if (configManager.config.enableClipboardListening) {
+            if (job?.isActive != true) {
+                job = run()
+            }
         }
     }
 
+    @Synchronized
     override fun stop() {
         job?.cancel()
         configManager.updateConfig { it.copy(lastClipboardChangeCount = changeCount) }
+    }
+
+    @Synchronized
+    override fun toggle() {
+        val enableClipboardListening = configManager.config.enableClipboardListening
+        if (enableClipboardListening) {
+            stop()
+        } else {
+            start()
+        }
+        configManager.updateConfig { it.copy(enableClipboardListening = !enableClipboardListening) }
     }
 }

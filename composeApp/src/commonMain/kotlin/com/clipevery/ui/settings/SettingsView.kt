@@ -61,6 +61,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Popup
 import com.clipevery.LocalKoinApplication
+import com.clipevery.clip.ClipboardService
 import com.clipevery.config.ConfigManager
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.PageViewContext
@@ -72,6 +73,7 @@ import com.clipevery.ui.base.arrowLeft
 import com.clipevery.ui.base.arrowRight
 import com.clipevery.ui.base.arrowUp
 import com.clipevery.ui.base.bolt
+import com.clipevery.ui.base.clipboard
 import com.clipevery.ui.base.getMenWidth
 import com.clipevery.ui.base.language
 import com.clipevery.ui.base.palette
@@ -98,6 +100,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
     val current = LocalKoinApplication.current
     val configManager = current.koin.get<ConfigManager>()
     val copywriter = current.koin.get<GlobalCopywriter>()
+    val clipboardService = current.koin.get<ClipboardService>()
     var hasBeenClicked by remember { mutableStateOf(false) }
     var showMoreLanguage by remember { mutableStateOf(false) }
 
@@ -290,6 +293,41 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                     Spacer(modifier = Modifier.weight(1f))
 
                     ThemeSegmentedControl()
+                }
+
+                Divider(modifier = Modifier.padding(start = 35.dp))
+
+                Row(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(40.dp)
+                            .padding(horizontal = 12.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        modifier = Modifier.size(15.dp),
+                        painter = clipboard(),
+                        contentDescription = "Enable Clipboard Listening",
+                        tint = Color(0xFF41B06E),
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    settingsText(copywriter.getText("Clipboard_Listening"))
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    var enableClipboardListening by remember { mutableStateOf(configManager.config.enableClipboardListening) }
+                    CustomSwitch(
+                        modifier =
+                            Modifier.width(32.dp)
+                                .height(20.dp),
+                        checked = enableClipboardListening,
+                        onCheckedChange = {
+                            enableClipboardListening = it
+                            clipboardService.toggle()
+                        },
+                    )
                 }
 
                 Divider(modifier = Modifier.padding(start = 35.dp))

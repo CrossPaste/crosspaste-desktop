@@ -145,6 +145,17 @@ class WindowsClipboardService(
         configManager.updateConfig { it.copy(lastClipboardChangeCount = changeCount) }
     }
 
+    @Synchronized
+    override fun toggle() {
+        val enableClipboardListening = configManager.config.enableClipboardListening
+        if (enableClipboardListening) {
+            stop()
+        } else {
+            start()
+        }
+        configManager.updateConfig { it.copy(enableClipboardListening = !enableClipboardListening) }
+    }
+
     private fun onChange() {
         var contents: Transferable? = null
         var waitTime = 20L

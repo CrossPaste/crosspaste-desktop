@@ -23,6 +23,7 @@ data class AppConfig(
     val isAllowDiscovery: Boolean = true,
     val blacklist: String = "[]",
     val lastClipboardChangeCount: Int = -1,
+    val enableClipboardListening: Boolean = true,
 ) {
 
     constructor(other: AppConfig, appEnv: AppEnv) : this(
@@ -42,5 +43,6 @@ data class AppConfig(
         isAllowDiscovery = other.isAllowDiscovery,
         blacklist = other.blacklist,
         lastClipboardChangeCount = other.lastClipboardChangeCount,
+        enableClipboardListening = other.enableClipboardListening,
     )
 }
