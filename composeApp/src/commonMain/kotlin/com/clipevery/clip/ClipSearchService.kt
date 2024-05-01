@@ -10,6 +10,12 @@ interface ClipSearchService {
 
     val inputSearch: State<String>
 
+    var searchFavorite: Boolean
+
+    var searchSort: Boolean
+
+    var searchClipType: Int?
+
     val searchResult: MutableList<ClipData>
 
     val currentClipData: State<ClipData?>
@@ -17,6 +23,12 @@ interface ClipSearchService {
     val appWindowManager: AppWindowManager
 
     fun updateInputSearch(inputSearch: String)
+
+    fun switchFavorite()
+
+    fun switchSort()
+
+    fun setClipType(clipType: Int?)
 
     suspend fun search()
 

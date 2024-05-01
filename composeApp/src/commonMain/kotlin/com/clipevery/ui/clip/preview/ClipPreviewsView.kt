@@ -106,7 +106,7 @@ fun ClipPreviewsView() {
                         }
                     }
 
-                    if (listState.firstVisibleItemIndex == 0) {
+                    if (listState.firstVisibleItemIndex == 0 && rememberClipDataList.isNotEmpty()) {
                         listState.scrollToItem(0)
                     }
                     // changes.deletions handle separately

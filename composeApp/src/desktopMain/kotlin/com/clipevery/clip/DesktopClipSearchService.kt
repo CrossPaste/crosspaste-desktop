@@ -36,6 +36,12 @@ class DesktopClipSearchService(
 
     override val inputSearch: State<String> get() = _inputSearch
 
+    override var searchFavorite by mutableStateOf(false)
+
+    override var searchSort by mutableStateOf(false)
+
+    override var searchClipType by mutableStateOf<Int?>(null)
+
     private var _inputSearch = mutableStateOf("")
 
     override val searchResult: MutableList<ClipData> = mutableStateListOf()
@@ -48,6 +54,33 @@ class DesktopClipSearchService(
         _inputSearch.value = inputSearch
     }
 
+    override fun switchFavorite() {
+        ioScope.launch {
+            mutex.withLock {
+                searchFavorite = !searchFavorite
+                search()
+            }
+        }
+    }
+
+    override fun switchSort() {
+        ioScope.launch {
+            mutex.withLock {
+                searchSort = !searchSort
+                search()
+            }
+        }
+    }
+
+    override fun setClipType(clipType: Int?) {
+        ioScope.launch {
+            mutex.withLock {
+                searchClipType = clipType
+                search()
+            }
+        }
+    }
+
     override suspend fun search() {
         searchJob?.cancel()
 
@@ -56,6 +89,9 @@ class DesktopClipSearchService(
                 val searchClipData =
                     clipDao.searchClipData(
                         inputSearch = _inputSearch.value,
+                        favorite = if (searchFavorite) searchFavorite else null,
+                        sort = searchSort,
+                        clipType = searchClipType,
                         limit = 50,
                     )
                 val searchClipDataFlow: Flow<ResultsChange<ClipData>> = searchClipData.asFlow()
@@ -147,6 +183,8 @@ class DesktopClipSearchService(
     override suspend fun activeWindow() {
         appWindowManager.activeSearchWindow()
         _inputSearch.value = ""
+        searchFavorite = false
+        searchSort = true
         search()
     }
 
