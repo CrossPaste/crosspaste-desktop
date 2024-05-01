@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.clip.item.ClipText
+import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.utils.getDateUtils
@@ -28,6 +29,7 @@ fun ClipTextDetailView(
     val copywriter = current.koin.get<GlobalCopywriter>()
     val dateUtils = getDateUtils()
     val text = clipText.text
+    val clipAppearItem = clipText as ClipAppearItem
 
     ClipDetailView(
         detailView = {
@@ -52,12 +54,13 @@ fun ClipTextDetailView(
                 items =
                     listOf(
                         ClipDetailInfoItem("Type", copywriter.getText("Text")),
-                        ClipDetailInfoItem("Size", clipData.size.toString()),
+                        ClipDetailInfoItem("Size", clipAppearItem.size.toString()),
                         ClipDetailInfoItem("Remote", copywriter.getText(if (clipData.remote) "Yes" else "No")),
                         ClipDetailInfoItem(
                             "Date",
                             copywriter.getDate(
                                 dateUtils.convertRealmInstantToLocalDateTime(clipData.createTime),
+                                true,
                             ),
                         ),
                     ),

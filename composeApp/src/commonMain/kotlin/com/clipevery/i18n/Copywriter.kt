@@ -8,7 +8,10 @@ interface Copywriter {
 
     fun getText(id: String): String
 
-    fun getDate(date: LocalDateTime): String
+    fun getDate(
+        date: LocalDateTime,
+        detail: Boolean = false,
+    ): String
 
     fun getAbridge(): String
 }
@@ -42,7 +45,10 @@ class PreviewGlobalCopywriter : GlobalCopywriter {
         return id
     }
 
-    override fun getDate(date: LocalDateTime): String {
+    override fun getDate(
+        date: LocalDateTime,
+        detail: Boolean,
+    ): String {
         return date.toString()
     }
 

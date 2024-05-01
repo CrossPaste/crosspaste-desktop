@@ -58,8 +58,11 @@ open class GlobalCopywriterImpl(private val configManager: ConfigManager) : Glob
         return copywriter.getText(id)
     }
 
-    override fun getDate(date: LocalDateTime): String {
-        return copywriter.getDate(date)
+    override fun getDate(
+        date: LocalDateTime,
+        detail: Boolean,
+    ): String {
+        return copywriter.getDate(date, detail)
     }
 
     override fun getAbridge(): String {
@@ -118,7 +121,10 @@ class CopywriterImpl(private val language: String) : Copywriter {
         }
     }
 
-    override fun getDate(date: LocalDateTime): String {
+    override fun getDate(
+        date: LocalDateTime,
+        detail: Boolean,
+    ): String {
         val locale =
             when (language) {
                 "zh" -> Locale.SIMPLIFIED_CHINESE
@@ -129,12 +135,22 @@ class CopywriterImpl(private val language: String) : Copywriter {
             }
 
         val pattern =
-            when (language) {
-                "en" -> "MM/dd/yyyy"
-                "es" -> "dd/MM/yyyy"
-                "jp" -> "yyyy/MM/dd"
-                "zh" -> "yyyy年MM月dd日"
-                else -> "MM/dd/yyyy"
+            if (detail) {
+                when (language) {
+                    "en" -> "MM/dd/yyyy HH:mm:ss"
+                    "es" -> "dd/MM/yyyy HH:mm:ss"
+                    "jp" -> "yyyy/MM/dd HH:mm:ss"
+                    "zh" -> "yyyy年MM月dd日 HH:mm:ss"
+                    else -> "MM/dd/yyyy HH:mm:ss"
+                }
+            } else {
+                when (language) {
+                    "en" -> "MM/dd/yyyy"
+                    "es" -> "dd/MM/yyyy"
+                    "jp" -> "yyyy/MM/dd"
+                    "zh" -> "yyyy年MM月dd日"
+                    else -> "MM/dd/yyyy"
+                }
             }
         return dateUtils.getDateText(date, pattern, locale)
     }
