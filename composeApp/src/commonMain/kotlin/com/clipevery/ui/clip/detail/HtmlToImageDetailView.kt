@@ -127,7 +127,7 @@ fun HtmlToImageDetailView(
                 items =
                     listOf(
                         ClipDetailInfoItem("Type", copywriter.getText("Html")),
-                        ClipDetailInfoItem("Size", clipAppearItem.size.toString()),
+                        ClipDetailInfoItem("Size", fileUtils.formatBytes(clipAppearItem.size)),
                         ClipDetailInfoItem("Remote", copywriter.getText(if (clipData.remote) "Yes" else "No")),
                         ClipDetailInfoItem(
                             "Date",
