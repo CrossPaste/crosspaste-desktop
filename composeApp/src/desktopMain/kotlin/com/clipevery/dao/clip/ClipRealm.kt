@@ -289,7 +289,7 @@ class ClipRealm(
                     clipData.clipAppearContent = clipAppearContent
                     clipContent.clipAppearItems.addAll(remainingItems.map { RealmAny.create(it as RealmObject) })
                     clipData.clipType = firstItem.getClipType()
-                    clipData.clipSearchContent = firstItem.getSearchContent()
+                    clipData.clipSearchContent = getSearchContent(firstItem, remainingItems)
                     clipData.md5 = firstItem.md5
                     clipData.size = size
                     clipData.clipState = ClipState.LOADED
@@ -303,6 +303,18 @@ class ClipRealm(
         }?.let { tasks ->
             taskExecutor.submitTasks(tasks)
         }
+    }
+
+    private fun getSearchContent(
+        firstItem: ClipAppearItem,
+        remainingItems: List<ClipAppearItem>,
+    ): String? {
+        if (firstItem.getClipType() == ClipType.HTML) {
+            remainingItems.firstOrNull { it.getClipType() == ClipType.TEXT }?.let {
+                return@let it.getSearchContent()
+            }
+        }
+        return firstItem.getSearchContent()
     }
 
     override suspend fun releaseRemoteClipData(
