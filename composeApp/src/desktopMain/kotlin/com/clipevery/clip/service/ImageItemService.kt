@@ -7,6 +7,7 @@ import com.clipevery.clip.ClipItemService
 import com.clipevery.clip.item.ImagesClipItem
 import com.clipevery.clip.service.HtmlItemService.HtmlItemService.HTML_ID
 import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.image.ImageService.writeImage
 import com.clipevery.utils.DesktopFileUtils
 import com.clipevery.utils.DesktopFileUtils.createClipPath
 import com.clipevery.utils.DesktopFileUtils.createClipRelativePath
@@ -23,8 +24,6 @@ import java.awt.datatransfer.Transferable
 import java.awt.image.BufferedImage
 import java.net.MalformedURLException
 import java.net.URL
-import java.nio.file.Path
-import javax.imageio.ImageIO
 
 class ImageItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
 
@@ -93,25 +92,6 @@ class ImageItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
                 }
                 clipCollector.updateCollectItem(itemIndex, this::class, update)
             }
-        }
-    }
-
-    private fun writeImage(
-        image: BufferedImage,
-        ext: String,
-        imagePath: Path,
-    ): Boolean {
-        if (!ImageIO.write(image, ext, imagePath.toFile())) {
-            val convertedImage =
-                BufferedImage(image.width, image.height, BufferedImage.TYPE_INT_RGB)
-
-            val g2d = convertedImage.createGraphics()
-            g2d.drawImage(image, 0, 0, null)
-            g2d.dispose()
-
-            return ImageIO.write(convertedImage, ext, imagePath.toFile())
-        } else {
-            return true
         }
     }
 

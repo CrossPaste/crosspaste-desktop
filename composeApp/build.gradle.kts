@@ -65,6 +65,7 @@ kotlin {
             implementation(libs.selenium.java)
             implementation(libs.signal.client)
             implementation(libs.theme.detector)
+            implementation(libs.webp.imageio)
             implementation(libs.zxing.core)
             implementation(libs.zxing.javase)
         }

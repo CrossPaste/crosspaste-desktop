@@ -22,6 +22,7 @@ realm = "1.15.0"
 selenium = "4.20.0"
 signal = "0.45.1"
 theme-detector = "3.8"
+webp-imageio = "0.8.0"
 zxing = "3.5.3"
 
 [libraries]
@@ -58,6 +59,7 @@ realm-kotlin-base = { module = "io.realm.kotlin:library-base", version.ref = "re
 selenium-java = { module = "org.seleniumhq.selenium:selenium-java", version.ref = "selenium" }
 signal-client = { module = "org.signal:libsignal-client", version.ref = "signal" }
 theme-detector = { module = "com.github.Dansoftowner:jSystemThemeDetector", version.ref = "theme-detector" }
+webp-imageio = { module = "com.github.usefulness:webp-imageio", version.ref = "webp-imageio" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 zxing-javase = { module = "com.google.zxing:javase", version.ref = "zxing" }
 
