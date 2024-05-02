@@ -36,23 +36,29 @@ fun MenuItem(
     text: String,
     textStyle: TextStyle = menuItemTextStyle,
     paddingValues: PaddingValues = PaddingValues(16.dp, 8.dp, 16.dp, 8.dp),
+    enabledInteraction: Boolean = true,
     onClick: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
-    val backgroundColor = if (isHovered) MaterialTheme.colors.secondaryVariant else Color.Transparent
+    val backgroundColor = if (enabledInteraction && isHovered) MaterialTheme.colors.secondaryVariant else Color.Transparent
+
+    var modifier =
+        Modifier
+            .fillMaxWidth()
+            .hoverable(interactionSource = interactionSource)
+            .background(backgroundColor)
+            .padding(paddingValues)
+
+    if (enabledInteraction) {
+        modifier = modifier.clickable(onClick = onClick)
+    }
 
     Text(
         text = text,
         color = MaterialTheme.colors.onBackground,
         style = textStyle,
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .hoverable(interactionSource = interactionSource)
-                .background(backgroundColor)
-                .clickable(onClick = onClick)
-                .padding(paddingValues),
+        modifier = modifier,
     )
 }
 
