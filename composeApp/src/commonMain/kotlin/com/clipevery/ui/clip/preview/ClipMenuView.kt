@@ -62,7 +62,7 @@ fun ClipMenuView(clipData: ClipData) {
         },
         modifier =
             Modifier
-                .background(Color.Transparent, CircleShape) // Set the background to blue and shape to circle
+                .background(Color.Transparent, CircleShape)
                 .onGloballyPositioned { coordinates ->
                     buttonPosition = coordinates.localToWindow(Offset.Zero)
                     buttonSize = coordinates.size.toSize()
