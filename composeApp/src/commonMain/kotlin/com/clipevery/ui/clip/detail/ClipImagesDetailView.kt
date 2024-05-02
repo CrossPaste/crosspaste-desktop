@@ -2,15 +2,19 @@ package com.clipevery.ui.clip.detail
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -43,6 +47,8 @@ import com.clipevery.ui.base.LoadImageData
 import com.clipevery.ui.base.chevronLeft
 import com.clipevery.ui.base.chevronRight
 import com.clipevery.ui.base.image
+import com.clipevery.ui.base.imageCompress
+import com.clipevery.ui.base.imageExpand
 import com.clipevery.ui.base.imageSlash
 import com.clipevery.ui.base.loadImageData
 import com.clipevery.utils.getDateUtils
@@ -96,6 +102,10 @@ fun ClipImagesDetailView(
 
         var hover by remember { mutableStateOf(false) }
 
+        var showMode by remember(clipData.id) { mutableStateOf(false) }
+
+        var forceMode by remember(clipData.id) { mutableStateOf(false) }
+
         ClipDetailView(
             detailView = {
                 Row(
@@ -131,27 +141,24 @@ fun ClipImagesDetailView(
                                     if (loadImageView.isSuccess()) {
                                         val painter = (loadImageView as LoadImageData).toPainterImage.toPainter()
                                         val intrinsicSize = painter.intrinsicSize
-                                        val isLongScreenshot = intrinsicSize.width * 180 < intrinsicSize.height * 100
 
-                                        val contentScale =
-                                            if (isLongScreenshot) {
-                                                ContentScale.FillWidth
-                                            } else {
-                                                ContentScale.Fit
-                                            }
+                                        if (!forceMode) {
+                                            showMode = intrinsicSize.width * 180 < intrinsicSize.height * 100
+                                        }
 
-                                        val modifier =
-                                            if (isLongScreenshot) {
+                                        val imageShowMode =
+                                            if (showMode) {
                                                 val scrollState = rememberScrollState()
-                                                Modifier.fillMaxSize().verticalScroll(scrollState)
+                                                ImageShowMode(Modifier.fillMaxSize().verticalScroll(scrollState), ContentScale.FillWidth)
                                             } else {
-                                                Modifier.fillMaxSize()
+                                                ImageShowMode(Modifier.fillMaxSize(), ContentScale.Fit)
                                             }
+
                                         Image(
-                                            modifier = modifier,
+                                            modifier = imageShowMode.modifier,
                                             painter = painter,
                                             contentDescription = "${imagePath.fileName}",
-                                            contentScale = contentScale,
+                                            contentScale = imageShowMode.contentScale,
                                         )
                                     } else if (loadImageView.isLoading()) {
                                         Icon(
@@ -173,7 +180,7 @@ fun ClipImagesDetailView(
                         )
 
                         if (clipFiles.count > 1 && hover) {
-                            Row(modifier = Modifier.fillMaxWidth().height(30.dp).padding(horizontal = 10.dp)) {
+                            Row(modifier = Modifier.fillMaxWidth().height(30.dp)) {
                                 ClipIconButton(
                                     radius = 18.dp,
                                     onClick = {
@@ -227,6 +234,33 @@ fun ClipImagesDetailView(
                                 }
                             }
                         }
+
+                        if (hover) {
+                            Row(modifier = Modifier.fillMaxSize()) {
+                                Spacer(modifier = Modifier.weight(1f))
+                                Column(modifier = Modifier.width(30.dp).fillMaxHeight()) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                    Box(
+                                        modifier =
+                                            Modifier.size(30.dp).background(
+                                                color = MaterialTheme.colors.background.copy(alpha = 0.5f),
+                                            ),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Icon(
+                                            modifier =
+                                                Modifier.size(20.dp).clickable {
+                                                    forceMode = true
+                                                    showMode = !showMode
+                                                },
+                                            painter = if (showMode) imageCompress() else imageExpand(),
+                                            contentDescription = "expand or compress image",
+                                            tint = MaterialTheme.colors.onBackground,
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             },
@@ -253,3 +287,5 @@ fun ClipImagesDetailView(
         )
     }
 }
+
+private data class ImageShowMode(val modifier: Modifier, val contentScale: ContentScale)

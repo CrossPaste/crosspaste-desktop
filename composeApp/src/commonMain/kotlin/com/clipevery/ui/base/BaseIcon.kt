@@ -78,3 +78,13 @@ fun expandCircleUp(): Painter {
 fun clipboard(): Painter {
     return painterResource("icon/base/clipboard.svg")
 }
+
+@Composable
+fun imageExpand(): Painter {
+    return painterResource("icon/base/image_expand.svg")
+}
+
+@Composable
+fun imageCompress(): Painter {
+    return painterResource("icon/base/image_compress.svg")
+}
