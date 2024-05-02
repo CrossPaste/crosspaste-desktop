@@ -42,6 +42,7 @@ import com.clipevery.ui.base.chevronLeft
 import com.clipevery.ui.base.chevronRight
 import com.clipevery.ui.base.loadIconData
 import com.clipevery.utils.getDateUtils
+import com.clipevery.utils.getFileUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -63,6 +64,7 @@ fun ClipFilesDetailView(
         val clipAppearItem = clipFiles as ClipAppearItem
 
         val dateUtils = getDateUtils()
+        val fileUtils = getFileUtils()
 
         var index by remember(clipData.id) { mutableStateOf(0) }
 
@@ -210,7 +212,7 @@ fun ClipFilesDetailView(
                         listOf(
                             ClipDetailInfoItem("File_Name", "${filePath.fileName}"),
                             ClipDetailInfoItem("Type", copywriter.getText("File")),
-                            ClipDetailInfoItem("Size", clipAppearItem.size.toString()),
+                            ClipDetailInfoItem("Size", fileUtils.formatBytes(clipAppearItem.size)),
                             ClipDetailInfoItem("Remote", copywriter.getText(if (clipData.remote) "Yes" else "No")),
                             ClipDetailInfoItem(
                                 "Date",

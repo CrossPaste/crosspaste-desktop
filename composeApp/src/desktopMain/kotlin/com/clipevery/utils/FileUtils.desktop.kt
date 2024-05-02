@@ -34,7 +34,7 @@ object DesktopFileUtils : FileUtils {
     override val tempDirectory: Path = java.nio.file.Files.createTempDirectory("clipevery")
 
     private val units = arrayOf("B", "KB", "MB", "GB", "TB")
-    private val decimalFormat = DecimalFormat("#,##0.#")
+    private val decimalFormat = DecimalFormat("###0.#")
 
     init {
         tempDirectory.toFile().deleteOnExit()

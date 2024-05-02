@@ -112,8 +112,13 @@ fun SingleImagePreviewView(imagePath: Path) {
                     }
 
                     if (existFile) {
+                        val imageSize =
+                            remember(imagePath) {
+                                fileUtils.formatBytes(fileUtils.getFileSize(imagePath))
+                            }
+
                         Text(
-                            text = "${copywriter.getText("Size")}: ${fileUtils.getFileSize(imagePath)}",
+                            text = "${copywriter.getText("Size")}: $imageSize",
                             color = MaterialTheme.colors.onBackground,
                             style =
                                 TextStyle(

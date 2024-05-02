@@ -19,6 +19,7 @@ import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.utils.getDateUtils
+import com.clipevery.utils.getFileUtils
 
 @Composable
 fun ClipTextDetailView(
@@ -28,6 +29,7 @@ fun ClipTextDetailView(
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val dateUtils = getDateUtils()
+    val fileUtils = getFileUtils()
     val text = clipText.text
     val clipAppearItem = clipText as ClipAppearItem
 
@@ -54,7 +56,7 @@ fun ClipTextDetailView(
                 items =
                     listOf(
                         ClipDetailInfoItem("Type", copywriter.getText("Text")),
-                        ClipDetailInfoItem("Size", clipAppearItem.size.toString()),
+                        ClipDetailInfoItem("Size", fileUtils.formatBytes(clipAppearItem.size)),
                         ClipDetailInfoItem("Remote", copywriter.getText(if (clipData.remote) "Yes" else "No")),
                         ClipDetailInfoItem(
                             "Date",

@@ -21,6 +21,7 @@ import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.clip.preview.openUrlInBrowser
 import com.clipevery.utils.getDateUtils
+import com.clipevery.utils.getFileUtils
 
 @Composable
 fun ClipUrlDetailView(
@@ -30,6 +31,7 @@ fun ClipUrlDetailView(
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val dateUtils = getDateUtils()
+    val fileUtils = getFileUtils()
     val url = clipUrl.url
     val clipAppearItem = clipUrl as ClipAppearItem
 
@@ -62,7 +64,7 @@ fun ClipUrlDetailView(
                 items =
                     listOf(
                         ClipDetailInfoItem("Type", copywriter.getText("Link")),
-                        ClipDetailInfoItem("Size", clipAppearItem.size.toString()),
+                        ClipDetailInfoItem("Size", fileUtils.formatBytes(clipAppearItem.size)),
                         ClipDetailInfoItem("Remote", copywriter.getText(if (clipData.remote) "Yes" else "No")),
                         ClipDetailInfoItem(
                             "Date",

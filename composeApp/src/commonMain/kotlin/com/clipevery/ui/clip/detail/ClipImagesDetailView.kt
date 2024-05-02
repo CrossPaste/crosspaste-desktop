@@ -46,6 +46,7 @@ import com.clipevery.ui.base.image
 import com.clipevery.ui.base.imageSlash
 import com.clipevery.ui.base.loadImageData
 import com.clipevery.utils.getDateUtils
+import com.clipevery.utils.getFileUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -65,6 +66,7 @@ fun ClipImagesDetailView(
         val clipAppearItem = clipFiles as ClipAppearItem
 
         val dateUtils = getDateUtils()
+        val fileUtils = getFileUtils()
 
         var index by remember(clipData.id) { mutableStateOf(0) }
 
@@ -236,7 +238,7 @@ fun ClipImagesDetailView(
                         listOf(
                             ClipDetailInfoItem("File_Name", "${imagePath.fileName}"),
                             ClipDetailInfoItem("Type", copywriter.getText("Image")),
-                            ClipDetailInfoItem("Size", clipAppearItem.size.toString()),
+                            ClipDetailInfoItem("Size", fileUtils.formatBytes(clipAppearItem.size)),
                             ClipDetailInfoItem("Remote", copywriter.getText(if (clipData.remote) "Yes" else "No")),
                             ClipDetailInfoItem(
                                 "Date",
