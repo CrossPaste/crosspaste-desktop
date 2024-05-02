@@ -16,6 +16,7 @@ import io.realm.kotlin.types.annotations.PrimaryKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import org.jsoup.Jsoup
 import org.mongodb.kbson.BsonObjectId
 import org.mongodb.kbson.ObjectId
 import java.awt.datatransfer.DataFlavor
@@ -75,7 +76,7 @@ class HtmlClipItem : RealmObject, ClipAppearItem, ClipHtml {
     }
 
     override fun getSearchContent(): String {
-        return html.lowercase()
+        return Jsoup.parse(html).text().lowercase()
     }
 
     override fun update(
