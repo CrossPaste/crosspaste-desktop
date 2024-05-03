@@ -22,8 +22,6 @@ import androidx.compose.material.Divider
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -57,6 +55,7 @@ import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.ClipIconButton
 import com.clipevery.ui.base.MenuItem
 import com.clipevery.ui.base.getMenWidth
+import com.clipevery.ui.base.settings
 import java.awt.Desktop
 import java.net.URI
 
@@ -165,7 +164,7 @@ fun TitleView(currentPage: MutableState<PageViewContext>) {
                             },
                 ) {
                     Icon(
-                        Icons.Outlined.Settings,
+                        settings(),
                         contentDescription = "info",
                         modifier = Modifier.padding(3.dp).size(30.dp),
                         tint = Color.White,

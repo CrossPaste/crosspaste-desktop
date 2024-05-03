@@ -5,8 +5,8 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 
 @Composable
-fun feed(): Painter {
-    return painterResource("icon/clip/feed.svg")
+fun text(): Painter {
+    return painterResource("icon/clip/text.svg")
 }
 
 @Composable
