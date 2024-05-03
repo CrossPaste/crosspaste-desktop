@@ -1,13 +1,16 @@
 package com.clipevery.ui.clip.preview
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
@@ -41,8 +44,11 @@ import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.ClipIconButton
 import com.clipevery.ui.base.MenuItem
 import com.clipevery.ui.base.getMenWidth
+import com.clipevery.ui.base.starRegular
+import com.clipevery.ui.base.starSolid
 import kotlinx.coroutines.runBlocking
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ClipMenuView(clipData: ClipData) {
     val current = LocalKoinApplication.current
@@ -55,88 +61,105 @@ fun ClipMenuView(clipData: ClipData) {
     var buttonPosition by remember { mutableStateOf(Offset.Zero) }
     var buttonSize by remember { mutableStateOf(Size(0.0f, 0.0f)) }
 
-    ClipIconButton(
-        radius = 18.dp,
-        onClick = {
-            showPopup = !showPopup
-        },
-        modifier =
-            Modifier
-                .background(Color.Transparent, CircleShape)
-                .onGloballyPositioned { coordinates ->
-                    buttonPosition = coordinates.localToWindow(Offset.Zero)
-                    buttonSize = coordinates.size.toSize()
-                },
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(
-            Icons.Outlined.MoreVert,
-            contentDescription = "info",
-            modifier = Modifier.padding(3.dp).size(18.dp),
-            tint = MaterialTheme.colors.primary,
-        )
-    }
-
-    if (showPopup) {
-        Popup(
-            alignment = Alignment.TopEnd,
-            offset =
-                IntOffset(
-                    with(density) { ((-40).dp).roundToPx() },
-                    with(density) { (20.dp).roundToPx() },
-                ),
-            onDismissRequest = {
-                if (showPopup) {
-                    showPopup = false
-                }
+        ClipIconButton(
+            radius = 12.dp,
+            onClick = {
+                showPopup = !showPopup
             },
-            properties =
-                PopupProperties(
-                    focusable = true,
-                    dismissOnBackPress = true,
-                    dismissOnClickOutside = true,
-                ),
+            modifier =
+                Modifier
+                    .background(Color.Transparent, CircleShape)
+                    .onGloballyPositioned { coordinates ->
+                        buttonPosition = coordinates.localToWindow(Offset.Zero)
+                        buttonSize = coordinates.size.toSize()
+                    },
         ) {
-            Box(
-                modifier =
-                    Modifier
-                        .wrapContentSize()
-                        .background(Color.Transparent)
-                        .shadow(15.dp),
-            ) {
-                val menuTexts =
-                    arrayOf(
-                        copywriter.getText(getTypeText(clipData.clipType)),
-                        copywriter.getText(if (clipData.favorite) "Delete_Favorite" else "Favorite"),
-                        copywriter.getText("Delete"),
-                        copywriter.getText("Remove_Device"),
-                    )
+            Icon(
+                Icons.Outlined.MoreVert,
+                contentDescription = "info",
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colors.primary,
+            )
+        }
 
-                val maxWidth = getMenWidth(menuTexts)
-
-                Column(
-                    modifier =
-                        Modifier
-                            .width(maxWidth)
-                            .wrapContentHeight()
-                            .clip(RoundedCornerShape(5.dp))
-                            .background(MaterialTheme.colors.surface),
-                ) {
-                    MenuItem(copywriter.getText(getTypeText(clipData.clipType)), enabledInteraction = false) {}
-
-                    Divider()
-
-                    MenuItem(copywriter.getText(if (clipData.favorite) "Delete_Favorite" else "Favorite")) {
-                        clipDao.setFavorite(clipData.id, !clipData.favorite)
+        if (showPopup) {
+            Popup(
+                alignment = Alignment.TopEnd,
+                offset =
+                    IntOffset(
+                        with(density) { ((-40).dp).roundToPx() },
+                        with(density) { (10.dp).roundToPx() },
+                    ),
+                onDismissRequest = {
+                    if (showPopup) {
                         showPopup = false
                     }
-                    MenuItem(copywriter.getText("Delete")) {
-                        runBlocking {
-                            clipDao.markDeleteClipData(clipData.id)
+                },
+                properties =
+                    PopupProperties(
+                        focusable = true,
+                        dismissOnBackPress = true,
+                        dismissOnClickOutside = true,
+                    ),
+            ) {
+                Box(
+                    modifier =
+                        Modifier
+                            .wrapContentSize()
+                            .background(Color.Transparent)
+                            .shadow(15.dp),
+                ) {
+                    val menuTexts =
+                        arrayOf(
+                            copywriter.getText(getTypeText(clipData.clipType)),
+                            copywriter.getText(if (clipData.favorite) "Delete_Favorite" else "Favorite"),
+                            copywriter.getText("Delete"),
+                            copywriter.getText("Remove_Device"),
+                        )
+
+                    val maxWidth = getMenWidth(menuTexts)
+
+                    Column(
+                        modifier =
+                            Modifier
+                                .width(maxWidth)
+                                .wrapContentHeight()
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(MaterialTheme.colors.surface),
+                    ) {
+                        MenuItem(copywriter.getText(getTypeText(clipData.clipType)), enabledInteraction = false) {}
+
+                        Divider()
+
+                        MenuItem(copywriter.getText(if (clipData.favorite) "Delete_Favorite" else "Favorite")) {
+                            clipDao.setFavorite(clipData.id, !clipData.favorite)
+                            showPopup = false
                         }
-                        showPopup = false
+                        MenuItem(copywriter.getText("Delete")) {
+                            runBlocking {
+                                clipDao.markDeleteClipData(clipData.id)
+                            }
+                            showPopup = false
+                        }
                     }
                 }
             }
         }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Icon(
+            modifier =
+                Modifier.size(16.dp).onClick {
+                    clipDao.setFavorite(clipData.id, !clipData.favorite)
+                },
+            painter = if (clipData.favorite) starSolid() else starRegular(),
+            contentDescription = "Favorite",
+            tint = if (clipData.favorite) Color(0xFFFFCE34) else MaterialTheme.colors.onSurface,
+        )
     }
 }

@@ -1,7 +1,7 @@
 package com.clipevery.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -94,13 +95,13 @@ fun TabView(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SingleTabView(
     title: String,
     selected: Boolean,
     clickable: () -> Unit,
 ) {
-    val textStyle: TextStyle
     val textUnit: TextUnit
     var modifier: Modifier =
         Modifier.padding(2.dp)
@@ -108,26 +109,27 @@ fun SingleTabView(
             .wrapContentSize(Alignment.CenterStart)
 
     if (selected) {
-        textStyle = TextStyle(fontWeight = FontWeight.Bold)
         modifier = modifier.border(5.dp, MaterialTheme.colors.primary, bottomBorderShape)
         textUnit = 16.sp
     } else {
-        textStyle = TextStyle(fontWeight = FontWeight.Normal)
         textUnit = 12.sp
     }
 
-    Box(modifier = modifier) {
+    Box(
+        modifier =
+            modifier
+                .onClick(onClick = { clickable() }),
+    ) {
         Text(
             text = title,
             color = MaterialTheme.colors.onBackground,
             fontSize = textUnit,
-            style = textStyle,
+            style = TextStyle(fontWeight = FontWeight.Normal),
             fontFamily = FontFamily.SansSerif,
             modifier =
                 Modifier
                     .padding(8.dp, 0.dp, 8.dp, 8.dp)
-                    .align(Alignment.BottomStart)
-                    .clickable { clickable() },
+                    .align(Alignment.BottomStart),
         )
     }
 }

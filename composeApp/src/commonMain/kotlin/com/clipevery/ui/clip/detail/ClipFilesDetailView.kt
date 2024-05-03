@@ -206,7 +206,7 @@ fun ClipFilesDetailView(
             },
             detailInfoView = {
                 ClipDetailInfoView(
-                    indexInfo = "(${index + 1}/$showFileCount)",
+                    indexInfo = if (showFileCount <= 1) null else "(${index + 1}/$showFileCount)",
                     clipData = clipData,
                     items =
                         listOf(

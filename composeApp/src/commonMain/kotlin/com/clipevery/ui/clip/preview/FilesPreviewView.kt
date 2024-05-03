@@ -17,7 +17,7 @@ fun FilesPreviewView(clipData: ClipData) {
     clipData.getClipItem()?.let {
         val clipFiles = it as ClipFiles
 
-        ClipSpecificPreviewContentView(it, {
+        ClipSpecificPreviewContentView({
             val filePaths = clipFiles.getFilePaths()
             LazyRow(modifier = Modifier.fillMaxSize()) {
                 items(filePaths.size) { index ->

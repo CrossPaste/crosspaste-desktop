@@ -266,7 +266,7 @@ fun ClipImagesDetailView(
             },
             detailInfoView = {
                 ClipDetailInfoView(
-                    indexInfo = "(${index + 1}/${clipFiles.count})",
+                    indexInfo = if (clipFiles.count <= 1) null else "(${index + 1}/${clipFiles.count})",
                     clipData = clipData,
                     items =
                         listOf(

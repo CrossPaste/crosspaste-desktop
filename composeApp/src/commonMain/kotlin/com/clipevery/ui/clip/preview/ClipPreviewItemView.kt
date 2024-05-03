@@ -2,20 +2,24 @@ package com.clipevery.ui.clip.preview
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.onClick
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.clip.ClipboardService
@@ -96,7 +100,7 @@ fun ClipPreviewItemView(
                 modifier =
                     Modifier.fillMaxWidth()
                         .height(120.dp)
-                        .padding(10.dp),
+                        .padding(10.dp, 10.dp, 0.dp, 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 clipData.clipContent()
@@ -147,15 +151,23 @@ fun getTypeText(clipType: Int): String {
 
 @Composable
 fun ClipSpecificPreviewContentView(
-    clipAppearItem: ClipAppearItem,
-    clipLeftContent: @Composable ClipAppearItem.() -> Unit,
-    clipRightInfo: @Composable ClipAppearItem.() -> Unit,
+    clipLeftContent: @Composable () -> Unit,
+    clipRightInfo: @Composable () -> Unit,
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        clipAppearItem.clipLeftContent()
-        Row(modifier = Modifier.fillMaxSize()) {
-            Spacer(modifier = Modifier.weight(1f))
-            clipAppearItem.clipRightInfo()
+    Row(modifier = Modifier.fillMaxSize()) {
+        BoxWithConstraints(
+            modifier =
+                Modifier
+                    .fillMaxHeight().width(400.dp)
+                    .clip(RoundedCornerShape(5.dp)),
+        ) {
+            clipLeftContent()
+        }
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Top,
+        ) {
+            clipRightInfo()
         }
     }
 }

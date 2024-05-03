@@ -1,5 +1,6 @@
 package com.clipevery.ui.search
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Divider
@@ -88,7 +90,7 @@ fun ClipeveryAppSearchView(
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun ClipeverySearchWindow(hideWindow: () -> Unit) {
     val current = LocalKoinApplication.current
@@ -246,9 +248,10 @@ fun ClipeverySearchWindow(hideWindow: () -> Unit) {
                                 ) {
                                     Icon(
                                         modifier =
-                                            Modifier.size(20.dp).clickable {
-                                                clipSearchService.switchFavorite()
-                                            },
+                                            Modifier.size(20.dp)
+                                                .onClick(onClick = {
+                                                    clipSearchService.switchFavorite()
+                                                }),
                                         painter = if (clipSearchService.searchFavorite) starSolid() else starRegular(),
                                         contentDescription = "Favorite",
                                         tint = if (clipSearchService.searchFavorite) Color(0xFFFFCE34) else MaterialTheme.colors.onSurface,
@@ -256,9 +259,10 @@ fun ClipeverySearchWindow(hideWindow: () -> Unit) {
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Icon(
                                         modifier =
-                                            Modifier.size(30.dp).clickable {
-                                                clipSearchService.switchSort()
-                                            },
+                                            Modifier.size(30.dp)
+                                                .onClick(onClick = {
+                                                    clipSearchService.switchSort()
+                                                }),
                                         painter = if (clipSearchService.searchSort) expandCircleDown() else expandCircleUp(),
                                         contentDescription = "Favorite",
                                         tint = MaterialTheme.colors.primary,

@@ -51,7 +51,7 @@ fun HtmlToImagePreviewView(clipData: ClipData) {
 
         var existFile by remember(clipData.id) { mutableStateOf(filePath.toFile().exists()) }
 
-        ClipSpecificPreviewContentView(it, {
+        ClipSpecificPreviewContentView({
             Row {
                 AsyncView(
                     key = clipData.id,

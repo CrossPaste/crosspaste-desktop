@@ -48,7 +48,6 @@ fun MenuItem(
             .fillMaxWidth()
             .hoverable(interactionSource = interactionSource)
             .background(backgroundColor)
-            .padding(paddingValues)
 
     if (enabledInteraction) {
         modifier = modifier.clickable(onClick = onClick)
@@ -58,7 +57,7 @@ fun MenuItem(
         text = text,
         color = MaterialTheme.colors.onBackground,
         style = textStyle,
-        modifier = modifier,
+        modifier = modifier.padding(paddingValues),
     )
 }
 
