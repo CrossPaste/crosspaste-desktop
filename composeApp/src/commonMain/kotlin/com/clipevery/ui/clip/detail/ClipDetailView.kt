@@ -20,7 +20,7 @@ fun ClipDetailView(
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier =
-                Modifier.fillMaxWidth().height(200.dp).padding(10.dp)
+                Modifier.fillMaxWidth().height(240.dp).padding(10.dp)
                     .clip(RoundedCornerShape(5.dp)),
         ) {
             detailView()
