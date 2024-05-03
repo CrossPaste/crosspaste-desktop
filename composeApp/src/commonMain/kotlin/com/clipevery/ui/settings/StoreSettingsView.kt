@@ -49,13 +49,13 @@ import com.clipevery.ui.base.CustomSwitch
 import com.clipevery.ui.base.anglesUpDown
 import com.clipevery.ui.base.clock
 import com.clipevery.ui.base.database
-import com.clipevery.ui.base.feed
 import com.clipevery.ui.base.file
 import com.clipevery.ui.base.hashtag
 import com.clipevery.ui.base.html
 import com.clipevery.ui.base.image
 import com.clipevery.ui.base.link
 import com.clipevery.ui.base.percent
+import com.clipevery.ui.base.text
 import com.clipevery.ui.base.trash
 import com.clipevery.ui.devices.measureTextWidth
 import com.clipevery.utils.Quadruple
@@ -131,7 +131,7 @@ fun StoreSettingsView() {
     val clipTypes: Array<Quadruple<String, Painter, Long?, String?>> =
         arrayOf(
             Quadruple("Pasteboard", hashtag(), clipCount, clipFormatSize),
-            Quadruple("Text", feed(), textCount, textFormatSize),
+            Quadruple("Text", text(), textCount, textFormatSize),
             Quadruple("Link", link(), urlCount, urlFormatSize),
             Quadruple("Html", html(), htmlCount, htmlFormatSize),
             Quadruple("Image", image(), imageCount, imageFormatSize),

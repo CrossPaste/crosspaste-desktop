@@ -50,8 +50,8 @@ fun network(): Painter {
 }
 
 @Composable
-fun towerBroadcast(): Painter {
-    return painterResource("icon/base/tower_broadcast.svg")
+fun wifi(): Painter {
+    return painterResource("icon/base/wifi.svg")
 }
 
 @Composable

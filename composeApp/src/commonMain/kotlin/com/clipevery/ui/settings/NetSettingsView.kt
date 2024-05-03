@@ -42,7 +42,7 @@ import com.clipevery.ui.base.CustomSwitch
 import com.clipevery.ui.base.link
 import com.clipevery.ui.base.network
 import com.clipevery.ui.base.remove
-import com.clipevery.ui.base.towerBroadcast
+import com.clipevery.ui.base.wifi
 import com.clipevery.ui.devices.SyncDeviceView
 import com.clipevery.utils.getJsonUtils
 import com.clipevery.utils.getNetUtils
@@ -168,7 +168,7 @@ fun NetSettingsView() {
         ) {
             Icon(
                 modifier = Modifier.size(15.dp),
-                painter = towerBroadcast(),
+                painter = wifi(),
                 contentDescription = "Allow discovery by new devices",
                 tint = MaterialTheme.colors.onBackground,
             )

@@ -27,12 +27,12 @@ import com.clipevery.LocalKoinApplication
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.i18n.GlobalCopywriter
-import com.clipevery.ui.base.feed
 import com.clipevery.ui.base.file
 import com.clipevery.ui.base.html
 import com.clipevery.ui.base.image
 import com.clipevery.ui.base.link
 import com.clipevery.ui.base.question
+import com.clipevery.ui.base.text
 import com.valentinilk.shimmer.shimmer
 
 @Composable
@@ -129,7 +129,7 @@ fun getTypeInfo(clipData: ClipData): TypeInfo {
     val clipType = clipData.getClipAppearItems().firstOrNull()?.getClipType() ?: ClipType.INVALID
     return when (clipType) {
         ClipType.TEXT -> {
-            TypeInfo(feed(), "Text")
+            TypeInfo(text(), "Text")
         }
         ClipType.URL -> {
             TypeInfo(link(), "Link")
