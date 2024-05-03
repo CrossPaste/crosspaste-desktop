@@ -176,7 +176,7 @@ class WindowsClipboardService(
                 logger.error { "systemClipboard get contents timeout" }
                 break
             }
-        } while (contents == null)
+        } while (!isValidContents(contents))
 
         contents?.let {
             serviceConsumerScope.launch(CoroutineName("WindowsClipboardConsumer")) {
