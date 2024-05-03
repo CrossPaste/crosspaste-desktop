@@ -7,6 +7,7 @@ enum class AppFileType {
     ENCRYPT,
     DATA,
     HTML,
+    FAVICON,
     IMAGE,
     VIDEO,
     FILE,
