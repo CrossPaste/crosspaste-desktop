@@ -1,5 +1,6 @@
 package com.clipevery.ui.search
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollbarStyle
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
@@ -37,6 +38,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -47,9 +50,18 @@ import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.app.AppWindowManager
 import com.clipevery.clip.ClipSearchService
+import com.clipevery.clip.item.ClipUrl
 import com.clipevery.dao.clip.ClipData
+import com.clipevery.dao.clip.ClipType
+import com.clipevery.ui.base.AsyncView
+import com.clipevery.ui.base.LoadIconData
+import com.clipevery.ui.base.LoadImageData
+import com.clipevery.ui.base.ToPainterImage
 import com.clipevery.ui.clip.ClipTypeIconView
+import com.clipevery.ui.clip.preview.getClipItem
 import com.clipevery.ui.clip.title.getClipTitle
+import com.clipevery.utils.getFaviconUtils
+import com.clipevery.utils.getResourceUtils
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch
@@ -135,6 +147,8 @@ fun ClipTitleView(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
+    val density = LocalDensity.current
+    val faviconUtils = getFaviconUtils()
     val title by remember(clipData.clipState) { mutableStateOf(getClipTitle(clipData)) }
 
     title?.let {
@@ -158,12 +172,51 @@ fun ClipTitleView(
                     horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        painter = ClipTypeIconView(clipData.clipType),
-                        contentDescription = "Clip Type Icon",
-                        modifier = Modifier.padding(3.dp).size(14.dp),
-                        tint = MaterialTheme.colors.onBackground,
-                    )
+                    val loadIconData =
+                        LoadIconData(
+                            clipData.clipType,
+                            object : ToPainterImage {
+                                @Composable
+                                override fun toPainter(): Painter {
+                                    return ClipTypeIconView(clipData.clipType)
+                                }
+                            },
+                        )
+
+                    AsyncView(
+                        key = clipData.id,
+                        defaultValue = loadIconData,
+                        load = {
+                            if (clipData.clipType == ClipType.URL) {
+                                clipData.getClipItem()?.let {
+                                    it as ClipUrl
+                                    faviconUtils.getFaviconPath(it.url)?.let { path ->
+                                        return@AsyncView LoadImageData(path, getResourceUtils().loadPainter(path, density))
+                                    }
+                                }
+                            }
+                            loadIconData
+                        },
+                    ) { loadIconView ->
+                        when (loadIconView) {
+                            is LoadIconData -> {
+                                Icon(
+                                    painter = loadIconView.toPainterImage.toPainter(),
+                                    contentDescription = "Clip Icon",
+                                    modifier = Modifier.padding(3.dp).size(18.dp),
+                                    tint = MaterialTheme.colors.onBackground,
+                                )
+                            }
+                            is LoadImageData -> {
+                                Image(
+                                    painter = loadIconView.toPainterImage.toPainter(),
+                                    contentDescription = "Clip Icon",
+                                    modifier = Modifier.padding(3.dp).size(18.dp),
+                                )
+                            }
+                        }
+                    }
+
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         modifier = Modifier.padding(horizontal = 16.dp),

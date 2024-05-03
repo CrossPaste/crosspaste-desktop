@@ -9,10 +9,11 @@ import kotlinx.coroutines.withContext
 @Composable
 fun AsyncView(
     key: Any,
+    defaultValue: LoadStateData = LoadingStateData,
     load: suspend () -> LoadStateData,
     loadFor: @Composable (LoadStateData) -> Unit,
 ) {
-    val state: LoadStateData by produceState(LoadingStateData as LoadStateData, key) {
+    val state: LoadStateData by produceState(defaultValue, key) {
         value =
             withContext(ioDispatcher) {
                 try {

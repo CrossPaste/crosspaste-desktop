@@ -11,7 +11,9 @@ import com.clipevery.ui.base.SvgResourceToPainter
 import com.clipevery.ui.base.ToPainterImage
 import com.clipevery.ui.base.XmlResourceToPainter
 import org.xml.sax.InputSource
+import java.nio.file.Path
 import java.util.Properties
+import kotlin.io.path.name
 
 actual fun getResourceUtils(): ResourceUtils {
     return DesktopResourceUtils
@@ -39,6 +41,21 @@ object DesktopResourceUtils : ResourceUtils {
     ): ToPainterImage {
         val inputStream = ResourceLoader.Default.load(fileName)
         return when (fileName.substringAfterLast(".")) {
+            "svg" -> SvgResourceToPainter(fileName, inputStream.buffered().use { loadSvgPainter(it, density) })
+            "xml" -> XmlResourceToPainter(inputStream.buffered().use { loadXmlImageVector(InputSource(it), density) })
+            else -> {
+                ImageBitmapToPainter(fileName, inputStream.use { it.buffered().use(::loadImageBitmap) })
+            }
+        }
+    }
+
+    override fun loadPainter(
+        path: Path,
+        density: Density,
+    ): ToPainterImage {
+        val inputStream = path.toFile().inputStream()
+        val fileName = path.fileName.name
+        return when (path.fileName.name.substringAfterLast(".")) {
             "svg" -> SvgResourceToPainter(fileName, inputStream.buffered().use { loadSvgPainter(it, density) })
             "xml" -> XmlResourceToPainter(inputStream.buffered().use { loadXmlImageVector(InputSource(it), density) })
             else -> {
