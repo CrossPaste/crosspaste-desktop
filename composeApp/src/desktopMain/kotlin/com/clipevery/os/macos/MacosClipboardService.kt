@@ -69,7 +69,7 @@ class MacosClipboardService(
                                     logger.debug { "Ignoring clipevery change" }
                                 } else {
                                     delay(20L)
-                                    val contents = systemClipboard.getContents(null)
+                                    val contents = getContents()
                                     if (contents != ownerTransferable) {
                                         contents?.let {
                                             launch(CoroutineName("MacClipboardServiceConsumer")) {
@@ -86,6 +86,19 @@ class MacosClipboardService(
                 delay(280L)
             }
         }
+    }
+
+    private suspend fun getContents(): Transferable? {
+        var contents = systemClipboard.getContents(null)
+        var sum = 0L
+        var waiting = 20L
+        while (!isValidContents(contents) && sum < 1000L) {
+            delay(waiting)
+            sum += waiting
+            waiting *= 2
+            contents = systemClipboard.getContents(null)
+        }
+        return contents
     }
 
     override fun lostOwnership(

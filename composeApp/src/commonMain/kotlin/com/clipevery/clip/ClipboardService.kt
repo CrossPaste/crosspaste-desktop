@@ -29,6 +29,10 @@ interface ClipboardService : ClipboardMonitor, ClipboardOwner {
 
     val clipboardChannel: Channel<suspend () -> Unit>
 
+    fun isValidContents(contents: Transferable?): Boolean {
+        return contents != null && contents.transferDataFlavors.isNotEmpty()
+    }
+
     suspend fun tryWriteClipboard(
         clipData: ClipData,
         localOnly: Boolean = false,
