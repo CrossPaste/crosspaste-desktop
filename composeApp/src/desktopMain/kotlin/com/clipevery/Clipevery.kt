@@ -243,10 +243,12 @@ class Clipevery {
         @Throws(Exception::class)
         private fun initInject() {
             koinApplication.koin.get<ClipboardService>().start()
-            koinApplication.koin.get<ClipBonjourService>().registerService()
             koinApplication.koin.get<QRCodeGenerator>()
             koinApplication.koin.get<ClipServer>().start()
             koinApplication.koin.get<ClipClient>()
+            // bonjour service should be registered after clip server started
+            // only server started, bonjour service can get the port
+            koinApplication.koin.get<ClipBonjourService>().registerService()
             koinApplication.koin.get<CleanClipScheduler>().start()
             koinApplication.koin.get<GlobalListener>().start()
         }
