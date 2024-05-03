@@ -1,7 +1,7 @@
 package com.clipevery.ui.clip.preview
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -38,6 +39,7 @@ import java.awt.Desktop
 import java.nio.file.Path
 import kotlin.io.path.exists
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SingleImagePreviewView(imagePath: Path) {
     val current = LocalKoinApplication.current
@@ -49,7 +51,7 @@ fun SingleImagePreviewView(imagePath: Path) {
 
     Row(
         modifier =
-            Modifier.clickable {
+            Modifier.onClick {
                 if (Desktop.isDesktopSupported() && existFile) {
                     val desktop = Desktop.getDesktop()
                     desktop.open(imagePath.toFile())

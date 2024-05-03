@@ -64,7 +64,6 @@ fun ClipPreviewItemView(
     val copywriter = current.koin.get<GlobalCopywriter>()
     val toastManager = current.koin.get<ToastManager>()
 
-    val backgroundColor = MaterialTheme.colors.background
     val scope = rememberCoroutineScope()
 
     Row(
@@ -89,7 +88,7 @@ fun ClipPreviewItemView(
                     },
                     onClick = {},
                 )
-                .background(backgroundColor),
+                .background(color = MaterialTheme.colors.surface),
     ) {
         Column(
             modifier =
@@ -159,7 +158,8 @@ fun ClipSpecificPreviewContentView(
             modifier =
                 Modifier
                     .fillMaxHeight().width(400.dp)
-                    .clip(RoundedCornerShape(5.dp)),
+                    .clip(RoundedCornerShape(5.dp))
+                    .background(color = MaterialTheme.colors.background),
         ) {
             clipLeftContent()
         }

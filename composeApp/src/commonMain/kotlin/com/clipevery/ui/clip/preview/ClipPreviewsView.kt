@@ -148,7 +148,11 @@ fun ClipPreviewsView() {
             }
     }
 
-    Box(modifier = Modifier.fillMaxWidth()) {
+    Box(
+        modifier =
+            Modifier.fillMaxWidth()
+                .background(color = MaterialTheme.colors.surface),
+    ) {
         LazyColumn(
             state = listState,
             modifier = Modifier.wrapContentHeight(),

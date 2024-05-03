@@ -1,10 +1,11 @@
 package com.clipevery.ui.clip.preview
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -35,6 +36,7 @@ import com.clipevery.ui.base.loadImageData
 import com.clipevery.utils.getFileUtils
 import java.awt.Desktop
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HtmlToImagePreviewView(clipData: ClipData) {
     clipData.getClipItem()?.let {
@@ -72,7 +74,7 @@ fun HtmlToImagePreviewView(clipData: ClipData) {
                                         Modifier
                                             .fillMaxSize()
                                             .clip(RoundedCornerShape(5.dp))
-                                            .clickable {
+                                            .onClick {
                                                 if (Desktop.isDesktopSupported()) {
                                                     fileUtils.createTempFile(
                                                         it.html.toByteArray(),

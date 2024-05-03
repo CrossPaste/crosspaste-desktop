@@ -1,9 +1,10 @@
 package com.clipevery.ui.clip.preview
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.onClick
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.MaterialTheme
@@ -22,19 +23,23 @@ import com.clipevery.dao.clip.ClipData
 import java.awt.Desktop
 import java.net.URI
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun UrlPreviewView(clipData: ClipData) {
     clipData.getClipItem()?.let {
         val clipUrl = it as ClipUrl
         ClipSpecificPreviewContentView({
-            Row(modifier = Modifier.fillMaxSize().padding(10.dp)) {
+            Row(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .onClick {
+                            openUrlInBrowser(clipUrl.url)
+                        }.padding(10.dp),
+            ) {
                 Text(
                     modifier =
                         Modifier.fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .clickable {
-                                openUrlInBrowser(clipUrl.url)
-                            },
+                            .verticalScroll(rememberScrollState()),
                     text = clipUrl.url,
                     textDecoration = TextDecoration.Underline,
                     fontFamily = FontFamily.SansSerif,
