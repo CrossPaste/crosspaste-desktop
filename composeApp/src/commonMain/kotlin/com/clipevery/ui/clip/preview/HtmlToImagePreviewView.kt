@@ -99,7 +99,7 @@ fun HtmlToImagePreviewView(clipData: ClipData) {
 
                             else -> {
                                 Text(
-                                    text = clipHtml.html,
+                                    text = clipHtml.getText(),
                                     fontFamily = FontFamily.SansSerif,
                                     maxLines = 4,
                                     softWrap = true,
