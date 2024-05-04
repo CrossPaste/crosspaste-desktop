@@ -12,5 +12,4 @@ English / [简体中文](./README.zh-CN.md)
 - **📋 Rich Clipboard Types**: Supports a wide variety of clipboard content including text, URLs, rich text, HTML, images, and files.
 - **🧹 Automatic Cleanup**: Features various automatic cleanup options to efficiently manage clipboard space without manual effort.
 - **🔌 Software Compatibility**: Fully compatible with major software suites, including Microsoft Office and Adobe.
-- **🆓 Free and Open Source**: Available at no cost, with open-source access for community use and contributions.
 
