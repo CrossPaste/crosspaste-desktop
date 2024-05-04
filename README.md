@@ -1,11 +1,11 @@
-This is a Kotlin Multiplatform project targeting Desktop.
+# Clipevery: 
 
-* `/composeApp` is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - `commonMain` is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    `iosMain` would be the right folder for such calls.
+## ✨ Features
 
-
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+- **🖥️ Multi-OS Support**: Works seamlessly across Mac, Windows, and soon, Linux—enabling a truly universal clipboard experience.
+- **🔄 Real-Time Sync**: Automatically synchronizes your clipboard across multiple devices in real-time, even between different operating systems like Mac and Windows.
+- **🔒 End-to-End Encryption**: Employs Signal’s end-to-end encryption protocol to ensure your data remains secure and private.
+- **📋 Rich Clipboard Types**: Supports a diverse range of clipboard contents including text, URLs, rich text, HTML, images, and files.
+- **🧹 Automatic Cleanup**: Offers multiple automatic cleanup options to manage clipboard space efficiently without manual intervention.
+- **🔗 Software Compatibility**: Fully compatible with popular software suites such as Microsoft Office and Adobe.
+- **🆓 Free and Open Source**: All these features come at no cost and are open-sourced for community use and contribution.
