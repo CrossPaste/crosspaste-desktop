@@ -1,5 +1,6 @@
 package com.clipevery.os.macos
 
+import com.clipevery.app.AppWindowManager
 import com.clipevery.clip.ClipboardService
 import com.clipevery.clip.TransferableConsumer
 import com.clipevery.clip.TransferableProducer
@@ -23,6 +24,7 @@ import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.Transferable
 
 class MacosClipboardService(
+    override val appWindowManager: AppWindowManager,
     override val clipDao: ClipDao,
     override val configManager: ConfigManager,
     override val clipConsumer: TransferableConsumer,
@@ -68,12 +70,21 @@ class MacosClipboardService(
                                 if (isClipevery.value != 0) {
                                     logger.debug { "Ignoring clipevery change" }
                                 } else {
-                                    delay(20L)
+                                    val start = System.currentTimeMillis()
+                                    val source = appWindowManager.getCurrentActiveApp()
+                                    val end = System.currentTimeMillis()
+
+                                    val delay = 20 + start - end
+
+                                    if (delay > 0) {
+                                        delay(delay)
+                                    }
+
                                     val contents = getContents()
                                     if (contents != ownerTransferable) {
                                         contents?.let {
                                             launch(CoroutineName("MacClipboardServiceConsumer")) {
-                                                clipConsumer.consume(it, remote.value != 0)
+                                                clipConsumer.consume(it, source, remote.value != 0)
                                             }
                                         }
                                     }

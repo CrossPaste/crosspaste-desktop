@@ -1,5 +1,6 @@
 package com.clipevery.os.windows
 
+import com.clipevery.app.AppWindowManager
 import com.clipevery.clip.ClipboardService
 import com.clipevery.clip.TransferableConsumer
 import com.clipevery.clip.TransferableProducer
@@ -29,6 +30,7 @@ import java.awt.datatransfer.Transferable
 import kotlin.math.min
 
 class WindowsClipboardService(
+    override val appWindowManager: AppWindowManager,
     override val clipDao: ClipDao,
     override val configManager: ConfigManager,
     override val clipConsumer: TransferableConsumer,
@@ -162,29 +164,48 @@ class WindowsClipboardService(
         var contents: Transferable? = null
         var waitTime = 20L
         var totalWaitTime = 0L
-        do {
-            Thread.sleep(waitTime)
-            totalWaitTime += waitTime
-            waitTime = min(waitTime * 2, 1000)
+        try {
+            val start = System.currentTimeMillis()
+            val source = appWindowManager.getCurrentActiveApp()
+            val end = System.currentTimeMillis()
+
+            val delay = waitTime + start - end
+
+            if (delay > 0) {
+                Thread.sleep(delay)
+            }
+
             try {
                 contents = systemClipboard.getContents(null)
             } catch (e: IllegalStateException) {
                 logger.warn(e) { "systemClipboard get contents fail" }
             }
 
-            if (contents == null && totalWaitTime + waitTime > 1000) {
-                logger.error { "systemClipboard get contents timeout" }
-                break
-            }
-        } while (!isValidContents(contents))
-
-        contents?.let {
-            serviceConsumerScope.launch(CoroutineName("WindowsClipboardConsumer")) {
-                if (it != ownerTransferable) {
-                    // in windows, we don't know if the clipboard is local or remote
-                    clipConsumer.consume(it, remote = false)
+            while (!isValidContents(contents) && totalWaitTime + waitTime <= 1000) {
+                Thread.sleep(waitTime)
+                totalWaitTime += waitTime
+                waitTime = min(waitTime * 2, 1000)
+                try {
+                    contents = systemClipboard.getContents(null)
+                } catch (e: IllegalStateException) {
+                    logger.warn(e) { "systemClipboard get contents fail" }
+                }
+                if (contents == null && totalWaitTime + waitTime > 1000) {
+                    logger.error { "systemClipboard get contents timeout" }
+                    break
                 }
             }
+
+            contents?.let {
+                serviceConsumerScope.launch(CoroutineName("WindowsClipboardConsumer")) {
+                    if (it != ownerTransferable) {
+                        // in windows, we don't know if the clipboard is local or remote
+                        clipConsumer.consume(it, source, remote = false)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to consume transferable" }
         }
     }
 

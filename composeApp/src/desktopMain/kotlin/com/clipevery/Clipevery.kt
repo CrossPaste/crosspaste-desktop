@@ -192,7 +192,7 @@ class Clipevery {
                     single<SignalProtocolStore> { DesktopSignalProtocolStore(get(), get(), get(), get()) }
 
                     // clip component
-                    single<ClipboardService> { getDesktopClipboardService(get(), get(), get(), get()) }
+                    single<ClipboardService> { getDesktopClipboardService(get(), get(), get(), get(), get()) }
                     single<TransferableConsumer> {
                         DesktopTransferableConsumer(
                             get(),

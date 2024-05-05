@@ -82,6 +82,7 @@ class ClipCollector(
 
     suspend fun createPreClipData(
         clipId: Long,
+        source: String?,
         remote: Boolean,
     ): ObjectId? {
         return logSuspendExecutionTime(logger, "createPreClipData") {
@@ -101,6 +102,7 @@ class ClipCollector(
                     this.clipId = clipId
                     this.clipContent = clipContent
                     this.clipType = ClipType.INVALID
+                    this.source = source
                     this.md5 = ""
                     this.appInstanceId = appInfo.appInstanceId
                     this.createTime = RealmInstant.now()

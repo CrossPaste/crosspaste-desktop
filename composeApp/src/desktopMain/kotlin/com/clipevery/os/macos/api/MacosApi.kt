@@ -38,6 +38,13 @@ interface MacosApi : Library {
 
     fun getHardwareUUID(): String?
 
+    fun getCurrentActiveApp(): String?
+
+    fun saveAppIcon(
+        bundleIdentifier: String,
+        path: String,
+    )
+
     fun bringToBack(
         windowTitle: String,
         appName: String,
