@@ -1,6 +1,7 @@
 package com.clipevery
 
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.painterResource
@@ -96,7 +97,9 @@ import com.clipevery.task.SyncClipTaskExecutor
 import com.clipevery.task.TaskExecutor
 import com.clipevery.ui.DesktopThemeDetector
 import com.clipevery.ui.ThemeDetector
+import com.clipevery.ui.base.DesktopNotificationManager
 import com.clipevery.ui.base.DesktopToastManager
+import com.clipevery.ui.base.NotificationManager
 import com.clipevery.ui.base.ToastManager
 import com.clipevery.ui.getTrayMouseAdapter
 import com.clipevery.ui.resource.ClipResourceLoader
@@ -234,6 +237,7 @@ class Clipevery {
                     single<ThemeDetector> { DesktopThemeDetector(get()) }
                     single<ClipResourceLoader> { DesktopAbsoluteClipResourceLoader }
                     single<ToastManager> { DesktopToastManager() }
+                    single<NotificationManager> { DesktopNotificationManager }
                 }
             return GlobalContext.startKoin {
                 modules(appModule)
@@ -281,6 +285,8 @@ class Clipevery {
 
                 val appWindowManager = koinApplication.koin.get<AppWindowManager>()
 
+                val notificationManager = koinApplication.koin.get<NotificationManager>()
+
                 val trayIcon =
                     if (currentPlatform().isMacos()) {
                         painterResource("clipevery_mac_tray.png")
@@ -296,6 +302,7 @@ class Clipevery {
                     )
 
                 Tray(
+                    state = remember { notificationManager.trayState },
                     icon = trayIcon,
                     mouseListener =
                         getTrayMouseAdapter(windowState) {
