@@ -24,6 +24,8 @@ interface AppWindowManager {
 
     fun stopRefreshToken()
 
+    fun getCurrentActiveApp(): String?
+
     fun activeMainWindow()
 
     suspend fun activeSearchWindow()

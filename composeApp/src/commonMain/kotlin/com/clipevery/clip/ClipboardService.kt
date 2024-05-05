@@ -1,5 +1,6 @@
 package com.clipevery.clip
 
+import com.clipevery.app.AppWindowManager
 import com.clipevery.config.ConfigManager
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipData
@@ -18,6 +19,8 @@ interface ClipboardService : ClipboardMonitor, ClipboardOwner {
     var ownerTransferable: Transferable?
 
     val systemClipboard: Clipboard
+
+    val appWindowManager: AppWindowManager
 
     val clipDao: ClipDao
 

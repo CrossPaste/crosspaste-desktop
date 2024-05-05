@@ -75,6 +75,10 @@ object DesktopAppWindowManager : AppWindowManager {
         }
     }
 
+    override fun getCurrentActiveApp(): String? {
+        return windowManager.getCurrentActiveApp()
+    }
+
     override fun activeMainWindow() {
         showMainWindow = true
         runBlocking {

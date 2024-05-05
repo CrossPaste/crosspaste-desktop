@@ -139,6 +139,35 @@ private func IOPlatformUUID() -> String? {
     return serialNumberAsCFString
 }
 
+@_cdecl("getCurrentActiveApp")
+public func getCurrentActiveApp() -> UnsafePointer<CChar>? {
+    let currentApp = NSWorkspace.shared.frontmostApplication
+    if let currentAppName = currentApp?.bundleIdentifier {
+        return UnsafePointer<CChar>(strdup(currentAppName))
+    } else {
+        return nil
+    }
+}
+
+@_cdecl("saveAppIcon")
+public func saveAppIcon(bundleIdentifier: UnsafePointer<CChar>, path: UnsafePointer<CChar>) {
+    let bundleIdentifierString = String(cString: bundleIdentifier)
+    let filePath = String(cString: path)
+
+    if let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifierString).first {
+        if let icon = app.icon, let tiffData = icon.tiffRepresentation {
+            let bitmapImage = NSBitmapImageRep(data: tiffData)
+            if let data = bitmapImage?.representation(using: .png, properties: [:]) {
+                do {
+                    try data.write(to: URL(fileURLWithPath: filePath))
+                } catch {
+                    print("Failed to write icon data to file: \(error)")
+                }
+            }
+        }
+    }
+}
+
 @_cdecl("bringToBack")
 public func bringToBack(windowTitle: UnsafePointer<CChar>, appName: UnsafePointer<CChar>, toPaste: Bool) {
     DispatchQueue.main.async {

@@ -39,6 +39,7 @@ open class DesktopTransferableConsumer(
 
     override suspend fun consume(
         transferable: Transferable,
+        source: String?,
         remote: Boolean,
     ) {
         logSuspendExecutionTime(logger, "consume") {
@@ -55,7 +56,7 @@ open class DesktopTransferableConsumer(
 
             try {
                 preCollect(clipId, dataFlavorMap, transferable, clipCollector)
-                clipCollector.createPreClipData(clipId, remote = remote)?.let {
+                clipCollector.createPreClipData(clipId, source, remote = remote)?.let {
                     updateClipData(clipId, dataFlavorMap, transferable, clipCollector)
                     clipCollector.completeCollect(it)
                 }

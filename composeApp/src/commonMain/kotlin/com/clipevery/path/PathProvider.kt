@@ -24,6 +24,7 @@ interface PathProvider {
                 AppFileType.ENCRYPT -> clipEncryptPath.resolve("encrypt")
                 AppFileType.DATA -> clipDataPath.resolve("data")
                 AppFileType.HTML -> clipUserPath.resolve("html")
+                AppFileType.ICON -> clipUserPath.resolve("icons")
                 AppFileType.FAVICON -> clipUserPath.resolve("favicon")
                 AppFileType.IMAGE -> clipUserPath.resolve("images")
                 AppFileType.VIDEO -> clipUserPath.resolve("videos")

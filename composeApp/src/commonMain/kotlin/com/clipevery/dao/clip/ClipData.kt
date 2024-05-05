@@ -33,14 +33,16 @@ class ClipData : RealmObject {
     @Index
     var clipType: Int = ClipType.INVALID
 
+    var source: String? = null
+
     @FullText
     @Transient
     var clipSearchContent: String? = null
 
+    var size: Long = 0
+
     @Index
     var md5: String = ""
-
-    var size: Long = 0
 
     @Index
     @Transient

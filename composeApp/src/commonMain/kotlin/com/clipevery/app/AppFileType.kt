@@ -7,7 +7,8 @@ enum class AppFileType {
     ENCRYPT,
     DATA,
     HTML,
-    FAVICON,
+    ICON, // use for app icon
+    FAVICON, // use for url favicon
     IMAGE,
     VIDEO,
     FILE,

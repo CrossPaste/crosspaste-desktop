@@ -2,16 +2,29 @@ package com.clipevery.os.windows.api
 
 import com.clipevery.app.DesktopAppWindowManager.mainWindowTitle
 import com.clipevery.app.DesktopAppWindowManager.searchWindowTitle
+import com.sun.jna.Memory
 import com.sun.jna.Native
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.BaseTSD.ULONG_PTR
+import com.sun.jna.platform.win32.GDI32
+import com.sun.jna.platform.win32.Kernel32
+import com.sun.jna.platform.win32.Psapi
+import com.sun.jna.platform.win32.Shell32
+import com.sun.jna.platform.win32.Version
 import com.sun.jna.platform.win32.WinDef.DWORD
+import com.sun.jna.platform.win32.WinDef.HBITMAP
 import com.sun.jna.platform.win32.WinDef.HDC
+import com.sun.jna.platform.win32.WinDef.HICON
 import com.sun.jna.platform.win32.WinDef.HWND
 import com.sun.jna.platform.win32.WinDef.LPARAM
 import com.sun.jna.platform.win32.WinDef.RECT
 import com.sun.jna.platform.win32.WinDef.WORD
 import com.sun.jna.platform.win32.WinDef.WPARAM
+import com.sun.jna.platform.win32.WinGDI
+import com.sun.jna.platform.win32.WinGDI.BITMAP
+import com.sun.jna.platform.win32.WinGDI.BITMAPINFO
+import com.sun.jna.platform.win32.WinGDI.ICONINFO
+import com.sun.jna.platform.win32.WinNT
 import com.sun.jna.platform.win32.WinNT.HANDLE
 import com.sun.jna.platform.win32.WinUser
 import com.sun.jna.platform.win32.WinUser.INPUT
@@ -22,10 +35,16 @@ import com.sun.jna.platform.win32.WinUser.SM_CYSCREEN
 import com.sun.jna.platform.win32.WinUser.SW_HIDE
 import com.sun.jna.platform.win32.WinUser.SW_RESTORE
 import com.sun.jna.ptr.IntByReference
+import com.sun.jna.ptr.PointerByReference
 import com.sun.jna.win32.StdCallLibrary
 import com.sun.jna.win32.StdCallLibrary.StdCallCallback
 import com.sun.jna.win32.W32APIOptions.DEFAULT_OPTIONS
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.awt.image.BufferedImage
+import java.io.File
+import java.util.Locale
+import java.util.Optional
+import javax.imageio.ImageIO
 
 interface User32 : StdCallLibrary {
     interface WNDPROC : StdCallCallback {
@@ -130,11 +149,6 @@ interface User32 : StdCallLibrary {
 
     fun SetForegroundWindow(hWnd: HWND): Boolean
 
-    fun EnumWindows(
-        lpEnumFunc: WinUser.WNDENUMPROC,
-        lParam: Pointer?,
-    ): Boolean
-
     fun GetWindowThreadProcessId(
         hWnd: HWND,
         lpdwProcessId: IntByReference,
@@ -161,6 +175,13 @@ interface User32 : StdCallLibrary {
         dwData: DWORD,
         dwExtraInfo: ULONG_PTR,
     )
+
+    fun GetIconInfo(
+        hIcon: HICON,
+        piconinfo: ICONINFO,
+    ): Boolean
+
+    fun GetDC(hWnd: HWND?): HDC?
 
     companion object {
         val INSTANCE =
@@ -214,6 +235,158 @@ interface User32 : StdCallLibrary {
         private val logger = KotlinLogging.logger {}
 
         private var searchHWND: HWND? = null
+
+        fun getActiveWindowProcessFilePath(): String? {
+            INSTANCE.GetForegroundWindow()?.let { hwnd ->
+                val processIdRef = IntByReference()
+                INSTANCE.GetWindowThreadProcessId(hwnd, processIdRef)
+                val processHandle =
+                    Kernel32.INSTANCE.OpenProcess(
+                        WinNT.PROCESS_QUERY_INFORMATION or WinNT.PROCESS_VM_READ,
+                        false,
+                        processIdRef.value,
+                    )
+
+                try {
+                    val bufferSize = 1024
+                    val memory = Memory((bufferSize * 2).toLong())
+                    if (Psapi.INSTANCE.GetModuleFileNameEx(processHandle, null, memory, bufferSize) > 0) {
+                        return memory.getWideString(0)
+                    }
+                } finally {
+                    Kernel32.INSTANCE.CloseHandle(processHandle)
+                }
+            }
+            return null
+        }
+
+        fun getFileDescription(filePath: String): String? {
+            val intByReference = IntByReference()
+            val versionLength: Int = Version.INSTANCE.GetFileVersionInfoSize(filePath, intByReference)
+            if (versionLength > 0) {
+                val memory = Memory(versionLength.toLong())
+                val lplpTranslate = PointerByReference()
+                if (Version.INSTANCE.GetFileVersionInfo(filePath, 0, versionLength, memory)) {
+                    val puLen = IntByReference()
+                    if (Version.INSTANCE.VerQueryValue(memory, "\\VarFileInfo\\Translation", lplpTranslate, puLen)) {
+                        val array: IntArray = lplpTranslate.value.getIntArray(0L, puLen.value / 4)
+                        val langAndCodepage = findLangAndCodepage(array) ?: return null
+                        val l: Int = langAndCodepage and 0xFFFF
+                        val m: Int = (langAndCodepage and -65536) shr 16
+
+                        val lang = String.format(Locale.ROOT, "%04x", l).takeLast(4)
+                        val codepage = String.format(Locale.ROOT, "%04x", m).takeLast(4)
+                        val lpSubBlock =
+                            String.format(Locale.ROOT, "\\StringFileInfo\\$lang$codepage\\FileDescription", l, m)
+
+                        val lplpBuffer = PointerByReference()
+                        if (Version.INSTANCE.VerQueryValue(
+                                memory,
+                                lpSubBlock,
+                                lplpBuffer,
+                                puLen,
+                            )
+                        ) {
+                            if (puLen.value > 0) {
+                                return lplpBuffer.value.getWideString(0)
+                            }
+                        } else {
+                            logger.error { "FileDescription GetLastError ${Kernel32.INSTANCE.GetLastError()}" }
+                        }
+                    } else {
+                        logger.error { "Translation GetLastError ${Kernel32.INSTANCE.GetLastError()}" }
+                    }
+                }
+            }
+            return null
+        }
+
+        private fun findLangAndCodepage(array: IntArray): Int? {
+            var value: Int? = null
+            for (i in array) {
+                if ((i and -65536) == 78643200 && (i and 65535) == 1033) {
+                    return i
+                }
+                value = i
+            }
+
+            return value
+        }
+
+        fun extractAndSaveIcon(
+            filePath: String,
+            outputPath: String,
+        ) {
+            val largeIcons = arrayOfNulls<HICON>(1) // Array to receive the large icon
+            val smallIcons = arrayOfNulls<HICON>(1) // Array to receive the small icon
+            val iconCount = Shell32.INSTANCE.ExtractIconEx(filePath, 0, largeIcons, smallIcons, 1)
+
+            if (iconCount > 0 && largeIcons[0] != null) {
+                val icon = largeIcons[0]!!
+
+                hiconToImage(icon)?.let { image ->
+                    ImageIO.write(image, "png", File(outputPath)) // Save the icon as a PNG file
+                }
+            }
+        }
+
+        fun hiconToImage(hicon: HICON): BufferedImage? {
+            var bitmapHandle: HBITMAP? = null
+            val user32 = INSTANCE
+            val gdi32 = GDI32.INSTANCE
+
+            try {
+                val info = ICONINFO()
+                if (!user32.GetIconInfo(hicon, info)) return null
+
+                info.read()
+                bitmapHandle = Optional.ofNullable(info.hbmColor).orElse(info.hbmMask)
+
+                val bitmap = BITMAP()
+                if (gdi32.GetObject(bitmapHandle, bitmap.size(), bitmap.pointer) > 0) {
+                    bitmap.read()
+
+                    val width = bitmap.bmWidth.toInt()
+                    val height = bitmap.bmHeight.toInt()
+
+                    user32.GetDC(null)?.let { deviceContext ->
+                        val bitmapInfo = BITMAPINFO()
+
+                        bitmapInfo.bmiHeader.biSize = bitmapInfo.bmiHeader.size()
+                        require(
+                            gdi32.GetDIBits(
+                                deviceContext, bitmapHandle, 0, 0, Pointer.NULL, bitmapInfo,
+                                WinGDI.DIB_RGB_COLORS,
+                            ) != 0,
+                        ) { "GetDIBits should not return 0" }
+
+                        bitmapInfo.read()
+
+                        val pixels = Memory(bitmapInfo.bmiHeader.biSizeImage.toLong())
+                        bitmapInfo.bmiHeader.biCompression = WinGDI.BI_RGB
+                        bitmapInfo.bmiHeader.biHeight = -height
+
+                        require(
+                            gdi32.GetDIBits(
+                                deviceContext, bitmapHandle, 0, bitmapInfo.bmiHeader.biHeight, pixels, bitmapInfo,
+                                WinGDI.DIB_RGB_COLORS,
+                            ) != 0,
+                        ) { "GetDIBits should not return 0" }
+
+                        val colorArray = pixels.getIntArray(0, width * height)
+                        val image = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+                        image.setRGB(0, 0, width, height, colorArray, 0, width)
+
+                        return image
+                    }
+                }
+            } finally {
+                gdi32.DeleteObject(hicon)
+                Optional.ofNullable(bitmapHandle).ifPresent { hObject: HANDLE? -> gdi32.DeleteObject(hObject) }
+            }
+
+            return null
+        }
 
         @Synchronized
         fun bringToFront(windowTitle: String): HWND? {
