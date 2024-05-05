@@ -42,6 +42,7 @@ import com.sun.jna.win32.W32APIOptions.DEFAULT_OPTIONS
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.awt.image.BufferedImage
 import java.io.File
+import java.util.Locale
 import java.util.Optional
 import javax.imageio.ImageIO
 
@@ -264,21 +265,52 @@ interface User32 : StdCallLibrary {
             val versionLength: Int = Version.INSTANCE.GetFileVersionInfoSize(filePath, intByReference)
             if (versionLength > 0) {
                 val memory = Memory(versionLength.toLong())
+                val lplpTranslate = PointerByReference()
                 if (Version.INSTANCE.GetFileVersionInfo(filePath, 0, versionLength, memory)) {
-                    val pointerByReference = PointerByReference()
-                    val puLen = IntByReference(0)
-                    if (Version.INSTANCE.VerQueryValue(
-                            memory,
-                            "\\StringFileInfo\\040904b0\\FileDescription",
-                            pointerByReference,
-                            puLen,
-                        )
-                    ) {
-                        return pointerByReference.value.getWideString(0)
+                    val puLen = IntByReference()
+                    if (Version.INSTANCE.VerQueryValue(memory, "\\VarFileInfo\\Translation", lplpTranslate, puLen)) {
+                        val array: IntArray = lplpTranslate.value.getIntArray(0L, puLen.value / 4)
+                        val langAndCodepage = findLangAndCodepage(array) ?: return null
+                        val l: Int = langAndCodepage and 0xFFFF
+                        val m: Int = (langAndCodepage and -65536) shr 16
+
+                        val lang = String.format(Locale.ROOT, "%04x", l).takeLast(4)
+                        val codepage = String.format(Locale.ROOT, "%04x", m).takeLast(4)
+                        val lpSubBlock =
+                            String.format(Locale.ROOT, "\\StringFileInfo\\$lang$codepage\\FileDescription", l, m)
+
+                        val lplpBuffer = PointerByReference()
+                        if (Version.INSTANCE.VerQueryValue(
+                                memory,
+                                lpSubBlock,
+                                lplpBuffer,
+                                puLen,
+                            )
+                        ) {
+                            if (puLen.value > 0) {
+                                return lplpBuffer.value.getWideString(0)
+                            }
+                        } else {
+                            logger.error { "FileDescription GetLastError ${Kernel32.INSTANCE.GetLastError()}" }
+                        }
+                    } else {
+                        logger.error { "Translation GetLastError ${Kernel32.INSTANCE.GetLastError()}" }
                     }
                 }
             }
             return null
+        }
+
+        private fun findLangAndCodepage(array: IntArray): Int? {
+            var value: Int? = null
+            for (i in array) {
+                if ((i and -65536) == 78643200 && (i and 65535) == 1033) {
+                    return i
+                }
+                value = i
+            }
+
+            return value
         }
 
         fun extractAndSaveIcon(
