@@ -30,9 +30,9 @@ import com.clipevery.dao.clip.ClipState
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.i18n.Copywriter
 import com.clipevery.i18n.GlobalCopywriter
+import com.clipevery.ui.base.MessageType
 import com.clipevery.ui.base.Toast
 import com.clipevery.ui.base.ToastManager
-import com.clipevery.ui.base.ToastStyle
 import com.clipevery.utils.getDateUtils
 import io.realm.kotlin.types.RealmInstant
 import kotlinx.coroutines.launch
@@ -78,7 +78,7 @@ fun ClipPreviewItemView(
                                 clipboardService.tryWriteClipboard(clipData, localOnly = true, filterFile = false)
                                 toastManager.setToast(
                                     Toast(
-                                        ToastStyle.success,
+                                        MessageType.Success,
                                         copywriter.getText("Copy_Successful"),
                                         3000,
                                     ),

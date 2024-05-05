@@ -14,6 +14,9 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -37,7 +40,7 @@ enum class ToastStyle(val iconFileName: String, val toastColor: Color) {
     warning("icon/toast/warning.svg", Color.Yellow),
 }
 
-data class Toast(val toastStyle: ToastStyle, val message: String, val duration: Long = 3000)
+data class Toast(val messageType: MessageType, val message: String, val duration: Long = 3000)
 
 @Composable
 fun ToastView(
@@ -47,6 +50,17 @@ fun ToastView(
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
     val toastManager = current.koin.get<ToastManager>()
+
+    val toastStyle by remember {
+        mutableStateOf(
+            when (toast.messageType) {
+                MessageType.Error -> ToastStyle.error
+                MessageType.Info -> ToastStyle.info
+                MessageType.Success -> ToastStyle.success
+                MessageType.Warning -> ToastStyle.warning
+            },
+        )
+    }
 
     LaunchedEffect(Unit) {
         if (toast.duration > 0) {
@@ -80,9 +94,9 @@ fun ToastView(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
-                    painter = painterResource(toast.toastStyle.iconFileName),
+                    painter = painterResource(toastStyle.iconFileName),
                     contentDescription = "toast icon",
-                    tint = toast.toastStyle.toastColor,
+                    tint = toastStyle.toastColor,
                 )
                 Spacer(Modifier.width(12.dp))
                 Text(
@@ -99,7 +113,7 @@ fun ToastView(
                     modifier = Modifier.clickable { onCancelTapped() },
                     painter = painterResource("icon/toast/close.svg"),
                     contentDescription = "Cancel",
-                    tint = toast.toastStyle.toastColor,
+                    tint = toastStyle.toastColor,
                 )
             }
         }
