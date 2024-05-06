@@ -2,6 +2,7 @@ package com.clipevery.clip
 
 import com.clipevery.app.AppEnv
 import com.clipevery.app.AppFileType
+import com.clipevery.app.AppWindowManager
 import com.clipevery.os.windows.WindowDpiHelper
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.platform.currentPlatform
@@ -16,11 +17,13 @@ import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.math.max
 
-object DesktopChromeService : ChromeService {
+class DesktopChromeService(private val appWindowManager: AppWindowManager) : ChromeService {
 
-    private const val CHROME_DRIVER = "chromedriver"
+    companion object {
+        private const val CHROME_DRIVER = "chromedriver"
 
-    private const val CHROME_HEADLESS_SHELL = "chrome-headless-shell"
+        private const val CHROME_HEADLESS_SHELL = "chrome-headless-shell"
+    }
 
     private val currentPlatform = currentPlatform()
 
@@ -83,12 +86,17 @@ object DesktopChromeService : ChromeService {
     }
 
     private val windowDimension: Dimension =
-        if (currentPlatform.isWindows()) {
-            val width: Int = (480.0 * scale).toInt()
-            val height: Int = (220.0 * scale).toInt()
-            Dimension(width, height)
-        } else {
-            Dimension(480, 180)
+        run {
+            val detailViewDpSize = appWindowManager.searchWindowDetailViewDpSize
+            val htmlWidthValue = detailViewDpSize.width.value - 20.0
+            val htmlHeightValue = detailViewDpSize.height.value - 20.0
+            if (currentPlatform.isWindows()) {
+                val width: Int = (htmlWidthValue * scale).toInt()
+                val height: Int = (htmlHeightValue * scale).toInt()
+                Dimension(width, height)
+            } else {
+                Dimension(htmlWidthValue.toInt(), htmlHeightValue.toInt())
+            }
         }
 
     private var chromeDriver: ChromeDriver? = null

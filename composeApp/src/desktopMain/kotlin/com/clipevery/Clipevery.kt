@@ -215,7 +215,7 @@ class Clipevery {
                         )
                     }
                     single<TransferableProducer> { DesktopTransferableProducer() }
-                    single<ChromeService> { DesktopChromeService }
+                    single<ChromeService> { DesktopChromeService(get()) }
                     single<ClipSearchService> { DesktopClipSearchService(get(), get(), get()) }
                     single<CleanClipScheduler> { DesktopCleanClipScheduler(get(), get(), get()) }
                     single<TaskExecutor> {
