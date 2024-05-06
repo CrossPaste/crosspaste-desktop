@@ -2,6 +2,7 @@ package com.clipevery.os.windows.api
 
 import com.clipevery.app.DesktopAppWindowManager.mainWindowTitle
 import com.clipevery.app.DesktopAppWindowManager.searchWindowTitle
+import com.clipevery.app.WinAppInfo
 import com.sun.jna.Memory
 import com.sun.jna.Native
 import com.sun.jna.Pointer
@@ -389,14 +390,37 @@ interface User32 : StdCallLibrary {
         }
 
         @Synchronized
-        fun bringToFront(windowTitle: String): HWND? {
+        fun bringToFront(windowTitle: String): WinAppInfo? {
             INSTANCE.GetForegroundWindow()?.let { previousHwnd ->
-                if (windowTitle == mainWindowTitle) {
-                    return@let previousHwnd
-                }
-
                 val processIdRef = IntByReference()
                 val processThreadId = INSTANCE.GetWindowThreadProcessId(previousHwnd, processIdRef)
+
+                val processHandle =
+                    Kernel32.INSTANCE.OpenProcess(
+                        WinNT.PROCESS_QUERY_INFORMATION or WinNT.PROCESS_VM_READ,
+                        false,
+                        processIdRef.value,
+                    )
+
+                var filePath: String? = null
+
+                try {
+                    val bufferSize = 1024
+                    val memory = Memory((bufferSize * 2).toLong())
+                    if (Psapi.INSTANCE.GetModuleFileNameEx(processHandle, null, memory, bufferSize) > 0) {
+                        filePath = memory.getWideString(0)
+                    }
+                } finally {
+                    Kernel32.INSTANCE.CloseHandle(processHandle)
+                }
+
+                if (windowTitle == mainWindowTitle) {
+                    if (filePath != null) {
+                        return@let WinAppInfo(previousHwnd, filePath)
+                    } else {
+                        return null
+                    }
+                }
 
                 if (searchHWND == null) {
                     searchHWND = INSTANCE.FindWindow(null, searchWindowTitle)
@@ -429,7 +453,11 @@ interface User32 : StdCallLibrary {
                 } else {
                     logger.info { "Window not found" }
                 }
-                return previousHwnd
+                if (filePath != null) {
+                    return@let WinAppInfo(previousHwnd, filePath)
+                } else {
+                    return null
+                }
             }
             return null
         }

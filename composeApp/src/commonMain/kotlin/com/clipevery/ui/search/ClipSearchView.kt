@@ -1,6 +1,7 @@
 package com.clipevery.ui.search
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -52,11 +53,13 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -67,12 +70,15 @@ import com.clipevery.clip.ClipSearchService
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.ClipeveryTheme
+import com.clipevery.ui.base.KeyboardView
 import com.clipevery.ui.base.MenuItem
+import com.clipevery.ui.base.enter
 import com.clipevery.ui.base.expandCircleDown
 import com.clipevery.ui.base.expandCircleUp
 import com.clipevery.ui.base.getMenWidth
 import com.clipevery.ui.base.starRegular
 import com.clipevery.ui.base.starSolid
+import com.clipevery.ui.darken
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.delay
 import org.koin.core.KoinApplication
@@ -105,6 +111,8 @@ fun ClipeverySearchWindow(hideWindow: () -> Unit) {
 
     val focusRequester = remember { FocusRequester() }
 
+    val searchWindowDpSize by remember { mutableStateOf(appWindowManager.searchWindowDpSize) }
+
     LaunchedEffect(appWindowManager.showSearchWindow) {
         if (appWindowManager.showSearchWindow) {
             delay(200)
@@ -132,8 +140,7 @@ fun ClipeverySearchWindow(hideWindow: () -> Unit) {
                 Modifier
                     .background(Color.Transparent)
                     .clip(RoundedCornerShape(10.dp))
-                    .width(800.dp)
-                    .height(480.dp)
+                    .size(searchWindowDpSize)
                     .padding(10.dp),
             contentAlignment = Alignment.Center,
         ) {
@@ -141,8 +148,7 @@ fun ClipeverySearchWindow(hideWindow: () -> Unit) {
                 modifier =
                     Modifier
                         .shadow(5.dp, RoundedCornerShape(10.dp))
-                        .width(780.dp)
-                        .height(460.dp)
+                        .size(searchWindowDpSize.minus(DpSize(20.dp, 20.dp)))
                         .background(MaterialTheme.colors.background)
                         .onPreviewKeyEvent {
                             it.key == Key(KeyEvent.VK_UP) || it.key == Key(KeyEvent.VK_DOWN)
@@ -372,29 +378,54 @@ fun ClipeverySearchWindow(hideWindow: () -> Unit) {
                             }
                         }
                     }
-                    Box {
-                        SearchResultView()
+
+                    Row(modifier = Modifier.size(searchWindowDpSize.minus(DpSize(20.dp, 120.dp)))) {
+                        SearchListView {
+                            clipSearchService.clickSetSelectedIndex(it)
+                        }
+                        Divider(
+                            modifier = Modifier.fillMaxHeight().width(1.dp),
+                            thickness = 2.dp,
+                        )
+                        DetialClipDataView()
+                    }
+
+                    Row(
+                        modifier =
+                            Modifier.height(40.dp)
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colors.surface.darken(0.1f))
+                                .padding(horizontal = 10.dp),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Image(
+                            painter = painterResource("clipevery_icon.png"),
+                            contentDescription = "Clipevery",
+                            modifier =
+                                Modifier.size(25.dp)
+                                    .clip(RoundedCornerShape(5.dp)),
+                        )
+
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        appWindowManager.getPrevAppName()?.let {
+                            Text(
+                                text = "${copywriter.getText("Paste_To")} $it",
+                                style =
+                                    TextStyle(
+                                        fontWeight = FontWeight.Normal,
+                                        fontFamily = FontFamily.SansSerif,
+                                        color = MaterialTheme.colors.onBackground,
+                                        fontSize = 14.sp,
+                                    ),
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            KeyboardView(keyboardValue = enter)
+                        }
                     }
                 }
             }
         }
-    }
-}
-
-@Composable
-fun SearchResultView() {
-    val current = LocalKoinApplication.current
-    val clipSearchService = current.koin.get<ClipSearchService>()
-
-    Row(modifier = Modifier.fillMaxSize()) {
-        SearchListView {
-            clipSearchService.clickSetSelectedIndex(it)
-        }
-        Divider(
-            modifier = Modifier.fillMaxHeight().width(1.dp),
-            thickness = 2.dp,
-        )
-
-        DetialClipDataView()
     }
 }

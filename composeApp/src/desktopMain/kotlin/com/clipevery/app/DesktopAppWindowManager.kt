@@ -44,7 +44,7 @@ object DesktopAppWindowManager : AppWindowManager {
 
     override val searchWindowTitle: String = "Clipevery Search"
 
-    override val searchWindowDpSize = DpSize(width = 800.dp, height = 600.dp)
+    override val searchWindowDpSize = DpSize(width = 800.dp, height = 520.dp)
 
     override val searchWindowDetailViewDpSize = DpSize(width = 500.dp, height = 240.dp)
 
@@ -77,8 +77,12 @@ object DesktopAppWindowManager : AppWindowManager {
         }
     }
 
-    override fun getCurrentActiveApp(): String? {
-        return windowManager.getCurrentActiveApp()
+    override fun getPrevAppName(): String? {
+        return windowManager.getPrevAppName()
+    }
+
+    override fun getCurrentActiveAppName(): String? {
+        return windowManager.getCurrentActiveAppName()
     }
 
     override fun activeMainWindow() {

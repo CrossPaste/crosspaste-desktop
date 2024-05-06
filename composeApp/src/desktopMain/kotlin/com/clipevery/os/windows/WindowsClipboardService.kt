@@ -166,7 +166,7 @@ class WindowsClipboardService(
         var totalWaitTime = 0L
         try {
             val start = System.currentTimeMillis()
-            val source = appWindowManager.getCurrentActiveApp()
+            val source = appWindowManager.getCurrentActiveAppName()
             val end = System.currentTimeMillis()
 
             val delay = waitTime + start - end

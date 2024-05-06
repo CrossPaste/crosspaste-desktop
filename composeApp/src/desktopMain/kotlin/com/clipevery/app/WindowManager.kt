@@ -2,7 +2,9 @@ package com.clipevery.app
 
 interface WindowManager {
 
-    fun getCurrentActiveApp(): String?
+    fun getPrevAppName(): String?
+
+    fun getCurrentActiveAppName(): String?
 
     suspend fun bringToFront(windowTitle: String)
 

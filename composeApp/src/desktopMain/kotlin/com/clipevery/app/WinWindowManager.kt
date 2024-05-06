@@ -24,7 +24,7 @@ class WinWindowManager : WindowManager {
 
     private val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
-    private var prevHWND: HWND? = null
+    private var prevWinAppInfo: WinAppInfo? = null
 
     private val fileDescriptorCache: LoadingCache<String, String> =
         CacheBuilder.newBuilder()
@@ -43,13 +43,20 @@ class WinWindowManager : WindowManager {
                 },
             )
 
-    override fun getCurrentActiveApp(): String? {
+    override fun getPrevAppName(): String? {
+        prevWinAppInfo?.filePath?.let {
+            return fileDescriptorCache[it].ifEmpty {
+                null
+            }
+        } ?: run {
+            return null
+        }
+    }
+
+    override fun getCurrentActiveAppName(): String? {
         User32.getActiveWindowProcessFilePath()?.let {
-            val fileDescriptor = fileDescriptorCache[it]
-            if (fileDescriptor.isEmpty()) {
-                return null
-            } else {
-                return fileDescriptor
+            return fileDescriptorCache[it].ifEmpty {
+                null
             }
         } ?: run {
             return null
@@ -73,7 +80,7 @@ class WinWindowManager : WindowManager {
             // to wait for the search window to be ready
             delay(500)
         }
-        prevHWND = User32.bringToFront(windowTitle)
+        prevWinAppInfo = User32.bringToFront(windowTitle)
     }
 
     override suspend fun bringToBack(
@@ -81,6 +88,13 @@ class WinWindowManager : WindowManager {
         toPaste: Boolean,
     ) {
         logger.info { "$windowTitle bringToBack Clipevery" }
-        User32.bringToBack(windowTitle, prevHWND, toPaste)
+        User32.bringToBack(windowTitle, prevWinAppInfo?.hwnd, toPaste)
+    }
+}
+
+data class WinAppInfo(val hwnd: HWND, val filePath: String) {
+
+    override fun toString(): String {
+        return "WinAppInfo(hwnd=$hwnd, filePath='$filePath')"
     }
 }
