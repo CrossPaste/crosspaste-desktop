@@ -36,6 +36,7 @@ import com.clipevery.clip.ClipPreviewService
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 @Composable
@@ -48,34 +49,36 @@ fun ClipPreviewsView() {
     var scrollJob: Job? by remember { mutableStateOf(null) }
     val coroutineScope = rememberCoroutineScope()
     val rememberClipDataList = remember { clipPreviewService.clipDataList }
-    val ioScope = rememberCoroutineScope()
 
     DisposableEffect(Unit) {
-        ioScope.launch {
+        coroutineScope.launch {
             clipPreviewService.loadClipPreviewList(false)
         }
         onDispose {
-            ioScope.launch {
+            coroutineScope.launch {
                 clipPreviewService.clearData()
             }
         }
     }
 
     LaunchedEffect(listState) {
-        snapshotFlow { listState.layoutInfo.visibleItemsInfo }
-            .collect { visibleItems ->
-                if (visibleItems.isNotEmpty() && visibleItems.last().index == rememberClipDataList.size - 1) {
-                    clipPreviewService.loadClipPreviewList(force = true, toLoadMore = true)
-                }
-
-                isScrolling = true
-                scrollJob?.cancel()
-                scrollJob =
-                    coroutineScope.launch(CoroutineName("HiddenScroll")) {
-                        delay(500)
-                        isScrolling = false
-                    }
+        snapshotFlow {
+            listState.firstVisibleItemIndex to
+                listState.firstVisibleItemScrollOffset
+        }.distinctUntilChanged().collect { (_, _) ->
+            val visibleItems = listState.layoutInfo.visibleItemsInfo
+            if (visibleItems.isNotEmpty() && visibleItems.last().index == rememberClipDataList.size - 1) {
+                clipPreviewService.loadClipPreviewList(force = true, toLoadMore = true)
             }
+
+            isScrolling = true
+            scrollJob?.cancel()
+            scrollJob =
+                coroutineScope.launch(CoroutineName("HiddenScroll")) {
+                    delay(500)
+                    isScrolling = false
+                }
+        }
     }
 
     Box(
