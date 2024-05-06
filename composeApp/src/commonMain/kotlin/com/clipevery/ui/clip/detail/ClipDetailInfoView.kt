@@ -38,6 +38,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -50,6 +51,7 @@ import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.path.PathProvider
+import com.clipevery.platform.currentPlatform
 import com.clipevery.ui.base.AsyncView
 import com.clipevery.ui.base.LoadImageData
 import com.clipevery.ui.base.LoadingStateData
@@ -112,7 +114,7 @@ fun ClipDetailInfoView(
                         fontSize = 12.sp,
                     ),
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(5.dp))
             AsyncView(
                 key = clipData.id,
                 load = {
@@ -122,19 +124,11 @@ fun ClipDetailInfoView(
             ) { loadImageData ->
                 when (loadImageData) {
                     is LoadImageData -> {
-                        Image(
-                            modifier = Modifier.size(32.dp),
-                            painter = loadImageData.toPainterImage.toPainter(),
-                            contentDescription = "app icon",
-                        )
+                        AppIcon(loadImageData.toPainterImage.toPainter())
                     }
 
                     is LoadingStateData -> {
-                        Image(
-                            modifier = Modifier.size(32.dp),
-                            painter = image(),
-                            contentDescription = "loading app icon",
-                        )
+                        AppIcon(image())
                     }
                 }
             }
@@ -216,5 +210,25 @@ fun ClipDetailInfoView(
                     hoverColor = MaterialTheme.colors.onBackground,
                 ),
         )
+    }
+}
+
+@Composable
+fun AppIcon(painter: Painter) {
+    val currentPlatform = currentPlatform()
+    if (currentPlatform.isMacos()) {
+        Image(
+            modifier = Modifier.size(36.dp).offset(x = 3.dp),
+            painter = painter,
+            contentDescription = "app icon",
+        )
+    } else {
+        Box(modifier = Modifier.size(36.dp), contentAlignment = Alignment.Center) {
+            Image(
+                modifier = Modifier.size(30.dp).offset(x = 3.dp),
+                painter = painter,
+                contentDescription = "app icon",
+            )
+        }
     }
 }
