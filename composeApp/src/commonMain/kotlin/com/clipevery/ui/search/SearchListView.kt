@@ -12,7 +12,6 @@ import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -168,7 +167,7 @@ fun ClipTitleView(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    modifier = Modifier.padding(horizontal = 5.dp),
                     horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -217,9 +216,8 @@ fun ClipTitleView(
                         }
                     }
 
-                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        modifier = Modifier.padding(horizontal = 16.dp),
+                        modifier = Modifier.padding(start = 10.dp),
                         text = it,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
