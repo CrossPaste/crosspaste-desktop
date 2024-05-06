@@ -1,6 +1,7 @@
 package com.clipevery
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -83,6 +84,7 @@ fun ClipeveryWindow(hideWindow: () -> Unit) {
                     Modifier
                         .shadow(5.dp, RoundedCornerShape(10.dp), false)
                         .fillMaxSize()
+                        .border(1.dp, MaterialTheme.colors.onSurface.copy(alpha = 0.12f), RoundedCornerShape(10.dp))
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onDoubleTap = {},
