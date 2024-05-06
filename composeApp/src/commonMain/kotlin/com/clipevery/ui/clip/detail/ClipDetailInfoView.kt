@@ -31,10 +31,13 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -60,6 +63,9 @@ import com.clipevery.ui.base.starRegular
 import com.clipevery.ui.base.starSolid
 import com.clipevery.utils.getResourceUtils
 import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 data class ClipDetailInfoItem(val key: String, val value: String)
@@ -137,9 +143,24 @@ fun ClipDetailInfoView(
     Spacer(modifier = Modifier.height(8.dp))
 
     val listState = rememberLazyListState()
-    val adapter = rememberScrollbarAdapter(scrollState = listState)
-    val showScrollbar by remember { mutableStateOf(items.size > 4) }
+    var isScrolling by remember { mutableStateOf(false) }
+    var scrollJob: Job? by remember { mutableStateOf(null) }
     val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            listState.firstVisibleItemIndex to
+                listState.firstVisibleItemScrollOffset
+        }.distinctUntilChanged().collect { (_, _) ->
+            isScrolling = true
+            scrollJob?.cancel()
+            scrollJob =
+                coroutineScope.launch(CoroutineName("HiddenScroll")) {
+                    delay(500)
+                    isScrolling = false
+                }
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -199,14 +220,14 @@ fun ClipDetailInfoView(
                                 }
                             },
                     ),
-            adapter = adapter,
+            adapter = rememberScrollbarAdapter(scrollState = listState),
             style =
                 ScrollbarStyle(
                     minimalHeight = 16.dp,
                     thickness = 8.dp,
                     shape = RoundedCornerShape(4.dp),
                     hoverDurationMillis = 300,
-                    unhoverColor = if (showScrollbar) MaterialTheme.colors.onBackground.copy(alpha = 0.48f) else Color.Transparent,
+                    unhoverColor = if (isScrolling) MaterialTheme.colors.onBackground.copy(alpha = 0.48f) else Color.Transparent,
                     hoverColor = MaterialTheme.colors.onBackground,
                 ),
         )
