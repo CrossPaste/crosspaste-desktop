@@ -150,6 +150,7 @@ fun ClipeverySearchWindow(hideWindow: () -> Unit) {
                         .shadow(5.dp, RoundedCornerShape(10.dp))
                         .size(searchWindowDpSize.minus(DpSize(20.dp, 20.dp)))
                         .background(MaterialTheme.colors.background)
+                        .border(1.dp, MaterialTheme.colors.onSurface.copy(alpha = 0.12f), RoundedCornerShape(10.dp))
                         .onPreviewKeyEvent {
                             it.key == Key(KeyEvent.VK_UP) || it.key == Key(KeyEvent.VK_DOWN)
                         },
