@@ -1,6 +1,7 @@
 package com.clipevery.ui.clip.detail
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollbarStyle
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
@@ -37,17 +38,27 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
+import com.clipevery.app.AppFileType
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
+import com.clipevery.path.PathProvider
+import com.clipevery.platform.currentPlatform
+import com.clipevery.ui.base.AsyncView
+import com.clipevery.ui.base.LoadImageData
+import com.clipevery.ui.base.LoadingStateData
+import com.clipevery.ui.base.image
 import com.clipevery.ui.base.starRegular
 import com.clipevery.ui.base.starSolid
+import com.clipevery.utils.getResourceUtils
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch
 
@@ -61,8 +72,10 @@ fun ClipDetailInfoView(
     items: List<ClipDetailInfoItem>,
 ) {
     val current = LocalKoinApplication.current
+    val density = LocalDensity.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val clipDao = current.koin.get<ClipDao>()
+    val pathProvider = current.koin.get<PathProvider>()
 
     Row(
         modifier = Modifier.fillMaxWidth().height(30.dp),
@@ -89,6 +102,37 @@ fun ClipDetailInfoView(
             contentDescription = "Favorite",
             tint = if (clipData.favorite) Color(0xFFFFCE34) else MaterialTheme.colors.onSurface,
         )
+        Spacer(modifier = Modifier.weight(1f))
+        clipData.source?.let { source ->
+            Text(
+                text = source,
+                style =
+                    TextStyle(
+                        fontWeight = FontWeight.Light,
+                        fontFamily = FontFamily.SansSerif,
+                        color = MaterialTheme.colors.onBackground,
+                        fontSize = 12.sp,
+                    ),
+            )
+            Spacer(modifier = Modifier.width(5.dp))
+            AsyncView(
+                key = clipData.id,
+                load = {
+                    val path = pathProvider.resolve("$source.png", AppFileType.ICON)
+                    LoadImageData(path, getResourceUtils().loadPainter(path, density))
+                },
+            ) { loadImageData ->
+                when (loadImageData) {
+                    is LoadImageData -> {
+                        AppIcon(loadImageData.toPainterImage.toPainter())
+                    }
+
+                    is LoadingStateData -> {
+                        AppIcon(image())
+                    }
+                }
+            }
+        }
     }
     Spacer(modifier = Modifier.height(8.dp))
 
@@ -166,5 +210,25 @@ fun ClipDetailInfoView(
                     hoverColor = MaterialTheme.colors.onBackground,
                 ),
         )
+    }
+}
+
+@Composable
+fun AppIcon(painter: Painter) {
+    val currentPlatform = currentPlatform()
+    if (currentPlatform.isMacos()) {
+        Image(
+            modifier = Modifier.size(36.dp).offset(x = 3.dp),
+            painter = painter,
+            contentDescription = "app icon",
+        )
+    } else {
+        Box(modifier = Modifier.size(36.dp), contentAlignment = Alignment.Center) {
+            Image(
+                modifier = Modifier.size(30.dp).offset(x = 3.dp),
+                painter = painter,
+                contentDescription = "app icon",
+            )
+        }
     }
 }
