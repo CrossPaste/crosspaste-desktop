@@ -19,10 +19,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -33,119 +32,53 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.clipevery.LocalKoinApplication
-import com.clipevery.dao.clip.ClipDao
-import com.clipevery.dao.clip.ClipData
-import com.clipevery.dao.clip.ClipDataSortObject
-import io.realm.kotlin.notifications.InitialResults
-import io.realm.kotlin.notifications.ResultsChange
-import io.realm.kotlin.notifications.UpdatedResults
-import io.realm.kotlin.query.RealmResults
+import com.clipevery.clip.ClipPreviewService
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-import org.mongodb.kbson.ObjectId
-
-val clipDataComparator = compareByDescending<ClipData> { it.getClipDataSortObject() }
 
 @Composable
 fun ClipPreviewsView() {
     val current = LocalKoinApplication.current
-    val clipDao = current.koin.get<ClipDao>()
+    val clipPreviewService = current.koin.get<ClipPreviewService>()
 
     val listState = rememberLazyListState()
     var isScrolling by remember { mutableStateOf(false) }
     var scrollJob: Job? by remember { mutableStateOf(null) }
     val coroutineScope = rememberCoroutineScope()
-    val rememberClipDataList = remember { mutableStateListOf<ClipData>() }
-    val rememberObjetIdMap = remember { mutableStateMapOf<ObjectId, ClipData>() }
+    val rememberClipDataList = remember { clipPreviewService.clipDataList }
 
-    LaunchedEffect(Unit) {
-        val clipDataList: RealmResults<ClipData> = clipDao.getClipData(limit = 20)
-
-        val clipDatasFlow = clipDataList.asFlow()
-        clipDatasFlow.collect { changes: ResultsChange<ClipData> ->
-            when (changes) {
-                is UpdatedResults -> {
-                    if (changes.insertions.isNotEmpty()) {
-                        for (i in changes.insertions.size - 1 downTo 0) {
-                            val newClipData = changes.list[changes.insertions[i]]
-                            var insertionIndex = rememberClipDataList.binarySearch(newClipData, clipDataComparator)
-                            if (insertionIndex < 0) {
-                                insertionIndex = -(insertionIndex + 1)
-                            }
-                            if (!rememberObjetIdMap.keys.contains(newClipData.id)) {
-                                rememberClipDataList.add(insertionIndex, newClipData)
-                                rememberObjetIdMap[newClipData.id] = newClipData
-                            }
-                        }
-                    }
-
-                    val md5Set: MutableSet<String> = mutableSetOf()
-                    val clipDataHashSet: MutableSet<ClipDataSortObject> = mutableSetOf()
-                    if (changes.changes.isNotEmpty()) {
-                        for (i in 0 until changes.changes.size) {
-                            val changeItem = changes.list[changes.changes[i]]
-                            val changeIndex = rememberClipDataList.binarySearch(changeItem, clipDataComparator)
-                            if (changeIndex >= 0) {
-                                rememberClipDataList[changeIndex] = changeItem
-                                md5Set.add(changeItem.md5)
-                                clipDataHashSet.add(changeItem.getClipDataSortObject())
-                            }
-                        }
-                    }
-
-                    if (md5Set.isNotEmpty()) {
-                        val iterator = rememberClipDataList.iterator()
-                        while (iterator.hasNext()) {
-                            val clipData = iterator.next()
-                            val hashObject = clipData.getClipDataSortObject()
-                            if (md5Set.contains(clipData.md5) && !clipDataHashSet.contains(hashObject)) {
-                                iterator.remove()
-                            }
-                        }
-                    }
-
-                    if (listState.firstVisibleItemIndex == 0 && rememberClipDataList.isNotEmpty()) {
-                        listState.scrollToItem(0)
-                    }
-                    // changes.deletions handle separately
-                }
-                is InitialResults -> {
-                    val initList = changes.list.sortedWith(clipDataComparator)
-                    rememberClipDataList.addAll(initList)
-                    rememberObjetIdMap.putAll(initList.map { it.id to it })
-                }
+    DisposableEffect(Unit) {
+        coroutineScope.launch {
+            clipPreviewService.loadClipPreviewList(false)
+        }
+        onDispose {
+            coroutineScope.launch {
+                clipPreviewService.clearData()
             }
         }
     }
 
     LaunchedEffect(listState) {
-        snapshotFlow { listState.layoutInfo.visibleItemsInfo }
-            .collect { visibleItems ->
-                if (visibleItems.isNotEmpty() && visibleItems.last().index == rememberClipDataList.size - 1) {
-                    val lastClipData: ClipData? = rememberClipDataList.lastOrNull()
-                    lastClipData?.let {
-                        val newClipDataList = clipDao.getClipDataLessThan(createTime = it.createTime, limit = 20)
-                        for (clipData in newClipDataList) {
-                            if (clipDataComparator.compare(clipData, lastClipData) > 0) {
-                                if (!rememberObjetIdMap.keys.contains(clipData.id)) {
-                                    rememberClipDataList.add(clipData)
-                                    rememberObjetIdMap[clipData.id] = clipData
-                                }
-                            }
-                        }
-                    }
-                }
-
-                isScrolling = true
-                scrollJob?.cancel()
-                scrollJob =
-                    coroutineScope.launch(CoroutineName("HiddenScroll")) {
-                        delay(500)
-                        isScrolling = false
-                    }
+        snapshotFlow {
+            listState.firstVisibleItemIndex to
+                listState.firstVisibleItemScrollOffset
+        }.distinctUntilChanged().collect { (_, _) ->
+            val visibleItems = listState.layoutInfo.visibleItemsInfo
+            if (visibleItems.isNotEmpty() && visibleItems.last().index == rememberClipDataList.size - 1) {
+                clipPreviewService.loadClipPreviewList(force = true, toLoadMore = true)
             }
+
+            isScrolling = true
+            scrollJob?.cancel()
+            scrollJob =
+                coroutineScope.launch(CoroutineName("HiddenScroll")) {
+                    delay(500)
+                    isScrolling = false
+                }
+        }
     }
 
     Box(

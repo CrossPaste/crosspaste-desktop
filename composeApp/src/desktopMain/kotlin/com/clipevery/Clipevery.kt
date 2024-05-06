@@ -22,9 +22,11 @@ import com.clipevery.clean.DesktopCleanClipScheduler
 import com.clipevery.clip.CacheManager
 import com.clipevery.clip.CacheManagerImpl
 import com.clipevery.clip.ChromeService
+import com.clipevery.clip.ClipPreviewService
 import com.clipevery.clip.ClipSearchService
 import com.clipevery.clip.ClipboardService
 import com.clipevery.clip.DesktopChromeService
+import com.clipevery.clip.DesktopClipPreviewService
 import com.clipevery.clip.DesktopClipSearchService
 import com.clipevery.clip.DesktopTransferableConsumer
 import com.clipevery.clip.DesktopTransferableProducer
@@ -216,6 +218,7 @@ class Clipevery {
                     }
                     single<TransferableProducer> { DesktopTransferableProducer() }
                     single<ChromeService> { DesktopChromeService(get()) }
+                    single<ClipPreviewService> { DesktopClipPreviewService(get()) }
                     single<ClipSearchService> { DesktopClipSearchService(get(), get(), get()) }
                     single<CleanClipScheduler> { DesktopCleanClipScheduler(get(), get(), get()) }
                     single<TaskExecutor> {
