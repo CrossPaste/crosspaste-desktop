@@ -26,7 +26,7 @@ interface AppWindowManager {
 
     fun stopRefreshToken()
 
-    fun getCurrentActiveApp(): String?
+    fun getCurrentActiveAppName(): String?
 
     fun activeMainWindow()
 
@@ -35,4 +35,6 @@ interface AppWindowManager {
     fun unActiveMainWindow()
 
     suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean)
+
+    fun getPrevAppName(): String?
 }

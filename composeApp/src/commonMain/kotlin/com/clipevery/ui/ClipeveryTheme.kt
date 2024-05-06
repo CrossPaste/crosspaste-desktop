@@ -66,3 +66,11 @@ interface ThemeDetector {
         isUserInDark: Boolean = false,
     )
 }
+
+fun Color.darken(amount: Float): Color {
+    return copy(
+        red = (red * (1 - amount)).coerceAtLeast(0f),
+        green = (green * (1 - amount)).coerceAtLeast(0f),
+        blue = (blue * (1 - amount)).coerceAtLeast(0f),
+    )
+}

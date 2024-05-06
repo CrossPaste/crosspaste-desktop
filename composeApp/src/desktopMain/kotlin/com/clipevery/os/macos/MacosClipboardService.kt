@@ -71,7 +71,7 @@ class MacosClipboardService(
                                     logger.debug { "Ignoring clipevery change" }
                                 } else {
                                     val start = System.currentTimeMillis()
-                                    val source = appWindowManager.getCurrentActiveApp()
+                                    val source = appWindowManager.getCurrentActiveAppName()
                                     val end = System.currentTimeMillis()
 
                                     val delay = 20 + start - end

@@ -199,7 +199,7 @@ public func bringToBack(windowTitle: UnsafePointer<CChar>, appName: UnsafePointe
 public func bringToFront(windowTitle: UnsafePointer<CChar>) -> UnsafePointer<CChar> {
 
     let currentApp = NSWorkspace.shared.frontmostApplication
-    let currentAppName = currentApp?.bundleIdentifier ?? ""
+    let currentAppInfo = "\(currentApp?.bundleIdentifier ?? "") \(currentApp?.localizedName ?? "")"
 
     DispatchQueue.main.async {
         let title = String(cString: windowTitle)
@@ -214,7 +214,7 @@ public func bringToFront(windowTitle: UnsafePointer<CChar>) -> UnsafePointer<CCh
             }
         }
     }
-    return UnsafePointer<CChar>(strdup(currentAppName))
+    return UnsafePointer<CChar>(strdup(currentAppInfo))
 }
 
 func simulatePasteCommand() {
