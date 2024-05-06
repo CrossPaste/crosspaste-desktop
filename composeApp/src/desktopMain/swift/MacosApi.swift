@@ -141,12 +141,12 @@ private func IOPlatformUUID() -> String? {
 
 @_cdecl("getCurrentActiveApp")
 public func getCurrentActiveApp() -> UnsafePointer<CChar>? {
-    let currentApp = NSWorkspace.shared.frontmostApplication
-    if let currentAppName = currentApp?.bundleIdentifier {
-        return UnsafePointer<CChar>(strdup(currentAppName))
-    } else {
-        return nil
+    if let currentApp = NSWorkspace.shared.frontmostApplication {
+        if let bundleIdentifier = currentApp.bundleIdentifier, let localizedName = currentApp.localizedName {
+            return UnsafePointer<CChar>(strdup("\(bundleIdentifier) \(localizedName)"))
+        }
     }
+    return nil
 }
 
 @_cdecl("saveAppIcon")

@@ -24,16 +24,25 @@ class MacWindowManager : WindowManager {
 
     override fun getCurrentActiveApp(): String? {
         MacosApi.INSTANCE.getCurrentActiveApp()?.let {
-            ioScope.launch {
-                saveImagePathByApp(it)
+            val result = it.split(" ", limit = 2)
+            if (result.size > 1) {
+                val bundleIdentifier = result[0]
+                val localizedName = result[1]
+                ioScope.launch {
+                    saveImagePathByApp(bundleIdentifier, localizedName)
+                }
+                return localizedName
             }
         }
-        return MacosApi.INSTANCE.getCurrentActiveApp()
+        return null
     }
 
     @Synchronized
-    private fun saveImagePathByApp(bundleIdentifier: String) {
-        val appImagePath = pathProvider.resolve("$bundleIdentifier.png", AppFileType.ICON)
+    private fun saveImagePathByApp(
+        bundleIdentifier: String,
+        localizedName: String,
+    ) {
+        val appImagePath = pathProvider.resolve("$localizedName.png", AppFileType.ICON)
         if (!appImagePath.toFile().exists()) {
             MacosApi.INSTANCE.saveAppIcon(bundleIdentifier, appImagePath.absolutePathString())
         }
