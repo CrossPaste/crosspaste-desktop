@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,9 +48,17 @@ fun ClipPreviewsView() {
     var scrollJob: Job? by remember { mutableStateOf(null) }
     val coroutineScope = rememberCoroutineScope()
     val rememberClipDataList = remember { clipPreviewService.clipDataList }
+    val ioScope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
-        clipPreviewService.loadClipPreviewList(false)
+    DisposableEffect(Unit) {
+        ioScope.launch {
+            clipPreviewService.loadClipPreviewList(false)
+        }
+        onDispose {
+            ioScope.launch {
+                clipPreviewService.clearData()
+            }
+        }
     }
 
     LaunchedEffect(listState) {

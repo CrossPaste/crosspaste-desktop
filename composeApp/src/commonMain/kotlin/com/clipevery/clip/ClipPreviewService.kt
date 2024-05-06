@@ -14,4 +14,6 @@ interface ClipPreviewService {
         force: Boolean,
         toLoadMore: Boolean = false,
     )
+
+    suspend fun clearData()
 }

@@ -63,4 +63,13 @@ class DesktopClipPreviewService(
             }
         }
     }
+
+    override suspend fun clearData() {
+        mutex.withLock {
+            loadJob?.cancel()
+            clipDataList.clear()
+            existMore = false
+            limit = 50
+        }
+    }
 }
