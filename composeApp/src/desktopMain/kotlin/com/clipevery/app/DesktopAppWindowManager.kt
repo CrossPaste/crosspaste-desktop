@@ -46,6 +46,8 @@ object DesktopAppWindowManager : AppWindowManager {
 
     override val searchWindowDpSize = DpSize(width = 800.dp, height = 600.dp)
 
+    override val searchWindowDetailViewDpSize = DpSize(width = 500.dp, height = 240.dp)
+
     override var showToken by mutableStateOf(false)
 
     override var token by mutableStateOf(charArrayOf('0', '0', '0', '0', '0', '0'))

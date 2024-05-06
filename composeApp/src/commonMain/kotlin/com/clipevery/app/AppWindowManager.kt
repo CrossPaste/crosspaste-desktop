@@ -16,6 +16,8 @@ interface AppWindowManager {
 
     val searchWindowDpSize: DpSize
 
+    val searchWindowDetailViewDpSize: DpSize
+
     var showToken: Boolean
 
     var token: CharArray
