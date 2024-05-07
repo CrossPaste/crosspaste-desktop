@@ -2,7 +2,7 @@ package com.clipevery.app
 
 import com.clipevery.platform.currentPlatform
 
-object DesktopAppRestartService: AppRestartService {
+object DesktopAppRestartService : AppRestartService {
 
     private val currentPlatform = currentPlatform()
 
@@ -26,7 +26,7 @@ object DesktopAppRestartService: AppRestartService {
     }
 }
 
-class MacAppRestartService: AppRestartService {
+class MacAppRestartService : AppRestartService {
 
     companion object {
         private const val SCRIPT = "restart.sh"
@@ -39,7 +39,7 @@ class MacAppRestartService: AppRestartService {
     }
 }
 
-class WindowsAppRestartService: AppRestartService {
+class WindowsAppRestartService : AppRestartService {
 
     companion object {
         private const val SCRIPT = "restart.bat"
@@ -52,7 +52,7 @@ class WindowsAppRestartService: AppRestartService {
     }
 }
 
-class LinuxAppRestartService: AppRestartService {
+class LinuxAppRestartService : AppRestartService {
     override fun restart(exitApplication: () -> Unit) {
         TODO("Not yet implemented")
     }
