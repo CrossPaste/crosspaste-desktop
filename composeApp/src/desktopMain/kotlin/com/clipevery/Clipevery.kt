@@ -14,8 +14,10 @@ import androidx.compose.ui.window.rememberWindowState
 import com.clipevery.app.AppEnv
 import com.clipevery.app.AppFileType
 import com.clipevery.app.AppInfo
+import com.clipevery.app.AppRestartService
 import com.clipevery.app.AppWindowManager
 import com.clipevery.app.DesktopAppInfoFactory
+import com.clipevery.app.DesktopAppRestartService
 import com.clipevery.app.DesktopAppWindowManager
 import com.clipevery.clean.CleanClipScheduler
 import com.clipevery.clean.DesktopCleanClipScheduler
@@ -151,6 +153,7 @@ class Clipevery {
                     // simple component
                     single<AppEnv> { appEnv }
                     single<AppInfo> { DesktopAppInfoFactory(get()).createAppInfo() }
+                    single<AppRestartService> { DesktopAppRestartService }
                     single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<ClipServer>() }) }
                     single<SyncInfoFactory> { DesktopSyncInfoFactory(get(), get()) }
                     single<PathProvider> { DesktopPathProvider }
@@ -321,6 +324,7 @@ class Clipevery {
 
                 val exitApplication: () -> Unit = {
                     appWindowManager.showMainWindow = false
+                    appWindowManager.showSearchWindow = false
                     ioScope.launch(CoroutineName("ExitApplication")) {
                         exitClipEveryApplication { exitApplication() }
                     }
