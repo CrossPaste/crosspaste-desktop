@@ -153,7 +153,6 @@ compose.desktop {
         jvmArgs("-DloggerDebugPackages=com.clipevery.routing,com.clipevery.net.clientapi")
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
 
             appResourcesRootDir = project.layout.projectDirectory.dir("resources")
             packageName = "clipevery"
@@ -172,21 +171,23 @@ compose.desktop {
             val webDriverFile = project.projectDir.toPath().resolve("webDriver.properties").toFile()
             webDriverProperties.load(FileReader(webDriverFile))
 
-            macOS {
-                iconFile = file("src/desktopMain/resources/icons/clipevery.icns")
-                bundleID = "com.clipevery.mac"
-                appCategory = "public.app-category.utilities"
-                infoPlist {
-                    dockName = "Clipevery"
-                    extraKeysRawXml = """
+            if (os.isMacOsX) {
+                targetFormats(TargetFormat.Dmg)
+
+                macOS {
+                    iconFile = file("src/desktopMain/resources/icons/clipevery.icns")
+                    bundleID = "com.clipevery.mac"
+                    appCategory = "public.app-category.utilities"
+                    infoPlist {
+                        dockName = "Clipevery"
+                        extraKeysRawXml = """
                         <key>LSUIElement</key>
                         <string>true</string>
                         <key>LSMinimumSystemVersion</key>
                         <string>10.15.0</string>
                     """
-                }
+                    }
 
-                if (os.isMacOsX) {
                     jvmArgs("-Dmac.bundleID=$bundleID")
 
                     val process = Runtime.getRuntime().exec("uname -m")
@@ -207,6 +208,7 @@ compose.desktop {
                                     .dir("macos-x64"),
                             )
                         }
+
                         "arm64" -> {
                             getJbrReleases(
                                 "osx-aarch64",
@@ -224,28 +226,32 @@ compose.desktop {
                     }
                 }
             }
-            windows {
 
-                val architecture = System.getProperty("os.arch")
+            if (os.isWindows) {
+                windows {
+                    targetFormats(TargetFormat.Msi)
 
-                if (architecture.contains("64")) {
-                    getJbrReleases(
-                        "windows-x64",
-                        jbrReleases,
-                        jbrDir,
-                    )
-                    getChromeDriver(
-                        "win64",
-                        webDriverProperties,
-                        appResourcesRootDir
-                            .get()
-                            .dir("windows-x64"),
-                    )
-                } else {
-                    throw IllegalArgumentException("Unsupported architecture: $architecture")
+                    val architecture = System.getProperty("os.arch")
+
+                    if (architecture.contains("64")) {
+                        getJbrReleases(
+                            "windows-x64",
+                            jbrReleases,
+                            jbrDir,
+                        )
+                        getChromeDriver(
+                            "win64",
+                            webDriverProperties,
+                            appResourcesRootDir
+                                .get()
+                                .dir("windows-x64"),
+                        )
+                    } else {
+                        throw IllegalArgumentException("Unsupported architecture: $architecture")
+                    }
+
+                    iconFile = file("src/desktopMain/resources/icons/clipevery.ico")
                 }
-
-                iconFile = file("src/desktopMain/resources/icons/clipevery.ico")
             }
         }
     }
