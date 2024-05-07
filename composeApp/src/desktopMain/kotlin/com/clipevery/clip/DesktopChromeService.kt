@@ -136,7 +136,7 @@ class DesktopChromeService(private val appWindowManager: AppWindowManager) : Chr
 
     @Synchronized
     override fun html2Image(html: String): ByteArray? {
-        return Retry.retry(3, {
+        return Retry.retry(1, {
             doHtml2Image(html)
         }) {
             chromeDriver?.quit()

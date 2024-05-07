@@ -94,6 +94,7 @@ import com.clipevery.sync.SyncManager
 import com.clipevery.task.CleanClipTaskExecutor
 import com.clipevery.task.DeleteClipTaskExecutor
 import com.clipevery.task.DesktopTaskExecutor
+import com.clipevery.task.Html2ImageTaskExecutor
 import com.clipevery.task.PullFileTaskExecutor
 import com.clipevery.task.SyncClipTaskExecutor
 import com.clipevery.task.TaskExecutor
@@ -228,6 +229,7 @@ class Clipevery {
                                 DeleteClipTaskExecutor(get()),
                                 PullFileTaskExecutor(get(), get(), get(), get()),
                                 CleanClipTaskExecutor(get(), get()),
+                                Html2ImageTaskExecutor(get(), get(), get()),
                             ),
                             get(),
                         )

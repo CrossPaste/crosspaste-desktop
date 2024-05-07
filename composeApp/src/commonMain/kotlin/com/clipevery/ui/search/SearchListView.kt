@@ -77,6 +77,8 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
 
     val coroutineScope = rememberCoroutineScope()
 
+    val searchResult = remember(clipSearchService.searchTime) { clipSearchService.searchResult }
+
     LaunchedEffect(clipSearchService.selectedIndex) {
         try {
             val visibleItems = searchListState.layoutInfo.visibleItemsInfo
@@ -104,7 +106,7 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
             modifier = Modifier.width(280.dp).height(400.dp),
         ) {
             itemsIndexed(
-                clipSearchService.searchResult,
+                searchResult,
                 key = { _, item -> item.id },
             ) { index, clipData ->
                 ClipTitleView(clipData, index == clipSearchService.selectedIndex) {

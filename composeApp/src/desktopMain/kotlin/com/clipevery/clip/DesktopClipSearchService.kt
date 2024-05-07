@@ -42,6 +42,8 @@ class DesktopClipSearchService(
 
     override var searchClipType by mutableStateOf<Int?>(null)
 
+    override var searchTime: Int = 0
+
     private var _inputSearch = mutableStateOf("")
 
     override val searchResult: MutableList<ClipData> = mutableStateListOf()
@@ -82,6 +84,8 @@ class DesktopClipSearchService(
     }
 
     override suspend fun search() {
+        searchTime++
+
         searchJob?.cancel()
 
         searchJob =

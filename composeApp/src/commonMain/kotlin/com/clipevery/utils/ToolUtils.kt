@@ -44,7 +44,7 @@ object Retry {
                 return action()
             } catch (e: Exception) {
                 lastException = e
-                logger.warn { "Attempt $attempt failed, retrying..." }
+                logger.warn(e) { "Attempt $attempt failed, retrying..." }
                 cleanUp()
             }
         }
