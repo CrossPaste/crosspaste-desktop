@@ -1,6 +1,7 @@
 *.iml
 .gradle
-**/build/
+composeApp/build/
+/buildSrc/build/
 xcuserdata
 !src/**/build/
 local.properties
@@ -22,5 +23,5 @@ composeApp/docs
 chrome-headless-shell-*/
 chromedriver-*/
 /composeApp/.user/
-conveyor.conf
 /output/
+/composeApp/jbr/

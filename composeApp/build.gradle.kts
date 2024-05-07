@@ -1,3 +1,4 @@
+import com.clipevery.build.JbrReleases
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import java.io.FileReader
@@ -152,7 +153,6 @@ compose.desktop {
         jvmArgs("-DloggerDebugPackages=com.clipevery.routing,com.clipevery.net.clientapi")
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
 
             appResourcesRootDir = project.layout.projectDirectory.dir("resources")
             packageName = "clipevery"
@@ -163,54 +163,95 @@ compose.desktop {
             // includeAllModules = true
             modules("jdk.charsets", "java.net.http")
 
-            val properties = Properties()
-            val webDriverFile = project.projectDir.toPath().resolve("webDriver.properties").toFile()
-            properties.load(FileReader(webDriverFile))
+            val jbrYamlFile = project.projectDir.toPath().resolve("jbr.yaml").toFile()
+            val jbrReleases = YamlUtils.loadJbrReleases(jbrYamlFile)
+            val jbrDir = project.projectDir.resolve("jbr")
 
-            macOS {
-                iconFile = file("src/desktopMain/resources/icons/clipevery.icns")
-                bundleID = "com.clipevery.mac"
-                appCategory = "public.app-category.utilities"
-                infoPlist {
-                    dockName = "Clipevery"
-                    extraKeysRawXml = """
+            val webDriverProperties = Properties()
+            val webDriverFile = project.projectDir.toPath().resolve("webDriver.properties").toFile()
+            webDriverProperties.load(FileReader(webDriverFile))
+
+            if (os.isMacOsX) {
+                targetFormats(TargetFormat.Dmg)
+
+                macOS {
+                    iconFile = file("src/desktopMain/resources/icons/clipevery.icns")
+                    bundleID = "com.clipevery.mac"
+                    appCategory = "public.app-category.utilities"
+                    infoPlist {
+                        dockName = "Clipevery"
+                        extraKeysRawXml = """
                         <key>LSUIElement</key>
                         <string>true</string>
                         <key>LSMinimumSystemVersion</key>
                         <string>10.15.0</string>
                     """
-                }
+                    }
 
-                if (os.isMacOsX) {
                     jvmArgs("-Dmac.bundleID=$bundleID")
 
                     val process = Runtime.getRuntime().exec("uname -m")
                     val result = process.inputStream.bufferedReader().use { it.readText() }.trim()
 
                     when (result) {
-                        "x86_64" -> getChromeDriver("mac-x64", properties, appResourcesRootDir.get().dir("macos-x64"))
-                        "arm64" ->
+                        "x86_64" -> {
+                            getJbrReleases(
+                                "osx-x64",
+                                jbrReleases,
+                                jbrDir,
+                            )
+                            getChromeDriver(
+                                "mac-x64",
+                                webDriverProperties,
+                                appResourcesRootDir
+                                    .get()
+                                    .dir("macos-x64"),
+                            )
+                        }
+
+                        "arm64" -> {
+                            getJbrReleases(
+                                "osx-aarch64",
+                                jbrReleases,
+                                jbrDir,
+                            )
                             getChromeDriver(
                                 "mac-arm64",
-                                properties,
+                                webDriverProperties,
                                 appResourcesRootDir
                                     .get()
                                     .dir("macos-arm64"),
                             )
+                        }
                     }
                 }
             }
-            windows {
 
-                val architecture = System.getProperty("os.arch")
+            if (os.isWindows) {
+                windows {
+                    targetFormats(TargetFormat.Msi)
 
-                if (architecture.contains("64")) {
-                    getChromeDriver("win64", properties, appResourcesRootDir.get().dir("windows-x64"))
-                } else {
-                    getChromeDriver("win32", properties, appResourcesRootDir.get().dir("windows-x86"))
+                    val architecture = System.getProperty("os.arch")
+
+                    if (architecture.contains("64")) {
+                        getJbrReleases(
+                            "windows-x64",
+                            jbrReleases,
+                            jbrDir,
+                        )
+                        getChromeDriver(
+                            "win64",
+                            webDriverProperties,
+                            appResourcesRootDir
+                                .get()
+                                .dir("windows-x64"),
+                        )
+                    } else {
+                        throw IllegalArgumentException("Unsupported architecture: $architecture")
+                    }
+
+                    iconFile = file("src/desktopMain/resources/icons/clipevery.ico")
                 }
-
-                iconFile = file("src/desktopMain/resources/icons/clipevery.ico")
             }
         }
     }
@@ -224,35 +265,66 @@ configurations.all {
     }
 }
 
+fun getJbrReleases(
+    platform: String,
+    jbrReleases: JbrReleases,
+    downDir: File,
+) {
+    val jbrDetails = jbrReleases.jbr[platform]!!
+    val fileName = jbrDetails.url.substringAfterLast("/")
+    downJbrReleases(jbrDetails.url, downDir) {
+        !downDir.resolve(fileName).exists()
+    }
+}
+
+fun downJbrReleases(
+    url: String,
+    downDir: File,
+    checkExist: () -> Boolean,
+) {
+    if (checkExist()) {
+        download.run {
+            src { url }
+            dest { downDir }
+            overwrite(true)
+            tempAndMove(true)
+        }
+    }
+}
+
 fun getChromeDriver(
     driverOsArch: String,
     properties: Properties,
-    resourceDir: Directory,
+    downDir: Directory,
 ) {
     val chromeDriver = "chromedriver-$driverOsArch"
     val chromeHeadlessShell = "chrome-headless-shell-$driverOsArch"
 
-    download(chromeDriver, properties, resourceDir)
-    download(chromeHeadlessShell, properties, resourceDir)
+    downloadChromeDriver(chromeDriver, properties.getProperty(chromeDriver)!!, downDir) {
+        downDir.dir(chromeDriver).asFileTree.isEmpty
+    }
+    downloadChromeDriver(chromeHeadlessShell, properties.getProperty(chromeHeadlessShell)!!, downDir) {
+        downDir.dir(chromeHeadlessShell).asFileTree.isEmpty
+    }
 }
 
-fun download(
+fun downloadChromeDriver(
     name: String,
-    properties: Properties,
-    resourceDir: Directory,
+    url: String,
+    downDir: Directory,
+    checkExist: () -> Boolean,
 ) {
-    if (resourceDir.dir(name).asFileTree.isEmpty) {
-        val chromeHeadlessShellUrl = properties.getProperty(name)!!
+    if (checkExist()) {
         download.run {
-            src { chromeHeadlessShellUrl }
-            dest { resourceDir }
+            src { url }
+            dest { downDir }
             overwrite(true)
             tempAndMove(true)
         }
         copy {
-            from(zipTree(resourceDir.file("$name.zip")))
-            into(resourceDir)
+            from(zipTree(downDir.file("$name.zip")))
+            into(downDir)
         }
-        delete(resourceDir.file("$name.zip"))
+        delete(downDir.file("$name.zip"))
     }
 }
