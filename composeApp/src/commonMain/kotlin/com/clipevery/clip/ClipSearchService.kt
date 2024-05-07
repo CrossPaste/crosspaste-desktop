@@ -16,6 +16,8 @@ interface ClipSearchService {
 
     var searchClipType: Int?
 
+    var searchTime: Int
+
     val searchResult: MutableList<ClipData>
 
     val currentClipData: State<ClipData?>

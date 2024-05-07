@@ -295,6 +295,9 @@ class ClipRealm(
                     clipData.clipState = ClipState.LOADED
 
                     val tasks = mutableListOf<ObjectId>()
+                    if (clipData.clipType == ClipType.HTML) {
+                        tasks.add(copyToRealm(createTask(clipData.id, TaskType.HTML_TO_IMAGE_TASK)).taskId)
+                    }
                     tasks.add(copyToRealm(createTask(clipData.id, TaskType.SYNC_CLIP_TASK, SyncExtraInfo())).taskId)
                     tasks.addAll(markDeleteSameMd5(clipData.id, clipData.md5))
                     return@write tasks
