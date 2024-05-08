@@ -1,6 +1,10 @@
 package com.clipevery.app
 
+import com.clipevery.path.DesktopPathProvider
 import com.clipevery.platform.currentPlatform
+import io.github.oshai.kotlinlogging.KLogger
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlin.io.path.absolutePathString
 
 object DesktopAppRestartService : AppRestartService {
 
@@ -32,10 +36,33 @@ class MacAppRestartService : AppRestartService {
         private const val SCRIPT = "restart.sh"
     }
 
+    private val logger: KLogger = KotlinLogging.logger {}
+
     override fun restart(exitApplication: () -> Unit) {
         val pid = ProcessHandle.current().pid()
-        Runtime.getRuntime().exec("sh $SCRIPT $pid")
-        exitApplication()
+        val appPath = DesktopPathProvider.clipAppPath
+        val restartLogPath = DesktopPathProvider.resolve("restart.log", AppFileType.LOG)
+        val scriptPath = appPath.resolve("Resources").resolve("bin").resolve(SCRIPT)
+        val openAppPath = appPath.parent
+        logger.info { "Restarting app script: $scriptPath\nwith args: $pid $openAppPath" }
+        val command =
+            listOf(
+                "bash",
+                scriptPath.absolutePathString(),
+                pid.toString(),
+                openAppPath.absolutePathString(),
+            )
+        try {
+            val process =
+                ProcessBuilder(command)
+                    .redirectOutput(restartLogPath.toFile())
+                    .redirectErrorStream(true)
+                    .start()
+            logger.info { "restart process pid: ${process.pid()} active: ${process.isAlive}" }
+            exitApplication()
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to restart app" }
+        }
     }
 }
 
@@ -45,10 +72,33 @@ class WindowsAppRestartService : AppRestartService {
         private const val SCRIPT = "restart.bat"
     }
 
+    private val logger: KLogger = KotlinLogging.logger {}
+
     override fun restart(exitApplication: () -> Unit) {
         val pid = ProcessHandle.current().pid()
-        Runtime.getRuntime().exec("sh $SCRIPT $pid")
-        exitApplication()
+        val appPath = DesktopPathProvider.clipAppPath
+        val restartLogPath = DesktopPathProvider.resolve("restart.log", AppFileType.LOG)
+        val scriptPath = appPath.resolve("app").resolve("bin").resolve(SCRIPT)
+        val appExePath = appPath.resolve("bin").resolve("clipevery.exe")
+
+        logger.info { "Restarting app script: $scriptPath\nwith args: $pid $appExePath" }
+        val command =
+            listOf(
+                "cmd",
+                "/c",
+                "\"${scriptPath.absolutePathString()}\" $pid \"${appExePath.absolutePathString()}\"",
+            )
+        try {
+            val process =
+                ProcessBuilder(command)
+                    .redirectOutput(restartLogPath.toFile())
+                    .redirectErrorStream(true)
+                    .start()
+            logger.info { "restart process pid: ${process.pid()} active: ${process.isAlive}" }
+            exitApplication()
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to restart app" }
+        }
     }
 }
 
