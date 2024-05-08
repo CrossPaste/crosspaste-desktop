@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
@@ -28,6 +29,7 @@ import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.AsyncView
 import com.clipevery.ui.base.LoadImageData
+import com.clipevery.ui.base.LoadingStateData
 import com.clipevery.ui.base.loadImageData
 import com.clipevery.utils.getDateUtils
 import com.clipevery.utils.getFileUtils
@@ -50,14 +52,18 @@ fun HtmlToImageDetailView(
 
     val filePath by remember(clipData.id) { mutableStateOf(clipHtml.getHtmlImagePath()) }
 
+    var existFile by remember(clipData.id) { mutableStateOf(filePath.toFile().exists()) }
+
     ClipDetailView(
         detailView = {
             AsyncView(
                 key = clipData.id,
+                defaultValue = if (existFile) loadImageData(filePath, density) else LoadingStateData,
                 load = {
                     while (!filePath.toFile().exists()) {
                         delay(200)
                     }
+                    existFile = true
                     loadImageData(filePath, density)
                 },
                 loadFor = { loadImageView ->
