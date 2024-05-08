@@ -55,10 +55,6 @@ import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.path.PathProvider
 import com.clipevery.platform.currentPlatform
-import com.clipevery.ui.base.AsyncView
-import com.clipevery.ui.base.LoadImageData
-import com.clipevery.ui.base.LoadingStateData
-import com.clipevery.ui.base.image
 import com.clipevery.ui.base.starRegular
 import com.clipevery.ui.base.starSolid
 import com.clipevery.utils.getResourceUtils
@@ -121,22 +117,15 @@ fun ClipDetailInfoView(
                     ),
             )
             Spacer(modifier = Modifier.width(5.dp))
-            AsyncView(
-                key = clipData.id,
-                load = {
-                    val path = pathProvider.resolve("$source.png", AppFileType.ICON)
-                    LoadImageData(path, getResourceUtils().loadPainter(path, density))
-                },
-            ) { loadImageData ->
-                when (loadImageData) {
-                    is LoadImageData -> {
-                        AppIcon(loadImageData.toPainterImage.toPainter())
-                    }
 
-                    is LoadingStateData -> {
-                        AppIcon(image())
-                    }
-                }
+            val iconPath by remember(source) { mutableStateOf(pathProvider.resolve("$source.png", AppFileType.ICON)) }
+
+            val iconExist by remember(source) {
+                mutableStateOf(iconPath.toFile().exists())
+            }
+
+            if (iconExist) {
+                AppIcon(getResourceUtils().loadPainter(iconPath, density).toPainter())
             }
         }
     }
