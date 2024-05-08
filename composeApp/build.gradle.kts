@@ -180,6 +180,9 @@ compose.desktop {
             val jbrYamlFile = project.projectDir.toPath().resolve("jbr.yaml").toFile()
             val jbrReleases = loadJbrReleases(jbrYamlFile)
             val jbrDir = project.projectDir.resolve("jbr")
+            if (!jbrDir.exists()) {
+                jbrDir.mkdirs()
+            }
 
             val webDriverProperties = Properties()
             val webDriverFile = project.projectDir.toPath().resolve("webDriver.properties").toFile()

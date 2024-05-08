@@ -1,7 +1,6 @@
 package com.clipevery.clip
 
 import com.clipevery.app.AppEnv
-import com.clipevery.app.AppFileType
 import com.clipevery.app.AppWindowManager
 import com.clipevery.os.windows.WindowDpiHelper
 import com.clipevery.path.DesktopPathProvider
@@ -106,7 +105,12 @@ class DesktopChromeService(private val appWindowManager: AppWindowManager) : Chr
     }
 
     private fun initChromeDriver() {
-        val resourcesPath = DesktopPathProvider.resolve("resources", AppFileType.APP)
+        val resourcesPath =
+            if (AppEnv.isDevelopment()) {
+                DesktopPathProvider.clipAppJarPath.resolve("resources")
+            } else {
+                DesktopPathProvider.clipAppJarPath
+            }
         if (currentPlatform.isMacos()) {
             if (currentPlatform.arch.contains("x86_64")) {
                 val macX64ResourcesPath =

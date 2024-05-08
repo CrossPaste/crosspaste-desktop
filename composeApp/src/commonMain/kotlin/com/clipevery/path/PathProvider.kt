@@ -124,6 +124,8 @@ interface PathProvider {
 
     val clipAppPath: Path
 
+    val clipAppJarPath: Path
+
     val clipUserPath: Path
 
     val clipLogPath: Path get() = clipUserPath

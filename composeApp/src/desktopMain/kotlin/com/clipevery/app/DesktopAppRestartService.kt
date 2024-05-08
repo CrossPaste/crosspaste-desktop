@@ -40,10 +40,10 @@ class MacAppRestartService : AppRestartService {
 
     override fun restart(exitApplication: () -> Unit) {
         val pid = ProcessHandle.current().pid()
-        val appPath = DesktopPathProvider.clipAppPath
+        val appJarPath = DesktopPathProvider.clipAppJarPath
         val restartLogPath = DesktopPathProvider.resolve("restart.log", AppFileType.LOG)
-        val scriptPath = appPath.resolve("Resources").resolve("bin").resolve(SCRIPT)
-        val openAppPath = appPath.parent
+        val scriptPath = appJarPath.resolve("bin").resolve(SCRIPT)
+        val openAppPath = DesktopPathProvider.clipAppPath
         logger.info { "Restarting app script: $scriptPath\nwith args: $pid $openAppPath" }
         val command =
             listOf(
@@ -76,10 +76,10 @@ class WindowsAppRestartService : AppRestartService {
 
     override fun restart(exitApplication: () -> Unit) {
         val pid = ProcessHandle.current().pid()
-        val appPath = DesktopPathProvider.clipAppPath
+        val appJarPath = DesktopPathProvider.clipAppJarPath
         val restartLogPath = DesktopPathProvider.resolve("restart.log", AppFileType.LOG)
-        val scriptPath = appPath.resolve("app").resolve("bin").resolve(SCRIPT)
-        val appExePath = appPath.resolve("bin").resolve("clipevery.exe")
+        val scriptPath = appJarPath.resolve("bin").resolve(SCRIPT)
+        val appExePath = DesktopPathProvider.clipAppPath.resolve("bin").resolve("clipevery.exe")
 
         logger.info { "Restarting app script: $scriptPath\nwith args: $pid $appExePath" }
         val command =
