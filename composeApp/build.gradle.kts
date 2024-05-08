@@ -1,6 +1,8 @@
-import com.clipevery.build.JbrReleases
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.yaml.snakeyaml.LoaderOptions
+import org.yaml.snakeyaml.Yaml
+import org.yaml.snakeyaml.constructor.Constructor
 import java.io.FileReader
 import java.util.Properties
 
@@ -22,6 +24,15 @@ plugins {
     alias(libs.plugins.ktlint)
     alias(libs.plugins.realmKotlin)
     alias(libs.plugins.download)
+}
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath(libs.yaml)
+    }
 }
 
 ktlint {
@@ -136,6 +147,9 @@ compose.desktop {
             tasks.named("desktopJar") {
                 dependsOn("compileSwift")
             }
+            tasks.named("desktopTest") {
+                dependsOn("compileSwift")
+            }
 
             jvmArgs("--add-opens", "java.desktop/sun.lwawt=ALL-UNNAMED")
             jvmArgs("--add-opens", "java.desktop/sun.lwawt.macosx=ALL-UNNAMED")
@@ -164,8 +178,11 @@ compose.desktop {
             modules("jdk.charsets", "java.net.http")
 
             val jbrYamlFile = project.projectDir.toPath().resolve("jbr.yaml").toFile()
-            val jbrReleases = YamlUtils.loadJbrReleases(jbrYamlFile)
+            val jbrReleases = loadJbrReleases(jbrYamlFile)
             val jbrDir = project.projectDir.resolve("jbr")
+            if (!jbrDir.exists()) {
+                jbrDir.mkdirs()
+            }
 
             val webDriverProperties = Properties()
             val webDriverFile = project.projectDir.toPath().resolve("webDriver.properties").toFile()
@@ -328,3 +345,20 @@ fun downloadChromeDriver(
         delete(downDir.file("$name.zip"))
     }
 }
+
+fun loadJbrReleases(file: File): JbrReleases {
+    val yaml = Yaml(Constructor(JbrReleases::class.java, LoaderOptions()))
+    file.inputStream().use {
+        val jbrReleases = yaml.load<JbrReleases>(it)
+        return jbrReleases
+    }
+}
+
+data class JbrReleases(
+    var jbr: Map<String, JbrDetails> = mutableMapOf(),
+)
+
+data class JbrDetails(
+    var url: String = "",
+    var sha512: String = "",
+)

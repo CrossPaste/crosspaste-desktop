@@ -17,6 +17,8 @@ object DesktopPathProvider : PathProvider {
 
     override val clipAppPath: Path = pathProvider.clipAppPath
 
+    override val clipAppJarPath: Path = pathProvider.clipAppJarPath
+
     override val clipUserPath: Path = pathProvider.clipUserPath
 
     override val clipLogPath: Path get() = pathProvider.clipUserPath
@@ -53,6 +55,8 @@ class DevelopmentPathProvider : PathProvider {
 
     override val clipAppPath: Path = getAppPath()
 
+    override val clipAppJarPath: Path = getAppPath()
+
     override val clipUserPath: Path = getUserPath()
 
     override val fileUtils: FileUtils = getFileUtils()
@@ -88,15 +92,17 @@ class WindowsPathProvider : PathProvider {
 
     private val userHomePath = System.getProperty("user.home")
 
-    override val clipAppPath: Path = getAppPath()
+    override val clipAppPath: Path = getAppJarPath().parent
+
+    override val clipAppJarPath: Path = getAppJarPath()
 
     override val clipUserPath: Path = Paths.get(userHomePath).resolve(".clipevery")
 
     override val fileUtils: FileUtils = getFileUtils()
 
-    private fun getAppPath(): Path {
+    private fun getAppJarPath(): Path {
         System.getProperty("compose.application.resources.dir")?.let {
-            return Paths.get(it).parent
+            return Paths.get(it)
         }
         System.getProperty("skiko.library.path")?.let {
             return Paths.get(it)
@@ -120,7 +126,9 @@ class MacosPathProvider : PathProvider {
 
     private val userHome = System.getProperty("user.home")
 
-    override val clipAppPath: Path = getAppPath()
+    override val clipAppPath: Path = getAppJarPath().parent.parent
+
+    override val clipAppJarPath: Path = getAppJarPath()
 
     override val clipUserPath: Path = getAppSupportPath()
 
@@ -148,9 +156,9 @@ class MacosPathProvider : PathProvider {
         return appLogsPath
     }
 
-    private fun getAppPath(): Path {
+    private fun getAppJarPath(): Path {
         System.getProperty("compose.application.resources.dir")?.let {
-            return Paths.get(it).parent
+            return Paths.get(it)
         }
         System.getProperty("skiko.library.path")?.let {
             return Paths.get(it)
@@ -161,6 +169,8 @@ class MacosPathProvider : PathProvider {
 
 class LinuxPathProvider : PathProvider {
     override val clipAppPath: Path
+        get() = TODO("Not yet implemented")
+    override val clipAppJarPath: Path
         get() = TODO("Not yet implemented")
     override val clipUserPath: Path
         get() = TODO("Not yet implemented")
