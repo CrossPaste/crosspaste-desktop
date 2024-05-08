@@ -1,7 +1,6 @@
 package com.clipevery.ui
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,12 +24,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.clipevery.LocalExitApplication
 import com.clipevery.LocalKoinApplication
-import com.clipevery.app.AppRestartService
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.chevronRight
-import io.github.oshai.kotlinlogging.KLogger
 
 @Composable
 fun AboutView(currentPageViewContext: MutableState<PageViewContext>) {
@@ -41,10 +37,7 @@ fun AboutView(currentPageViewContext: MutableState<PageViewContext>) {
 @Composable
 fun AboutContentView() {
     val current = LocalKoinApplication.current
-    val exitApplication = LocalExitApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
-    val appRestartService = current.koin.get<AppRestartService>()
-    val kLogger = current.koin.get<KLogger>()
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -68,12 +61,7 @@ fun AboutContentView() {
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    modifier =
-                        Modifier.clickable {
-                            kLogger.info { "Restarting app" }
-                            appRestartService.restart { exitApplication() }
-                        },
-                    text = "Clipevery",
+                    text = "ClipEvery",
                     style = MaterialTheme.typography.subtitle1,
                     color = MaterialTheme.colors.onBackground,
                     fontSize = 14.sp,

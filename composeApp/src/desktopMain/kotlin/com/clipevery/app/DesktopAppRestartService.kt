@@ -79,14 +79,19 @@ class WindowsAppRestartService : AppRestartService {
         val appJarPath = DesktopPathProvider.clipAppJarPath
         val restartLogPath = DesktopPathProvider.resolve("restart.log", AppFileType.LOG)
         val scriptPath = appJarPath.resolve("bin").resolve(SCRIPT)
-        val appExePath = DesktopPathProvider.clipAppPath.resolve("bin").resolve("clipevery.exe")
+        val appExePath =
+            DesktopPathProvider.clipAppPath
+                .resolve("bin")
+                .resolve("clipevery.exe")
 
         logger.info { "Restarting app script: $scriptPath\nwith args: $pid $appExePath" }
         val command =
             listOf(
                 "cmd",
                 "/c",
-                "\"${scriptPath.absolutePathString()}\" $pid \"${appExePath.absolutePathString()}\"",
+                scriptPath.absolutePathString(),
+                pid.toString(),
+                appExePath.absolutePathString(),
             )
         try {
             val process =
