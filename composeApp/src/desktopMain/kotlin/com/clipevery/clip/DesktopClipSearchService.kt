@@ -84,8 +84,6 @@ class DesktopClipSearchService(
     }
 
     override suspend fun search() {
-        searchTime++
-
         searchJob?.cancel()
 
         searchJob =
@@ -109,6 +107,7 @@ class DesktopClipSearchService(
                             updateSearchResult(changes.list)
                         }
                     }
+                    searchTime++
                 }
             }
     }

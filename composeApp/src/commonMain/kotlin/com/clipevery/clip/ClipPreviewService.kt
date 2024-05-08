@@ -6,6 +6,8 @@ import org.mongodb.kbson.ObjectId
 
 interface ClipPreviewService {
 
+    var refreshTime: Int
+
     val clipDataList: MutableList<ClipData>
 
     val clipDataMap: SnapshotStateMap<ObjectId, ClipData>

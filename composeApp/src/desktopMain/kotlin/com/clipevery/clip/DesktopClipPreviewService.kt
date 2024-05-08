@@ -27,6 +27,8 @@ class DesktopClipPreviewService(
 
     private var existMore: Boolean = false
 
+    override var refreshTime: Int = 0
+
     override val clipDataList: MutableList<ClipData> = mutableStateListOf()
 
     override val clipDataMap = mutableStateMapOf<ObjectId, ClipData>()
@@ -57,6 +59,7 @@ class DesktopClipPreviewService(
                             mutex.withLock {
                                 clipDataList.clear()
                                 clipDataList.addAll(changes.list)
+                                refreshTime++
                             }
                         }
                     }
