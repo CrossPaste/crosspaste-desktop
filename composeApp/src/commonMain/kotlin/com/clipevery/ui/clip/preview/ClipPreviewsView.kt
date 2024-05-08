@@ -48,7 +48,7 @@ fun ClipPreviewsView() {
     var isScrolling by remember { mutableStateOf(false) }
     var scrollJob: Job? by remember { mutableStateOf(null) }
     val coroutineScope = rememberCoroutineScope()
-    val rememberClipDataList = remember { clipPreviewService.clipDataList }
+    val rememberClipDataList = remember(clipPreviewService.refreshTime) { clipPreviewService.clipDataList }
 
     DisposableEffect(Unit) {
         coroutineScope.launch {
