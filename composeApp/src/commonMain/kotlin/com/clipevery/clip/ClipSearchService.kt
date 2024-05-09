@@ -8,7 +8,7 @@ interface ClipSearchService {
 
     var selectedIndex: Int
 
-    val inputSearch: State<String>
+    var inputSearch: String
 
     var searchFavorite: Boolean
 

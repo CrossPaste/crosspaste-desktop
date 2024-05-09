@@ -123,15 +123,23 @@ fun ClipeverySearchWindow(hideWindow: () -> Unit) {
         }
     }
 
-    LaunchedEffect(clipSearchService.inputSearch.value) {
+    LaunchedEffect(clipSearchService.inputSearch) {
         val currentTime = System.currentTimeMillis()
         lastInputTime = currentTime
-        if (clipSearchService.inputSearch.value.trim().isNotEmpty()) {
+        if (clipSearchService.inputSearch.trim().isNotEmpty()) {
             delay(500)
         }
         if (lastInputTime == currentTime) {
             clipSearchService.search()
         }
+    }
+
+    LaunchedEffect(
+        clipSearchService.searchFavorite,
+        clipSearchService.searchSort,
+        clipSearchService.searchClipType,
+    ) {
+        clipSearchService.search()
     }
 
     ClipeveryTheme {
@@ -177,7 +185,7 @@ fun ClipeverySearchWindow(hideWindow: () -> Unit) {
                                             logger.debug { "onFocusChanged $it" }
                                         }
                                         .fillMaxSize(),
-                                value = clipSearchService.inputSearch.value,
+                                value = clipSearchService.inputSearch,
                                 onValueChange = { clipSearchService.updateInputSearch(it) },
                                 keyboardOptions = KeyboardOptions.Default.copy(autoCorrect = true),
                                 visualTransformation = VisualTransformation.None,

@@ -72,7 +72,7 @@ interface ClipDao {
     )
 
     fun searchClipData(
-        inputSearch: String,
+        searchTerms: List<String>,
         favorite: Boolean? = null,
         appInstanceId: String? = null,
         clipType: Int? = null,

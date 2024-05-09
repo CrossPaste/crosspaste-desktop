@@ -6,6 +6,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.clipevery.platform.currentPlatform
+import com.clipevery.utils.ioDispatcher
+import com.clipevery.utils.mainDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -14,6 +16,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlin.random.Random
 
 object DesktopAppWindowManager : AppWindowManager {
@@ -52,8 +55,10 @@ object DesktopAppWindowManager : AppWindowManager {
 
     override var token by mutableStateOf(charArrayOf('0', '0', '0', '0', '0', '0'))
 
-    private fun refreshToken() {
-        token = CharArray(6) { (Random.nextInt(10) + '0'.code).toChar() }
+    private suspend fun refreshToken() {
+        withContext(mainDispatcher) {
+            token = CharArray(6) { (Random.nextInt(10) + '0'.code).toChar() }
+        }
     }
 
     @Synchronized
@@ -99,15 +104,19 @@ object DesktopAppWindowManager : AppWindowManager {
 
     override fun unActiveMainWindow() {
         runBlocking {
-            windowManager.bringToBack(mainWindowTitle, false)
+            withContext(ioDispatcher) {
+                windowManager.bringToBack(mainWindowTitle, false)
+            }
         }
         showMainWindow = false
     }
 
     override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
         if (showSearchWindow) {
-            val toPaste = preparePaste()
-            windowManager.bringToBack(searchWindowTitle, toPaste)
+            withContext(ioDispatcher) {
+                val toPaste = preparePaste()
+                windowManager.bringToBack(searchWindowTitle, toPaste)
+            }
             showSearchWindow = false
         }
     }

@@ -9,6 +9,7 @@ import com.clipevery.app.AppWindowManager
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.utils.ioDispatcher
+import com.clipevery.utils.mainDispatcher
 import io.realm.kotlin.notifications.InitialResults
 import io.realm.kotlin.notifications.ResultsChange
 import io.realm.kotlin.notifications.UpdatedResults
@@ -16,8 +17,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import org.mongodb.kbson.ObjectId
 
 class DesktopClipSearchService(
@@ -30,11 +30,11 @@ class DesktopClipSearchService(
 
     private val ioScope = CoroutineScope(ioDispatcher)
 
-    private val mutex: Mutex = Mutex()
+    private var searchHash by mutableStateOf(0)
 
     override var selectedIndex by mutableStateOf(0)
 
-    override val inputSearch: State<String> get() = _inputSearch
+    override var inputSearch by mutableStateOf("")
 
     override var searchFavorite by mutableStateOf(false)
 
@@ -44,8 +44,6 @@ class DesktopClipSearchService(
 
     override var searchTime: Int = 0
 
-    private var _inputSearch = mutableStateOf("")
-
     override val searchResult: MutableList<ClipData> = mutableStateListOf()
 
     override val currentClipData: State<ClipData?> get() = _currentClipData
@@ -53,44 +51,44 @@ class DesktopClipSearchService(
     private var _currentClipData = mutableStateOf<ClipData?>(null)
 
     override fun updateInputSearch(inputSearch: String) {
-        _inputSearch.value = inputSearch
+        this.inputSearch = inputSearch
     }
 
     override fun switchFavorite() {
-        ioScope.launch {
-            mutex.withLock {
-                searchFavorite = !searchFavorite
-                search()
-            }
-        }
+        searchFavorite = !searchFavorite
     }
 
     override fun switchSort() {
-        ioScope.launch {
-            mutex.withLock {
-                searchSort = !searchSort
-                search()
-            }
-        }
+        searchSort = !searchSort
     }
 
     override fun setClipType(clipType: Int?) {
-        ioScope.launch {
-            mutex.withLock {
-                searchClipType = clipType
-                search()
-            }
-        }
+        searchClipType = clipType
+    }
+
+    private fun searchHash(): Int {
+        return inputSearch.hashCode() + searchFavorite.hashCode() + searchSort.hashCode() + searchClipType.hashCode()
     }
 
     override suspend fun search() {
+        val searchTerms =
+            inputSearch.trim().lowercase().split("\\s+".toRegex()).filterNot { it.isEmpty() }.distinct()
+
+        val currentSearchHash = searchHash()
+
+        if (searchHash == currentSearchHash) {
+            return
+        }
+
+        searchHash = currentSearchHash
+
         searchJob?.cancel()
 
         searchJob =
             ioScope.launch {
                 val searchClipData =
                     clipDao.searchClipData(
-                        inputSearch = _inputSearch.value,
+                        searchTerms = searchTerms,
                         favorite = if (searchFavorite) searchFavorite else null,
                         sort = searchSort,
                         clipType = searchClipType,
@@ -99,15 +97,17 @@ class DesktopClipSearchService(
                 val searchClipDataFlow: Flow<ResultsChange<ClipData>> = searchClipData.asFlow()
 
                 searchClipDataFlow.collect { changes ->
-                    when (changes) {
-                        is InitialResults -> {
-                            initSearchResult(changes.list)
-                        }
-                        is UpdatedResults -> {
-                            updateSearchResult(changes.list)
+                    withContext(mainDispatcher) {
+                        when (changes) {
+                            is InitialResults -> {
+                                initSearchResult(changes.list)
+                            }
+
+                            is UpdatedResults -> {
+                                updateSearchResult(changes.list)
+                            }
                         }
                     }
-                    searchTime++
                 }
             }
     }
@@ -121,11 +121,7 @@ class DesktopClipSearchService(
     }
 
     override fun clickSetSelectedIndex(selectedIndex: Int) {
-        ioScope.launch {
-            mutex.withLock {
-                innerSetSelectedIndex(selectedIndex)
-            }
-        }
+        innerSetSelectedIndex(selectedIndex)
     }
 
     private fun innerSetSelectedIndex(selectedIndex: Int) {
@@ -133,70 +129,57 @@ class DesktopClipSearchService(
         setCurrentClipData()
     }
 
-    private suspend fun initSearchResult(searchResult: List<ClipData>) {
-        mutex.withLock {
-            this.searchResult.clear()
-            this.searchResult.addAll(searchResult)
-            this.selectedIndex = 0
-            setCurrentClipData()
-        }
+    private fun initSearchResult(searchResult: List<ClipData>) {
+        this.searchResult.clear()
+        this.searchResult.addAll(searchResult)
+        this.selectedIndex = 0
+        setCurrentClipData()
+        searchTime++
     }
 
-    private suspend fun updateSearchResult(searchResult: List<ClipData>) {
-        mutex.withLock {
-            val prevSelectedId: ObjectId? = _currentClipData.value?.id
-            this.searchResult.clear()
-            this.searchResult.addAll(searchResult)
-            prevSelectedId?.let { id ->
-                val newSelectedIndex = searchResult.indexOfFirst { it.id == id }
-                if (newSelectedIndex >= 0) {
-                    this.selectedIndex = newSelectedIndex
-                } else {
-                    this.selectedIndex = 0
-                }
-            } ?: run {
+    private fun updateSearchResult(searchResult: List<ClipData>) {
+        val prevSelectedId: ObjectId? = _currentClipData.value?.id
+        this.searchResult.clear()
+        this.searchResult.addAll(searchResult)
+        prevSelectedId?.let { id ->
+            val newSelectedIndex = searchResult.indexOfFirst { it.id == id }
+            if (newSelectedIndex >= 0) {
+                this.selectedIndex = newSelectedIndex
+            } else {
                 this.selectedIndex = 0
             }
-            setCurrentClipData()
+        } ?: run {
+            this.selectedIndex = 0
         }
+        setCurrentClipData()
+        searchTime++
     }
 
     override fun upSelectedIndex() {
-        ioScope.launch {
-            mutex.withLock {
-                if (selectedIndex > 0) {
-                    selectedIndex--
-                    setCurrentClipData()
-                }
-            }
+        if (selectedIndex > 0) {
+            selectedIndex--
+            setCurrentClipData()
         }
     }
 
     override fun downSelectedIndex() {
-        ioScope.launch {
-            mutex.withLock {
-                if (selectedIndex < searchResult.size - 1) {
-                    selectedIndex++
-                    setCurrentClipData()
-                }
-            }
+        if (selectedIndex < searchResult.size - 1) {
+            selectedIndex++
+            setCurrentClipData()
         }
     }
 
     override suspend fun activeWindow() {
         appWindowManager.activeSearchWindow()
-        _inputSearch.value = ""
+        inputSearch = ""
         searchFavorite = false
         searchSort = true
-        search()
     }
 
     override suspend fun unActiveWindow() {
         appWindowManager.unActiveSearchWindow { false }
-        mutex.withLock {
-            searchResult.clear()
-            innerSetSelectedIndex(0)
-        }
+        searchResult.clear()
+        innerSetSelectedIndex(0)
     }
 
     override suspend fun toPaste() {
@@ -206,9 +189,7 @@ class DesktopClipSearchService(
                 true
             } ?: false
         }
-        mutex.withLock {
-            searchResult.clear()
-            innerSetSelectedIndex(0)
-        }
+        searchResult.clear()
+        innerSetSelectedIndex(0)
     }
 }

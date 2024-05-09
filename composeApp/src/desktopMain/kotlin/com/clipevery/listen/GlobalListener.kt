@@ -3,7 +3,7 @@ package com.clipevery.listen
 import com.clipevery.app.AppWindowManager
 import com.clipevery.clip.ClipSearchService
 import com.clipevery.config.ConfigManager
-import com.clipevery.utils.ioDispatcher
+import com.clipevery.utils.mainDispatcher
 import com.github.kwhat.jnativehook.GlobalScreen
 import com.github.kwhat.jnativehook.NativeHookException
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
@@ -53,7 +53,7 @@ class SearchListener(
 
     private val logger = KotlinLogging.logger {}
 
-    private val dispatcher = CoroutineScope(ioDispatcher)
+    private val mainDispatcherScope = CoroutineScope(mainDispatcher)
 
     override fun nativeKeyPressed(e: NativeKeyEvent) {
         val isCmdOrCtrlPressed = (e.modifiers and NativeKeyEvent.META_MASK) != 0
@@ -62,24 +62,28 @@ class SearchListener(
 
         if (isCmdOrCtrlPressed && isShiftPressed && isSpacePressed) {
             logger.info { "Open search window" }
-            dispatcher.launch(CoroutineName("OpenSearchWindow")) {
+            mainDispatcherScope.launch(CoroutineName("OpenSearchWindow")) {
                 clipSearchService.activeWindow()
             }
         } else if (e.keyCode == NativeKeyEvent.VC_ENTER) {
-            dispatcher.launch(CoroutineName("Paste")) {
+            mainDispatcherScope.launch(CoroutineName("Paste")) {
                 clipSearchService.toPaste()
             }
         } else if (e.keyCode == NativeKeyEvent.VC_ESCAPE) {
-            dispatcher.launch(CoroutineName("HideWindow")) {
+            mainDispatcherScope.launch(CoroutineName("HideWindow")) {
                 clipSearchService.unActiveWindow()
             }
         } else if (e.keyCode == NativeKeyEvent.VC_UP) {
             if (appWindowManager.showSearchWindow) {
-                clipSearchService.upSelectedIndex()
+                mainDispatcherScope.launch(CoroutineName("UpSelectedIndex")) {
+                    clipSearchService.upSelectedIndex()
+                }
             }
         } else if (e.keyCode == NativeKeyEvent.VC_DOWN) {
             if (appWindowManager.showSearchWindow) {
-                clipSearchService.downSelectedIndex()
+                mainDispatcherScope.launch(CoroutineName("DownSelectedIndex")) {
+                    clipSearchService.downSelectedIndex()
+                }
             }
         }
     }
