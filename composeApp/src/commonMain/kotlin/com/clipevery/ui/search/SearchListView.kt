@@ -47,11 +47,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
+import com.clipevery.app.AppFileType
 import com.clipevery.app.AppWindowManager
 import com.clipevery.clip.ClipSearchService
 import com.clipevery.clip.item.ClipUrl
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.dao.clip.ClipType
+import com.clipevery.path.PathProvider
 import com.clipevery.ui.base.AsyncView
 import com.clipevery.ui.base.LoadIconData
 import com.clipevery.ui.base.LoadImageData
@@ -64,6 +66,7 @@ import com.clipevery.utils.getResourceUtils
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch
+import kotlin.io.path.exists
 
 @Composable
 fun SearchListView(setSelectedIndex: (Int) -> Unit) {
@@ -148,8 +151,6 @@ fun ClipTitleView(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    val density = LocalDensity.current
-    val faviconUtils = getFaviconUtils()
     val title by remember(clipData.clipState) { mutableStateOf(getClipTitle(clipData)) }
 
     title?.let {
@@ -173,50 +174,7 @@ fun ClipTitleView(
                     horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    val loadIconData =
-                        LoadIconData(
-                            clipData.clipType,
-                            object : ToPainterImage {
-                                @Composable
-                                override fun toPainter(): Painter {
-                                    return ClipTypeIconView(clipData.clipType)
-                                }
-                            },
-                        )
-
-                    AsyncView(
-                        key = clipData.id,
-                        defaultValue = loadIconData,
-                        load = {
-                            if (clipData.clipType == ClipType.URL) {
-                                clipData.getClipItem()?.let {
-                                    it as ClipUrl
-                                    faviconUtils.getFaviconPath(it.url)?.let { path ->
-                                        return@AsyncView LoadImageData(path, getResourceUtils().loadPainter(path, density))
-                                    }
-                                }
-                            }
-                            loadIconData
-                        },
-                    ) { loadIconView ->
-                        when (loadIconView) {
-                            is LoadIconData -> {
-                                Icon(
-                                    painter = loadIconView.toPainterImage.toPainter(),
-                                    contentDescription = "Clip Icon",
-                                    modifier = Modifier.padding(3.dp).size(18.dp),
-                                    tint = MaterialTheme.colors.onBackground,
-                                )
-                            }
-                            is LoadImageData -> {
-                                Image(
-                                    painter = loadIconView.toPainterImage.toPainter(),
-                                    contentDescription = "Clip Icon",
-                                    modifier = Modifier.padding(3.dp).size(18.dp),
-                                )
-                            }
-                        }
-                    }
+                    ClipTypeIconView(clipData)
 
                     Text(
                         modifier = Modifier.padding(start = 10.dp),
@@ -234,6 +192,90 @@ fun ClipTitleView(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun ClipTypeIconView(clipData: ClipData) {
+    val current = LocalKoinApplication.current
+    val density = LocalDensity.current
+    val pathProvider = current.koin.get<PathProvider>()
+    val faviconUtils = getFaviconUtils()
+    val loadIconData =
+        LoadIconData(
+            clipData.clipType,
+            object : ToPainterImage {
+                @Composable
+                override fun toPainter(): Painter {
+                    return ClipTypeIconView(clipData.clipType)
+                }
+            },
+        )
+
+    if (clipData.clipType == ClipType.URL) {
+        AsyncView(
+            key = clipData.id,
+            defaultValue = loadIconData,
+            load = {
+                clipData.getClipItem()?.let {
+                    it as ClipUrl
+                    faviconUtils.getFaviconPath(it.url)?.let { path ->
+                        return@AsyncView LoadImageData(path, getResourceUtils().loadPainter(path, density))
+                    }
+                }
+                loadIconData
+            },
+        ) { loadView ->
+            when (loadView) {
+                is LoadIconData -> {
+                    Icon(
+                        painter = loadView.toPainterImage.toPainter(),
+                        contentDescription = "Clip Icon",
+                        modifier = Modifier.padding(3.dp).size(18.dp),
+                        tint = MaterialTheme.colors.onBackground,
+                    )
+                }
+                is LoadImageData -> {
+                    Image(
+                        painter = loadView.toPainterImage.toPainter(),
+                        contentDescription = "Clip Icon",
+                        modifier = Modifier.padding(3.dp).size(18.dp),
+                    )
+                }
+            }
+        }
+    } else if (clipData.clipType != ClipType.HTML) {
+        Icon(
+            painter = loadIconData.toPainterImage.toPainter(),
+            contentDescription = "Clip Icon",
+            modifier = Modifier.padding(3.dp).size(18.dp),
+            tint = MaterialTheme.colors.onBackground,
+        )
+    } else {
+        clipData.source?.let {
+            val path = pathProvider.resolve("$it.png", AppFileType.ICON)
+            if (pathProvider.resolve("$it.png", AppFileType.ICON).exists()) {
+                Image(
+                    painter = getResourceUtils().loadPainter(path, density).toPainter(),
+                    contentDescription = "Clip Icon",
+                    modifier = Modifier.padding(3.dp).size(18.dp),
+                )
+            } else {
+                Icon(
+                    painter = loadIconData.toPainterImage.toPainter(),
+                    contentDescription = "Clip Icon",
+                    modifier = Modifier.padding(3.dp).size(18.dp),
+                    tint = MaterialTheme.colors.onBackground,
+                )
+            }
+        } ?: run {
+            Icon(
+                painter = loadIconData.toPainterImage.toPainter(),
+                contentDescription = "Clip Icon",
+                modifier = Modifier.padding(3.dp).size(18.dp),
+                tint = MaterialTheme.colors.onBackground,
+            )
         }
     }
 }
