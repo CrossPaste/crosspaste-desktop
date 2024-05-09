@@ -416,7 +416,7 @@ class ClipRealm(
     }
 
     override fun searchClipData(
-        inputSearch: String,
+        searchTerms: List<String>,
         favorite: Boolean?,
         appInstanceId: String?,
         clipType: Int?,
@@ -424,8 +424,6 @@ class ClipRealm(
         limit: Int,
     ): RealmResults<ClipData> {
         return logExecutionTime(logger, "searchClipData") {
-            val searchTerms =
-                inputSearch.trim().lowercase().split("\\s+".toRegex()).filterNot { it.isEmpty() }.distinct()
             logger.info { "Performing search for: $searchTerms" }
             var query = realm.query(ClipData::class, "clipState != $0", ClipState.DELETED)
 
