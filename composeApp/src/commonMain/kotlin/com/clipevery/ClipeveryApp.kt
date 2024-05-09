@@ -27,6 +27,7 @@ import com.clipevery.ui.ClipeveryTheme
 import com.clipevery.ui.HomeView
 import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.PageViewType
+import com.clipevery.ui.base.MessageView
 import com.clipevery.ui.base.ToastManager
 import com.clipevery.ui.base.ToastView
 import com.clipevery.ui.devices.DeviceDetailView
@@ -104,6 +105,9 @@ fun ClipeveryWindow(hideWindow: () -> Unit) {
                 ) {
                     ClipeveryContent()
                 }
+
+                MessageView()
+
                 toast?.let {
                     ToastView(toast = it) {
                         toastManager.cancel()

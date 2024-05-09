@@ -59,7 +59,8 @@ import com.clipevery.endpoint.DesktopEndpointInfoFactory
 import com.clipevery.endpoint.EndpointInfoFactory
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.i18n.GlobalCopywriterImpl
-import com.clipevery.listen.GlobalListener
+import com.clipevery.listen.DesktopGlobalListener
+import com.clipevery.listener.GlobalListener
 import com.clipevery.log.ClipeveryLogger
 import com.clipevery.log.initLogger
 import com.clipevery.net.ClipBonjourService
@@ -102,8 +103,10 @@ import com.clipevery.task.SyncClipTaskExecutor
 import com.clipevery.task.TaskExecutor
 import com.clipevery.ui.DesktopThemeDetector
 import com.clipevery.ui.ThemeDetector
+import com.clipevery.ui.base.DesktopMessageManager
 import com.clipevery.ui.base.DesktopNotificationManager
 import com.clipevery.ui.base.DesktopToastManager
+import com.clipevery.ui.base.MessageManager
 import com.clipevery.ui.base.NotificationManager
 import com.clipevery.ui.base.ToastManager
 import com.clipevery.ui.getTrayMouseAdapter
@@ -241,11 +244,12 @@ class Clipevery {
                     // ui component
                     single<AppWindowManager> { DesktopAppWindowManager }
                     single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
-                    single<GlobalListener> { GlobalListener(get(), get(), get()) }
+                    single<GlobalListener> { DesktopGlobalListener(get(), get(), get()) }
                     single<ThemeDetector> { DesktopThemeDetector(get()) }
                     single<ClipResourceLoader> { DesktopAbsoluteClipResourceLoader }
                     single<ToastManager> { DesktopToastManager() }
                     single<NotificationManager> { DesktopNotificationManager }
+                    single<MessageManager> { DesktopMessageManager(get()) }
                 }
             return GlobalContext.startKoin {
                 modules(appModule)
