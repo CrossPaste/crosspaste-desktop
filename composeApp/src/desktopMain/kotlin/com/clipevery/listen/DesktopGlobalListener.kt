@@ -3,6 +3,7 @@ package com.clipevery.listen
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -150,7 +151,7 @@ private class GlobalListenerMessageViewFactory : ComposeMessageViewFactory {
                 tint = messageStyle.messageColor,
             )
         }
-
+        Spacer(modifier = Modifier.height(8.dp))
         Row(
             modifier = Modifier.fillMaxWidth().wrapContentHeight(),
             horizontalArrangement = Arrangement.Start,
@@ -169,7 +170,6 @@ private class GlobalListenerMessageViewFactory : ComposeMessageViewFactory {
                     ) {
                         append(content.substring(0, index))
                     }
-                    append(content.substring(0, index))
                     pushStringAnnotation(tag = "clickable", annotation = "click_here")
                     withStyle(style = SpanStyle(color = MaterialTheme.colors.primary, fontSize = 14.sp, fontWeight = FontWeight.Light)) {
                         append(click)
@@ -209,12 +209,20 @@ private class GlobalListenerMessageViewFactory : ComposeMessageViewFactory {
                     modifier = Modifier.wrapContentWidth().height(28.dp),
                     border = BorderStroke(1.dp, Color(0xFFAFCBE1)),
                     colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                    elevation =
+                        ButtonDefaults.elevation(
+                            defaultElevation = 0.dp,
+                            pressedElevation = 0.dp,
+                            hoveredElevation = 0.dp,
+                            focusedElevation = 0.dp,
+                        ),
                     onClick = {
                         appRestartService.restart { exitApplication() }
                     },
                 ) {
                     Text(
-                        text = copywriter.getText("Restart application"),
+                        text = copywriter.getText("Restart_Application"),
                         style =
                             TextStyle(
                                 fontSize = 14.sp,
