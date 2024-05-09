@@ -25,7 +25,12 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+            ./composeApp/resources
+            ./composeApp/jbr
+          key: >
+            ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*',
+            '**/gradle-wrapper.properties', '**/libs.versions.toml',
+            '**/webDriver.properties', '**/jbr.yaml') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
 
