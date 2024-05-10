@@ -33,13 +33,6 @@ import androidx.compose.ui.window.PopupProperties
 import com.clipevery.LocalKoinApplication
 import kotlinx.coroutines.delay
 
-enum class ToastStyle(val iconFileName: String, val toastColor: Color) {
-    error("icon/toast/error.svg", Color.Red),
-    info("icon/toast/info.svg", Color.Blue),
-    success("icon/toast/success.svg", Color.Green),
-    warning("icon/toast/warning.svg", Color.Yellow),
-}
-
 data class Toast(val messageType: MessageType, val message: String, val duration: Long = 3000)
 
 @Composable
@@ -51,15 +44,8 @@ fun ToastView(
     val density = LocalDensity.current
     val toastManager = current.koin.get<ToastManager>()
 
-    val toastStyle by remember {
-        mutableStateOf(
-            when (toast.messageType) {
-                MessageType.Error -> ToastStyle.error
-                MessageType.Info -> ToastStyle.info
-                MessageType.Success -> ToastStyle.success
-                MessageType.Warning -> ToastStyle.warning
-            },
-        )
+    val messageStyle by remember {
+        mutableStateOf(toast.messageType.getMessageStyle())
     }
 
     LaunchedEffect(Unit) {
@@ -94,9 +80,9 @@ fun ToastView(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
-                    painter = painterResource(toastStyle.iconFileName),
+                    painter = painterResource(messageStyle.iconFileName),
                     contentDescription = "toast icon",
-                    tint = toastStyle.toastColor,
+                    tint = messageStyle.messageColor,
                 )
                 Spacer(Modifier.width(12.dp))
                 Text(
@@ -113,7 +99,7 @@ fun ToastView(
                     modifier = Modifier.clickable { onCancelTapped() },
                     painter = painterResource("icon/toast/close.svg"),
                     contentDescription = "Cancel",
-                    tint = toastStyle.toastColor,
+                    tint = messageStyle.messageColor,
                 )
             }
         }
