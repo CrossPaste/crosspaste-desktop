@@ -17,9 +17,9 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,6 +52,7 @@ import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.awt.Desktop
 import java.net.URI
@@ -110,16 +111,49 @@ private class GlobalListenerMessageViewFactory : ComposeMessageViewFactory {
 
     override var showMessage: Boolean by mutableStateOf(true)
 
+    private var jumpPrivacyAccessibility: Boolean by mutableStateOf(false)
+
     @Composable
     override fun MessageView(key: Any) {
+        if (key == NativeHookException.DARWIN_AXAPI_DISABLED) {
+            GlobalShortcutActivationFailedMessageView()
+        } else {
+        }
+    }
+
+    private fun jumpPrivacyAccessibility() {
+        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+            Desktop.getDesktop()
+                .browse(URI("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"))
+        }
+    }
+
+    @Composable
+    fun GlobalShortcutActivationFailedMessageView() {
         val current = LocalKoinApplication.current
+        val appWindowManager = current.koin.get<AppWindowManager>()
         val exitApplication = LocalExitApplication.current
+        val globalListener = current.koin.get<GlobalListener>()
         val copywriter = current.koin.get<GlobalCopywriter>()
         val appRestartService = current.koin.get<AppRestartService>()
 
         val messageStyle = MessageType.Error.getMessageStyle()
 
-        var showRestart by remember { mutableStateOf(false) }
+        LaunchedEffect(appWindowManager.showMainWindow) {
+            if (appWindowManager.showMainWindow) {
+                if (globalListener.isRegistered()) {
+                    showMessage = false
+                } else {
+                    globalListener.errorCode?.let { code ->
+                        if (code == NativeHookException.DARWIN_AXAPI_DISABLED && !jumpPrivacyAccessibility) {
+                            delay(8000) // wait to read the message
+                            jumpPrivacyAccessibility()
+                            jumpPrivacyAccessibility = true
+                        }
+                    }
+                }
+            }
+        }
 
         Row(
             modifier = Modifier.fillMaxWidth().wrapContentHeight(),
@@ -188,18 +222,16 @@ private class GlobalListenerMessageViewFactory : ComposeMessageViewFactory {
                     annotatedText.getStringAnnotations(tag = "clickable", start = offset, end = offset)
                         .firstOrNull()?.let {
                             if (it.item == "click_here") {
-                                if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                                    Desktop.getDesktop()
-                                        .browse(URI("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"))
-                                    showRestart = true
-                                }
+                                jumpPrivacyAccessibility()
                             }
                         }
                 },
             )
         }
 
-        if (showRestart) {
+        if (jumpPrivacyAccessibility) {
+            Spacer(modifier = Modifier.height(8.dp))
+
             Row(
                 modifier = Modifier.fillMaxWidth().wrapContentHeight(),
                 horizontalArrangement = Arrangement.Center,
