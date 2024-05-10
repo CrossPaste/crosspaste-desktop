@@ -122,6 +122,8 @@ interface PathProvider {
 
     val fileUtils: FileUtils
 
+    val userHome: Path
+
     val clipAppPath: Path
 
     val clipAppJarPath: Path
