@@ -15,9 +15,11 @@ import com.clipevery.app.AppEnv
 import com.clipevery.app.AppFileType
 import com.clipevery.app.AppInfo
 import com.clipevery.app.AppRestartService
+import com.clipevery.app.AppStartUpService
 import com.clipevery.app.AppWindowManager
 import com.clipevery.app.DesktopAppInfoFactory
 import com.clipevery.app.DesktopAppRestartService
+import com.clipevery.app.DesktopAppStartUpService
 import com.clipevery.app.DesktopAppWindowManager
 import com.clipevery.clean.CleanClipScheduler
 import com.clipevery.clean.DesktopCleanClipScheduler
@@ -156,6 +158,7 @@ class Clipevery {
                     // simple component
                     single<AppEnv> { appEnv }
                     single<AppInfo> { DesktopAppInfoFactory(get()).createAppInfo() }
+                    single<AppStartUpService> { DesktopAppStartUpService(get()) }
                     single<AppRestartService> { DesktopAppRestartService }
                     single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<ClipServer>() }) }
                     single<SyncInfoFactory> { DesktopSyncInfoFactory(get(), get()) }
@@ -267,6 +270,7 @@ class Clipevery {
             koinApplication.koin.get<ClipBonjourService>().registerService()
             koinApplication.koin.get<CleanClipScheduler>().start()
             koinApplication.koin.get<GlobalListener>().start()
+            koinApplication.koin.get<AppStartUpService>().followConfig()
         }
 
         private fun exitClipEveryApplication(exitApplication: () -> Unit) {

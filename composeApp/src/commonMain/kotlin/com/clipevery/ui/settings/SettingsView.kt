@@ -358,9 +358,9 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                             Modifier.width(32.dp)
                                 .height(20.dp),
                         checked = isEncrypted,
-                        onCheckedChange = { it ->
-                            isEncrypted = it
-                            configManager.updateConfig { it.copy(isEncryptSync = isEncrypted) }
+                        onCheckedChange = { changeIsEncryptSync ->
+                            configManager.updateConfig { config -> config.copy(isEncryptSync = changeIsEncryptSync) }
+                            isEncrypted = configManager.config.isEncryptSync
                         },
                     )
                 }
@@ -387,13 +387,17 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
 
                     Spacer(modifier = Modifier.weight(1f))
 
-                    var isChecked by remember { mutableStateOf(false) }
+                    var enableAutoStartUp by remember { mutableStateOf(configManager.config.enableAutoStartUp) }
+
                     CustomSwitch(
                         modifier =
                             Modifier.width(32.dp)
                                 .height(20.dp),
-                        checked = isChecked,
-                        onCheckedChange = { isChecked = it },
+                        checked = enableAutoStartUp,
+                        onCheckedChange = { changeEnableAutoStartUp ->
+                            configManager.updateConfig { config -> config.copy(enableAutoStartUp = changeEnableAutoStartUp) }
+                            enableAutoStartUp = configManager.config.enableAutoStartUp
+                        },
                     )
                 }
 

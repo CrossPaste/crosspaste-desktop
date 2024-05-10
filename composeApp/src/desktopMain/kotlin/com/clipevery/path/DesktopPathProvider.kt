@@ -15,17 +15,19 @@ object DesktopPathProvider : PathProvider {
 
     override val fileUtils: FileUtils = getFileUtils()
 
+    override val userHome: Path = pathProvider.userHome
+
     override val clipAppPath: Path = pathProvider.clipAppPath
 
     override val clipAppJarPath: Path = pathProvider.clipAppJarPath
 
     override val clipUserPath: Path = pathProvider.clipUserPath
 
-    override val clipLogPath: Path get() = pathProvider.clipUserPath
+    override val clipLogPath: Path get() = pathProvider.clipLogPath
 
-    override val clipEncryptPath get() = pathProvider.clipUserPath
+    override val clipEncryptPath get() = pathProvider.clipEncryptPath
 
-    override val clipDataPath get() = pathProvider.clipUserPath
+    override val clipDataPath get() = pathProvider.clipDataPath
 
     private fun getPathProvider(): PathProvider {
         val appEnv = AppEnv.getAppEnv()
@@ -61,6 +63,8 @@ class DevelopmentPathProvider : PathProvider {
 
     override val fileUtils: FileUtils = getFileUtils()
 
+    override val userHome: Path = Paths.get(System.getProperty("user.home"))
+
     private fun getAppPath(): Path {
         development.getProperty("clipAppPath")?.let {
             val path = Paths.get(it)
@@ -90,13 +94,13 @@ class DevelopmentPathProvider : PathProvider {
 
 class WindowsPathProvider : PathProvider {
 
-    private val userHomePath = System.getProperty("user.home")
+    override val userHome: Path = Paths.get(System.getProperty("user.home"))
 
     override val clipAppPath: Path = getAppJarPath().parent
 
     override val clipAppJarPath: Path = getAppJarPath()
 
-    override val clipUserPath: Path = Paths.get(userHomePath).resolve(".clipevery")
+    override val clipUserPath: Path = userHome.resolve(".clipevery")
 
     override val fileUtils: FileUtils = getFileUtils()
 
@@ -124,7 +128,7 @@ class MacosPathProvider : PathProvider {
      * └── runtime
      */
 
-    private val userHome = System.getProperty("user.home")
+    override val userHome: Path = Paths.get(System.getProperty("user.home"))
 
     override val clipAppPath: Path = getAppJarPath().parent.parent
 
@@ -137,7 +141,10 @@ class MacosPathProvider : PathProvider {
     override val fileUtils: FileUtils = getFileUtils()
 
     private fun getAppSupportPath(): Path {
-        val appSupportPath = Paths.get(userHome, "Library", "Application Support", "Clipevery")
+        val appSupportPath =
+            userHome.resolve("Library")
+                .resolve("Application Support")
+                .resolve("Clipevery")
 
         if (Files.notExists(appSupportPath)) {
             Files.createDirectories(appSupportPath)
@@ -147,7 +154,11 @@ class MacosPathProvider : PathProvider {
     }
 
     private fun getLogPath(): Path {
-        val appLogsPath = Paths.get(userHome, "Library", "Logs", "Clipevery")
+        val appLogsPath =
+            userHome
+                .resolve("Library")
+                .resolve("Logs")
+                .resolve("Clipevery")
 
         if (Files.notExists(appLogsPath)) {
             Files.createDirectories(appLogsPath)
@@ -168,6 +179,9 @@ class MacosPathProvider : PathProvider {
 }
 
 class LinuxPathProvider : PathProvider {
+
+    override val userHome: Path = Paths.get(System.getProperty("user.home"))
+
     override val clipAppPath: Path
         get() = TODO("Not yet implemented")
     override val clipAppJarPath: Path
