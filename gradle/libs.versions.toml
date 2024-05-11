@@ -1,5 +1,5 @@
 [versions]
-conveyor = "1.9"
+conveyor = "1.10"
 compose = "1.6.7"
 compose-plugin = "1.6.2"
 compose-compiler = "1.5.8"
