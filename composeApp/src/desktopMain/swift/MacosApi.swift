@@ -63,7 +63,8 @@ public func setPassword(service: UnsafePointer<CChar>, account: UnsafePointer<CC
         kSecClass as String: kSecClassGenericPassword,
         kSecAttrService as String: serviceString,
         kSecAttrAccount as String: accountString,
-        kSecValueData as String: passwordData
+        kSecValueData as String: passwordData,
+        kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlocked
     ]
 
     // Try to add the item to the keychain

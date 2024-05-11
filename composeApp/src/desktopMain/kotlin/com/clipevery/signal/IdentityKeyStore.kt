@@ -130,7 +130,7 @@ class MacosIdentityKeyStoreFactory(
                     val secretKey = encryptUtils.stringToSecretKey(it)
                     val decryptData = encryptUtils.decryptData(secretKey, bytes)
                     val (identityKeyPair, registrationId) = readIdentityKeyPairWithRegistrationId(decryptData)
-                    return DesktopIdentityKeyStore(signalDao, identityKeyPair, registrationId)
+                    return@createIdentityKeyStore DesktopIdentityKeyStore(signalDao, identityKeyPair, registrationId)
                 } catch (e: Exception) {
                     logger.error(e) { "Failed to decrypt signalProtocol" }
                 }
