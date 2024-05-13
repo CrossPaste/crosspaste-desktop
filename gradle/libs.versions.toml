@@ -57,7 +57,7 @@ ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages", versio
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 material-desktop = { module = "org.jetbrains.compose.material:material-desktop", version.ref = "compose-plugin" }
 realm-kotlin-base = { module = "io.realm.kotlin:library-base", version.ref = "realm" }
-selenium-java = { module = "org.seleniumhq.selenium:selenium-java", version.ref = "selenium" }
+selenium-chrome-driver = { module = "org.seleniumhq.selenium:selenium-chrome-driver", version.ref = "selenium" }
 signal-client = { module = "org.signal:libsignal-client", version.ref = "signal" }
 theme-detector = { module = "com.github.Dansoftowner:jSystemThemeDetector", version.ref = "theme-detector" }
 webp-imageio = { module = "com.github.usefulness:webp-imageio", version.ref = "webp-imageio" }
