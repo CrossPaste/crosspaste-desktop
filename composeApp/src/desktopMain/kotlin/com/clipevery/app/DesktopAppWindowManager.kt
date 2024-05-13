@@ -21,9 +21,10 @@ import kotlin.random.Random
 
 object DesktopAppWindowManager : AppWindowManager {
 
+    private val currentPlatform = currentPlatform()
+
     private val windowManager: WindowManager =
         run {
-            val currentPlatform = currentPlatform()
             when {
                 currentPlatform.isMacos() -> MacWindowManager()
                 currentPlatform.isWindows() -> WinWindowManager()
@@ -40,6 +41,8 @@ object DesktopAppWindowManager : AppWindowManager {
     override var showMainWindow by mutableStateOf(false)
 
     override val mainWindowTitle: String = "Clipevery"
+
+    private var mainWindowActionTime = System.currentTimeMillis()
 
     override val mainWindowDpSize = DpSize(width = 460.dp, height = 710.dp)
 
@@ -91,7 +94,16 @@ object DesktopAppWindowManager : AppWindowManager {
     }
 
     override fun activeMainWindow() {
-        showMainWindow = true
+        if (currentPlatform.isWindows()) {
+            val currentTimeMillis = System.currentTimeMillis()
+            val fastClick = currentTimeMillis - mainWindowActionTime < 200
+            mainWindowActionTime = currentTimeMillis
+            if (fastClick) {
+                return
+            }
+        } else {
+            showMainWindow = true
+        }
         runBlocking {
             windowManager.bringToFront(mainWindowTitle)
         }
@@ -107,6 +119,9 @@ object DesktopAppWindowManager : AppWindowManager {
             withContext(ioDispatcher) {
                 windowManager.bringToBack(mainWindowTitle, false)
             }
+        }
+        if (currentPlatform.isWindows()) {
+            mainWindowActionTime = System.currentTimeMillis()
         }
         showMainWindow = false
     }
