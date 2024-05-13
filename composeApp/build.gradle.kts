@@ -74,7 +74,7 @@ kotlin {
             implementation(libs.ktor.server.netty)
             implementation(libs.ktor.server.status.pages)
             implementation(libs.logback.classic)
-            implementation(libs.selenium.java)
+            implementation(libs.selenium.chrome.driver)
             implementation(libs.signal.client)
             implementation(libs.theme.detector)
             implementation(libs.webp.imageio)
@@ -99,6 +99,16 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+            }
+        }
+
+        configurations {
+            all {
+                exclude(group = "org.seleniumhq.selenium", module = "selenium-firefox-driver")
+                exclude(group = "org.seleniumhq.selenium", module = "selenium-edge-driver")
+                exclude(group = "org.seleniumhq.selenium", module = "selenium-ie-driver")
+                exclude(group = "io.opentelemetry")
+                exclude(group = "io.opentelemetry.semconv")
             }
         }
     }
