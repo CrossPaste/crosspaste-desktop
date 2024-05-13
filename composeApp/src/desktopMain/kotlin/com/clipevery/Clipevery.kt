@@ -357,7 +357,7 @@ class Clipevery {
                                 }
 
                                 override fun windowLostFocus(e: WindowEvent?) {
-                                    appWindowManager.showMainWindow = false
+                                    appWindowManager.unActiveMainWindow()
                                 }
                             }
 
