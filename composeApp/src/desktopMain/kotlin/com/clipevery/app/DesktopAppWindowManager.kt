@@ -96,14 +96,13 @@ object DesktopAppWindowManager : AppWindowManager {
     override fun activeMainWindow() {
         if (currentPlatform.isWindows()) {
             val currentTimeMillis = System.currentTimeMillis()
-            val fastClick = currentTimeMillis - mainWindowActionTime < 200
+            val fastClick = currentTimeMillis - mainWindowActionTime < 500
             mainWindowActionTime = currentTimeMillis
             if (fastClick) {
                 return
             }
-        } else {
-            showMainWindow = true
         }
+        showMainWindow = true
         runBlocking {
             windowManager.bringToFront(mainWindowTitle)
         }
