@@ -3,6 +3,7 @@ package com.clipevery.utils
 import com.clipevery.os.macos.api.MacosApi
 import com.clipevery.platform.currentPlatform
 import java.io.BufferedReader
+import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
 import java.util.UUID
@@ -56,6 +57,11 @@ object MacosDeviceUtils : DeviceUtils {
 object LinuxDeviceUtils : DeviceUtils {
 
     override fun createAppInstanceId(): String {
-        TODO("Not yet implemented")
+        val file = File("/etc/machine-id")
+        return if (file.exists()) {
+            file.readText().trim()
+        } else {
+            UUID.randomUUID().toString()
+        }
     }
 }

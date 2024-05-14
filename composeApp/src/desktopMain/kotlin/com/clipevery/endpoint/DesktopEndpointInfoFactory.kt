@@ -5,6 +5,7 @@ import com.clipevery.os.macos.api.MacosApi
 import com.clipevery.platform.Platform
 import com.clipevery.platform.currentPlatform
 import com.clipevery.utils.DesktopNetUtils
+import com.clipevery.utils.getDeviceUtils
 import com.sun.jna.platform.win32.Kernel32Util
 import java.io.BufferedReader
 import java.io.IOException
@@ -77,5 +78,21 @@ fun getLinuxEndpointInfo(
     port: Int,
     platform: Platform,
 ): EndpointInfo {
-    TODO("Not yet implemented")
+    fun getHostName(): String {
+        val process = Runtime.getRuntime().exec("hostname")
+        val reader = BufferedReader(InputStreamReader(process.inputStream))
+        val hostName = reader.readLine()
+        reader.close()
+        return hostName
+    }
+
+    val deviceName = getHostName()
+    val deviceId = getDeviceUtils().createAppInstanceId()
+    return EndpointInfo(
+        deviceId = deviceId,
+        deviceName = deviceName,
+        platform = platform,
+        hostInfoList = DesktopNetUtils.getHostInfoList(),
+        port = port,
+    )
 }
