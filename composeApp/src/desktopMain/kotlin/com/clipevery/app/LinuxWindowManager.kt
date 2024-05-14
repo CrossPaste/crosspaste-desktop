@@ -1,6 +1,13 @@
 package com.clipevery.app
 
+import com.clipevery.os.linux.api.X11Api
+import io.github.oshai.kotlinlogging.KotlinLogging
+
 class LinuxWindowManager : WindowManager {
+
+    private val logger = KotlinLogging.logger {}
+
+//    private var prevLinuxAppInfo: LinuxAppInfo? = null
 
     override fun getPrevAppName(): String? {
         return null
@@ -10,14 +17,13 @@ class LinuxWindowManager : WindowManager {
         return null
     }
 
+    override suspend fun bringToFront(windowTitle: String) {
+        X11Api.activateWindowByTitle(windowTitle)
+    }
+
     override suspend fun bringToBack(
         windowTitle: String,
         toPaste: Boolean,
     ) {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun bringToFront(windowTitle: String) {
-        TODO("Not yet implemented")
     }
 }
