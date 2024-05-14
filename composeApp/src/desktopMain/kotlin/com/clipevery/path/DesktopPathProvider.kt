@@ -182,12 +182,21 @@ class LinuxPathProvider : PathProvider {
 
     override val userHome: Path = Paths.get(System.getProperty("user.home"))
 
-    override val clipAppPath: Path
-        get() = TODO("Not yet implemented")
-    override val clipAppJarPath: Path
-        get() = TODO("Not yet implemented")
-    override val clipUserPath: Path
-        get() = TODO("Not yet implemented")
+    override val clipAppPath: Path = getAppJarPath().parent
+
+    override val clipAppJarPath: Path = getAppJarPath()
+
+    override val clipUserPath: Path = userHome.resolve(".local").resolve("shard").resolve(".clipevery")
 
     override val fileUtils: FileUtils = getFileUtils()
+
+    private fun getAppJarPath(): Path {
+        System.getProperty("compose.application.resources.dir")?.let {
+            return Paths.get(it)
+        }
+        System.getProperty("skiko.library.path")?.let {
+            return Paths.get(it)
+        }
+        throw IllegalStateException("Could not find app path")
+    }
 }
