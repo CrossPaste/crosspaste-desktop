@@ -18,6 +18,8 @@ class DesktopEndpointInfoFactory(private val clipServer: Lazy<ClipServer>) : End
             getMacEndpointInfo(port, platform)
         } else if (platform.isWindows()) {
             getWindowEndpointInfo(port, platform)
+        } else if (platform.isLinux()) {
+            getLinuxEndpointInfo(port, platform)
         } else {
             throw IllegalStateException("Unsupported platform: $platform")
         }
@@ -69,4 +71,11 @@ fun getWindowDeviceId(): String {
         e.printStackTrace()
     }
     return "Unknown"
+}
+
+fun getLinuxEndpointInfo(
+    port: Int,
+    platform: Platform,
+): EndpointInfo {
+    TODO("Not yet implemented")
 }

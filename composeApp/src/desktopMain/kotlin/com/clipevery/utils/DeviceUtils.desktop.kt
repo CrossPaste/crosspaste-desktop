@@ -56,6 +56,6 @@ object MacosDeviceUtils : DeviceUtils {
 object LinuxDeviceUtils : DeviceUtils {
 
     override fun createAppInstanceId(): String {
-        return UUID.randomUUID().toString()
+        TODO("Not yet implemented")
     }
 }

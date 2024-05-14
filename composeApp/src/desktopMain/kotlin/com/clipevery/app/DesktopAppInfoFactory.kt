@@ -22,6 +22,8 @@ fun getAppInfoFactory(appInstanceId: String): AppInfoFactory {
         MacosAppInfoFactory(appInstanceId)
     } else if (platform.isWindows()) {
         WindowsAppInfoFactory(appInstanceId)
+    } else if (platform.isLinux()) {
+        LinuxAppInfoFactory(appInstanceId)
     } else {
         throw IllegalStateException("Unknown platform: ${platform.name}")
     }
@@ -34,6 +36,12 @@ class MacosAppInfoFactory(private val appInstanceId: String) : AppInfoFactory {
 }
 
 class WindowsAppInfoFactory(private val appInstanceId: String) : AppInfoFactory {
+    override fun createAppInfo(): AppInfo {
+        return AppInfo(appInstanceId = appInstanceId, appVersion = getVersion(), userName = getUserName())
+    }
+}
+
+class LinuxAppInfoFactory(private val appInstanceId: String) : AppInfoFactory {
     override fun createAppInfo(): AppInfo {
         return AppInfo(appInstanceId = appInstanceId, appVersion = getVersion(), userName = getUserName())
     }
