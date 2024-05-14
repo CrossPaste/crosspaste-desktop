@@ -280,6 +280,25 @@ compose.desktop {
                     iconFile = file("src/desktopMain/resources/icons/clipevery.ico")
                 }
             }
+
+            if (os.isLinux) {
+                linux {
+                    targetFormats(TargetFormat.Deb)
+
+                    getJbrReleases(
+                        "linux-x64",
+                        jbrReleases,
+                        jbrDir,
+                    )
+                    getChromeDriver(
+                        "linux64",
+                        webDriverProperties,
+                        appResourcesRootDir
+                            .get()
+                            .dir("linux-x64"),
+                    )
+                }
+            }
         }
     }
 }
