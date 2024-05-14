@@ -111,6 +111,9 @@ class DesktopChromeService(private val appWindowManager: AppWindowManager) : Chr
             } else {
                 DesktopPathProvider.clipAppJarPath
             }
+
+        // todo not support 32 bit OS
+
         if (currentPlatform.isMacos()) {
             if (currentPlatform.arch.contains("x86_64")) {
                 val macX64ResourcesPath =
@@ -126,13 +129,13 @@ class DesktopChromeService(private val appWindowManager: AppWindowManager) : Chr
                 val win64ResourcesPath =
                     if (AppEnv.isDevelopment()) resourcesPath.resolve("windows-x64") else resourcesPath
                 initChromeDriver.invoke("win64", "chromedriver.exe", "chrome-headless-shell.exe", win64ResourcesPath)
-            } else {
-                val win32ResourcesPath =
-                    if (AppEnv.isDevelopment()) resourcesPath.resolve("windows-x86") else resourcesPath
-                initChromeDriver.invoke("win32", "chromedriver.exe", "chrome-headless-shell.exe", win32ResourcesPath)
             }
         } else if (currentPlatform.isLinux()) {
-            // todo linux init chrome driver
+            if (currentPlatform.is64bit()) {
+                val linux64ResourcesPath =
+                    if (AppEnv.isDevelopment()) resourcesPath.resolve("linux-x64") else resourcesPath
+                initChromeDriver.invoke("linux64", "chromedriver", "chrome-headless-shell", linux64ResourcesPath)
+            }
         }
 
         chromeDriver = ChromeDriver(options)

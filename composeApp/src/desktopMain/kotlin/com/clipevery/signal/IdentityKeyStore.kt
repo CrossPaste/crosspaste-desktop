@@ -70,6 +70,8 @@ fun getClipIdentityKeyStoreFactory(
         MacosIdentityKeyStoreFactory(appInfo, signalDao)
     } else if (currentPlatform.isWindows()) {
         WindowsIdentityKeyStoreFactory(appInfo, signalDao)
+    } else if (currentPlatform.isLinux()) {
+        LinuxIdentityKeyStoreFactory(appInfo, signalDao)
     } else {
         throw IllegalStateException("Unknown platform: ${currentPlatform.name}")
     }
@@ -205,5 +207,14 @@ class WindowsIdentityKeyStoreFactory(
         val encryptData = WindowDapiHelper.encryptData(data)
         filePersist.saveBytes(encryptData!!)
         return DesktopIdentityKeyStore(signalDao, identityKeyPair, registrationId)
+    }
+}
+
+class LinuxIdentityKeyStoreFactory(
+    private val appInfo: AppInfo,
+    private val signalDao: SignalDao,
+) : IdentityKeyStoreFactory {
+    override fun createIdentityKeyStore(): IdentityKeyStore {
+        TODO("Not yet implemented")
     }
 }

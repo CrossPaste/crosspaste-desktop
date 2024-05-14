@@ -28,6 +28,7 @@ object DesktopAppWindowManager : AppWindowManager {
             when {
                 currentPlatform.isMacos() -> MacWindowManager()
                 currentPlatform.isWindows() -> WinWindowManager()
+                currentPlatform.isLinux() -> LinuxWindowManager()
                 else -> throw IllegalStateException("Unsupported platform: $currentPlatform")
             }
         }
