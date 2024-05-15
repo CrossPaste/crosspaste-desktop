@@ -361,6 +361,7 @@ class Clipevery {
                                     appWindowManager.unActiveMainWindow()
                                 }
                             }
+
                         window.addWindowFocusListener(windowListener)
 
                         onDispose {
