@@ -11,6 +11,7 @@ import com.clipevery.ui.base.SvgResourceToPainter
 import com.clipevery.ui.base.ToPainterImage
 import com.clipevery.ui.base.XmlResourceToPainter
 import org.xml.sax.InputSource
+import java.io.InputStream
 import java.nio.file.Path
 import java.util.Properties
 import kotlin.io.path.name
@@ -19,18 +20,18 @@ actual fun getResourceUtils(): ResourceUtils {
     return DesktopResourceUtils
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 object DesktopResourceUtils : ResourceUtils {
+
+    private val loader = ResourceLoader.Default
+
+    override fun resourceInputStream(fileName: String): InputStream {
+        return loader.load(fileName)
+    }
 
     override fun loadProperties(fileName: String): Properties {
         val properties = Properties()
-        val classLoader = Thread.currentThread().contextClassLoader
-        classLoader.getResourceAsStream(fileName).use { inputStream ->
-            if (inputStream == null) {
-                throw IllegalArgumentException("File not found: $fileName")
-            } else {
-                properties.load(inputStream)
-            }
-        }
+        properties.load(resourceInputStream(fileName))
         return properties
     }
 
@@ -39,7 +40,7 @@ object DesktopResourceUtils : ResourceUtils {
         fileName: String,
         density: Density,
     ): ToPainterImage {
-        val inputStream = ResourceLoader.Default.load(fileName)
+        val inputStream = loader.load(fileName)
         return when (fileName.substringAfterLast(".")) {
             "svg" -> SvgResourceToPainter(fileName, inputStream.buffered().use { loadSvgPainter(it, density) })
             "xml" -> XmlResourceToPainter(inputStream.buffered().use { loadXmlImageVector(InputSource(it), density) })
