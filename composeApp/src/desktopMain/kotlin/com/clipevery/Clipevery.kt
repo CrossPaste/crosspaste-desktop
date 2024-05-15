@@ -269,7 +269,6 @@ class Clipevery {
             // only server started, bonjour service can get the port
             koinApplication.koin.get<ClipBonjourService>().registerService()
             koinApplication.koin.get<CleanClipScheduler>().start()
-            koinApplication.koin.get<GlobalListener>().start()
             koinApplication.koin.get<AppStartUpService>().followConfig()
         }
 
@@ -350,6 +349,8 @@ class Clipevery {
                     resizable = false,
                 ) {
                     DisposableEffect(Unit) {
+                        koinApplication.koin.get<GlobalListener>().start()
+
                         val windowListener =
                             object : WindowAdapter() {
                                 override fun windowGainedFocus(e: WindowEvent?) {
