@@ -18,12 +18,13 @@ class LinuxWindowManager : WindowManager {
     }
 
     override suspend fun bringToFront(windowTitle: String) {
-        X11Api.activateWindowByTitle(windowTitle)
+        X11Api.bringToFront(windowTitle)
     }
 
     override suspend fun bringToBack(
         windowTitle: String,
         toPaste: Boolean,
     ) {
+        X11Api.bringToBack(windowTitle, "", false)
     }
 }

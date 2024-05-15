@@ -20,11 +20,16 @@ interface X11Api : X11 {
         w: X11.Window,
     )
 
+    fun XLowerWindow(
+        display: X11.Display,
+        w: X11.Window,
+    )
+
     companion object {
 
         val INSTANCE: X11Api = Native.load("X11", X11Api::class.java)
 
-        fun activateWindowByTitle(windowTitle: String) {
+        fun bringToFront(windowTitle: String) {
             val x11 = INSTANCE
             val display = x11.XOpenDisplay(null) ?: throw RuntimeException("Unable to open X Display")
             val rootWindow = x11.XDefaultRootWindow(display)
@@ -35,6 +40,29 @@ interface X11Api : X11 {
                 x11.XSetInputFocus(display, window, X11.RevertToParent, X11.CurrentTime)
                 x11.XRaiseWindow(display, window)
                 println("Window '$windowTitle' activated and brought to front.")
+            } else {
+                println("Window with title '$windowTitle' not found.")
+            }
+
+            x11.XCloseDisplay(display)
+        }
+
+        fun bringToBack(
+            windowTitle: String,
+            appName: String,
+            toPaste: Boolean,
+        ) {
+            val x11 = INSTANCE
+            val display = x11.XOpenDisplay(null) ?: throw RuntimeException("Unable to open X Display")
+            val rootWindow = x11.XDefaultRootWindow(display)
+
+            val window = findWindowByTitle(display, rootWindow, windowTitle)
+            if (window != null) {
+                // Set the window to be in the background
+                x11.XLowerWindow(display, window)
+                // Hide the window
+                x11.XUnmapWindow(display, window)
+                println("Window '$windowTitle' sent to back and hidden.")
             } else {
                 println("Window with title '$windowTitle' not found.")
             }
