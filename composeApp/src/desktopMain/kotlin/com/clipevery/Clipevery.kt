@@ -136,7 +136,6 @@ import org.signal.libsignal.protocol.state.PreKeyStore
 import org.signal.libsignal.protocol.state.SessionStore
 import org.signal.libsignal.protocol.state.SignalProtocolStore
 import org.signal.libsignal.protocol.state.SignedPreKeyStore
-import java.awt.event.ActionEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import kotlin.io.path.pathString
@@ -305,11 +304,12 @@ class Clipevery {
 
             val resourceUtils = getResourceUtils()
 
-            var exitApplication: () -> Unit = {
-                appWindowManager.showMainWindow = false
-                appWindowManager.showSearchWindow = false
-                exitClipEveryApplication { }
-            }
+            val exitHandler =
+                ExitHandler(exitApplication = {
+                    appWindowManager.showMainWindow = false
+                    appWindowManager.showSearchWindow = false
+                    exitClipEveryApplication { }
+                })
 
             if (platform.isLinux()) {
                 val systemTray: SystemTray = SystemTray.get() ?: throw RuntimeException("Unable to load SystemTray!")
@@ -317,18 +317,12 @@ class Clipevery {
                 systemTray.setImage(resourceUtils.resourceInputStream("clipevery_icon.png"))
 
                 systemTray.menu.add(
-                    MenuItem("Open Clipevery") {
-                        fun actionPerformed(e: ActionEvent?) {
-                            appWindowManager.activeMainWindow()
-                        }
-                    },
+                    MenuItem("Open Clipevery") { appWindowManager.activeMainWindow() },
                 )
 
                 systemTray.menu.add(
                     MenuItem("Quit Clipevery") {
-                        fun actionPerformed(e: ActionEvent?) {
-                            exitApplication()
-                        }
+                        exitHandler.exitApplication()
                     },
                 )
             }
@@ -367,7 +361,7 @@ class Clipevery {
                     )
                 }
 
-                exitApplication = {
+                exitHandler.exitApplication = {
                     appWindowManager.showMainWindow = false
                     appWindowManager.showSearchWindow = false
                     ioScope.launch(CoroutineName("ExitApplication")) {
@@ -376,7 +370,7 @@ class Clipevery {
                 }
 
                 Window(
-                    onCloseRequest = exitApplication,
+                    onCloseRequest = exitHandler.exitApplication,
                     visible = appWindowManager.showMainWindow,
                     state = windowState,
                     title = appWindowManager.mainWindowTitle,
@@ -409,7 +403,7 @@ class Clipevery {
                     ClipeveryApp(
                         koinApplication,
                         hideWindow = { appWindowManager.unActiveMainWindow() },
-                        exitApplication = exitApplication,
+                        exitApplication = exitHandler.exitApplication,
                     )
                 }
 
@@ -458,3 +452,5 @@ class Clipevery {
         }
     }
 }
+
+class ExitHandler(var exitApplication: () -> Unit)
