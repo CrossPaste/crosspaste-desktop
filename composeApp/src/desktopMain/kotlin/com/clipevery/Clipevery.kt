@@ -1,11 +1,9 @@
 package com.clipevery
 
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
@@ -82,7 +80,6 @@ import com.clipevery.net.clientapi.SendClipClientApi
 import com.clipevery.net.clientapi.SyncClientApi
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.path.PathProvider
-import com.clipevery.platform.currentPlatform
 import com.clipevery.presist.DesktopFilePersist
 import com.clipevery.presist.FilePersist
 import com.clipevery.realm.RealmManager
@@ -111,7 +108,6 @@ import com.clipevery.ui.base.DesktopToastManager
 import com.clipevery.ui.base.MessageManager
 import com.clipevery.ui.base.NotificationManager
 import com.clipevery.ui.base.ToastManager
-import com.clipevery.ui.getTrayMouseAdapter
 import com.clipevery.ui.resource.ClipResourceLoader
 import com.clipevery.ui.resource.DesktopAbsoluteClipResourceLoader
 import com.clipevery.ui.search.ClipeveryAppSearchView
@@ -121,6 +117,7 @@ import com.clipevery.utils.IDGeneratorFactory
 import com.clipevery.utils.QRCodeGenerator
 import com.clipevery.utils.TelnetUtils
 import com.clipevery.utils.ioDispatcher
+import dorkbox.systemTray.SystemTray
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
@@ -295,39 +292,43 @@ class Clipevery {
                 logger.error(throwable) { "cant start clipevery" }
             }
 
+            val systemTray: SystemTray = SystemTray.get() ?: throw RuntimeException("Unable to load SystemTray!")
+
+            systemTray.setImage("clipevery_icon.png")
+
             application {
                 val ioScope = rememberCoroutineScope { ioDispatcher }
 
                 val appWindowManager = koinApplication.koin.get<AppWindowManager>()
 
-                val notificationManager = koinApplication.koin.get<NotificationManager>()
+//                val notificationManager = koinApplication.koin.get<NotificationManager>()
 
-                val trayIcon =
-                    if (currentPlatform().isMacos()) {
-                        painterResource("clipevery_mac_tray.png")
-                    } else {
-                        painterResource("clipevery_icon.png")
-                    }
-
+//                val trayIcon =
+//                    if (currentPlatform().isMacos()) {
+//                        painterResource("clipevery_mac_tray.png")
+//                    } else {
+//                        painterResource("clipevery_icon.png")
+//                    }
+//
                 val windowState =
                     rememberWindowState(
                         placement = WindowPlacement.Floating,
                         position = WindowPosition.PlatformDefault,
                         size = appWindowManager.mainWindowDpSize,
                     )
-
-                Tray(
-                    state = remember { notificationManager.trayState },
-                    icon = trayIcon,
-                    mouseListener =
-                        getTrayMouseAdapter(windowState) {
-                            if (appWindowManager.showMainWindow) {
-                                appWindowManager.unActiveMainWindow()
-                            } else {
-                                appWindowManager.activeMainWindow()
-                            }
-                        },
-                )
+//
+//                Tray(
+//                    state = remember { notificationManager.trayState },
+//                    icon = trayIcon,
+//                    mouseListener =
+//                        getTrayMouseAdapter(windowState) {
+//                            if (appWindowManager.showMainWindow) {
+//                                appWindowManager.unActiveMainWindow()
+//                            } else {
+//                                appWindowManager.activeMainWindow()
+//                            }
+//                        },
+//                )
 
                 val exitApplication: () -> Unit = {
                     appWindowManager.showMainWindow = false
