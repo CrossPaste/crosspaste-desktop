@@ -1,7 +1,9 @@
 package com.clipevery.os.linux.api
 
 import com.sun.jna.Native
+import com.sun.jna.NativeLong
 import com.sun.jna.Pointer
+import com.sun.jna.Structure
 import com.sun.jna.platform.unix.X11
 import com.sun.jna.platform.unix.X11.CurrentTime
 import com.sun.jna.platform.unix.X11.RevertToParent
@@ -28,7 +30,7 @@ interface X11Api : X11 {
     fun XGetTextProperty(
         display: X11.Display,
         window: X11.Window,
-        text_prop: X11.XTextProperty,
+        textProp: XTextProperty.ByReference,
         property: X11.Atom,
     ): Int
 
@@ -93,9 +95,14 @@ interface X11Api : X11 {
                 return null
             }
 
-            val property = X11.XTextProperty()
-            if (x11.XGetTextProperty(display, window, property, atom) != 0 && property.value != null) {
-                val data = property.value.split('\u0000')
+            val textProp = XTextProperty.ByReference()
+
+            val result = x11.XGetTextProperty(display, window, textProp, atom)
+            if (result != 0 && textProp.value.value != null) {
+                val resultString = textProp.value.pointer.getString(0) // 获取字符串数据，假设编码是 UTF-8
+                logger.info { "resultString = $resultString" }
+
+                val data = resultString.split('\u0000')
                 if (data.size >= 2) {
                     return Pair(data[0], data[1])
                 }
@@ -168,4 +175,17 @@ interface X11Api : X11 {
             return null
         }
     }
+}
+
+@Structure.FieldOrder("value", "encoding", "format", "nitems")
+open class XTextProperty : Structure() {
+    @JvmField var value: PointerByReference = PointerByReference()
+
+    @JvmField var encoding: X11.Atom = X11.Atom()
+
+    @JvmField var format: Int = 0
+
+    @JvmField var nitems: NativeLong = NativeLong(0)
+
+    class ByReference : XTextProperty(), Structure.ByReference
 }
