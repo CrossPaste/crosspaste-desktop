@@ -6,7 +6,6 @@ import com.sun.jna.Pointer
 import com.sun.jna.Structure
 import com.sun.jna.platform.unix.X11
 import com.sun.jna.platform.unix.X11.CurrentTime
-import com.sun.jna.platform.unix.X11.RevertToParent
 import com.sun.jna.platform.unix.X11.RevertToPointerRoot
 import com.sun.jna.ptr.IntByReference
 import com.sun.jna.ptr.NativeLongByReference
@@ -53,36 +52,11 @@ interface X11Api : X11 {
         val INSTANCE: X11Api = Native.load("X11", X11Api::class.java)
 
         fun bringToFront(windowTitle: String) {
-            val x11 = INSTANCE
-            val display = x11.XOpenDisplay(null) ?: throw RuntimeException("Unable to open X Display")
-            val rootWindow = x11.XDefaultRootWindow(display)
-
-            val windowByReference = X11.WindowByReference()
-
-            val intByReference = IntByReference()
-
-            x11.XGetInputFocus(display, windowByReference, intByReference)
-
-            val focusedWindow = windowByReference.value
-
-            if (focusedWindow != X11.Window.None) {
-                get_window_pid(display, focusedWindow).let { pid ->
-                    logger.info { "Focused window: $pid" }
+            INSTANCE.XOpenDisplay(null)?.let {
+                WMCtrl.get_active_window_class(it)?.let { className ->
+                    println("className = $className")
                 }
             }
-
-            val window = findWindowByTitle(display, rootWindow, windowTitle)
-            if (window != null) {
-                x11.XMapWindow(display, window)
-                x11.XRaiseWindow(display, window)
-
-                // Attempt to set the window as the active window and bring it to the front
-                x11.XSetInputFocus(display, window, RevertToParent, CurrentTime)
-            } else {
-                logger.error { "Window with title '$windowTitle' not found." }
-            }
-
-            x11.XCloseDisplay(display)
         }
 
         fun getAppUniqueIdentifier(
