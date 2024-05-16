@@ -15,6 +15,7 @@ import com.sun.jna.ptr.PointerByReference
 import dorkbox.jna.linux.Gtk.FALSE
 import dorkbox.jna.linux.Gtk.TRUE
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.awt.image.BufferedImage
 
 object WMCtrl {
 
@@ -113,7 +114,7 @@ object WMCtrl {
     }
 
     fun getClientList(
-        disp: X11.Display?,
+        disp: X11.Display,
         stackingOrder: Boolean,
     ): List<X11.Window>? {
         val size = NativeLongByReference()
@@ -123,20 +124,20 @@ object WMCtrl {
         if (stackingOrder) {
             msg = "_NET_CLIENT_LIST_STACKING"
             clientList =
-                get_property(
+                getProperty(
                     disp, x11.XDefaultRootWindow(disp),
                     X11.XA_WINDOW, "_NET_CLIENT_LIST_STACKING", size,
                 )
         } else {
             msg = "_NET_CLIENT_LIST or _WIN_CLIENT_LIST"
             clientList =
-                get_property(
+                getProperty(
                     disp, x11.XDefaultRootWindow(disp),
                     X11.XA_WINDOW, "_NET_CLIENT_LIST", size,
                 )
             if (clientList == null) {
                 clientList =
-                    get_property(
+                    getProperty(
                         disp, x11.XDefaultRootWindow(disp),
                         X11.XA_CARDINAL, "_WIN_CLIENT_LIST", size,
                     )
@@ -198,14 +199,14 @@ object WMCtrl {
         val root: X11.Window = x11.XDefaultRootWindow(disp)
         var cur_desktop: Int? = null
         if ((
-                get_property_as_int(
+                getPropertyAsInt(
                     disp, root, X11.XA_CARDINAL,
                     "_NET_CURRENT_DESKTOP",
                 ).also { cur_desktop = it }
             ) == null
         ) {
             if ((
-                    get_property_as_int(
+                    getPropertyAsInt(
                         disp, root, X11.XA_CARDINAL,
                         "_WIN_WORKSPACE",
                     ).also { cur_desktop = it }
@@ -229,14 +230,14 @@ object WMCtrl {
 
         // desktop ID
         if ((
-                get_property_as_int(
+                getPropertyAsInt(
                     disp, win, X11.XA_CARDINAL,
                     "_NET_WM_DESKTOP",
                 ).also { desktop = it?.toLong() }
             ) == null
         ) {
             if ((
-                    get_property_as_int(
+                    getPropertyAsInt(
                         disp, win, X11.XA_CARDINAL,
                         "_WIN_WORKSPACE",
                     ).also { desktop = it?.toLong() }
@@ -282,9 +283,9 @@ object WMCtrl {
         return client_msg(disp, win, "_NET_CLOSE_WINDOW", 0, 0, 0, 0, 0)
     }
 
-    fun get_window_icon_name(
-        disp: X11.Display?,
-        win: X11.Window?,
+    fun getWindowIconName(
+        disp: X11.Display,
+        win: X11.Window,
     ): String? {
         val icon_name_return = PointerByReference()
 
@@ -308,7 +309,7 @@ object WMCtrl {
     ): Pair<String, String>? {
         val size = NativeLongByReference()
 
-        return get_property(
+        return getProperty(
             display,
             win,
             X11.XA_STRING,
@@ -345,23 +346,23 @@ object WMCtrl {
         disp: X11.Display,
         win: X11.Window,
     ): Int {
-        return get_property_as_int(
+        return getPropertyAsInt(
             disp, win, X11.XA_CARDINAL,
             "_NET_WM_PID",
         ) ?: -1
     }
 
-    fun get_property(
-        disp: X11.Display?,
-        win: X11.Window?,
+    fun getProperty(
+        disp: X11.Display,
+        win: X11.Window,
         xa_prop_type: Atom,
         prop_name: String?,
     ): Pointer? {
-        return get_property(disp, win, xa_prop_type, prop_name, null)
+        return getProperty(disp, win, xa_prop_type, prop_name, null)
     }
 
     fun getActiveWindow(disp: X11.Display): X11.Window? {
-        return get_property_as_window(
+        return getPropertyAsWindow(
             disp,
             x11.XDefaultRootWindow(disp),
             X11.XA_WINDOW,
@@ -369,68 +370,96 @@ object WMCtrl {
         )
     }
 
-    private fun get_property_as_window(
-        disp: X11.Display,
-        win: X11.Window?,
-        xa_prop_type: Atom,
-        prop_name: String,
+    fun getActiveWindowIcon(
+        display: X11.Display,
+        activeWindow: X11.Window,
+    ): BufferedImage? {
+        return getPropertyAsIcon(
+            display,
+            activeWindow,
+            x11.XInternAtom(display, "_NET_WM_ICON", false),
+            "_NET_WM_ICON",
+        )
+    }
+
+    private fun getPropertyAsIcon(
+        display: X11.Display,
+        window: X11.Window,
+        xaPropType: Atom,
+        propName: String,
+    ): BufferedImage? {
+        return getProperty(
+            display,
+            window,
+            xaPropType,
+            propName,
+            null,
+        )?.let { prop ->
+            val width = prop.getInt(0)
+            val height = prop.getInt(4)
+            val buffer = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+            for (y in 0 until height) {
+                for (x in 0 until width) {
+                    val argb = prop.getInt((8 + (x + y * width) * 4).toLong()) // Offset calculation
+                    buffer.setRGB(x, y, argb)
+                }
+            }
+            return buffer
+        }
+    }
+
+    private fun getPropertyAsWindow(
+        display: X11.Display,
+        window: X11.Window,
+        xaPropType: Atom,
+        propName: String,
     ): X11.Window? {
-        var ret: X11.Window? = null
-
-        val prop =
-            get_property(
-                disp,
-                win,
-                xa_prop_type,
-                prop_name,
-                null,
-            )
-        if (prop != null) {
-            ret = X11.Window(prop.getLong(0))
+        return getProperty(
+            display,
+            window,
+            xaPropType,
+            propName,
+            null,
+        )?.let { prop ->
+            val winodw = X11.Window(prop.getLong(0))
             free(prop)
+            return winodw
         }
-
-        return ret
     }
 
-    private fun get_property_as_int(
-        disp: X11.Display,
-        win: X11.Window,
-        xa_prop_type: Atom,
-        prop_name: String,
+    private fun getPropertyAsInt(
+        display: X11.Display,
+        window: X11.Window,
+        xaPropType: Atom,
+        propName: String,
     ): Int? {
-        var intProp: Int? = null
-
-        val prop =
-            get_property(
-                disp,
-                win,
-                xa_prop_type,
-                prop_name,
-                null,
-            )
-        if (prop != null) {
-            intProp = prop.getInt(0)
+        return getProperty(
+            display,
+            window,
+            xaPropType,
+            propName,
+            null,
+        )?.let { prop ->
+            val intProp = prop.getInt(0)
             free(prop)
+            return intProp
         }
-
-        return intProp
     }
 
-    fun get_property(
-        disp: X11.Display?,
-        win: X11.Window?,
-        xa_prop_type: Atom,
-        prop_name: String?,
+    fun getProperty(
+        display: X11.Display,
+        window: X11.Window,
+        xaPropType: Atom,
+        propName: String?,
         size: NativeLongByReference?,
     ): Pointer? {
-        val xa_ret_type = AtomByReference()
-        val ret_format = IntByReference()
-        val ret_nitems = NativeLongByReference()
-        val ret_bytes_after = NativeLongByReference()
-        val ret_prop = PointerByReference()
+        val xaRetType = AtomByReference()
+        val retFormat = IntByReference()
+        val retNitems = NativeLongByReference()
+        val retBytesAfter = NativeLongByReference()
+        val retProp = PointerByReference()
 
-        val xa_prop_name = x11.XInternAtom(disp, prop_name, false)
+        val xaPropName = x11.XInternAtom(display, propName, false)
 
         /*
          * MAX_PROPERTY_VALUE_LEN / 4 explanation (XGetWindowProperty manpage):
@@ -448,41 +477,41 @@ object WMCtrl {
          * when long was changed to 64 bit.
          */
         if (x11.XGetWindowProperty(
-                disp, win, xa_prop_name, NativeLong(0),
+                display, window, xaPropName, NativeLong(0),
                 NativeLong(MAX_PROPERTY_VALUE_LEN / 4), false,
-                xa_prop_type, xa_ret_type, ret_format, ret_nitems,
-                ret_bytes_after, ret_prop,
+                xaPropType, xaRetType, retFormat, retNitems,
+                retBytesAfter, retProp,
             ) != X11.Success
         ) {
-            logger.error { "Cannot get $prop_name property." }
+            logger.error { "Cannot get $propName property." }
             return null
         }
 
-        if ((xa_ret_type.value == null) ||
+        if ((xaRetType.value == null) ||
             (
-                xa_ret_type.value.toLong() !=
-                    xa_prop_type
+                xaRetType.value.toLong() !=
+                    xaPropType
                         .toLong()
             )
         ) {
-            logger.error { "Invalid type of $prop_name property." }
-            free(ret_prop.pointer)
+            logger.error { "Invalid type of $propName property." }
+            free(retProp.pointer)
             return null
         }
 
         if (size != null) {
             var tmp_size = (
-                (ret_format.value / 8) *
-                    ret_nitems.value.toLong()
+                (retFormat.value / 8) *
+                    retNitems.value.toLong()
             )
             // Correct 64 Architecture implementation of 32 bit data
-            if (ret_format.value == 32) {
+            if (retFormat.value == 32) {
                 tmp_size *= (NativeLong.SIZE / 4).toLong()
             }
             size.value = NativeLong(tmp_size)
         }
 
-        return ret_prop.value
+        return retProp.value
     }
 
     fun client_msg(

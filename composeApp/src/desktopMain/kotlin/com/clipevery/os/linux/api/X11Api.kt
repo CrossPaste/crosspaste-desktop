@@ -1,5 +1,6 @@
 package com.clipevery.os.linux.api
 
+import com.clipevery.os.linux.api.WMCtrl.getActiveWindow
 import com.sun.jna.Native
 import com.sun.jna.NativeLong
 import com.sun.jna.Pointer
@@ -52,12 +53,18 @@ interface X11Api : X11 {
         val INSTANCE: X11Api = Native.load("X11", X11Api::class.java)
 
         fun bringToFront(windowTitle: String) {
-            INSTANCE.XOpenDisplay(null)?.let {
-                WMCtrl.getActiveWindowInstanceAndClass(it)?.let { pair ->
-                    pair.second?.let { className ->
-                        println("className = $className")
+            INSTANCE.XOpenDisplay(null)?.let { display ->
+                getActiveWindow(display)?.let {
+                    WMCtrl.getActiveWindowIcon(display, it)?.let { buffer ->
+                        println("buffer = $buffer")
                     }
                 }
+
+//                WMCtrl.getActiveWindowInstanceAndClass(it)?.let { pair ->
+//                    pair.second?.let { className ->
+//                        println("className = $className")
+//                    }
+//                }
             }
         }
 
