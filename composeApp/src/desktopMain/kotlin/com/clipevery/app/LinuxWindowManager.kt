@@ -25,6 +25,6 @@ class LinuxWindowManager : WindowManager {
         windowTitle: String,
         toPaste: Boolean,
     ) {
-        X11Api.bringToBack(windowTitle, "", false)
+        X11Api.bringToBack(windowTitle, "", toPaste)
     }
 }

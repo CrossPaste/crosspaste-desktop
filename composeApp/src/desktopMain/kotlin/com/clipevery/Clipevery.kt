@@ -304,29 +304,6 @@ class Clipevery {
 
             val resourceUtils = getResourceUtils()
 
-            val exitHandler =
-                ExitHandler(exitApplication = {
-                    appWindowManager.showMainWindow = false
-                    appWindowManager.showSearchWindow = false
-                    exitClipEveryApplication { }
-                })
-
-            if (platform.isLinux()) {
-                val systemTray: SystemTray = SystemTray.get() ?: throw RuntimeException("Unable to load SystemTray!")
-
-                systemTray.setImage(resourceUtils.resourceInputStream("clipevery_icon.png"))
-
-                systemTray.menu.add(
-                    MenuItem("Open Clipevery") { appWindowManager.activeMainWindow() },
-                )
-
-                systemTray.menu.add(
-                    MenuItem("Quit Clipevery") {
-                        exitHandler.exitApplication()
-                    },
-                )
-            }
-
             application {
                 val ioScope = rememberCoroutineScope { ioDispatcher }
 
@@ -361,7 +338,7 @@ class Clipevery {
                     )
                 }
 
-                exitHandler.exitApplication = {
+                val exitApplication: () -> Unit = {
                     appWindowManager.showMainWindow = false
                     appWindowManager.showSearchWindow = false
                     ioScope.launch(CoroutineName("ExitApplication")) {
@@ -370,7 +347,7 @@ class Clipevery {
                 }
 
                 Window(
-                    onCloseRequest = exitHandler.exitApplication,
+                    onCloseRequest = exitApplication,
                     visible = appWindowManager.showMainWindow,
                     state = windowState,
                     title = appWindowManager.mainWindowTitle,
@@ -381,6 +358,22 @@ class Clipevery {
                     resizable = false,
                 ) {
                     DisposableEffect(Unit) {
+                        if (platform.isLinux()) {
+                            val systemTray: SystemTray = SystemTray.get() ?: throw RuntimeException("Unable to load SystemTray!")
+
+                            systemTray.setImage(resourceUtils.resourceInputStream("clipevery_icon.png"))
+
+                            systemTray.menu.add(
+                                MenuItem("Open Clipevery") { appWindowManager.activeMainWindow() },
+                            )
+
+                            systemTray.menu.add(
+                                MenuItem("Quit Clipevery") {
+                                    exitApplication()
+                                },
+                            )
+                        }
+
                         koinApplication.koin.get<GlobalListener>().start()
 
                         val windowListener =
@@ -403,7 +396,7 @@ class Clipevery {
                     ClipeveryApp(
                         koinApplication,
                         hideWindow = { appWindowManager.unActiveMainWindow() },
-                        exitApplication = exitHandler.exitApplication,
+                        exitApplication = exitApplication,
                     )
                 }
 
@@ -452,5 +445,3 @@ class Clipevery {
         }
     }
 }
-
-class ExitHandler(var exitApplication: () -> Unit)

@@ -62,6 +62,8 @@ interface X11Api : X11 {
                 x11.XLowerWindow(display, window)
                 // Hide the window
                 x11.XUnmapWindow(display, window)
+
+                x11.XSetInputFocus(display, rootWindow, X11.RevertToNone, X11.CurrentTime)
                 println("Window '$windowTitle' sent to back and hidden.")
             } else {
                 println("Window with title '$windowTitle' not found.")
