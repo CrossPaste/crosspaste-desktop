@@ -296,46 +296,39 @@ object WMCtrl {
         return g_strdup(icon_name_return.pointer)
     }
 
-    fun get_active_window_class(disp: X11.Display): Pair<String?, String?>? {
-        val win: X11.Window? = get_active_window(disp)
-        return if ((win == null)) null else get_window_class(disp, win)
+    fun getActiveWindowInstanceAndClass(disp: X11.Display): Pair<String?, String?>? {
+        return getActiveWindow(disp)?.let {
+            return getWindowClass(disp, it)
+        }
     }
 
-    fun get_window_class(
-        disp: X11.Display?,
-        win: X11.Window?,
-    ): Pair<String?, String?>? {
+    fun getWindowClass(
+        display: X11.Display,
+        win: X11.Window,
+    ): Pair<String, String>? {
         val size = NativeLongByReference()
 
-        val wm_class: Pointer? =
-            get_property(
-                disp,
-                win,
-                X11.XA_STRING,
-                "WM_CLASS",
-                size,
-            )
-        if (wm_class != null) {
-            var instanceName: String? = null
-            var className: String? = null
+        return get_property(
+            display,
+            win,
+            X11.XA_STRING,
+            "WM_CLASS",
+            size,
+        )?.let { pointer ->
+            val instanceName: String? = pointer.getString(0, Native.getDefaultStringEncoding())
 
-            instanceName = wm_class.getString(0, Native.getDefaultStringEncoding())
+            return instanceName?.let {
+                val endOfInstanceName: Long = instanceName.length.toLong()
+                val className = pointer.getString(endOfInstanceName + 1, Native.getDefaultStringEncoding())
 
-            val endOfInstanceName: Long = instanceName.length.toLong()
-
-            className = wm_class.getString(endOfInstanceName + 1, Native.getDefaultStringEncoding())
-
-            free(wm_class)
-            return Pair(instanceName, className)
+                free(pointer)
+                return Pair(instanceName, className)
+            }
         }
-
-        free(wm_class)
-
-        return null
     }
 
     fun get_active_window_id(disp: X11.Display): Long {
-        val win: X11.Window? = get_active_window(disp)
+        val win: X11.Window? = getActiveWindow(disp)
         return if ((win == null)) -1 else get_window_id(win)
     }
 
@@ -344,7 +337,7 @@ object WMCtrl {
     }
 
     fun get_active_window_pid(disp: X11.Display): Int {
-        val win: X11.Window? = get_active_window(disp)
+        val win: X11.Window? = getActiveWindow(disp)
         return if ((win == null)) -1 else get_window_pid(disp, win)
     }
 
@@ -367,7 +360,7 @@ object WMCtrl {
         return get_property(disp, win, xa_prop_type, prop_name, null)
     }
 
-    fun get_active_window(disp: X11.Display): X11.Window? {
+    fun getActiveWindow(disp: X11.Display): X11.Window? {
         return get_property_as_window(
             disp,
             x11.XDefaultRootWindow(disp),

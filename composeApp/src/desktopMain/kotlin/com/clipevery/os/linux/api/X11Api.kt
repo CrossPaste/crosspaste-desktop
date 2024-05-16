@@ -53,7 +53,7 @@ interface X11Api : X11 {
 
         fun bringToFront(windowTitle: String) {
             INSTANCE.XOpenDisplay(null)?.let {
-                WMCtrl.get_active_window_class(it)?.let { pair ->
+                WMCtrl.getActiveWindowInstanceAndClass(it)?.let { pair ->
                     pair.second?.let { className ->
                         println("className = $className")
                     }
