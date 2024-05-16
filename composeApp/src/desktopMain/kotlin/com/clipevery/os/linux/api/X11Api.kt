@@ -9,8 +9,10 @@ import com.sun.jna.platform.unix.X11.CurrentTime
 import com.sun.jna.platform.unix.X11.RevertToParent
 import com.sun.jna.platform.unix.X11.RevertToPointerRoot
 import com.sun.jna.ptr.IntByReference
+import com.sun.jna.ptr.NativeLongByReference
 import com.sun.jna.ptr.PointerByReference
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.io.File
 
 interface X11Api : X11 {
 
@@ -64,10 +66,9 @@ interface X11Api : X11 {
             val focusedWindow = windowByReference.value
 
             if (focusedWindow != X11.Window.None) {
-                getWindowClass(display, focusedWindow)?.let { pair ->
-                    pair.let {
-                        logger.info { "Focused window: ${it.first} ${it.second}" }
-                    }
+                val atom = x11.XInternAtom(display, "_NET_WM_PID", false)
+                getWindowPid(display, focusedWindow, atom)?.let { pid ->
+                    logger.info { "Focused window: $pid" }
                 }
             }
 
@@ -85,29 +86,55 @@ interface X11Api : X11 {
             x11.XCloseDisplay(display)
         }
 
-        fun getWindowClass(
+        fun getAppUniqueIdentifier(
             display: X11.Display,
             window: X11.Window,
-        ): Pair<String, String>? {
-            val x11 = INSTANCE
-            val atom = x11.XInternAtom(display, "WM_CLASS", true)
-            if (atom == X11.Atom.None) {
-                return null
-            }
+        ): String? {
+            val x11 = X11.INSTANCE
+            val pidAtom = x11.XInternAtom(display, "_NET_WM_PID", true)
+            if (pidAtom == X11.Atom.None) return null
 
-            val textProp = XTextProperty.ByReference()
+            val pid = getWindowPid(display, window, pidAtom) ?: return null
+            val cmdPath = getExecutablePathFromPid(pid)
 
-            val result = x11.XGetTextProperty(display, window, textProp, atom)
-            if (result != 0 && textProp.value.value != null) {
-                val resultString = textProp.value.pointer.getString(0) // 获取字符串数据，假设编码是 UTF-8
-                logger.info { "resultString = $resultString" }
+            return cmdPath
+        }
 
-                val data = resultString.split('\u0000')
-                if (data.size >= 2) {
-                    return Pair(data[0], data[1])
-                }
+        fun getWindowPid(
+            display: X11.Display,
+            window: X11.Window,
+            pidAtom: X11.Atom,
+        ): Int? {
+            val actual_type_return = X11.AtomByReference()
+            val actual_format_return = IntByReference()
+            val nitems_return = NativeLongByReference()
+            val bytes_after_return = NativeLongByReference()
+            val prop_return = PointerByReference()
+
+            val status: Int =
+                INSTANCE.XGetWindowProperty(
+                    display, window, pidAtom,
+                    NativeLong(0), // long_offset
+                    NativeLong(1), // long_length
+                    false, // delete
+                    X11.Atom(0),
+                    actual_type_return,
+                    actual_format_return,
+                    nitems_return,
+                    bytes_after_return,
+                    prop_return,
+                )
+
+            if (status == X11.Success && nitems_return.value.toLong() > 0) {
+                val pid = prop_return.value.getInt(0)
+                return pid
             }
             return null
+        }
+
+        fun getExecutablePathFromPid(pid: Int): String? {
+            val procPath = "/proc/$pid/exe"
+            return File(procPath).canonicalPath
         }
 
         fun bringToBack(
