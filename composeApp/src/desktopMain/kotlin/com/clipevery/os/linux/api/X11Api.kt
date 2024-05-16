@@ -3,6 +3,9 @@ package com.clipevery.os.linux.api
 import com.sun.jna.Native
 import com.sun.jna.Pointer
 import com.sun.jna.platform.unix.X11
+import com.sun.jna.platform.unix.X11.CurrentTime
+import com.sun.jna.platform.unix.X11.RevertToParent
+import com.sun.jna.platform.unix.X11.RevertToPointerRoot
 import com.sun.jna.ptr.IntByReference
 import com.sun.jna.ptr.PointerByReference
 
@@ -36,10 +39,14 @@ interface X11Api : X11 {
 
             val window = findWindowByTitle(display, rootWindow, windowTitle)
             if (window != null) {
-                // Set the window to be active and on top
-                x11.XSetInputFocus(display, window, X11.RevertToParent, X11.CurrentTime)
-                x11.XRaiseWindow(display, window)
-                println("Window '$windowTitle' activated and brought to front.")
+                // Attempt to set the window as the active window and bring it to the front
+                val focusResult = x11.XSetInputFocus(display, window, RevertToParent, CurrentTime)
+                if (focusResult == 0) {
+                    x11.XRaiseWindow(display, window)
+                    println("Window '$windowTitle' activated and brought to front.")
+                } else {
+                    println("Failed to set focus to window '$windowTitle'. Error code: $focusResult")
+                }
             } else {
                 println("Window with title '$windowTitle' not found.")
             }
@@ -60,11 +67,14 @@ interface X11Api : X11 {
             if (window != null) {
                 // Set the window to be in the background
                 x11.XLowerWindow(display, window)
-                // Hide the window
-                x11.XUnmapWindow(display, window)
 
-                x11.XSetInputFocus(display, rootWindow, X11.RevertToNone, X11.CurrentTime)
-                println("Window '$windowTitle' sent to back and hidden.")
+                // Attempt to set the input focus to the root window to effectively give up the focus
+                val result = x11.XSetInputFocus(display, rootWindow, RevertToPointerRoot, CurrentTime)
+                if (result == 0) {
+                    println("Window '$windowTitle' sent to back and focus given up.")
+                } else {
+                    println("Failed to set focus to root window. Error code: $result")
+                }
             } else {
                 println("Window with title '$windowTitle' not found.")
             }
