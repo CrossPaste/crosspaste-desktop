@@ -8,6 +8,7 @@ import com.sun.jna.platform.unix.X11.RevertToParent
 import com.sun.jna.platform.unix.X11.RevertToPointerRoot
 import com.sun.jna.ptr.IntByReference
 import com.sun.jna.ptr.PointerByReference
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 interface X11Api : X11 {
 
@@ -16,6 +17,19 @@ interface X11Api : X11 {
         w: X11.Window,
         revert_to: Int,
         time: Int,
+    ): Int
+
+    fun XGetInputFocus(
+        display: X11.Display,
+        focus_return: X11.WindowByReference,
+        revert_to_return: IntByReference,
+    ): Int
+
+    fun XGetTextProperty(
+        display: X11.Display,
+        window: X11.Window,
+        text_prop: X11.XTextProperty,
+        property: X11.Atom,
     ): Int
 
     fun XRaiseWindow(
@@ -30,6 +44,8 @@ interface X11Api : X11 {
 
     companion object {
 
+        private val logger = KotlinLogging.logger {}
+
         val INSTANCE: X11Api = Native.load("X11", X11Api::class.java)
 
         fun bringToFront(windowTitle: String) {
@@ -37,21 +53,54 @@ interface X11Api : X11 {
             val display = x11.XOpenDisplay(null) ?: throw RuntimeException("Unable to open X Display")
             val rootWindow = x11.XDefaultRootWindow(display)
 
+            val windowByReference = X11.WindowByReference()
+
+            val intByReference = IntByReference()
+
+            x11.XGetInputFocus(display, windowByReference, intByReference)
+
+            val focusedWindow = windowByReference.value
+
+            if (focusedWindow != X11.Window.None) {
+                getWindowClass(display, focusedWindow)?.let { pair ->
+                    pair.let {
+                        logger.info { "Focused window: ${it.first} ${it.second}" }
+                    }
+                }
+            }
+
             val window = findWindowByTitle(display, rootWindow, windowTitle)
             if (window != null) {
+                x11.XMapWindow(display, window)
+                x11.XRaiseWindow(display, window)
+
                 // Attempt to set the window as the active window and bring it to the front
-                val focusResult = x11.XSetInputFocus(display, window, RevertToParent, CurrentTime)
-                if (focusResult == 0) {
-                    x11.XRaiseWindow(display, window)
-                    println("Window '$windowTitle' activated and brought to front.")
-                } else {
-                    println("Failed to set focus to window '$windowTitle'. Error code: $focusResult")
-                }
+                x11.XSetInputFocus(display, window, RevertToParent, CurrentTime)
             } else {
-                println("Window with title '$windowTitle' not found.")
+                logger.error { "Window with title '$windowTitle' not found." }
             }
 
             x11.XCloseDisplay(display)
+        }
+
+        fun getWindowClass(
+            display: X11.Display,
+            window: X11.Window,
+        ): Pair<String, String>? {
+            val x11 = INSTANCE
+            val atom = x11.XInternAtom(display, "WM_CLASS", true)
+            if (atom == X11.Atom.None) {
+                return null
+            }
+
+            val property = X11.XTextProperty()
+            if (x11.XGetTextProperty(display, window, property, atom) != 0 && property.value != null) {
+                val data = property.value.split('\u0000')
+                if (data.size >= 2) {
+                    return Pair(data[0], data[1])
+                }
+            }
+            return null
         }
 
         fun bringToBack(
