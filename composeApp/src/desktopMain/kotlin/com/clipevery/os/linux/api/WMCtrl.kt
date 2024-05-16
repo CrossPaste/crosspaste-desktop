@@ -296,7 +296,7 @@ object WMCtrl {
         return g_strdup(icon_name_return.pointer)
     }
 
-    fun get_active_window_class(disp: X11.Display): String? {
+    fun get_active_window_class(disp: X11.Display): Pair<String?, String?>? {
         val win: X11.Window? = get_active_window(disp)
         return if ((win == null)) null else get_window_class(disp, win)
     }
@@ -304,8 +304,7 @@ object WMCtrl {
     fun get_window_class(
         disp: X11.Display?,
         win: X11.Window?,
-    ): String? {
-        var class_utf8: String? = null
+    ): Pair<String?, String?>? {
         val size = NativeLongByReference()
 
         val wm_class: Pointer? =
@@ -317,19 +316,22 @@ object WMCtrl {
                 size,
             )
         if (wm_class != null) {
-            var p_0 = 0
-            while (wm_class.getByte(p_0.toLong()).toInt() != 0) {
-                p_0++
-            }
-            if (size.value.toLong() - 1 > p_0) {
-                wm_class.setByte(p_0.toLong(), '.'.code.toByte())
-            }
-            class_utf8 = g_locale_to_utf8(wm_class)
+            var instanceName: String? = null
+            var className: String? = null
+
+            instanceName = wm_class.getString(0, Native.getDefaultStringEncoding())
+
+            val endOfInstanceName: Long = instanceName.length.toLong()
+
+            className = wm_class.getString(endOfInstanceName + 1, Native.getDefaultStringEncoding())
+
+            free(wm_class)
+            return Pair(instanceName, className)
         }
 
         free(wm_class)
 
-        return class_utf8
+        return null
     }
 
     fun get_active_window_id(disp: X11.Display): Long {
