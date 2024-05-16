@@ -66,8 +66,7 @@ interface X11Api : X11 {
             val focusedWindow = windowByReference.value
 
             if (focusedWindow != X11.Window.None) {
-                val atom = x11.XInternAtom(display, "_NET_WM_PID", false)
-                getWindowPid(display, focusedWindow, atom)?.let { pid ->
+                get_window_pid(display, focusedWindow).let { pid ->
                     logger.info { "Focused window: $pid" }
                 }
             }
@@ -90,51 +89,127 @@ interface X11Api : X11 {
             display: X11.Display,
             window: X11.Window,
         ): String? {
-            val x11 = X11.INSTANCE
-            val pidAtom = x11.XInternAtom(display, "_NET_WM_PID", true)
-            if (pidAtom == X11.Atom.None) return null
-
-            val pid = getWindowPid(display, window, pidAtom) ?: return null
+            val pid = get_window_pid(display, window)
             val cmdPath = getExecutablePathFromPid(pid)
 
             return cmdPath
         }
 
-        fun getWindowPid(
-            display: X11.Display,
-            window: X11.Window,
-            pidAtom: X11.Atom,
-        ): Int? {
-            val actual_type_return = X11.AtomByReference()
-            val actual_format_return = IntByReference()
-            val nitems_return = NativeLongByReference()
-            val bytes_after_return = NativeLongByReference()
-            val prop_return = PointerByReference()
-
-            val status: Int =
-                INSTANCE.XGetWindowProperty(
-                    display, window, pidAtom,
-                    NativeLong(0), // long_offset
-                    NativeLong(1), // long_length
-                    false, // delete
-                    X11.Atom(0),
-                    actual_type_return,
-                    actual_format_return,
-                    nitems_return,
-                    bytes_after_return,
-                    prop_return,
-                )
-
-            if (status == X11.Success && nitems_return.value.toLong() > 0) {
-                val pid = prop_return.value.getInt(0)
-                return pid
-            }
-            return null
-        }
-
         fun getExecutablePathFromPid(pid: Int): String? {
             val procPath = "/proc/$pid/exe"
             return File(procPath).canonicalPath
+        }
+
+        fun get_property(
+            disp: X11.Display?,
+            win: X11.Window?,
+            xa_prop_type: X11.Atom,
+            prop_name: String?,
+            size: NativeLongByReference?,
+        ): Pointer? {
+            val xa_ret_type = X11.AtomByReference()
+            val ret_format = IntByReference()
+            val ret_nitems = NativeLongByReference()
+            val ret_bytes_after = NativeLongByReference()
+            val ret_prop = PointerByReference()
+
+            val xa_prop_name: X11.Atom = INSTANCE.XInternAtom(disp, prop_name, false)
+
+            /*
+             * MAX_PROPERTY_VALUE_LEN / 4 explanation (XGetWindowProperty manpage):
+             *
+             * long_length = Specifies the length in 32-bit multiples of the data to
+             * be retrieved.
+             *
+             * NOTE: see
+             * http://mail.gnome.org/archives/wm-spec-list/2003-March/msg00067.html
+             * In particular:
+             *
+             * When the X window system was ported to 64-bit architectures, a rather
+             * peculiar design decision was made, 32-bit quantities such as Window
+             * IDs, atoms, etc, were kept as longs in the client side APIs, even
+             * when long was changed to 64 bit.
+             */
+            if (INSTANCE.XGetWindowProperty(
+                    disp, win, xa_prop_name, NativeLong(0),
+                    NativeLong(4096 / 4), false,
+                    xa_prop_type, xa_ret_type, ret_format, ret_nitems,
+                    ret_bytes_after, ret_prop,
+                ) != X11.Success
+            ) {
+                logger.info { "Cannot get $prop_name property." }
+                return null
+            }
+
+            if ((xa_ret_type.value == null) ||
+                (
+                    xa_ret_type.value.toLong() !=
+                        xa_prop_type
+                            .toLong()
+                )
+            ) {
+                logger.info { "Invalid type of $prop_name property." }
+                g_free(ret_prop.pointer)
+                return null
+            }
+
+            if (size != null) {
+                var tmp_size = (
+                    (ret_format.value / 8) *
+                        ret_nitems.value.toLong()
+                )
+                // Correct 64 Architecture implementation of 32 bit data
+                if (ret_format.value == 32) {
+                    tmp_size *= (NativeLong.SIZE / 4).toLong()
+                }
+                size.value = NativeLong(tmp_size)
+            }
+
+            return ret_prop.value
+        }
+
+        fun get_window_pid(
+            disp: X11.Display,
+            win: X11.Window,
+        ): Int {
+            val pid =
+                get_property_as_int(
+                    disp,
+                    win,
+                    X11.XA_CARDINAL,
+                    "_NET_WM_PID",
+                )
+            return if ((pid == null)) -1 else pid
+        }
+
+        private fun get_property_as_int(
+            disp: X11.Display,
+            win: X11.Window,
+            xa_prop_type: X11.Atom,
+            prop_name: String,
+        ): Int? {
+            var intProp: Int? = null
+
+            val prop =
+                get_property(
+                    disp,
+                    win,
+                    xa_prop_type,
+                    prop_name,
+                    null,
+                )
+            if (prop != null) {
+                intProp = prop.getInt(0)
+                g_free(prop)
+            }
+
+            return intProp
+        }
+
+        private fun g_free(pointer: Pointer?) {
+            if (pointer != null) {
+                INSTANCE.XFree(pointer)
+            }
         }
 
         fun bringToBack(
