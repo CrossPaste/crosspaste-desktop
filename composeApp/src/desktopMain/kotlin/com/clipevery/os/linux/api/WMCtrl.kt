@@ -1,5 +1,6 @@
 package com.clipevery.os.linux.api
 
+import com.clipevery.os.linux.api.X11Api.Companion.INSTANCE
 import com.sun.jna.Library
 import com.sun.jna.Native
 import com.sun.jna.NativeLong
@@ -19,16 +20,11 @@ import java.awt.image.BufferedImage
 
 object WMCtrl {
 
-    private const val MAX_PROPERTY_VALUE_LEN: Long = 4096L
+    private const val MAX_PROPERTY_VALUE_LEN: Long = 8 * 1024 * 1024
 
     private val logger = KotlinLogging.logger {}
 
     private val x11 = Native.load("X11", X11::class.java)
-
-    const val EXIT_SUCCESS: Boolean = true
-    const val EXIT_FAILURE: Boolean = false
-
-    val options: Options = Options()
 
     private fun findWindow(
         x11: X11,
@@ -74,7 +70,7 @@ object WMCtrl {
             x11.XGetWMName(display, window, name)
             if (name.value == null || name.value.trim { it <= ' ' } === "") continue
 
-            val wPid: Int = WMCtrl.get_window_pid(display, window)
+            val wPid: Int = getWindowPid(display, window)
             if (wPid == findPid) {
                 return window
             }
@@ -88,17 +84,75 @@ object WMCtrl {
         return null
     }
 
+    fun findWindowByTitle(
+        display: X11.Display,
+        rootWindow: X11.Window,
+        title: String,
+    ): X11.Window? {
+        val x11 = INSTANCE
+
+        val windowRef = X11.WindowByReference()
+        val parentRef = X11.WindowByReference()
+        val childrenRef = PointerByReference()
+        val childCountRef = IntByReference()
+
+        x11.XQueryTree(display, rootWindow, windowRef, parentRef, childrenRef, childCountRef)
+        if (childrenRef.value == null) {
+            return null
+        }
+
+        val childrenCount = childCountRef.value
+        if (childrenCount == 0) return null
+
+        val ids: LongArray
+
+        when (Native.LONG_SIZE) {
+            java.lang.Long.BYTES -> {
+                ids = childrenRef.value.getLongArray(0, childCountRef.value)
+            }
+            Integer.BYTES -> {
+                val intIds = childrenRef.value.getIntArray(0, childCountRef.value)
+                ids = LongArray(intIds.size)
+                for (i in intIds.indices) {
+                    ids[i] = intIds[i].toLong()
+                }
+            }
+            else -> {
+                throw IllegalStateException("Unexpected size for Native.LONG_SIZE" + Native.LONG_SIZE)
+            }
+        }
+
+        for (id in ids) {
+            if (id == 0L) {
+                continue
+            }
+            val window: X11.Window = X11.Window(id)
+
+            val namePtr = PointerByReference()
+            if (INSTANCE.XFetchName(display, window, namePtr) != 0) {
+                val name = namePtr.value.getString(0)
+                free(namePtr.value)
+                if (title == name) {
+                    return window
+                }
+            } else {
+                free(namePtr.value)
+            }
+        }
+        return null
+    }
+
     fun switchDesktop(
-        disp: X11.Display?,
+        display: X11.Display,
         target: Long,
     ): Boolean {
         if (target < 0) {
-            logger.error { "Invalid desktop ID.\n" }
+            logger.error { "Invalid desktop ID." }
             return false
         }
-        if (client_msg(
-                disp,
-                x11.XDefaultRootWindow(disp),
+        if (clientMsg(
+                display,
+                x11.XDefaultRootWindow(display),
                 "_NET_CURRENT_DESKTOP",
                 target,
                 0,
@@ -107,83 +161,27 @@ object WMCtrl {
                 0,
             )
         ) {
-            x11.XFlush(disp)
+            x11.XFlush(display)
             return true
         }
         return false
     }
 
-    fun getClientList(
-        disp: X11.Display,
-        stackingOrder: Boolean,
-    ): List<X11.Window>? {
-        val size = NativeLongByReference()
-        var clientList: Pointer? = null
-        var msg: String? = null
-
-        if (stackingOrder) {
-            msg = "_NET_CLIENT_LIST_STACKING"
-            clientList =
-                getProperty(
-                    disp, x11.XDefaultRootWindow(disp),
-                    X11.XA_WINDOW, "_NET_CLIENT_LIST_STACKING", size,
-                )
-        } else {
-            msg = "_NET_CLIENT_LIST or _WIN_CLIENT_LIST"
-            clientList =
-                getProperty(
-                    disp, x11.XDefaultRootWindow(disp),
-                    X11.XA_WINDOW, "_NET_CLIENT_LIST", size,
-                )
-            if (clientList == null) {
-                clientList =
-                    getProperty(
-                        disp, x11.XDefaultRootWindow(disp),
-                        X11.XA_CARDINAL, "_WIN_CLIENT_LIST", size,
-                    )
-            }
-        }
-
-        if (clientList == null) {
-            logger.error { "Cannot get client list properties.\n(msg)" }
-            return null
-        }
-
-        val resultList = ArrayList<X11.Window>()
-        val SIZE_OF_WINDOW = 4
-        var i = 0
-        val count = size.value.toLong().toInt() / SIZE_OF_WINDOW
-        while (i < count) {
-            resultList.add(
-                X11.Window(
-                    Pointer.nativeValue(
-                        clientList
-                            .getPointer((i * X11.Window.SIZE).toLong()),
-                    ),
-                ),
-            )
-
-            i++
-        }
-
-        return resultList
-    }
-
     fun windowToDesktop(
-        disp: X11.Display,
+        display: X11.Display,
         win: X11.Window,
     ): Boolean {
-        return windowToDesktop(disp, win, -1)
+        return windowToDesktop(display, win, -1)
     }
 
     fun windowToDesktop(
-        disp: X11.Display,
+        display: X11.Display,
         win: X11.Window,
         desktop: Int,
     ): Boolean {
         var currentDesktop = desktop
         if (currentDesktop < 0) {
-            currentDesktop = getCurrentDesktop(disp)
+            currentDesktop = getCurrentDesktop(display)
             if (currentDesktop < 0) {
                 logger.error {
                     "Cannot get current desktop properties. (_NET_CURRENT_DESKTOP or _WIN_WORKSPACE property)"
@@ -192,24 +190,24 @@ object WMCtrl {
             }
         }
 
-        return client_msg(disp, win, "_NET_WM_DESKTOP", currentDesktop.toLong(), 0, 0, 0, 0)
+        return clientMsg(display, win, "_NET_WM_DESKTOP", currentDesktop.toLong(), 0, 0, 0, 0)
     }
 
-    fun getCurrentDesktop(disp: X11.Display): Int {
-        val root: X11.Window = x11.XDefaultRootWindow(disp)
-        var cur_desktop: Int? = null
+    fun getCurrentDesktop(display: X11.Display): Int {
+        val root: X11.Window = x11.XDefaultRootWindow(display)
+        var curDesktop: Int? = null
         if ((
                 getPropertyAsInt(
-                    disp, root, X11.XA_CARDINAL,
+                    display, root,
                     "_NET_CURRENT_DESKTOP",
-                ).also { cur_desktop = it }
+                ).also { curDesktop = it }
             ) == null
         ) {
             if ((
                     getPropertyAsInt(
-                        disp, root, X11.XA_CARDINAL,
+                        display, root,
                         "_WIN_WORKSPACE",
-                    ).also { cur_desktop = it }
+                    ).also { curDesktop = it }
                 ) == null
             ) {
                 logger.error {
@@ -218,27 +216,27 @@ object WMCtrl {
             }
         }
 
-        return if ((cur_desktop == null)) -1 else cur_desktop!!
+        return if ((curDesktop == null)) -1 else curDesktop!!
     }
 
-    fun activateWindow(
-        disp: X11.Display,
+    fun activeWindow(
+        display: X11.Display,
         win: X11.Window,
-        switch_desktop: Boolean,
+        switchDesktop: Boolean,
     ): Boolean {
         var desktop: Long? = null
 
         // desktop ID
         if ((
                 getPropertyAsInt(
-                    disp, win, X11.XA_CARDINAL,
+                    display, win,
                     "_NET_WM_DESKTOP",
                 ).also { desktop = it?.toLong() }
             ) == null
         ) {
             if ((
                     getPropertyAsInt(
-                        disp, win, X11.XA_CARDINAL,
+                        display, win,
                         "_WIN_WORKSPACE",
                     ).also { desktop = it?.toLong() }
                 ) == null
@@ -247,10 +245,10 @@ object WMCtrl {
             }
         }
 
-        if (switch_desktop && (desktop != null)) {
-            if (!client_msg(
-                    disp,
-                    x11.XDefaultRootWindow(disp),
+        if (switchDesktop && (desktop != null)) {
+            if (!clientMsg(
+                    display,
+                    x11.XDefaultRootWindow(display),
                     "_NET_CURRENT_DESKTOP",
                     desktop!!,
                     0,
@@ -263,43 +261,43 @@ object WMCtrl {
             }
         }
 
-        client_msg(disp, win, "_NET_ACTIVE_WINDOW", 0, 0, 0, 0, 0)
-        x11.XMapRaised(disp, win)
+        clientMsg(display, win, "_NET_ACTIVE_WINDOW", 0, 0, 0, 0, 0)
+        x11.XMapRaised(display, win)
 
         return true
     }
 
-    fun iconify_window(
-        disp: X11.Display?,
+    fun iconifyWindow(
+        display: X11.Display?,
         win: X11.Window?,
     ): Boolean {
-        return X11Ext.INSTANCE.XIconifyWindow(disp, win, x11.XDefaultScreen(disp)) == TRUE
+        return X11Ext.INSTANCE.XIconifyWindow(display, win, x11.XDefaultScreen(display)) == TRUE
     }
 
     fun closeWindow(
-        disp: X11.Display?,
+        display: X11.Display?,
         win: X11.Window?,
     ): Boolean {
-        return client_msg(disp, win, "_NET_CLOSE_WINDOW", 0, 0, 0, 0, 0)
+        return clientMsg(display, win, "_NET_CLOSE_WINDOW", 0, 0, 0, 0, 0)
     }
 
     fun getWindowIconName(
-        disp: X11.Display,
+        display: X11.Display,
         win: X11.Window,
     ): String? {
-        val icon_name_return = PointerByReference()
+        val iconNameReturn = PointerByReference()
 
-        if (X11Ext.INSTANCE.XGetIconName(disp, win, icon_name_return) == 0) {
-            free(icon_name_return.pointer)
+        if (X11Ext.INSTANCE.XGetIconName(display, win, iconNameReturn) == 0) {
+            free(iconNameReturn.pointer)
             return null
         }
 
-        return g_strdup(icon_name_return.pointer)
+        return g_strdup(iconNameReturn.pointer)
     }
 
-    fun getActiveWindowInstanceAndClass(disp: X11.Display): Pair<String?, String?>? {
-        return getActiveWindow(disp)?.let {
-            return getWindowClass(disp, it)
+    fun getActiveWindowInstanceAndClass(display: X11.Display): Pair<String?, String?>? {
+        return getActiveWindow(display)?.let {
+            return getWindowClass(display, it)
         }
     }
 
@@ -328,86 +326,70 @@ object WMCtrl {
         }
     }
 
-    fun get_active_window_id(disp: X11.Display): Long {
-        val win: X11.Window? = getActiveWindow(disp)
-        return if ((win == null)) -1 else get_window_id(win)
+    fun getActiveWindowId(display: X11.Display): Long {
+        return getActiveWindow(display)?.let {
+            return getWindowId(it)
+        } ?: -1
     }
 
-    fun get_window_id(win: X11.Window): Long {
+    fun getWindowId(win: X11.Window): Long {
         return win.toLong()
     }
 
-    fun get_active_window_pid(disp: X11.Display): Int {
-        val win: X11.Window? = getActiveWindow(disp)
-        return if ((win == null)) -1 else get_window_pid(disp, win)
+    fun getActiveWindowPid(display: X11.Display): Int {
+        return getActiveWindow(display)?.let {
+            return getWindowPid(display, it)
+        } ?: -1
     }
 
-    fun get_window_pid(
-        disp: X11.Display,
+    fun getWindowPid(
+        display: X11.Display,
         win: X11.Window,
     ): Int {
         return getPropertyAsInt(
-            disp, win, X11.XA_CARDINAL,
+            display, win,
             "_NET_WM_PID",
         ) ?: -1
     }
 
     fun getProperty(
-        disp: X11.Display,
-        win: X11.Window,
-        xa_prop_type: Atom,
-        prop_name: String?,
-    ): Pointer? {
-        return getProperty(disp, win, xa_prop_type, prop_name, null)
-    }
-
-    fun getActiveWindow(disp: X11.Display): X11.Window? {
-        return getPropertyAsWindow(
-            disp,
-            x11.XDefaultRootWindow(disp),
-            X11.XA_WINDOW,
-            "_NET_ACTIVE_WINDOW",
-        )
-    }
-
-    fun getActiveWindowIcon(
         display: X11.Display,
-        activeWindow: X11.Window,
-    ): BufferedImage? {
-        return getPropertyAsIcon(
+        win: X11.Window,
+        xaPropType: Atom,
+        propName: String?,
+    ): Pointer? {
+        return getProperty(display, win, xaPropType, propName, null)
+    }
+
+    fun getActiveWindow(display: X11.Display): X11.Window? {
+        return getPropertyAsWindow(
             display,
-            activeWindow,
-            X11.XA_CARDINAL,
-            "_NET_WM_ICON",
+            x11.XDefaultRootWindow(display),
         )
     }
 
-    private fun getPropertyAsIcon(
+    fun getPropertyAsIcon(
         display: X11.Display,
         window: X11.Window,
-        xaPropType: Atom,
-        propName: String,
     ): BufferedImage? {
         return getProperty(
             display,
             window,
-            xaPropType,
-            propName,
+            X11.XA_CARDINAL,
+            "_NET_WM_ICON",
             null,
         )?.let { prop ->
             val width = prop.getLong(0).toInt()
             val height = prop.getLong(8).toInt()
             val buffer = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
 
-            // 预计算整个图像的大小（以字节为单位）
             val numPixels = width * height
             val bytesPerPixel = 8 // 每个像素8字节，包括填充
             val imageData = ByteArray(numPixels * bytesPerPixel)
 
-            // 从本地内存一次性读取所有像素数据
             prop.read(16, imageData, 0, imageData.size)
 
-            // 处理每个像素，转换 BGRA 到 ARGB
+            // https://stackoverflow.com/questions/43237104/picture-format-for-net-wm-icon
             var offset = 0
             for (y in 0 until height) {
                 for (x in 0 until width) {
@@ -418,7 +400,7 @@ object WMCtrl {
                     val alpha = imageData[bgraIndex + 3].toInt() and 0xff
                     val argb = (alpha shl 24) or (red shl 16) or (green shl 8) or blue
                     buffer.setRGB(x, y, argb)
-                    offset += bytesPerPixel // 移到下一个像素，跳过填充
+                    offset += bytesPerPixel
                 }
             }
             return buffer
@@ -428,38 +410,49 @@ object WMCtrl {
     private fun getPropertyAsWindow(
         display: X11.Display,
         window: X11.Window,
-        xaPropType: Atom,
-        propName: String,
     ): X11.Window? {
-        return getProperty(
+        return getPropertyAs(
             display,
             window,
-            xaPropType,
-            propName,
-            null,
-        )?.let { prop ->
-            val winodw = X11.Window(prop.getLong(0))
-            free(prop)
-            return winodw
+            X11.XA_WINDOW,
+            "_NET_ACTIVE_WINDOW",
+        ) { pointer ->
+            X11.Window(pointer.getLong(0))
         }
     }
 
     private fun getPropertyAsInt(
         display: X11.Display,
         window: X11.Window,
-        xaPropType: Atom,
         propName: String,
     ): Int? {
+        return getPropertyAs(
+            display,
+            window,
+            X11.XA_CARDINAL,
+            propName,
+        ) { pointer ->
+            pointer.getInt(0)
+        }
+    }
+
+    private fun <T> getPropertyAs(
+        display: X11.Display,
+        window: X11.Window,
+        xaPropType: Atom,
+        propName: String,
+        convertTo: (Pointer) -> T,
+    ): T? {
         return getProperty(
             display,
             window,
             xaPropType,
             propName,
             null,
-        )?.let { prop ->
-            val intProp = prop.getInt(0)
-            free(prop)
-            return intProp
+        )?.let { pointer ->
+            val result = convertTo(pointer)
+            free(pointer)
+            return result
         }
     }
 
@@ -531,8 +524,8 @@ object WMCtrl {
         return retProp.value
     }
 
-    fun client_msg(
-        disp: X11.Display?,
+    private fun clientMsg(
+        display: X11.Display?,
         win: X11.Window?,
         msg: String?,
         data0: Long,
@@ -553,7 +546,7 @@ object WMCtrl {
         xclient.type = X11.ClientMessage
         xclient.serial = NativeLong(0)
         xclient.send_event = TRUE
-        xclient.message_type = x11.XInternAtom(disp, msg, false)
+        xclient.message_type = x11.XInternAtom(display, msg, false)
         xclient.window = win
         xclient.format = 32
         xclient.data.setType(Array<NativeLong>::class.java)
@@ -567,19 +560,15 @@ object WMCtrl {
         event.setTypedValue(xclient)
 
         if (x11.XSendEvent(
-                disp, x11.XDefaultRootWindow(disp), FALSE, mask,
+                display, x11.XDefaultRootWindow(display), FALSE, mask,
                 event,
             ) != FALSE
         ) {
-            return EXIT_SUCCESS
+            return true
         } else {
             logger.error { "Cannot send $msg event." }
-            return EXIT_FAILURE
+            return false
         }
-    }
-
-    private fun g_locale_to_utf8(pointer: Pointer): String {
-        return g_strdup(pointer)
     }
 
     private fun g_strdup(pointer: Pointer): String {
@@ -597,21 +586,21 @@ object WMCtrl {
 private interface X11Ext : Library {
 
     fun XMoveWindow(
-        disp: X11.Display?,
+        display: X11.Display?,
         win: X11.Window?,
         x: Long,
         y: Long,
     )
 
     fun XResizeWindow(
-        disp: X11.Display?,
+        display: X11.Display?,
         win: X11.Window?,
         width: Long,
         height: Long,
     )
 
     fun XMoveResizeWindow(
-        disp: X11.Display?,
+        display: X11.Display?,
         win: X11.Window?,
         x: Long,
         y: Long,
@@ -620,12 +609,12 @@ private interface X11Ext : Library {
     )
 
     fun XCreateFontCursor(
-        disp: X11.Display?,
+        display: X11.Display?,
         shape: Long,
     ): X11.Cursor?
 
     fun XGrabPointer(
-        disp: X11.Display?,
+        display: X11.Display?,
         grab_window: X11.Window?,
         owner_events: Int,
         event_mask: NativeLong?,
@@ -637,51 +626,34 @@ private interface X11Ext : Library {
     ): Int
 
     fun XAllowEvents(
-        disp: X11.Display?,
+        display: X11.Display?,
         event_mode: Int,
         time: Int,
     ): Int
 
     fun XUngrabPointer(
-        disp: X11.Display?,
+        display: X11.Display?,
         time: Int,
     ): Int
 
     fun XmuClientWindow(
-        disp: X11.Display?,
+        display: X11.Display?,
         win: X11.Window?,
     ): X11.Window?
 
     fun XGetIconName(
-        disp: X11.Display?,
+        display: X11.Display?,
         win: X11.Window?,
         icon_name_return: PointerByReference?,
     ): Int
 
     fun XIconifyWindow(
-        disp: X11.Display?,
+        display: X11.Display?,
         win: X11.Window?,
         screen: Int,
     ): Int
 
     companion object {
-        const val XC_crosshair: Int = 34
-
         val INSTANCE: X11Ext = Native.load("X11", X11Ext::class.java)
     }
-}
-
-class Options {
-    var verbose: Boolean = false
-    var force_utf8: Boolean = false
-    var show_class: Boolean = false
-    var show_pid: Boolean = false
-    var show_geometry: Boolean = false
-    var stacking_order: Boolean = false
-    var match_by_id: Boolean = false
-    var match_by_cls: Boolean = false
-    var full_window_title_match: Boolean = false
-    var wa_desktop_titles_invalid_utf8: Boolean = false
-    var param_window: String = ""
-    var param: String = ""
 }
