@@ -68,3 +68,22 @@ class WindowsTrayMouseClicked(private val windowState: WindowState, private val 
             )
     }
 }
+
+object LinuxTrayWindowState {
+
+    fun setWindowPosition(windowState: WindowState) {
+        val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
+        val bounds = gd.defaultConfiguration.bounds
+        val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
+
+        val usableWidth = bounds.width - insets.right
+
+        val windowWidth = windowState.size.width
+
+        windowState.position =
+            WindowPosition.Absolute(
+                x = usableWidth.dp - windowWidth,
+                y = 0.dp,
+            )
+    }
+}
