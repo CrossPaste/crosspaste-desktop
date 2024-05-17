@@ -222,48 +222,9 @@ object WMCtrl {
     fun activeWindow(
         display: X11.Display,
         win: X11.Window,
-        switchDesktop: Boolean,
     ): Boolean {
-        var desktop: Long? = null
-
-        // desktop ID
-        if ((
-                getPropertyAsInt(
-                    display, win,
-                    "_NET_WM_DESKTOP",
-                ).also { desktop = it?.toLong() }
-            ) == null
-        ) {
-            if ((
-                    getPropertyAsInt(
-                        display, win,
-                        "_WIN_WORKSPACE",
-                    ).also { desktop = it?.toLong() }
-                ) == null
-            ) {
-                logger.info { "Cannot find desktop ID of the window." }
-            }
-        }
-
-        if (switchDesktop && (desktop != null)) {
-            if (!clientMsg(
-                    display,
-                    x11.XDefaultRootWindow(display),
-                    "_NET_CURRENT_DESKTOP",
-                    desktop!!,
-                    0,
-                    0,
-                    0,
-                    0,
-                )
-            ) {
-                logger.info { "Cannot switch desktop." }
-            }
-        }
-
-        X11Ext.INSTANCE.XSetInputFocus(display, win, X11.RevertToParent, X11.CurrentTime)
-        //        clientMsg(display, win, "_NET_ACTIVE_WINDOW", 0, 0, 0, 0, 0)
         x11.XMapRaised(display, win)
+        clientMsg(display, win, "_NET_ACTIVE_WINDOW", 0, 0, 0, 0, 0)
 
         return true
     }

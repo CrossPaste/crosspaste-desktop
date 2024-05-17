@@ -1,6 +1,7 @@
 package com.clipevery.os.linux.api
 
 import com.clipevery.app.DesktopAppWindowManager.mainWindowTitle
+import com.clipevery.app.DesktopAppWindowManager.searchWindowTitle
 import com.clipevery.app.LinuxAppInfo
 import com.clipevery.os.linux.api.WMCtrl.getActiveWindow
 import com.sun.jna.Native
@@ -53,7 +54,7 @@ interface X11Api : X11 {
                     }
 
                 getWindow(windowTitle)?.let { window ->
-                    WMCtrl.activeWindow(display, window, false)
+                    WMCtrl.activeWindow(display, window)
                 }
 
                 INSTANCE.XCloseDisplay(display)
@@ -68,7 +69,7 @@ interface X11Api : X11 {
         ) {
             INSTANCE.XOpenDisplay(null)?.let { display ->
                 prevLinuxAppInfo?.let {
-                    WMCtrl.activeWindow(display, it.window, false)
+                    WMCtrl.activeWindow(display, it.window)
                     if (toPaste) {
                         // todo
                         println("toPaste")
@@ -103,7 +104,7 @@ interface X11Api : X11 {
             if (searchWindow == null) {
                 INSTANCE.XOpenDisplay(null)?.let { display ->
                     val rootWindow = INSTANCE.XDefaultRootWindow(display)
-                    WMCtrl.findWindowByTitle(display, rootWindow, mainWindowTitle)?.let {
+                    WMCtrl.findWindowByTitle(display, rootWindow, searchWindowTitle)?.let {
                         searchWindow = it
                     }
                 }
