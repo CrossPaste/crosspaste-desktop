@@ -585,62 +585,6 @@ object WMCtrl {
 
 private interface X11Ext : Library {
 
-    fun XMoveWindow(
-        display: X11.Display?,
-        win: X11.Window?,
-        x: Long,
-        y: Long,
-    )
-
-    fun XResizeWindow(
-        display: X11.Display?,
-        win: X11.Window?,
-        width: Long,
-        height: Long,
-    )
-
-    fun XMoveResizeWindow(
-        display: X11.Display?,
-        win: X11.Window?,
-        x: Long,
-        y: Long,
-        width: Long,
-        height: Long,
-    )
-
-    fun XCreateFontCursor(
-        display: X11.Display?,
-        shape: Long,
-    ): X11.Cursor?
-
-    fun XGrabPointer(
-        display: X11.Display?,
-        grab_window: X11.Window?,
-        owner_events: Int,
-        event_mask: NativeLong?,
-        pointer_mode: Int,
-        keyboard_mode: Int,
-        confine_to: X11.Window?,
-        cursor: X11.Cursor?,
-        time: Int,
-    ): Int
-
-    fun XAllowEvents(
-        display: X11.Display?,
-        event_mode: Int,
-        time: Int,
-    ): Int
-
-    fun XUngrabPointer(
-        display: X11.Display?,
-        time: Int,
-    ): Int
-
-    fun XmuClientWindow(
-        display: X11.Display?,
-        win: X11.Window?,
-    ): X11.Window?
-
     fun XGetIconName(
         display: X11.Display?,
         win: X11.Window?,

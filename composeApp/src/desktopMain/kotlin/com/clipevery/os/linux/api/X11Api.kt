@@ -6,33 +6,18 @@ import com.clipevery.os.linux.api.WMCtrl.getActiveWindow
 import com.sun.jna.Native
 import com.sun.jna.platform.unix.X11
 import com.sun.jna.platform.unix.X11.Window
-import io.github.oshai.kotlinlogging.KotlinLogging
 import java.nio.file.Path
 import javax.imageio.ImageIO
 
 interface X11Api : X11 {
 
-    fun XSetInputFocus(
-        display: X11.Display,
-        w: X11.Window,
-        revert_to: Int,
-        time: Int,
-    ): Int
-
-    fun XLowerWindow(
-        display: X11.Display,
-        w: X11.Window,
-    )
-
     companion object {
-
-        private val logger = KotlinLogging.logger {}
 
         val INSTANCE: X11Api = Native.load("X11", X11Api::class.java)
 
-        var mainWindow: Window? = null
+        private var mainWindow: Window? = null
 
-        var searchWindow: Window? = null
+        private var searchWindow: Window? = null
 
         fun getActiveWindow(): LinuxAppInfo? {
             INSTANCE.XOpenDisplay(null)?.let { display ->
@@ -46,7 +31,7 @@ interface X11Api : X11 {
         }
 
         fun saveAppIcon(
-            window: X11.Window,
+            window: Window,
             iconPath: Path,
         ) {
             INSTANCE.XOpenDisplay(null)?.let { display ->
