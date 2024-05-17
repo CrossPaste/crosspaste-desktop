@@ -176,6 +176,13 @@ class WindowsAppStartUpService(private val configManager: ConfigManager) : AppSt
 
 class LinuxAppStartUpService(private val configManager: ConfigManager) : AppStartUpService {
 
+    private val logger: KLogger = KotlinLogging.logger {}
+
+    private val appExePath =
+        DesktopPathProvider.clipAppPath
+            .resolve("bin")
+            .resolve("clipevery")
+
     override fun followConfig() {
         if (configManager.config.enableAutoStartUp) {
             makeAutoStatUp()
@@ -185,14 +192,37 @@ class LinuxAppStartUpService(private val configManager: ConfigManager) : AppStar
     }
 
     override fun isAutoStartUp(): Boolean {
-        TODO("Not yet implemented")
+        val command = "crontab -l | grep -F '@reboot $appExePath'"
+        val output = executeCommand(command)
+        return output.contains("@reboot $appExePath")
     }
 
     override fun makeAutoStatUp() {
-        TODO("Not yet implemented")
+        if (!isAutoStartUp()) {
+            val command = "(crontab -l 2>/dev/null; echo \"@reboot $appExePath\") | crontab -"
+            val output = executeCommand(command)
+            logger.info { "Cron job added: $output" }
+        }
     }
 
     override fun removeAutoStartUp() {
-        TODO("Not yet implemented")
+        if (isAutoStartUp()) {
+            val command = "(crontab -l | grep -v \"@reboot $appExePath\") | crontab -"
+            val output = executeCommand(command)
+            logger.info { "Cron job removed: $output" }
+        }
+    }
+
+    private fun executeCommand(command: String): String {
+        val process = Runtime.getRuntime().exec(arrayOf("/bin/bash", "-c", command))
+        val reader = BufferedReader(InputStreamReader(process.inputStream))
+        val output = StringBuilder()
+
+        var line: String?
+        while (reader.readLine().also { line = it } != null) {
+            output.append(line + "\n")
+        }
+        process.waitFor()
+        return output.toString()
     }
 }
