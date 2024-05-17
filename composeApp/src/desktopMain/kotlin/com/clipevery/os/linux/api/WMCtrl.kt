@@ -395,19 +395,30 @@ object WMCtrl {
             propName,
             null,
         )?.let { prop ->
-            val width = prop.getLong(0).toInt() // Read width as long, then convert to Int
-            val height = prop.getLong(8).toInt() // Read height as long, then convert to Int
+            val width = prop.getLong(0).toInt()
+            val height = prop.getLong(8).toInt()
             val buffer = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+
+            // 预计算整个图像的大小（以字节为单位）
+            val numPixels = width * height
+            val bytesPerPixel = 8 // 每个像素8字节，包括填充
+            val imageData = ByteArray(numPixels * bytesPerPixel)
+
+            // 从本地内存一次性读取所有像素数据
+            prop.read(16, imageData, 0, imageData.size)
+
+            // 处理每个像素，转换 BGRA 到 ARGB
+            var offset = 0
             for (y in 0 until height) {
                 for (x in 0 until width) {
-                    val offset = 16 + (x + y * width) * 8 // 计算像素数据的偏移量，包括填充
-                    val bgra = prop.getInt(offset.toLong()) // 读取原始 BGRA 格式的像素数据
-                    val blue = bgra and 0xff // 提取蓝色通道
-                    val green = (bgra shr 8) and 0xff // 提取绿色通道
-                    val red = (bgra shr 16) and 0xff // 提取红色通道
-                    val alpha = (bgra shr 24) and 0xff // 提取透明度通道
+                    val bgraIndex = offset
+                    val blue = imageData[bgraIndex].toInt() and 0xff
+                    val green = imageData[bgraIndex + 1].toInt() and 0xff
+                    val red = imageData[bgraIndex + 2].toInt() and 0xff
+                    val alpha = imageData[bgraIndex + 3].toInt() and 0xff
                     val argb = (alpha shl 24) or (red shl 16) or (green shl 8) or blue
                     buffer.setRGB(x, y, argb)
+                    offset += bytesPerPixel // 移到下一个像素，跳过填充
                 }
             }
             return buffer
