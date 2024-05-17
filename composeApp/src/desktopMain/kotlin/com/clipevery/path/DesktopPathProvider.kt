@@ -182,7 +182,7 @@ class LinuxPathProvider : PathProvider {
 
     override val userHome: Path = Paths.get(System.getProperty("user.home"))
 
-    override val clipAppPath: Path = getAppJarPath().parent
+    override val clipAppPath: Path = getAppJarPath().parent.parent
 
     override val clipAppJarPath: Path = getAppJarPath()
 
