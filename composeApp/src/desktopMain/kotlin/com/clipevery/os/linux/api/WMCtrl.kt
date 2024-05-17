@@ -400,12 +400,13 @@ object WMCtrl {
             val buffer = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
             for (y in 0 until height) {
                 for (x in 0 until width) {
-                    val bgra = prop.getInt((16 + (x + y * width) * 8).toLong()) // Adjust offset for BGRA values
-                    val blue = (bgra and 0xff) shl 16 // Move blue to red
-                    val green = bgra and 0xff00 // Green stays
-                    val red = (bgra and 0xff0000) ushr 16 // Move red to blue
-                    val alpha = (bgra ushr 24) and 0xff // Alpha stays
-                    val argb = (alpha shl 24) or blue or green or red // Combine into ARGB
+                    val offset = 16 + (x + y * width) * 8 // 计算像素数据的偏移量，包括填充
+                    val bgra = prop.getInt(offset.toLong()) // 读取原始 BGRA 格式的像素数据
+                    val blue = bgra and 0xff // 提取蓝色通道
+                    val green = (bgra shr 8) and 0xff // 提取绿色通道
+                    val red = (bgra shr 16) and 0xff // 提取红色通道
+                    val alpha = (bgra shr 24) and 0xff // 提取透明度通道
+                    val argb = (alpha shl 24) or (red shl 16) or (green shl 8) or blue
                     buffer.setRGB(x, y, argb)
                 }
             }
