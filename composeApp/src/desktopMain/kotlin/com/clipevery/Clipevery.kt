@@ -305,6 +305,13 @@ class Clipevery {
 
             val resourceUtils = getResourceUtils()
 
+            val systemTray: SystemTray? =
+                if (platform.isLinux()) {
+                    SystemTray.get() ?: throw RuntimeException("Unable to load SystemTray!")
+                } else {
+                    null
+                }
+
             application {
                 val ioScope = rememberCoroutineScope { ioDispatcher }
 
@@ -362,15 +369,13 @@ class Clipevery {
                 ) {
                     DisposableEffect(Unit) {
                         if (platform.isLinux()) {
-                            val systemTray: SystemTray = SystemTray.get() ?: throw RuntimeException("Unable to load SystemTray!")
+                            systemTray?.setImage(resourceUtils.resourceInputStream("clipevery_icon.png"))
 
-                            systemTray.setImage(resourceUtils.resourceInputStream("clipevery_icon.png"))
-
-                            systemTray.menu.add(
+                            systemTray?.menu?.add(
                                 MenuItem("Open Clipevery") { appWindowManager.activeMainWindow() },
                             )
 
-                            systemTray.menu.add(
+                            systemTray?.menu?.add(
                                 MenuItem("Quit Clipevery") {
                                     exitApplication()
                                 },
