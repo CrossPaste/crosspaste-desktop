@@ -104,6 +104,7 @@ import com.clipevery.task.PullFileTaskExecutor
 import com.clipevery.task.SyncClipTaskExecutor
 import com.clipevery.task.TaskExecutor
 import com.clipevery.ui.DesktopThemeDetector
+import com.clipevery.ui.LinuxTrayWindowState
 import com.clipevery.ui.ThemeDetector
 import com.clipevery.ui.base.DesktopMessageManager
 import com.clipevery.ui.base.DesktopNotificationManager
@@ -336,6 +337,8 @@ class Clipevery {
                                 }
                             },
                     )
+                } else {
+                    LinuxTrayWindowState.setWindowPosition(windowState)
                 }
 
                 val exitApplication: () -> Unit = {
