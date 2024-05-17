@@ -7,7 +7,9 @@ import com.clipevery.clip.TransferableProducer
 import com.clipevery.config.ConfigManager
 import com.clipevery.dao.clip.ClipDao
 import io.github.oshai.kotlinlogging.KLogger
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.channels.Channel
+import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.Transferable
 
@@ -18,35 +20,36 @@ class LinuxClipboardService(
     override val clipConsumer: TransferableConsumer,
     override val clipProducer: TransferableProducer,
 ) : ClipboardService {
-    override val logger: KLogger
-        get() = TODO("Not yet implemented")
-    override var owner: Boolean
-        get() = TODO("Not yet implemented")
-        set(value) {}
-    override var ownerTransferable: Transferable?
-        get() = TODO("Not yet implemented")
-        set(value) {}
-    override val systemClipboard: Clipboard
-        get() = TODO("Not yet implemented")
-    override val clipboardChannel: Channel<suspend () -> Unit>
-        get() = TODO("Not yet implemented")
+    override val logger: KLogger = KotlinLogging.logger {}
+
+    override var owner: Boolean = false
+
+    override var ownerTransferable: Transferable? = null
+
+    override val systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
+
+    override val clipboardChannel: Channel<suspend () -> Unit> = Channel(Channel.UNLIMITED)
 
     override fun start() {
-        TODO("Not yet implemented")
     }
 
     override fun stop() {
-        TODO("Not yet implemented")
     }
 
     override fun toggle() {
-        TODO("Not yet implemented")
+        val enableClipboardListening = configManager.config.enableClipboardListening
+        if (enableClipboardListening) {
+            stop()
+        } else {
+            start()
+        }
+        configManager.updateConfig { it.copy(enableClipboardListening = !enableClipboardListening) }
     }
 
     override fun lostOwnership(
         clipboard: Clipboard?,
         contents: Transferable?,
     ) {
-        TODO("Not yet implemented")
+        owner = false
     }
 }

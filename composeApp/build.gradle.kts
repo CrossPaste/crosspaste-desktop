@@ -76,6 +76,7 @@ kotlin {
             implementation(libs.logback.classic)
             implementation(libs.selenium.chrome.driver)
             implementation(libs.signal.client)
+            implementation(libs.system.tray)
             implementation(libs.theme.detector)
             implementation(libs.webp.imageio)
             implementation(libs.zxing.core)

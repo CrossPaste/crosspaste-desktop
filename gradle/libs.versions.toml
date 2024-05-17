@@ -21,6 +21,7 @@ logback = "1.5.6"
 realm = "1.16.0"
 selenium = "4.20.0"
 signal = "0.46.0"
+system-tray = "4.4"
 theme-detector = "3.8"
 webp-imageio = "0.8.0"
 yaml = "2.2"
@@ -59,6 +60,7 @@ material-desktop = { module = "org.jetbrains.compose.material:material-desktop",
 realm-kotlin-base = { module = "io.realm.kotlin:library-base", version.ref = "realm" }
 selenium-chrome-driver = { module = "org.seleniumhq.selenium:selenium-chrome-driver", version.ref = "selenium" }
 signal-client = { module = "org.signal:libsignal-client", version.ref = "signal" }
+system-tray = { module = "com.dorkbox:SystemTray", version.ref = "system-tray" }
 theme-detector = { module = "com.github.Dansoftowner:jSystemThemeDetector", version.ref = "theme-detector" }
 webp-imageio = { module = "com.github.usefulness:webp-imageio", version.ref = "webp-imageio" }
 yaml = { module = "org.yaml:snakeyaml", version.ref = "yaml" }

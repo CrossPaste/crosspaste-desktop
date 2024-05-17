@@ -120,7 +120,10 @@ import com.clipevery.utils.IDGenerator
 import com.clipevery.utils.IDGeneratorFactory
 import com.clipevery.utils.QRCodeGenerator
 import com.clipevery.utils.TelnetUtils
+import com.clipevery.utils.getResourceUtils
 import com.clipevery.utils.ioDispatcher
+import dorkbox.systemTray.MenuItem
+import dorkbox.systemTray.SystemTray
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
@@ -295,19 +298,14 @@ class Clipevery {
                 logger.error(throwable) { "cant start clipevery" }
             }
 
+            val appWindowManager = koinApplication.koin.get<AppWindowManager>()
+
+            val platform = currentPlatform()
+
+            val resourceUtils = getResourceUtils()
+
             application {
                 val ioScope = rememberCoroutineScope { ioDispatcher }
-
-                val appWindowManager = koinApplication.koin.get<AppWindowManager>()
-
-                val notificationManager = koinApplication.koin.get<NotificationManager>()
-
-                val trayIcon =
-                    if (currentPlatform().isMacos()) {
-                        painterResource("clipevery_mac_tray.png")
-                    } else {
-                        painterResource("clipevery_icon.png")
-                    }
 
                 val windowState =
                     rememberWindowState(
@@ -316,18 +314,29 @@ class Clipevery {
                         size = appWindowManager.mainWindowDpSize,
                     )
 
-                Tray(
-                    state = remember { notificationManager.trayState },
-                    icon = trayIcon,
-                    mouseListener =
-                        getTrayMouseAdapter(windowState) {
-                            if (appWindowManager.showMainWindow) {
-                                appWindowManager.unActiveMainWindow()
-                            } else {
-                                appWindowManager.activeMainWindow()
-                            }
-                        },
-                )
+                if (!platform.isLinux()) {
+                    val notificationManager = koinApplication.koin.get<NotificationManager>()
+
+                    val trayIcon =
+                        if (currentPlatform().isMacos()) {
+                            painterResource("clipevery_mac_tray.png")
+                        } else {
+                            painterResource("clipevery_icon.png")
+                        }
+
+                    Tray(
+                        state = remember { notificationManager.trayState },
+                        icon = trayIcon,
+                        mouseListener =
+                            getTrayMouseAdapter(windowState) {
+                                if (appWindowManager.showMainWindow) {
+                                    appWindowManager.unActiveMainWindow()
+                                } else {
+                                    appWindowManager.activeMainWindow()
+                                }
+                            },
+                    )
+                }
 
                 val exitApplication: () -> Unit = {
                     appWindowManager.showMainWindow = false
@@ -349,6 +358,22 @@ class Clipevery {
                     resizable = false,
                 ) {
                     DisposableEffect(Unit) {
+                        if (platform.isLinux()) {
+                            val systemTray: SystemTray = SystemTray.get() ?: throw RuntimeException("Unable to load SystemTray!")
+
+                            systemTray.setImage(resourceUtils.resourceInputStream("clipevery_icon.png"))
+
+                            systemTray.menu.add(
+                                MenuItem("Open Clipevery") { appWindowManager.activeMainWindow() },
+                            )
+
+                            systemTray.menu.add(
+                                MenuItem("Quit Clipevery") {
+                                    exitApplication()
+                                },
+                            )
+                        }
+
                         koinApplication.koin.get<GlobalListener>().start()
 
                         val windowListener =

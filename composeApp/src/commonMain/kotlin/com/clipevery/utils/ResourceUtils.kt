@@ -2,12 +2,15 @@ package com.clipevery.utils
 
 import androidx.compose.ui.unit.Density
 import com.clipevery.ui.base.ToPainterImage
+import java.io.InputStream
 import java.nio.file.Path
 import java.util.Properties
 
 expect fun getResourceUtils(): ResourceUtils
 
 interface ResourceUtils {
+
+    fun resourceInputStream(fileName: String): InputStream
 
     fun loadProperties(fileName: String): Properties
 
