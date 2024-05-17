@@ -261,7 +261,8 @@ object WMCtrl {
             }
         }
 
-        clientMsg(display, win, "_NET_ACTIVE_WINDOW", 0, 0, 0, 0, 0)
+        X11Ext.INSTANCE.XSetInputFocus(display, win, X11.RevertToParent, X11.CurrentTime)
+        //        clientMsg(display, win, "_NET_ACTIVE_WINDOW", 0, 0, 0, 0, 0)
         x11.XMapRaised(display, win)
 
         return true
@@ -595,6 +596,13 @@ private interface X11Ext : Library {
         display: X11.Display?,
         win: X11.Window?,
         screen: Int,
+    ): Int
+
+    fun XSetInputFocus(
+        display: X11.Display,
+        window: X11.Window,
+        revertTo: Int,
+        time: Int,
     ): Int
 
     companion object {

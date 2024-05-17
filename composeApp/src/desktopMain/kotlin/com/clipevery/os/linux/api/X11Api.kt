@@ -26,6 +26,7 @@ interface X11Api : X11 {
                         return@getActiveWindow LinuxAppInfo(previousWindow, it.second)
                     }
                 }
+                INSTANCE.XCloseDisplay(display)
             }
             return null
         }
@@ -38,6 +39,7 @@ interface X11Api : X11 {
                 WMCtrl.getPropertyAsIcon(display, window)?.let { buffer ->
                     ImageIO.write(buffer, "png", iconPath.toFile())
                 }
+                INSTANCE.XCloseDisplay(display)
             }
         }
 
