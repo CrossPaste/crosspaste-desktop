@@ -377,7 +377,7 @@ object WMCtrl {
         return getPropertyAsIcon(
             display,
             activeWindow,
-            x11.XInternAtom(display, "_NET_WM_ICON", false),
+            X11.XA_CARDINAL,
             "_NET_WM_ICON",
         )
     }
@@ -395,12 +395,17 @@ object WMCtrl {
             propName,
             null,
         )?.let { prop ->
-            val width = prop.getInt(0)
-            val height = prop.getInt(4)
+            val width = prop.getLong(0).toInt() // Read width as long, then convert to Int
+            val height = prop.getLong(8).toInt() // Read height as long, then convert to Int
             val buffer = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
             for (y in 0 until height) {
                 for (x in 0 until width) {
-                    val argb = prop.getInt((8 + (x + y * width) * 4).toLong()) // Offset calculation
+                    val bgra = prop.getInt((16 + (x + y * width) * 8).toLong()) // Adjust offset for BGRA values
+                    val blue = (bgra and 0xff) shl 16 // Move blue to red
+                    val green = bgra and 0xff00 // Green stays
+                    val red = (bgra and 0xff0000) ushr 16 // Move red to blue
+                    val alpha = (bgra ushr 24) and 0xff // Alpha stays
+                    val argb = (alpha shl 24) or blue or green or red // Combine into ARGB
                     buffer.setRGB(x, y, argb)
                 }
             }
