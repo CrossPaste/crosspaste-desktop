@@ -5,21 +5,19 @@ import com.clipevery.app.DesktopAppWindowManager.searchWindowTitle
 import com.clipevery.app.LinuxAppInfo
 import com.clipevery.os.linux.api.WMCtrl.getActiveWindow
 import com.sun.jna.Native
+import com.sun.jna.NativeLong
 import com.sun.jna.platform.unix.X11
-import com.sun.jna.platform.unix.X11.Atom
 import com.sun.jna.platform.unix.X11.Display
 import com.sun.jna.platform.unix.X11.Window
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.nio.file.Path
 import javax.imageio.ImageIO
 
 interface X11Api : X11 {
 
-    fun XGetSelectionOwner(
-        display: Display,
-        selection: Atom,
-    ): Long
-
     companion object {
+
+        private val logger = KotlinLogging.logger {}
 
         val INSTANCE: X11Api = Native.load("X11", X11Api::class.java)
 
@@ -78,11 +76,26 @@ interface X11Api : X11 {
                 prevLinuxAppInfo?.let {
                     WMCtrl.activeWindow(display, it.window)
                     if (toPaste) {
-                        // todo
-                        println("toPaste")
+                        toPaste(display)
                     }
                 }
                 INSTANCE.XCloseDisplay(display)
+            }
+        }
+
+        fun toPaste(display: Display) {
+            val xTest = X11.XTest.INSTANCE
+            try {
+                val ctrlKey = 37
+                val vKey = 55
+
+                xTest.XTestFakeKeyEvent(display, ctrlKey, true, NativeLong(0))
+                xTest.XTestFakeKeyEvent(display, vKey, true, NativeLong(0))
+                xTest.XTestFakeKeyEvent(display, vKey, false, NativeLong(0))
+                xTest.XTestFakeKeyEvent(display, ctrlKey, false, NativeLong(0))
+                INSTANCE.XFlush(display)
+            } catch (e: Exception) {
+                logger.error(e) { "toPaste error" }
             }
         }
 
