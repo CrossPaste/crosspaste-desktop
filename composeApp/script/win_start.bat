@@ -1,12 +1,20 @@
 @echo off
-:: Check the number of arguments
-if "%~2"=="" (
-    echo Usage: %0 [pid] [app_path]
-    exit /b 1
+:: Determine the application path relative to this script
+set "APP_PATH=%~dp0clipevery.exe"
+
+:: Check if a PID is provided
+if "%~1" == "" (
+    goto START_APP
 )
 
 set "PID=%1"
-set "APP_PATH=%2"
+
+:: Validate if PID is a number
+echo %PID% | findstr /R /X "[0-9][0-9]*" >nul
+if %ERRORLEVEL% neq 0 (
+    echo Warning: Provided PID is not a number. Starting the application immediately.
+    goto START_APP
+)
 
 :CHECK_LOOP
 :: Check if the process exists
