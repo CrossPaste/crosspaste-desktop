@@ -74,7 +74,7 @@ class WindowsAppRestartService : AppRestartService {
 
     override fun restart(exitApplication: () -> Unit) {
         val pid = ProcessHandle.current().pid()
-        val appPath = DesktopPathProvider.clipAppPath
+        val appPath = DesktopPathProvider.clipAppJarPath
         val restartLogPath = DesktopPathProvider.resolve("restart.log", AppFileType.LOG)
         val scriptPath = appPath.resolve("bin").resolve(SCRIPT)
 
