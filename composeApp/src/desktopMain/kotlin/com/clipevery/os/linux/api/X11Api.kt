@@ -10,6 +10,7 @@ import com.sun.jna.platform.unix.X11
 import com.sun.jna.platform.unix.X11.Display
 import com.sun.jna.platform.unix.X11.Window
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.delay
 import java.nio.file.Path
 import javax.imageio.ImageIO
 
@@ -67,7 +68,7 @@ interface X11Api : X11 {
             }
         }
 
-        fun bringToBack(
+        suspend fun bringToBack(
             windowTitle: String,
             prevLinuxAppInfo: LinuxAppInfo?,
             toPaste: Boolean,
@@ -83,7 +84,7 @@ interface X11Api : X11 {
             }
         }
 
-        fun toPaste(display: Display) {
+        suspend fun toPaste(display: Display) {
             val xTest = X11.XTest.INSTANCE
             try {
                 val ctrlKey = 37
@@ -91,9 +92,9 @@ interface X11Api : X11 {
 
                 xTest.XTestFakeKeyEvent(display, ctrlKey, true, NativeLong(0))
                 xTest.XTestFakeKeyEvent(display, vKey, true, NativeLong(0))
+                delay(100)
                 xTest.XTestFakeKeyEvent(display, vKey, false, NativeLong(0))
                 xTest.XTestFakeKeyEvent(display, ctrlKey, false, NativeLong(0))
-                INSTANCE.XFlush(display)
             } catch (e: Exception) {
                 logger.error(e) { "toPaste error" }
             }
