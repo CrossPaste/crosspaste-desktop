@@ -253,8 +253,10 @@ class DesktopSyncHandler(
                         buildUrl(urlBuilder, host, syncRuntimeInfo.port, "sync", "showToken")
                     }
                 ) {
-                    syncRuntimeInfo.connectHostAddress = null
-                    syncRuntimeInfo.connectState = SyncState.DISCONNECTED
+                    update {
+                        syncRuntimeInfo.connectHostAddress = null
+                        syncRuntimeInfo.connectState = SyncState.DISCONNECTED
+                    }
                 }
             }
         }
