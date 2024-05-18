@@ -7,9 +7,11 @@ import com.clipevery.clip.TransferableProducer
 import com.clipevery.config.ConfigManager
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.os.linux.api.X11Api
+import com.clipevery.os.linux.api.XFixes
 import com.clipevery.utils.cpuDispatcher
 import com.sun.jna.NativeLong
 import com.sun.jna.platform.unix.X11
+import com.sun.jna.platform.unix.X11.XA_PRIMARY
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
@@ -60,38 +62,45 @@ class LinuxClipboardService(
             val x11 = X11Api.INSTANCE
             x11.XOpenDisplay(null)?.let { display ->
                 try {
+                    val XFixesSetSelectionOwnerNotifyMask = (1 shl 0).toLong()
+
                     val rootWindow = x11.XDefaultRootWindow(display)
                     val clipboardAtom = x11.XInternAtom(display, "CLIPBOARD", false)
 
-                    val owner = x11.XGetSelectionOwner(display, clipboardAtom)
-
-                    if (owner != 0L) {
-                        x11.XSelectInput(display, rootWindow, NativeLong(X11.PropertyChangeMask.toLong()))
-                    }
+                    XFixes.INSTANCE.XFixesSelectSelectionInput(
+                        display,
+                        rootWindow,
+                        XA_PRIMARY,
+                        NativeLong(XFixesSetSelectionOwnerNotifyMask),
+                    )
+                    XFixes.INSTANCE.XFixesSelectSelectionInput(
+                        display,
+                        rootWindow,
+                        clipboardAtom,
+                        NativeLong(XFixesSetSelectionOwnerNotifyMask),
+                    )
 
                     val event = X11.XEvent()
                     while (isActive) {
                         x11.XNextEvent(display, event)
 
-                        if (event.xselectionclear != null && event.xselectionclear.selection == clipboardAtom) {
-                            logger.info { "notify change event" }
-                            changeCount++
-                            val start = System.currentTimeMillis()
-                            val source = appWindowManager.getCurrentActiveAppName()
-                            val end = System.currentTimeMillis()
+                        logger.info { "notify change event" }
+                        changeCount++
+                        val start = System.currentTimeMillis()
+                        val source = appWindowManager.getCurrentActiveAppName()
+                        val end = System.currentTimeMillis()
 
-                            val delay = 20 + start - end
+                        val delay = 20 + start - end
 
-                            if (delay > 0) {
-                                delay(delay)
-                            }
+                        if (delay > 0) {
+                            delay(delay)
+                        }
 
-                            val contents = getContents()
-                            if (contents != ownerTransferable) {
-                                contents?.let {
-                                    launch(CoroutineName("MacClipboardServiceConsumer")) {
-                                        clipConsumer.consume(it, source, remote = false)
-                                    }
+                        val contents = getContents()
+                        if (contents != ownerTransferable) {
+                            contents?.let {
+                                launch(CoroutineName("MacClipboardServiceConsumer")) {
+                                    clipConsumer.consume(it, source, remote = false)
                                 }
                             }
                         }
