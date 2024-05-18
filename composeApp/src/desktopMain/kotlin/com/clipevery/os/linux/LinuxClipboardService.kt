@@ -61,13 +61,19 @@ class LinuxClipboardService(
             x11.XOpenDisplay(null)?.let { display ->
                 try {
                     val rootWindow = x11.XDefaultRootWindow(display)
-                    val eventMask = X11.PropertyChangeMask // 监听属性变化事件
-                    x11.XSelectInput(display, rootWindow, NativeLong(eventMask.toLong()))
+                    val clipboardAtom = x11.XInternAtom(display, "CLIPBOARD", false)
+
+                    val owner = x11.XGetSelectionOwner(display, clipboardAtom)
+
+                    if (owner != 0L) {
+                        x11.XSelectInput(display, rootWindow, NativeLong(X11.PropertyChangeMask.toLong()))
+                    }
 
                     val event = X11.XEvent()
                     while (isActive) {
                         x11.XNextEvent(display, event)
-                        if (event.type == X11.PropertyNotify) {
+
+                        if (event.xselectionclear != null && event.xselectionclear.selection == clipboardAtom) {
                             logger.info { "notify change event" }
                             changeCount++
                             val start = System.currentTimeMillis()
