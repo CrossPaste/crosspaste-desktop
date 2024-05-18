@@ -7,20 +7,17 @@ import com.clipevery.os.linux.api.WMCtrl.getActiveWindow
 import com.sun.jna.Native
 import com.sun.jna.NativeLong
 import com.sun.jna.platform.unix.X11
-import com.sun.jna.platform.unix.X11.Atom
 import com.sun.jna.platform.unix.X11.Display
 import com.sun.jna.platform.unix.X11.Window
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.nio.file.Path
 import javax.imageio.ImageIO
 
 interface X11Api : X11 {
 
-    fun XGetSelectionOwner(
-        display: Display,
-        selection: Atom,
-    ): Long
-
     companion object {
+
+        private val logger = KotlinLogging.logger {}
 
         val INSTANCE: X11Api = Native.load("X11", X11Api::class.java)
 
@@ -98,7 +95,7 @@ interface X11Api : X11 {
                 xTest.XTestFakeKeyEvent(display, ctrlKey, false, NativeLong(0))
                 INSTANCE.XFlush(display)
             } catch (e: Exception) {
-                e.printStackTrace()
+                logger.error(e) { "toPaste error" }
             }
         }
 
