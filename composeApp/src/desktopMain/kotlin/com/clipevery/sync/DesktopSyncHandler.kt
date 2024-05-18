@@ -249,8 +249,12 @@ class DesktopSyncHandler(
     override suspend fun showToken() {
         if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
             syncRuntimeInfo.connectHostAddress?.let { host ->
-                syncClientApi.showToken { urlBuilder ->
-                    buildUrl(urlBuilder, host, syncRuntimeInfo.port, "sync", "showToken")
+                if (!syncClientApi.showToken { urlBuilder ->
+                        buildUrl(urlBuilder, host, syncRuntimeInfo.port, "sync", "showToken")
+                    }
+                ) {
+                    syncRuntimeInfo.connectHostAddress = null
+                    syncRuntimeInfo.connectState = SyncState.DISCONNECTED
                 }
             }
         }

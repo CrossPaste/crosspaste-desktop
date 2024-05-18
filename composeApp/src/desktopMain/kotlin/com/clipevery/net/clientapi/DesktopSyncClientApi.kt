@@ -79,7 +79,13 @@ class DesktopSyncClientApi(
         }
     }
 
-    override suspend fun showToken(toUrl: URLBuilder.(URLBuilder) -> Unit) {
-        clipClient.get(urlBuilder = toUrl)
+    override suspend fun showToken(toUrl: URLBuilder.(URLBuilder) -> Unit): Boolean {
+        try {
+            clipClient.get(urlBuilder = toUrl)
+            return true
+        } catch (e: Exception) {
+            logger.error(e) { "showToken api fail" }
+            return false
+        }
     }
 }
