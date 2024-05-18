@@ -5,6 +5,7 @@ import com.clipevery.app.DesktopAppWindowManager.searchWindowTitle
 import com.clipevery.app.LinuxAppInfo
 import com.clipevery.os.linux.api.WMCtrl.getActiveWindow
 import com.sun.jna.Native
+import com.sun.jna.NativeLong
 import com.sun.jna.platform.unix.X11
 import com.sun.jna.platform.unix.X11.Atom
 import com.sun.jna.platform.unix.X11.Display
@@ -78,11 +79,26 @@ interface X11Api : X11 {
                 prevLinuxAppInfo?.let {
                     WMCtrl.activeWindow(display, it.window)
                     if (toPaste) {
-                        // todo
-                        println("toPaste")
+                        toPaste(display)
                     }
                 }
                 INSTANCE.XCloseDisplay(display)
+            }
+        }
+
+        fun toPaste(display: Display) {
+            val xTest = X11.XTest.INSTANCE
+            try {
+                val ctrlKey = 37
+                val vKey = 55
+
+                xTest.XTestFakeKeyEvent(display, ctrlKey, true, NativeLong(0))
+                xTest.XTestFakeKeyEvent(display, vKey, true, NativeLong(0))
+                xTest.XTestFakeKeyEvent(display, vKey, false, NativeLong(0))
+                xTest.XTestFakeKeyEvent(display, ctrlKey, false, NativeLong(0))
+                INSTANCE.XFlush(display)
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
 
