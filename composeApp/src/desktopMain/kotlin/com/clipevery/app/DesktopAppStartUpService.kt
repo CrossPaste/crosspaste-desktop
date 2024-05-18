@@ -179,7 +179,7 @@ class LinuxAppStartUpService(private val configManager: ConfigManager) : AppStar
     private val logger: KLogger = KotlinLogging.logger {}
 
     private val appExePath =
-        DesktopPathProvider.clipAppJarPath
+        DesktopPathProvider.clipAppPath
             .resolve("bin")
             .resolve("start.sh")
 
