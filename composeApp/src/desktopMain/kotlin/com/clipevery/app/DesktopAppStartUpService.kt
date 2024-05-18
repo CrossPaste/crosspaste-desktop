@@ -179,9 +179,9 @@ class LinuxAppStartUpService(private val configManager: ConfigManager) : AppStar
     private val logger: KLogger = KotlinLogging.logger {}
 
     private val appExePath =
-        DesktopPathProvider.clipAppPath
+        DesktopPathProvider.clipAppJarPath
             .resolve("bin")
-            .resolve("clipevery")
+            .resolve("start.sh")
 
     override fun followConfig() {
         if (configManager.config.enableAutoStartUp) {
