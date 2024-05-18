@@ -178,10 +178,16 @@ class LinuxAppStartUpService(private val configManager: ConfigManager) : AppStar
 
     private val logger: KLogger = KotlinLogging.logger {}
 
+    private val desktopFile = "clipevery.desktop"
+
+    private val pathProvider = DesktopPathProvider
+
+    private val filePersist = DesktopFilePersist
+
     private val appExePath =
         DesktopPathProvider.clipAppPath
             .resolve("bin")
-            .resolve("start.sh")
+            .resolve("clipevery")
 
     override fun followConfig() {
         if (configManager.config.enableAutoStartUp) {
@@ -192,37 +198,43 @@ class LinuxAppStartUpService(private val configManager: ConfigManager) : AppStar
     }
 
     override fun isAutoStartUp(): Boolean {
-        val command = "crontab -l | grep -F '@reboot $appExePath'"
-        val output = executeCommand(command)
-        return output.contains("@reboot $appExePath")
+        return pathProvider.userHome.resolve(".config/autostart/$desktopFile").toFile().exists()
     }
 
     override fun makeAutoStatUp() {
-        if (!isAutoStartUp()) {
-            val command = "(crontab -l 2>/dev/null; echo \"@reboot $appExePath\") | crontab -"
-            val output = executeCommand(command)
-            logger.info { "Cron job added: $output" }
+        try {
+            if (!isAutoStartUp()) {
+                logger.info { "Make auto startup" }
+                val desktopFilePath = pathProvider.userHome.resolve(".config/autostart/$desktopFile")
+                filePersist.createOneFilePersist(desktopFilePath)
+                    .saveBytes(
+                        """
+                        [Desktop Entry]
+                        Type=Application
+                        Name=Clipevery
+                        Exec=${appExePath.absolutePathString()} --minimize
+                        Categories=Utility
+                        Terminal=false
+                        X-GNOME-Autostart-enabled=true
+                        X-GNOME-Autostart-Delay=10
+                        X-MATE-Autostart-Delay=10
+                        X-KDE-autostart-after=panel
+                        """.trimIndent().toByteArray(),
+                    )
+            }
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to make auto startup" }
         }
     }
 
     override fun removeAutoStartUp() {
-        if (isAutoStartUp()) {
-            val command = "(crontab -l | grep -v \"@reboot $appExePath\") | crontab -"
-            val output = executeCommand(command)
-            logger.info { "Cron job removed: $output" }
+        try {
+            if (isAutoStartUp()) {
+                logger.info { "Remove auto startup" }
+                pathProvider.userHome.resolve(".config/autostart/$desktopFile").toFile().delete()
+            }
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to remove auto startup" }
         }
-    }
-
-    private fun executeCommand(command: String): String {
-        val process = Runtime.getRuntime().exec(arrayOf("/bin/bash", "-c", command))
-        val reader = BufferedReader(InputStreamReader(process.inputStream))
-        val output = StringBuilder()
-
-        var line: String?
-        while (reader.readLine().also { line = it } != null) {
-            output.append(line + "\n")
-        }
-        process.waitFor()
-        return output.toString()
     }
 }
