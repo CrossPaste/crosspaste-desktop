@@ -6,11 +6,18 @@ import com.clipevery.app.LinuxAppInfo
 import com.clipevery.os.linux.api.WMCtrl.getActiveWindow
 import com.sun.jna.Native
 import com.sun.jna.platform.unix.X11
+import com.sun.jna.platform.unix.X11.Atom
+import com.sun.jna.platform.unix.X11.Display
 import com.sun.jna.platform.unix.X11.Window
 import java.nio.file.Path
 import javax.imageio.ImageIO
 
 interface X11Api : X11 {
+
+    fun XGetSelectionOwner(
+        display: Display,
+        selection: Atom,
+    ): Long
 
     companion object {
 
