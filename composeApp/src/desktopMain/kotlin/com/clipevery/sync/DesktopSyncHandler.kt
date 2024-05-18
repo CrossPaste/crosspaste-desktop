@@ -254,8 +254,8 @@ class DesktopSyncHandler(
                     }
                 ) {
                     update {
-                        syncRuntimeInfo.connectHostAddress = null
-                        syncRuntimeInfo.connectState = SyncState.DISCONNECTED
+                        this.connectHostAddress = null
+                        this.connectState = SyncState.DISCONNECTED
                     }
                 }
             }
