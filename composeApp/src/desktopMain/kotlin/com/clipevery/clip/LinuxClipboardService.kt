@@ -5,8 +5,8 @@ import com.clipevery.config.ConfigManager
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.os.linux.api.X11Api
 import com.clipevery.os.linux.api.XFixes
-import com.clipevery.utils.ControlUtils.ensureMinExecutionTime
-import com.clipevery.utils.ControlUtils.exponentialBackoffUntilValid
+import com.clipevery.utils.DesktopControlUtils.ensureMinExecutionTime
+import com.clipevery.utils.DesktopControlUtils.exponentialBackoffUntilValid
 import com.clipevery.utils.cpuDispatcher
 import com.sun.jna.NativeLong
 import com.sun.jna.platform.unix.X11

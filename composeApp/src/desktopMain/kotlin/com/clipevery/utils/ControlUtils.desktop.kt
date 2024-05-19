@@ -2,11 +2,15 @@ package com.clipevery.utils
 
 import kotlinx.coroutines.delay
 
-object ControlUtils {
+actual fun getControlUtils(): ControlUtils {
+    return DesktopControlUtils
+}
 
-    suspend fun <T> ensureMinExecutionTime(
-        delayTime: Int = 20,
-        action: () -> T,
+object DesktopControlUtils : ControlUtils {
+
+    override suspend fun <T> ensureMinExecutionTime(
+        delayTime: Int,
+        action: suspend () -> T,
     ): T {
         val start = System.currentTimeMillis()
         val result = action()
@@ -20,11 +24,11 @@ object ControlUtils {
         return result
     }
 
-    suspend fun <T> exponentialBackoffUntilValid(
+    override suspend fun <T> exponentialBackoffUntilValid(
         initTime: Long,
         maxTime: Long,
         isValidResult: (T) -> Boolean,
-        action: () -> T,
+        action: suspend () -> T,
     ): T {
         var result = action()
         var sum = 0L
@@ -38,8 +42,8 @@ object ControlUtils {
         return result
     }
 
-    fun <T> blockEnsureMinExecutionTime(
-        delayTime: Int = 20,
+    override fun <T> blockEnsureMinExecutionTime(
+        delayTime: Int,
         action: () -> T,
     ): T {
         val start = System.currentTimeMillis()
@@ -54,7 +58,7 @@ object ControlUtils {
         return result
     }
 
-    fun <T> blockExponentialBackoffUntilValid(
+    override fun <T> blockExponentialBackoffUntilValid(
         initTime: Long,
         maxTime: Long,
         isValidResult: (T) -> Boolean,

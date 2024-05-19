@@ -4,8 +4,8 @@ import com.clipevery.app.AppWindowManager
 import com.clipevery.config.ConfigManager
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.os.macos.api.MacosApi
-import com.clipevery.utils.ControlUtils.ensureMinExecutionTime
-import com.clipevery.utils.ControlUtils.exponentialBackoffUntilValid
+import com.clipevery.utils.DesktopControlUtils.ensureMinExecutionTime
+import com.clipevery.utils.DesktopControlUtils.exponentialBackoffUntilValid
 import com.clipevery.utils.cpuDispatcher
 import com.sun.jna.ptr.IntByReference
 import io.github.oshai.kotlinlogging.KLogger
