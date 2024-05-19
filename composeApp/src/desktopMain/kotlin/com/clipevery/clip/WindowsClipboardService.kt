@@ -5,8 +5,8 @@ import com.clipevery.config.ConfigManager
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.os.windows.api.User32
 import com.clipevery.platform.currentPlatform
-import com.clipevery.utils.ControlUtils.blockEnsureMinExecutionTime
-import com.clipevery.utils.ControlUtils.blockExponentialBackoffUntilValid
+import com.clipevery.utils.DesktopControlUtils.blockEnsureMinExecutionTime
+import com.clipevery.utils.DesktopControlUtils.blockExponentialBackoffUntilValid
 import com.clipevery.utils.cpuDispatcher
 import com.clipevery.utils.ioDispatcher
 import com.sun.jna.Pointer
