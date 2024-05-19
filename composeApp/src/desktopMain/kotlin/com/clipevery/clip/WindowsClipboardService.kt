@@ -177,6 +177,7 @@ class WindowsClipboardService(
             contents?.let {
                 serviceConsumerScope.launch(CoroutineName("WindowsClipboardConsumer")) {
                     if (it != ownerTransferable) {
+                        ownerTransferable = it
                         // in windows, we don't know if the clipboard is local or remote
                         clipConsumer.consume(it, source, remote = false)
                     }
