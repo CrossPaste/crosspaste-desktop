@@ -10,7 +10,6 @@ import com.clipevery.utils.DesktopControlUtils.exponentialBackoffUntilValid
 import com.clipevery.utils.cpuDispatcher
 import com.sun.jna.NativeLong
 import com.sun.jna.platform.unix.X11
-import com.sun.jna.platform.unix.X11.XA_PRIMARY
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
@@ -68,12 +67,6 @@ class LinuxClipboardService(
                     val rootWindow = x11.XDefaultRootWindow(display)
                     val clipboardAtom = x11.XInternAtom(display, "CLIPBOARD", false)
 
-                    XFixes.INSTANCE.XFixesSelectSelectionInput(
-                        display,
-                        rootWindow,
-                        XA_PRIMARY,
-                        NativeLong(XFIXES_SET_SELECTION_OWNER_NOTIFY_MASK),
-                    )
                     XFixes.INSTANCE.XFixesSelectSelectionInput(
                         display,
                         rootWindow,
