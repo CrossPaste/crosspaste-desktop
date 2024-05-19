@@ -63,7 +63,6 @@ import com.clipevery.ui.clip.preview.getClipItem
 import com.clipevery.ui.clip.title.getClipTitle
 import com.clipevery.utils.getFaviconUtils
 import com.clipevery.utils.getResourceUtils
-import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch
 import kotlin.io.path.exists
@@ -73,7 +72,6 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
     val current = LocalKoinApplication.current
     val clipSearchService = current.koin.get<ClipSearchService>()
     val appWindowManager = current.koin.get<AppWindowManager>()
-    val logger = current.koin.get<KLogger>()
     val searchListState = rememberLazyListState()
     val adapter = rememberScrollbarAdapter(scrollState = searchListState)
     var showScrollbar by remember { mutableStateOf(false) }
@@ -82,18 +80,22 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
 
     val searchResult = remember(clipSearchService.searchTime) { clipSearchService.searchResult }
 
-    LaunchedEffect(clipSearchService.selectedIndex) {
-        try {
-            val visibleItems = searchListState.layoutInfo.visibleItemsInfo
-            if (visibleItems.isNotEmpty() && appWindowManager.showSearchWindow) {
-                if (visibleItems.last().index < clipSearchService.selectedIndex) {
-                    searchListState.scrollToItem(clipSearchService.selectedIndex - 9)
-                } else if (visibleItems.first().index > clipSearchService.selectedIndex) {
-                    searchListState.scrollToItem(clipSearchService.selectedIndex)
-                }
+    LaunchedEffect(appWindowManager.showSearchWindow) {
+        if (appWindowManager.showSearchWindow) {
+            if (clipSearchService.searchResult.size > 0) {
+                searchListState.scrollToItem(0)
             }
-        } catch (e: Exception) {
-            logger.error(e) { "SearchListView LaunchedEffect error" }
+        }
+    }
+
+    LaunchedEffect(clipSearchService.selectedIndex) {
+        val visibleItems = searchListState.layoutInfo.visibleItemsInfo
+        if (visibleItems.isNotEmpty() && appWindowManager.showSearchWindow) {
+            if (visibleItems.last().index < clipSearchService.selectedIndex) {
+                searchListState.scrollToItem(clipSearchService.selectedIndex - 9)
+            } else if (visibleItems.first().index > clipSearchService.selectedIndex) {
+                searchListState.scrollToItem(clipSearchService.selectedIndex)
+            }
         }
     }
 
