@@ -6,18 +6,18 @@ import com.clipevery.net.ClipClient
 import com.clipevery.utils.FailResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.util.*
 import io.ktor.util.reflect.*
 
-class DesktopPullFileClientApi(
+class DesktopPullClientApi(
     private val clipClient: ClipClient,
     private val configManager: ConfigManager,
-) : PullFileClientApi {
+) : PullClientApi {
 
     private val logger = KotlinLogging.logger {}
 
-    @OptIn(InternalAPI::class)
     override suspend fun pullFile(
         pullFileRequest: PullFileRequest,
         toUrl: URLBuilder.(URLBuilder) -> Unit,
@@ -32,13 +32,32 @@ class DesktopPullFileClientApi(
                 urlBuilder = toUrl,
             )
 
+        return result(response, "file", pullFileRequest)
+    }
+
+    override suspend fun pullIcon(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult {
+        val response =
+            clipClient.get(
+                timeout = 5000L,
+                urlBuilder = toUrl,
+            )
+
+        return result(response, "icon", response.request.url)
+    }
+
+    @OptIn(InternalAPI::class)
+    private suspend fun result(
+        response: HttpResponse,
+        api: String,
+        key: Any,
+    ): ClientApiResult {
         return if (response.status.value == 200) {
-            logger.debug { "Success to pull file $pullFileRequest" }
+            logger.debug { "Success to pull $api" }
             SuccessResult(response.content)
         } else {
             val failResponse = response.body<FailResponse>()
-            logger.error { "Fail to pull file $pullFileRequest: ${response.status.value} $failResponse" }
-            FailureResult("Fail to pull file $pullFileRequest: ${response.status.value} $failResponse")
+            logger.error { "Fail to pull $api $key: ${response.status.value} $failResponse" }
+            FailureResult("Fail to pull $api $key: ${response.status.value} $failResponse")
         }
     }
 }

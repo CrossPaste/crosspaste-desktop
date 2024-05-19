@@ -74,10 +74,10 @@ import com.clipevery.net.DesktopClipServer
 import com.clipevery.net.DesktopSyncInfoFactory
 import com.clipevery.net.SyncInfoFactory
 import com.clipevery.net.SyncRefresher
-import com.clipevery.net.clientapi.DesktopPullFileClientApi
+import com.clipevery.net.clientapi.DesktopPullClientApi
 import com.clipevery.net.clientapi.DesktopSendClipClientApi
 import com.clipevery.net.clientapi.DesktopSyncClientApi
-import com.clipevery.net.clientapi.PullFileClientApi
+import com.clipevery.net.clientapi.PullClientApi
 import com.clipevery.net.clientapi.SendClipClientApi
 import com.clipevery.net.clientapi.SyncClientApi
 import com.clipevery.path.DesktopPathProvider
@@ -101,6 +101,7 @@ import com.clipevery.task.DeleteClipTaskExecutor
 import com.clipevery.task.DesktopTaskExecutor
 import com.clipevery.task.Html2ImageTaskExecutor
 import com.clipevery.task.PullFileTaskExecutor
+import com.clipevery.task.PullIconTaskExecutor
 import com.clipevery.task.SyncClipTaskExecutor
 import com.clipevery.task.TaskExecutor
 import com.clipevery.ui.DesktopThemeDetector
@@ -184,7 +185,7 @@ class Clipevery {
                     single<RealmManager> { RealmManagerImpl.createRealmManager(get()) }
                     single<SignalDao> { SignalRealm(get<RealmManager>().realm) }
                     single<SyncRuntimeInfoDao> { SyncRuntimeInfoRealm(get<RealmManager>().realm) }
-                    single<ClipDao> { ClipRealm(get<RealmManager>().realm, lazy { get() }) }
+                    single<ClipDao> { ClipRealm(get<RealmManager>().realm, get(), lazy { get() }) }
                     single<ClipTaskDao> { ClipTaskRealm(get<RealmManager>().realm) }
 
                     // net component
@@ -194,7 +195,7 @@ class Clipevery {
                     single<TelnetUtils> { TelnetUtils(get<ClipClient>()) }
                     single<SyncClientApi> { DesktopSyncClientApi(get(), get()) }
                     single<SendClipClientApi> { DesktopSendClipClientApi(get(), get()) }
-                    single<PullFileClientApi> { DesktopPullFileClientApi(get(), get()) }
+                    single<PullClientApi> { DesktopPullClientApi(get(), get()) }
                     single { DesktopSyncManager(get(), get(), get(), get(), get(), lazy { get() }) }
                     single<SyncRefresher> { get<DesktopSyncManager>() }
                     single<SyncManager> { get<DesktopSyncManager>() }
@@ -243,6 +244,7 @@ class Clipevery {
                                 PullFileTaskExecutor(get(), get(), get(), get()),
                                 CleanClipTaskExecutor(get(), get()),
                                 Html2ImageTaskExecutor(get(), get(), get()),
+                                PullIconTaskExecutor(get(), get(), get(), get()),
                             ),
                             get(),
                         )

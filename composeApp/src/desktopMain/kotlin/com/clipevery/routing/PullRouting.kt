@@ -1,10 +1,12 @@
 package com.clipevery.routing
 
 import com.clipevery.Clipevery
+import com.clipevery.app.AppFileType
 import com.clipevery.clip.CacheManager
 import com.clipevery.dto.pull.PullFileRequest
 import com.clipevery.dto.pull.PullFilesKey
 import com.clipevery.exception.StandardErrorCode
+import com.clipevery.path.PathProvider
 import com.clipevery.sync.SyncManager
 import com.clipevery.utils.failResponse
 import com.clipevery.utils.getAppInstanceId
@@ -15,6 +17,7 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.utils.io.*
+import kotlin.io.path.exists
 
 fun Routing.pullRouting() {
     val logger = KotlinLogging.logger {}
@@ -24,6 +27,8 @@ fun Routing.pullRouting() {
     val syncManager = koinApplication.koin.get<SyncManager>()
 
     val cacheManager = koinApplication.koin.get<CacheManager>()
+
+    val pathProvider = koinApplication.koin.get<PathProvider>()
 
     val fileUtils = getFileUtils()
 
@@ -61,5 +66,26 @@ fun Routing.pullRouting() {
                 }
             }
         }
+    }
+
+    get("/pull/icon/{source}") {
+        val source =
+            call.parameters["source"] ?: run {
+                logger.error { "source is null" }
+                failResponse(call, StandardErrorCode.NOT_FOUND_SOURCE.toErrorCode())
+                return@get
+            }
+
+        val iconPath = pathProvider.resolve("$source.png", AppFileType.ICON)
+        if (!iconPath.exists()) {
+            logger.error { "icon not found: $source" }
+            failResponse(call, StandardErrorCode.NOT_FOUND_ICON.toErrorCode())
+            return@get
+        }
+
+        val producer: suspend ByteWriteChannel.() -> Unit = {
+            fileUtils.readFile(iconPath, this)
+        }
+        successResponse(call, producer)
     }
 }

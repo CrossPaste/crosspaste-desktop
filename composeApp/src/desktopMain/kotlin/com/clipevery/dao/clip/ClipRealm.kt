@@ -1,5 +1,6 @@
 package com.clipevery.dao.clip
 
+import com.clipevery.app.AppFileType
 import com.clipevery.clip.ClipPlugin
 import com.clipevery.clip.item.FilesClipItem
 import com.clipevery.clip.item.HtmlClipItem
@@ -7,6 +8,7 @@ import com.clipevery.clip.item.ImagesClipItem
 import com.clipevery.clip.item.TextClipItem
 import com.clipevery.clip.item.UrlClipItem
 import com.clipevery.dao.task.TaskType
+import com.clipevery.path.PathProvider
 import com.clipevery.task.TaskExecutor
 import com.clipevery.task.extra.SyncExtraInfo
 import com.clipevery.utils.LoggerExtension.logExecutionTime
@@ -24,9 +26,11 @@ import io.realm.kotlin.types.RealmAny
 import io.realm.kotlin.types.RealmInstant
 import io.realm.kotlin.types.RealmObject
 import org.mongodb.kbson.ObjectId
+import kotlin.io.path.exists
 
 class ClipRealm(
     private val realm: Realm,
+    private val pathProvider: PathProvider,
     private val lazyTaskExecutor: Lazy<TaskExecutor>,
 ) : ClipDao {
 
@@ -326,6 +330,10 @@ class ClipRealm(
     ) {
         val tasks = mutableListOf<ObjectId>()
         val existFile = clipData.existFileResource()
+        val existIconFile: Boolean? =
+            clipData.source?.let {
+                pathProvider.resolve("$it.png", AppFileType.ICON).exists()
+            }
 
         realm.write(block = {
             query(ClipData::class, "id == $0 AND clipState != $1", clipData.id, ClipState.DELETED).first().find()?.let {
@@ -341,6 +349,15 @@ class ClipRealm(
                 copyToRealm(pullFileTask)
                 tasks.add(pullFileTask.taskId)
             }
+
+            existIconFile?.let {
+                if (!it) {
+                    val pullIconTask = createTask(clipData.id, TaskType.PULL_ICON_TASK)
+                    copyToRealm(pullIconTask)
+                    tasks.add(pullIconTask.taskId)
+                }
+            }
+
             return@write clipData
         })?.let {
             tryWriteClipboard(clipData, existFile)
