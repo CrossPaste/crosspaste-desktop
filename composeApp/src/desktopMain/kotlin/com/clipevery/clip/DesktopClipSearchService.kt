@@ -141,14 +141,18 @@ class DesktopClipSearchService(
         val prevSelectedId: ObjectId? = _currentClipData.value?.id
         this.searchResult.clear()
         this.searchResult.addAll(searchResult)
-        prevSelectedId?.let { id ->
-            val newSelectedIndex = searchResult.indexOfFirst { it.id == id }
-            if (newSelectedIndex >= 0) {
-                this.selectedIndex = newSelectedIndex
-            } else {
+        if (appWindowManager.showSearchWindow) {
+            prevSelectedId?.let { id ->
+                val newSelectedIndex = searchResult.indexOfFirst { it.id == id }
+                if (newSelectedIndex >= 0) {
+                    this.selectedIndex = newSelectedIndex
+                } else {
+                    this.selectedIndex = 0
+                }
+            } ?: run {
                 this.selectedIndex = 0
             }
-        } ?: run {
+        } else {
             this.selectedIndex = 0
         }
         setCurrentClipData()
@@ -178,7 +182,6 @@ class DesktopClipSearchService(
 
     override suspend fun unActiveWindow() {
         appWindowManager.unActiveSearchWindow { false }
-        searchResult.clear()
         innerSetSelectedIndex(0)
     }
 
@@ -189,7 +192,6 @@ class DesktopClipSearchService(
                 true
             } ?: false
         }
-        searchResult.clear()
         innerSetSelectedIndex(0)
     }
 }
