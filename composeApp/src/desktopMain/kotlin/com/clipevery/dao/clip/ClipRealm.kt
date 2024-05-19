@@ -348,14 +348,16 @@ class ClipRealm(
                 copyToRealm(clipData)
                 copyToRealm(pullFileTask)
                 tasks.add(pullFileTask.taskId)
-                existIconFile?.let {
-                    if (!it) {
-                        val pullIconTask = createTask(clipData.id, TaskType.PULL_ICON_TASK)
-                        copyToRealm(pullIconTask)
-                        tasks.add(pullIconTask.taskId)
-                    }
+            }
+
+            existIconFile?.let {
+                if (!it) {
+                    val pullIconTask = createTask(clipData.id, TaskType.PULL_ICON_TASK)
+                    copyToRealm(pullIconTask)
+                    tasks.add(pullIconTask.taskId)
                 }
             }
+
             return@write clipData
         })?.let {
             tryWriteClipboard(clipData, existFile)
