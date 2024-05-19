@@ -3,9 +3,6 @@ package com.clipevery.clip
 import com.clipevery.app.AppWindowManager
 import com.clipevery.config.ConfigManager
 import com.clipevery.dao.clip.ClipDao
-import com.clipevery.os.linux.LinuxClipboardService
-import com.clipevery.os.macos.MacosClipboardService
-import com.clipevery.os.windows.WindowsClipboardService
 import com.clipevery.platform.currentPlatform
 
 fun getDesktopClipboardService(

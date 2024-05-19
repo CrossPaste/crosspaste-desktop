@@ -36,6 +36,15 @@ interface ClipboardService : ClipboardMonitor, ClipboardOwner {
         return contents != null && contents.transferDataFlavors.isNotEmpty()
     }
 
+    fun getClipboardContentsBySafe(): Transferable? {
+        return try {
+            systemClipboard.getContents(null)
+        } catch (e: Exception) {
+            logger.error(e) { "getContentsBySafe error" }
+            null
+        }
+    }
+
     suspend fun tryWriteClipboard(
         clipData: ClipData,
         localOnly: Boolean = false,

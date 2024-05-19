@@ -8,6 +8,8 @@ import androidx.compose.ui.unit.dp
 import com.clipevery.platform.currentPlatform
 import com.clipevery.utils.ioDispatcher
 import com.clipevery.utils.mainDispatcher
+import io.github.oshai.kotlinlogging.KLogger
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,6 +22,8 @@ import kotlinx.coroutines.withContext
 import kotlin.random.Random
 
 object DesktopAppWindowManager : AppWindowManager {
+
+    private val logger: KLogger = KotlinLogging.logger {}
 
     private val currentPlatform = currentPlatform()
 
@@ -91,7 +95,12 @@ object DesktopAppWindowManager : AppWindowManager {
     }
 
     override fun getCurrentActiveAppName(): String? {
-        return windowManager.getCurrentActiveAppName()
+        return try {
+            windowManager.getCurrentActiveAppName()
+        } catch (e: Exception) {
+            logger.error(e) { "getCurrentActiveAppName fail" }
+            null
+        }
     }
 
     override fun activeMainWindow() {

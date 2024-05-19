@@ -1,13 +1,12 @@
-package com.clipevery.os.windows
+package com.clipevery.clip
 
 import com.clipevery.app.AppWindowManager
-import com.clipevery.clip.ClipboardService
-import com.clipevery.clip.TransferableConsumer
-import com.clipevery.clip.TransferableProducer
 import com.clipevery.config.ConfigManager
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.os.windows.api.User32
 import com.clipevery.platform.currentPlatform
+import com.clipevery.utils.ControlUtils.blockEnsureMinExecutionTime
+import com.clipevery.utils.ControlUtils.blockExponentialBackoffUntilValid
 import com.clipevery.utils.cpuDispatcher
 import com.clipevery.utils.ioDispatcher
 import com.sun.jna.Pointer
@@ -27,7 +26,6 @@ import kotlinx.coroutines.launch
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.Transferable
-import kotlin.math.min
 
 class WindowsClipboardService(
     override val appWindowManager: AppWindowManager,
@@ -161,40 +159,20 @@ class WindowsClipboardService(
     }
 
     private fun onChange() {
-        var contents: Transferable? = null
-        var waitTime = 20L
-        var totalWaitTime = 0L
         try {
-            val start = System.currentTimeMillis()
-            val source = appWindowManager.getCurrentActiveAppName()
-            val end = System.currentTimeMillis()
-
-            val delay = waitTime + start - end
-
-            if (delay > 0) {
-                Thread.sleep(delay)
-            }
-
-            try {
-                contents = systemClipboard.getContents(null)
-            } catch (e: IllegalStateException) {
-                logger.warn(e) { "systemClipboard get contents fail" }
-            }
-
-            while (!isValidContents(contents) && totalWaitTime + waitTime <= 1000) {
-                Thread.sleep(waitTime)
-                totalWaitTime += waitTime
-                waitTime = min(waitTime * 2, 1000)
-                try {
-                    contents = systemClipboard.getContents(null)
-                } catch (e: IllegalStateException) {
-                    logger.warn(e) { "systemClipboard get contents fail" }
+            val source =
+                blockEnsureMinExecutionTime(delayTime = 20) {
+                    appWindowManager.getCurrentActiveAppName()
                 }
-                if (contents == null && totalWaitTime + waitTime > 1000) {
-                    logger.error { "systemClipboard get contents timeout" }
-                    break
+
+            val contents =
+                blockExponentialBackoffUntilValid(
+                    initTime = 20L,
+                    maxTime = 1000L,
+                    isValidResult = ::isValidContents,
+                ) {
+                    getClipboardContentsBySafe()
                 }
-            }
 
             contents?.let {
                 serviceConsumerScope.launch(CoroutineName("WindowsClipboardConsumer")) {
