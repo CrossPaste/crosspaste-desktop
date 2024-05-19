@@ -99,7 +99,7 @@ fun ClipPreviewItemView(
                 modifier =
                     Modifier.fillMaxWidth()
                         .height(120.dp)
-                        .padding(10.dp, 10.dp, 0.dp, 10.dp),
+                        .padding(10.dp, 5.dp, 0.dp, 5.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 clipData.clipContent()

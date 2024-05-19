@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -93,14 +92,9 @@ fun ClipPreviewsView() {
             itemsIndexed(
                 rememberClipDataList,
                 key = { _, item -> item.id },
-            ) { index, clipData ->
+            ) { _, clipData ->
                 ClipPreviewItemView(clipData) {
                     ClipSpecificPreviewView(this)
-                }
-                if (index != rememberClipDataList.size - 1) {
-                    Divider(
-                        thickness = 2.dp,
-                    )
                 }
             }
         }
