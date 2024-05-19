@@ -1,13 +1,12 @@
-package com.clipevery.os.linux
+package com.clipevery.clip
 
 import com.clipevery.app.AppWindowManager
-import com.clipevery.clip.ClipboardService
-import com.clipevery.clip.TransferableConsumer
-import com.clipevery.clip.TransferableProducer
 import com.clipevery.config.ConfigManager
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.os.linux.api.X11Api
 import com.clipevery.os.linux.api.XFixes
+import com.clipevery.utils.ControlUtils.ensureMinExecutionTime
+import com.clipevery.utils.ControlUtils.exponentialBackoffUntilValid
 import com.clipevery.utils.cpuDispatcher
 import com.sun.jna.NativeLong
 import com.sun.jna.platform.unix.X11
@@ -19,7 +18,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.awt.Toolkit
@@ -33,6 +31,11 @@ class LinuxClipboardService(
     override val clipConsumer: TransferableConsumer,
     override val clipProducer: TransferableProducer,
 ) : ClipboardService {
+
+    companion object {
+        const val XFIXES_SET_SELECTION_OWNER_NOTIFY_MASK = (1 shl 0).toLong()
+    }
+
     override val logger: KLogger = KotlinLogging.logger {}
 
     private var changeCount = configManager.config.lastClipboardChangeCount
@@ -62,8 +65,6 @@ class LinuxClipboardService(
             val x11 = X11Api.INSTANCE
             x11.XOpenDisplay(null)?.let { display ->
                 try {
-                    val XFixesSetSelectionOwnerNotifyMask = (1 shl 0).toLong()
-
                     val rootWindow = x11.XDefaultRootWindow(display)
                     val clipboardAtom = x11.XInternAtom(display, "CLIPBOARD", false)
 
@@ -71,38 +72,45 @@ class LinuxClipboardService(
                         display,
                         rootWindow,
                         XA_PRIMARY,
-                        NativeLong(XFixesSetSelectionOwnerNotifyMask),
+                        NativeLong(XFIXES_SET_SELECTION_OWNER_NOTIFY_MASK),
                     )
                     XFixes.INSTANCE.XFixesSelectSelectionInput(
                         display,
                         rootWindow,
                         clipboardAtom,
-                        NativeLong(XFixesSetSelectionOwnerNotifyMask),
+                        NativeLong(XFIXES_SET_SELECTION_OWNER_NOTIFY_MASK),
                     )
 
                     val event = X11.XEvent()
                     while (isActive) {
-                        x11.XNextEvent(display, event)
+                        try {
+                            x11.XNextEvent(display, event)
 
-                        logger.info { "notify change event" }
-                        changeCount++
-                        val start = System.currentTimeMillis()
-                        val source = appWindowManager.getCurrentActiveAppName()
-                        val end = System.currentTimeMillis()
+                            logger.info { "notify change event" }
+                            changeCount++
 
-                        val delay = 20 + start - end
+                            val source =
+                                ensureMinExecutionTime(delayTime = 20) {
+                                    appWindowManager.getCurrentActiveAppName()
+                                }
 
-                        if (delay > 0) {
-                            delay(delay)
-                        }
-
-                        val contents = getContents()
-                        if (contents != ownerTransferable) {
-                            contents?.let {
-                                launch(CoroutineName("MacClipboardServiceConsumer")) {
-                                    clipConsumer.consume(it, source, remote = false)
+                            val contents =
+                                exponentialBackoffUntilValid(
+                                    initTime = 20L,
+                                    maxTime = 1000L,
+                                    isValidResult = ::isValidContents,
+                                ) {
+                                    getClipboardContentsBySafe()
+                                }
+                            if (contents != ownerTransferable) {
+                                contents?.let {
+                                    launch(CoroutineName("LinuxClipboardServiceConsumer")) {
+                                        clipConsumer.consume(it, source, remote = false)
+                                    }
                                 }
                             }
+                        } catch (e: Exception) {
+                            logger.error(e) { "Failed to consume transferable" }
                         }
                     }
                 } finally {
@@ -110,19 +118,6 @@ class LinuxClipboardService(
                 }
             }
         }
-    }
-
-    private suspend fun getContents(): Transferable? {
-        var contents = systemClipboard.getContents(null)
-        var sum = 0L
-        var waiting = 20L
-        while (!isValidContents(contents) && sum < 1000L) {
-            delay(waiting)
-            sum += waiting
-            waiting *= 2
-            contents = systemClipboard.getContents(null)
-        }
-        return contents
     }
 
     override fun start() {

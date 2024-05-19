@@ -1,12 +1,11 @@
-package com.clipevery.os.macos
+package com.clipevery.clip
 
 import com.clipevery.app.AppWindowManager
-import com.clipevery.clip.ClipboardService
-import com.clipevery.clip.TransferableConsumer
-import com.clipevery.clip.TransferableProducer
 import com.clipevery.config.ConfigManager
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.os.macos.api.MacosApi
+import com.clipevery.utils.ControlUtils.ensureMinExecutionTime
+import com.clipevery.utils.ControlUtils.exponentialBackoffUntilValid
 import com.clipevery.utils.cpuDispatcher
 import com.sun.jna.ptr.IntByReference
 import io.github.oshai.kotlinlogging.KLogger
@@ -70,17 +69,19 @@ class MacosClipboardService(
                                 if (isClipevery.value != 0) {
                                     logger.debug { "Ignoring clipevery change" }
                                 } else {
-                                    val start = System.currentTimeMillis()
-                                    val source = appWindowManager.getCurrentActiveAppName()
-                                    val end = System.currentTimeMillis()
+                                    val source =
+                                        ensureMinExecutionTime(delayTime = 20) {
+                                            appWindowManager.getCurrentActiveAppName()
+                                        }
 
-                                    val delay = 20 + start - end
-
-                                    if (delay > 0) {
-                                        delay(delay)
-                                    }
-
-                                    val contents = getContents()
+                                    val contents =
+                                        exponentialBackoffUntilValid(
+                                            initTime = 20L,
+                                            maxTime = 1000L,
+                                            isValidResult = ::isValidContents,
+                                        ) {
+                                            getClipboardContentsBySafe()
+                                        }
                                     if (contents != ownerTransferable) {
                                         contents?.let {
                                             launch(CoroutineName("MacClipboardServiceConsumer")) {
@@ -97,19 +98,6 @@ class MacosClipboardService(
                 delay(280L)
             }
         }
-    }
-
-    private suspend fun getContents(): Transferable? {
-        var contents = systemClipboard.getContents(null)
-        var sum = 0L
-        var waiting = 20L
-        while (!isValidContents(contents) && sum < 1000L) {
-            delay(waiting)
-            sum += waiting
-            waiting *= 2
-            contents = systemClipboard.getContents(null)
-        }
-        return contents
     }
 
     override fun lostOwnership(
