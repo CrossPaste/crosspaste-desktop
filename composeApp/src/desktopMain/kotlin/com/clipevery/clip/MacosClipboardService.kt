@@ -84,6 +84,7 @@ class MacosClipboardService(
                                         }
                                     if (contents != ownerTransferable) {
                                         contents?.let {
+                                            ownerTransferable = it
                                             launch(CoroutineName("MacClipboardServiceConsumer")) {
                                                 clipConsumer.consume(it, source, remote.value != 0)
                                             }

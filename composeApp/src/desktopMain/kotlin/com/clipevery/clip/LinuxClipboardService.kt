@@ -5,11 +5,15 @@ import com.clipevery.config.ConfigManager
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.os.linux.api.X11Api
 import com.clipevery.os.linux.api.XFixes
+import com.clipevery.os.linux.api.XFixesSelectionNotifyEvent
 import com.clipevery.utils.DesktopControlUtils.ensureMinExecutionTime
 import com.clipevery.utils.DesktopControlUtils.exponentialBackoffUntilValid
 import com.clipevery.utils.cpuDispatcher
 import com.sun.jna.NativeLong
+import com.sun.jna.Structure
 import com.sun.jna.platform.unix.X11
+import com.sun.jna.platform.unix.X11.XA_PRIMARY
+import com.sun.jna.ptr.IntByReference
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
@@ -67,6 +71,21 @@ class LinuxClipboardService(
                     val rootWindow = x11.XDefaultRootWindow(display)
                     val clipboardAtom = x11.XInternAtom(display, "CLIPBOARD", false)
 
+                    val eventBaseReturnBuffer = IntByReference()
+                    val errorBaseReturnBuffer = IntByReference()
+
+                    if (XFixes.INSTANCE.XFixesQueryExtension(display, eventBaseReturnBuffer, errorBaseReturnBuffer) == 0) {
+                        throw RuntimeException("XFixes extension missing")
+                    }
+
+                    val eventBaseReturn = eventBaseReturnBuffer.value
+
+                    XFixes.INSTANCE.XFixesSelectSelectionInput(
+                        display,
+                        rootWindow,
+                        XA_PRIMARY,
+                        NativeLong(XFIXES_SET_SELECTION_OWNER_NOTIFY_MASK),
+                    )
                     XFixes.INSTANCE.XFixesSelectSelectionInput(
                         display,
                         rootWindow,
@@ -79,26 +98,39 @@ class LinuxClipboardService(
                         try {
                             x11.XNextEvent(display, event)
 
-                            logger.info { "notify change event" }
-                            changeCount++
+                            if (event.type == (eventBaseReturn + XFixes.XFixesSelectionNotify)) {
+                                val selectionNotify: XFixesSelectionNotifyEvent =
+                                    Structure.newInstance(
+                                        XFixesSelectionNotifyEvent::class.java,
+                                        event.getPointer(),
+                                    )
+                                selectionNotify.read()
 
-                            val source =
-                                ensureMinExecutionTime(delayTime = 20) {
-                                    appWindowManager.getCurrentActiveAppName()
-                                }
+                                // Ignore selected events and keep copy events
+                                if (selectionNotify.selection?.toLong() == 0x145L) {
+                                    logger.info { "notify change event" }
+                                    changeCount++
 
-                            val contents =
-                                exponentialBackoffUntilValid(
-                                    initTime = 20L,
-                                    maxTime = 1000L,
-                                    isValidResult = ::isValidContents,
-                                ) {
-                                    getClipboardContentsBySafe()
-                                }
-                            if (contents != ownerTransferable) {
-                                contents?.let {
-                                    launch(CoroutineName("LinuxClipboardServiceConsumer")) {
-                                        clipConsumer.consume(it, source, remote = false)
+                                    val source =
+                                        ensureMinExecutionTime(delayTime = 20) {
+                                            appWindowManager.getCurrentActiveAppName()
+                                        }
+
+                                    val contents =
+                                        exponentialBackoffUntilValid(
+                                            initTime = 20L,
+                                            maxTime = 1000L,
+                                            isValidResult = ::isValidContents,
+                                        ) {
+                                            getClipboardContentsBySafe()
+                                        }
+                                    if (contents != ownerTransferable) {
+                                        contents?.let {
+                                            ownerTransferable = it
+                                            launch(CoroutineName("LinuxClipboardServiceConsumer")) {
+                                                clipConsumer.consume(it, source, remote = false)
+                                            }
+                                        }
                                     }
                                 }
                             }
