@@ -32,7 +32,7 @@ class DesktopPullClientApi(
                 urlBuilder = toUrl,
             )
 
-        return result(response, "file")
+        return result(response, "file", pullFileRequest)
     }
 
     override suspend fun pullIcon(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult {
@@ -42,21 +42,22 @@ class DesktopPullClientApi(
                 urlBuilder = toUrl,
             )
 
-        return result(response, "icon")
+        return result(response, "icon", response.request.url)
     }
 
     @OptIn(InternalAPI::class)
     private suspend fun result(
         response: HttpResponse,
         api: String,
+        key: Any,
     ): ClientApiResult {
         return if (response.status.value == 200) {
             logger.debug { "Success to pull $api" }
             SuccessResult(response.content)
         } else {
             val failResponse = response.body<FailResponse>()
-            logger.error { "Fail to pull $api: ${response.status.value} $failResponse" }
-            FailureResult("Fail to pull $api: ${response.status.value} $failResponse")
+            logger.error { "Fail to pull $api $key: ${response.status.value} $failResponse" }
+            FailureResult("Fail to pull $api $key: ${response.status.value} $failResponse")
         }
     }
 }
