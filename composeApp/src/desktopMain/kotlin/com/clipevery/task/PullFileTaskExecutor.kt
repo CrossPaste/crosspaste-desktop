@@ -9,7 +9,7 @@ import com.clipevery.dao.task.TaskType
 import com.clipevery.dto.pull.PullFileRequest
 import com.clipevery.net.clientapi.ClientApiResult
 import com.clipevery.net.clientapi.FailureResult
-import com.clipevery.net.clientapi.PullFileClientApi
+import com.clipevery.net.clientapi.PullClientApi
 import com.clipevery.net.clientapi.SuccessResult
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.presist.FilesIndex
@@ -29,7 +29,7 @@ import io.ktor.utils.io.*
 
 class PullFileTaskExecutor(
     private val clipDao: ClipDao,
-    private val pullFileClientApi: PullFileClientApi,
+    private val pullClientApi: PullClientApi,
     private val syncManager: SyncManager,
     private val clipboardService: ClipboardService,
 ) : SingleTypeTaskExecutor {
@@ -121,7 +121,7 @@ class PullFileTaskExecutor(
                         try {
                             filesIndex.getChunk(chunkIndex)?.let { filesChunk ->
                                 val pullFileRequest = PullFileRequest(clipData.appInstanceId, clipData.clipId, chunkIndex)
-                                val result = pullFileClientApi.pullFile(pullFileRequest, toUrl)
+                                val result = pullClientApi.pullFile(pullFileRequest, toUrl)
                                 if (result is SuccessResult) {
                                     val byteReadChannel = result.getResult<ByteReadChannel>()
                                     fileUtils.writeFilesChunk(filesChunk, byteReadChannel)

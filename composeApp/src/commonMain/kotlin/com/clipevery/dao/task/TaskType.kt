@@ -8,4 +8,5 @@ object TaskType {
     const val PULL_FILE_TASK = 2
     const val CLEAN_CLIP_TASK = 3
     const val HTML_TO_IMAGE_TASK = 4
+    const val PULL_ICON_TASK = 5
 }

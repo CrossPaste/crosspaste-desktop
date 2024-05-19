@@ -68,9 +68,19 @@ interface FileUtils {
         length: Long,
     ): Boolean
 
+    suspend fun writeFile(
+        path: Path,
+        byteReadChannel: ByteReadChannel,
+    )
+
     suspend fun writeFilesChunk(
         filesChunk: FilesChunk,
         byteReadChannel: ByteReadChannel,
+    )
+
+    suspend fun readFile(
+        path: Path,
+        byteWriteChannel: ByteWriteChannel,
     )
 
     suspend fun readFilesChunk(

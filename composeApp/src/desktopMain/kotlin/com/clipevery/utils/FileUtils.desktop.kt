@@ -228,6 +228,22 @@ object DesktopFileUtils : FileUtils {
         }
     }
 
+    override suspend fun writeFile(
+        path: Path,
+        byteReadChannel: ByteReadChannel,
+    ) {
+        val buffer = ByteArray(8192 * 10)
+        path.toFile().outputStream().use { outputStream ->
+            while (true) {
+                val readSize = byteReadChannel.readAvailable(buffer)
+                if (readSize == -1) {
+                    break
+                }
+                outputStream.write(buffer, 0, readSize)
+            }
+        }
+    }
+
     override suspend fun writeFilesChunk(
         filesChunk: FilesChunk,
         byteReadChannel: ByteReadChannel,
@@ -274,6 +290,22 @@ object DesktopFileUtils : FileUtils {
                     byteWriteChannel.writeFully(buffer, 0, readSize)
                     remaining -= readSize
                 }
+            }
+        }
+    }
+
+    override suspend fun readFile(
+        path: Path,
+        byteWriteChannel: ByteWriteChannel,
+    ) {
+        val buffer = ByteArray(8192 * 10)
+        path.toFile().inputStream().use { inputStream ->
+            while (true) {
+                val readSize = inputStream.read(buffer)
+                if (readSize == -1) {
+                    break
+                }
+                byteWriteChannel.writeFully(buffer, 0, readSize)
             }
         }
     }
