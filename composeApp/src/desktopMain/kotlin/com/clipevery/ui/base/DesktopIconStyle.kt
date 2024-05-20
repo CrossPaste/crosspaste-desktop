@@ -1,0 +1,84 @@
+package com.clipevery.ui.base
+
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.res.loadImageBitmap
+import com.clipevery.app.AppFileType
+import com.clipevery.path.DesktopPathProvider
+import com.google.common.cache.CacheBuilder
+import com.google.common.cache.CacheLoader
+import com.google.common.cache.LoadingCache
+import kotlin.io.path.exists
+import kotlin.io.path.inputStream
+
+object DesktopIconStyle : IconStyle {
+
+    private val iconStyleCache: LoadingCache<String, Boolean> =
+        CacheBuilder.newBuilder()
+            .maximumSize(1000)
+            .build(
+                object : CacheLoader<String, Boolean>() {
+                    override fun load(key: String): Boolean {
+                        val iconPath = DesktopPathProvider.resolve("$key.png", AppFileType.ICON)
+                        if (iconPath.exists()) {
+                            println("exist $key")
+                            val imageBitmap = iconPath.inputStream().use { it.buffered().use(::loadImageBitmap) }
+                            return checkMacStyleIcon(imageBitmap)
+                        } else {
+                            println("no exist $key")
+                            return false
+                        }
+                    }
+                },
+            )
+
+    override fun isMacStyleIcon(source: String): Boolean {
+        return iconStyleCache.get(source)
+    }
+
+    override fun refreshStyle(source: String) {
+        iconStyleCache.refresh(source)
+    }
+
+    private fun checkMacStyleIcon(imageBitmap: ImageBitmap): Boolean {
+        val width = imageBitmap.width
+        val height = imageBitmap.height
+        val edgeWidth = width / 12 // Width of the border is 1/12th of the image width
+        val sampleRate = maxOf(1, edgeWidth / 5) // Define sampling rate, at least 1, meaning check at least every 5 pixels
+
+        val pixelMap = imageBitmap.toPixelMap() // Convert once to avoid multiple conversions
+
+        fun isTransparent(
+            x: Int,
+            y: Int,
+        ): Boolean {
+            val pixel = pixelMap[x, y]
+            return pixel.alpha <= 0.01f
+        }
+
+        // Function to check the edge, taking start and end coordinates, and whether the check is horizontal or vertical
+        fun checkEdge(
+            start: Int,
+            end: Int,
+            isHorizontal: Boolean,
+        ): Boolean {
+            for (i in start until end step sampleRate) {
+                if (isHorizontal) {
+                    // Horizontal check, fix the y coordinate, change the x coordinate
+                    for (y in 0 until edgeWidth step sampleRate) {
+                        if (!isTransparent(i, y) || !isTransparent(i, height - 1 - y)) return false
+                    }
+                } else {
+                    // Vertical check, fix the x coordinate, change the y coordinate
+                    for (x in 0 until edgeWidth step sampleRate) {
+                        if (!isTransparent(x, i) || !isTransparent(width - 1 - x, i)) return false
+                    }
+                }
+            }
+            return true
+        }
+
+        // Check all four edges
+        return checkEdge(0, width, isHorizontal = true) && checkEdge(0, height, isHorizontal = false)
+    }
+}
