@@ -1,7 +1,6 @@
 package com.clipevery.ui.clip.detail
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollbarStyle
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
@@ -41,8 +40,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -54,10 +51,10 @@ import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.path.PathProvider
-import com.clipevery.platform.currentPlatform
+import com.clipevery.ui.base.AppImageIcon
+import com.clipevery.ui.base.IconStyle
 import com.clipevery.ui.base.starRegular
 import com.clipevery.ui.base.starSolid
-import com.clipevery.utils.getResourceUtils
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -74,7 +71,7 @@ fun ClipDetailInfoView(
     items: List<ClipDetailInfoItem>,
 ) {
     val current = LocalKoinApplication.current
-    val density = LocalDensity.current
+    val iconStyle = current.koin.get<IconStyle>()
     val copywriter = current.koin.get<GlobalCopywriter>()
     val clipDao = current.koin.get<ClipDao>()
     val pathProvider = current.koin.get<PathProvider>()
@@ -106,6 +103,20 @@ fun ClipDetailInfoView(
         )
         Spacer(modifier = Modifier.weight(1f))
         clipData.source?.let { source ->
+
+            val iconPath by remember(source) { mutableStateOf(pathProvider.resolve("$source.png", AppFileType.ICON)) }
+
+            val iconExist by remember(source) {
+                mutableStateOf(iconPath.toFile().exists())
+            }
+
+            if (iconExist) {
+                val isMacStyleIcon by remember(source) { mutableStateOf(iconStyle.isMacStyleIcon(source)) }
+                AppImageIcon(iconPath, isMacStyleIcon, 30.dp)
+            }
+
+            Spacer(modifier = Modifier.width(5.dp))
+
             Text(
                 text = source,
                 style =
@@ -116,17 +127,6 @@ fun ClipDetailInfoView(
                         fontSize = 12.sp,
                     ),
             )
-            Spacer(modifier = Modifier.width(5.dp))
-
-            val iconPath by remember(source) { mutableStateOf(pathProvider.resolve("$source.png", AppFileType.ICON)) }
-
-            val iconExist by remember(source) {
-                mutableStateOf(iconPath.toFile().exists())
-            }
-
-            if (iconExist) {
-                AppIcon(getResourceUtils().loadPainter(iconPath, density).toPainter())
-            }
         }
     }
     Spacer(modifier = Modifier.height(8.dp))
@@ -220,25 +220,5 @@ fun ClipDetailInfoView(
                     hoverColor = MaterialTheme.colors.onBackground,
                 ),
         )
-    }
-}
-
-@Composable
-fun AppIcon(painter: Painter) {
-    val currentPlatform = currentPlatform()
-    if (currentPlatform.isMacos()) {
-        Image(
-            modifier = Modifier.size(36.dp).offset(x = 3.dp),
-            painter = painter,
-            contentDescription = "app icon",
-        )
-    } else {
-        Box(modifier = Modifier.size(36.dp), contentAlignment = Alignment.Center) {
-            Image(
-                modifier = Modifier.size(30.dp).offset(x = 3.dp),
-                painter = painter,
-                contentDescription = "app icon",
-            )
-        }
     }
 }

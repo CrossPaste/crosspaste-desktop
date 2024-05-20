@@ -54,7 +54,9 @@ import com.clipevery.clip.item.ClipUrl
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.path.PathProvider
+import com.clipevery.ui.base.AppImageIcon
 import com.clipevery.ui.base.AsyncView
+import com.clipevery.ui.base.IconStyle
 import com.clipevery.ui.base.LoadIconData
 import com.clipevery.ui.base.LoadImageData
 import com.clipevery.ui.base.ToPainterImage
@@ -202,6 +204,7 @@ fun ClipTitleView(
 fun ClipTypeIconView(clipData: ClipData) {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
+    val iconStyle = current.koin.get<IconStyle>()
     val pathProvider = current.koin.get<PathProvider>()
     val faviconUtils = getFaviconUtils()
     val loadIconData =
@@ -234,7 +237,7 @@ fun ClipTypeIconView(clipData: ClipData) {
                     Icon(
                         painter = loadView.toPainterImage.toPainter(),
                         contentDescription = "Clip Icon",
-                        modifier = Modifier.padding(3.dp).size(18.dp),
+                        modifier = Modifier.padding(2.dp).size(20.dp),
                         tint = MaterialTheme.colors.onBackground,
                     )
                 }
@@ -242,7 +245,7 @@ fun ClipTypeIconView(clipData: ClipData) {
                     Image(
                         painter = loadView.toPainterImage.toPainter(),
                         contentDescription = "Clip Icon",
-                        modifier = Modifier.padding(3.dp).size(18.dp),
+                        modifier = Modifier.padding(2.dp).size(20.dp),
                     )
                 }
             }
@@ -251,23 +254,20 @@ fun ClipTypeIconView(clipData: ClipData) {
         Icon(
             painter = loadIconData.toPainterImage.toPainter(),
             contentDescription = "Clip Icon",
-            modifier = Modifier.padding(3.dp).size(18.dp),
+            modifier = Modifier.padding(2.dp).size(20.dp),
             tint = MaterialTheme.colors.onBackground,
         )
     } else {
         clipData.source?.let {
             val path = pathProvider.resolve("$it.png", AppFileType.ICON)
-            if (pathProvider.resolve("$it.png", AppFileType.ICON).exists()) {
-                Image(
-                    painter = getResourceUtils().loadPainter(path, density).toPainter(),
-                    contentDescription = "Clip Icon",
-                    modifier = Modifier.padding(3.dp).size(18.dp),
-                )
+            if (path.exists()) {
+                val isMacStyleIcon by remember(it) { mutableStateOf(iconStyle.isMacStyleIcon(it)) }
+                AppImageIcon(path = path, isMacStyleIcon = isMacStyleIcon)
             } else {
                 Icon(
                     painter = loadIconData.toPainterImage.toPainter(),
                     contentDescription = "Clip Icon",
-                    modifier = Modifier.padding(3.dp).size(18.dp),
+                    modifier = Modifier.padding(2.dp).size(20.dp),
                     tint = MaterialTheme.colors.onBackground,
                 )
             }
@@ -275,7 +275,7 @@ fun ClipTypeIconView(clipData: ClipData) {
             Icon(
                 painter = loadIconData.toPainterImage.toPainter(),
                 contentDescription = "Clip Icon",
-                modifier = Modifier.padding(3.dp).size(18.dp),
+                modifier = Modifier.padding(2.dp).size(20.dp),
                 tint = MaterialTheme.colors.onBackground,
             )
         }
