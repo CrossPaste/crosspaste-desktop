@@ -53,8 +53,8 @@ fun UrlPreviewView(clipData: ClipData) {
                         ),
                 )
             }
-        }, {
-            ClipMenuView(clipData = clipData)
+        }, { hover ->
+            ClipMenuView(clipData = clipData, hover = hover)
         })
     }
 }

@@ -32,8 +32,8 @@ fun FilesPreviewView(clipData: ClipData) {
                     }
                 }
             }
-        }, {
-            ClipMenuView(clipData = clipData)
+        }, { hover ->
+            ClipMenuView(clipData = clipData, hover)
         })
     }
 }
