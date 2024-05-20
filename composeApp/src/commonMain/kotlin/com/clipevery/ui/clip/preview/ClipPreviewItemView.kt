@@ -3,9 +3,11 @@ package com.clipevery.ui.clip.preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,10 +18,17 @@ import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.dp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.clip.ClipboardService
@@ -148,26 +157,53 @@ fun getTypeText(clipType: Int): String {
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ClipSpecificPreviewContentView(
-    clipLeftContent: @Composable () -> Unit,
-    clipRightInfo: @Composable () -> Unit,
+    clipMainContent: @Composable () -> Unit,
+    clipRightInfo: @Composable (Boolean) -> Unit,
 ) {
-    Row(modifier = Modifier.fillMaxSize()) {
-        BoxWithConstraints(
-            modifier =
-                Modifier
-                    .fillMaxHeight().width(400.dp)
-                    .clip(RoundedCornerShape(5.dp))
-                    .background(color = MaterialTheme.colors.background),
-        ) {
-            clipLeftContent()
+    var hover by remember { mutableStateOf(false) }
+
+    Box(
+        modifier =
+            Modifier.fillMaxSize()
+                .onPointerEvent(
+                    eventType = PointerEventType.Enter,
+                    onEvent = {
+                        hover = true
+                    },
+                )
+                .onPointerEvent(
+                    eventType = PointerEventType.Exit,
+                    onEvent = {
+                        hover = false
+                    },
+                ),
+    ) {
+        Row(modifier = Modifier.fillMaxSize()) {
+            BoxWithConstraints(
+                modifier =
+                    Modifier
+                        .fillMaxHeight().width(420.dp)
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(color = MaterialTheme.colors.background),
+            ) {
+                clipMainContent()
+            }
         }
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Top,
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Start,
         ) {
-            clipRightInfo()
+            Spacer(modifier = Modifier.weight(1f))
+            Column(
+                modifier = Modifier.width(30.dp),
+                verticalArrangement = Arrangement.Top,
+            ) {
+                clipRightInfo(hover)
+            }
+            Spacer(modifier = Modifier.width(10.dp))
         }
     }
 }

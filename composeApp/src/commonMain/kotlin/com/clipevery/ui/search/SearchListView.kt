@@ -60,7 +60,7 @@ import com.clipevery.ui.base.IconStyle
 import com.clipevery.ui.base.LoadIconData
 import com.clipevery.ui.base.LoadImageData
 import com.clipevery.ui.base.ToPainterImage
-import com.clipevery.ui.clip.ClipTypeIconView
+import com.clipevery.ui.clip.ClipTypeIconBaseView
 import com.clipevery.ui.clip.preview.getClipItem
 import com.clipevery.ui.clip.title.getClipTitle
 import com.clipevery.utils.getFaviconUtils
@@ -213,7 +213,7 @@ fun ClipTypeIconView(clipData: ClipData) {
             object : ToPainterImage {
                 @Composable
                 override fun toPainter(): Painter {
-                    return ClipTypeIconView(clipData.clipType)
+                    return ClipTypeIconBaseView(clipData.clipType)
                 }
             },
         )

@@ -11,7 +11,7 @@ import com.clipevery.ui.base.question
 import com.clipevery.ui.base.text
 
 @Composable
-fun ClipTypeIconView(clipType: Int): Painter {
+fun ClipTypeIconBaseView(clipType: Int): Painter {
     return when (clipType) {
         ClipType.TEXT -> {
             text()
