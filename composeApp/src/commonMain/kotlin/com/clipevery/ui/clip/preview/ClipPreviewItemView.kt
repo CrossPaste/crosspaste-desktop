@@ -70,7 +70,7 @@ fun ClipPreviewItemView(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(120.dp)
+                .height(110.dp)
                 .onClick(
                     onDoubleClick = {
                         if (clipData.clipState == ClipState.LOADED) {
@@ -93,12 +93,12 @@ fun ClipPreviewItemView(
         Column(
             modifier =
                 Modifier.fillMaxWidth()
-                    .height(120.dp),
+                    .height(110.dp),
         ) {
             Row(
                 modifier =
                     Modifier.fillMaxWidth()
-                        .height(120.dp)
+                        .height(110.dp)
                         .padding(10.dp, 5.dp, 0.dp, 5.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
