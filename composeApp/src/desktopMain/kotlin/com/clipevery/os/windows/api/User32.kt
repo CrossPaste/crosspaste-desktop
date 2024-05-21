@@ -416,7 +416,7 @@ interface User32 : StdCallLibrary {
 
                 if (windowTitle == mainWindowTitle) {
                     if (filePath != null) {
-                        return@let WinAppInfo(previousHwnd, filePath)
+                        return@bringToFront WinAppInfo(previousHwnd, filePath)
                     } else {
                         return null
                     }
@@ -454,7 +454,7 @@ interface User32 : StdCallLibrary {
                     logger.info { "Window not found" }
                 }
                 if (filePath != null) {
-                    return@let WinAppInfo(previousHwnd, filePath)
+                    return@bringToFront WinAppInfo(previousHwnd, filePath)
                 } else {
                     return null
                 }
