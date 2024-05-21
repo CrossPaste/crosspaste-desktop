@@ -23,7 +23,6 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,6 +33,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,7 +46,6 @@ import com.clipevery.dao.sync.createSyncRuntimeInfo
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.sync.DeviceManager
-import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.base.ClipIconButton
 import com.clipevery.ui.base.add
 import com.clipevery.ui.base.magnifying
@@ -55,7 +56,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 
 @Composable
-fun NearbyDevicesView(currentPageViewContext: MutableState<PageViewContext>) {
+fun NearbyDevicesView() {
     val current = LocalKoinApplication.current
     val deviceManager = current.koin.get<DeviceManager>()
     val isSearching by deviceManager.isSearching
@@ -96,10 +97,15 @@ fun NotFoundNearByDevices() {
                         .fillMaxWidth(0.8f),
                 textAlign = TextAlign.Center,
                 text = copywriter.getText("No_other_devices_found_with_Clipevery_enabled"),
-                color = MaterialTheme.colors.onBackground,
-                fontSize = 28.sp,
                 maxLines = 3,
-                lineHeight = 32.sp,
+                style =
+                    TextStyle(
+                        fontFamily = FontFamily.SansSerif,
+                        fontWeight = FontWeight.Light,
+                        color = MaterialTheme.colors.onBackground.copy(alpha = 0.5f),
+                        fontSize = 20.sp,
+                        lineHeight = 24.sp,
+                    ),
             )
         }
     }

@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
@@ -46,12 +45,11 @@ import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.sync.SyncManager
 import com.clipevery.ui.PageViewContext
-import com.clipevery.ui.SingleTabView
+import com.clipevery.ui.base.ExpandView
 
 @Composable
 fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
     val current = LocalKoinApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
     val syncManager = current.koin.get<SyncManager>()
 
     val waitToVerifySyncRuntimeInfo by remember { syncManager.waitToVerifySyncRuntimeInfo }
@@ -63,28 +61,15 @@ fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
         contentAlignment = Alignment.TopCenter,
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.height(310.dp).fillMaxWidth()) {
-                Row(
-                    modifier =
-                        Modifier.padding(8.dp)
-                            .wrapContentWidth(),
-                ) {
-                    SingleTabView(copywriter.getText("MyDevices")) {}
-                    Spacer(modifier = Modifier.fillMaxWidth())
+            if (syncManager.realTimeSyncRuntimeInfos.isNotEmpty()) {
+                ExpandView("MyDevices", defaultExpand = true) {
+                    MyDevicesView(currentPageViewContext)
                 }
-                MyDevicesView(currentPageViewContext)
+                Spacer(modifier = Modifier.height(10.dp))
             }
-            Column(modifier = Modifier.fillMaxSize()) {
-                Row(
-                    modifier =
-                        Modifier.padding(8.dp)
-                            .wrapContentWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    SingleTabView(copywriter.getText("NearbyDevices")) {}
-                    Spacer(modifier = Modifier.fillMaxWidth())
-                }
-                NearbyDevicesView(currentPageViewContext)
+
+            ExpandView("NearbyDevices", defaultExpand = true) {
+                NearbyDevicesView()
             }
         }
 

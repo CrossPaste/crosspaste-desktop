@@ -131,7 +131,7 @@ fun DeviceConnectView(
     ) {
         Row(
             modifier =
-                Modifier.wrapContentSize()
+                Modifier
                     .padding(start = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.End,
@@ -139,7 +139,7 @@ fun DeviceConnectView(
             Icon(
                 connectIcon,
                 contentDescription = "connectState",
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(16.dp),
                 tint = connectColor,
             )
             Spacer(modifier = Modifier.width(8.dp))
@@ -149,7 +149,7 @@ fun DeviceConnectView(
                     TextStyle(
                         fontWeight = FontWeight.Light,
                         color = connectColor,
-                        fontSize = 17.sp,
+                        fontSize = 14.sp,
                     ),
             )
 
