@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -31,9 +32,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -108,10 +113,15 @@ fun bindingQRCode() {
                         modifier = Modifier.weight(1f, fill = false).padding(end = 8.dp),
                         textAlign = TextAlign.Center,
                         text = copywriter.getText("Please_scan_the_binding_device"),
-                        color = MaterialTheme.colors.onBackground,
-                        fontSize = 28.sp,
                         maxLines = 3,
-                        lineHeight = 32.sp,
+                        style =
+                            TextStyle(
+                                fontFamily = FontFamily.SansSerif,
+                                fontWeight = FontWeight.Light,
+                                color = MaterialTheme.colors.onBackground.copy(alpha = 0.5f),
+                                fontSize = 20.sp,
+                                lineHeight = 24.sp,
+                            ),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Icon(
@@ -124,7 +134,9 @@ fun bindingQRCode() {
                 Spacer(modifier = Modifier.height(20.dp))
                 qrImage?.let {
                     Image(
-                        modifier = Modifier.size(qrSize.width),
+                        modifier =
+                            Modifier.size(qrSize.width)
+                                .clip(RoundedCornerShape(10.dp)),
                         bitmap = it,
                         contentDescription = "QR Code",
                     )
