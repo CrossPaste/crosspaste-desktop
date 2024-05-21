@@ -4,8 +4,10 @@ import com.clipevery.app.AppFileType
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.task.ClipTask
 import com.clipevery.dao.task.TaskType
+import com.clipevery.exception.StandardErrorCode
 import com.clipevery.net.clientapi.PullClientApi
 import com.clipevery.net.clientapi.SuccessResult
+import com.clipevery.net.clientapi.createFailureResult
 import com.clipevery.path.PathProvider
 import com.clipevery.sync.SyncManager
 import com.clipevery.task.extra.BaseExtraInfo
@@ -57,17 +59,31 @@ class PullIconTaskExecutor(
                                     return pullIcon(source, iconPath, host, port, baseExtraInfo)
                                 } ?: run {
                                     return createFailureClipTaskResult(
+                                        logger = logger,
                                         retryHandler = { baseExtraInfo.executionHistories.size < 2 },
                                         startTime = clipTask.modifyTime,
-                                        failMessage = "Failed to get connect host address",
+                                        fails =
+                                            listOf(
+                                                createFailureResult(
+                                                    StandardErrorCode.CANT_GET_SYNC_ADDRESS,
+                                                    "Failed to get connect host address by $appInstanceId",
+                                                ),
+                                            ),
                                         extraInfo = baseExtraInfo,
                                     )
                                 }
                             } ?: run {
                                 return createFailureClipTaskResult(
+                                    logger = logger,
                                     retryHandler = { baseExtraInfo.executionHistories.size < 2 },
                                     startTime = clipTask.modifyTime,
-                                    failMessage = "Failed to get sync handler by $appInstanceId",
+                                    fails =
+                                        listOf(
+                                            createFailureResult(
+                                                StandardErrorCode.PULL_ICON_TASK_FAIL,
+                                                "Failed to sync clip to $appInstanceId",
+                                            ),
+                                        ),
                                     extraInfo = baseExtraInfo,
                                 )
                             }
@@ -102,9 +118,16 @@ class PullIconTaskExecutor(
             return SuccessClipTaskResult()
         } else {
             return createFailureClipTaskResult(
+                logger = logger,
                 retryHandler = { baseExtraInfo.executionHistories.size < 2 },
                 startTime = System.currentTimeMillis(),
-                failMessage = "Failed to pull icon",
+                fails =
+                    listOf(
+                        createFailureResult(
+                            StandardErrorCode.PULL_ICON_TASK_FAIL,
+                            "Failed to pull icon $source",
+                        ),
+                    ),
                 extraInfo = baseExtraInfo,
             )
         }

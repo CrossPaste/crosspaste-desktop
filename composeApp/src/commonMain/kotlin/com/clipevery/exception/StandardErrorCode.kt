@@ -13,6 +13,12 @@ enum class StandardErrorCode(code: Int, errorType: ErrorType) : ErrorCodeSupplie
     TOKEN_INVALID(1001, ErrorType.EXTERNAL_ERROR),
     NOT_FOUND_SOURCE(1002, ErrorType.EXTERNAL_ERROR),
     NOT_FOUND_ICON(1003, ErrorType.EXTERNAL_ERROR),
+    CLEAN_TASK_FAIL(1004, ErrorType.EXTERNAL_ERROR),
+    DELETE_TASK_FAIL(1005, ErrorType.EXTERNAL_ERROR),
+    HTML_2_IMAGE_TASK_FAIL(1006, ErrorType.EXTERNAL_ERROR),
+    PULL_FILE_TASK_FAIL(1007, ErrorType.EXTERNAL_ERROR),
+    PULL_FILE_CHUNK_TASK_FAIL(1008, ErrorType.EXTERNAL_ERROR),
+    PULL_ICON_TASK_FAIL(1009, ErrorType.EXTERNAL_ERROR),
 
     SIGNAL_INVALID_MESSAGE(2000, ErrorType.EXTERNAL_ERROR),
     SIGNAL_INVALID_KEY_ID(2001, ErrorType.EXTERNAL_ERROR),
@@ -26,6 +32,7 @@ enum class StandardErrorCode(code: Int, errorType: ErrorType) : ErrorCodeSupplie
 
     SYNC_NOT_ALLOW_RECEIVE(4000, ErrorType.USER_ERROR),
     SYNC_NOT_ALLOW_SEND(4001, ErrorType.USER_ERROR),
+    CANT_GET_SYNC_ADDRESS(4002, ErrorType.USER_ERROR),
     ;
 
     private val errorCode: ErrorCode

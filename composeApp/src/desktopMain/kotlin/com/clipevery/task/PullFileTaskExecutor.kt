@@ -7,10 +7,12 @@ import com.clipevery.dao.clip.ClipData
 import com.clipevery.dao.task.ClipTask
 import com.clipevery.dao.task.TaskType
 import com.clipevery.dto.pull.PullFileRequest
+import com.clipevery.exception.StandardErrorCode
 import com.clipevery.net.clientapi.ClientApiResult
 import com.clipevery.net.clientapi.FailureResult
 import com.clipevery.net.clientapi.PullClientApi
 import com.clipevery.net.clientapi.SuccessResult
+import com.clipevery.net.clientapi.createFailureResult
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.presist.FilesIndex
 import com.clipevery.presist.FilesIndexBuilder
@@ -82,17 +84,31 @@ class PullFileTaskExecutor(
                     return pullFiles(clipData, host, port, filesIndex, pullExtraInfo, 8)
                 } ?: run {
                     return createFailureClipTaskResult(
+                        logger = logger,
                         retryHandler = { pullExtraInfo.executionHistories.size < 3 },
                         startTime = clipTask.modifyTime,
-                        failMessage = "Failed to get connect host address by $appInstanceId",
+                        fails =
+                            listOf(
+                                createFailureResult(
+                                    StandardErrorCode.CANT_GET_SYNC_ADDRESS,
+                                    "Failed to get connect host address by $appInstanceId",
+                                ),
+                            ),
                         extraInfo = pullExtraInfo,
                     )
                 }
             } ?: run {
                 return createFailureClipTaskResult(
+                    logger = logger,
                     retryHandler = { pullExtraInfo.executionHistories.size < 3 },
                     startTime = clipTask.modifyTime,
-                    failMessage = "Failed to get sync handler by $appInstanceId",
+                    fails =
+                        listOf(
+                            createFailureResult(
+                                StandardErrorCode.PULL_FILE_TASK_FAIL,
+                                "Failed to get sync handler by $appInstanceId",
+                            ),
+                        ),
                     extraInfo = pullExtraInfo,
                 )
             }
@@ -127,9 +143,21 @@ class PullFileTaskExecutor(
                                     fileUtils.writeFilesChunk(filesChunk, byteReadChannel)
                                 }
                                 Pair(chunkIndex, result)
-                            } ?: Pair(chunkIndex, FailureResult("chunkIndex $chunkIndex out of range"))
+                            } ?: Pair(
+                                chunkIndex,
+                                createFailureResult(
+                                    StandardErrorCode.PULL_FILE_CHUNK_TASK_FAIL,
+                                    "chunkIndex $chunkIndex out of range",
+                                ),
+                            )
                         } catch (e: Exception) {
-                            Pair(chunkIndex, FailureResult("pull chunk fail: ${e.message}"))
+                            Pair(
+                                chunkIndex,
+                                createFailureResult(
+                                    StandardErrorCode.PULL_FILE_CHUNK_TASK_FAIL,
+                                    "pull chunk fail: ${e.message}",
+                                ),
+                            )
                         }
                     }
                 }
@@ -138,9 +166,10 @@ class PullFileTaskExecutor(
 
         val successes = map.filter { it.value is SuccessResult }.map { it.key }
 
-        for (entry in map.filter { it.value is FailureResult }) {
-            logger.error { "chunk index ${entry.key} fail: ${(entry.value as FailureResult).message}" }
-        }
+        val fails: Map<Int, FailureResult> =
+            map
+                .filter { it.value is FailureResult }
+                .mapValues { it.value as FailureResult }
 
         successes.forEach {
             pullExtraInfo.pullChunks[it] = true
@@ -155,9 +184,10 @@ class PullFileTaskExecutor(
             }
 
             createFailureClipTaskResult(
+                logger = logger,
                 retryHandler = { needRetry },
                 startTime = System.currentTimeMillis(),
-                failMessage = "exist pull chunk fail",
+                fails = fails.values,
                 extraInfo = pullExtraInfo,
             )
         } else {

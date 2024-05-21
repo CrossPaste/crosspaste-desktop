@@ -4,8 +4,10 @@ import com.clipevery.dao.task.ClipTask
 import com.clipevery.dao.task.ClipTaskExtraInfo
 import com.clipevery.dao.task.ExecutionHistory
 import com.clipevery.dao.task.TaskStatus
+import com.clipevery.net.clientapi.FailureResult
 import com.clipevery.task.FailureClipTaskResult
 import com.clipevery.task.extra.BaseExtraInfo
+import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -13,6 +15,8 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.serializer
 import org.mongodb.kbson.ObjectId
+import java.io.PrintWriter
+import java.io.StringWriter
 import kotlin.reflect.KClass
 
 object TaskUtils {
@@ -69,13 +73,28 @@ object TaskUtils {
     }
 
     fun createFailureClipTaskResult(
+        logger: KLogger,
         retryHandler: () -> Boolean,
         startTime: Long,
-        failMessage: String,
+        fails: Collection<FailureResult>,
         extraInfo: ClipTaskExtraInfo,
     ): FailureClipTaskResult {
         val needRetry = retryHandler()
+
+        val failMessage = fails.joinToString(separator = "\n", limit = 3) { getStackTraceAsString(it.throwable) }
+
+        if (!needRetry) {
+            logger.error { failMessage }
+        }
+
         extraInfo.executionHistories.add(ExecutionHistory(startTime, System.currentTimeMillis(), TaskStatus.FAILURE, failMessage))
         return FailureClipTaskResult(DesktopJsonUtils.JSON.encodeToString(extraInfo), needRetry)
+    }
+
+    private fun getStackTraceAsString(throwable: Throwable): String {
+        val sw = StringWriter()
+        val pw = PrintWriter(sw)
+        throwable.printStackTrace(pw)
+        return sw.toString()
     }
 }

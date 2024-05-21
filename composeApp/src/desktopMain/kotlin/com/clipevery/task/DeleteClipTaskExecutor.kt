@@ -3,7 +3,11 @@ package com.clipevery.task
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.task.ClipTask
 import com.clipevery.dao.task.TaskType
-import com.clipevery.utils.TaskUtils.createFailExtraInfo
+import com.clipevery.exception.StandardErrorCode
+import com.clipevery.net.clientapi.createFailureResult
+import com.clipevery.task.extra.BaseExtraInfo
+import com.clipevery.utils.TaskUtils
+import com.clipevery.utils.TaskUtils.createFailureClipTaskResult
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 class DeleteClipTaskExecutor(private val clipDao: ClipDao) : SingleTypeTaskExecutor {
@@ -17,8 +21,13 @@ class DeleteClipTaskExecutor(private val clipDao: ClipDao) : SingleTypeTaskExecu
             clipDao.deleteClipData(clipTask.clipDataId!!)
             return SuccessClipTaskResult()
         } catch (e: Throwable) {
-            logger.error(e) { "delete clip data error: $clipTask" }
-            return FailureClipTaskResult(createFailExtraInfo(clipTask, e))
+            return createFailureClipTaskResult(
+                logger = logger,
+                retryHandler = { false },
+                startTime = clipTask.modifyTime,
+                fails = listOf(createFailureResult(StandardErrorCode.DELETE_TASK_FAIL, e)),
+                extraInfo = TaskUtils.getExtraInfo(clipTask, BaseExtraInfo::class),
+            )
         }
     }
 }

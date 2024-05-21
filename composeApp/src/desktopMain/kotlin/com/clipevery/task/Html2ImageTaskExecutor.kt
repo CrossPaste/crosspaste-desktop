@@ -5,9 +5,13 @@ import com.clipevery.clip.item.ClipHtml
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.task.ClipTask
 import com.clipevery.dao.task.TaskType
+import com.clipevery.exception.StandardErrorCode
+import com.clipevery.net.clientapi.createFailureResult
 import com.clipevery.presist.FilePersist
+import com.clipevery.task.extra.BaseExtraInfo
 import com.clipevery.ui.clip.preview.getClipItem
 import com.clipevery.utils.TaskUtils
+import com.clipevery.utils.TaskUtils.createFailureClipTaskResult
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -40,9 +44,12 @@ class Html2ImageTaskExecutor(
                     }
                 }
             } catch (e: Throwable) {
-                logger.error(e) { "html 2 image fail" }
-                return FailureClipTaskResult(
-                    TaskUtils.createFailExtraInfo(clipTask, e),
+                return createFailureClipTaskResult(
+                    logger = logger,
+                    retryHandler = { false },
+                    startTime = clipTask.modifyTime,
+                    fails = listOf(createFailureResult(StandardErrorCode.HTML_2_IMAGE_TASK_FAIL, e)),
+                    extraInfo = TaskUtils.getExtraInfo(clipTask, BaseExtraInfo::class),
                 )
             }
         }

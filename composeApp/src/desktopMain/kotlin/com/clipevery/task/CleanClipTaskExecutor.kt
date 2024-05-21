@@ -6,11 +6,15 @@ import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.dao.task.ClipTask
 import com.clipevery.dao.task.TaskType
+import com.clipevery.exception.StandardErrorCode
+import com.clipevery.net.clientapi.createFailureResult
 import com.clipevery.task.extra.BaseExtraInfo
 import com.clipevery.utils.DateUtils
 import com.clipevery.utils.TaskUtils
 import com.clipevery.utils.TaskUtils.createFailureClipTaskResult
 import com.clipevery.utils.getDateUtils
+import io.github.oshai.kotlinlogging.KLogger
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.types.RealmInstant
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -20,6 +24,8 @@ class CleanClipTaskExecutor(
     private val configManager: ConfigManager,
 ) : SingleTypeTaskExecutor {
 
+    private val logger: KLogger = KotlinLogging.logger {}
+
     private val dateUtils: DateUtils = getDateUtils()
 
     override val taskType: Int = TaskType.CLEAN_CLIP_TASK
@@ -27,7 +33,6 @@ class CleanClipTaskExecutor(
     private val cleanLock = Mutex()
 
     override suspend fun doExecuteTask(clipTask: ClipTask): ClipTaskResult {
-        val baseExtraInfo = TaskUtils.getExtraInfo(clipTask, BaseExtraInfo::class)
         if (configManager.config.isThresholdCleanup) {
             try {
                 cleanLock.withLock {
@@ -40,10 +45,12 @@ class CleanClipTaskExecutor(
                     clipDao.markDeleteByCleanTime(fileCleanTimeInstant, ClipType.FILE)
                 }
             } catch (e: Throwable) {
+                val baseExtraInfo = TaskUtils.getExtraInfo(clipTask, BaseExtraInfo::class)
                 return createFailureClipTaskResult(
+                    logger = logger,
                     retryHandler = { baseExtraInfo.executionHistories.size < 2 },
                     startTime = clipTask.modifyTime,
-                    failMessage = e.message ?: "Failed to clean clip data",
+                    fails = listOf(createFailureResult(StandardErrorCode.CLEAN_TASK_FAIL, e)),
                     extraInfo = baseExtraInfo,
                 )
             }
@@ -62,10 +69,12 @@ class CleanClipTaskExecutor(
                     }
                 }
             } catch (e: Throwable) {
+                val baseExtraInfo = TaskUtils.getExtraInfo(clipTask, BaseExtraInfo::class)
                 return createFailureClipTaskResult(
+                    logger = logger,
                     retryHandler = { baseExtraInfo.executionHistories.size < 2 },
                     startTime = clipTask.modifyTime,
-                    failMessage = e.message ?: "Failed to clean clip data",
+                    fails = listOf(createFailureResult(StandardErrorCode.CLEAN_TASK_FAIL, e)),
                     extraInfo = baseExtraInfo,
                 )
             }
