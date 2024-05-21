@@ -2,9 +2,9 @@ package com.clipevery.net.clientapi
 
 import com.clipevery.config.ConfigManager
 import com.clipevery.dao.clip.ClipData
+import com.clipevery.exception.StandardErrorCode
 import com.clipevery.net.ClipClient
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.client.call.*
 import io.ktor.http.*
 import io.ktor.util.reflect.*
 
@@ -34,8 +34,10 @@ class DesktopSendClipClientApi(
             logger.debug { "$targetAppInstanceId is not allow to receive clip" }
             SuccessResult()
         } else if (response.status.value != 200) {
-            logger.error { "sync clip to $targetAppInstanceId fail" }
-            FailureResult(message = response.call.body())
+            createFailureResult(
+                StandardErrorCode.SYNC_CLIP_ERROR,
+                "sync clip to $targetAppInstanceId fail",
+            )
         } else {
             SuccessResult()
         }

@@ -2,6 +2,7 @@ package com.clipevery.net.clientapi
 
 import com.clipevery.config.ConfigManager
 import com.clipevery.dto.pull.PullFileRequest
+import com.clipevery.exception.StandardErrorCode
 import com.clipevery.net.ClipClient
 import com.clipevery.utils.FailResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -56,8 +57,14 @@ class DesktopPullClientApi(
             SuccessResult(response.content)
         } else {
             val failResponse = response.body<FailResponse>()
-            logger.error { "Fail to pull $api $key: ${response.status.value} $failResponse" }
-            FailureResult("Fail to pull $api $key: ${response.status.value} $failResponse")
+            createFailureResult(
+                if (api == "file") {
+                    StandardErrorCode.PULL_FILE_CHUNK_TASK_FAIL
+                } else {
+                    StandardErrorCode.PULL_ICON_TASK_FAIL
+                },
+                "Fail to pull $api $key: ${response.status.value} $failResponse",
+            )
         }
     }
 }

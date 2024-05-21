@@ -3,9 +3,11 @@ package com.clipevery.task
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.task.ClipTask
 import com.clipevery.dao.task.TaskType
+import com.clipevery.exception.StandardErrorCode
 import com.clipevery.net.clientapi.ClientApiResult
 import com.clipevery.net.clientapi.FailureResult
 import com.clipevery.net.clientapi.SendClipClientApi
+import com.clipevery.net.clientapi.createFailureResult
 import com.clipevery.sync.SyncManager
 import com.clipevery.task.extra.SyncExtraInfo
 import com.clipevery.utils.DesktopJsonUtils
@@ -54,13 +56,20 @@ class SyncClipTaskExecutor(
                                     } ?: run {
                                         return@async Pair(
                                             entryHandler.key,
-                                            FailureResult("Failed to get connect host address by ${entryHandler.key}"),
+                                            createFailureResult(
+                                                StandardErrorCode.CANT_GET_SYNC_ADDRESS,
+                                                "Failed to get connect host address by ${entryHandler.key}",
+                                            ),
                                         )
                                     }
                                 } catch (e: Exception) {
-                                    val failMessage = "Failed to sync clip to ${entryHandler.key}"
-                                    logger.error(e) { failMessage }
-                                    return@async Pair(entryHandler.key, FailureResult(message = failMessage))
+                                    return@async Pair(
+                                        entryHandler.key,
+                                        createFailureResult(
+                                            StandardErrorCode.SYNC_CLIP_ERROR,
+                                            "Failed to sync clip to ${entryHandler.key}",
+                                        ),
+                                    )
                                 }
                             }
                         deferredResults.add(deferred)
@@ -72,18 +81,22 @@ class SyncClipTaskExecutor(
                 mapOf()
             }
 
-        val fails = mapResult.filter { it.value is FailureResult }.map { it.key }
+        val fails: Map<String, FailureResult> =
+            mapResult
+                .filter { it.value is FailureResult }
+                .mapValues { it.value as FailureResult }
 
         syncExtraInfo.syncFails.clear()
 
         if (fails.isEmpty()) {
             return SuccessClipTaskResult(DesktopJsonUtils.JSON.encodeToString(syncExtraInfo))
         } else {
-            syncExtraInfo.syncFails.addAll(fails)
+            syncExtraInfo.syncFails.addAll(fails.keys)
             return createFailureClipTaskResult(
+                logger = logger,
                 retryHandler = { syncExtraInfo.executionHistories.size < 3 },
                 startTime = clipTask.modifyTime,
-                failMessage = fails.joinToString(", "),
+                fails = fails.values,
                 extraInfo = syncExtraInfo,
             )
         }
