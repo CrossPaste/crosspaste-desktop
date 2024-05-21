@@ -67,6 +67,7 @@ import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.WindowDecoration
 import com.clipevery.ui.base.CustomSwitch
+import com.clipevery.ui.base.ExpandView
 import com.clipevery.ui.base.MenuItem
 import com.clipevery.ui.base.arrowDown
 import com.clipevery.ui.base.arrowLeft
@@ -436,11 +437,11 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            SettingsItemView("Network") {
+            ExpandView("Network") {
                 NetSettingsView()
             }
             Spacer(modifier = Modifier.height(10.dp))
-            SettingsItemView("Store") {
+            ExpandView("Store") {
                 StoreSettingsView()
             }
 

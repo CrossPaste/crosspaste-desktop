@@ -1,4 +1,4 @@
-package com.clipevery.ui.settings
+package com.clipevery.ui.base
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -31,24 +31,28 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.i18n.GlobalCopywriter
-import com.clipevery.ui.base.arrowDown
-import com.clipevery.ui.base.arrowLeft
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
-fun SettingsItemView(
+fun ExpandView(
     title: String,
+    defaultExpand: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     var hover by remember { mutableStateOf(false) }
-    val backgroundColor = if (hover) MaterialTheme.colors.background else MaterialTheme.colors.surface
+    val backgroundColor =
+        if (hover) {
+            MaterialTheme.colors.secondaryVariant
+        } else {
+            MaterialTheme.colors.surface
+        }
 
-    var openSettings by remember { mutableStateOf(false) }
+    var expand by remember { mutableStateOf(defaultExpand) }
 
     val languageArrow: Painter =
-        if (openSettings) {
+        if (expand) {
             arrowDown()
         } else {
             arrowLeft()
@@ -68,7 +72,7 @@ fun SettingsItemView(
                         interactionSource = MutableInteractionSource(),
                         indication = null,
                         onClick = {
-                            openSettings = !openSettings
+                            expand = !expand
                         },
                     )
                     .onPointerEvent(
@@ -103,7 +107,7 @@ fun SettingsItemView(
             )
         }
 
-        if (openSettings) {
+        if (expand) {
             content()
         }
     }

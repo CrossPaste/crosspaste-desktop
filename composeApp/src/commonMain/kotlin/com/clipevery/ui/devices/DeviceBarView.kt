@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -66,10 +67,14 @@ fun DeviceBarView(
 ) {
     Row(
         modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(modifier = Modifier.wrapContentSize()) {
+        Row(
+            modifier = Modifier.weight(0.6f),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Icon(
                 modifier = Modifier.padding(12.dp).size(36.dp),
                 painter = PlatformPainter(syncRuntimeInfo),
@@ -77,28 +82,38 @@ fun DeviceBarView(
                 tint = MaterialTheme.colors.onBackground,
             )
 
-            Column(modifier = Modifier.align(Alignment.CenterVertically)) {
+            Column(
+                modifier =
+                    Modifier.height(36.dp)
+                        .align(Alignment.CenterVertically)
+                        .padding(bottom = 2.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
+            ) {
                 Row(
                     modifier = Modifier.wrapContentWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
+                        modifier = Modifier.wrapContentSize(),
                         text = syncRuntimeInfo.platformName,
+                        maxLines = 1,
                         style =
                             TextStyle(
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colors.onBackground,
-                                fontSize = 17.sp,
+                                fontSize = 13.sp,
                             ),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
+                        modifier = Modifier.wrapContentSize(),
                         text = syncRuntimeInfo.platformVersion,
+                        maxLines = 1,
                         style =
                             TextStyle(
                                 fontWeight = FontWeight.Light,
                                 color = MaterialTheme.colors.onBackground,
-                                fontSize = 15.sp,
+                                fontSize = 11.sp,
                             ),
                     )
                 }
@@ -106,18 +121,24 @@ fun DeviceBarView(
                 Text(
                     modifier = Modifier.wrapContentSize(),
                     text = syncRuntimeInfo.noteName ?: syncRuntimeInfo.deviceName,
+                    maxLines = 1,
                     style =
                         TextStyle(
                             fontWeight = FontWeight.Light,
-                            color = MaterialTheme.colors.onBackground,
-                            fontSize = 15.sp,
+                            color = MaterialTheme.colors.onBackground.copy(alpha = 0.5f),
+                            fontSize = 11.sp,
                         ),
-                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
         }
 
-        deviceViewProvider()
+        Row(
+            modifier = Modifier.weight(0.4f),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            deviceViewProvider()
+        }
     }
 }
