@@ -64,7 +64,7 @@ fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
                         Modifier.padding(8.dp)
                             .wrapContentWidth(),
                 ) {
-                    SingleTabView(copywriter.getText("MyDevices"), true) {}
+                    SingleTabView(copywriter.getText("MyDevices")) {}
                     Spacer(modifier = Modifier.fillMaxWidth())
                 }
                 MyDevicesView(currentPageViewContext)
@@ -76,7 +76,7 @@ fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
                             .wrapContentWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    SingleTabView(copywriter.getText("NearbyDevices"), true) {}
+                    SingleTabView(copywriter.getText("NearbyDevices")) {}
                     Spacer(modifier = Modifier.fillMaxWidth())
                 }
                 NearbyDevicesView(currentPageViewContext)
