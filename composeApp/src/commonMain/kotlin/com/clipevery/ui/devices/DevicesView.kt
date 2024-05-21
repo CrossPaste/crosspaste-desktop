@@ -56,7 +56,12 @@ fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
 
     val waitToVerifySyncRuntimeInfo by remember { syncManager.waitToVerifySyncRuntimeInfo }
 
-    Box(contentAlignment = Alignment.TopCenter) {
+    Box(
+        modifier =
+            Modifier.fillMaxSize()
+                .background(color = MaterialTheme.colors.surface),
+        contentAlignment = Alignment.TopCenter,
+    ) {
         Column(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.height(310.dp).fillMaxWidth()) {
                 Row(
