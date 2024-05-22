@@ -30,11 +30,11 @@ import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.AsyncView
 import com.clipevery.ui.base.LoadImageData
 import com.clipevery.ui.base.LoadingStateData
+import com.clipevery.ui.base.UISupport
 import com.clipevery.ui.base.loadImageData
 import com.clipevery.utils.getDateUtils
 import com.clipevery.utils.getFileUtils
 import kotlinx.coroutines.delay
-import java.awt.Desktop
 
 @Composable
 fun HtmlToImageDetailView(
@@ -44,7 +44,7 @@ fun HtmlToImageDetailView(
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
     val copywriter = current.koin.get<GlobalCopywriter>()
-
+    val uiSupport = current.koin.get<UISupport>()
     val clipAppearItem = clipHtml as ClipAppearItem
 
     val dateUtils = getDateUtils()
@@ -79,16 +79,7 @@ fun HtmlToImageDetailView(
                                         .horizontalScroll(horizontalScrollState)
                                         .verticalScroll(verticalScrollState)
                                         .clickable {
-                                            if (Desktop.isDesktopSupported()) {
-                                                fileUtils.createTempFile(
-                                                    clipHtml.html.toByteArray(),
-                                                    fileUtils.createRandomFileName("html"),
-                                                )?.let {
-                                                        path ->
-                                                    val desktop = Desktop.getDesktop()
-                                                    desktop.browse(path.toFile().toURI())
-                                                }
-                                            }
+                                            uiSupport.openHtml(clipHtml.html)
                                         },
                             ) {
                                 Image(

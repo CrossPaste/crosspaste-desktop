@@ -15,30 +15,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.clipevery.LocalKoinApplication
 import com.clipevery.clip.item.ClipText
 import com.clipevery.dao.clip.ClipData
-import com.clipevery.utils.getFileUtils
-import java.awt.Desktop
+import com.clipevery.ui.base.UISupport
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TextPreviewView(clipData: ClipData) {
     clipData.getClipItem()?.let {
-        val fileUtils = getFileUtils()
+        val current = LocalKoinApplication.current
+        val uiSupport = current.koin.get<UISupport>()
+
         ClipSpecificPreviewContentView({
             Row(
                 modifier =
                     Modifier.fillMaxSize().onClick {
-                        if (Desktop.isDesktopSupported()) {
-                            val desktop = Desktop.getDesktop()
-                            fileUtils.createTempFile(
-                                (it as ClipText).text.toByteArray(),
-                                fileUtils.createRandomFileName("txt"),
-                            )?.let {
-                                    path ->
-                                desktop.open(path.toFile())
-                            }
-                        }
+                        uiSupport.openText((it as ClipText).text)
                     }.padding(10.dp),
             ) {
                 Text(

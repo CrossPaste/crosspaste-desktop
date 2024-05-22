@@ -29,13 +29,13 @@ import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.SketchBackground
+import com.clipevery.ui.base.UISupport
 import com.clipevery.ui.base.file
 import com.clipevery.ui.base.fileSlash
 import com.clipevery.ui.base.folder
 import com.clipevery.utils.FileExtUtils
 import com.clipevery.utils.getFileUtils
 import io.ktor.util.*
-import java.awt.Desktop
 import java.nio.file.Path
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -43,6 +43,8 @@ import java.nio.file.Path
 fun SingleFilePreviewView(filePath: Path) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
+    val uiSupport = current.koin.get<UISupport>()
+
     val fileUtils = getFileUtils()
 
     val existFile by remember { mutableStateOf(filePath.toFile().exists()) }
@@ -57,10 +59,7 @@ fun SingleFilePreviewView(filePath: Path) {
     Row(
         modifier =
             Modifier.onClick {
-                if (Desktop.isDesktopSupported() && existFile) {
-                    val desktop = Desktop.getDesktop()
-                    desktop.browseFileDirectory(filePath.toFile())
-                }
+                uiSupport.browseFile(filePath)
             },
     ) {
         Box(modifier = Modifier.size(100.dp)) {
