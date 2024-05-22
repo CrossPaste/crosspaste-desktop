@@ -82,8 +82,7 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
             Row(
                 modifier =
                     Modifier.wrapContentSize()
-                        .padding(horizontal = 12.dp)
-                        .padding(vertical = 5.dp),
+                        .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -91,15 +90,14 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
                     color = MaterialTheme.colors.onBackground,
                     style = TextStyle(fontWeight = FontWeight.Light),
                     fontFamily = FontFamily.SansSerif,
-                    fontSize = 17.sp,
+                    fontSize = 14.sp,
                     modifier = Modifier.weight(1f),
                 )
                 CustomSwitch(
                     modifier =
                         Modifier.align(Alignment.CenterVertically)
                             .width(32.dp)
-                            .height(20.dp)
-                            .padding(0.dp),
+                            .height(20.dp),
                     checked = syncRuntimeInfo.allowSend,
                     onCheckedChange = {
                         syncRuntimeInfoDao.update(syncRuntimeInfo) {
@@ -115,8 +113,7 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
             Row(
                 modifier =
                     Modifier.wrapContentSize()
-                        .padding(horizontal = 12.dp)
-                        .padding(vertical = 5.dp),
+                        .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -124,15 +121,14 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
                     color = MaterialTheme.colors.onBackground,
                     style = TextStyle(fontWeight = FontWeight.Light),
                     fontFamily = FontFamily.SansSerif,
-                    fontSize = 17.sp,
+                    fontSize = 14.sp,
                     modifier = Modifier.weight(1f),
                 )
                 CustomSwitch(
                     modifier =
                         Modifier.align(Alignment.CenterVertically)
                             .width(32.dp)
-                            .height(20.dp)
-                            .padding(0.dp),
+                            .height(20.dp),
                     checked = syncRuntimeInfo.allowReceive,
                     onCheckedChange = {
                         syncRuntimeInfoDao.update(syncRuntimeInfo) {
@@ -162,7 +158,7 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
 
         val textStyle =
             TextStyle(
-                fontSize = 16.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Normal,
             )
 
@@ -191,8 +187,7 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
                 Row(
                     modifier =
                         Modifier.fillMaxWidth()
-                            .padding(horizontal = 12.dp)
-                            .padding(vertical = 12.dp),
+                            .padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
@@ -201,14 +196,14 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
                         style = TextStyle(fontWeight = FontWeight.Light),
                         fontFamily = FontFamily.SansSerif,
                         color = MaterialTheme.colors.onBackground,
-                        fontSize = 17.sp,
+                        fontSize = 14.sp,
                     )
                     Text(
                         text = pair.second,
                         style = TextStyle(fontWeight = FontWeight.Light),
                         fontFamily = FontFamily.SansSerif,
                         color = MaterialTheme.colors.onBackground,
-                        fontSize = 16.sp,
+                        fontSize = 12.sp,
                     )
                 }
                 if (index < properties.size - 1) {
