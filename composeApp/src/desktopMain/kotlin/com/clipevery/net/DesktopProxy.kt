@@ -6,10 +6,12 @@ import java.net.URI
 
 object DesktopProxy {
 
-    private val proxySelector = ProxySelector.getDefault()
+    init {
+        System.setProperty("java.net.useSystemProxies", "true")
+    }
 
     fun getProxy(uri: URI): Proxy {
-        val proxyList = proxySelector.select(uri)
+        val proxyList = ProxySelector.getDefault().select(uri)
         return proxyList.firstOrNull() ?: Proxy.NO_PROXY
     }
 }
