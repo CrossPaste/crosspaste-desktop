@@ -113,10 +113,12 @@ import com.clipevery.ui.base.DesktopIconStyle
 import com.clipevery.ui.base.DesktopMessageManager
 import com.clipevery.ui.base.DesktopNotificationManager
 import com.clipevery.ui.base.DesktopToastManager
+import com.clipevery.ui.base.DesktopUISupport
 import com.clipevery.ui.base.IconStyle
 import com.clipevery.ui.base.MessageManager
 import com.clipevery.ui.base.NotificationManager
 import com.clipevery.ui.base.ToastManager
+import com.clipevery.ui.base.UISupport
 import com.clipevery.ui.getTrayMouseAdapter
 import com.clipevery.ui.resource.ClipResourceLoader
 import com.clipevery.ui.resource.DesktopAbsoluteClipResourceLoader
@@ -265,6 +267,7 @@ class Clipevery {
                     single<NotificationManager> { DesktopNotificationManager }
                     single<MessageManager> { DesktopMessageManager(get()) }
                     single<IconStyle> { DesktopIconStyle }
+                    single<UISupport> { DesktopUISupport(get(), get()) }
                 }
             return GlobalContext.startKoin {
                 modules(appModule)

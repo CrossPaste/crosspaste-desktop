@@ -1,6 +1,7 @@
 package com.clipevery.ui
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
 import androidx.compose.material.Icon
@@ -25,7 +27,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
+import com.clipevery.app.AppInfo
 import com.clipevery.i18n.GlobalCopywriter
+import com.clipevery.ui.base.UISupport
 import com.clipevery.ui.base.chevronRight
 
 @Composable
@@ -37,7 +41,8 @@ fun AboutView(currentPageViewContext: MutableState<PageViewContext>) {
 @Composable
 fun AboutContentView() {
     val current = LocalKoinApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
+    val appInfo = current.koin.get<AppInfo>()
+    val uiSupport = current.koin.get<UISupport>()
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -61,93 +66,78 @@ fun AboutContentView() {
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "ClipEvery",
+                    text = "Clipevery",
                     style = MaterialTheme.typography.subtitle1,
                     color = MaterialTheme.colors.onBackground,
                     fontSize = 14.sp,
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "Version 1.0.0", // todo get version
+                    text = "Version ${appInfo.appVersion}",
                     style = MaterialTheme.typography.subtitle2,
                     color = MaterialTheme.colors.onBackground,
                     fontSize = 14.sp,
                 )
                 Spacer(modifier = Modifier.height(30.dp))
 
-                Row(
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .height(40.dp)
-                            .padding(horizontal = 80.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = copywriter.getText("Official_website"),
-                        style = MaterialTheme.typography.body1,
-                        color = MaterialTheme.colors.onBackground,
-                        fontSize = 15.sp,
-                    )
-
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    Icon(
-                        painter = chevronRight(),
-                        contentDescription = "chevron right",
-                        tint = MaterialTheme.colors.onBackground,
-                    )
+                AboutInfoItem("Official_website") {
+                    uiSupport.openUrlInBrowser("https://clipevery.com")
                 }
 
                 Divider(modifier = Modifier.padding(horizontal = 80.dp))
 
-                Row(
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .height(40.dp)
-                            .padding(horizontal = 80.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = copywriter.getText("Change_log"),
-                        style = MaterialTheme.typography.body1,
-                        color = MaterialTheme.colors.onBackground,
-                        fontSize = 15.sp,
-                    )
-
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    Icon(
-                        painter = chevronRight(),
-                        contentDescription = "chevron right",
-                        tint = MaterialTheme.colors.onBackground,
-                    )
+                AboutInfoItem("Change_log") {
+                    uiSupport.openUrlInBrowser("https://github.com/clipevery/clipevery-desktop/blob/main/CHANGELOG.md")
                 }
 
                 Divider(modifier = Modifier.padding(horizontal = 80.dp))
 
-                Row(
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .height(40.dp)
-                            .padding(horizontal = 80.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = copywriter.getText("Contact_us"),
-                        style = MaterialTheme.typography.body1,
-                        color = MaterialTheme.colors.onBackground,
-                        fontSize = 15.sp,
-                    )
+                AboutInfoItem("Feedback") {
+                    uiSupport.openUrlInBrowser("https://github.com/clipevery/clipevery-desktop/issues")
+                }
 
-                    Spacer(modifier = Modifier.weight(1f))
+                Divider(modifier = Modifier.padding(horizontal = 80.dp))
 
-                    Icon(
-                        painter = chevronRight(),
-                        contentDescription = "chevron right",
-                        tint = MaterialTheme.colors.onBackground,
-                    )
+                AboutInfoItem("Contact_us") {
+                    uiSupport.openEmailClient("compile.future@gmail.com")
                 }
             }
         }
+    }
+}
+
+@Composable
+fun AboutInfoItem(
+    title: String,
+    onClick: () -> Unit,
+) {
+    val current = LocalKoinApplication.current
+    val copywriter = current.koin.get<GlobalCopywriter>()
+    Row(
+        modifier =
+            Modifier.fillMaxWidth()
+                .height(40.dp)
+                .padding(horizontal = 80.dp, vertical = 5.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .clickable {
+                    onClick()
+                },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            modifier = Modifier.wrapContentSize().padding(start = 5.dp),
+            text = copywriter.getText(title),
+            style = MaterialTheme.typography.body1,
+            color = MaterialTheme.colors.onBackground,
+            fontSize = 15.sp,
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Icon(
+            painter = chevronRight(),
+            contentDescription = "chevron right",
+            tint = MaterialTheme.colors.onBackground,
+        )
     }
 }

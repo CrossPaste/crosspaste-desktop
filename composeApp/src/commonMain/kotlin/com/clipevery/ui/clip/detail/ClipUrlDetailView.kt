@@ -19,7 +19,7 @@ import com.clipevery.clip.item.ClipUrl
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
-import com.clipevery.ui.clip.preview.openUrlInBrowser
+import com.clipevery.ui.base.UISupport
 import com.clipevery.utils.getDateUtils
 import com.clipevery.utils.getFileUtils
 
@@ -30,6 +30,7 @@ fun ClipUrlDetailView(
 ) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
+    val uiSupport = current.koin.get<UISupport>()
     val dateUtils = getDateUtils()
     val fileUtils = getFileUtils()
     val url = clipUrl.url
@@ -41,7 +42,7 @@ fun ClipUrlDetailView(
                 modifier =
                     Modifier.fillMaxSize()
                         .clickable {
-                            openUrlInBrowser(clipUrl.url)
+                            uiSupport.openUrlInBrowser(clipUrl.url)
                         }.padding(10.dp),
             ) {
                 Text(
