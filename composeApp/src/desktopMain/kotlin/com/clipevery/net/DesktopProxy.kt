@@ -23,8 +23,9 @@ object DesktopProxy {
                         "HTTPS_PROXY"
                     }
                 System.getenv(proxyName)?.let {
-                    val proxyHost = it.split(":")[0]
-                    val proxyPort = it.split(":")[1].toInt()
+                    val proxyUri = URI(it)
+                    val proxyHost = proxyUri.host
+                    val proxyPort = proxyUri.port
                     Proxy(Proxy.Type.HTTP, InetSocketAddress(proxyHost, proxyPort))
                 } ?: run {
                     Proxy.NO_PROXY
