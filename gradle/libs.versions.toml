@@ -60,6 +60,7 @@ logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "lo
 material-desktop = { module = "org.jetbrains.compose.material:material-desktop", version.ref = "compose-plugin" }
 realm-kotlin-base = { module = "io.realm.kotlin:library-base", version.ref = "realm" }
 selenium-chrome-driver = { module = "org.seleniumhq.selenium:selenium-chrome-driver", version.ref = "selenium" }
+selenium-devtools = { module = "org.seleniumhq.selenium:selenium-devtools-v125", version.ref = "selenium" }
 signal-client = { module = "org.signal:libsignal-client", version.ref = "signal" }
 system-tray = { module = "com.dorkbox:SystemTray", version.ref = "system-tray" }
 theme-detector = { module = "com.github.Dansoftowner:jSystemThemeDetector", version.ref = "theme-detector" }
