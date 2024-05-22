@@ -39,7 +39,6 @@ import com.clipevery.LocalKoinApplication
 import com.clipevery.app.AppRestartService
 import com.clipevery.app.AppWindowManager
 import com.clipevery.clip.ClipSearchService
-import com.clipevery.config.ConfigManager
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.listener.GlobalListener
 import com.clipevery.ui.base.ComposeMessageViewFactory
@@ -61,7 +60,6 @@ val logger = KotlinLogging.logger {}
 
 class DesktopGlobalListener(
     appWindowManager: AppWindowManager,
-    configManager: ConfigManager,
     clipSearchService: ClipSearchService,
 ) : GlobalListener {
 
@@ -117,7 +115,6 @@ private class GlobalListenerMessageViewFactory : ComposeMessageViewFactory {
     override fun MessageView(key: Any) {
         if (key == NativeHookException.DARWIN_AXAPI_DISABLED) {
             GlobalShortcutActivationFailedMessageView()
-        } else {
         }
     }
 

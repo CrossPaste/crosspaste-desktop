@@ -260,7 +260,7 @@ class Clipevery {
                     // ui component
                     single<AppWindowManager> { DesktopAppWindowManager }
                     single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
-                    single<GlobalListener> { DesktopGlobalListener(get(), get(), get()) }
+                    single<GlobalListener> { DesktopGlobalListener(get(), get()) }
                     single<ThemeDetector> { DesktopThemeDetector(get()) }
                     single<ClipResourceLoader> { DesktopAbsoluteClipResourceLoader }
                     single<ToastManager> { DesktopToastManager() }
@@ -455,10 +455,7 @@ class Clipevery {
                         }
                     }
 
-                    ClipeveryAppSearchView(
-                        koinApplication,
-                        hideWindow = { appWindowManager.showSearchWindow = false },
-                    )
+                    ClipeveryAppSearchView(koinApplication)
                 }
             }
         }

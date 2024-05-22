@@ -67,7 +67,7 @@ object SignalClientEncryption : HttpClientPlugin<SignalConfig, SignalClientEncry
         scope: HttpClient,
     ) {
         scope.sendPipeline.intercept(HttpSendPipeline.State) {
-            context.headers["appInstanceId"]?.let { appInstanceId ->
+            context.headers["appInstanceId"]?.let {
                 context.headers["signal"]?.let { signal ->
                     if (signal == "1") {
                         val originalContent = context.body as? OutgoingContent.ByteArrayContent

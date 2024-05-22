@@ -126,7 +126,6 @@ internal class HTMLCodec(
         var iHeadSize: Long = 0
         val iCRSize = EOLN.length.toLong()
         val iEntCount = astEntries.size
-        val bContinue = true
 
         var iEntry = 0
         while (iEntry < iEntCount) {
@@ -139,24 +138,21 @@ internal class HTMLCodec(
                 }
                 iHeadSize += stLine.length + iCRSize
                 val stValue: String = stLine.substring(astEntries[iEntry].length).trim { it <= ' ' }
-                if (null != stValue) {
-                    try {
-                        when (iEntry) {
-                            0 -> stVersion = stValue
-                            1 -> iHTMLStart = stValue.toInt().toLong()
-                            2 -> iHTMLEnd = stValue.toInt().toLong()
-                            3 -> iFragStart = stValue.toInt().toLong()
-                            4 -> iFragEnd = stValue.toInt().toLong()
-                            5 -> iSelStart = stValue.toInt().toLong()
-                            6 -> iSelEnd = stValue.toInt().toLong()
-                            7 -> stBaseURL = stValue
-                        }
-                    } catch (e: NumberFormatException) {
-                        throw IOException(FAILURE_MSG + astEntries[iEntry] + " value " + e + INVALID_MSG)
+                try {
+                    when (iEntry) {
+                        0 -> stVersion = stValue
+                        1 -> iHTMLStart = stValue.toInt().toLong()
+                        2 -> iHTMLEnd = stValue.toInt().toLong()
+                        3 -> iFragStart = stValue.toInt().toLong()
+                        4 -> iFragEnd = stValue.toInt().toLong()
+                        5 -> iSelStart = stValue.toInt().toLong()
+                        6 -> iSelEnd = stValue.toInt().toLong()
+                        7 -> stBaseURL = stValue
                     }
+                } catch (e: NumberFormatException) {
+                    throw IOException(FAILURE_MSG + astEntries[iEntry] + " value " + e + INVALID_MSG)
                 }
                 break
-                ++iEntry
             }
             ++iEntry
         }
@@ -180,11 +176,6 @@ internal class HTMLCodec(
             }
 
             EHTMLReadMode.HTML_READ_SELECTION -> {
-                iStartOffset = iSelStart
-                iEndOffset = iSelEnd
-            }
-
-            else -> {
                 iStartOffset = iSelStart
                 iEndOffset = iSelEnd
             }

@@ -67,7 +67,7 @@ class LinuxWindowManager : WindowManager {
         toPaste: Boolean,
     ) {
         logger.info { "$windowTitle bringToBack Clipevery" }
-        X11Api.bringToBack(windowTitle, prevLinuxAppInfo, toPaste)
+        X11Api.bringToBack(prevLinuxAppInfo, toPaste)
     }
 }
 

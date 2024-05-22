@@ -69,7 +69,6 @@ interface X11Api : X11 {
         }
 
         suspend fun bringToBack(
-            windowTitle: String,
             prevLinuxAppInfo: LinuxAppInfo?,
             toPaste: Boolean,
         ) {
