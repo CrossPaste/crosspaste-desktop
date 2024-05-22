@@ -71,7 +71,9 @@ import com.clipevery.net.ClipServer
 import com.clipevery.net.DesktopClipBonjourService
 import com.clipevery.net.DesktopClipClient
 import com.clipevery.net.DesktopClipServer
+import com.clipevery.net.DesktopFaviconLoader
 import com.clipevery.net.DesktopSyncInfoFactory
+import com.clipevery.net.FaviconLoader
 import com.clipevery.net.SyncInfoFactory
 import com.clipevery.net.SyncRefresher
 import com.clipevery.net.clientapi.DesktopPullClientApi
@@ -202,6 +204,7 @@ class Clipevery {
                     single<SyncRefresher> { get<DesktopSyncManager>() }
                     single<SyncManager> { get<DesktopSyncManager>() }
                     single<DeviceManager> { DesktopDeviceManager(get(), get(), get()) }
+                    single<FaviconLoader> { DesktopFaviconLoader }
 
                     // signal component
                     single<IdentityKeyStore> { getClipIdentityKeyStoreFactory(get(), get()).createIdentityKeyStore() }
