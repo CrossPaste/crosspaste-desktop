@@ -18,6 +18,7 @@ kotlinx-coroutines = "1.8.1"
 kotlinx-serialization = "1.6.3"
 ktor = "2.3.11"
 logback = "1.5.6"
+mockk = "1.13.11"
 realm = "1.16.0"
 selenium = "4.21.0"
 signal = "0.47.0"
@@ -71,7 +72,7 @@ zxing-javase = { module = "com.google.zxing:javase", version.ref = "zxing" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
-
+io-mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 
 [plugins]
 conveyor = { id = "dev.hydraulic.conveyor", version.ref = "conveyor" }

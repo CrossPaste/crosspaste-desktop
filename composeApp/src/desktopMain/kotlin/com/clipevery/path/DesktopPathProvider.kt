@@ -5,6 +5,7 @@ import com.clipevery.platform.currentPlatform
 import com.clipevery.utils.FileUtils
 import com.clipevery.utils.getFileUtils
 import com.clipevery.utils.getResourceUtils
+import com.clipevery.utils.getSystemProperty
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -49,7 +50,9 @@ object DesktopPathProvider : PathProvider {
 
 class DevelopmentPathProvider : PathProvider {
 
-    private val composeAppDir = System.getProperty("user.dir")
+    private val systemProperty = getSystemProperty()
+
+    private val composeAppDir = systemProperty.get("user.dir")
 
     private val resourceUtils = getResourceUtils()
 
@@ -63,7 +66,7 @@ class DevelopmentPathProvider : PathProvider {
 
     override val fileUtils: FileUtils = getFileUtils()
 
-    override val userHome: Path = Paths.get(System.getProperty("user.home"))
+    override val userHome: Path = Paths.get(systemProperty.get("user.home"))
 
     private fun getAppPath(): Path {
         development.getProperty("clipAppPath")?.let {
@@ -94,7 +97,9 @@ class DevelopmentPathProvider : PathProvider {
 
 class WindowsPathProvider : PathProvider {
 
-    override val userHome: Path = Paths.get(System.getProperty("user.home"))
+    private val systemProperty = getSystemProperty()
+
+    override val userHome: Path = Paths.get(systemProperty.get("user.home"))
 
     override val clipAppPath: Path = getAppJarPath().parent
 
@@ -105,10 +110,10 @@ class WindowsPathProvider : PathProvider {
     override val fileUtils: FileUtils = getFileUtils()
 
     private fun getAppJarPath(): Path {
-        System.getProperty("compose.application.resources.dir")?.let {
+        systemProperty.getOption("compose.application.resources.dir")?.let {
             return Paths.get(it)
         }
-        System.getProperty("skiko.library.path")?.let {
+        systemProperty.getOption("skiko.library.path")?.let {
             return Paths.get(it)
         }
         throw IllegalStateException("Could not find app path")
@@ -127,8 +132,9 @@ class MacosPathProvider : PathProvider {
      * ├── app
      * └── runtime
      */
+    private val systemProperty = getSystemProperty()
 
-    override val userHome: Path = Paths.get(System.getProperty("user.home"))
+    override val userHome: Path = Paths.get(systemProperty.get("user.home"))
 
     override val clipAppPath: Path = getAppJarPath().parent.parent
 
@@ -168,10 +174,10 @@ class MacosPathProvider : PathProvider {
     }
 
     private fun getAppJarPath(): Path {
-        System.getProperty("compose.application.resources.dir")?.let {
+        systemProperty.getOption("compose.application.resources.dir")?.let {
             return Paths.get(it)
         }
-        System.getProperty("skiko.library.path")?.let {
+        systemProperty.getOption("skiko.library.path")?.let {
             return Paths.get(it)
         }
         throw IllegalStateException("Could not find app path")
@@ -180,7 +186,9 @@ class MacosPathProvider : PathProvider {
 
 class LinuxPathProvider : PathProvider {
 
-    override val userHome: Path = Paths.get(System.getProperty("user.home"))
+    private val systemProperty = getSystemProperty()
+
+    override val userHome: Path = Paths.get(systemProperty.get("user.home"))
 
     override val clipAppPath: Path = getAppJarPath().parent.parent
 
@@ -191,10 +199,10 @@ class LinuxPathProvider : PathProvider {
     override val fileUtils: FileUtils = getFileUtils()
 
     private fun getAppJarPath(): Path {
-        System.getProperty("compose.application.resources.dir")?.let {
+        systemProperty.getOption("compose.application.resources.dir")?.let {
             return Paths.get(it)
         }
-        System.getProperty("skiko.library.path")?.let {
+        systemProperty.getOption("skiko.library.path")?.let {
             return Paths.get(it)
         }
         throw IllegalStateException("Could not find app path")

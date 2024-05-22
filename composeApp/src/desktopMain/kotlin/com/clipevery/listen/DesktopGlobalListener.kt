@@ -43,6 +43,7 @@ import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.listener.GlobalListener
 import com.clipevery.ui.base.ComposeMessageViewFactory
 import com.clipevery.ui.base.MessageType
+import com.clipevery.utils.getSystemProperty
 import com.clipevery.utils.mainDispatcher
 import com.github.kwhat.jnativehook.GlobalScreen
 import com.github.kwhat.jnativehook.NativeHookException
@@ -63,6 +64,8 @@ class DesktopGlobalListener(
     clipSearchService: ClipSearchService,
 ) : GlobalListener {
 
+    private val systemProperty = getSystemProperty()
+
     private val searchListener = SearchListener(appWindowManager, clipSearchService)
 
     override var errorCode: Int? by mutableStateOf(null)
@@ -74,7 +77,7 @@ class DesktopGlobalListener(
     }
 
     override fun start() {
-        if (System.getProperty("globalListener", false.toString()).toBoolean()) {
+        if (systemProperty.get("globalListener", false.toString()).toBoolean()) {
             try {
                 if (!isRegistered()) {
                     GlobalScreen.registerNativeHook()
@@ -88,7 +91,7 @@ class DesktopGlobalListener(
     }
 
     override fun stop() {
-        if (System.getProperty("globalListener", false.toString()).toBoolean()) {
+        if (systemProperty.get("globalListener", false.toString()).toBoolean()) {
             try {
                 if (isRegistered()) {
                     GlobalScreen.removeNativeKeyListener(searchListener)

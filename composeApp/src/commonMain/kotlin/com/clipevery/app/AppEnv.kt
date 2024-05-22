@@ -1,5 +1,7 @@
 package com.clipevery.app
 
+import com.clipevery.utils.getSystemProperty
+
 enum class AppEnv {
     PRODUCTION,
     DEVELOPMENT,
@@ -7,8 +9,11 @@ enum class AppEnv {
     ;
 
     companion object {
+
+        private val SYSTEM_PROPERTY = getSystemProperty()
+
         fun getAppEnv(): AppEnv {
-            return System.getProperty("appEnv")?.let {
+            return SYSTEM_PROPERTY.getOption("appEnv")?.let {
                 try {
                     AppEnv.valueOf(it)
                 } catch (e: Throwable) {

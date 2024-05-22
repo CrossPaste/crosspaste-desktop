@@ -6,11 +6,13 @@ import ch.qos.logback.classic.encoder.PatternLayoutEncoder
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.rolling.RollingFileAppender
 import ch.qos.logback.core.rolling.TimeBasedRollingPolicy
+import com.clipevery.utils.getSystemProperty
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 actual fun initLogger(logPath: String): ClipeveryLogger {
-    val logLevel = System.getProperty("loggerLevel") ?: "info"
+    val systemProperty = getSystemProperty()
+    val logLevel = systemProperty.getOption("loggerLevel") ?: "info"
 
     val context = LoggerFactory.getILoggerFactory() as LoggerContext
 
@@ -41,7 +43,7 @@ actual fun initLogger(logPath: String): ClipeveryLogger {
     val jThemeLogger = context.getLogger("com.jthemedetecor") as ch.qos.logback.classic.Logger
     jThemeLogger.level = Level.OFF
 
-    val loggerDebugPackages = System.getProperty("loggerDebugPackages")
+    val loggerDebugPackages = systemProperty.getOption("loggerDebugPackages")
 
     loggerDebugPackages?.let { debugPackages ->
         for (packageName in debugPackages.split(",")) {
