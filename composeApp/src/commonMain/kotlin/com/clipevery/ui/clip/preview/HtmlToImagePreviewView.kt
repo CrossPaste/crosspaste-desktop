@@ -24,22 +24,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.clipevery.LocalKoinApplication
 import com.clipevery.clip.item.ClipHtml
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.ui.base.AsyncView
 import com.clipevery.ui.base.LoadImageData
+import com.clipevery.ui.base.UISupport
 import com.clipevery.ui.base.loadImageData
-import com.clipevery.utils.getFileUtils
 import kotlinx.coroutines.delay
-import java.awt.Desktop
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HtmlToImagePreviewView(clipData: ClipData) {
     clipData.getClipItem()?.let {
+        val current = LocalKoinApplication.current
         val density = LocalDensity.current
 
-        val fileUtils = getFileUtils()
+        val uiSupport = current.koin.get<UISupport>()
 
         val clipHtml = it as ClipHtml
 
@@ -64,16 +65,7 @@ fun HtmlToImagePreviewView(clipData: ClipData) {
                                             .fillMaxSize()
                                             .clip(RoundedCornerShape(5.dp))
                                             .onClick {
-                                                if (Desktop.isDesktopSupported()) {
-                                                    fileUtils.createTempFile(
-                                                        it.html.toByteArray(),
-                                                        fileUtils.createRandomFileName("html"),
-                                                    )?.let {
-                                                            path ->
-                                                        val desktop = Desktop.getDesktop()
-                                                        desktop.browse(path.toFile().toURI())
-                                                    }
-                                                }
+                                                uiSupport.openHtml(it.html)
                                             },
                                 ) {
                                     Image(
