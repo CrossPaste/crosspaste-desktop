@@ -30,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
@@ -38,7 +39,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.clip.item.ClipFiles
-import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.AsyncView
@@ -51,12 +51,15 @@ import com.clipevery.ui.base.imageCompress
 import com.clipevery.ui.base.imageExpand
 import com.clipevery.ui.base.imageSlash
 import com.clipevery.ui.base.loadImageData
+import com.clipevery.utils.DateUtils
+import com.clipevery.utils.FileUtils
 import com.clipevery.utils.getDateUtils
 import com.clipevery.utils.getFileUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.nio.file.Path
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -68,8 +71,6 @@ fun ClipImagesDetailView(
         val current = LocalKoinApplication.current
         val density = LocalDensity.current
         val copywriter = current.koin.get<GlobalCopywriter>()
-
-        val clipAppearItem = clipFiles as ClipAppearItem
 
         val dateUtils = getDateUtils()
         val fileUtils = getFileUtils()
@@ -106,6 +107,8 @@ fun ClipImagesDetailView(
 
         var forceMode by remember(clipData.id) { mutableStateOf(false) }
 
+        var imageSize by remember { mutableStateOf<Size?>(null) }
+
         ClipDetailView(
             detailView = {
                 Row(
@@ -141,6 +144,8 @@ fun ClipImagesDetailView(
                                     if (loadImageView.isSuccess()) {
                                         val painter = (loadImageView as LoadImageData).toPainterImage.toPainter()
                                         val intrinsicSize = painter.intrinsicSize
+
+                                        imageSize = intrinsicSize
 
                                         if (!forceMode) {
                                             showMode = intrinsicSize.width * 180 < intrinsicSize.height * 100
@@ -269,23 +274,48 @@ fun ClipImagesDetailView(
                     indexInfo = if (clipFiles.count <= 1) null else "(${index + 1}/${clipFiles.count})",
                     clipData = clipData,
                     items =
-                        listOf(
-                            ClipDetailInfoItem("File_Name", "${imagePath.fileName}"),
-                            ClipDetailInfoItem("Type", copywriter.getText("Image")),
-                            ClipDetailInfoItem("Size", fileUtils.formatBytes(clipAppearItem.size)),
-                            ClipDetailInfoItem("Remote", copywriter.getText(if (clipData.remote) "Yes" else "No")),
-                            ClipDetailInfoItem(
-                                "Date",
-                                copywriter.getDate(
-                                    dateUtils.convertRealmInstantToLocalDateTime(clipData.createTime),
-                                    true,
-                                ),
-                            ),
+                        detailInfoItems(
+                            imagePath,
+                            copywriter,
+                            fileUtils,
+                            dateUtils,
+                            clipData,
+                            imageSize,
                         ),
                 )
             },
         )
     }
+}
+
+fun detailInfoItems(
+    imagePath: Path,
+    copywriter: GlobalCopywriter,
+    fileUtils: FileUtils,
+    dateUtils: DateUtils,
+    clipData: ClipData,
+    size: Size?,
+): List<ClipDetailInfoItem> {
+    val details =
+        mutableListOf(
+            ClipDetailInfoItem("File_Name", imagePath.fileName.toString()),
+            ClipDetailInfoItem("Type", copywriter.getText("Image")),
+            ClipDetailInfoItem("Size", fileUtils.formatBytes(clipData.size)),
+            ClipDetailInfoItem("Remote", copywriter.getText(if (clipData.remote) "Yes" else "No")),
+            ClipDetailInfoItem(
+                "Date",
+                copywriter.getDate(
+                    dateUtils.convertRealmInstantToLocalDateTime(clipData.createTime),
+                    true,
+                ),
+            ),
+        )
+
+    size?.let {
+        details.add(2, ClipDetailInfoItem("Dimensions", "${it.width.toInt()} x ${it.height.toInt()}"))
+    }
+
+    return details
 }
 
 private data class ImageShowMode(val modifier: Modifier, val contentScale: ContentScale)
