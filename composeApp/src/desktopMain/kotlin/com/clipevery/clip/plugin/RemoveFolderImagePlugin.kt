@@ -16,8 +16,8 @@ object RemoveFolderImagePlugin : ClipPlugin {
             val files = imageItem as ClipFiles
             if (files.getFilePaths().size == 1) {
                 clipAppearItems.firstOrNull { it.getClipType() == ClipType.FILE }?.let {
-                    val files = it as ClipFiles
-                    if (it.getFilePaths().size == 1 && files.getFilePaths()[0].isDirectory()) {
+                    val clipFiles = it as ClipFiles
+                    if (it.getFilePaths().size == 1 && clipFiles.getFilePaths()[0].isDirectory()) {
                         imageItem.clear(realm, clearResource = true)
                         return clipAppearItems.filter { item -> item != imageItem }
                     }

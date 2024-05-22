@@ -83,7 +83,7 @@ fun Routing.syncRouting() {
                 )
 
             val bytes = PreKeyBundleSerializer.encodePreKeyBundle(preKeyBundle)
-            logger.debug { "${appInfo.appInstanceId} create preKeyBundle for $appInstanceId:\n $preKeyBundle" }
+            logger.debug { "${appInfo.appInstanceId} create preKeyBundle for $appInstanceId:\n ${preKeyBundle.getDescString()}" }
             successResponse(call, DataContent(bytes))
         }
     }
@@ -178,8 +178,8 @@ fun Routing.syncRouting() {
     }
 }
 
-fun PreKeyBundle.toString() {
-    "PreKeyBundle(registrationId=$registrationId, " +
+fun PreKeyBundle.getDescString(): String {
+    return "PreKeyBundle(registrationId=$registrationId, " +
         "deviceId=$deviceId, " +
         "preKeyId=$preKeyId, " +
         "preKey=$preKey, " +

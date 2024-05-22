@@ -85,20 +85,17 @@ import org.koin.core.KoinApplication
 import java.awt.event.KeyEvent
 
 @Composable
-fun ClipeveryAppSearchView(
-    koinApplication: KoinApplication,
-    hideWindow: () -> Unit,
-) {
+fun ClipeveryAppSearchView(koinApplication: KoinApplication) {
     CompositionLocalProvider(
         LocalKoinApplication provides koinApplication,
     ) {
-        ClipeverySearchWindow(hideWindow)
+        ClipeverySearchWindow()
     }
 }
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
-fun ClipeverySearchWindow(hideWindow: () -> Unit) {
+fun ClipeverySearchWindow() {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
     val inputModeManager = LocalInputModeManager.current

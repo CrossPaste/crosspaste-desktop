@@ -195,7 +195,7 @@ object WMCtrl {
 
     fun getCurrentDesktop(display: X11.Display): Int {
         val root: X11.Window = x11.XDefaultRootWindow(display)
-        var curDesktop: Int? = null
+        var curDesktop: Int?
         if ((
                 getPropertyAsInt(
                     display, root,
