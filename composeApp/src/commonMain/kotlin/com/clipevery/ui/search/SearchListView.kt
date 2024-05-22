@@ -53,6 +53,7 @@ import com.clipevery.clip.ClipSearchService
 import com.clipevery.clip.item.ClipUrl
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.dao.clip.ClipType
+import com.clipevery.net.FaviconLoader
 import com.clipevery.path.PathProvider
 import com.clipevery.ui.base.AppImageIcon
 import com.clipevery.ui.base.AsyncView
@@ -63,7 +64,6 @@ import com.clipevery.ui.base.ToPainterImage
 import com.clipevery.ui.clip.ClipTypeIconBaseView
 import com.clipevery.ui.clip.preview.getClipItem
 import com.clipevery.ui.clip.title.getClipTitle
-import com.clipevery.utils.getFaviconUtils
 import com.clipevery.utils.getResourceUtils
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch
@@ -206,7 +206,7 @@ fun ClipTypeIconView(clipData: ClipData) {
     val density = LocalDensity.current
     val iconStyle = current.koin.get<IconStyle>()
     val pathProvider = current.koin.get<PathProvider>()
-    val faviconUtils = getFaviconUtils()
+    val faviconLoader = current.koin.get<FaviconLoader>()
     val loadIconData =
         LoadIconData(
             clipData.clipType,
@@ -225,7 +225,7 @@ fun ClipTypeIconView(clipData: ClipData) {
             load = {
                 clipData.getClipItem()?.let {
                     it as ClipUrl
-                    faviconUtils.getFaviconPath(it.url)?.let { path ->
+                    faviconLoader.getFaviconPath(it.url)?.let { path ->
                         return@AsyncView LoadImageData(path, getResourceUtils().loadPainter(path, density))
                     }
                 }
