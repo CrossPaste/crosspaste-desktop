@@ -4,6 +4,7 @@ import com.clipevery.config.ConfigManager
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.platform.currentPlatform
 import com.clipevery.presist.DesktopFilePersist
+import com.clipevery.utils.getSystemProperty
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.BufferedReader
@@ -46,7 +47,7 @@ class MacAppStartUpService(private val configManager: ConfigManager) : AppStartU
 
     private val logger: KLogger = KotlinLogging.logger {}
 
-    private val clipeveryBundleID = System.getProperty("mac.bundleID")
+    private val clipeveryBundleID = getSystemProperty().get("mac.bundleID")
 
     private val plist = "$clipeveryBundleID.plist"
 

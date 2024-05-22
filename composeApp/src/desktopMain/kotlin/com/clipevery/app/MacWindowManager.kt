@@ -3,6 +3,7 @@ package com.clipevery.app
 import com.clipevery.os.macos.api.MacosApi
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.path.PathProvider
+import com.clipevery.utils.getSystemProperty
 import com.clipevery.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
@@ -18,7 +19,7 @@ class MacWindowManager : WindowManager {
 
     private val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
-    private val clipeveryBundleID = System.getProperty("mac.bundleID")
+    private val clipeveryBundleID = getSystemProperty().get("mac.bundleID")
 
     private var prevMacAppInfo: MacAppInfo? = null
 

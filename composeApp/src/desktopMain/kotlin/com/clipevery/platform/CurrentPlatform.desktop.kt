@@ -1,15 +1,17 @@
 package com.clipevery.platform
 
 import com.clipevery.utils.OnceFunction
+import com.clipevery.utils.getSystemProperty
 
 actual fun currentPlatform(): Platform {
     return OnceFunction { getCurrentPlatform() }.run()
 }
 
 private fun getCurrentPlatform(): Platform {
-    val osName = System.getProperty("os.name").lowercase()
-    val version = System.getProperty("os.version")
-    val architecture = System.getProperty("os.arch")
+    val systemProperty = getSystemProperty()
+    val osName = systemProperty.get("os.name").lowercase()
+    val version = systemProperty.get("os.version")
+    val architecture = systemProperty.get("os.arch")
     val bitMode =
         if (architecture.contains("64")) {
             64
