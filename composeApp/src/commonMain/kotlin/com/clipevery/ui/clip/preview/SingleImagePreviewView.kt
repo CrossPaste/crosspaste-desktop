@@ -103,7 +103,7 @@ fun SingleImagePreviewView(imagePath: Path) {
                         Text(
                             text =
                                 "${copywriter.getText("Dimensions")}: " +
-                                    "${painter.intrinsicSize.width} x ${painter.intrinsicSize.height}",
+                                    "${painter.intrinsicSize.width.toInt()} x ${painter.intrinsicSize.height.toInt()}",
                             color = MaterialTheme.colors.onBackground,
                             style =
                                 TextStyle(
