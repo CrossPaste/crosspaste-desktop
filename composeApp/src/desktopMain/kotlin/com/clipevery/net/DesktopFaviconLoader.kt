@@ -22,6 +22,49 @@ object DesktopFaviconLoader : FaviconLoader {
 
     private val desktopProxy = DesktopProxy
 
+    private fun getGoogleIconUrl(host: String): String {
+        return "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://$host&size=32"
+    }
+
+    private fun getDefaultIcoUrl(host: String): String {
+        return "https://$host/favicon.ico"
+    }
+
+    private fun saveIco(
+        url: String,
+        path: Path,
+    ): Path? {
+        val httpsUrl = URL(url)
+
+        val uri = httpsUrl.toURI()
+
+        val proxy = desktopProxy.getProxy(uri)
+
+        (proxy.address() as InetSocketAddress?).let { address ->
+            val client =
+                HttpClient.newBuilder()
+                    .proxy(ProxySelector.of(address))
+                    .build()
+
+            val request =
+                HttpRequest.newBuilder()
+                    .uri(uri)
+                    .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
+
+            if (response.statusCode() == 200) {
+                FileOutputStream(path.toFile()).use { output ->
+                    response.body().use { input ->
+                        input.copyTo(output)
+                    }
+                }
+                return@saveIco path
+            }
+        }
+        return null
+    }
+
     override fun getFaviconPath(url: String): Path? {
         try {
             Url(url).host.let {
@@ -31,34 +74,10 @@ object DesktopFaviconLoader : FaviconLoader {
                     return@getFaviconPath path
                 }
 
-                val iconUrl =
-                    "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://$it&size=32"
-
-                val httpsUrl = URL(iconUrl)
-
-                val uri = httpsUrl.toURI()
-
-                val proxy = desktopProxy.getProxy(uri)
-
-                (proxy.address() as InetSocketAddress?).let { address ->
-                    val client =
-                        HttpClient.newBuilder()
-                            .proxy(ProxySelector.of(address))
-                            .build()
-
-                    val request =
-                        HttpRequest.newBuilder()
-                            .uri(uri)
-                            .build()
-
-                    val response = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
-
-                    if (response.statusCode() == 200) {
-                        FileOutputStream(path.toFile()).use { output ->
-                            response.body().use { input ->
-                                input.copyTo(output)
-                            }
-                        }
+                saveIco(getGoogleIconUrl(it), path)?.let {
+                    return@getFaviconPath path
+                } ?: run {
+                    saveIco(getDefaultIcoUrl(it), path)?.let {
                         return@getFaviconPath path
                     }
                 }
