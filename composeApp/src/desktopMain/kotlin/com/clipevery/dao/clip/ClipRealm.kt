@@ -343,6 +343,9 @@ class ClipRealm(
                 clipData.updateClipState(ClipState.LOADED)
                 copyToRealm(clipData)
                 tasks.addAll(markDeleteSameMd5(clipData.id, clipData.md5))
+                if (clipData.clipType == ClipType.HTML) {
+                    tasks.add(copyToRealm(createTask(clipData.id, TaskType.HTML_TO_IMAGE_TASK)).taskId)
+                }
             } else {
                 val pullFileTask = createTask(clipData.id, TaskType.PULL_FILE_TASK)
                 copyToRealm(clipData)
