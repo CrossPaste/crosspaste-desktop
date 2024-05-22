@@ -75,6 +75,7 @@ kotlin {
             implementation(libs.ktor.server.status.pages)
             implementation(libs.logback.classic)
             implementation(libs.selenium.chrome.driver)
+            implementation(libs.selenium.devtools)
             implementation(libs.signal.client)
             implementation(libs.system.tray)
             implementation(libs.theme.detector)
