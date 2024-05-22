@@ -18,14 +18,17 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.clipevery.LocalKoinApplication
 import com.clipevery.clip.item.ClipUrl
 import com.clipevery.dao.clip.ClipData
-import java.awt.Desktop
-import java.net.URI
+import com.clipevery.ui.base.UISupport
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun UrlPreviewView(clipData: ClipData) {
+    val current = LocalKoinApplication.current
+    val uiSupport = current.koin.get<UISupport>()
+
     clipData.getClipItem()?.let {
         val clipUrl = it as ClipUrl
         ClipSpecificPreviewContentView({
@@ -33,7 +36,7 @@ fun UrlPreviewView(clipData: ClipData) {
                 modifier =
                     Modifier.fillMaxSize()
                         .onClick {
-                            openUrlInBrowser(clipUrl.url)
+                            uiSupport.openUrlInBrowser(clipUrl.url)
                         }.padding(10.dp),
             ) {
                 Text(
@@ -56,13 +59,5 @@ fun UrlPreviewView(clipData: ClipData) {
         }, { hover ->
             ClipMenuView(clipData = clipData, hover = hover)
         })
-    }
-}
-
-fun openUrlInBrowser(url: String) {
-    if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-        Desktop.getDesktop().browse(URI(url))
-    } else {
-        // todo show error message: cant open browser
     }
 }
