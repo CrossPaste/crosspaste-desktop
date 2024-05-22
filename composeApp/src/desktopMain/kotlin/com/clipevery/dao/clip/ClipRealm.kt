@@ -348,6 +348,9 @@ class ClipRealm(
                 copyToRealm(clipData)
                 copyToRealm(pullFileTask)
                 tasks.add(pullFileTask.taskId)
+                if (clipData.clipType == ClipType.HTML) {
+                    tasks.add(copyToRealm(createTask(clipData.id, TaskType.HTML_TO_IMAGE_TASK)).taskId)
+                }
             }
 
             existIconFile?.let {
