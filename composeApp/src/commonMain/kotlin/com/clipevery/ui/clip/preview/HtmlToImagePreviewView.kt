@@ -80,7 +80,7 @@ fun HtmlToImagePreviewView(clipData: ClipData) {
                                         painter = loadImageView.toPainterImage.toPainter(),
                                         contentDescription = "Html 2 Image",
                                         alignment = Alignment.TopStart,
-                                        contentScale = ContentScale.Crop,
+                                        contentScale = ContentScale.None,
                                         modifier = Modifier.fillMaxSize(),
                                     )
                                 }
