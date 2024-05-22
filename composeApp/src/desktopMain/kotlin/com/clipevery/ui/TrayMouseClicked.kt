@@ -63,8 +63,8 @@ class WindowsTrayMouseClicked(private val windowState: WindowState, private val 
 
         windowState.position =
             WindowPosition.Absolute(
-                x = usableWidth.dp - windowWidth - 32.dp,
-                y = usableHeight.dp - windowHeight - 32.dp,
+                x = usableWidth.dp - windowWidth + 8.dp,
+                y = usableHeight.dp - windowHeight + 8.dp,
             )
     }
 }
