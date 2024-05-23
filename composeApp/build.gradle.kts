@@ -310,6 +310,7 @@ compose.desktop {
 }
 
 tasks.withType<Test> {
+    useJUnitPlatform()
     systemProperty("appEnv", "TEST")
 }
 

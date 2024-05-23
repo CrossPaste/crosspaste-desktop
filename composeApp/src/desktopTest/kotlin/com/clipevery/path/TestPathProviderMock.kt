@@ -3,8 +3,8 @@ package com.clipevery.path
 import io.mockk.every
 import io.mockk.mockkObject
 import io.mockk.unmockkAll
-import org.junit.Test
 import java.nio.file.Files
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class TestPathProviderMock {
