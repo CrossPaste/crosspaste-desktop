@@ -80,10 +80,10 @@ object DesktopFaviconLoader : FaviconLoader {
                     return@getFaviconPath path
                 }
 
-                saveIco(getGoogleIconUrl(it), path)?.let {
+                saveIco(getDefaultIcoUrl(it), path)?.let {
                     return@getFaviconPath path
                 } ?: run {
-                    saveIco(getDefaultIcoUrl(it), path)?.let {
+                    saveIco(getGoogleIconUrl(it), path)?.let {
                         return@getFaviconPath path
                     }
                 }
