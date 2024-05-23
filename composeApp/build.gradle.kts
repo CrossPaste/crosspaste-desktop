@@ -1,3 +1,4 @@
+
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.yaml.snakeyaml.LoaderOptions
@@ -306,6 +307,10 @@ compose.desktop {
             }
         }
     }
+}
+
+tasks.withType<Test> {
+    systemProperty("appEnv", "TEST")
 }
 
 // region Work around temporary Compose bugs.
