@@ -13,6 +13,7 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.nio.file.Path
+import java.time.Duration
 
 object DesktopFaviconLoader : FaviconLoader {
 
@@ -41,25 +42,30 @@ object DesktopFaviconLoader : FaviconLoader {
         val proxy = desktopProxy.getProxy(uri)
 
         (proxy.address() as InetSocketAddress?).let { address ->
-            val client =
-                HttpClient.newBuilder()
-                    .proxy(ProxySelector.of(address))
-                    .build()
+            try {
+                val client =
+                    HttpClient.newBuilder()
+                        .proxy(ProxySelector.of(address))
+                        .build()
 
-            val request =
-                HttpRequest.newBuilder()
-                    .uri(uri)
-                    .build()
+                val request =
+                    HttpRequest.newBuilder()
+                        .uri(uri)
+                        .timeout(Duration.ofSeconds(5))
+                        .build()
 
-            val response = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
+                val response = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
 
-            if (response.statusCode() == 200) {
-                FileOutputStream(path.toFile()).use { output ->
-                    response.body().use { input ->
-                        input.copyTo(output)
+                if (response.statusCode() == 200) {
+                    FileOutputStream(path.toFile()).use { output ->
+                        response.body().use { input ->
+                            input.copyTo(output)
+                        }
                     }
+                    return@saveIco path
                 }
-                return@saveIco path
+            } catch (e: Exception) {
+                logger.warn(e) { "Failed to save favicon for $url" }
             }
         }
         return null
@@ -74,10 +80,10 @@ object DesktopFaviconLoader : FaviconLoader {
                     return@getFaviconPath path
                 }
 
-                saveIco(getGoogleIconUrl(it), path)?.let {
+                saveIco(getDefaultIcoUrl(it), path)?.let {
                     return@getFaviconPath path
                 } ?: run {
-                    saveIco(getDefaultIcoUrl(it), path)?.let {
+                    saveIco(getGoogleIconUrl(it), path)?.let {
                         return@getFaviconPath path
                     }
                 }
