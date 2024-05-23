@@ -10,7 +10,6 @@ jmdns = "3.5.9"
 jna = "5.14.0"
 jnativehook = "2.2.2"
 jsoup = "1.17.2"
-junit = "4.13.2"
 koin = "3.5.6"
 kotlin = "1.9.23"
 kotlin-logging = "6.0.9"
@@ -71,8 +70,6 @@ zxing-javase = { module = "com.google.zxing:javase", version.ref = "zxing" }
 
 # test libs
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
-kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
-junit = { group = "junit", name = "junit", version.ref = "junit" }
 io-mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 
 [plugins]
