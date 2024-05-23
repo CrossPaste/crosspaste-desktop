@@ -22,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -35,22 +36,31 @@ import com.clipevery.ui.base.fileSlash
 import com.clipevery.ui.base.folder
 import com.clipevery.utils.FileExtUtils
 import com.clipevery.utils.getFileUtils
+import com.clipevery.utils.getResourceUtils
 import io.ktor.util.*
 import java.nio.file.Path
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SingleFilePreviewView(filePath: Path) {
+fun SingleFilePreviewView(
+    filePath: Path,
+    imagePath: Path?,
+) {
     val current = LocalKoinApplication.current
+    val density = LocalDensity.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val uiSupport = current.koin.get<UISupport>()
 
     val fileUtils = getFileUtils()
 
+    val resourceUtils = getResourceUtils()
+
     val existFile by remember { mutableStateOf(filePath.toFile().exists()) }
 
     val optionPainter: Painter? =
-        if (existFile) {
+        if (imagePath != null) {
+            resourceUtils.loadPainter(imagePath, density).toPainter()
+        } else if (existFile) {
             FileExtUtils.getExtPreviewImagePainter(filePath.extension)
         } else {
             fileSlash()
