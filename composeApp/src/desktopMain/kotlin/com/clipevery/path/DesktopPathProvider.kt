@@ -9,6 +9,7 @@ import com.clipevery.utils.getSystemProperty
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlin.reflect.KClass
 
 object DesktopPathProvider : PathProvider {
 
@@ -30,10 +31,14 @@ object DesktopPathProvider : PathProvider {
 
     override val clipDataPath get() = pathProvider.clipDataPath
 
+    @Suppress("UNCHECKED_CAST")
     private fun getPathProvider(): PathProvider {
         val appEnv = AppEnv.getAppEnv()
         return if (appEnv == AppEnv.DEVELOPMENT) {
             DevelopmentPathProvider()
+        } else if (appEnv == AppEnv.TEST) {
+            val kClass = Class.forName("com.clipevery.path.TestPathProvider").kotlin as KClass<PathProvider>
+            kClass.objectInstance ?: throw IllegalStateException("Expected a singleton instance")
         } else {
             if (currentPlatform().isWindows()) {
                 WindowsPathProvider()
