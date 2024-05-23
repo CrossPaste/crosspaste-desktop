@@ -13,6 +13,7 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.nio.file.Path
+import java.time.Duration
 
 object DesktopFaviconLoader : FaviconLoader {
 
@@ -50,6 +51,7 @@ object DesktopFaviconLoader : FaviconLoader {
                 val request =
                     HttpRequest.newBuilder()
                         .uri(uri)
+                        .timeout(Duration.ofSeconds(5))
                         .build()
 
                 val response = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
