@@ -42,6 +42,8 @@ class DesktopClipSearchService(
 
     override var searchClipType by mutableStateOf<Int?>(null)
 
+    override var searchLimit by mutableStateOf(50)
+
     override var searchTime: Int = 0
 
     override val searchResult: MutableList<ClipData> = mutableStateListOf()
@@ -67,10 +69,24 @@ class DesktopClipSearchService(
     }
 
     private fun searchHash(): Int {
-        return inputSearch.hashCode() + searchFavorite.hashCode() + searchSort.hashCode() + searchClipType.hashCode()
+        var hashCode = inputSearch.hashCode()
+        hashCode = 31 * hashCode + searchFavorite.hashCode()
+        hashCode = 31 * hashCode + searchSort.hashCode()
+        hashCode = 31 * hashCode + searchClipType.hashCode()
+        hashCode = 31 * hashCode + searchLimit.hashCode()
+        return hashCode
     }
 
-    override suspend fun search() {
+    override fun tryAddLimit(): Boolean {
+        if (searchLimit == searchResult.size) {
+            searchLimit += 50
+            return true
+        } else {
+            return false
+        }
+    }
+
+    override suspend fun search(keepSelectIndex: Boolean) {
         val searchTerms =
             inputSearch.trim().lowercase().split("\\s+".toRegex()).filterNot { it.isEmpty() }.distinct()
 
@@ -92,7 +108,7 @@ class DesktopClipSearchService(
                         favorite = if (searchFavorite) searchFavorite else null,
                         sort = searchSort,
                         clipType = searchClipType,
-                        limit = 50,
+                        limit = searchLimit,
                     )
                 val searchClipDataFlow: Flow<ResultsChange<ClipData>> = searchClipData.asFlow()
 
@@ -100,7 +116,7 @@ class DesktopClipSearchService(
                     withContext(mainDispatcher) {
                         when (changes) {
                             is InitialResults -> {
-                                initSearchResult(changes.list)
+                                initSearchResult(changes.list, keepSelectIndex)
                             }
 
                             is UpdatedResults -> {
@@ -129,10 +145,19 @@ class DesktopClipSearchService(
         setCurrentClipData()
     }
 
-    private fun initSearchResult(searchResult: List<ClipData>) {
+    private fun initSearchResult(
+        searchResult: List<ClipData>,
+        keepSelectIndex: Boolean,
+    ) {
         this.searchResult.clear()
         this.searchResult.addAll(searchResult)
-        this.selectedIndex = 0
+        if (keepSelectIndex) {
+            if (selectedIndex > searchResult.size - 1) {
+                this.selectedIndex = 0
+            }
+        } else {
+            this.selectedIndex = 0
+        }
         setCurrentClipData()
         searchTime++
     }
@@ -178,6 +203,7 @@ class DesktopClipSearchService(
         inputSearch = ""
         searchFavorite = false
         searchSort = true
+        searchLimit = 50
     }
 
     override suspend fun unActiveWindow() {

@@ -16,6 +16,8 @@ interface ClipSearchService {
 
     var searchClipType: Int?
 
+    var searchLimit: Int
+
     var searchTime: Int
 
     val searchResult: MutableList<ClipData>
@@ -32,7 +34,9 @@ interface ClipSearchService {
 
     fun setClipType(clipType: Int?)
 
-    suspend fun search()
+    fun tryAddLimit(): Boolean
+
+    suspend fun search(keepSelectIndex: Boolean = false)
 
     fun clickSetSelectedIndex(selectedIndex: Int)
 
