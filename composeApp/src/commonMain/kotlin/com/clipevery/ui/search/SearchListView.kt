@@ -33,6 +33,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -66,6 +67,9 @@ import com.clipevery.ui.clip.preview.getClipItem
 import com.clipevery.ui.clip.title.getClipTitle
 import com.clipevery.utils.getResourceUtils
 import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlin.io.path.exists
 
@@ -77,6 +81,7 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
     val searchListState = rememberLazyListState()
     val adapter = rememberScrollbarAdapter(scrollState = searchListState)
     var showScrollbar by remember { mutableStateOf(false) }
+    var scrollJob: Job? by remember { mutableStateOf(null) }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -85,18 +90,53 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
     LaunchedEffect(appWindowManager.showSearchWindow) {
         if (appWindowManager.showSearchWindow) {
             if (clipSearchService.searchResult.size > 0) {
+                clipSearchService.selectedIndex = 0
                 searchListState.scrollToItem(0)
             }
         }
     }
 
-    LaunchedEffect(clipSearchService.selectedIndex) {
-        val visibleItems = searchListState.layoutInfo.visibleItemsInfo
-        if (visibleItems.isNotEmpty() && appWindowManager.showSearchWindow) {
-            if (visibleItems.last().index < clipSearchService.selectedIndex) {
-                searchListState.scrollToItem(clipSearchService.selectedIndex - 9)
-            } else if (visibleItems.first().index > clipSearchService.selectedIndex) {
-                searchListState.scrollToItem(clipSearchService.selectedIndex)
+    LaunchedEffect(clipSearchService.selectedIndex, appWindowManager.showSearchWindow) {
+        if (appWindowManager.showSearchWindow) {
+            val visibleItems = searchListState.layoutInfo.visibleItemsInfo
+            if (visibleItems.isNotEmpty()) {
+                val lastIndex = visibleItems.last().index
+
+                if (lastIndex < clipSearchService.selectedIndex) {
+                    searchListState.scrollToItem(clipSearchService.selectedIndex - 9)
+                } else if (visibleItems.first().index > clipSearchService.selectedIndex) {
+                    searchListState.scrollToItem(clipSearchService.selectedIndex)
+                }
+
+                if (clipSearchService.searchResult.size - lastIndex <= 10) {
+                    if (clipSearchService.tryAddLimit()) {
+                        clipSearchService.search(keepSelectIndex = true)
+                    }
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(searchListState) {
+        snapshotFlow {
+            searchListState.firstVisibleItemIndex to
+                searchListState.firstVisibleItemScrollOffset
+        }.distinctUntilChanged().collect { (_, _) ->
+            val visibleItems = searchListState.layoutInfo.visibleItemsInfo
+            if (visibleItems.isNotEmpty() && clipSearchService.searchResult.size - visibleItems.last().index <= 10) {
+                if (clipSearchService.tryAddLimit()) {
+                    clipSearchService.search(keepSelectIndex = true)
+                }
+            }
+
+            showScrollbar = clipSearchService.searchResult.size > 10
+            if (showScrollbar) {
+                scrollJob?.cancel()
+                scrollJob =
+                    coroutineScope.launch(CoroutineName("HiddenScroll")) {
+                        delay(500)
+                        showScrollbar = false
+                    }
             }
         }
     }
