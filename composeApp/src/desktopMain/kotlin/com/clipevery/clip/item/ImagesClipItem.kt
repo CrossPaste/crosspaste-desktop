@@ -28,7 +28,7 @@ import java.nio.file.Paths
 
 @Serializable
 @SerialName("images")
-class ImagesClipItem : RealmObject, ClipAppearItem, ClipFiles {
+class ImagesClipItem : RealmObject, ClipAppearItem, ClipImages {
 
     @PrimaryKey
     @Transient

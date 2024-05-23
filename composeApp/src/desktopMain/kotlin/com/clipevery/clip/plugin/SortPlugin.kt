@@ -9,8 +9,8 @@ object SortPlugin : ClipPlugin {
 
     private val itemPriorityMap: Map<Int, Int> =
         mapOf(
-            ClipType.IMAGE to 4,
-            ClipType.FILE to 3,
+            ClipType.FILE to 4,
+            ClipType.IMAGE to 3,
             ClipType.HTML to 2,
             ClipType.URL to 1,
             ClipType.TEXT to 0,
