@@ -37,6 +37,7 @@ enum class PageViewType {
     DEVICE_DETAIL,
     QR_CODE,
     SETTINGS,
+    SHORTCUT_KEYS,
     ABOUT,
     DEBUG,
 }

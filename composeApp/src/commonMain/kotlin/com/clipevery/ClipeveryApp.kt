@@ -33,6 +33,7 @@ import com.clipevery.ui.base.ToastView
 import com.clipevery.ui.devices.DeviceDetailView
 import com.clipevery.ui.devices.TokenView
 import com.clipevery.ui.settings.SettingsView
+import com.clipevery.ui.settings.ShortcutKeysView
 import org.koin.core.KoinApplication
 
 @Composable
@@ -132,6 +133,9 @@ fun ClipeveryContent() {
         }
         PageViewType.SETTINGS -> {
             SettingsView(currentPageViewContext)
+        }
+        PageViewType.SHORTCUT_KEYS -> {
+            ShortcutKeysView(currentPageViewContext)
         }
         PageViewType.ABOUT -> {
             AboutView(currentPageViewContext)
