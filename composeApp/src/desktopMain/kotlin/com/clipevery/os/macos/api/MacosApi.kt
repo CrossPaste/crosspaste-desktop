@@ -53,6 +53,8 @@ interface MacosApi : Library {
 
     fun bringToFront(windowTitle: String): String
 
+    fun simulatePasteCommand()
+
     companion object {
         val INSTANCE: MacosApi = Native.load("MacosApi", MacosApi::class.java)
     }

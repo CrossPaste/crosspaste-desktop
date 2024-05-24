@@ -1,6 +1,7 @@
 package com.clipevery.ui.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,19 +10,28 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Divider
+import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -33,6 +43,7 @@ import com.clipevery.listener.ShortcutKeys
 import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.WindowDecoration
 import com.clipevery.ui.base.KeyboardView
+import com.clipevery.ui.base.edit
 
 @Composable
 fun ShortcutKeysView(currentPageViewContext: MutableState<PageViewContext>) {
@@ -118,20 +129,49 @@ fun ShortcutKeysContentView() {
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ShortcutKeyRow(name: String) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val shortcutKeys = current.koin.get<ShortcutKeys>()
+
+    var hover by remember { mutableStateOf(false) }
+
     Row(
         modifier =
             Modifier.fillMaxWidth()
                 .height(40.dp)
+                .onPointerEvent(
+                    eventType = PointerEventType.Enter,
+                    onEvent = {
+                        hover = true
+                    },
+                ).onPointerEvent(
+                    eventType = PointerEventType.Exit,
+                    onEvent = {
+                        hover = false
+                    },
+                )
                 .padding(horizontal = 12.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         settingsText(copywriter.getText(name))
         Spacer(modifier = Modifier.weight(1f))
+
+        Icon(
+            modifier =
+                Modifier.size(16.dp)
+                    .clickable {
+                        // todo
+                    },
+            painter = edit(),
+            contentDescription = "edit shortcut key",
+            tint = if (hover) MaterialTheme.colors.primary else MaterialTheme.colors.onSurface,
+        )
+
+        Spacer(modifier = Modifier.width(10.dp))
+
         ShortcutKeyItemView(shortcutKeys.shortcutKeysCore.keys[name] ?: listOf())
     }
 }

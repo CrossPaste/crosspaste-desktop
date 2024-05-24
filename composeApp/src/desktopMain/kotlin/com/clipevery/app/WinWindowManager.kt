@@ -90,6 +90,10 @@ class WinWindowManager : WindowManager {
         logger.info { "$windowTitle bringToBack Clipevery" }
         User32.bringToBack(windowTitle, prevWinAppInfo?.hwnd, toPaste)
     }
+
+    override suspend fun toPaste() {
+        User32.paste()
+    }
 }
 
 data class WinAppInfo(val hwnd: HWND, val filePath: String) {

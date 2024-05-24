@@ -483,7 +483,7 @@ interface User32 : StdCallLibrary {
         }
 
         @Suppress("UNCHECKED_CAST")
-        private fun paste() {
+        fun paste() {
             val inputs: Array<INPUT> = INPUT().toArray(2) as Array<INPUT>
 
             inputs[0].type = DWORD(INPUT.INPUT_KEYBOARD.toLong())

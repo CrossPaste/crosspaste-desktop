@@ -2,6 +2,7 @@ package com.clipevery.dao.clip
 
 import com.clipevery.clip.ClipPlugin
 import io.realm.kotlin.MutableRealm
+import io.realm.kotlin.query.RealmQuery
 import io.realm.kotlin.query.RealmResults
 import io.realm.kotlin.types.RealmInstant
 import org.mongodb.kbson.ObjectId
@@ -74,7 +75,7 @@ interface ClipDao {
     fun searchClipData(
         searchTerms: List<String>,
         favorite: Boolean? = null,
-        appInstanceId: String? = null,
+        appInstanceIdQuery: (RealmQuery<ClipData>) -> RealmQuery<ClipData> = { it },
         clipType: Int? = null,
         sort: Boolean = true, // sort createTime, true: desc, false: asc
         limit: Int,

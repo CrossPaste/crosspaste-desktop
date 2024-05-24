@@ -37,21 +37,24 @@ class DesktopShortcutKeysLoader(
     }
 
     private fun toConsumer(keys: TreeMap<String, List<KeyboardKeyInfo>>): Consumer<NativeKeyEvent> {
-        return Consumer { event ->
-            val keyboardKeySet: Set<KeyboardKeyInfo> = keys.values.flatten().toSet()
+        val keyboardKeySet: Set<KeyboardKeyInfo> = keys.values.flatten().toSet()
 
-            val matchMap: Map<Int, Boolean> =
-                keyboardKeySet.associate { info ->
-                    info.code to (
+        val matchMap: Map<Int, (NativeKeyEvent) -> Boolean> =
+            keyboardKeySet.associate { info ->
+                info.code to { event ->
+                    (
                         map[info.code]?.third?.let { match ->
                             match(event)
                         } ?: false
                     )
                 }
+            }
 
+        return Consumer { event ->
             for (entry in keys) {
                 entry.value.toList().fastAll { info ->
-                    matchMap[info.code] ?: false
+                    val eventCheck = matchMap[info.code] ?: { false }
+                    eventCheck(event)
                 }.let { match ->
                     if (match) {
                         shortcutKeysAction.action(entry.key)

@@ -94,6 +94,10 @@ object DesktopAppWindowManager : AppWindowManager {
         return windowManager.getPrevAppName()
     }
 
+    override suspend fun toPaste() {
+        windowManager.toPaste()
+    }
+
     override fun getCurrentActiveAppName(): String? {
         return try {
             windowManager.getCurrentActiveAppName()

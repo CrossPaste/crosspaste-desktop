@@ -83,7 +83,7 @@ interface X11Api : X11 {
             }
         }
 
-        suspend fun toPaste(display: Display) {
+        private suspend fun toPaste(display: Display) {
             val xTest = X11.XTest.INSTANCE
             try {
                 val ctrlKey = 37
@@ -96,6 +96,13 @@ interface X11Api : X11 {
                 xTest.XTestFakeKeyEvent(display, ctrlKey, false, NativeLong(0))
             } catch (e: Exception) {
                 logger.error(e) { "toPaste error" }
+            }
+        }
+
+        suspend fun toPaste() {
+            INSTANCE.XOpenDisplay(null)?.let { display ->
+                toPaste(display)
+                INSTANCE.XCloseDisplay(display)
             }
         }
 

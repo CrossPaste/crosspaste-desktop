@@ -35,6 +35,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -50,7 +51,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.res.painterResource
@@ -81,6 +82,7 @@ import com.clipevery.ui.base.starSolid
 import com.clipevery.ui.darken
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.koin.core.KoinApplication
 import java.awt.event.KeyEvent
 
@@ -109,6 +111,8 @@ fun ClipeverySearchWindow() {
     val focusRequester = remember { FocusRequester() }
 
     val searchWindowDpSize by remember { mutableStateOf(appWindowManager.searchWindowDpSize) }
+
+    val mainScope = rememberCoroutineScope()
 
     LaunchedEffect(appWindowManager.showSearchWindow) {
         if (appWindowManager.showSearchWindow) {
@@ -155,10 +159,7 @@ fun ClipeverySearchWindow() {
                         .shadow(5.dp, RoundedCornerShape(10.dp))
                         .size(searchWindowDpSize.minus(DpSize(20.dp, 20.dp)))
                         .background(MaterialTheme.colors.background)
-                        .border(1.dp, MaterialTheme.colors.onSurface.copy(alpha = 0.12f), RoundedCornerShape(10.dp))
-                        .onPreviewKeyEvent {
-                            it.key == Key(KeyEvent.VK_UP) || it.key == Key(KeyEvent.VK_DOWN)
-                        },
+                        .border(1.dp, MaterialTheme.colors.onSurface.copy(alpha = 0.12f), RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 Column {
@@ -180,6 +181,27 @@ fun ClipeverySearchWindow() {
                                         }
                                         .onFocusChanged {
                                             logger.debug { "onFocusChanged $it" }
+                                        }
+                                        .onKeyEvent {
+                                            when (it.key) {
+                                                Key(KeyEvent.VK_ENTER) -> {
+                                                    mainScope.launch {
+                                                        clipSearchService.toPaste()
+                                                    }
+                                                    true
+                                                }
+                                                Key(KeyEvent.VK_UP) -> {
+                                                    clipSearchService.upSelectedIndex()
+                                                    true
+                                                }
+                                                Key(KeyEvent.VK_DOWN) -> {
+                                                    clipSearchService.downSelectedIndex()
+                                                    true
+                                                }
+                                                else -> {
+                                                    false
+                                                }
+                                            }
                                         }
                                         .fillMaxSize(),
                                 value = clipSearchService.inputSearch,

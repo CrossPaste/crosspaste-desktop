@@ -69,6 +69,10 @@ class LinuxWindowManager : WindowManager {
         logger.info { "$windowTitle bringToBack Clipevery" }
         X11Api.bringToBack(prevLinuxAppInfo, toPaste)
     }
+
+    override suspend fun toPaste() {
+        X11Api.toPaste()
+    }
 }
 
 data class LinuxAppInfo(val window: Window, val className: String) {

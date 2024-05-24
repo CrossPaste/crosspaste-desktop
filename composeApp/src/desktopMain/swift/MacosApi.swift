@@ -218,6 +218,7 @@ public func bringToFront(windowTitle: UnsafePointer<CChar>) -> UnsafePointer<CCh
     return UnsafePointer<CChar>(strdup(currentAppInfo))
 }
 
+@_cdecl("simulatePasteCommand")
 func simulatePasteCommand() {
     let source = CGEventSource(stateID: .combinedSessionState)
 
