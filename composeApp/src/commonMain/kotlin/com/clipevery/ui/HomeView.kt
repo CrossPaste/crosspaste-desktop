@@ -202,6 +202,7 @@ fun TitleView(currentPage: MutableState<PageViewContext>) {
                                 arrayOf(
                                     copywriter.getText("Check_for_updates"),
                                     copywriter.getText("Settings"),
+                                    copywriter.getText("ShortcutKeys"),
                                     copywriter.getText("About"),
                                     copywriter.getText("FQA"),
                                     copywriter.getText("Quit"),
@@ -223,6 +224,10 @@ fun TitleView(currentPage: MutableState<PageViewContext>) {
                                 }
                                 MenuItem(copywriter.getText("Settings")) {
                                     currentPage.value = PageViewContext(PageViewType.SETTINGS, currentPage.value)
+                                    showPopup = false
+                                }
+                                MenuItem(copywriter.getText("Shortcut_Keys")) {
+                                    currentPage.value = PageViewContext(PageViewType.SHORTCUT_KEYS, currentPage.value)
                                     showPopup = false
                                 }
                                 MenuItem(copywriter.getText("About")) {
