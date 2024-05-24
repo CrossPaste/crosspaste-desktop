@@ -1,6 +1,7 @@
 package com.clipevery.listen
 
 import androidx.compose.ui.util.fastAll
+import com.clipevery.listener.KeyboardKeyInfo
 import com.clipevery.listener.ShortcutKeysAction
 import com.clipevery.listener.ShortcutKeysCore
 import com.clipevery.platform.currentPlatform
@@ -25,7 +26,7 @@ class DesktopShortcutKeysLoader(
             throw IllegalStateException("Unsupported platform: $platform")
         }
 
-    private val map: Map<String, Triple<String, Int, (NativeKeyEvent) -> Boolean>> =
+    private val map: Map<Int, Triple<String, Int, (NativeKeyEvent) -> Boolean>> =
         keyboardKeys.initializeMap()
 
     @Suppress("UNCHECKED_CAST")
@@ -35,22 +36,22 @@ class DesktopShortcutKeysLoader(
         return ShortcutKeysCore(consumer, keys)
     }
 
-    private fun toConsumer(keys: TreeMap<String, Array<String>>): Consumer<NativeKeyEvent> {
+    private fun toConsumer(keys: TreeMap<String, List<KeyboardKeyInfo>>): Consumer<NativeKeyEvent> {
         return Consumer { event ->
-            val keyboardKeySet = keys.values.flatMap { it.toSet() }
+            val keyboardKeySet: Set<KeyboardKeyInfo> = keys.values.flatten().toSet()
 
-            val matchMap: Map<String, Boolean> =
-                keyboardKeySet.associateWith { key ->
-                    (
-                        map[key]?.third?.let { match ->
+            val matchMap: Map<Int, Boolean> =
+                keyboardKeySet.associate { info ->
+                    info.code to (
+                        map[info.code]?.third?.let { match ->
                             match(event)
                         } ?: false
                     )
                 }
 
             for (entry in keys) {
-                entry.value.toList().fastAll { key ->
-                    matchMap[key] ?: false
+                entry.value.toList().fastAll { info ->
+                    matchMap[info.code] ?: false
                 }.let { match ->
                     if (match) {
                         shortcutKeysAction.action(entry.key)
@@ -61,12 +62,14 @@ class DesktopShortcutKeysLoader(
         }
     }
 
-    private fun loadKeys(properties: Properties): TreeMap<String, Array<String>> {
+    private fun loadKeys(properties: Properties): TreeMap<String, List<KeyboardKeyInfo>> {
         return properties.map { it.key.toString() to parseKeys(it.value.toString()) }.toMap(TreeMap())
     }
 
-    private fun parseKeys(define: String): Array<String> {
-        val regex = """\s\+\s""".toRegex()
-        return regex.split(define).map { it.trim() }.toTypedArray()
+    private fun parseKeys(define: String): List<KeyboardKeyInfo> {
+        return define.split("+").mapNotNull {
+            val code = it.toInt()
+            map[code]?.let { info -> KeyboardKeyInfo(info.first, code) }
+        }
     }
 }

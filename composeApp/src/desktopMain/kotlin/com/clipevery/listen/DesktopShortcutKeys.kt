@@ -12,6 +12,8 @@ import com.clipevery.presist.DesktopOneFilePersist
 import com.clipevery.utils.getResourceUtils
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.io.InputStreamReader
+import java.nio.charset.StandardCharsets
 import java.util.Properties
 import kotlin.io.path.exists
 
@@ -36,27 +38,27 @@ class DesktopShortcutKeys(
 
     private fun defaultKeysCore(): ShortcutKeysCore {
         val platform = currentPlatform()
-        val properties = getResourceUtils().loadProperties("shortcut-keys/${platform.name}.properties")
+        val properties = getResourceUtils().loadProperties("shortcut_keys/${platform.name}.properties")
         return shortcutKeysLoader.load(properties)
     }
 
     private fun loadKeysCore(): ShortcutKeysCore? {
         try {
-            val shortcutKeysPropertiesPath = pathProvider.resolve("config/shortcut-keys.properties", AppFileType.USER)
+            val shortcutKeysPropertiesPath = pathProvider.resolve("shortcut-keys.properties", AppFileType.USER)
             if (!shortcutKeysPropertiesPath.exists()) {
                 val filePersist = DesktopOneFilePersist(shortcutKeysPropertiesPath)
                 val platform = currentPlatform()
                 val bytes =
                     getResourceUtils()
-                        .resourceInputStream("shortcut-keys/${platform.name}.properties")
+                        .resourceInputStream("shortcut_keys/${platform.name}.properties")
                         .readBytes()
                 filePersist.saveBytes(bytes)
             }
 
-            val properties =
-                Properties().apply {
-                    load(shortcutKeysPropertiesPath.toFile().inputStream())
-                }
+            val properties = Properties()
+
+            InputStreamReader(shortcutKeysPropertiesPath.toFile().inputStream(), StandardCharsets.UTF_8)
+                .use { inputStreamReader -> properties.load(inputStreamReader) }
 
             return shortcutKeysLoader.load(properties)
         } catch (e: Exception) {

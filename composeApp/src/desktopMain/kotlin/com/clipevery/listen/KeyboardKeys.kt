@@ -50,6 +50,10 @@ interface KeyboardKeys {
 
     val BACK_SLASH: Triple<String, Int, (NativeKeyEvent) -> Boolean>
 
+    val EQUALS: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+
+    val MINUS: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+
     val F1: Triple<String, Int, (NativeKeyEvent) -> Boolean>
 
     val F2: Triple<String, Int, (NativeKeyEvent) -> Boolean>
@@ -147,15 +151,15 @@ interface KeyboardKeys {
     val Z: Triple<String, Int, (NativeKeyEvent) -> Boolean>
 
     @Suppress("UNCHECKED_CAST")
-    fun initializeMap(): Map<String, Triple<String, Int, (NativeKeyEvent) -> Boolean>> {
-        val map = mutableMapOf<String, Triple<String, Int, (NativeKeyEvent) -> Boolean>>()
+    fun initializeMap(): Map<Int, Triple<String, Int, (NativeKeyEvent) -> Boolean>> {
+        val map = mutableMapOf<Int, Triple<String, Int, (NativeKeyEvent) -> Boolean>>()
         val clazz = this::class
 
         clazz.memberProperties.forEach { property ->
             property.isAccessible = true
-            if (property.returnType.toString() == "kotlin.Triple<kotlin.String, kotlin.Int, kotlin.Function1<org.jnativehook.keyboard.NativeKeyEvent, kotlin.Boolean>>") {
+            if (property.returnType.toString() == "kotlin.Triple<kotlin.String, kotlin.Int, (com.github.kwhat.jnativehook.keyboard.NativeKeyEvent) -> kotlin.Boolean>") {
                 val value = property.getter.call(this) as Triple<String, Int, (NativeKeyEvent) -> Boolean>
-                map[property.name] = value
+                map[value.second] = value
             }
         }
         return map

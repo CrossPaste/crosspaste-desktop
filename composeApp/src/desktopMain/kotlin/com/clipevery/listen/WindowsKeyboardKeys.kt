@@ -69,6 +69,12 @@ class WindowsKeyboardKeys : KeyboardKeys {
     override val BACK_SLASH: Triple<String, Int, (NativeKeyEvent) -> Boolean> =
         Triple("\\", NativeKeyEvent.VC_BACK_SLASH) { it.keyCode == NativeKeyEvent.VC_BACK_SLASH }
 
+    override val EQUALS: Triple<String, Int, (NativeKeyEvent) -> Boolean> =
+        Triple("=", NativeKeyEvent.VC_EQUALS) { it.keyCode == NativeKeyEvent.VC_EQUALS }
+
+    override val MINUS: Triple<String, Int, (NativeKeyEvent) -> Boolean> =
+        Triple("-", NativeKeyEvent.VC_MINUS) { it.keyCode == NativeKeyEvent.VC_MINUS }
+
     override val F1: Triple<String, Int, (NativeKeyEvent) -> Boolean> =
         Triple("F1", NativeKeyEvent.VC_F1) { it.keyCode == NativeKeyEvent.VC_F1 }
 
