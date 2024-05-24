@@ -37,4 +37,6 @@ interface AppWindowManager {
     suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean)
 
     fun getPrevAppName(): String?
+
+    suspend fun toPaste()
 }

@@ -93,3 +93,8 @@ fun imageExpand(): Painter {
 fun imageCompress(): Painter {
     return painterResource("icon/base/image_compress.svg")
 }
+
+@Composable
+fun edit(): Painter {
+    return painterResource("icon/base/edit.svg")
+}

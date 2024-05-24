@@ -70,6 +70,10 @@ class MacWindowManager : WindowManager {
         MacosApi.INSTANCE.bringToBack(windowTitle, prevMacAppInfo?.bundleIdentifier ?: "", toPaste)
     }
 
+    override suspend fun toPaste() {
+        MacosApi.INSTANCE.simulatePasteCommand()
+    }
+
     private fun createMacAppInfo(info: String): MacAppInfo? {
         val result = info.split(" ", limit = 2)
         if (result.size > 1) {

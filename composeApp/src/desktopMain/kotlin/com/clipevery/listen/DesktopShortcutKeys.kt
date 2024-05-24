@@ -44,7 +44,9 @@ class DesktopShortcutKeys(
 
     private fun loadKeysCore(): ShortcutKeysCore? {
         try {
-            val shortcutKeysPropertiesPath = pathProvider.resolve("shortcut-keys.properties", AppFileType.USER)
+            val shortcutKeysPropertiesPath =
+                pathProvider
+                    .resolve("shortcut-keys.properties", AppFileType.USER)
             if (!shortcutKeysPropertiesPath.exists()) {
                 val filePersist = DesktopOneFilePersist(shortcutKeysPropertiesPath)
                 val platform = currentPlatform()

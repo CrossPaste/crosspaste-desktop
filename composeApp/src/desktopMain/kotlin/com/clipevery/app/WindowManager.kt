@@ -12,4 +12,6 @@ interface WindowManager {
         windowTitle: String,
         toPaste: Boolean,
     )
+
+    suspend fun toPaste()
 }

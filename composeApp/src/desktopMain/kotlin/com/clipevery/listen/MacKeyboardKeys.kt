@@ -43,7 +43,7 @@ class MacKeyboardKeys : KeyboardKeys {
         Triple("⇧", NativeKeyEvent.VC_SHIFT) { (it.modifiers and NativeKeyEvent.SHIFT_MASK) != 0 }
 
     override val COMMAND: Triple<String, Int, (NativeKeyEvent) -> Boolean> =
-        Triple("⌘", NativeKeyEvent.VC_META) { it.keyCode == NativeKeyEvent.VC_META }
+        Triple("⌘", NativeKeyEvent.VC_META) { (it.modifiers and NativeKeyEvent.META_MASK) != 0 }
 
     override val COMMA: Triple<String, Int, (NativeKeyEvent) -> Boolean> =
         Triple(",", NativeKeyEvent.VC_COMMA) { it.keyCode == NativeKeyEvent.VC_COMMA }

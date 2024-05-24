@@ -18,6 +18,7 @@ import com.clipevery.utils.getDateUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.Realm
+import io.realm.kotlin.query.RealmQuery
 import io.realm.kotlin.query.RealmResults
 import io.realm.kotlin.query.Sort
 import io.realm.kotlin.query.min
@@ -438,7 +439,7 @@ class ClipRealm(
     override fun searchClipData(
         searchTerms: List<String>,
         favorite: Boolean?,
-        appInstanceId: String?,
+        appInstanceIdQuery: (RealmQuery<ClipData>) -> RealmQuery<ClipData>,
         clipType: Int?,
         sort: Boolean,
         limit: Int,
@@ -454,12 +455,12 @@ class ClipRealm(
                 }
             }
 
+            query = appInstanceIdQuery(query)
+
             if (favorite != null) {
                 query = query.query("favorite == $0", favorite)
             }
-            if (appInstanceId != null) {
-                query = query.query("appInstanceId == $0", appInstanceId)
-            }
+
             if (clipType != null) {
                 query = query.query("clipType == $0", clipType)
             }

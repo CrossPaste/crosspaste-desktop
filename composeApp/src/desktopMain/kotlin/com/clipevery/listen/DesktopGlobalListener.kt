@@ -38,35 +38,30 @@ import com.clipevery.LocalExitApplication
 import com.clipevery.LocalKoinApplication
 import com.clipevery.app.AppRestartService
 import com.clipevery.app.AppWindowManager
-import com.clipevery.clip.ClipSearchService
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.listener.GlobalListener
+import com.clipevery.listener.ShortcutKeys
 import com.clipevery.ui.base.ComposeMessageViewFactory
 import com.clipevery.ui.base.MessageType
 import com.clipevery.utils.getSystemProperty
-import com.clipevery.utils.mainDispatcher
 import com.github.kwhat.jnativehook.GlobalScreen
 import com.github.kwhat.jnativehook.NativeHookException
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.awt.Desktop
 import java.net.URI
 
 val logger = KotlinLogging.logger {}
 
 class DesktopGlobalListener(
-    appWindowManager: AppWindowManager,
-    clipSearchService: ClipSearchService,
+    shortcutKeys: ShortcutKeys,
 ) : GlobalListener {
 
     private val systemProperty = getSystemProperty()
 
-    private val searchListener = SearchListener(appWindowManager, clipSearchService)
+    private val searchListener = SearchListener(shortcutKeys)
 
     override var errorCode: Int? by mutableStateOf(null)
 
@@ -200,17 +195,34 @@ private class GlobalListenerMessageViewFactory : ComposeMessageViewFactory {
             val annotatedText =
                 buildAnnotatedString {
                     withStyle(
-                        style = SpanStyle(color = MaterialTheme.colors.onBackground, fontSize = 14.sp, fontWeight = FontWeight.Light),
+                        style =
+                            SpanStyle(
+                                color = MaterialTheme.colors.onBackground,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Light,
+                            ),
                     ) {
                         append(content.substring(0, index))
                     }
                     pushStringAnnotation(tag = "clickable", annotation = "click_here")
-                    withStyle(style = SpanStyle(color = MaterialTheme.colors.primary, fontSize = 14.sp, fontWeight = FontWeight.Light)) {
+                    withStyle(
+                        style =
+                            SpanStyle(
+                                color = MaterialTheme.colors.primary,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Light,
+                            ),
+                    ) {
                         append(click)
                     }
                     pop()
                     withStyle(
-                        style = SpanStyle(color = MaterialTheme.colors.onBackground, fontSize = 14.sp, fontWeight = FontWeight.Light),
+                        style =
+                            SpanStyle(
+                                color = MaterialTheme.colors.primary,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Light,
+                            ),
                     ) {
                         append(content.substring(index + click.length))
                     }
@@ -270,44 +282,10 @@ private class GlobalListenerMessageViewFactory : ComposeMessageViewFactory {
 }
 
 class SearchListener(
-    private val appWindowManager: AppWindowManager,
-    private val clipSearchService: ClipSearchService,
+    private val shortcutKeys: ShortcutKeys,
 ) : NativeKeyListener {
 
-    private val logger = KotlinLogging.logger {}
-
-    private val mainDispatcherScope = CoroutineScope(mainDispatcher)
-
     override fun nativeKeyPressed(e: NativeKeyEvent) {
-        val isCmdOrCtrlPressed = (e.modifiers and NativeKeyEvent.META_MASK) != 0
-        val isShiftPressed = (e.modifiers and NativeKeyEvent.SHIFT_MASK) != 0
-        val isSpacePressed = e.keyCode == NativeKeyEvent.VC_SPACE
-
-        if (isCmdOrCtrlPressed && isShiftPressed && isSpacePressed) {
-            logger.info { "Open search window" }
-            mainDispatcherScope.launch(CoroutineName("OpenSearchWindow")) {
-                clipSearchService.activeWindow()
-            }
-        } else if (e.keyCode == NativeKeyEvent.VC_ENTER) {
-            mainDispatcherScope.launch(CoroutineName("Paste")) {
-                clipSearchService.toPaste()
-            }
-        } else if (e.keyCode == NativeKeyEvent.VC_ESCAPE) {
-            mainDispatcherScope.launch(CoroutineName("HideWindow")) {
-                clipSearchService.unActiveWindow()
-            }
-        } else if (e.keyCode == NativeKeyEvent.VC_UP) {
-            if (appWindowManager.showSearchWindow) {
-                mainDispatcherScope.launch(CoroutineName("UpSelectedIndex")) {
-                    clipSearchService.upSelectedIndex()
-                }
-            }
-        } else if (e.keyCode == NativeKeyEvent.VC_DOWN) {
-            if (appWindowManager.showSearchWindow) {
-                mainDispatcherScope.launch(CoroutineName("DownSelectedIndex")) {
-                    clipSearchService.downSelectedIndex()
-                }
-            }
-        }
+        shortcutKeys.shortcutKeysCore.eventConsumer.accept(e)
     }
 }

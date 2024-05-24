@@ -266,7 +266,7 @@ class Clipevery {
                     // ui component
                     single<AppWindowManager> { DesktopAppWindowManager }
                     single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
-                    single<GlobalListener> { DesktopGlobalListener(get(), get()) }
+                    single<GlobalListener> { DesktopGlobalListener(get()) }
                     single<ThemeDetector> { DesktopThemeDetector(get()) }
                     single<ClipResourceLoader> { DesktopAbsoluteClipResourceLoader }
                     single<ToastManager> { DesktopToastManager() }
@@ -276,7 +276,7 @@ class Clipevery {
                     single<UISupport> { DesktopUISupport(get(), get()) }
                     single<ShortcutKeys> { DesktopShortcutKeys(get(), get()) }
                     single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get()) }
-                    single<ShortcutKeysAction> { DesktopShortKeysAction() }
+                    single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get()) }
                 }
             return GlobalContext.startKoin {
                 modules(appModule)
