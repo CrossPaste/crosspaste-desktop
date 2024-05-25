@@ -63,11 +63,13 @@ import com.clipevery.i18n.GlobalCopywriterImpl
 import com.clipevery.listen.DesktopGlobalListener
 import com.clipevery.listen.DesktopShortKeysAction
 import com.clipevery.listen.DesktopShortcutKeys
+import com.clipevery.listen.DesktopShortcutKeysListener
 import com.clipevery.listen.DesktopShortcutKeysLoader
 import com.clipevery.listen.ShortcutKeysLoader
 import com.clipevery.listener.GlobalListener
 import com.clipevery.listener.ShortcutKeys
 import com.clipevery.listener.ShortcutKeysAction
+import com.clipevery.listener.ShortcutKeysListener
 import com.clipevery.log.ClipeveryLogger
 import com.clipevery.log.initLogger
 import com.clipevery.net.ClipBonjourService
@@ -265,6 +267,7 @@ class Clipevery {
                     // ui component
                     single<AppWindowManager> { DesktopAppWindowManager }
                     single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
+                    single<ShortcutKeysListener> { DesktopShortcutKeysListener(get()) }
                     single<GlobalListener> { DesktopGlobalListener(get()) }
                     single<ThemeDetector> { DesktopThemeDetector(get()) }
                     single<ClipResourceLoader> { DesktopAbsoluteClipResourceLoader }

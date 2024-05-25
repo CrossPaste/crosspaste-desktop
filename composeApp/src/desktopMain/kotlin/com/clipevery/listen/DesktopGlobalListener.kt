@@ -40,13 +40,12 @@ import com.clipevery.app.AppRestartService
 import com.clipevery.app.AppWindowManager
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.listener.GlobalListener
-import com.clipevery.listener.ShortcutKeys
+import com.clipevery.listener.ShortcutKeysListener
 import com.clipevery.ui.base.ComposeMessageViewFactory
 import com.clipevery.ui.base.MessageType
 import com.clipevery.utils.getSystemProperty
 import com.github.kwhat.jnativehook.GlobalScreen
 import com.github.kwhat.jnativehook.NativeHookException
-import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
@@ -56,12 +55,10 @@ import java.net.URI
 val logger = KotlinLogging.logger {}
 
 class DesktopGlobalListener(
-    shortcutKeys: ShortcutKeys,
+    private val listener: ShortcutKeysListener,
 ) : GlobalListener {
 
     private val systemProperty = getSystemProperty()
-
-    private val searchListener = SearchListener(shortcutKeys)
 
     override var errorCode: Int? by mutableStateOf(null)
 
@@ -76,7 +73,7 @@ class DesktopGlobalListener(
             try {
                 if (!isRegistered()) {
                     GlobalScreen.registerNativeHook()
-                    GlobalScreen.addNativeKeyListener(searchListener)
+                    GlobalScreen.addNativeKeyListener(listener as NativeKeyListener)
                 }
             } catch (e: NativeHookException) {
                 errorCode = e.code
@@ -89,7 +86,7 @@ class DesktopGlobalListener(
         if (systemProperty.get("globalListener", false.toString()).toBoolean()) {
             try {
                 if (isRegistered()) {
-                    GlobalScreen.removeNativeKeyListener(searchListener)
+                    GlobalScreen.removeNativeKeyListener(listener as NativeKeyListener)
                     GlobalScreen.unregisterNativeHook()
                 }
             } catch (e: NativeHookException) {
@@ -278,14 +275,5 @@ private class GlobalListenerMessageViewFactory : ComposeMessageViewFactory {
                 }
             }
         }
-    }
-}
-
-class SearchListener(
-    private val shortcutKeys: ShortcutKeys,
-) : NativeKeyListener {
-
-    override fun nativeKeyPressed(e: NativeKeyEvent) {
-        shortcutKeys.shortcutKeysCore.eventConsumer.accept(e)
     }
 }
