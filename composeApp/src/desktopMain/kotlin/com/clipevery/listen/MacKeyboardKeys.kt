@@ -34,10 +34,10 @@ class MacKeyboardKeys : KeyboardKeys {
         Triple("→", NativeKeyEvent.VC_RIGHT) { it.keyCode == NativeKeyEvent.VC_RIGHT }
 
     override val CTRL: Triple<String, Int, (NativeKeyEvent) -> Boolean> =
-        Triple("⌃", NativeKeyEvent.VC_CONTROL) { it.keyCode == NativeKeyEvent.VC_CONTROL }
+        Triple("⌃", NativeKeyEvent.VC_CONTROL) { (it.modifiers and NativeKeyEvent.CTRL_MASK) != 0 }
 
     override val ALT: Triple<String, Int, (NativeKeyEvent) -> Boolean> =
-        Triple("⌥", NativeKeyEvent.VC_ALT) { it.keyCode == NativeKeyEvent.VC_ALT }
+        Triple("⌥", NativeKeyEvent.VC_ALT) { (it.modifiers and NativeKeyEvent.ALT_MASK) != 0 }
 
     override val SHIFT: Triple<String, Int, (NativeKeyEvent) -> Boolean> =
         Triple("⇧", NativeKeyEvent.VC_SHIFT) { (it.modifiers and NativeKeyEvent.SHIFT_MASK) != 0 }
