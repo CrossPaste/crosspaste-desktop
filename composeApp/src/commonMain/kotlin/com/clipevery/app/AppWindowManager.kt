@@ -1,6 +1,7 @@
 package com.clipevery.app
 
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.window.WindowPosition
 
 interface AppWindowManager {
 
@@ -8,11 +9,17 @@ interface AppWindowManager {
 
     val mainWindowTitle: String
 
+    var mainWindowPosition: WindowPosition
+
     val mainWindowDpSize: DpSize
+
+    var showMainDialog: Boolean
 
     var showSearchWindow: Boolean
 
     val searchWindowTitle: String
+
+    val searchWindowPosition: WindowPosition
 
     val searchWindowDpSize: DpSize
 
