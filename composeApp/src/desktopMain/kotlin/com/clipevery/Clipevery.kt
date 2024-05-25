@@ -3,7 +3,6 @@ package com.clipevery
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
@@ -356,7 +355,7 @@ class Clipevery {
                         state = remember { notificationManager.trayState },
                         icon = trayIcon,
                         mouseListener =
-                            getTrayMouseAdapter(windowState) {
+                            getTrayMouseAdapter(appWindowManager, windowState) {
                                 if (appWindowManager.showMainWindow) {
                                     appWindowManager.unActiveMainWindow()
                                 } else {
@@ -365,7 +364,7 @@ class Clipevery {
                             },
                     )
                 } else {
-                    LinuxTrayWindowState.setWindowPosition(windowState)
+                    LinuxTrayWindowState.setWindowPosition(appWindowManager, windowState)
                 }
 
                 val exitApplication: () -> Unit = {
@@ -411,7 +410,9 @@ class Clipevery {
                                 }
 
                                 override fun windowLostFocus(e: WindowEvent?) {
-                                    appWindowManager.unActiveMainWindow()
+                                    if (!appWindowManager.showMainDialog) {
+                                        appWindowManager.unActiveMainWindow()
+                                    }
                                 }
                             }
 
@@ -431,7 +432,7 @@ class Clipevery {
                 val searchWindowState =
                     rememberWindowState(
                         placement = WindowPlacement.Floating,
-                        position = WindowPosition.Aligned(Alignment.Center),
+                        position = appWindowManager.searchWindowPosition,
                         size = appWindowManager.searchWindowDpSize,
                     )
 

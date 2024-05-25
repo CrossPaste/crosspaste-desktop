@@ -5,31 +5,38 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
+import com.clipevery.app.AppWindowManager
 import com.clipevery.platform.currentPlatform
 import java.awt.GraphicsEnvironment
 import java.awt.Toolkit
 import java.awt.event.MouseAdapter
 
 fun getTrayMouseAdapter(
+    appWindowManager: AppWindowManager,
     windowState: WindowState,
     mouseClickedAction: () -> Unit,
 ): MouseAdapter {
     return if (currentPlatform().isMacos()) {
-        MacTrayMouseClicked(windowState, mouseClickedAction)
+        MacTrayMouseClicked(appWindowManager, windowState, mouseClickedAction)
     } else {
-        WindowsTrayMouseClicked(windowState, mouseClickedAction)
+        WindowsTrayMouseClicked(appWindowManager, windowState, mouseClickedAction)
     }
 }
 
-class MacTrayMouseClicked(private val windowState: WindowState, private val mouseClickedAction: () -> Unit) : MouseAdapter() {
+class MacTrayMouseClicked(
+    private val appWindowManager: AppWindowManager,
+    private val windowState: WindowState,
+    private val mouseClickedAction: () -> Unit,
+) : MouseAdapter() {
 
     override fun mouseClicked(e: java.awt.event.MouseEvent) {
         mouseClickedAction()
-        windowState.position =
+        appWindowManager.mainWindowPosition =
             WindowPosition.Absolute(
                 x = calculatePosition(e.x.dp, windowState.size.width),
                 y = 30.dp,
             )
+        windowState.position = appWindowManager.mainWindowPosition
     }
 
     private fun calculatePosition(
@@ -46,7 +53,11 @@ class MacTrayMouseClicked(private val windowState: WindowState, private val mous
     }
 }
 
-class WindowsTrayMouseClicked(private val windowState: WindowState, private val mouseClickedAction: () -> Unit) : MouseAdapter() {
+class WindowsTrayMouseClicked(
+    private val appWindowManager: AppWindowManager,
+    private val windowState: WindowState,
+    private val mouseClickedAction: () -> Unit,
+) : MouseAdapter() {
 
     override fun mouseClicked(e: java.awt.event.MouseEvent) {
         mouseClickedAction()
@@ -61,17 +72,22 @@ class WindowsTrayMouseClicked(private val windowState: WindowState, private val 
         val windowWidth = windowState.size.width
         val windowHeight = windowState.size.height
 
-        windowState.position =
+        appWindowManager.mainWindowPosition =
             WindowPosition.Absolute(
                 x = usableWidth.dp - windowWidth + 8.dp,
                 y = usableHeight.dp - windowHeight + 8.dp,
             )
+
+        windowState.position = appWindowManager.mainWindowPosition
     }
 }
 
 object LinuxTrayWindowState {
 
-    fun setWindowPosition(windowState: WindowState) {
+    fun setWindowPosition(
+        appWindowManager: AppWindowManager,
+        windowState: WindowState,
+    ) {
         val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
         val bounds = gd.defaultConfiguration.bounds
         val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
@@ -80,10 +96,12 @@ object LinuxTrayWindowState {
 
         val windowWidth = windowState.size.width
 
-        windowState.position =
+        appWindowManager.mainWindowPosition =
             WindowPosition.Absolute(
                 x = usableWidth.dp - windowWidth,
                 y = 0.dp,
             )
+
+        windowState.position = appWindowManager.mainWindowPosition
     }
 }

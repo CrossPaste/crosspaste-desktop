@@ -3,8 +3,10 @@ package com.clipevery.app
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.WindowPosition
 import com.clipevery.platform.currentPlatform
 import com.clipevery.utils.ioDispatcher
 import com.clipevery.utils.mainDispatcher
@@ -47,13 +49,19 @@ object DesktopAppWindowManager : AppWindowManager {
 
     override val mainWindowTitle: String = "Clipevery"
 
+    override var mainWindowPosition by mutableStateOf<WindowPosition>(WindowPosition.PlatformDefault)
+
     private var mainWindowActionTime = System.currentTimeMillis()
 
     override val mainWindowDpSize = DpSize(width = 460.dp, height = 710.dp)
 
+    override var showMainDialog by mutableStateOf(false)
+
     override var showSearchWindow by mutableStateOf(false)
 
     override val searchWindowTitle: String = "Clipevery Search"
+
+    override val searchWindowPosition: WindowPosition by mutableStateOf(WindowPosition.Aligned(Alignment.Center))
 
     override val searchWindowDpSize = DpSize(width = 800.dp, height = 520.dp)
 
