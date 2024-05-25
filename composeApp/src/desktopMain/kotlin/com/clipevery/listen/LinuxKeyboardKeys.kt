@@ -34,16 +34,16 @@ class LinuxKeyboardKeys : KeyboardKeys {
         Triple("→", NativeKeyEvent.VC_RIGHT) { it.keyCode == NativeKeyEvent.VC_RIGHT }
 
     override val CTRL: Triple<String, Int, (NativeKeyEvent) -> Boolean> =
-        Triple("Ctrl", NativeKeyEvent.VC_CONTROL) { it.keyCode == NativeKeyEvent.VC_CONTROL }
+        Triple("Ctrl", NativeKeyEvent.VC_CONTROL) { (it.modifiers and NativeKeyEvent.CTRL_MASK) != 0 }
 
     override val ALT: Triple<String, Int, (NativeKeyEvent) -> Boolean> =
-        Triple("Alt", NativeKeyEvent.VC_ALT) { it.keyCode == NativeKeyEvent.VC_ALT }
+        Triple("Alt", NativeKeyEvent.VC_ALT) { (it.modifiers and NativeKeyEvent.ALT_MASK) != 0 }
 
     override val SHIFT: Triple<String, Int, (NativeKeyEvent) -> Boolean> =
         Triple("Shift", NativeKeyEvent.VC_SHIFT) { (it.modifiers and NativeKeyEvent.SHIFT_MASK) != 0 }
 
     override val COMMAND: Triple<String, Int, (NativeKeyEvent) -> Boolean> =
-        Triple("Super", NativeKeyEvent.VC_META) { it.keyCode == NativeKeyEvent.VC_META }
+        Triple("Super", NativeKeyEvent.VC_META) { (it.modifiers and NativeKeyEvent.META_MASK) != 0 }
 
     override val COMMA: Triple<String, Int, (NativeKeyEvent) -> Boolean> =
         Triple(",", NativeKeyEvent.VC_COMMA) { it.keyCode == NativeKeyEvent.VC_COMMA }
