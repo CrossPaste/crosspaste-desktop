@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.clipevery.app.AppFileType
+import com.clipevery.listener.KeyboardKeyInfo
 import com.clipevery.listener.ShortcutKeys
 import com.clipevery.listener.ShortcutKeysCore
 import com.clipevery.path.PathProvider
@@ -12,7 +13,9 @@ import com.clipevery.presist.DesktopOneFilePersist
 import com.clipevery.utils.getResourceUtils
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.io.FileOutputStream
 import java.io.InputStreamReader
+import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets
 import java.util.Properties
 import kotlin.io.path.exists
@@ -66,6 +69,33 @@ class DesktopShortcutKeys(
         } catch (e: Exception) {
             logger.error(e) { "Failed to load shortcut keys" }
             return null
+        }
+    }
+
+    override fun update(
+        keyName: String,
+        keys: List<KeyboardKeyInfo>,
+    ) {
+        try {
+            val shortcutKeysPropertiesPath =
+                pathProvider
+                    .resolve("shortcut-keys.properties", AppFileType.USER)
+
+            val properties = Properties()
+
+            InputStreamReader(shortcutKeysPropertiesPath.toFile().inputStream(), StandardCharsets.UTF_8)
+                .use { inputStreamReader -> properties.load(inputStreamReader) }
+
+            properties.setProperty(keyName, keys.joinToString("+") { "${it.code}" })
+
+            FileOutputStream(shortcutKeysPropertiesPath.toFile()).use { fileOutputStream ->
+                OutputStreamWriter(fileOutputStream, Charsets.UTF_8).use { writer ->
+                    properties.store(writer, "Comments")
+                }
+            }
+            shortcutKeysCore = shortcutKeysLoader.load(properties)
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to update shortcut keys" }
         }
     }
 }

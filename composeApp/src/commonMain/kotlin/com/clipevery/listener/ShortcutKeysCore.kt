@@ -30,4 +30,8 @@ data class KeyboardKeyInfo(
         result = 31 * result + code
         return result
     }
+
+    override fun toString(): String {
+        return "KeyboardKeyInfo(name='$name', code=$code)"
+    }
 }

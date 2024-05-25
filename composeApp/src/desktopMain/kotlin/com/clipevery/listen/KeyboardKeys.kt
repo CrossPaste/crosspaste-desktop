@@ -164,4 +164,12 @@ interface KeyboardKeys {
         }
         return map
     }
+
+    fun groupKeys(): Map<Boolean, Map<Int, Triple<String, Int, (NativeKeyEvent) -> Boolean>>> {
+        val map: Map<Int, Triple<String, Int, (NativeKeyEvent) -> Boolean>> = initializeMap()
+        val combinationKeys: (Int) -> Boolean = { it == SHIFT.second || it == CTRL.second || it == ALT.second || it == COMMAND.second }
+        return map.values.groupBy { combinationKeys(it.second) }
+            .map { it.key to it.value.associateBy { info -> info.second } }
+            .toMap()
+    }
 }
