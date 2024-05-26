@@ -71,37 +71,41 @@ interface X11Api : X11 {
         suspend fun bringToBack(
             prevLinuxAppInfo: LinuxAppInfo?,
             toPaste: Boolean,
+            keyCodes: List<Int>,
         ) {
             INSTANCE.XOpenDisplay(null)?.let { display ->
                 prevLinuxAppInfo?.let {
                     WMCtrl.activeWindow(display, it.window)
                     if (toPaste) {
-                        toPaste(display)
+                        toPaste(display, keyCodes)
                     }
                 }
                 INSTANCE.XCloseDisplay(display)
             }
         }
 
-        private suspend fun toPaste(display: Display) {
+        private suspend fun toPaste(
+            display: Display,
+            keyCodes: List<Int>,
+        ) {
             val xTest = X11.XTest.INSTANCE
             try {
-                val ctrlKey = 37
-                val vKey = 55
-
-                xTest.XTestFakeKeyEvent(display, ctrlKey, true, NativeLong(0))
-                xTest.XTestFakeKeyEvent(display, vKey, true, NativeLong(0))
+                for (keyCode in keyCodes) {
+                    xTest.XTestFakeKeyEvent(display, keyCode, true, NativeLong(0))
+                }
                 delay(100)
-                xTest.XTestFakeKeyEvent(display, vKey, false, NativeLong(0))
-                xTest.XTestFakeKeyEvent(display, ctrlKey, false, NativeLong(0))
+
+                for (keyCode in keyCodes.reversed()) {
+                    xTest.XTestFakeKeyEvent(display, keyCode, false, NativeLong(0))
+                }
             } catch (e: Exception) {
                 logger.error(e) { "toPaste error" }
             }
         }
 
-        suspend fun toPaste() {
+        suspend fun toPaste(keyCodes: List<Int>) {
             INSTANCE.XOpenDisplay(null)?.let { display ->
-                toPaste(display)
+                toPaste(display, keyCodes)
                 INSTANCE.XCloseDisplay(display)
             }
         }

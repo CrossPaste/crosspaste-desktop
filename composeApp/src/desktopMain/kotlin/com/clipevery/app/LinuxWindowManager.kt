@@ -12,7 +12,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 class LinuxWindowManager(
-    shortcutKeys: ShortcutKeys,
+    private val shortcutKeys: ShortcutKeys,
 ) : WindowManager {
 
     private val logger = KotlinLogging.logger {}
@@ -70,11 +70,19 @@ class LinuxWindowManager(
         toPaste: Boolean,
     ) {
         logger.info { "$windowTitle bringToBack Clipevery" }
-        X11Api.bringToBack(prevLinuxAppInfo, toPaste)
+        val keyCodes =
+            shortcutKeys.shortcutKeysCore.keys["Paste"]?.let {
+                it.map { key -> key.rawCode }
+            } ?: listOf()
+        X11Api.bringToBack(prevLinuxAppInfo, toPaste, keyCodes)
     }
 
     override suspend fun toPaste() {
-        X11Api.toPaste()
+        val keyCodes =
+            shortcutKeys.shortcutKeysCore.keys["Paste"]?.let {
+                it.map { key -> key.rawCode }
+            } ?: listOf()
+        X11Api.toPaste(keyCodes)
     }
 }
 
