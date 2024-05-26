@@ -7,6 +7,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
+import com.clipevery.listener.ShortcutKeys
 import com.clipevery.platform.currentPlatform
 import com.clipevery.utils.ioDispatcher
 import com.clipevery.utils.mainDispatcher
@@ -23,21 +24,28 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlin.random.Random
 
-object DesktopAppWindowManager : AppWindowManager {
+class DesktopAppWindowManager(private val shortcutKeys: Lazy<ShortcutKeys>) : AppWindowManager {
+
+    companion object {
+        const val MAIN_WINDOW_TITLE: String = "Clipevery"
+
+        const val SEARCH_WINDOW_TITLE: String = "Clipevery Search"
+    }
 
     private val logger: KLogger = KotlinLogging.logger {}
 
     private val currentPlatform = currentPlatform()
 
-    private val windowManager: WindowManager =
+    private val windowManager: WindowManager by lazy {
         run {
             when {
-                currentPlatform.isMacos() -> MacWindowManager()
-                currentPlatform.isWindows() -> WinWindowManager()
-                currentPlatform.isLinux() -> LinuxWindowManager()
+                currentPlatform.isMacos() -> MacWindowManager(shortcutKeys.value)
+                currentPlatform.isWindows() -> WinWindowManager(shortcutKeys.value)
+                currentPlatform.isLinux() -> LinuxWindowManager(shortcutKeys.value)
                 else -> throw IllegalStateException("Unsupported platform: $currentPlatform")
             }
         }
+    }
 
     private var startRefreshNumber: Int = 0
 
@@ -46,8 +54,6 @@ object DesktopAppWindowManager : AppWindowManager {
     private val scope = CoroutineScope(Dispatchers.IO)
 
     override var showMainWindow by mutableStateOf(false)
-
-    override val mainWindowTitle: String = "Clipevery"
 
     override var mainWindowPosition by mutableStateOf<WindowPosition>(WindowPosition.PlatformDefault)
 
@@ -58,8 +64,6 @@ object DesktopAppWindowManager : AppWindowManager {
     override var showMainDialog by mutableStateOf(false)
 
     override var showSearchWindow by mutableStateOf(false)
-
-    override val searchWindowTitle: String = "Clipevery Search"
 
     override val searchWindowPosition: WindowPosition by mutableStateOf(WindowPosition.Aligned(Alignment.Center))
 
@@ -126,19 +130,19 @@ object DesktopAppWindowManager : AppWindowManager {
         }
         showMainWindow = true
         runBlocking {
-            windowManager.bringToFront(mainWindowTitle)
+            windowManager.bringToFront(MAIN_WINDOW_TITLE)
         }
     }
 
     override suspend fun activeSearchWindow() {
         showSearchWindow = true
-        windowManager.bringToFront(searchWindowTitle)
+        windowManager.bringToFront(SEARCH_WINDOW_TITLE)
     }
 
     override fun unActiveMainWindow() {
         runBlocking {
             withContext(ioDispatcher) {
-                windowManager.bringToBack(mainWindowTitle, false)
+                windowManager.bringToBack(MAIN_WINDOW_TITLE, false)
             }
         }
         if (currentPlatform.isWindows()) {
@@ -151,7 +155,7 @@ object DesktopAppWindowManager : AppWindowManager {
         if (showSearchWindow) {
             withContext(ioDispatcher) {
                 val toPaste = preparePaste()
-                windowManager.bringToBack(searchWindowTitle, toPaste)
+                windowManager.bringToBack(SEARCH_WINDOW_TITLE, toPaste)
             }
             showSearchWindow = false
         }

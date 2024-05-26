@@ -170,7 +170,7 @@ public func saveAppIcon(bundleIdentifier: UnsafePointer<CChar>, path: UnsafePoin
 }
 
 @_cdecl("bringToBack")
-public func bringToBack(windowTitle: UnsafePointer<CChar>, appName: UnsafePointer<CChar>, toPaste: Bool) {
+public func bringToBack(windowTitle: UnsafePointer<CChar>, appName: UnsafePointer<CChar>, toPaste: Bool, keyCodesPointer: UnsafePointer<Int32>, count: Int) {
     DispatchQueue.main.async {
         let title = String(cString: windowTitle)
         let windows = NSApplication.shared.windows
@@ -189,10 +189,9 @@ public func bringToBack(windowTitle: UnsafePointer<CChar>, appName: UnsafePointe
         if let app = apps.first {
             app.activate(options: [.activateIgnoringOtherApps])
             if (toPaste) {
-                simulatePasteCommand()
+                simulatePasteCommand(keyCodesPointer: keyCodesPointer, count: count)
             }
         }
-
     }
 }
 
@@ -219,28 +218,43 @@ public func bringToFront(windowTitle: UnsafePointer<CChar>) -> UnsafePointer<CCh
 }
 
 @_cdecl("simulatePasteCommand")
-func simulatePasteCommand() {
+func simulatePasteCommand(keyCodesPointer: UnsafePointer<Int32>, count: Int) {
+    if (count <= 0) {
+        return
+    }
+
     let source = CGEventSource(stateID: .combinedSessionState)
+    let keyCodes = UnsafeBufferPointer(start: keyCodesPointer, count: count)
 
-    // Create an event for pressing the Command key
-    let commandDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(55), keyDown: true)
-    commandDown?.flags = .maskCommand
+    var flags = CGEventFlags()
 
-    // Create an event for pressing the 'V' key
-    let vKeyDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(9), keyDown: true)
-    vKeyDown?.flags = .maskCommand
+    // Identify and set modifier flags
+    for keyCode in keyCodes {
+        switch keyCode {
+        case 55:  // Command key
+            flags.insert(.maskCommand)
+        case 56:  // Shift key
+            flags.insert(.maskShift)
+        case 58:  // Option key
+            flags.insert(.maskAlternate)
+        case 59:  // Control key
+            flags.insert(.maskControl)
+        default:
+            break
+        }
+    }
 
-    // Create an event for releasing the 'V' key
-    let vKeyUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(9), keyDown: false)
-    vKeyUp?.flags = .maskCommand
+    for keyCode in keyCodes {
+        if let keyDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(UInt16(keyCode)), keyDown: true) {
+            keyDown.flags = flags
+            keyDown.post(tap: .cghidEventTap)
+        }
+    }
 
-    // Create an event for releasing the Command key
-    let commandUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(55), keyDown: false)
-    commandUp?.flags = .maskCommand
-
-    // Send events to simulate pasting
-    commandDown?.post(tap: .cghidEventTap)
-    vKeyDown?.post(tap: .cghidEventTap)
-    vKeyUp?.post(tap: .cghidEventTap)
-    commandUp?.post(tap: .cghidEventTap)
+    for keyCode in keyCodes.reversed() {
+        if let keyUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(UInt16(keyCode)), keyDown: false) {
+            keyUp.flags = flags
+            keyUp.post(tap: .cghidEventTap)
+        }
+    }
 }

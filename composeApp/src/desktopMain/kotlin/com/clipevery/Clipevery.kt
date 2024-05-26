@@ -20,6 +20,8 @@ import com.clipevery.app.DesktopAppInfoFactory
 import com.clipevery.app.DesktopAppRestartService
 import com.clipevery.app.DesktopAppStartUpService
 import com.clipevery.app.DesktopAppWindowManager
+import com.clipevery.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
+import com.clipevery.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.clipevery.clean.CleanClipScheduler
 import com.clipevery.clean.DesktopCleanClipScheduler
 import com.clipevery.clip.CacheManager
@@ -265,7 +267,7 @@ class Clipevery {
                     }
 
                     // ui component
-                    single<AppWindowManager> { DesktopAppWindowManager }
+                    single<AppWindowManager> { DesktopAppWindowManager(lazy { get() }) }
                     single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
                     single<ShortcutKeysListener> { DesktopShortcutKeysListener(get()) }
                     single<GlobalListener> { DesktopGlobalListener(get()) }
@@ -382,7 +384,7 @@ class Clipevery {
                     onCloseRequest = exitApplication,
                     visible = appWindowManager.showMainWindow,
                     state = windowState,
-                    title = appWindowManager.mainWindowTitle,
+                    title = MAIN_WINDOW_TITLE,
                     icon = painterResource("clipevery_icon.png"),
                     alwaysOnTop = true,
                     undecorated = true,
@@ -443,7 +445,7 @@ class Clipevery {
                     onCloseRequest = ::exitApplication,
                     visible = appWindowManager.showSearchWindow,
                     state = searchWindowState,
-                    title = appWindowManager.searchWindowTitle,
+                    title = SEARCH_WINDOW_TITLE,
                     alwaysOnTop = true,
                     undecorated = true,
                     transparent = true,

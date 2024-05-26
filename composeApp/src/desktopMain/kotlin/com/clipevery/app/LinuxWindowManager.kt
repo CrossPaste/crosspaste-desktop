@@ -1,5 +1,6 @@
 package com.clipevery.app
 
+import com.clipevery.listener.ShortcutKeys
 import com.clipevery.os.linux.api.X11Api
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.path.PathProvider
@@ -10,7 +11,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
-class LinuxWindowManager : WindowManager {
+class LinuxWindowManager(
+    shortcutKeys: ShortcutKeys,
+) : WindowManager {
 
     private val logger = KotlinLogging.logger {}
 

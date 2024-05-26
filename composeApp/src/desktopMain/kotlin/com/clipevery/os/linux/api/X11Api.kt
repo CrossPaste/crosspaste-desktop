@@ -1,7 +1,7 @@
 package com.clipevery.os.linux.api
 
-import com.clipevery.app.DesktopAppWindowManager.mainWindowTitle
-import com.clipevery.app.DesktopAppWindowManager.searchWindowTitle
+import com.clipevery.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
+import com.clipevery.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.clipevery.app.LinuxAppInfo
 import com.clipevery.os.linux.api.WMCtrl.getActiveWindow
 import com.sun.jna.Native
@@ -108,7 +108,7 @@ interface X11Api : X11 {
 
         @Synchronized
         private fun getWindow(windowTitle: String): Window? {
-            return if (windowTitle == mainWindowTitle) {
+            return if (windowTitle == MAIN_WINDOW_TITLE) {
                 findMainWindow()
             } else {
                 findSearchWindow()
@@ -119,7 +119,7 @@ interface X11Api : X11 {
             if (mainWindow == null) {
                 INSTANCE.XOpenDisplay(null)?.let { display ->
                     val rootWindow = INSTANCE.XDefaultRootWindow(display)
-                    WMCtrl.findWindowByTitle(display, rootWindow, mainWindowTitle)?.let {
+                    WMCtrl.findWindowByTitle(display, rootWindow, MAIN_WINDOW_TITLE)?.let {
                         mainWindow = it
                     }
                 }
@@ -131,7 +131,7 @@ interface X11Api : X11 {
             if (searchWindow == null) {
                 INSTANCE.XOpenDisplay(null)?.let { display ->
                     val rootWindow = INSTANCE.XDefaultRootWindow(display)
-                    WMCtrl.findWindowByTitle(display, rootWindow, searchWindowTitle)?.let {
+                    WMCtrl.findWindowByTitle(display, rootWindow, SEARCH_WINDOW_TITLE)?.let {
                         searchWindow = it
                     }
                 }

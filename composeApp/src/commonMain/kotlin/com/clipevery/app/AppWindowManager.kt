@@ -7,8 +7,6 @@ interface AppWindowManager {
 
     var showMainWindow: Boolean
 
-    val mainWindowTitle: String
-
     var mainWindowPosition: WindowPosition
 
     val mainWindowDpSize: DpSize
@@ -16,8 +14,6 @@ interface AppWindowManager {
     var showMainDialog: Boolean
 
     var showSearchWindow: Boolean
-
-    val searchWindowTitle: String
 
     val searchWindowPosition: WindowPosition
 
