@@ -1,7 +1,7 @@
 package com.clipevery.os.linux.api
 
-import com.clipevery.app.DesktopAppWindowManager.mainWindowTitle
-import com.clipevery.app.DesktopAppWindowManager.searchWindowTitle
+import com.clipevery.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
+import com.clipevery.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.clipevery.app.LinuxAppInfo
 import com.clipevery.os.linux.api.WMCtrl.getActiveWindow
 import com.sun.jna.Native
@@ -71,44 +71,48 @@ interface X11Api : X11 {
         suspend fun bringToBack(
             prevLinuxAppInfo: LinuxAppInfo?,
             toPaste: Boolean,
+            keyCodes: List<Int>,
         ) {
             INSTANCE.XOpenDisplay(null)?.let { display ->
                 prevLinuxAppInfo?.let {
                     WMCtrl.activeWindow(display, it.window)
                     if (toPaste) {
-                        toPaste(display)
+                        toPaste(display, keyCodes)
                     }
                 }
                 INSTANCE.XCloseDisplay(display)
             }
         }
 
-        private suspend fun toPaste(display: Display) {
+        private suspend fun toPaste(
+            display: Display,
+            keyCodes: List<Int>,
+        ) {
             val xTest = X11.XTest.INSTANCE
             try {
-                val ctrlKey = 37
-                val vKey = 55
-
-                xTest.XTestFakeKeyEvent(display, ctrlKey, true, NativeLong(0))
-                xTest.XTestFakeKeyEvent(display, vKey, true, NativeLong(0))
+                for (keyCode in keyCodes) {
+                    xTest.XTestFakeKeyEvent(display, keyCode, true, NativeLong(0))
+                }
                 delay(100)
-                xTest.XTestFakeKeyEvent(display, vKey, false, NativeLong(0))
-                xTest.XTestFakeKeyEvent(display, ctrlKey, false, NativeLong(0))
+
+                for (keyCode in keyCodes.reversed()) {
+                    xTest.XTestFakeKeyEvent(display, keyCode, false, NativeLong(0))
+                }
             } catch (e: Exception) {
                 logger.error(e) { "toPaste error" }
             }
         }
 
-        suspend fun toPaste() {
+        suspend fun toPaste(keyCodes: List<Int>) {
             INSTANCE.XOpenDisplay(null)?.let { display ->
-                toPaste(display)
+                toPaste(display, keyCodes)
                 INSTANCE.XCloseDisplay(display)
             }
         }
 
         @Synchronized
         private fun getWindow(windowTitle: String): Window? {
-            return if (windowTitle == mainWindowTitle) {
+            return if (windowTitle == MAIN_WINDOW_TITLE) {
                 findMainWindow()
             } else {
                 findSearchWindow()
@@ -119,7 +123,7 @@ interface X11Api : X11 {
             if (mainWindow == null) {
                 INSTANCE.XOpenDisplay(null)?.let { display ->
                     val rootWindow = INSTANCE.XDefaultRootWindow(display)
-                    WMCtrl.findWindowByTitle(display, rootWindow, mainWindowTitle)?.let {
+                    WMCtrl.findWindowByTitle(display, rootWindow, MAIN_WINDOW_TITLE)?.let {
                         mainWindow = it
                     }
                 }
@@ -131,7 +135,7 @@ interface X11Api : X11 {
             if (searchWindow == null) {
                 INSTANCE.XOpenDisplay(null)?.let { display ->
                     val rootWindow = INSTANCE.XDefaultRootWindow(display)
-                    WMCtrl.findWindowByTitle(display, rootWindow, searchWindowTitle)?.let {
+                    WMCtrl.findWindowByTitle(display, rootWindow, SEARCH_WINDOW_TITLE)?.let {
                         searchWindow = it
                     }
                 }

@@ -1,7 +1,7 @@
 package com.clipevery.os.windows.api
 
-import com.clipevery.app.DesktopAppWindowManager.mainWindowTitle
-import com.clipevery.app.DesktopAppWindowManager.searchWindowTitle
+import com.clipevery.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
+import com.clipevery.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.clipevery.app.WinAppInfo
 import com.sun.jna.Memory
 import com.sun.jna.Native
@@ -414,7 +414,7 @@ interface User32 : StdCallLibrary {
                     Kernel32.INSTANCE.CloseHandle(processHandle)
                 }
 
-                if (windowTitle == mainWindowTitle) {
+                if (windowTitle == MAIN_WINDOW_TITLE) {
                     if (filePath != null) {
                         return@bringToFront WinAppInfo(previousHwnd, filePath)
                     } else {
@@ -423,7 +423,7 @@ interface User32 : StdCallLibrary {
                 }
 
                 if (searchHWND == null) {
-                    searchHWND = INSTANCE.FindWindow(null, searchWindowTitle)
+                    searchHWND = INSTANCE.FindWindow(null, SEARCH_WINDOW_TITLE)
                 }
 
                 if (searchHWND != null) {
@@ -466,6 +466,7 @@ interface User32 : StdCallLibrary {
             windowTitle: String,
             previousHwnd: HWND?,
             toPaste: Boolean,
+            keyCodes: List<Int>,
         ) {
             val hWnd = INSTANCE.FindWindow(null, windowTitle)
             if (hWnd != null) {
@@ -478,52 +479,39 @@ interface User32 : StdCallLibrary {
             }
 
             if (toPaste) {
-                paste()
+                paste(keyCodes)
             }
         }
 
         @Suppress("UNCHECKED_CAST")
-        fun paste() {
-            val inputs: Array<INPUT> = INPUT().toArray(2) as Array<INPUT>
+        fun paste(keyCodes: List<Int>) {
+            if (keyCodes.isEmpty()) {
+                return
+            }
 
-            inputs[0].type = DWORD(INPUT.INPUT_KEYBOARD.toLong())
-            inputs[0].input.setType(
-                "ki",
-            )
+            val inputs: Array<INPUT> = INPUT().toArray(keyCodes.size) as Array<INPUT>
 
-            // Because setting INPUT_INPUT_KEYBOARD is not enough:
-            // https://groups.google.com/d/msg/jna-users/NDBGwC1VZbU/cjYCQ1CjBwAJ
-            inputs[0].input.ki.wScan = WORD(0)
-            inputs[0].input.ki.time = DWORD(0)
-            inputs[0].input.ki.dwExtraInfo = ULONG_PTR(0)
+            for (i in keyCodes.indices) {
+                inputs[i].type = DWORD(INPUT.INPUT_KEYBOARD.toLong())
+                inputs[i].input.setType(
+                    "ki",
+                )
 
-            inputs[1].type = DWORD(INPUT.INPUT_KEYBOARD.toLong())
-            inputs[1].input.setType(
-                "ki",
-            )
+                // Because setting INPUT_INPUT_KEYBOARD is not enough:
+                // https://groups.google.com/d/msg/jna-users/NDBGwC1VZbU/cjYCQ1CjBwAJ
+                inputs[i].input.ki.wScan = WORD(0)
+                inputs[i].input.ki.time = DWORD(0)
+                inputs[i].input.ki.dwExtraInfo = ULONG_PTR(0)
 
-            // todo Support binding dynamic shortcut keys
-            inputs[1].input.ki.wScan = WORD(0)
-            inputs[1].input.ki.time = DWORD(0)
-            inputs[1].input.ki.dwExtraInfo = ULONG_PTR(0)
-
-            // press ctrl
-            inputs[0].input.ki.wVk = WORD(0x11)
-            inputs[0].input.ki.dwFlags = DWORD(0) // keydown
-
-            // press v
-            inputs[1].input.ki.wVk = WORD('V'.code.toLong())
-            inputs[1].input.ki.dwFlags = DWORD(0) // keydown
+                inputs[i].input.ki.wVk = WORD(keyCodes[i].toLong())
+                inputs[i].input.ki.dwFlags = DWORD(0) // keydown
+            }
 
             INSTANCE.SendInput(DWORD(inputs.size.toLong()), inputs, inputs[0].size())
 
-            // release ctrl
-            inputs[0].input.ki.wVk = WORD(0x11)
-            inputs[0].input.ki.dwFlags = DWORD(2) // keyup
-
-            // release v
-            inputs[1].input.ki.wVk = WORD('V'.code.toLong())
-            inputs[1].input.ki.dwFlags = DWORD(2) // keyup
+            for (i in keyCodes.indices) {
+                inputs[i].input.ki.dwFlags = DWORD(2) // keyup
+            }
 
             INSTANCE.SendInput(DWORD(inputs.size.toLong()), inputs, inputs[0].size())
         }

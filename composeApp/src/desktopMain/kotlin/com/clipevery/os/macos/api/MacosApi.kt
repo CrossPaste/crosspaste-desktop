@@ -2,6 +2,7 @@ package com.clipevery.os.macos.api
 
 import com.sun.jna.Library
 import com.sun.jna.Native
+import com.sun.jna.Pointer
 import com.sun.jna.ptr.IntByReference
 
 interface MacosApi : Library {
@@ -49,11 +50,16 @@ interface MacosApi : Library {
         windowTitle: String,
         appName: String,
         toPaste: Boolean,
+        array: Pointer,
+        count: Int,
     )
 
     fun bringToFront(windowTitle: String): String
 
-    fun simulatePasteCommand()
+    fun simulatePasteCommand(
+        array: Pointer,
+        count: Int,
+    )
 
     companion object {
         val INSTANCE: MacosApi = Native.load("MacosApi", MacosApi::class.java)

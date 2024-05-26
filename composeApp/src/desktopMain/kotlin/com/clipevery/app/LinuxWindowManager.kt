@@ -1,5 +1,6 @@
 package com.clipevery.app
 
+import com.clipevery.listener.ShortcutKeys
 import com.clipevery.os.linux.api.X11Api
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.path.PathProvider
@@ -10,7 +11,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
-class LinuxWindowManager : WindowManager {
+class LinuxWindowManager(
+    private val shortcutKeys: ShortcutKeys,
+) : WindowManager {
 
     private val logger = KotlinLogging.logger {}
 
@@ -67,11 +70,19 @@ class LinuxWindowManager : WindowManager {
         toPaste: Boolean,
     ) {
         logger.info { "$windowTitle bringToBack Clipevery" }
-        X11Api.bringToBack(prevLinuxAppInfo, toPaste)
+        val keyCodes =
+            shortcutKeys.shortcutKeysCore.keys["Paste"]?.let {
+                it.map { key -> key.rawCode }
+            } ?: listOf()
+        X11Api.bringToBack(prevLinuxAppInfo, toPaste, keyCodes)
     }
 
     override suspend fun toPaste() {
-        X11Api.toPaste()
+        val keyCodes =
+            shortcutKeys.shortcutKeysCore.keys["Paste"]?.let {
+                it.map { key -> key.rawCode }
+            } ?: listOf()
+        X11Api.toPaste(keyCodes)
     }
 }
 

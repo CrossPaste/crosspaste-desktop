@@ -1,6 +1,7 @@
 package com.clipevery.app
 
-import com.clipevery.app.DesktopAppWindowManager.searchWindowTitle
+import com.clipevery.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
+import com.clipevery.listener.ShortcutKeys
 import com.clipevery.os.windows.api.User32
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.path.PathProvider
@@ -16,7 +17,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.io.path.absolutePathString
 
-class WinWindowManager : WindowManager {
+class WinWindowManager(
+    private val shortcutKeys: ShortcutKeys,
+) : WindowManager {
 
     private val logger = KotlinLogging.logger {}
 
@@ -76,7 +79,7 @@ class WinWindowManager : WindowManager {
 
     override suspend fun bringToFront(windowTitle: String) {
         logger.info { "$windowTitle bringToFront Clipevery" }
-        if (windowTitle == searchWindowTitle) {
+        if (windowTitle == SEARCH_WINDOW_TITLE) {
             // to wait for the search window to be ready
             delay(500)
         }
@@ -88,11 +91,20 @@ class WinWindowManager : WindowManager {
         toPaste: Boolean,
     ) {
         logger.info { "$windowTitle bringToBack Clipevery" }
-        User32.bringToBack(windowTitle, prevWinAppInfo?.hwnd, toPaste)
+        val keyCodes =
+            shortcutKeys.shortcutKeysCore.keys["Paste"]?.let {
+                it.map { key -> key.rawCode }
+            } ?: listOf()
+        User32.bringToBack(windowTitle, prevWinAppInfo?.hwnd, toPaste, keyCodes)
     }
 
     override suspend fun toPaste() {
-        User32.paste()
+        val keyCodes =
+            shortcutKeys.shortcutKeysCore.keys["Paste"]?.let {
+                it.map { key -> key.rawCode }
+            } ?: listOf()
+
+        User32.paste(keyCodes)
     }
 }
 
