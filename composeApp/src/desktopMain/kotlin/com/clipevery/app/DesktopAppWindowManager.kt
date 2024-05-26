@@ -23,28 +23,37 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlin.random.Random
+import kotlin.reflect.KClass
 
-class DesktopAppWindowManager(private val shortcutKeys: Lazy<ShortcutKeys>) : AppWindowManager {
+class DesktopAppWindowManager(private val lazyShortcutKeys: Lazy<ShortcutKeys>) : AppWindowManager {
 
     companion object {
         const val MAIN_WINDOW_TITLE: String = "Clipevery"
 
         const val SEARCH_WINDOW_TITLE: String = "Clipevery Search"
+
+        val currentPlatform = currentPlatform()
+
+        @Suppress("UNCHECKED_CAST")
+        fun create(lazyShortcutKeys: Lazy<ShortcutKeys>): WindowManager {
+            if (AppEnv.isTest()) {
+                val kClass = Class.forName("com.clipevery.app.TestWindowManager").kotlin as KClass<WindowManager>
+                return kClass.objectInstance ?: throw IllegalStateException("Expected a singleton instance")
+            }
+            val shortcutKeys = lazyShortcutKeys.value
+            return when {
+                currentPlatform.isMacos() -> MacWindowManager(shortcutKeys)
+                currentPlatform.isWindows() -> WinWindowManager(shortcutKeys)
+                currentPlatform.isLinux() -> LinuxWindowManager(shortcutKeys)
+                else -> throw IllegalStateException("Unsupported platform: $currentPlatform")
+            }
+        }
     }
 
     private val logger: KLogger = KotlinLogging.logger {}
 
-    private val currentPlatform = currentPlatform()
-
     private val windowManager: WindowManager by lazy {
-        run {
-            when {
-                currentPlatform.isMacos() -> MacWindowManager(shortcutKeys.value)
-                currentPlatform.isWindows() -> WinWindowManager(shortcutKeys.value)
-                currentPlatform.isLinux() -> LinuxWindowManager(shortcutKeys.value)
-                else -> throw IllegalStateException("Unsupported platform: $currentPlatform")
-            }
-        }
+        create(lazyShortcutKeys)
     }
 
     private var startRefreshNumber: Int = 0
