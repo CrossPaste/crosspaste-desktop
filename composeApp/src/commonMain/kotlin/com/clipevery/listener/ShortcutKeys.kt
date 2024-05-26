@@ -6,6 +6,6 @@ interface ShortcutKeys {
 
     fun update(
         keyName: String,
-        keys: List<KeyboardKeyInfo>,
+        keys: List<KeyboardKey>,
     )
 }

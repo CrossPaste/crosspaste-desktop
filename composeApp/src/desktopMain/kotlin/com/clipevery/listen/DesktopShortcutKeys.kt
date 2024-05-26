@@ -4,7 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.clipevery.app.AppFileType
-import com.clipevery.listener.KeyboardKeyInfo
+import com.clipevery.listener.KeyboardKey
 import com.clipevery.listener.ShortcutKeys
 import com.clipevery.listener.ShortcutKeysCore
 import com.clipevery.path.PathProvider
@@ -74,7 +74,7 @@ class DesktopShortcutKeys(
 
     override fun update(
         keyName: String,
-        keys: List<KeyboardKeyInfo>,
+        keys: List<KeyboardKey>,
     ) {
         try {
             val shortcutKeysPropertiesPath =

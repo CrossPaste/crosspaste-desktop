@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.i18n.GlobalCopywriter
-import com.clipevery.listener.KeyboardKeyInfo
+import com.clipevery.listener.KeyboardKey
 import com.clipevery.listener.ShortcutKeys
 import com.clipevery.listener.ShortcutKeysListener
 import com.clipevery.ui.PageViewContext
@@ -259,7 +259,7 @@ fun ShortcutKeyRow(name: String) {
 }
 
 @Composable
-fun ShortcutKeyItemView(keys: List<KeyboardKeyInfo>) {
+fun ShortcutKeyItemView(keys: List<KeyboardKey>) {
     Row(
         modifier = Modifier.wrapContentSize(),
         verticalAlignment = Alignment.CenterVertically,
