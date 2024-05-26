@@ -1,175 +1,171 @@
 package com.clipevery.listen
 
-import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
 import kotlin.reflect.full.memberProperties
-import kotlin.reflect.jvm.isAccessible
 
 interface KeyboardKeys {
 
-    val ENTER: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val ENTER: KeyboardKeyDefine
 
-    val ESC: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val ESC: KeyboardKeyDefine
 
-    val DELETE: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val DELETE: KeyboardKeyDefine
 
-    val BACKSPACE: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val BACKSPACE: KeyboardKeyDefine
 
-    val TAB: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val TAB: KeyboardKeyDefine
 
-    val SPACE: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val SPACE: KeyboardKeyDefine
 
-    val UP: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val UP: KeyboardKeyDefine
 
-    val DOWN: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val DOWN: KeyboardKeyDefine
 
-    val LEFT: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val LEFT: KeyboardKeyDefine
 
-    val RIGHT: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val RIGHT: KeyboardKeyDefine
 
-    val CTRL: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val CTRL: KeyboardKeyDefine
 
-    val ALT: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val ALT: KeyboardKeyDefine
 
-    val SHIFT: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val SHIFT: KeyboardKeyDefine
 
-    val COMMAND: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val COMMAND: KeyboardKeyDefine
 
-    val COMMA: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val COMMA: KeyboardKeyDefine
 
-    val PERIOD: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val PERIOD: KeyboardKeyDefine
 
-    val SLASH: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val SLASH: KeyboardKeyDefine
 
-    val SEMICOLON: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val SEMICOLON: KeyboardKeyDefine
 
-    val QUOTE: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val QUOTE: KeyboardKeyDefine
 
-    val OPEN_BRACKET: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val OPEN_BRACKET: KeyboardKeyDefine
 
-    val CLOSE_BRACKET: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val CLOSE_BRACKET: KeyboardKeyDefine
 
-    val BACK_SLASH: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val BACK_SLASH: KeyboardKeyDefine
 
-    val EQUALS: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val EQUALS: KeyboardKeyDefine
 
-    val MINUS: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val MINUS: KeyboardKeyDefine
 
-    val F1: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val F1: KeyboardKeyDefine
 
-    val F2: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val F2: KeyboardKeyDefine
 
-    val F3: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val F3: KeyboardKeyDefine
 
-    val F4: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val F4: KeyboardKeyDefine
 
-    val F5: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val F5: KeyboardKeyDefine
 
-    val F6: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val F6: KeyboardKeyDefine
 
-    val F7: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val F7: KeyboardKeyDefine
 
-    val F8: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val F8: KeyboardKeyDefine
 
-    val F9: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val F9: KeyboardKeyDefine
 
-    val F10: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val F10: KeyboardKeyDefine
 
-    val F11: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val F11: KeyboardKeyDefine
 
-    val F12: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val F12: KeyboardKeyDefine
 
-    val _1: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val _1: KeyboardKeyDefine
 
-    val _2: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val _2: KeyboardKeyDefine
 
-    val _3: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val _3: KeyboardKeyDefine
 
-    val _4: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val _4: KeyboardKeyDefine
 
-    val _5: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val _5: KeyboardKeyDefine
 
-    val _6: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val _6: KeyboardKeyDefine
 
-    val _7: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val _7: KeyboardKeyDefine
 
-    val _8: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val _8: KeyboardKeyDefine
 
-    val _9: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val _9: KeyboardKeyDefine
 
-    val _0: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val _0: KeyboardKeyDefine
 
-    val A: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val A: KeyboardKeyDefine
 
-    val B: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val B: KeyboardKeyDefine
 
-    val C: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val C: KeyboardKeyDefine
 
-    val D: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val D: KeyboardKeyDefine
 
-    val E: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val E: KeyboardKeyDefine
 
-    val F: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val F: KeyboardKeyDefine
 
-    val G: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val G: KeyboardKeyDefine
 
-    val H: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val H: KeyboardKeyDefine
 
-    val I: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val I: KeyboardKeyDefine
 
-    val J: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val J: KeyboardKeyDefine
 
-    val K: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val K: KeyboardKeyDefine
 
-    val L: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val L: KeyboardKeyDefine
 
-    val M: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val M: KeyboardKeyDefine
 
-    val N: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val N: KeyboardKeyDefine
 
-    val O: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val O: KeyboardKeyDefine
 
-    val P: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val P: KeyboardKeyDefine
 
-    val Q: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val Q: KeyboardKeyDefine
 
-    val R: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val R: KeyboardKeyDefine
 
-    val S: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val S: KeyboardKeyDefine
 
-    val T: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val T: KeyboardKeyDefine
 
-    val U: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val U: KeyboardKeyDefine
 
-    val V: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val V: KeyboardKeyDefine
 
-    val W: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val W: KeyboardKeyDefine
 
-    val X: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val X: KeyboardKeyDefine
 
-    val Y: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val Y: KeyboardKeyDefine
 
-    val Z: Triple<String, Int, (NativeKeyEvent) -> Boolean>
+    val Z: KeyboardKeyDefine
 
-    @Suppress("UNCHECKED_CAST")
-    fun initializeMap(): Map<Int, Triple<String, Int, (NativeKeyEvent) -> Boolean>> {
-        val map = mutableMapOf<Int, Triple<String, Int, (NativeKeyEvent) -> Boolean>>()
-        val clazz = this::class
+    val allKeys: Map<Int, KeyboardKeyDefine>
+        get() = initAllMap()
 
-        clazz.memberProperties.forEach { property ->
-            property.isAccessible = true
-            if (property.returnType.toString() == "kotlin.Triple<kotlin.String, kotlin.Int, (com.github.kwhat.jnativehook.keyboard.NativeKeyEvent) -> kotlin.Boolean>") {
-                val value = property.getter.call(this) as Triple<String, Int, (NativeKeyEvent) -> Boolean>
-                map[value.second] = value
-            }
-        }
-        return map
+    val groupModifierKeys: Map<Boolean, Map<Int, KeyboardKeyDefine>>
+        get() = initGroupModifierKeys()
+
+    fun initAllMap(): Map<Int, KeyboardKeyDefine> {
+        return this::class.memberProperties
+            .filter { it.returnType.toString() == "com.clipevery.listen.KeyboardKeyDefine" }
+            .map { it.getter.call(this) as KeyboardKeyDefine }
+            .associateBy { it.code }
     }
 
-    fun groupKeys(): Map<Boolean, Map<Int, Triple<String, Int, (NativeKeyEvent) -> Boolean>>> {
-        val map: Map<Int, Triple<String, Int, (NativeKeyEvent) -> Boolean>> = initializeMap()
-        val combinationKeys: (Int) -> Boolean = { it == SHIFT.second || it == CTRL.second || it == ALT.second || it == COMMAND.second }
-        return map.values.groupBy { combinationKeys(it.second) }
-            .map { it.key to it.value.associateBy { info -> info.second } }
+    fun initGroupModifierKeys(): Map<Boolean, Map<Int, KeyboardKeyDefine>> {
+        val map: Map<Int, KeyboardKeyDefine> = initAllMap()
+        val combinationKeys: (Int) -> Boolean = { it == SHIFT.code || it == CTRL.code || it == ALT.code || it == COMMAND.code }
+        return map.values.groupBy { combinationKeys(it.code) }
+            .map { it.key to it.value.associateBy { info -> info.code } }
             .toMap()
     }
 }
