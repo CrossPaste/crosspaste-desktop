@@ -15,18 +15,21 @@ fun ImagesPreviewView(clipData: ClipData) {
     clipData.getClipItem()?.let {
         val clipFiles = it as ClipFiles
 
-        ClipSpecificPreviewContentView({
-            val imagePaths = clipFiles.getFilePaths()
-            LazyRow(modifier = Modifier.fillMaxSize()) {
-                items(imagePaths.size) { index ->
-                    SingleImagePreviewView(imagePaths[index])
-                    if (index != imagePaths.size - 1) {
-                        Spacer(modifier = Modifier.size(10.dp))
+        ClipSpecificPreviewContentView(
+            clipMainContent = {
+                val imagePaths = clipFiles.getFilePaths()
+                LazyRow(modifier = Modifier.fillMaxSize()) {
+                    items(imagePaths.size) { index ->
+                        SingleImagePreviewView(imagePaths[index])
+                        if (index != imagePaths.size - 1) {
+                            Spacer(modifier = Modifier.size(10.dp))
+                        }
                     }
                 }
-            }
-        }, { hover ->
-            ClipMenuView(clipData = clipData, hover = hover)
-        })
+            },
+            clipRightInfo = { hover ->
+                ClipMenuView(clipData = clipData, hover = hover)
+            },
+        )
     }
 }

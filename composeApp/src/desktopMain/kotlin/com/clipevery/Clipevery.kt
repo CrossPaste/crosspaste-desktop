@@ -29,10 +29,12 @@ import com.clipevery.clip.CacheManagerImpl
 import com.clipevery.clip.ChromeService
 import com.clipevery.clip.ClipPreviewService
 import com.clipevery.clip.ClipSearchService
+import com.clipevery.clip.ClipSyncProcessManager
 import com.clipevery.clip.ClipboardService
 import com.clipevery.clip.DesktopChromeService
 import com.clipevery.clip.DesktopClipPreviewService
 import com.clipevery.clip.DesktopClipSearchService
+import com.clipevery.clip.DesktopClipSyncProcessManager
 import com.clipevery.clip.DesktopTransferableConsumer
 import com.clipevery.clip.DesktopTransferableProducer
 import com.clipevery.clip.TransferableConsumer
@@ -148,6 +150,7 @@ import kotlinx.coroutines.launch
 import org.koin.core.KoinApplication
 import org.koin.core.context.GlobalContext
 import org.koin.dsl.module
+import org.mongodb.kbson.ObjectId
 import org.signal.libsignal.protocol.state.IdentityKeyStore
 import org.signal.libsignal.protocol.state.PreKeyStore
 import org.signal.libsignal.protocol.state.SessionStore
@@ -250,6 +253,7 @@ class Clipevery {
                     single<TransferableProducer> { DesktopTransferableProducer() }
                     single<ChromeService> { DesktopChromeService(get()) }
                     single<ClipPreviewService> { DesktopClipPreviewService(get()) }
+                    single<ClipSyncProcessManager<ObjectId>> { DesktopClipSyncProcessManager() }
                     single<ClipSearchService> { DesktopClipSearchService(get(), get(), get()) }
                     single<CleanClipScheduler> { DesktopCleanClipScheduler(get(), get(), get()) }
                     single<TaskExecutor> {
@@ -257,7 +261,7 @@ class Clipevery {
                             listOf(
                                 SyncClipTaskExecutor(get(), get(), get()),
                                 DeleteClipTaskExecutor(get()),
-                                PullFileTaskExecutor(get(), get(), get(), get()),
+                                PullFileTaskExecutor(get(), get(), get(), get(), get()),
                                 CleanClipTaskExecutor(get(), get()),
                                 Html2ImageTaskExecutor(get(), get(), get()),
                                 PullIconTaskExecutor(get(), get(), get(), get()),

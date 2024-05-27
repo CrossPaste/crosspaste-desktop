@@ -46,59 +46,62 @@ fun HtmlToImagePreviewView(clipData: ClipData) {
 
         val filePath by remember(clipData.id) { mutableStateOf(clipHtml.getHtmlImagePath()) }
 
-        ClipSpecificPreviewContentView({
-            Row {
-                AsyncView(
-                    key = clipData.id,
-                    load = {
-                        while (!filePath.toFile().exists()) {
-                            delay(200)
-                        }
-                        loadImageData(filePath, density)
-                    },
-                    loadFor = { loadImageView ->
-                        when (loadImageView) {
-                            is LoadImageData -> {
-                                BoxWithConstraints(
-                                    modifier =
-                                        Modifier
-                                            .fillMaxSize()
-                                            .clip(RoundedCornerShape(5.dp))
-                                            .onClick {
-                                                uiSupport.openHtml(it.html)
-                                            },
-                                ) {
-                                    Image(
-                                        painter = loadImageView.toPainterImage.toPainter(),
-                                        contentDescription = "Html 2 Image",
-                                        alignment = Alignment.TopStart,
-                                        contentScale = ContentScale.None,
-                                        modifier = Modifier.fillMaxSize(),
+        ClipSpecificPreviewContentView(
+            clipMainContent = {
+                Row {
+                    AsyncView(
+                        key = clipData.id,
+                        load = {
+                            while (!filePath.toFile().exists()) {
+                                delay(200)
+                            }
+                            loadImageData(filePath, density)
+                        },
+                        loadFor = { loadImageView ->
+                            when (loadImageView) {
+                                is LoadImageData -> {
+                                    BoxWithConstraints(
+                                        modifier =
+                                            Modifier
+                                                .fillMaxSize()
+                                                .clip(RoundedCornerShape(5.dp))
+                                                .onClick {
+                                                    uiSupport.openHtml(it.html)
+                                                },
+                                    ) {
+                                        Image(
+                                            painter = loadImageView.toPainterImage.toPainter(),
+                                            contentDescription = "Html 2 Image",
+                                            alignment = Alignment.TopStart,
+                                            contentScale = ContentScale.None,
+                                            modifier = Modifier.fillMaxSize(),
+                                        )
+                                    }
+                                }
+
+                                else -> {
+                                    Text(
+                                        text = clipHtml.getText(),
+                                        fontFamily = FontFamily.SansSerif,
+                                        maxLines = 4,
+                                        softWrap = true,
+                                        overflow = TextOverflow.Ellipsis,
+                                        style =
+                                            TextStyle(
+                                                fontWeight = FontWeight.Normal,
+                                                color = MaterialTheme.colors.onBackground,
+                                                fontSize = 14.sp,
+                                            ),
                                     )
                                 }
                             }
-
-                            else -> {
-                                Text(
-                                    text = clipHtml.getText(),
-                                    fontFamily = FontFamily.SansSerif,
-                                    maxLines = 4,
-                                    softWrap = true,
-                                    overflow = TextOverflow.Ellipsis,
-                                    style =
-                                        TextStyle(
-                                            fontWeight = FontWeight.Normal,
-                                            color = MaterialTheme.colors.onBackground,
-                                            fontSize = 14.sp,
-                                        ),
-                                )
-                            }
-                        }
-                    },
-                )
-            }
-        }, { hover ->
-            ClipMenuView(clipData = clipData, hover = hover)
-        })
+                        },
+                    )
+                }
+            },
+            clipRightInfo = { hover ->
+                ClipMenuView(clipData = clipData, hover = hover)
+            },
+        )
     }
 }

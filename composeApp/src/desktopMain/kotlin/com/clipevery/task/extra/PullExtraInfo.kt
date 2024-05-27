@@ -13,5 +13,5 @@ class PullExtraInfo : ClipTaskExtraInfo {
     override val executionHistories: MutableList<ExecutionHistory> = mutableListOf()
 
     @SerialName("pullChunks")
-    val pullChunks: MutableList<Boolean> = mutableListOf()
+    var pullChunks: IntArray = intArrayOf()
 }

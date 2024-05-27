@@ -1,5 +1,6 @@
 package com.clipevery.task
 
+import com.clipevery.clip.ClipSyncProcessManager
 import com.clipevery.clip.ClipboardService
 import com.clipevery.clip.item.ClipFiles
 import com.clipevery.dao.clip.ClipDao
@@ -28,11 +29,13 @@ import com.clipevery.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import io.ktor.utils.io.*
+import org.mongodb.kbson.ObjectId
 
 class PullFileTaskExecutor(
     private val clipDao: ClipDao,
     private val pullClientApi: PullClientApi,
     private val syncManager: SyncManager,
+    private val clipSyncProcessManager: ClipSyncProcessManager<ObjectId>,
     private val clipboardService: ClipboardService,
 ) : SingleTypeTaskExecutor {
 
@@ -72,7 +75,7 @@ class PullFileTaskExecutor(
             }
 
             if (pullExtraInfo.pullChunks.isEmpty()) {
-                pullExtraInfo.pullChunks.addAll(List(filesIndex.getChunkCount()) { false })
+                pullExtraInfo.pullChunks = IntArray(filesIndex.getChunkCount())
             } else if (pullExtraInfo.pullChunks.size != filesIndex.getChunkCount()) {
                 throw IllegalArgumentException("pullChunks size is not equal to chunkNum")
             }
@@ -81,7 +84,7 @@ class PullFileTaskExecutor(
                 val port = it.syncRuntimeInfo.port
 
                 it.getConnectHostAddress()?.let { host ->
-                    return pullFiles(clipData, host, port, filesIndex, pullExtraInfo, 8)
+                    return pullFiles(clipData, host, port, filesIndex, pullExtraInfo)
                 } ?: run {
                     return createFailureClipTaskResult(
                         logger = logger,
@@ -123,7 +126,6 @@ class PullFileTaskExecutor(
         port: Int,
         filesIndex: FilesIndex,
         pullExtraInfo: PullExtraInfo,
-        concurrencyLevel: Int,
     ): ClipTaskResult {
         val toUrl: URLBuilder.(URLBuilder) -> Unit = { urlBuilder: URLBuilder ->
             buildUrl(urlBuilder, host, port, "pull", "file")
@@ -131,7 +133,7 @@ class PullFileTaskExecutor(
 
         val tasks: List<suspend () -> Pair<Int, ClientApiResult>> =
             (0..<filesIndex.getChunkCount())
-                .filter { !pullExtraInfo.pullChunks[it] }
+                .filter { pullExtraInfo.pullChunks[it] == 0 }
                 .map { chunkIndex ->
                     {
                         try {
@@ -162,7 +164,7 @@ class PullFileTaskExecutor(
                     }
                 }
 
-        val map = TaskSemaphore.withIoTaskLimit(concurrencyLevel, tasks).toMap()
+        val map = clipSyncProcessManager.runTask(clipData.id, tasks).toMap()
 
         val successes = map.filter { it.value is SuccessResult }.map { it.key }
 
@@ -172,10 +174,10 @@ class PullFileTaskExecutor(
                 .mapValues { it.value as FailureResult }
 
         successes.forEach {
-            pullExtraInfo.pullChunks[it] = true
+            pullExtraInfo.pullChunks[it] = 1
         }
 
-        return if (pullExtraInfo.pullChunks.contains(false)) {
+        return if (pullExtraInfo.pullChunks.contains(0)) {
             val needRetry = pullExtraInfo.executionHistories.size < 3
 
             if (!needRetry) {
@@ -191,6 +193,7 @@ class PullFileTaskExecutor(
                 extraInfo = pullExtraInfo,
             )
         } else {
+            clipSyncProcessManager.cleanProcess(clipData.id)
             clipboardService.tryWriteRemoteClipboardWithFile(clipData)
             SuccessClipTaskResult()
         }
