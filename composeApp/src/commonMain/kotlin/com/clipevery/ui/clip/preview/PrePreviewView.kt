@@ -16,11 +16,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,11 +29,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
+import com.clipevery.clip.ClipSingleProcess
 import com.clipevery.clip.ClipSyncProcessManager
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.ui.base.ClipProgressbar
 import com.valentinilk.shimmer.shimmer
-import kotlinx.coroutines.launch
 import org.mongodb.kbson.ObjectId
 
 @Composable
@@ -43,19 +41,7 @@ fun PrePreviewView(clipData: ClipData) {
     val current = LocalKoinApplication.current
     val clipSyncProcessManager = current.koin.get<ClipSyncProcessManager<ObjectId>>()
 
-    val process by remember(clipData.id) { mutableStateOf(clipSyncProcessManager.getProcess(clipData.id)) }
-
-    val coroutineScope = rememberCoroutineScope()
-
-    DisposableEffect(Unit) {
-        coroutineScope.launch {
-        }
-
-        onDispose {
-            coroutineScope.launch {
-            }
-        }
-    }
+    val singleProcess: ClipSingleProcess? by remember(clipData.id) { mutableStateOf(clipSyncProcessManager.getProcess(clipData.id)) }
 
     Box(
         modifier =
@@ -63,7 +49,9 @@ fun PrePreviewView(clipData: ClipData) {
                 .fillMaxSize()
                 .clip(RoundedCornerShape(5.dp)),
     ) {
-        ClipProgressbar(process.process)
+        singleProcess?.process?.let {
+            ClipProgressbar(it)
+        }
 
         ClipSpecificPreviewContentView(
             backgroundColor = Color.Transparent,
@@ -91,16 +79,18 @@ fun PrePreviewView(clipData: ClipData) {
                                     .background(Color.Gray),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(
-                                text = "${(process.process * 100).toInt()}%",
-                                color = MaterialTheme.colors.onBackground,
-                                style =
-                                    TextStyle(
-                                        fontSize = 14.sp,
-                                        fontFamily = FontFamily.Monospace,
-                                        fontWeight = FontWeight.Bold,
-                                    ),
-                            )
+                            singleProcess?.process?.let {
+                                Text(
+                                    text = "${(it * 100).toInt()}%",
+                                    color = MaterialTheme.colors.onBackground,
+                                    style =
+                                        TextStyle(
+                                            fontSize = 14.sp,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontWeight = FontWeight.Bold,
+                                        ),
+                                )
+                            }
                         }
 
                         Column(

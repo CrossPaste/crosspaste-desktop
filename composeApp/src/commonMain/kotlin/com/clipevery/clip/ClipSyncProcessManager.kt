@@ -1,17 +1,30 @@
 package com.clipevery.clip
 
-import kotlinx.coroutines.Job
+import com.clipevery.net.clientapi.ClientApiResult
+import org.mongodb.kbson.ObjectId
 
 interface ClipSyncProcessManager<T> {
 
     val processMap: MutableMap<T, ClipSingleProcess>
 
-    fun getProcess(key: T): ClipSingleProcess
+    fun getProcess(key: ObjectId): ClipSingleProcess?
+
+    fun getProcess(
+        key: T,
+        taskNum: Int,
+    ): ClipSingleProcess
+
+    fun cleanProcess(key: T)
+
+    suspend fun runTask(
+        clipDataId: ObjectId,
+        tasks: List<suspend () -> Pair<Int, ClientApiResult>>,
+    ): List<Pair<Int, ClientApiResult>>
 }
 
 interface ClipSingleProcess {
 
     var process: Float
 
-    val job: Job
+    fun success(index: Int)
 }

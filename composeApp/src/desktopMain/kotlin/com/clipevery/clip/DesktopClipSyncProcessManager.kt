@@ -3,65 +3,77 @@ package com.clipevery.clip
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.clipevery.dao.task.ClipTaskDao
-import com.clipevery.task.extra.PullExtraInfo
-import com.clipevery.utils.TaskUtils
+import com.clipevery.net.clientapi.ClientApiResult
+import com.clipevery.net.clientapi.SuccessResult
 import com.clipevery.utils.ioDispatcher
-import com.clipevery.utils.mainDispatcher
 import io.ktor.util.collections.*
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import org.mongodb.kbson.ObjectId
 
-class DesktopClipSyncProcessManager(private val clipTaskDao: ClipTaskDao) : ClipSyncProcessManager<ObjectId> {
+class DesktopClipSyncProcessManager : ClipSyncProcessManager<ObjectId> {
 
     private val ioScope = CoroutineScope(ioDispatcher)
 
+    private val semaphore = Semaphore(10)
+
     override val processMap: MutableMap<ObjectId, ClipSingleProcess> = ConcurrentMap()
 
-    override fun getProcess(key: ObjectId): ClipSingleProcess {
+    override fun cleanProcess(key: ObjectId) {
+        processMap.remove(key)
+    }
+
+    override fun getProcess(key: ObjectId): ClipSingleProcess? {
+        return processMap[key]
+    }
+
+    override fun getProcess(
+        key: ObjectId,
+        taskNum: Int,
+    ): ClipSingleProcess {
         return processMap.computeIfAbsent(key) {
-            ClipSingleProcessImpl(ioScope, key, clipTaskDao)
+            ClipSingleProcessImpl(taskNum)
         }
+    }
+
+    override suspend fun runTask(
+        clipDataId: ObjectId,
+        tasks: List<suspend () -> Pair<Int, ClientApiResult>>,
+    ): List<Pair<Int, ClientApiResult>> {
+        val process = getProcess(clipDataId, tasks.size)
+        return ioScope.async {
+            tasks.map { task ->
+                async {
+                    semaphore.withPermit {
+                        val result = task()
+                        if (result.second is SuccessResult) {
+                            process.success(result.first)
+                        }
+                        result
+                    }
+                }
+            }.awaitAll()
+        }.await()
     }
 }
 
-class ClipSingleProcessImpl(
-    ioScope: CoroutineScope,
-    private val clipDataId: ObjectId,
-    private val clipTaskDao: ClipTaskDao,
-) : ClipSingleProcess {
+class ClipSingleProcessImpl(private val taskNum: Int) : ClipSingleProcess {
 
     override var process: Float by mutableStateOf(0.0f)
 
-    override val job: Job =
-        ioScope.launch {
-            val pullFileTask = clipTaskDao.getTask(clipDataId)
+    private var successNum = 0
 
-            if (pullFileTask.isEmpty()) {
-                process = 1.0f
-                return@launch
-            }
+    private val tasks: MutableList<Boolean> = MutableList(taskNum) { false }
 
-            val pullFileTaskFlow = pullFileTask.asFlow()
-
-            pullFileTaskFlow.collect { changes ->
-                if (changes.list.isEmpty()) {
-                    withContext(mainDispatcher) {
-                        process = 1.0f
-                    }
-                    this@launch.cancel()
-                }
-                val clipTask = changes.list.first()
-                val pullExtraInfo: PullExtraInfo = TaskUtils.getExtraInfo(clipTask, PullExtraInfo::class)
-                val size = pullExtraInfo.pullChunks.size
-                val count = pullExtraInfo.pullChunks.count { it }
-                withContext(mainDispatcher) {
-                    process = count / size.toFloat()
-                }
-            }
+    @Synchronized
+    override fun success(index: Int) {
+        if (!tasks[index]) {
+            tasks[index] = true
+            successNum += 1
+            process = successNum / taskNum.toFloat()
         }
+    }
 }

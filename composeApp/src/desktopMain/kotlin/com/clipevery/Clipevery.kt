@@ -253,7 +253,7 @@ class Clipevery {
                     single<TransferableProducer> { DesktopTransferableProducer() }
                     single<ChromeService> { DesktopChromeService(get()) }
                     single<ClipPreviewService> { DesktopClipPreviewService(get()) }
-                    single<ClipSyncProcessManager<ObjectId>> { DesktopClipSyncProcessManager(get()) }
+                    single<ClipSyncProcessManager<ObjectId>> { DesktopClipSyncProcessManager() }
                     single<ClipSearchService> { DesktopClipSearchService(get(), get(), get()) }
                     single<CleanClipScheduler> { DesktopCleanClipScheduler(get(), get(), get()) }
                     single<TaskExecutor> {
@@ -261,7 +261,7 @@ class Clipevery {
                             listOf(
                                 SyncClipTaskExecutor(get(), get(), get()),
                                 DeleteClipTaskExecutor(get()),
-                                PullFileTaskExecutor(get(), get(), get(), get()),
+                                PullFileTaskExecutor(get(), get(), get(), get(), get()),
                                 CleanClipTaskExecutor(get(), get()),
                                 Html2ImageTaskExecutor(get(), get(), get()),
                                 PullIconTaskExecutor(get(), get(), get(), get()),
