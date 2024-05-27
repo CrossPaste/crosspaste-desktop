@@ -1,6 +1,7 @@
 package com.clipevery.dao.task
 
 import io.realm.kotlin.Realm
+import io.realm.kotlin.query.RealmResults
 import org.mongodb.kbson.ObjectId
 
 class ClipTaskRealm(private val realm: Realm) : ClipTaskDao {
@@ -23,5 +24,15 @@ class ClipTaskRealm(private val realm: Realm) : ClipTaskDao {
                 return@write if (copeFromRealm) copyFromRealm(it) else null
             }
         }
+    }
+
+    override fun getTask(clipDataId: ObjectId): RealmResults<ClipTask> {
+        return realm.query(
+            ClipTask::class,
+            "clipDataId = $0 AND taskType = $1",
+            clipDataId,
+            TaskType.PULL_FILE_TASK,
+        )
+            .find()
     }
 }

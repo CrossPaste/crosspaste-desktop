@@ -27,30 +27,33 @@ fun TextPreviewView(clipData: ClipData) {
         val current = LocalKoinApplication.current
         val uiSupport = current.koin.get<UISupport>()
 
-        ClipSpecificPreviewContentView({
-            Row(
-                modifier =
-                    Modifier.fillMaxSize().onClick {
-                        uiSupport.openText((it as ClipText).text)
-                    }.padding(10.dp),
-            ) {
-                Text(
-                    modifier = Modifier.fillMaxSize(),
-                    text = (it as ClipText).text,
-                    fontFamily = FontFamily.SansSerif,
-                    maxLines = 4,
-                    softWrap = true,
-                    overflow = TextOverflow.Ellipsis,
-                    style =
-                        TextStyle(
-                            fontWeight = FontWeight.Normal,
-                            color = MaterialTheme.colors.onBackground,
-                            fontSize = 14.sp,
-                        ),
-                )
-            }
-        }, { hover ->
-            ClipMenuView(clipData = clipData, hover = hover)
-        })
+        ClipSpecificPreviewContentView(
+            clipMainContent = {
+                Row(
+                    modifier =
+                        Modifier.fillMaxSize().onClick {
+                            uiSupport.openText((it as ClipText).text)
+                        }.padding(10.dp),
+                ) {
+                    Text(
+                        modifier = Modifier.fillMaxSize(),
+                        text = (it as ClipText).text,
+                        fontFamily = FontFamily.SansSerif,
+                        maxLines = 4,
+                        softWrap = true,
+                        overflow = TextOverflow.Ellipsis,
+                        style =
+                            TextStyle(
+                                fontWeight = FontWeight.Normal,
+                                color = MaterialTheme.colors.onBackground,
+                                fontSize = 14.sp,
+                            ),
+                    )
+                }
+            },
+            clipRightInfo = { hover ->
+                ClipMenuView(clipData = clipData, hover = hover)
+            },
+        )
     }
 }

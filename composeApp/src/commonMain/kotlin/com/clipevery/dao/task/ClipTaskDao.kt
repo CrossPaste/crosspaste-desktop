@@ -1,5 +1,6 @@
 package com.clipevery.dao.task
 
+import io.realm.kotlin.query.RealmResults
 import org.mongodb.kbson.ObjectId
 
 interface ClipTaskDao {
@@ -11,4 +12,6 @@ interface ClipTaskDao {
         copeFromRealm: Boolean = false,
         block: ClipTask.() -> Unit,
     ): ClipTask?
+
+    fun getTask(clipDataId: ObjectId): RealmResults<ClipTask>
 }

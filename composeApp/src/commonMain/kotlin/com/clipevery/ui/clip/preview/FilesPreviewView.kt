@@ -26,23 +26,26 @@ fun FilesPreviewView(clipData: ClipData) {
             )
                 ?.getFilePaths()
 
-        ClipSpecificPreviewContentView({
-            LazyRow(modifier = Modifier.fillMaxSize()) {
-                items(clipFilePaths.size) { index ->
-                    val filepath = clipFilePaths[index]
-                    if (canPreviewImage(filepath.extension)) {
-                        SingleImagePreviewView(filepath)
-                    } else {
-                        SingleFilePreviewView(filepath, getImagePath(index, clipFilePaths, clipImages))
-                    }
-                    if (index != clipFilePaths.size - 1) {
-                        Spacer(modifier = Modifier.size(10.dp))
+        ClipSpecificPreviewContentView(
+            clipMainContent = {
+                LazyRow(modifier = Modifier.fillMaxSize()) {
+                    items(clipFilePaths.size) { index ->
+                        val filepath = clipFilePaths[index]
+                        if (canPreviewImage(filepath.extension)) {
+                            SingleImagePreviewView(filepath)
+                        } else {
+                            SingleFilePreviewView(filepath, getImagePath(index, clipFilePaths, clipImages))
+                        }
+                        if (index != clipFilePaths.size - 1) {
+                            Spacer(modifier = Modifier.size(10.dp))
+                        }
                     }
                 }
-            }
-        }, { hover ->
-            ClipMenuView(clipData = clipData, hover)
-        })
+            },
+            clipRightInfo = { hover ->
+                ClipMenuView(clipData = clipData, hover)
+            },
+        )
     }
 }
 

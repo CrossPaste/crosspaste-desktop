@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.dp
@@ -108,7 +109,7 @@ fun ClipPreviewItemView(
                 modifier =
                     Modifier.fillMaxWidth()
                         .height(110.dp)
-                        .padding(10.dp, 5.dp, 0.dp, 5.dp),
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 clipData.clipContent()
@@ -160,6 +161,7 @@ fun getTypeText(clipType: Int): String {
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ClipSpecificPreviewContentView(
+    backgroundColor: Color = MaterialTheme.colors.background,
     clipMainContent: @Composable () -> Unit,
     clipRightInfo: @Composable (Boolean) -> Unit,
 ) {
@@ -187,7 +189,7 @@ fun ClipSpecificPreviewContentView(
                     Modifier
                         .fillMaxHeight().width(420.dp)
                         .clip(RoundedCornerShape(5.dp))
-                        .background(color = MaterialTheme.colors.background),
+                        .background(color = backgroundColor),
             ) {
                 clipMainContent()
             }
@@ -203,7 +205,6 @@ fun ClipSpecificPreviewContentView(
             ) {
                 clipRightInfo(hover)
             }
-            Spacer(modifier = Modifier.width(10.dp))
         }
     }
 }

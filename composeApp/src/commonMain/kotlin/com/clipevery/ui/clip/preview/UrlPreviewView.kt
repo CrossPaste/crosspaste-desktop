@@ -31,33 +31,36 @@ fun UrlPreviewView(clipData: ClipData) {
 
     clipData.getClipItem()?.let {
         val clipUrl = it as ClipUrl
-        ClipSpecificPreviewContentView({
-            Row(
-                modifier =
-                    Modifier.fillMaxSize()
-                        .onClick {
-                            uiSupport.openUrlInBrowser(clipUrl.url)
-                        }.padding(10.dp),
-            ) {
-                Text(
+        ClipSpecificPreviewContentView(
+            clipMainContent = {
+                Row(
                     modifier =
                         Modifier.fillMaxSize()
-                            .verticalScroll(rememberScrollState()),
-                    text = clipUrl.url,
-                    textDecoration = TextDecoration.Underline,
-                    fontFamily = FontFamily.SansSerif,
-                    maxLines = 4,
-                    overflow = TextOverflow.Ellipsis,
-                    style =
-                        TextStyle(
-                            fontWeight = FontWeight.Normal,
-                            color = MaterialTheme.colors.primary,
-                            fontSize = 14.sp,
-                        ),
-                )
-            }
-        }, { hover ->
-            ClipMenuView(clipData = clipData, hover = hover)
-        })
+                            .onClick {
+                                uiSupport.openUrlInBrowser(clipUrl.url)
+                            }.padding(10.dp),
+                ) {
+                    Text(
+                        modifier =
+                            Modifier.fillMaxSize()
+                                .verticalScroll(rememberScrollState()),
+                        text = clipUrl.url,
+                        textDecoration = TextDecoration.Underline,
+                        fontFamily = FontFamily.SansSerif,
+                        maxLines = 4,
+                        overflow = TextOverflow.Ellipsis,
+                        style =
+                            TextStyle(
+                                fontWeight = FontWeight.Normal,
+                                color = MaterialTheme.colors.primary,
+                                fontSize = 14.sp,
+                            ),
+                    )
+                }
+            },
+            clipRightInfo = { hover ->
+                ClipMenuView(clipData = clipData, hover = hover)
+            },
+        )
     }
 }
