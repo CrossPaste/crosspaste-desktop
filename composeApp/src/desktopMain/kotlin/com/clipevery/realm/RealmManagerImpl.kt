@@ -1,5 +1,6 @@
 package com.clipevery.realm
 
+import com.clipevery.app.AppEnv
 import com.clipevery.app.AppFileType
 import com.clipevery.clip.item.FilesClipItem
 import com.clipevery.clip.item.HtmlClipItem
@@ -61,13 +62,17 @@ class RealmManagerImpl private constructor(private val config: RealmConfiguratio
 
         fun createRealmManager(pathProvider: PathProvider): RealmManager {
             val path = pathProvider.resolve(appFileType = AppFileType.DATA)
-            val config =
+            val builder =
                 RealmConfiguration.Builder(DTO_TYPES + SIGNAL_TYPES + CLIP_TYPES + TASK_TYPES)
                     .directory(path.pathString)
                     .name("clipevery.realm")
                     .schemaVersion(1)
-                    .build()
-            return RealmManagerImpl(config)
+
+            if (!AppEnv.isProduction()) {
+                builder.deleteRealmIfMigrationNeeded()
+            }
+
+            return RealmManagerImpl(builder.build())
         }
     }
 
