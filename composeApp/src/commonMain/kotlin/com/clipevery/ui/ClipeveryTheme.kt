@@ -1,5 +1,6 @@
 package com.clipevery.ui
 
+import androidx.compose.material.Colors
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
@@ -9,20 +10,15 @@ import com.clipevery.LocalKoinApplication
 
 private val LightColorPalette =
     lightColors(
-        primary = Color(0xFF1672FF),
-        primaryVariant = Color(0xFF247CFF),
-        secondaryVariant = Color(0xFFE8F5FF),
+        primary = Color(0xFF167DFF),
         surface = Color(0xFFF3F2F7),
     )
 
 private val DarkColorPalette =
     darkColors(
         primary = Color(0xFFBB86FC),
-        primaryVariant = Color(0xFF3700B3),
-        secondary = Color(0xFF363B3E),
-        secondaryVariant = Color(0xFF363B3E),
-        background = Color(0xFF202326),
-        surface = Color(0xFF2F3338),
+        background = Color(0xFF23272A),
+        surface = Color(0xFF353A40),
     )
 
 @Composable
@@ -73,4 +69,12 @@ fun Color.darken(amount: Float): Color {
         green = (green * (1 - amount)).coerceAtLeast(0f),
         blue = (blue * (1 - amount)).coerceAtLeast(0f),
     )
+}
+
+fun Colors.hoverSurfaceColor(): Color {
+    return if (isLight) {
+        Color(0xFFEBF6FF)
+    } else {
+        Color(0xFF363B3E)
+    }
 }

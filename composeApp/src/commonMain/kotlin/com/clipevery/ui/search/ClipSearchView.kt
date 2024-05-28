@@ -232,7 +232,6 @@ fun ClipeverySearchWindow() {
                                         cursorColor = MaterialTheme.colors.primary,
                                         errorCursorColor = Color.Red,
                                         focusedIndicatorColor = MaterialTheme.colors.primary,
-                                        unfocusedIndicatorColor = MaterialTheme.colors.secondaryVariant,
                                         disabledIndicatorColor = Color.Transparent,
                                     ),
                                 textStyle =
