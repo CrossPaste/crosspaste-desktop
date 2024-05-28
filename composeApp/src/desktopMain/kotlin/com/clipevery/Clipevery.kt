@@ -363,6 +363,7 @@ class Clipevery {
                     Tray(
                         state = remember { notificationManager.trayState },
                         icon = trayIcon,
+                        tooltip = "Clipevery",
                         mouseListener =
                             getTrayMouseAdapter(appWindowManager, windowState) {
                                 if (appWindowManager.showMainWindow) {
@@ -398,7 +399,7 @@ class Clipevery {
                     DisposableEffect(Unit) {
                         if (platform.isLinux()) {
                             systemTray?.setImage(resourceUtils.resourceInputStream("clipevery_icon.png"))
-
+                            systemTray?.setTooltip("Clipevery")
                             systemTray?.menu?.add(
                                 MenuItem("Open Clipevery") { appWindowManager.activeMainWindow() },
                             )
