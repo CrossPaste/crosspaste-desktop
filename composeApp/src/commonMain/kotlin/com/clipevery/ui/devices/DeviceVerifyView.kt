@@ -185,7 +185,6 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
                                             cursorColor = MaterialTheme.colors.primary,
                                             errorCursorColor = Color.Red,
                                             focusedIndicatorColor = MaterialTheme.colors.primary,
-                                            unfocusedIndicatorColor = MaterialTheme.colors.secondaryVariant,
                                             disabledIndicatorColor = Color.Transparent,
                                         ),
                                     contentPadding = PaddingValues(4.dp, 16.dp, 4.dp, 16.dp),

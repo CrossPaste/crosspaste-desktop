@@ -65,6 +65,7 @@ import com.clipevery.ui.base.arrowRightIcon
 import com.clipevery.ui.base.block
 import com.clipevery.ui.base.getMenWidth
 import com.clipevery.ui.base.syncAlt
+import com.clipevery.ui.hoverSurfaceColor
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -91,7 +92,7 @@ fun DeviceConnectView(
     val connectIcon = getAllowSendAndReceiveImage(syncRuntimeInfo)
 
     var hover by remember { mutableStateOf(false) }
-    val backgroundColor = if (hover) MaterialTheme.colors.secondaryVariant else MaterialTheme.colors.background
+    val backgroundColor = if (hover) MaterialTheme.colors.hoverSurfaceColor() else MaterialTheme.colors.background
 
     var modifier =
         Modifier
