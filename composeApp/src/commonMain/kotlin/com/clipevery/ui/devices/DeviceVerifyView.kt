@@ -106,7 +106,15 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
                                     .width(40.dp)
                                     .height(50.dp)
                                     .background(MaterialTheme.colors.background, RoundedCornerShape(4.dp))
-                                    .border(1.dp, MaterialTheme.colors.primary, RoundedCornerShape(4.dp)),
+                                    .border(
+                                        1.dp,
+                                        if (isError && token.length != 1) {
+                                            MaterialTheme.colors.error
+                                        } else {
+                                            MaterialTheme.colors.primary
+                                        },
+                                        RoundedCornerShape(4.dp),
+                                    ),
                         ) {
                             CustomTextField(
                                 value = token,
@@ -118,7 +126,7 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
                                         }
                                     }
                                 },
-                                isError = token.length <= 1,
+                                isError = isError && (token.length != 1),
                                 singleLine = true,
                                 textStyle =
                                     LocalTextStyle.current.copy(
@@ -142,7 +150,6 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
                                         disabledTextColor = Color.Transparent,
                                         backgroundColor = Color.Transparent,
                                         cursorColor = MaterialTheme.colors.primary,
-                                        errorCursorColor = Color.Red,
                                         focusedIndicatorColor = MaterialTheme.colors.primary,
                                         disabledIndicatorColor = Color.Transparent,
                                     ),
@@ -166,11 +173,11 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
                                 syncManager.trustByToken(syncRuntimeInfo.appInstanceId, token.toInt())
                                 syncManager.resolveSync(syncRuntimeInfo.appInstanceId, false)
                             }
+                            dialogService.dialog = null
                         } else {
                             isError = true
                         }
                     }
-                    dialogService.dialog = null
                 },
             )
         }
