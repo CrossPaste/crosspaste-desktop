@@ -5,11 +5,13 @@ import com.clipevery.app.AppInfo
 import com.clipevery.app.AppWindowManager
 import com.clipevery.dao.signal.SignalDao
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
+import com.clipevery.dao.sync.SyncState
 import com.clipevery.dto.sync.DataContent
 import com.clipevery.dto.sync.RequestTrust
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.exception.StandardErrorCode
 import com.clipevery.serializer.PreKeyBundleSerializer
+import com.clipevery.sync.SyncManager
 import com.clipevery.utils.DesktopJsonUtils
 import com.clipevery.utils.failResponse
 import com.clipevery.utils.getAppInstanceId
@@ -18,6 +20,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
+import io.realm.kotlin.types.RealmInstant
 import org.signal.libsignal.protocol.InvalidMessageException
 import org.signal.libsignal.protocol.NoSessionException
 import org.signal.libsignal.protocol.SessionCipher
@@ -41,6 +44,8 @@ fun Routing.syncRouting() {
     val syncRuntimeInfoDao = koinApplication.koin.get<SyncRuntimeInfoDao>()
 
     val signalProtocolStore = koinApplication.koin.get<SignalProtocolStore>()
+
+    val syncManager = koinApplication.koin.get<SyncManager>()
 
     get("/sync/telnet") {
         successResponse(call)
@@ -173,6 +178,17 @@ fun Routing.syncRouting() {
             } else {
                 logger.error { "token invalid: ${requestTrust.token}" }
                 failResponse(call, StandardErrorCode.TOKEN_INVALID.toErrorCode())
+            }
+        }
+    }
+
+    get("sync/notifyExit") {
+        getAppInstanceId(call).let { appInstanceId ->
+            syncManager.getSyncHandlers()[appInstanceId]?.let { syncHandler ->
+                syncHandler.update {
+                    this.connectState = SyncState.DISCONNECTED
+                    this.modifyTime = RealmInstant.now()
+                }
             }
         }
     }

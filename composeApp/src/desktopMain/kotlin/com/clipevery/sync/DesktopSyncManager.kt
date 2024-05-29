@@ -204,6 +204,14 @@ class DesktopSyncManager(
         }
     }
 
+    override fun notifyExit() {
+        internalSyncHandlers.values.forEach { syncHandler ->
+            realTimeSyncScope.launch(CoroutineName("NotifyExit")) {
+                syncHandler.notifyExit()
+            }
+        }
+    }
+
     override fun refresh() {
         _refreshing.value = true
         realTimeSyncScope.launch(CoroutineName("SyncManagerRefresh")) {

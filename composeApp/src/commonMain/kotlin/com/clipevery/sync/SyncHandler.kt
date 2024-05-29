@@ -17,6 +17,8 @@ interface SyncHandler {
         resolveWay: ResolveWay,
     )
 
+    suspend fun update(block: SyncRuntimeInfo.() -> Unit): SyncRuntimeInfo?
+
     fun updateSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo)
 
     fun clearContext()
@@ -24,4 +26,6 @@ interface SyncHandler {
     suspend fun trustByToken(token: Int)
 
     suspend fun showToken()
+
+    suspend fun notifyExit()
 }

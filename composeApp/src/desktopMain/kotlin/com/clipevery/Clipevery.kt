@@ -312,6 +312,7 @@ class Clipevery {
             koinApplication.koin.get<ClipboardService>().stop()
             koinApplication.koin.get<ClipBonjourService>().unregisterService()
             koinApplication.koin.get<ClipServer>().stop()
+            koinApplication.koin.get<SyncManager>().notifyExit()
             koinApplication.koin.get<CleanClipScheduler>().stop()
             koinApplication.koin.get<GlobalListener>().stop()
             exitApplication()
