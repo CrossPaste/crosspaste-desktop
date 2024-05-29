@@ -14,7 +14,7 @@ interface SyncHandler {
 
     suspend fun resolveSync(
         currentDeviceSyncInfo: SyncInfo,
-        force: Boolean,
+        resolveWay: ResolveWay,
     )
 
     fun updateSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo)

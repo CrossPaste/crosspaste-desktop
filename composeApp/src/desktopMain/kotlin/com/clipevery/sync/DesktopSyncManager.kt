@@ -60,6 +60,8 @@ class DesktopSyncManager(
 
     override val isRefreshing: State<Boolean> get() = _refreshing
 
+    private val resolver = DesktopResolver(realTimeSyncScope)
+
     init {
         realTimeSyncScope.launch(CoroutineName("SyncManagerListenChanger")) {
             val syncRuntimeInfos = syncRuntimeInfoDao.getAllSyncRuntimeInfos()
@@ -104,7 +106,7 @@ class DesktopSyncManager(
                                     signalProtocolStore,
                                     syncRuntimeInfoDao,
                                 )
-                            resolveSync(insertionSyncRuntimeInfo.appInstanceId, true)
+                            resolveSync(insertionSyncRuntimeInfo.appInstanceId, ResolveWay.AUTO_FORCE)
                         }
 
                         for (change in changes.changes) {
@@ -116,7 +118,7 @@ class DesktopSyncManager(
                                 changeSyncRuntimeInfo.port != oldSyncRuntimeInfo.port ||
                                 !hostInfoListEqual(changeSyncRuntimeInfo.hostInfoList, oldSyncRuntimeInfo.hostInfoList)
                             ) {
-                                resolveSync(changeSyncRuntimeInfo.appInstanceId, true)
+                                resolveSync(changeSyncRuntimeInfo.appInstanceId, ResolveWay.AUTO_FORCE)
                             }
                         }
 
@@ -152,23 +154,23 @@ class DesktopSyncManager(
         refreshWaitToVerifySyncRuntimeInfo()
     }
 
-    override fun resolveSyncs(force: Boolean) {
+    override suspend fun resolveSyncs(resolveWay: ResolveWay) {
         val syncInfo = syncInfoFactory.createSyncInfo()
         internalSyncHandlers.values.forEach { syncHandler ->
-            realTimeSyncScope.launch {
-                doResolveSync(syncHandler, syncInfo, force)
+            resolver.resolveDevice(syncHandler.syncRuntimeInfo.appInstanceId) {
+                doResolveSync(syncHandler, syncInfo, resolveWay)
             }
         }
     }
 
-    override fun resolveSync(
+    override suspend fun resolveSync(
         id: String,
-        force: Boolean,
+        resolveWay: ResolveWay,
     ) {
         internalSyncHandlers[id]?.let { syncHandler ->
-            realTimeSyncScope.launch(CoroutineName("SyncManagerResolve")) {
+            resolver.resolveDevice(syncHandler.syncRuntimeInfo.appInstanceId) {
                 val syncInfo = syncInfoFactory.createSyncInfo()
-                doResolveSync(syncHandler, syncInfo, force)
+                doResolveSync(syncHandler, syncInfo, resolveWay)
             }
         }
     }
@@ -176,10 +178,10 @@ class DesktopSyncManager(
     private suspend fun doResolveSync(
         syncHandler: SyncHandler,
         currentDeviceSyncInfo: SyncInfo,
-        force: Boolean,
+        resolveWay: ResolveWay,
     ) {
         try {
-            syncHandler.resolveSync(currentDeviceSyncInfo, force)
+            syncHandler.resolveSync(currentDeviceSyncInfo, resolveWay)
         } catch (e: Exception) {
             logger.error(e) { "resolve sync error" }
         }
@@ -193,19 +195,21 @@ class DesktopSyncManager(
         appInstanceId: String,
         token: Int,
     ) {
-        internalSyncHandlers[appInstanceId]?.also {
-            it.trustByToken(token)
-            val syncInfo = syncInfoFactory.createSyncInfo()
-            it.resolveSync(syncInfo, false)
+        internalSyncHandlers[appInstanceId]?.also { syncHandler ->
+            resolver.resolveDevice(syncHandler.syncRuntimeInfo.appInstanceId) {
+                syncHandler.trustByToken(token)
+                val syncInfo = syncInfoFactory.createSyncInfo()
+                syncHandler.resolveSync(syncInfo, ResolveWay.AUTO_FORCE)
+            }
         }
     }
 
-    override fun refresh(force: Boolean) {
+    override fun refresh() {
         _refreshing.value = true
         realTimeSyncScope.launch(CoroutineName("SyncManagerRefresh")) {
             logger.info { "start launch" }
             try {
-                resolveSyncs(force)
+                resolveSyncs(ResolveWay.MANUAL)
             } catch (e: Exception) {
                 logger.error(e) { "checkConnects error" }
             }

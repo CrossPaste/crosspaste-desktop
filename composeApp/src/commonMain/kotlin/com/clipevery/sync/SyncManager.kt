@@ -6,16 +6,16 @@ interface SyncManager {
 
     var realTimeSyncRuntimeInfos: MutableList<SyncRuntimeInfo>
 
-    fun resolveSyncs(force: Boolean)
+    var waitToVerifySyncRuntimeInfo: SyncRuntimeInfo?
 
-    fun resolveSync(
+    suspend fun resolveSyncs(resolveWay: ResolveWay)
+
+    suspend fun resolveSync(
         id: String,
-        force: Boolean,
+        resolveWay: ResolveWay,
     )
 
     fun getSyncHandlers(): Map<String, SyncHandler>
-
-    var waitToVerifySyncRuntimeInfo: SyncRuntimeInfo?
 
     fun refreshWaitToVerifySyncRuntimeInfo()
 
