@@ -106,7 +106,15 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
                                     .width(40.dp)
                                     .height(50.dp)
                                     .background(MaterialTheme.colors.background, RoundedCornerShape(4.dp))
-                                    .border(1.dp, MaterialTheme.colors.primary, RoundedCornerShape(4.dp)),
+                                    .border(
+                                        1.dp,
+                                        if (isError && token.length != 1) {
+                                            MaterialTheme.colors.error
+                                        } else {
+                                            MaterialTheme.colors.primary
+                                        },
+                                        RoundedCornerShape(4.dp),
+                                    ),
                         ) {
                             CustomTextField(
                                 value = token,
@@ -118,7 +126,7 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
                                         }
                                     }
                                 },
-                                isError = isError || token.length > 1 || (token.length == 1 && !token[0].isDigit()),
+                                isError = isError && (token.length != 1),
                                 singleLine = true,
                                 textStyle =
                                     LocalTextStyle.current.copy(
