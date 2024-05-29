@@ -3,7 +3,6 @@ package com.clipevery.ui.settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -38,7 +37,6 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
@@ -48,8 +46,9 @@ import com.clipevery.listener.ShortcutKeys
 import com.clipevery.listener.ShortcutKeysListener
 import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.WindowDecoration
-import com.clipevery.ui.base.ClipDialogWindowView
+import com.clipevery.ui.base.ClipDialog
 import com.clipevery.ui.base.DialogButtonsView
+import com.clipevery.ui.base.DialogService
 import com.clipevery.ui.base.KeyboardView
 import com.clipevery.ui.base.edit
 
@@ -143,9 +142,9 @@ fun ShortcutKeyRow(name: String) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val shortcutKeys = current.koin.get<ShortcutKeys>()
+    val dialogService = current.koin.get<DialogService>()
 
     var hover by remember { mutableStateOf(false) }
-    var showEdit by remember { mutableStateOf(false) }
 
     Row(
         modifier =
@@ -168,11 +167,67 @@ fun ShortcutKeyRow(name: String) {
         settingsText(copywriter.getText(name))
         Spacer(modifier = Modifier.weight(1f))
 
+        val shortcutKeysListener = current.koin.get<ShortcutKeysListener>()
+
         Icon(
             modifier =
                 Modifier.size(16.dp)
                     .clickable {
-                        showEdit = !showEdit
+                        dialogService.dialog =
+                            ClipDialog(
+                                key = name,
+                                width = 300.dp,
+                                title = "Please_directly_enter_the_new_shortcut_key_you_wish_to_set",
+                            ) {
+                                DisposableEffect(Unit) {
+                                    shortcutKeysListener.editShortcutKeysMode = true
+                                    onDispose {
+                                        shortcutKeysListener.editShortcutKeysMode = false
+                                    }
+                                }
+
+                                Column(
+                                    modifier =
+                                        Modifier.fillMaxWidth()
+                                            .wrapContentHeight(),
+                                ) {
+                                    Row(
+                                        modifier =
+                                            Modifier.fillMaxWidth()
+                                                .height(60.dp)
+                                                .padding(15.dp)
+                                                .border(1.dp, MaterialTheme.colors.onSurface, RoundedCornerShape(5.dp)),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().padding(horizontal = 5.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            Icon(
+                                                modifier =
+                                                    Modifier.size(16.dp),
+                                                painter = edit(),
+                                                contentDescription = "edit shortcut key",
+                                                tint = MaterialTheme.colors.primary,
+                                            )
+                                            Spacer(modifier = Modifier.weight(1f))
+                                            ShortcutKeyItemView(shortcutKeysListener.currentKeys)
+                                        }
+                                    }
+                                    Row(modifier = Modifier.fillMaxWidth()) {
+                                        DialogButtonsView(
+                                            cancelAction = {
+                                                dialogService.dialog = null
+                                            },
+                                            confirmAction = {
+                                                shortcutKeys.update(name, shortcutKeysListener.currentKeys)
+                                                shortcutKeysListener.currentKeys.clear()
+                                                dialogService.dialog = null
+                                            },
+                                        )
+                                    }
+                                }
+                            }
                     },
             painter = edit(),
             contentDescription = "edit shortcut key",
@@ -182,79 +237,6 @@ fun ShortcutKeyRow(name: String) {
         Spacer(modifier = Modifier.width(10.dp))
 
         ShortcutKeyItemView(shortcutKeys.shortcutKeysCore.keys[name] ?: listOf())
-
-        if (showEdit) {
-            ClipDialogWindowView(
-                title = copywriter.getText("Edit_Shortcut_Key"),
-                size = DpSize(300.dp, 160.dp),
-                onCloseRequest = { showEdit = false },
-            ) {
-                val shortcutKeysListener = current.koin.get<ShortcutKeysListener>()
-
-                DisposableEffect(Unit) {
-                    shortcutKeysListener.editShortcutKeysMode = true
-                    onDispose {
-                        shortcutKeysListener.editShortcutKeysMode = false
-                    }
-                }
-
-                Box(
-                    Modifier.fillMaxSize()
-                        .background(MaterialTheme.colors.background),
-                    contentAlignment = Alignment.TopStart,
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(5.dp),
-                        verticalArrangement = Arrangement.Top,
-                    ) {
-                        Text(
-                            modifier = Modifier.padding(start = 15.dp),
-                            text = copywriter.getText("Please_directly_enter_the_new_shortcut_key_you_wish_to_set"),
-                            color = MaterialTheme.colors.onBackground,
-                            style =
-                                TextStyle(
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Normal,
-                                    fontFamily = MaterialTheme.typography.subtitle1.fontFamily,
-                                ),
-                        )
-                        Row(
-                            modifier =
-                                Modifier.fillMaxWidth()
-                                    .height(60.dp)
-                                    .padding(15.dp)
-                                    .border(1.dp, MaterialTheme.colors.onSurface, RoundedCornerShape(5.dp)),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 5.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Icon(
-                                    modifier =
-                                        Modifier.size(16.dp),
-                                    painter = edit(),
-                                    contentDescription = "edit shortcut key",
-                                    tint = MaterialTheme.colors.primary,
-                                )
-                                Spacer(modifier = Modifier.weight(1f))
-                                ShortcutKeyItemView(shortcutKeysListener.currentKeys)
-                            }
-                        }
-
-                        DialogButtonsView(
-                            cancelAction = {
-                                showEdit = false
-                            },
-                            confirmAction = {
-                                shortcutKeys.update(name, shortcutKeysListener.currentKeys)
-                                showEdit = false
-                            },
-                        )
-                    }
-                }
-            }
-        }
     }
 }
 

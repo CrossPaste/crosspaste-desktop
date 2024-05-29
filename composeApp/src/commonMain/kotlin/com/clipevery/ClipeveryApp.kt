@@ -27,6 +27,7 @@ import com.clipevery.ui.ClipeveryTheme
 import com.clipevery.ui.HomeView
 import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.PageViewType
+import com.clipevery.ui.base.DialogService
 import com.clipevery.ui.base.MessageView
 import com.clipevery.ui.base.ToastManager
 import com.clipevery.ui.base.ToastView
@@ -54,6 +55,7 @@ fun ClipeveryApp(
 fun ClipeveryWindow(hideWindow: () -> Unit) {
     val current = LocalKoinApplication.current
     val toastManager = current.koin.get<ToastManager>()
+    val dialogService = current.koin.get<DialogService>()
 
     val toast by toastManager.toast
 
@@ -114,6 +116,8 @@ fun ClipeveryWindow(hideWindow: () -> Unit) {
                         toastManager.cancel()
                     }
                 }
+
+                dialogService.dialog?.content()
             }
         }
     }
