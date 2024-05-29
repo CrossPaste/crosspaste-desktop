@@ -22,6 +22,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,14 +46,32 @@ import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.sync.SyncManager
 import com.clipevery.ui.PageViewContext
+import com.clipevery.ui.base.ClipDialog
+import com.clipevery.ui.base.DialogService
 import com.clipevery.ui.base.ExpandView
 
 @Composable
 fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
     val current = LocalKoinApplication.current
     val syncManager = current.koin.get<SyncManager>()
+    val dialogService = current.koin.get<DialogService>()
 
-    val waitToVerifySyncRuntimeInfo by remember { syncManager.waitToVerifySyncRuntimeInfo }
+    LaunchedEffect(syncManager.waitToVerifySyncRuntimeInfo?.deviceId) {
+        syncManager.waitToVerifySyncRuntimeInfo?.let { info ->
+            if (dialogService.dialog == null ||
+                dialogService.dialog?.key != info.deviceId
+            ) {
+                dialogService.dialog =
+                    ClipDialog(
+                        key = info.deviceId,
+                        title = "Do_you_trust_this_device?",
+                        width = 320.dp,
+                    ) {
+                        DeviceVerifyView(info)
+                    }
+            }
+        }
+    }
 
     Box(
         modifier =
@@ -71,10 +90,6 @@ fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
             ExpandView("NearbyDevices", defaultExpand = true) {
                 NearbyDevicesView()
             }
-        }
-
-        waitToVerifySyncRuntimeInfo?.let {
-            DeviceVerifyView(it)
         }
     }
 }

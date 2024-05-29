@@ -1,8 +1,10 @@
 package com.clipevery.sync
 
 import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.clipevery.dao.sync.SyncRuntimeInfo
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.dao.sync.SyncState
@@ -44,7 +46,7 @@ class DesktopSyncManager(
 
     private val ignoreVerifySet: MutableSet<String> = mutableSetOf()
 
-    override var waitToVerifySyncRuntimeInfo = mutableStateOf<SyncRuntimeInfo?>(null)
+    override var waitToVerifySyncRuntimeInfo by mutableStateOf<SyncRuntimeInfo?>(null)
 
     private var internalSyncHandlers: MutableMap<String, SyncHandler> = ConcurrentMap()
 
@@ -134,7 +136,7 @@ class DesktopSyncManager(
     }
 
     override fun refreshWaitToVerifySyncRuntimeInfo() {
-        waitToVerifySyncRuntimeInfo.value =
+        waitToVerifySyncRuntimeInfo =
             realTimeSyncRuntimeInfos
                 .filter { !ignoreVerifySet.contains(it.appInstanceId) }
                 .firstOrNull { it.connectState == SyncState.UNVERIFIED }

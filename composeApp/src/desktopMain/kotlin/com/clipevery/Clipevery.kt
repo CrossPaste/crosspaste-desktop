@@ -120,11 +120,13 @@ import com.clipevery.task.TaskExecutor
 import com.clipevery.ui.DesktopThemeDetector
 import com.clipevery.ui.LinuxTrayWindowState
 import com.clipevery.ui.ThemeDetector
+import com.clipevery.ui.base.DesktopDialogService
 import com.clipevery.ui.base.DesktopIconStyle
 import com.clipevery.ui.base.DesktopMessageManager
 import com.clipevery.ui.base.DesktopNotificationManager
 import com.clipevery.ui.base.DesktopToastManager
 import com.clipevery.ui.base.DesktopUISupport
+import com.clipevery.ui.base.DialogService
 import com.clipevery.ui.base.IconStyle
 import com.clipevery.ui.base.MessageManager
 import com.clipevery.ui.base.NotificationManager
@@ -285,6 +287,7 @@ class Clipevery {
                     single<ShortcutKeys> { DesktopShortcutKeys(get(), get()) }
                     single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get()) }
                     single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get()) }
+                    single<DialogService> { DesktopDialogService() }
                 }
             return GlobalContext.startKoin {
                 modules(appModule)
