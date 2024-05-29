@@ -10,6 +10,7 @@ import com.clipevery.dto.sync.RequestTrust
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.exception.StandardErrorCode
 import com.clipevery.serializer.PreKeyBundleSerializer
+import com.clipevery.sync.SyncManager
 import com.clipevery.utils.DesktopJsonUtils
 import com.clipevery.utils.failResponse
 import com.clipevery.utils.getAppInstanceId
@@ -42,12 +43,14 @@ fun Routing.syncRouting() {
 
     val signalProtocolStore = koinApplication.koin.get<SignalProtocolStore>()
 
+    val syncManager = koinApplication.koin.get<SyncManager>()
+
     get("/sync/telnet") {
         successResponse(call)
     }
 
     get("/sync/preKeyBundle") {
-        getAppInstanceId(call).let { appInstanceId ->
+        getAppInstanceId(call)?.let { appInstanceId ->
 
             val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
 
@@ -89,7 +92,7 @@ fun Routing.syncRouting() {
     }
 
     post("sync/exchangeSyncInfo") {
-        getAppInstanceId(call).let { appInstanceId ->
+        getAppInstanceId(call)?.let { appInstanceId ->
             val dataContent = call.receive(DataContent::class)
             val bytes = dataContent.data
             val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
@@ -143,7 +146,7 @@ fun Routing.syncRouting() {
     }
 
     get("/sync/isTrust") {
-        getAppInstanceId(call).let { appInstanceId ->
+        getAppInstanceId(call)?.let { appInstanceId ->
             val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
             signalProtocolStore.getIdentity(signalProtocolAddress)?.let {
                 logger.debug { "${appInfo.appInstanceId} isTrust $appInstanceId" }
@@ -156,7 +159,7 @@ fun Routing.syncRouting() {
     }
 
     post("sync/trust") {
-        getAppInstanceId(call).let { appInstanceId ->
+        getAppInstanceId(call)?.let { appInstanceId ->
             val requestTrust = call.receive(RequestTrust::class)
 
             val appWindowManager = koinApplication.koin.get<AppWindowManager>()
@@ -174,6 +177,12 @@ fun Routing.syncRouting() {
                 logger.error { "token invalid: ${requestTrust.token}" }
                 failResponse(call, StandardErrorCode.TOKEN_INVALID.toErrorCode())
             }
+        }
+    }
+
+    get("sync/notifyExit") {
+        getAppInstanceId(call)?.let { appInstanceId ->
+            syncManager.markExit(appInstanceId)
         }
     }
 }

@@ -88,4 +88,12 @@ class DesktopSyncClientApi(
             return false
         }
     }
+
+    override suspend fun notifyExit(toUrl: URLBuilder.(URLBuilder) -> Unit) {
+        try {
+            clipClient.get(urlBuilder = toUrl)
+        } catch (e: Exception) {
+            logger.error(e) { "notifyExit api fail" }
+        }
+    }
 }

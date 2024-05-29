@@ -26,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.signal.libsignal.protocol.state.SignalProtocolStore
 
@@ -200,6 +201,21 @@ class DesktopSyncManager(
                 syncHandler.trustByToken(token)
                 val syncInfo = syncInfoFactory.createSyncInfo()
                 syncHandler.resolveSync(syncInfo, ResolveWay.AUTO_FORCE)
+            }
+        }
+    }
+
+    override fun notifyExit() {
+        internalSyncHandlers.values.forEach { syncHandler ->
+            // Ensure that the notification is completed before exiting
+            runBlocking { syncHandler.notifyExit() }
+        }
+    }
+
+    override fun markExit(appInstanceId: String) {
+        internalSyncHandlers[appInstanceId]?.let { syncHandler ->
+            realTimeSyncScope.launch(CoroutineName("MarkExit")) {
+                syncHandler.markExit()
             }
         }
     }

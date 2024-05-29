@@ -9,6 +9,7 @@ import com.clipevery.net.clientapi.SyncClientApi
 import com.clipevery.utils.TelnetUtils
 import com.clipevery.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.realm.kotlin.types.RealmInstant
 import kotlinx.coroutines.delay
 import org.signal.libsignal.protocol.SessionBuilder
 import org.signal.libsignal.protocol.SessionCipher
@@ -63,6 +64,7 @@ class DesktopSyncHandler(
             if (syncRuntimeInfo.connectState != SyncState.DISCONNECTED) {
                 update {
                     this.connectState = SyncState.DISCONNECTED
+                    this.modifyTime = RealmInstant.now()
                 } ?: run {
                     return
                 }
@@ -106,7 +108,7 @@ class DesktopSyncHandler(
         this.syncRuntimeInfo = syncRuntimeInfo
     }
 
-    private suspend fun update(block: SyncRuntimeInfo.() -> Unit): SyncRuntimeInfo? {
+    override suspend fun update(block: SyncRuntimeInfo.() -> Unit): SyncRuntimeInfo? {
         syncRuntimeInfoDao.suspendUpdate(syncRuntimeInfo) {
             block()
         }?. let {
@@ -123,11 +125,13 @@ class DesktopSyncHandler(
             update {
                 this.connectHostAddress = hostInfo.hostAddress
                 this.connectState = SyncState.CONNECTING
+                this.modifyTime = RealmInstant.now()
             }
         } ?: run {
             logger.info { "${syncRuntimeInfo.platformName} to disconnected" }
             update {
                 this.connectState = SyncState.DISCONNECTED
+                this.modifyTime = RealmInstant.now()
             }
         }
     }
@@ -144,6 +148,7 @@ class DesktopSyncHandler(
             logger.info { "${syncRuntimeInfo.platformName} to disconnected" }
             update {
                 this.connectState = SyncState.DISCONNECTED
+                this.modifyTime = RealmInstant.now()
             }
         }
     }
@@ -191,6 +196,7 @@ class DesktopSyncHandler(
             logger.info { "connect state to unmatched $host $port" }
             update {
                 this.connectState = SyncState.UNMATCHED
+                this.modifyTime = RealmInstant.now()
             }
         } else {
             logger.info { "connect state to unverified $host $port" }
@@ -198,6 +204,7 @@ class DesktopSyncHandler(
                 this.connectHostAddress = host
                 this.port = port
                 this.connectState = SyncState.UNVERIFIED
+                this.modifyTime = RealmInstant.now()
                 logger.info { "createSession ${syncRuntimeInfo.platformName} ${SyncState.UNVERIFIED}" }
             }
         }
@@ -217,6 +224,7 @@ class DesktopSyncHandler(
         ) {
             update {
                 this.connectState = SyncState.CONNECTED
+                this.modifyTime = RealmInstant.now()
             }
             true
         } else {
@@ -244,9 +252,27 @@ class DesktopSyncHandler(
                     update {
                         this.connectHostAddress = null
                         this.connectState = SyncState.DISCONNECTED
+                        this.modifyTime = RealmInstant.now()
                     }
                 }
             }
+        }
+    }
+
+    override suspend fun notifyExit() {
+        if (syncRuntimeInfo.connectState == SyncState.CONNECTED) {
+            syncRuntimeInfo.connectHostAddress?.let { host ->
+                syncClientApi.notifyExit { urlBuilder ->
+                    buildUrl(urlBuilder, host, syncRuntimeInfo.port, "sync", "notifyExit")
+                }
+            }
+        }
+    }
+
+    override suspend fun markExit() {
+        update {
+            this.connectState = SyncState.DISCONNECTED
+            this.modifyTime = RealmInstant.now()
         }
     }
 

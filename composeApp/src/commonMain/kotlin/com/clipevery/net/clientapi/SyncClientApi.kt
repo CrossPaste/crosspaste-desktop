@@ -23,4 +23,6 @@ interface SyncClientApi {
     ): Boolean
 
     suspend fun showToken(toUrl: URLBuilder.(URLBuilder) -> Unit): Boolean
+
+    suspend fun notifyExit(toUrl: URLBuilder.(URLBuilder) -> Unit)
 }
