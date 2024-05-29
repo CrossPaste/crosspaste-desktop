@@ -118,7 +118,7 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
                                         }
                                     }
                                 },
-                                isError = token.length <= 1,
+                                isError = isError || token.length > 1 || (token.length == 1 && !token[0].isDigit()),
                                 singleLine = true,
                                 textStyle =
                                     LocalTextStyle.current.copy(
@@ -142,7 +142,6 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
                                         disabledTextColor = Color.Transparent,
                                         backgroundColor = Color.Transparent,
                                         cursorColor = MaterialTheme.colors.primary,
-                                        errorCursorColor = Color.Red,
                                         focusedIndicatorColor = MaterialTheme.colors.primary,
                                         disabledIndicatorColor = Color.Transparent,
                                     ),
@@ -166,11 +165,11 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
                                 syncManager.trustByToken(syncRuntimeInfo.appInstanceId, token.toInt())
                                 syncManager.resolveSync(syncRuntimeInfo.appInstanceId, false)
                             }
+                            dialogService.dialog = null
                         } else {
                             isError = true
                         }
                     }
-                    dialogService.dialog = null
                 },
             )
         }
