@@ -14,7 +14,7 @@ import org.signal.libsignal.protocol.SessionBuilder
 import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.SignalProtocolAddress
 import org.signal.libsignal.protocol.state.SignalProtocolStore
-import java.util.concurrent.atomic.AtomicReference
+import kotlin.math.min
 
 class DesktopSyncHandler(
     override var syncRuntimeInfo: SyncRuntimeInfo,
@@ -32,63 +32,47 @@ class DesktopSyncHandler(
 
     override val sessionCipher: SessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
 
-    private val resolveState = AtomicReference<Boolean?>(null)
+    private var disConnectedTime = 0
 
     override suspend fun getConnectHostAddress(): String? {
         syncRuntimeInfo.connectHostAddress?.let {
             return it
         } ?: run {
             val syncInfo = syncInfoFactory.createSyncInfo()
-            resolveSync(syncInfo, false)
+            resolveSync(syncInfo, ResolveWay.AUTO_NO_FORCE)
             return syncRuntimeInfo.connectHostAddress
         }
     }
 
-    override suspend fun resolveSync(
-        currentDeviceSyncInfo: SyncInfo,
-        force: Boolean,
-    ) {
-        var delaySum = 0
-        while (true) {
-            if (delaySum >= 1000) {
-                break
-            } else {
-                when {
-                    force && resolveState.compareAndSet(null, true) ->
-                        try {
-                            doResolveSync(currentDeviceSyncInfo, true)
-                            break
-                        } finally {
-                            resolveState.set(null)
-                        }
-
-                    !force && resolveState.compareAndSet(null, false) ->
-                        try {
-                            doResolveSync(currentDeviceSyncInfo, false)
-                            break
-                        } finally {
-                            resolveState.set(null)
-                        }
-
-                    force -> while (resolveState.get() == false) {
-                        delay(100)
-                        delaySum += 100
-                    }
-                }
-            }
+    private suspend fun delayResolve() {
+        disConnectedTime++
+        if (disConnectedTime > 1) {
+            delay(min(20L * (1 shl (disConnectedTime - 1)), 1000L * 60L))
         }
     }
 
-    private suspend fun doResolveSync(
+    private fun clearDelayState() {
+        disConnectedTime = 0
+    }
+
+    override suspend fun resolveSync(
         currentDeviceSyncInfo: SyncInfo,
-        force: Boolean,
+        resolveWay: ResolveWay,
     ) {
-        if (force && syncRuntimeInfo.connectHostAddress != null) {
-            update {
-                this.connectState = SyncState.DISCONNECTED
-            } ?: run {
-                return
+        if (resolveWay.isForce() && syncRuntimeInfo.connectHostAddress != null) {
+            if (syncRuntimeInfo.connectState != SyncState.DISCONNECTED) {
+                update {
+                    this.connectState = SyncState.DISCONNECTED
+                } ?: run {
+                    return
+                }
             }
+        }
+
+        if (resolveWay.isAuto() && syncRuntimeInfo.connectState == SyncState.DISCONNECTED) {
+            delayResolve()
+        } else {
+            clearDelayState()
         }
 
         if (syncRuntimeInfo.connectState != SyncState.CONNECTED) {
@@ -111,6 +95,10 @@ class DesktopSyncHandler(
                     }
                 }
             } while (syncRuntimeInfo.connectState == SyncState.CONNECTING)
+        }
+
+        if (syncRuntimeInfo.connectState != SyncState.DISCONNECTED) {
+            clearDelayState()
         }
     }
 

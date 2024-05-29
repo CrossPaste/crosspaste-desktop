@@ -171,7 +171,6 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
                         if (token.length == tokenCount) {
                             coroutineScope.launch {
                                 syncManager.trustByToken(syncRuntimeInfo.appInstanceId, token.toInt())
-                                syncManager.resolveSync(syncRuntimeInfo.appInstanceId, false)
                             }
                             dialogService.dialog = null
                         } else {

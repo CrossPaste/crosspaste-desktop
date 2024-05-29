@@ -6,5 +6,5 @@ interface SyncRefresher {
 
     val isRefreshing: State<Boolean>
 
-    fun refresh(force: Boolean)
+    fun refresh()
 }
