@@ -29,4 +29,6 @@ interface SyncManager {
     )
 
     fun notifyExit()
+
+    fun markExit(appInstanceId: String)
 }

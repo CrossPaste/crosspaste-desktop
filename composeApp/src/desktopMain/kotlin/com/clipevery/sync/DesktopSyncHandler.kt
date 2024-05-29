@@ -269,6 +269,13 @@ class DesktopSyncHandler(
         }
     }
 
+    override suspend fun markExit() {
+        update {
+            this.connectState = SyncState.DISCONNECTED
+            this.modifyTime = RealmInstant.now()
+        }
+    }
+
     private fun isExistSession(): Boolean {
         return signalProtocolStore.loadSession(signalProtocolAddress) != null
     }

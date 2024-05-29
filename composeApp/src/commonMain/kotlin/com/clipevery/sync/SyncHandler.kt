@@ -28,4 +28,6 @@ interface SyncHandler {
     suspend fun showToken()
 
     suspend fun notifyExit()
+
+    suspend fun markExit()
 }

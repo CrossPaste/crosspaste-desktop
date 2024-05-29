@@ -5,7 +5,6 @@ import com.clipevery.app.AppInfo
 import com.clipevery.app.AppWindowManager
 import com.clipevery.dao.signal.SignalDao
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
-import com.clipevery.dao.sync.SyncState
 import com.clipevery.dto.sync.DataContent
 import com.clipevery.dto.sync.RequestTrust
 import com.clipevery.dto.sync.SyncInfo
@@ -20,7 +19,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
-import io.realm.kotlin.types.RealmInstant
 import org.signal.libsignal.protocol.InvalidMessageException
 import org.signal.libsignal.protocol.NoSessionException
 import org.signal.libsignal.protocol.SessionCipher
@@ -52,7 +50,7 @@ fun Routing.syncRouting() {
     }
 
     get("/sync/preKeyBundle") {
-        getAppInstanceId(call).let { appInstanceId ->
+        getAppInstanceId(call)?.let { appInstanceId ->
 
             val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
 
@@ -94,7 +92,7 @@ fun Routing.syncRouting() {
     }
 
     post("sync/exchangeSyncInfo") {
-        getAppInstanceId(call).let { appInstanceId ->
+        getAppInstanceId(call)?.let { appInstanceId ->
             val dataContent = call.receive(DataContent::class)
             val bytes = dataContent.data
             val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
@@ -148,7 +146,7 @@ fun Routing.syncRouting() {
     }
 
     get("/sync/isTrust") {
-        getAppInstanceId(call).let { appInstanceId ->
+        getAppInstanceId(call)?.let { appInstanceId ->
             val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
             signalProtocolStore.getIdentity(signalProtocolAddress)?.let {
                 logger.debug { "${appInfo.appInstanceId} isTrust $appInstanceId" }
@@ -161,7 +159,7 @@ fun Routing.syncRouting() {
     }
 
     post("sync/trust") {
-        getAppInstanceId(call).let { appInstanceId ->
+        getAppInstanceId(call)?.let { appInstanceId ->
             val requestTrust = call.receive(RequestTrust::class)
 
             val appWindowManager = koinApplication.koin.get<AppWindowManager>()
@@ -183,13 +181,8 @@ fun Routing.syncRouting() {
     }
 
     get("sync/notifyExit") {
-        getAppInstanceId(call).let { appInstanceId ->
-            syncManager.getSyncHandlers()[appInstanceId]?.let { syncHandler ->
-                syncHandler.update {
-                    this.connectState = SyncState.DISCONNECTED
-                    this.modifyTime = RealmInstant.now()
-                }
-            }
+        getAppInstanceId(call)?.let { appInstanceId ->
+            syncManager.markExit(appInstanceId)
         }
     }
 }
