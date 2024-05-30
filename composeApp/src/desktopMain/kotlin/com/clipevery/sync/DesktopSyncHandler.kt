@@ -33,7 +33,9 @@ class DesktopSyncHandler(
 
     override val sessionCipher: SessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
 
-    private var disConnectedTime = 0
+    override var recommendedRefreshTime: Long = 0L
+
+    private var failTime = 0
 
     override suspend fun getConnectHostAddress(): String? {
         syncRuntimeInfo.connectHostAddress?.let {
@@ -45,63 +47,73 @@ class DesktopSyncHandler(
         }
     }
 
-    private suspend fun delayResolve() {
-        disConnectedTime++
-        if (disConnectedTime > 1) {
-            delay(min(20L * (1 shl (disConnectedTime - 1)), 1000L * 60L))
-        }
-    }
-
-    private fun clearDelayState() {
-        disConnectedTime = 0
-    }
-
     override suspend fun resolveSync(
         currentDeviceSyncInfo: SyncInfo,
         resolveWay: ResolveWay,
     ) {
-        if (resolveWay.isForce() && syncRuntimeInfo.connectHostAddress != null) {
-            if (syncRuntimeInfo.connectState != SyncState.DISCONNECTED) {
-                update {
-                    this.connectState = SyncState.DISCONNECTED
-                    this.modifyTime = RealmInstant.now()
-                } ?: run {
-                    return
-                }
+        if (!resolveWay.isForce()) {
+            val currentTime = System.currentTimeMillis()
+            val waitTime = recommendedRefreshTime - currentTime
+            delay(waitTime)
+        }
+
+        if (syncRuntimeInfo.connectState == SyncState.DISCONNECTED ||
+            syncRuntimeInfo.connectHostAddress == null
+        ) {
+            selectHostThenResolveConnect(currentDeviceSyncInfo)
+        } else if (syncRuntimeInfo.connectState == SyncState.CONNECTED) {
+            resolveConnect(currentDeviceSyncInfo)
+        } else if (resolveWay.isForce()) {
+            selectHostThenResolveConnect(currentDeviceSyncInfo)
+        } else {
+            resolveConnect(currentDeviceSyncInfo)
+        }
+    }
+
+    private suspend fun selectHostThenResolveConnect(currentDeviceSyncInfo: SyncInfo) {
+        syncRuntimeInfo.connectHostAddress?.let {
+            update {
+                this.connectState = SyncState.DISCONNECTED
+                this.modifyTime = RealmInstant.now()
+            } ?: run {
+                // If null is returned, it means that this syncHandler has been deleted.
+                return
             }
         }
 
-        if (resolveWay.isAuto() && syncRuntimeInfo.connectState == SyncState.DISCONNECTED) {
-            delayResolve()
-        } else {
-            clearDelayState()
-        }
-
-        if (syncRuntimeInfo.connectState != SyncState.CONNECTED) {
-            do {
-                when (syncRuntimeInfo.connectState) {
-                    SyncState.DISCONNECTED -> {
-                        resolveDisconnected()
-                    }
-                    SyncState.CONNECTING -> {
-                        resolveConnecting(currentDeviceSyncInfo)
-                    }
-                    SyncState.UNVERIFIED -> {
-                        tokenCache.getToken(syncRuntimeInfo.appInstanceId)?.let { token ->
-                            trustByToken(token)
-                        }
-                        resolveConnecting(currentDeviceSyncInfo)
-                    }
-                    else -> {
-                        logger.warn { "current state is ${syncRuntimeInfo.connectState}" }
-                    }
+        do {
+            when (syncRuntimeInfo.connectState) {
+                SyncState.DISCONNECTED -> {
+                    resolveDisconnected()
                 }
-            } while (syncRuntimeInfo.connectState == SyncState.CONNECTING)
-        }
+                SyncState.CONNECTING -> {
+                    resolveConnecting(currentDeviceSyncInfo)
+                }
+                SyncState.UNVERIFIED -> {
+                    tokenCache.getToken(syncRuntimeInfo.appInstanceId)?.let { token ->
+                        trustByToken(token)
+                    }
+                    resolveConnecting(currentDeviceSyncInfo)
+                }
+                else -> {
+                    logger.warn { "current state is ${syncRuntimeInfo.connectState}" }
+                }
+            }
+        } while (syncRuntimeInfo.connectState == SyncState.CONNECTING)
 
-        if (syncRuntimeInfo.connectState != SyncState.DISCONNECTED) {
-            clearDelayState()
+        if (syncRuntimeInfo.connectState == SyncState.CONNECTED) {
+            failTime = 0
+            recommendedRefreshTime = System.currentTimeMillis() + 60000L
+        } else {
+            if (failTime < 12) {
+                failTime++
+            }
+            recommendedRefreshTime = System.currentTimeMillis() + min(20L * (1 shl (failTime - 1)), 60000L)
         }
+    }
+
+    private suspend fun resolveConnect(currentDeviceSyncInfo: SyncInfo) {
+        resolveConnecting(currentDeviceSyncInfo)
     }
 
     override fun updateSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo) {

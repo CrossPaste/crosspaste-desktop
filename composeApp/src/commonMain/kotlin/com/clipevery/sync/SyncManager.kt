@@ -1,6 +1,7 @@
 package com.clipevery.sync
 
 import com.clipevery.dao.sync.SyncRuntimeInfo
+import com.clipevery.dto.sync.SyncInfo
 
 interface SyncManager {
 
@@ -31,4 +32,6 @@ interface SyncManager {
     fun notifyExit()
 
     fun markExit(appInstanceId: String)
+
+    fun updateSyncInfo(syncInfo: SyncInfo)
 }
