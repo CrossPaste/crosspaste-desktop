@@ -27,7 +27,10 @@ class DesktopSendClipClientApi(
                 messageType = typeInfo<ClipData>(),
                 targetAppInstanceId = targetAppInstanceId,
                 encrypt = configManager.config.isEncryptSync,
-                urlBuilder = { buildUrl(it, "sync", "clip") },
+                urlBuilder = {
+                    toUrl(it)
+                    buildUrl(it, "sync", "clip")
+                },
             )
 
         // 422 is the status code for user not allow to receive clip

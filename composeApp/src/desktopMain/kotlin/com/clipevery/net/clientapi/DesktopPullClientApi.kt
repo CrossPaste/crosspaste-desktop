@@ -30,7 +30,10 @@ class DesktopPullClientApi(
                 targetAppInstanceId = pullFileRequest.appInstanceId,
                 encrypt = configManager.config.isEncryptSync,
                 timeout = 5000L, // pull file timeout is 5s
-                urlBuilder = { buildUrl(it, "pull", "file") },
+                urlBuilder = {
+                    toUrl(it)
+                    buildUrl(it, "pull", "file")
+                },
             )
 
         return result(response, "file", pullFileRequest)
@@ -43,7 +46,10 @@ class DesktopPullClientApi(
         val response =
             clipClient.get(
                 timeout = 5000L,
-                urlBuilder = { buildUrl(it, "pull", "icon", source) },
+                urlBuilder = {
+                    toUrl(it)
+                    buildUrl(it, "pull", "icon", source)
+                },
             )
 
         return result(response, "icon", response.request.url)

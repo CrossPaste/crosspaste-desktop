@@ -24,7 +24,10 @@ class DesktopSyncClientApi(
 
     override suspend fun getPreKeyBundle(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult {
         return request(logger, request = {
-            clipClient.get(urlBuilder = { buildUrl(it, "sync", "preKeyBundle") })
+            clipClient.get(urlBuilder = {
+                toUrl(it)
+                buildUrl(it, "sync", "preKeyBundle")
+            })
         }) { response ->
             PreKeyBundleSerializer.decodePreKeyBundle(response.body<DataContent>().data)
         }
@@ -39,13 +42,23 @@ class DesktopSyncClientApi(
             val data = DesktopJsonUtils.JSON.encodeToString(syncInfo).toByteArray()
             val ciphertextMessage = sessionCipher.encrypt(data)
             val dataContent = DataContent(data = ciphertextMessage.serialize())
-            clipClient.post(dataContent, typeInfo<DataContent>(), urlBuilder = { buildUrl(it, "sync", "exchangeSyncInfo") })
+            clipClient.post(
+                dataContent,
+                typeInfo<DataContent>(),
+                urlBuilder = {
+                    toUrl(it)
+                    buildUrl(it, "sync", "exchangeSyncInfo")
+                },
+            )
         }, transformData = { true })
     }
 
     override suspend fun isTrust(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult {
         return request(logger, request = {
-            clipClient.get(urlBuilder = { buildUrl(it, "sync", "isTrust") })
+            clipClient.get(urlBuilder = {
+                toUrl(it)
+                buildUrl(it, "sync", "isTrust")
+            })
         }, transformData = { true })
     }
 
@@ -56,19 +69,32 @@ class DesktopSyncClientApi(
         return request(logger, request = {
             val identityKey = signalProtocolStore.identityKeyPair.publicKey
             val requestTrust = RequestTrust(identityKey, token)
-            clipClient.post(requestTrust, typeInfo<RequestTrust>(), urlBuilder = { buildUrl(it, "sync", "trust") })
+            clipClient.post(
+                requestTrust,
+                typeInfo<RequestTrust>(),
+                urlBuilder = {
+                    toUrl(it)
+                    buildUrl(it, "sync", "trust")
+                },
+            )
         }, transformData = { true })
     }
 
     override suspend fun showToken(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult {
         return request(logger, request = {
-            clipClient.get(urlBuilder = { buildUrl(it, "sync", "showToken") })
+            clipClient.get(urlBuilder = {
+                toUrl(it)
+                buildUrl(it, "sync", "showToken")
+            })
         }, transformData = { true })
     }
 
     override suspend fun notifyExit(toUrl: URLBuilder.(URLBuilder) -> Unit) {
         request(logger, request = {
-            clipClient.get(urlBuilder = { buildUrl(it, "sync", "notifyExit") })
+            clipClient.get(urlBuilder = {
+                toUrl(it)
+                buildUrl(it, "sync", "notifyExit")
+            })
         }, transformData = { true })
     }
 }
