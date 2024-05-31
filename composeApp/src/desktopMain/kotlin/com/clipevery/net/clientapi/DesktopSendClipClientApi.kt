@@ -4,6 +4,7 @@ import com.clipevery.config.ConfigManager
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.exception.StandardErrorCode
 import com.clipevery.net.ClipClient
+import com.clipevery.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import io.ktor.util.reflect.*
@@ -26,7 +27,7 @@ class DesktopSendClipClientApi(
                 messageType = typeInfo<ClipData>(),
                 targetAppInstanceId = targetAppInstanceId,
                 encrypt = configManager.config.isEncryptSync,
-                urlBuilder = toUrl,
+                urlBuilder = { buildUrl(it, "sync", "clip") },
             )
 
         // 422 is the status code for user not allow to receive clip

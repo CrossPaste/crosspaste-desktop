@@ -4,7 +4,7 @@ import com.clipevery.config.ConfigManager
 import com.clipevery.dto.pull.PullFileRequest
 import com.clipevery.exception.StandardErrorCode
 import com.clipevery.net.ClipClient
-import com.clipevery.utils.FailResponse
+import com.clipevery.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.*
 import io.ktor.client.statement.*
@@ -30,17 +30,20 @@ class DesktopPullClientApi(
                 targetAppInstanceId = pullFileRequest.appInstanceId,
                 encrypt = configManager.config.isEncryptSync,
                 timeout = 5000L, // pull file timeout is 5s
-                urlBuilder = toUrl,
+                urlBuilder = { buildUrl(it, "pull", "file") },
             )
 
         return result(response, "file", pullFileRequest)
     }
 
-    override suspend fun pullIcon(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult {
+    override suspend fun pullIcon(
+        source: String,
+        toUrl: URLBuilder.(URLBuilder) -> Unit,
+    ): ClientApiResult {
         val response =
             clipClient.get(
                 timeout = 5000L,
-                urlBuilder = toUrl,
+                urlBuilder = { buildUrl(it, "pull", "icon", source) },
             )
 
         return result(response, "icon", response.request.url)

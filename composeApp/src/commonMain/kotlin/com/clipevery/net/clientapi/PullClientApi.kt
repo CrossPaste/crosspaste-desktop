@@ -10,5 +10,8 @@ interface PullClientApi {
         toUrl: URLBuilder.(URLBuilder) -> Unit,
     ): ClientApiResult
 
-    suspend fun pullIcon(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult
+    suspend fun pullIcon(
+        source: String,
+        toUrl: URLBuilder.(URLBuilder) -> Unit,
+    ): ClientApiResult
 }

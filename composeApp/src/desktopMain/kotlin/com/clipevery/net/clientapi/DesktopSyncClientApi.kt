@@ -6,13 +6,13 @@ import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.net.ClipClient
 import com.clipevery.serializer.PreKeyBundleSerializer
 import com.clipevery.utils.DesktopJsonUtils
+import com.clipevery.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.*
 import io.ktor.http.*
 import io.ktor.util.reflect.*
 import kotlinx.serialization.encodeToString
 import org.signal.libsignal.protocol.SessionCipher
-import org.signal.libsignal.protocol.state.PreKeyBundle
 import org.signal.libsignal.protocol.state.SignalProtocolStore
 
 class DesktopSyncClientApi(
@@ -22,78 +22,53 @@ class DesktopSyncClientApi(
 
     private val logger = KotlinLogging.logger {}
 
-    override suspend fun getPreKeyBundle(toUrl: URLBuilder.(URLBuilder) -> Unit): PreKeyBundle? {
-        try {
-            val response = clipClient.get(urlBuilder = toUrl)
-            if (response.status.value != 200) {
-                return null
-            }
-            return PreKeyBundleSerializer.decodePreKeyBundle(response.body<DataContent>().data)
-        } catch (e: Exception) {
-            logger.error(e) { "getPreKeyBundle error" }
+    override suspend fun getPreKeyBundle(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult {
+        return request(logger, request = {
+            clipClient.get(urlBuilder = { buildUrl(it, "sync", "preKeyBundle") })
+        }) { response ->
+            PreKeyBundleSerializer.decodePreKeyBundle(response.body<DataContent>().data)
         }
-        return null
     }
 
     override suspend fun exchangeSyncInfo(
         syncInfo: SyncInfo,
         sessionCipher: SessionCipher,
         toUrl: URLBuilder.(URLBuilder) -> Unit,
-    ): Boolean {
-        try {
+    ): ClientApiResult {
+        return request(logger, request = {
             val data = DesktopJsonUtils.JSON.encodeToString(syncInfo).toByteArray()
             val ciphertextMessage = sessionCipher.encrypt(data)
-
             val dataContent = DataContent(data = ciphertextMessage.serialize())
-
-            val response = clipClient.post(dataContent, typeInfo<DataContent>(), urlBuilder = toUrl)
-            return response.status.value == 200
-        } catch (e: Exception) {
-            logger.error(e) { "exchangeSyncInfo error" }
-        }
-        return false
+            clipClient.post(dataContent, typeInfo<DataContent>(), urlBuilder = { buildUrl(it, "sync", "exchangeSyncInfo") })
+        }, transformData = { true })
     }
 
-    override suspend fun isTrust(toUrl: URLBuilder.(URLBuilder) -> Unit): Boolean {
-        try {
-            val response = clipClient.get(urlBuilder = toUrl)
-            return response.status.value == 200
-        } catch (e: Exception) {
-            logger.error(e) { "isTrust api fail" }
-            return false
-        }
+    override suspend fun isTrust(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult {
+        return request(logger, request = {
+            clipClient.get(urlBuilder = { buildUrl(it, "sync", "isTrust") })
+        }, transformData = { true })
     }
 
     override suspend fun trust(
         token: Int,
         toUrl: URLBuilder.(URLBuilder) -> Unit,
-    ): Boolean {
-        try {
+    ): ClientApiResult {
+        return request(logger, request = {
             val identityKey = signalProtocolStore.identityKeyPair.publicKey
             val requestTrust = RequestTrust(identityKey, token)
-            val response = clipClient.post(requestTrust, typeInfo<RequestTrust>(), urlBuilder = toUrl)
-            return response.status.value == 200
-        } catch (e: Exception) {
-            logger.error(e) { "trust api fail" }
-            return false
-        }
+            clipClient.post(requestTrust, typeInfo<RequestTrust>(), urlBuilder = { buildUrl(it, "sync", "trust") })
+        }, transformData = { true })
     }
 
-    override suspend fun showToken(toUrl: URLBuilder.(URLBuilder) -> Unit): Boolean {
-        try {
-            clipClient.get(urlBuilder = toUrl)
-            return true
-        } catch (e: Exception) {
-            logger.error(e) { "showToken api fail" }
-            return false
-        }
+    override suspend fun showToken(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult {
+        return request(logger, request = {
+            clipClient.get(urlBuilder = { buildUrl(it, "sync", "showToken") })
+        }, transformData = { true })
     }
 
     override suspend fun notifyExit(toUrl: URLBuilder.(URLBuilder) -> Unit) {
-        try {
-            clipClient.get(urlBuilder = toUrl)
-        } catch (e: Exception) {
-            logger.error(e) { "notifyExit api fail" }
-        }
+        request(logger, request = {
+            clipClient.get(urlBuilder = { buildUrl(it, "sync", "notifyExit") })
+        }, transformData = { true })
     }
 }

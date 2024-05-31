@@ -81,7 +81,7 @@ object TaskUtils {
     ): FailureClipTaskResult {
         val needRetry = retryHandler()
 
-        val failMessage = fails.joinToString(separator = "\n", limit = 3) { getStackTraceAsString(it.throwable) }
+        val failMessage = fails.joinToString(separator = "\n", limit = 3) { getStackTraceAsString(it.exception) }
 
         if (!needRetry) {
             logger.error { failMessage }
