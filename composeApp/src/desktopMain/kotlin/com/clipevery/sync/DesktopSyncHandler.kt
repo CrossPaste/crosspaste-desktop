@@ -10,7 +10,12 @@ import com.clipevery.utils.TelnetUtils
 import com.clipevery.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.types.RealmInstant
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.signal.libsignal.protocol.SessionBuilder
 import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.SignalProtocolAddress
@@ -25,6 +30,7 @@ class DesktopSyncHandler(
     private val syncClientApi: SyncClientApi,
     private val signalProtocolStore: SignalProtocolStore,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
+    scope: CoroutineScope,
 ) : SyncHandler {
 
     private val logger = KotlinLogging.logger {}
@@ -37,83 +43,125 @@ class DesktopSyncHandler(
 
     private var failTime = 0
 
-    override suspend fun getConnectHostAddress(): String? {
-        syncRuntimeInfo.connectHostAddress?.let {
-            return it
-        } ?: run {
-            val syncInfo = syncInfoFactory.createSyncInfo()
-            resolveSync(syncInfo, ResolveWay.AUTO_NO_FORCE)
-            return syncRuntimeInfo.connectHostAddress
-        }
+    private val job: Job
+
+    private val mutex: Mutex = Mutex()
+
+    init {
+        job =
+            scope.launch {
+                while (true) {
+                    try {
+                        pollingResolve()
+                    } catch (e: Exception) {
+                        logger.error(e) { "resolve error" }
+                    }
+                }
+            }
     }
 
-    override suspend fun resolveSync(
-        currentDeviceSyncInfo: SyncInfo,
-        resolveWay: ResolveWay,
-    ) {
-        if (!resolveWay.isForce()) {
-            val currentTime = System.currentTimeMillis()
-            val waitTime = recommendedRefreshTime - currentTime
-            delay(waitTime)
-        }
+    private suspend fun pollingResolve() {
+        mutex.withLock {
+            if (recommendedRefreshTime > System.currentTimeMillis()) {
+                return@withLock
+            }
+            if (syncRuntimeInfo.connectState == SyncState.DISCONNECTED ||
+                syncRuntimeInfo.connectHostAddress == null
+            ) {
+                resolveDisconnected()
+                if (syncRuntimeInfo.connectState != SyncState.CONNECTING) {
+                    failTime++
+                    return@withLock
+                }
+            }
 
-        if (syncRuntimeInfo.connectState == SyncState.DISCONNECTED ||
-            syncRuntimeInfo.connectHostAddress == null
-        ) {
-            selectHostThenResolveConnect(currentDeviceSyncInfo)
-        } else if (syncRuntimeInfo.connectState == SyncState.CONNECTED) {
-            resolveConnect(currentDeviceSyncInfo)
-        } else if (resolveWay.isForce()) {
-            selectHostThenResolveConnect(currentDeviceSyncInfo)
-        } else {
-            resolveConnect(currentDeviceSyncInfo)
+            val currentDeviceSyncInfo = getCurrentSyncInfo()
+
+            resolveConnecting(currentDeviceSyncInfo)
+
+            if (syncRuntimeInfo.connectState != SyncState.CONNECTED) {
+                failTime++
+                return@withLock
+            }
         }
+        waitNext()
     }
 
-    private suspend fun selectHostThenResolveConnect(currentDeviceSyncInfo: SyncInfo) {
-        syncRuntimeInfo.connectHostAddress?.let {
-            update {
-                this.connectState = SyncState.DISCONNECTED
-                this.modifyTime = RealmInstant.now()
-            } ?: run {
-                // If null is returned, it means that this syncHandler has been deleted.
-                return
+    private fun getCurrentSyncInfo(): SyncInfo {
+        return syncInfoFactory.createSyncInfo()
+    }
+
+    private suspend fun waitNext() {
+        if (recommendedRefreshTime <= System.currentTimeMillis()) {
+            mutex.withLock {
+                recommendedRefreshTime = computeRefreshTime()
             }
         }
 
         do {
-            when (syncRuntimeInfo.connectState) {
-                SyncState.DISCONNECTED -> {
-                    resolveDisconnected()
-                }
-                SyncState.CONNECTING -> {
-                    resolveConnecting(currentDeviceSyncInfo)
-                }
-                SyncState.UNVERIFIED -> {
-                    tokenCache.getToken(syncRuntimeInfo.appInstanceId)?.let { token ->
-                        trustByToken(token)
-                    }
-                    resolveConnecting(currentDeviceSyncInfo)
-                }
-                else -> {
-                    logger.warn { "current state is ${syncRuntimeInfo.connectState}" }
-                }
-            }
-        } while (syncRuntimeInfo.connectState == SyncState.CONNECTING)
+            // if recommendedRefreshTime is updated, then we continue to wait for the new time
+            val waitTime = recommendedRefreshTime - System.currentTimeMillis()
+            delay(waitTime)
+        } while (waitTime > 0)
+    }
 
-        if (syncRuntimeInfo.connectState == SyncState.CONNECTED) {
-            failTime = 0
-            recommendedRefreshTime = System.currentTimeMillis() + 60000L
-        } else {
-            if (failTime < 12) {
-                failTime++
-            }
-            recommendedRefreshTime = System.currentTimeMillis() + min(20L * (1 shl (failTime - 1)), 60000L)
+    private fun computeRefreshTime(): Long {
+        var delayTime = 60000L // wait 1 min by default
+        if (failTime > 0) {
+            val power = min(11, failTime)
+            delayTime = 1000 + min(20L * (1L shl power), 59000L)
+        }
+        return System.currentTimeMillis() + delayTime
+    }
+
+    override suspend fun getConnectHostAddress(): String? {
+        syncRuntimeInfo.connectHostAddress?.let {
+            return it
+        } ?: run {
+            forceResolve()
+            return syncRuntimeInfo.connectHostAddress
         }
     }
 
-    private suspend fun resolveConnect(currentDeviceSyncInfo: SyncInfo) {
-        resolveConnecting(currentDeviceSyncInfo)
+    override suspend fun forceResolve() {
+        mutex.withLock {
+            if (syncRuntimeInfo.connectState == SyncState.CONNECTED) {
+                val currentDeviceSyncInfo = getCurrentSyncInfo()
+                resolveConnecting(currentDeviceSyncInfo)
+            }
+
+            if (syncRuntimeInfo.connectState == SyncState.CONNECTED) {
+                failTime = 0
+                recommendedRefreshTime = computeRefreshTime()
+                return@withLock
+            }
+
+            resolveDisconnected()
+            if (syncRuntimeInfo.connectState != SyncState.CONNECTING) {
+                failTime++
+                recommendedRefreshTime = computeRefreshTime()
+                return@withLock
+            }
+
+            val currentDeviceSyncInfo = getCurrentSyncInfo()
+
+            resolveConnecting(currentDeviceSyncInfo)
+
+            if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
+                tokenCache.getToken(syncRuntimeInfo.appInstanceId)?.let { token ->
+                    trustByToken(token)
+                }
+                resolveConnecting(currentDeviceSyncInfo)
+            }
+
+            if (syncRuntimeInfo.connectState != SyncState.CONNECTED) {
+                failTime++
+                recommendedRefreshTime = computeRefreshTime()
+            } else {
+                failTime = 0
+                recommendedRefreshTime = computeRefreshTime()
+            }
+        }
     }
 
     override fun updateSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo) {
@@ -297,6 +345,6 @@ class DesktopSyncHandler(
     }
 
     override fun clearContext() {
-        // todo clear session
+        job.cancel()
     }
 }

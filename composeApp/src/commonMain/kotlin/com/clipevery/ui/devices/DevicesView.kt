@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.dao.sync.SyncRuntimeInfo
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
-import com.clipevery.sync.ResolveWay
 import com.clipevery.sync.SyncManager
 import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.base.ClipDialog
@@ -49,7 +48,7 @@ fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
     val dialogService = current.koin.get<DialogService>()
 
     LaunchedEffect(Unit) {
-        syncManager.resolveSyncs(ResolveWay.AUTO_FORCE)
+        syncManager.resolveSyncs()
     }
 
     LaunchedEffect(syncManager.waitToVerifySyncRuntimeInfo?.deviceId) {
