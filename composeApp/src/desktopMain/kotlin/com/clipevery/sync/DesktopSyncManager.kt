@@ -8,13 +8,12 @@ import androidx.compose.runtime.setValue
 import com.clipevery.dao.sync.SyncRuntimeInfo
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.dao.sync.SyncState
-import com.clipevery.dao.sync.hostInfoListEqual
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.net.SyncInfoFactory
 import com.clipevery.net.SyncRefresher
 import com.clipevery.net.clientapi.SyncClientApi
 import com.clipevery.utils.TelnetUtils
-import com.clipevery.utils.cpuDispatcher
+import com.clipevery.utils.ioDispatcher
 import com.clipevery.utils.mainDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.collections.*
@@ -23,16 +22,12 @@ import io.realm.kotlin.notifications.UpdatedResults
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.signal.libsignal.protocol.state.SignalProtocolStore
-import java.util.concurrent.ConcurrentHashMap
 
 class DesktopSyncManager(
     private val telnetUtils: TelnetUtils,
@@ -57,17 +52,13 @@ class DesktopSyncManager(
 
     private val realTimeJob = SupervisorJob()
 
-    private val realTimeSyncScope = CoroutineScope(cpuDispatcher + realTimeJob)
+    private val realTimeSyncScope = CoroutineScope(ioDispatcher + realTimeJob)
 
     private val deviceManager: DeviceManager by lazyDeviceManager
 
     private var _refreshing = mutableStateOf(false)
 
     override val isRefreshing: State<Boolean> get() = _refreshing
-
-    private val jobs = ConcurrentHashMap<String, Job>()
-
-    private val mutexes = ConcurrentHashMap<String, Mutex>()
 
     init {
         realTimeSyncScope.launch(CoroutineName("SyncManagerListenChanger")) {
@@ -83,6 +74,7 @@ class DesktopSyncManager(
                             syncClientApi,
                             signalProtocolStore,
                             syncRuntimeInfoDao,
+                            realTimeSyncScope,
                         )
                 },
             )
@@ -112,24 +104,13 @@ class DesktopSyncManager(
                                     syncClientApi,
                                     signalProtocolStore,
                                     syncRuntimeInfoDao,
+                                    realTimeSyncScope,
                                 )
-                            // Resolve the sync immediately after the insertion
-                            resolveSync(insertionSyncRuntimeInfo.appInstanceId, ResolveWay.AUTO_FORCE)
                         }
 
-                        for (change in changes.changes) {
-                            val changeSyncRuntimeInfo = changes.list[change]
-                            val oldSyncRuntimeInfo = internalSyncHandlers[changeSyncRuntimeInfo.appInstanceId]!!.syncRuntimeInfo
-                            internalSyncHandlers[changeSyncRuntimeInfo.appInstanceId]!!
-                                .updateSyncRuntimeInfo(changeSyncRuntimeInfo)
-
-                            if (changeSyncRuntimeInfo.connectHostAddress == null ||
-                                changeSyncRuntimeInfo.port != oldSyncRuntimeInfo.port ||
-                                !hostInfoListEqual(changeSyncRuntimeInfo.hostInfoList, oldSyncRuntimeInfo.hostInfoList)
-                            ) {
-                                resolveSync(changeSyncRuntimeInfo.appInstanceId, ResolveWay.AUTO_FORCE)
-                            }
-                        }
+                        // When the synchronization parameters change,
+                        // we will force resolve, so we do not need to process it redundantly here
+                        // for (change in changes.changes) { }
 
                         withContext(Dispatchers.Main) {
                             realTimeSyncRuntimeInfos.clear()
@@ -163,34 +144,25 @@ class DesktopSyncManager(
         refreshWaitToVerifySyncRuntimeInfo()
     }
 
-    override suspend fun resolveSyncs(resolveWay: ResolveWay) {
-        val syncInfo = syncInfoFactory.createSyncInfo()
+    override suspend fun resolveSyncs() {
         internalSyncHandlers.values.forEach { syncHandler ->
-            resolve(syncHandler, resolveWay) {
-                doResolveSync(syncHandler, syncInfo, resolveWay)
+            realTimeSyncScope.launch {
+                doResolveSync(syncHandler)
             }
         }
     }
 
-    override suspend fun resolveSync(
-        id: String,
-        resolveWay: ResolveWay,
-    ) {
+    override suspend fun resolveSync(id: String) {
         internalSyncHandlers[id]?.let { syncHandler ->
-            resolve(syncHandler, resolveWay) {
-                val syncInfo = syncInfoFactory.createSyncInfo()
-                doResolveSync(syncHandler, syncInfo, resolveWay)
+            realTimeSyncScope.launch {
+                doResolveSync(syncHandler)
             }
         }
     }
 
-    private suspend fun doResolveSync(
-        syncHandler: SyncHandler,
-        currentDeviceSyncInfo: SyncInfo,
-        resolveWay: ResolveWay,
-    ) {
+    private suspend fun doResolveSync(syncHandler: SyncHandler) {
         try {
-            syncHandler.resolveSync(currentDeviceSyncInfo, resolveWay)
+            syncHandler.forceResolve()
         } catch (e: Exception) {
             logger.error(e) { "resolve sync error" }
         }
@@ -205,9 +177,9 @@ class DesktopSyncManager(
         token: Int,
     ) {
         internalSyncHandlers[appInstanceId]?.also { syncHandler ->
-            resolve(syncHandler, ResolveWay.AUTO_FORCE) {
+            realTimeSyncScope.launch {
                 syncHandler.trustByToken(token)
-                doResolveSync(syncHandler, syncInfoFactory.createSyncInfo(), ResolveWay.AUTO_FORCE)
+                doResolveSync(syncHandler)
             }
         }
     }
@@ -231,7 +203,7 @@ class DesktopSyncManager(
         internalSyncHandlers[syncInfo.appInfo.appInstanceId]?.let { syncHandler ->
             realTimeSyncScope.launch(CoroutineName("UpdateSyncInfo")) {
                 if (!syncRuntimeInfoDao.insertOrUpdate(syncInfo)) {
-                    doResolveSync(syncHandler, syncInfoFactory.createSyncInfo(), ResolveWay.AUTO_FORCE)
+                    doResolveSync(syncHandler)
                 }
             }
         }
@@ -242,38 +214,13 @@ class DesktopSyncManager(
         realTimeSyncScope.launch(CoroutineName("SyncManagerRefresh")) {
             logger.info { "start launch" }
             try {
-                resolveSyncs(ResolveWay.MANUAL)
+                resolveSyncs()
             } catch (e: Exception) {
                 logger.error(e) { "checkConnects error" }
             }
             delay(1000)
             logger.info { "set refreshing false" }
             _refreshing.value = false
-        }
-    }
-
-    private fun getMutex(deviceId: String): Mutex = mutexes.computeIfAbsent(deviceId) { Mutex() }
-
-    suspend fun resolve(
-        syncHandler: SyncHandler,
-        resolveWay: ResolveWay,
-        action: suspend () -> Unit,
-    ) {
-        val key = syncHandler.syncRuntimeInfo.appInstanceId
-        val mutex = getMutex(syncHandler.syncRuntimeInfo.appInstanceId)
-        mutex.withLock {
-            if (resolveWay.isForce()) {
-                jobs[key]?.cancel()
-                jobs[key] = realTimeSyncScope.launch { action() }
-            } else {
-                jobs[key]?.let { job ->
-                    if (job.isCancelled || job.isCompleted) {
-                        jobs[key] = realTimeSyncScope.launch { action() }
-                    }
-                } ?: run {
-                    jobs[key] = realTimeSyncScope.launch { action() }
-                }
-            }
         }
     }
 }
