@@ -5,6 +5,8 @@ import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.dao.sync.SyncState
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.net.SyncInfoFactory
+import com.clipevery.net.clientapi.FailureResult
+import com.clipevery.net.clientapi.SuccessResult
 import com.clipevery.net.clientapi.SyncClientApi
 import com.clipevery.utils.TelnetUtils
 import com.clipevery.utils.buildUrl
@@ -13,12 +15,14 @@ import io.realm.kotlin.types.RealmInstant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.signal.libsignal.protocol.SessionBuilder
 import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.SignalProtocolAddress
+import org.signal.libsignal.protocol.state.PreKeyBundle
 import org.signal.libsignal.protocol.state.SignalProtocolStore
 import kotlin.math.min
 
@@ -50,7 +54,7 @@ class DesktopSyncHandler(
     init {
         job =
             scope.launch {
-                while (true) {
+                while (isActive) {
                     try {
                         pollingResolve()
                     } catch (e: Exception) {
@@ -218,12 +222,7 @@ class DesktopSyncHandler(
         port: Int,
         syncInfo: SyncInfo,
     ): Boolean {
-        try {
-            return exchangeSyncInfo(host, port, syncInfo)
-        } catch (e: Exception) {
-            logger.warn(e) { "useSession exchangeSyncInfo fail" }
-        }
-        return false
+        return exchangeSyncInfo(host, port, syncInfo)
     }
 
     private suspend fun createSession(
@@ -231,41 +230,53 @@ class DesktopSyncHandler(
         port: Int,
         syncInfo: SyncInfo,
     ) {
-        if (syncClientApi.isTrust { urlBuilder ->
-                buildUrl(urlBuilder, host, port, "sync", "isTrust")
+        val result =
+            syncClientApi.isTrust { urlBuilder ->
+                buildUrl(urlBuilder, host, port)
             }
-        ) {
-            try {
-                syncClientApi.getPreKeyBundle { urlBuilder ->
-                    buildUrl(urlBuilder, host, port, "sync", "preKeyBundle")
-                }?.let { preKeyBundle ->
-                    val sessionBuilder = createSessionBuilder()
-                    try {
-                        signalProtocolStore.saveIdentity(signalProtocolAddress, preKeyBundle.identityKey)
-                        sessionBuilder.process(preKeyBundle)
-                        if (exchangeSyncInfo(host, port, syncInfo)) {
+
+        when (result) {
+            is SuccessResult -> {
+                val preKeyBundleResult =
+                    syncClientApi.getPreKeyBundle { urlBuilder ->
+                        buildUrl(urlBuilder, host, port)
+                    }
+
+                when (preKeyBundleResult) {
+                    is SuccessResult -> {
+                        val preKeyBundle = preKeyBundleResult.getResult<PreKeyBundle>()
+                        val sessionBuilder = createSessionBuilder()
+                        try {
+                            signalProtocolStore.saveIdentity(signalProtocolAddress, preKeyBundle.identityKey)
+                            sessionBuilder.process(preKeyBundle)
+                        } catch (e: Exception) {
+                            logger.warn(e) { "createSession exchangeSyncInfo fail" }
+                            update {
+                                this.connectState = SyncState.DISCONNECTED
+                                this.modifyTime = RealmInstant.now()
+                            }
                             return
                         }
-                    } catch (e: Exception) {
-                        logger.warn(e) { "createSession exchangeSyncInfo fail" }
+                        exchangeSyncInfo(host, port, syncInfo)
                     }
                 }
-            } catch (e: Exception) {
-                logger.warn(e) { "createSession getPreKeyBundle fail" }
             }
-            logger.info { "connect state to unmatched $host $port" }
-            update {
-                this.connectState = SyncState.UNMATCHED
-                this.modifyTime = RealmInstant.now()
+            is FailureResult -> {
+                logger.info { "connect state to unverified $host $port" }
+                update {
+                    this.connectHostAddress = host
+                    this.port = port
+                    this.connectState = SyncState.UNVERIFIED
+                    this.modifyTime = RealmInstant.now()
+                    logger.info { "createSession ${syncRuntimeInfo.platformName} UNVERIFIED" }
+                }
             }
-        } else {
-            logger.info { "connect state to unverified $host $port" }
-            update {
-                this.connectHostAddress = host
-                this.port = port
-                this.connectState = SyncState.UNVERIFIED
-                this.modifyTime = RealmInstant.now()
-                logger.info { "createSession ${syncRuntimeInfo.platformName} ${SyncState.UNVERIFIED}" }
+            else -> {
+                logger.info { "connect state to disconnect $host $port" }
+                update {
+                    this.connectState = SyncState.DISCONNECTED
+                    this.modifyTime = RealmInstant.now()
+                }
             }
         }
     }
@@ -275,20 +286,40 @@ class DesktopSyncHandler(
         port: Int,
         syncInfo: SyncInfo,
     ): Boolean {
-        return if (syncClientApi.exchangeSyncInfo(
+        val result =
+            syncClientApi.exchangeSyncInfo(
                 syncInfo,
                 sessionCipher,
             ) { urlBuilder ->
-                buildUrl(urlBuilder, host, port, "sync", "exchangeSyncInfo")
+                buildUrl(urlBuilder, host, port)
             }
-        ) {
-            update {
-                this.connectState = SyncState.CONNECTED
-                this.modifyTime = RealmInstant.now()
+
+        when (result) {
+            is SuccessResult -> {
+                update {
+                    this.connectState = SyncState.CONNECTED
+                    this.modifyTime = RealmInstant.now()
+                }
+                return true
             }
-            true
-        } else {
-            false
+
+            is FailureResult -> {
+                logger.info { "exchangeSyncInfo return fail state to unmatched $host $port" }
+                update {
+                    this.connectState = SyncState.UNMATCHED
+                    this.modifyTime = RealmInstant.now()
+                }
+                return false
+            }
+
+            else -> {
+                logger.info { "exchangeSyncInfo connect fail state to unmatched $host $port" }
+                update {
+                    this.connectState = SyncState.DISCONNECTED
+                    this.modifyTime = RealmInstant.now()
+                }
+                return false
+            }
         }
     }
 
@@ -296,7 +327,7 @@ class DesktopSyncHandler(
         if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
             syncRuntimeInfo.connectHostAddress?.let { host ->
                 syncClientApi.trust(token) { urlBuilder ->
-                    buildUrl(urlBuilder, host, syncRuntimeInfo.port, "sync", "trust")
+                    buildUrl(urlBuilder, host, syncRuntimeInfo.port)
                 }
             }
         }
@@ -305,12 +336,12 @@ class DesktopSyncHandler(
     override suspend fun showToken() {
         if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
             syncRuntimeInfo.connectHostAddress?.let { host ->
-                if (!syncClientApi.showToken { urlBuilder ->
-                        buildUrl(urlBuilder, host, syncRuntimeInfo.port, "sync", "showToken")
+                val result =
+                    syncClientApi.showToken { urlBuilder ->
+                        buildUrl(urlBuilder, host, syncRuntimeInfo.port)
                     }
-                ) {
+                if (result !is SuccessResult) {
                     update {
-                        this.connectHostAddress = null
                         this.connectState = SyncState.DISCONNECTED
                         this.modifyTime = RealmInstant.now()
                     }
@@ -323,7 +354,7 @@ class DesktopSyncHandler(
         if (syncRuntimeInfo.connectState == SyncState.CONNECTED) {
             syncRuntimeInfo.connectHostAddress?.let { host ->
                 syncClientApi.notifyExit { urlBuilder ->
-                    buildUrl(urlBuilder, host, syncRuntimeInfo.port, "sync", "notifyExit")
+                    buildUrl(urlBuilder, host, syncRuntimeInfo.port)
                 }
             }
         }

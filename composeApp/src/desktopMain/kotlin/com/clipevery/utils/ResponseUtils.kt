@@ -3,12 +3,12 @@ package com.clipevery.utils
 import com.clipevery.exception.ErrorCode
 import com.clipevery.exception.ErrorType
 import com.clipevery.exception.StandardErrorCode
+import com.clipevery.net.clientapi.FailResponse
 import io.ktor.http.*
 import io.ktor.http.ContentType.Application.OctetStream
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.utils.io.*
-import kotlinx.serialization.Serializable
 
 suspend inline fun successResponse(call: ApplicationCall) {
     call.respond(status = HttpStatusCode.OK, message = "")
@@ -59,15 +59,4 @@ suspend inline fun getAppInstanceId(call: ApplicationCall): String? {
         failResponse(call, StandardErrorCode.NOT_FOUND_APP_INSTANCE_ID.toErrorCode())
     }
     return appInstanceId
-}
-
-@Serializable
-data class FailResponse(
-    val errorCode: Int,
-    val message: String = "",
-) {
-
-    override fun toString(): String {
-        return "FailResponse(errorCode=$errorCode, message='$message')"
-    }
 }

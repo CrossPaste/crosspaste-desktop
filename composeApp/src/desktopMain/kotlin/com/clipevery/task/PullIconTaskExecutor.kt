@@ -105,10 +105,10 @@ class PullIconTaskExecutor(
         baseExtraInfo: BaseExtraInfo,
     ): ClipTaskResult {
         val toUrl: URLBuilder.(URLBuilder) -> Unit = { urlBuilder: URLBuilder ->
-            buildUrl(urlBuilder, host, port, "pull", "icon", source)
+            buildUrl(urlBuilder, host, port)
         }
 
-        val result = pullClientApi.pullIcon(toUrl)
+        val result = pullClientApi.pullIcon(source, toUrl)
         if (result is SuccessResult) {
             val byteReadChannel = result.getResult<ByteReadChannel>()
             fileUtils.writeFile(iconPath, byteReadChannel)

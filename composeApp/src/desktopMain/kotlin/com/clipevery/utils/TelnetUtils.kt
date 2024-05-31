@@ -61,7 +61,8 @@ class TelnetUtils(private val clipClient: ClipClient) {
         return try {
             val httpResponse =
                 clipClient.get(timeout = timeout) { urlBuilder ->
-                    buildUrl(urlBuilder, hostInfo.hostAddress, port, "sync", "telnet")
+                    buildUrl(urlBuilder, hostInfo.hostAddress, port)
+                    buildUrl(urlBuilder, "sync", "telnet")
                 }
             logger.info { "httpResponse.status = ${httpResponse.status.value} ${hostInfo.hostAddress}:$port" }
 

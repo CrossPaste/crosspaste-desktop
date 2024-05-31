@@ -1,5 +1,8 @@
 package com.clipevery.exception
 
+val standardErrorCodeMap: Map<Int, ErrorCodeSupplier> =
+    StandardErrorCode.entries.associateBy { it.getCode() }
+
 enum class StandardErrorCode(code: Int, errorType: ErrorType) : ErrorCodeSupplier {
     UNKNOWN_ERROR(0, ErrorType.INTERNAL_ERROR),
     BOOTSTRAP_ERROR(1, ErrorType.INTERNAL_ERROR),
@@ -43,5 +46,9 @@ enum class StandardErrorCode(code: Int, errorType: ErrorType) : ErrorCodeSupplie
 
     override fun toErrorCode(): ErrorCode {
         return errorCode
+    }
+
+    fun getCode(): Int {
+        return errorCode.code
     }
 }

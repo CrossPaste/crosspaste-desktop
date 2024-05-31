@@ -50,7 +50,7 @@ class SyncClipTaskExecutor(
                                     clientHandler.getConnectHostAddress()?.let {
                                         val syncClipResult =
                                             sendClipClientApi.sendClip(clipData, targetAppInstanceId) { urlBuilder ->
-                                                buildUrl(urlBuilder, it, port, "sync", "clip")
+                                                buildUrl(urlBuilder, it, port)
                                             }
                                         return@async Pair(entryHandler.key, syncClipResult)
                                     } ?: run {
