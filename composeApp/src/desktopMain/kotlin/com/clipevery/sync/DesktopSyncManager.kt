@@ -23,12 +23,16 @@ import io.realm.kotlin.notifications.UpdatedResults
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.signal.libsignal.protocol.state.SignalProtocolStore
+import java.util.concurrent.ConcurrentHashMap
 
 class DesktopSyncManager(
     private val telnetUtils: TelnetUtils,
@@ -61,7 +65,9 @@ class DesktopSyncManager(
 
     override val isRefreshing: State<Boolean> get() = _refreshing
 
-    private val resolver = DesktopResolver(realTimeSyncScope)
+    private val jobs = ConcurrentHashMap<String, Job>()
+
+    private val mutexes = ConcurrentHashMap<String, Mutex>()
 
     init {
         realTimeSyncScope.launch(CoroutineName("SyncManagerListenChanger")) {
@@ -107,6 +113,7 @@ class DesktopSyncManager(
                                     signalProtocolStore,
                                     syncRuntimeInfoDao,
                                 )
+                            // Resolve the sync immediately after the insertion
                             resolveSync(insertionSyncRuntimeInfo.appInstanceId, ResolveWay.AUTO_FORCE)
                         }
 
@@ -115,6 +122,7 @@ class DesktopSyncManager(
                             val oldSyncRuntimeInfo = internalSyncHandlers[changeSyncRuntimeInfo.appInstanceId]!!.syncRuntimeInfo
                             internalSyncHandlers[changeSyncRuntimeInfo.appInstanceId]!!
                                 .updateSyncRuntimeInfo(changeSyncRuntimeInfo)
+
                             if (changeSyncRuntimeInfo.connectHostAddress == null ||
                                 changeSyncRuntimeInfo.port != oldSyncRuntimeInfo.port ||
                                 !hostInfoListEqual(changeSyncRuntimeInfo.hostInfoList, oldSyncRuntimeInfo.hostInfoList)
@@ -158,7 +166,7 @@ class DesktopSyncManager(
     override suspend fun resolveSyncs(resolveWay: ResolveWay) {
         val syncInfo = syncInfoFactory.createSyncInfo()
         internalSyncHandlers.values.forEach { syncHandler ->
-            resolver.resolveDevice(syncHandler.syncRuntimeInfo.appInstanceId) {
+            resolve(syncHandler, resolveWay) {
                 doResolveSync(syncHandler, syncInfo, resolveWay)
             }
         }
@@ -169,7 +177,7 @@ class DesktopSyncManager(
         resolveWay: ResolveWay,
     ) {
         internalSyncHandlers[id]?.let { syncHandler ->
-            resolver.resolveDevice(syncHandler.syncRuntimeInfo.appInstanceId) {
+            resolve(syncHandler, resolveWay) {
                 val syncInfo = syncInfoFactory.createSyncInfo()
                 doResolveSync(syncHandler, syncInfo, resolveWay)
             }
@@ -197,10 +205,9 @@ class DesktopSyncManager(
         token: Int,
     ) {
         internalSyncHandlers[appInstanceId]?.also { syncHandler ->
-            resolver.resolveDevice(syncHandler.syncRuntimeInfo.appInstanceId) {
+            resolve(syncHandler, ResolveWay.AUTO_FORCE) {
                 syncHandler.trustByToken(token)
-                val syncInfo = syncInfoFactory.createSyncInfo()
-                syncHandler.resolveSync(syncInfo, ResolveWay.AUTO_FORCE)
+                doResolveSync(syncHandler, syncInfoFactory.createSyncInfo(), ResolveWay.AUTO_FORCE)
             }
         }
     }
@@ -220,6 +227,16 @@ class DesktopSyncManager(
         }
     }
 
+    override fun updateSyncInfo(syncInfo: SyncInfo) {
+        internalSyncHandlers[syncInfo.appInfo.appInstanceId]?.let { syncHandler ->
+            realTimeSyncScope.launch(CoroutineName("UpdateSyncInfo")) {
+                if (!syncRuntimeInfoDao.insertOrUpdate(syncInfo)) {
+                    doResolveSync(syncHandler, syncInfoFactory.createSyncInfo(), ResolveWay.AUTO_FORCE)
+                }
+            }
+        }
+    }
+
     override fun refresh() {
         _refreshing.value = true
         realTimeSyncScope.launch(CoroutineName("SyncManagerRefresh")) {
@@ -232,6 +249,31 @@ class DesktopSyncManager(
             delay(1000)
             logger.info { "set refreshing false" }
             _refreshing.value = false
+        }
+    }
+
+    private fun getMutex(deviceId: String): Mutex = mutexes.computeIfAbsent(deviceId) { Mutex() }
+
+    suspend fun resolve(
+        syncHandler: SyncHandler,
+        resolveWay: ResolveWay,
+        action: suspend () -> Unit,
+    ) {
+        val key = syncHandler.syncRuntimeInfo.appInstanceId
+        val mutex = getMutex(syncHandler.syncRuntimeInfo.appInstanceId)
+        mutex.withLock {
+            if (resolveWay.isForce()) {
+                jobs[key]?.cancel()
+                jobs[key] = realTimeSyncScope.launch { action() }
+            } else {
+                jobs[key]?.let { job ->
+                    if (job.isCancelled || job.isCompleted) {
+                        jobs[key] = realTimeSyncScope.launch { action() }
+                    }
+                } ?: run {
+                    jobs[key] = realTimeSyncScope.launch { action() }
+                }
+            }
         }
     }
 }

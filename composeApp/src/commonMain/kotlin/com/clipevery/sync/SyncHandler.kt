@@ -6,6 +6,8 @@ import org.signal.libsignal.protocol.SessionCipher
 
 interface SyncHandler {
 
+    var recommendedRefreshTime: Long
+
     var syncRuntimeInfo: SyncRuntimeInfo
 
     val sessionCipher: SessionCipher

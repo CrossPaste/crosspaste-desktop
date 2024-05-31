@@ -4,7 +4,6 @@ import com.clipevery.Clipevery
 import com.clipevery.app.AppInfo
 import com.clipevery.app.AppWindowManager
 import com.clipevery.dao.signal.SignalDao
-import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.dto.sync.DataContent
 import com.clipevery.dto.sync.RequestTrust
 import com.clipevery.dto.sync.SyncInfo
@@ -38,8 +37,6 @@ fun Routing.syncRouting() {
     val appInfo = koinApplication.koin.get<AppInfo>()
 
     val signalDao = koinApplication.koin.get<SignalDao>()
-
-    val syncRuntimeInfoDao = koinApplication.koin.get<SyncRuntimeInfoDao>()
 
     val signalProtocolStore = koinApplication.koin.get<SignalProtocolStore>()
 
@@ -128,7 +125,7 @@ fun Routing.syncRouting() {
 
             try {
                 val syncInfo = DesktopJsonUtils.JSON.decodeFromString<SyncInfo>(String(decrypt!!, Charsets.UTF_8))
-                syncRuntimeInfoDao.inertOrUpdate(syncInfo)
+                syncManager.updateSyncInfo(syncInfo)
                 logger.debug { "$appInstanceId exchangeSyncInfo to ${appInfo.appInstanceId} success" }
                 successResponse(call)
             } catch (e: Exception) {

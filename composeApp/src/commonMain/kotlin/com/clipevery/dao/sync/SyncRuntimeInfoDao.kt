@@ -4,6 +4,7 @@ import com.clipevery.dto.sync.SyncInfo
 import io.realm.kotlin.query.RealmResults
 
 interface SyncRuntimeInfoDao {
+
     fun getAllSyncRuntimeInfos(): RealmResults<SyncRuntimeInfo>
 
     fun getSyncRuntimeInfo(appInstanceId: String): SyncRuntimeInfo?
@@ -18,9 +19,7 @@ interface SyncRuntimeInfoDao {
         block: SyncRuntimeInfo.() -> Unit,
     ): SyncRuntimeInfo?
 
-    fun inertOrUpdate(syncInfo: SyncInfo)
-
-    fun inertOrUpdate(syncInfos: List<SyncInfo>): List<String>
+    fun insertOrUpdate(syncInfo: SyncInfo): Boolean
 
     fun deleteSyncRuntimeInfo(appInstanceId: String)
 }

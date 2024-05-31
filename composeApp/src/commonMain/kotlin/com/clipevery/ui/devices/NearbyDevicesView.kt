@@ -241,7 +241,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
         ClipIconButton(
             radius = 18.dp,
             onClick = {
-                syncRuntimeInfoDao.inertOrUpdate(syncInfo)
+                syncRuntimeInfoDao.insertOrUpdate(syncInfo)
             },
             modifier =
                 Modifier

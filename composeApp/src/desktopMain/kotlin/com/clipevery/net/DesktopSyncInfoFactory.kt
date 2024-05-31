@@ -9,6 +9,7 @@ class DesktopSyncInfoFactory(
     private val endpointInfoFactory: EndpointInfoFactory,
 ) : SyncInfoFactory {
     override fun createSyncInfo(): SyncInfo {
+        // todo add cache, createEndpointInfo maybe slow
         return SyncInfo(
             appInfo = appInfo,
             endpointInfo = endpointInfoFactory.createEndpointInfo(),
