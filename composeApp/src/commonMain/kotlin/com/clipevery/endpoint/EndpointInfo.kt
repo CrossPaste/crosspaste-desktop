@@ -1,6 +1,5 @@
 package com.clipevery.endpoint
 
-import com.clipevery.dao.sync.HostInfo
 import com.clipevery.platform.Platform
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -11,7 +10,7 @@ data class EndpointInfo(
     val deviceId: String,
     val deviceName: String,
     val platform: Platform,
-    val hostInfoList: List<HostInfo>,
+    val hostList: List<String>,
     val port: Int,
 ) {
     override fun toString(): String {

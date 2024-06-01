@@ -37,7 +37,7 @@ private fun getMacEndpointInfo(
         deviceId = deviceId,
         deviceName = deviceName,
         platform = platform,
-        hostInfoList = DesktopNetUtils.getHostInfoList(),
+        hostList = DesktopNetUtils.getHostList(),
         port = port,
     )
 }
@@ -52,7 +52,7 @@ private fun getWindowEndpointInfo(
         deviceId = deviceId,
         deviceName = deviceName,
         platform = platform,
-        hostInfoList = DesktopNetUtils.getHostInfoList(),
+        hostList = DesktopNetUtils.getHostList(),
         port = port,
     )
 }
@@ -92,7 +92,7 @@ fun getLinuxEndpointInfo(
         deviceId = deviceId,
         deviceName = deviceName,
         platform = platform,
-        hostInfoList = DesktopNetUtils.getHostInfoList(),
+        hostList = DesktopNetUtils.getHostList(),
         port = port,
     )
 }
