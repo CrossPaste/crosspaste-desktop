@@ -19,7 +19,7 @@ class SyncRuntimeInfo : RealmObject {
     var platformArch: String = ""
     var platformBitMode: Int = 64
     var platformVersion: String = ""
-    var hostInfoList: RealmList<HostInfo> = realmListOf()
+    var hostList: RealmList<String> = realmListOf()
     var port: Int = 0
     var noteName: String? = null
     var connectHostAddress: String? = null
@@ -30,17 +30,17 @@ class SyncRuntimeInfo : RealmObject {
     var modifyTime: RealmInstant = RealmInstant.now()
 }
 
-fun hostInfoListEqual(
-    hostInfoList: RealmList<HostInfo>,
-    otherHostInfoList: RealmList<HostInfo>,
+fun hostListEqual(
+    hostList: List<String>,
+    otherHostList: List<String>,
 ): Boolean {
-    if (hostInfoList.size != otherHostInfoList.size) {
+    if (hostList.size != otherHostList.size) {
         return false
     }
-    val sortHostInfoList = hostInfoList.sortedWith { o1, o2 -> o1.hostAddress.compareTo(o2.hostAddress) }
-    val otherSortHostInfoList = otherHostInfoList.sortedWith { o1, o2 -> o1.hostAddress.compareTo(o2.hostAddress) }
-    for (i in 0 until hostInfoList.size) {
-        if (sortHostInfoList[i].hostAddress != otherSortHostInfoList[i].hostAddress) {
+    val sortHostInfoList = hostList.sortedWith { o1, o2 -> o1.compareTo(o2) }
+    val otherSortHostInfoList = otherHostList.sortedWith { o1, o2 -> o1.compareTo(o2) }
+    for (i in hostList.indices) {
+        if (sortHostInfoList[i] != otherSortHostInfoList[i]) {
             return false
         }
     }
@@ -58,7 +58,7 @@ fun createSyncRuntimeInfo(syncInfo: SyncInfo): SyncRuntimeInfo {
         platformArch = syncInfo.endpointInfo.platform.arch
         platformBitMode = syncInfo.endpointInfo.platform.bitMode
         platformVersion = syncInfo.endpointInfo.platform.version
-        hostInfoList = syncInfo.endpointInfo.hostInfoList.toRealmList()
+        hostList = syncInfo.endpointInfo.hostList.toRealmList()
         port = syncInfo.endpointInfo.port
         createTime = RealmInstant.now()
     }

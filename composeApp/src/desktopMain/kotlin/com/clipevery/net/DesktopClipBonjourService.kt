@@ -32,13 +32,13 @@ class DesktopClipBonjourService(
 
         val serviceListener = deviceManager as ServiceListener
 
-        for (hostInfo in endpointInfo.hostInfoList) {
-            val jmDNS: JmDNS = JmDNS.create(InetAddress.getByName(hostInfo.hostAddress))
-            jmdnsMap.putIfAbsent(hostInfo.hostAddress, jmDNS)
+        for (hostAddress in endpointInfo.hostList) {
+            val jmDNS: JmDNS = JmDNS.create(InetAddress.getByName(hostAddress))
+            jmdnsMap.putIfAbsent(hostAddress, jmDNS)
             val serviceInfo =
                 ServiceInfo.create(
                     SERVICE_TYPE,
-                    "clipevery@${appInfo.appInstanceId}@${hostInfo.hostAddress.replace(".", "_")}",
+                    "clipevery@${appInfo.appInstanceId}@${hostAddress.replace(".", "_")}",
                     endpointInfo.port,
                     0,
                     0,

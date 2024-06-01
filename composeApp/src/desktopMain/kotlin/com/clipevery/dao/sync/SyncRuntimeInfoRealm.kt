@@ -92,8 +92,8 @@ class SyncRuntimeInfoRealm(private val realm: Realm) : SyncRuntimeInfoDao {
             hasModify = true
         }
 
-        if (syncRuntimeInfo.hostInfoList != syncInfo.endpointInfo.hostInfoList) {
-            syncRuntimeInfo.hostInfoList = syncInfo.endpointInfo.hostInfoList.toRealmList()
+        if (hostListEqual(syncRuntimeInfo.hostList, syncInfo.endpointInfo.hostList)) {
+            syncRuntimeInfo.hostList = syncInfo.endpointInfo.hostList.toRealmList()
             hasModify = true
         }
 

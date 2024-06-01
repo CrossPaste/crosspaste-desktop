@@ -184,10 +184,10 @@ class DesktopSyncHandler(
     }
 
     private suspend fun resolveDisconnected() {
-        telnetUtils.switchHost(syncRuntimeInfo.hostInfoList, syncRuntimeInfo.port)?.let { hostInfo ->
-            logger.info { "${hostInfo.hostAddress} to connecting" }
+        telnetUtils.switchHost(syncRuntimeInfo.hostList, syncRuntimeInfo.port)?.let { hostAddress ->
+            logger.info { "$hostAddress to connecting" }
             update {
-                this.connectHostAddress = hostInfo.hostAddress
+                this.connectHostAddress = hostAddress
                 this.connectState = SyncState.CONNECTING
                 this.modifyTime = RealmInstant.now()
             }
