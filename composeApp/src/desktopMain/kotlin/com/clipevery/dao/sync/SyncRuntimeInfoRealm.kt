@@ -50,7 +50,7 @@ class SyncRuntimeInfoRealm(private val realm: Realm) : SyncRuntimeInfoDao {
     private fun updateSyncRuntimeInfo(
         syncRuntimeInfo: SyncRuntimeInfo,
         syncInfo: SyncInfo,
-    ) {
+    ): Boolean {
         var hasModify = false
         if (syncRuntimeInfo.appVersion != syncInfo.appInfo.appVersion) {
             syncRuntimeInfo.appVersion = syncInfo.appInfo.appVersion
@@ -107,19 +107,23 @@ class SyncRuntimeInfoRealm(private val realm: Realm) : SyncRuntimeInfoDao {
         if (hasModify || syncRuntimeInfo.connectState != SyncState.CONNECTED) {
             syncRuntimeInfo.modifyTime = RealmInstant.now()
         }
+        return hasModify
     }
 
     override fun insertOrUpdate(syncInfo: SyncInfo): Boolean {
-        return realm.writeBlocking {
-            return@writeBlocking query(SyncRuntimeInfo::class, "appInstanceId == $0", syncInfo.appInfo.appInstanceId)
-                .first()
-                .find()?.let {
-                    updateSyncRuntimeInfo(it, syncInfo)
-                    return@let false
-                } ?: run {
-                copyToRealm(createSyncRuntimeInfo(syncInfo))
-                return@run true
+        try {
+            return realm.writeBlocking {
+                query(SyncRuntimeInfo::class, "appInstanceId == $0", syncInfo.appInfo.appInstanceId)
+                    .first()
+                    .find()?.let {
+                        return@let updateSyncRuntimeInfo(it, syncInfo)
+                    } ?: run {
+                    copyToRealm(createSyncRuntimeInfo(syncInfo))
+                    return@run true
+                }
             }
+        } catch (e: Exception) {
+            return false
         }
     }
 

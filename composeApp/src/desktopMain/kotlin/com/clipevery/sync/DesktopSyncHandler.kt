@@ -88,6 +88,8 @@ class DesktopSyncHandler(
             if (syncRuntimeInfo.connectState != SyncState.CONNECTED) {
                 failTime++
                 return@withLock
+            } else {
+                failTime = 0
             }
         }
         waitNext()
