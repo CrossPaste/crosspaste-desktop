@@ -216,7 +216,7 @@ class Clipevery {
                     single<SyncClientApi> { DesktopSyncClientApi(get(), get()) }
                     single<SendClipClientApi> { DesktopSendClipClientApi(get(), get()) }
                     single<PullClientApi> { DesktopPullClientApi(get(), get()) }
-                    single { DesktopSyncManager(get(), get(), get(), get(), get(), lazy { get() }) }
+                    single { DesktopSyncManager(get(), get(), get(), get(), get(), get(), lazy { get() }) }
                     single<SyncRefresher> { get<DesktopSyncManager>() }
                     single<SyncManager> { get<DesktopSyncManager>() }
                     single<DeviceManager> { DesktopDeviceManager(get(), get(), get()) }

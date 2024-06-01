@@ -24,4 +24,6 @@ interface SyncClientApi {
     suspend fun showToken(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult
 
     suspend fun notifyExit(toUrl: URLBuilder.(URLBuilder) -> Unit)
+
+    suspend fun notifyRemove(toUrl: URLBuilder.(URLBuilder) -> Unit)
 }

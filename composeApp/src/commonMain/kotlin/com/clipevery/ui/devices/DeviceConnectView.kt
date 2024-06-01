@@ -50,9 +50,7 @@ import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.clipevery.LocalKoinApplication
-import com.clipevery.dao.signal.SignalDao
 import com.clipevery.dao.sync.SyncRuntimeInfo
-import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.dao.sync.SyncState
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.sync.SyncManager
@@ -79,8 +77,6 @@ fun DeviceConnectView(
     val density = LocalDensity.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val syncManager = current.koin.get<SyncManager>()
-    val syncRuntimeInfoDao = current.koin.get<SyncRuntimeInfoDao>()
-    val signalDao = current.koin.get<SignalDao>()
 
     val (connectColor, connectText) =
         if (syncRuntimeInfo.allowSend || syncRuntimeInfo.allowReceive) {
@@ -230,9 +226,7 @@ fun DeviceConnectView(
                                 }
                                 MenuItem(copywriter.getText("Remove_Device")) {
                                     val id = syncRuntimeInfo.appInstanceId
-                                    syncRuntimeInfoDao.deleteSyncRuntimeInfo(id)
-                                    signalDao.deleteSession(id)
-                                    signalDao.deleteIdentity(id)
+                                    syncManager.removeSyncHandler(id)
                                     showPopup = false
                                 }
                             }
