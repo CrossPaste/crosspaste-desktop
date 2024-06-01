@@ -2,10 +2,12 @@ package com.clipevery.ui.devices
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,7 +18,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Divider
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
@@ -30,7 +34,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.text.TextStyle
@@ -46,10 +49,9 @@ import com.clipevery.dao.sync.createSyncRuntimeInfo
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.sync.DeviceManager
-import com.clipevery.ui.base.ClipIconButton
-import com.clipevery.ui.base.add
 import com.clipevery.ui.base.magnifying
-import com.clipevery.ui.base.warning
+import com.clipevery.ui.connectedColor
+import com.clipevery.ui.disconnectedColor
 import com.clipevery.ui.hoverSurfaceColor
 import com.clipevery.utils.getJsonUtils
 import kotlinx.coroutines.delay
@@ -233,36 +235,50 @@ fun SyncDeviceView(
 @Composable
 fun NearbyDeviceView(syncInfo: SyncInfo) {
     val current = LocalKoinApplication.current
+    val copywriter = current.koin.get<GlobalCopywriter>()
     val deviceManager = current.koin.get<DeviceManager>()
     val syncRuntimeInfoDao = current.koin.get<SyncRuntimeInfoDao>()
     val configManager = current.koin.get<ConfigManager>()
     val jsonUtils = getJsonUtils()
     SyncDeviceView(syncInfo = syncInfo) {
-        ClipIconButton(
-            radius = 18.dp,
+        Button(
+            modifier = Modifier.height(28.dp),
             onClick = {
                 syncRuntimeInfoDao.insertOrUpdate(syncInfo)
             },
-            modifier =
-                Modifier
-                    .background(Color.Transparent, CircleShape),
+            shape = RoundedCornerShape(4.dp),
+            border = BorderStroke(1.dp, connectedColor()),
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+            colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.background),
+            elevation =
+                ButtonDefaults.elevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 0.dp,
+                    hoveredElevation = 0.dp,
+                    focusedElevation = 0.dp,
+                ),
         ) {
-            Icon(
-                painter = add(),
-                contentDescription = "add",
-                tint = Color.Green,
-                modifier = Modifier.size(30.dp),
+            Text(
+                text = copywriter.getText("Add"),
+                color = connectedColor(),
+                style =
+                    TextStyle(
+                        fontFamily = FontFamily.SansSerif,
+                        fontWeight = FontWeight.Light,
+                        fontSize = 14.sp,
+                    ),
             )
         }
 
         Spacer(modifier = Modifier.width(8.dp))
-        ClipIconButton(
-            radius = 18.dp,
+
+        Button(
+            modifier = Modifier.height(28.dp),
             onClick = {
                 val blackSyncInfos: MutableList<SyncInfo> = jsonUtils.JSON.decodeFromString(configManager.config.blacklist)
                 for (blackSyncInfo in blackSyncInfos) {
                     if (blackSyncInfo.appInfo.appInstanceId == syncInfo.appInfo.appInstanceId) {
-                        return@ClipIconButton
+                        return@Button
                     }
                 }
                 blackSyncInfos.add(syncInfo)
@@ -270,15 +286,27 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
                 configManager.updateConfig { it.copy(blacklist = newBlackList) }
                 deviceManager.refresh()
             },
-            modifier =
-                Modifier
-                    .background(Color.Transparent, CircleShape),
+            shape = RoundedCornerShape(4.dp),
+            border = BorderStroke(1.dp, disconnectedColor()),
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+            colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.background),
+            elevation =
+                ButtonDefaults.elevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 0.dp,
+                    hoveredElevation = 0.dp,
+                    focusedElevation = 0.dp,
+                ),
         ) {
-            Icon(
-                painter = warning(),
-                contentDescription = "remove blacklist",
-                tint = Color.Yellow,
-                modifier = Modifier.size(30.dp),
+            Text(
+                text = copywriter.getText("Block"),
+                color = disconnectedColor(),
+                style =
+                    TextStyle(
+                        fontFamily = FontFamily.SansSerif,
+                        fontWeight = FontWeight.Light,
+                        fontSize = 14.sp,
+                    ),
             )
         }
         Spacer(modifier = Modifier.width(16.dp))
