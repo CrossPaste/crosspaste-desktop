@@ -54,7 +54,7 @@ fun SingleImagePreviewView(imagePath: Path) {
     Row(
         modifier =
             Modifier.onClick {
-                uiSupport.browseFile(imagePath)
+                uiSupport.openImage(imagePath)
             },
     ) {
         AsyncView(
