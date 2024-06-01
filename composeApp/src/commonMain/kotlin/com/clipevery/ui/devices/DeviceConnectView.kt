@@ -20,7 +20,6 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -36,12 +35,13 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -58,12 +58,18 @@ import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.PageViewType
 import com.clipevery.ui.base.ClipIconButton
 import com.clipevery.ui.base.MenuItem
-import com.clipevery.ui.base.arrowLeftIcon
-import com.clipevery.ui.base.arrowRightIcon
+import com.clipevery.ui.base.allowReceive
+import com.clipevery.ui.base.allowSend
 import com.clipevery.ui.base.block
 import com.clipevery.ui.base.getMenWidth
-import com.clipevery.ui.base.syncAlt
+import com.clipevery.ui.base.sync
+import com.clipevery.ui.base.unverified
+import com.clipevery.ui.connectedColor
+import com.clipevery.ui.connectingColor
+import com.clipevery.ui.disconnectedColor
 import com.clipevery.ui.hoverSurfaceColor
+import com.clipevery.ui.unmatchedColor
+import com.clipevery.ui.unverifiedColor
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -134,9 +140,9 @@ fun DeviceConnectView(
             horizontalArrangement = Arrangement.End,
         ) {
             Icon(
-                connectIcon,
+                painter = connectIcon,
                 contentDescription = "connectState",
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(18.dp),
                 tint = connectColor,
             )
             Spacer(modifier = Modifier.width(8.dp))
@@ -144,7 +150,8 @@ fun DeviceConnectView(
                 text = copywriter.getText(connectText),
                 style =
                     TextStyle(
-                        fontWeight = FontWeight.Light,
+                        fontFamily = FontFamily.SansSerif,
+                        fontWeight = FontWeight.Bold,
                         color = connectColor,
                         fontSize = 14.sp,
                     ),
@@ -241,15 +248,15 @@ fun DeviceConnectView(
 }
 
 @Composable
-fun getAllowSendAndReceiveImage(syncRuntimeInfo: SyncRuntimeInfo): ImageVector {
+fun getAllowSendAndReceiveImage(syncRuntimeInfo: SyncRuntimeInfo): Painter {
     return if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
-        Icons.Outlined.Lock
+        unverified()
     } else if (syncRuntimeInfo.allowSend && syncRuntimeInfo.allowReceive) {
-        syncAlt()
+        sync()
     } else if (syncRuntimeInfo.allowSend) {
-        arrowLeftIcon()
+        allowSend()
     } else if (syncRuntimeInfo.allowReceive) {
-        arrowRightIcon()
+        allowReceive()
     } else {
         block()
     }
@@ -257,11 +264,11 @@ fun getAllowSendAndReceiveImage(syncRuntimeInfo: SyncRuntimeInfo): ImageVector {
 
 fun getConnectStateColorAndText(connectState: Int): Pair<Color, String> {
     return when (connectState) {
-        SyncState.CONNECTED -> Pair(Color.Green, "CONNECTED")
-        SyncState.CONNECTING -> Pair(Color.Gray, "CONNECTING")
-        SyncState.DISCONNECTED -> Pair(Color.Red, "DISCONNECTED")
-        SyncState.UNMATCHED -> Pair(Color.Yellow, "UNMATCHED")
-        SyncState.UNVERIFIED -> Pair(Color(0xFFFFA500), "UNVERIFIED")
-        else -> Pair(Color.Red, "OFF_CONNECTED")
+        SyncState.CONNECTED -> Pair(connectedColor(), "CONNECTED")
+        SyncState.CONNECTING -> Pair(connectingColor(), "CONNECTING")
+        SyncState.DISCONNECTED -> Pair(disconnectedColor(), "DISCONNECTED")
+        SyncState.UNMATCHED -> Pair(unmatchedColor(), "UNMATCHED")
+        SyncState.UNVERIFIED -> Pair(unverifiedColor(), "UNVERIFIED")
+        else -> throw IllegalArgumentException("Unknown connectState: $connectState")
     }
 }
