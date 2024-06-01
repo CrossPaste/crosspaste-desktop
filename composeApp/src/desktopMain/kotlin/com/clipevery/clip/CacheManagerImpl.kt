@@ -18,7 +18,7 @@ class CacheManagerImpl(private val clipDao: ClipDao) : CacheManager {
 
     private val dateUtils: DateUtils = getDateUtils()
 
-    override val filesIndexCache: LoadingCache<PullFilesKey, FilesIndex> =
+    private val filesIndexCache: LoadingCache<PullFilesKey, FilesIndex> =
         CacheBuilder.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(5, TimeUnit.MINUTES)
@@ -44,4 +44,8 @@ class CacheManagerImpl(private val clipDao: ClipDao) : CacheManager {
                     }
                 },
             )
+
+    override fun getFilesIndex(pullFilesKey: PullFilesKey): FilesIndex? {
+        return filesIndexCache.getIfPresent(pullFilesKey)
+    }
 }

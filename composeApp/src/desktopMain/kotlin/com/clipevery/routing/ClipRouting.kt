@@ -24,7 +24,7 @@ fun Routing.clipRouting() {
     val clipboardService = koinApplication.koin.get<ClipboardService>()
 
     post("/sync/clip") {
-        getAppInstanceId(call).let { appInstanceId ->
+        getAppInstanceId(call)?.let { appInstanceId ->
             syncManager.getSyncHandlers()[appInstanceId]?.let { syncHandler ->
                 if (!syncHandler.syncRuntimeInfo.allowSend) {
                     logger.debug { "sync handler ($appInstanceId) not allow send" }

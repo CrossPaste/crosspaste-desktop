@@ -140,6 +140,7 @@ fun Routing.syncRouting() {
         appWindowManager.showToken = true
         appWindowManager.showMainWindow = true
         logger.debug { "show token" }
+        successResponse(call)
     }
 
     get("/sync/isTrust") {
@@ -180,6 +181,7 @@ fun Routing.syncRouting() {
     get("sync/notifyExit") {
         getAppInstanceId(call)?.let { appInstanceId ->
             syncManager.markExit(appInstanceId)
+            successResponse(call)
         }
     }
 }
