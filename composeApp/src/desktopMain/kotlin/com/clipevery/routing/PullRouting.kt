@@ -33,7 +33,7 @@ fun Routing.pullRouting() {
     val fileUtils = getFileUtils()
 
     post("/pull/file") {
-        getAppInstanceId(call).let { fromAppInstanceId ->
+        getAppInstanceId(call)?.let { fromAppInstanceId ->
             val pullFileRequest: PullFileRequest = call.receive()
             val appInstanceId = pullFileRequest.appInstanceId
             val clipId = pullFileRequest.clipId
@@ -50,7 +50,7 @@ fun Routing.pullRouting() {
                 return@post
             }
 
-            cacheManager.filesIndexCache.get(PullFilesKey(appInstanceId, clipId)).let { filesIndex ->
+            cacheManager.getFilesIndex(PullFilesKey(appInstanceId, clipId))?.let { filesIndex ->
                 filesIndex.getChunk(pullFileRequest.chunkIndex)?.let { chunk ->
                     logger.info { "filesIndex ${pullFileRequest.chunkIndex} $chunk" }
                     val producer: suspend ByteWriteChannel.() -> Unit = {
@@ -64,6 +64,9 @@ fun Routing.pullRouting() {
                         "out range chunk index ${pullFileRequest.chunkIndex}",
                     )
                 }
+            } ?: run {
+                logger.error { "$fromAppInstanceId get $appInstanceId filesIndex not found" }
+                failResponse(call, StandardErrorCode.NOT_FOUND_FILES_INDEX.toErrorCode())
             }
         }
     }
