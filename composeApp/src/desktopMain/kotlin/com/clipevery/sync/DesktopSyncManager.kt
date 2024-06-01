@@ -200,9 +200,9 @@ class DesktopSyncManager(
     }
 
     override fun updateSyncInfo(syncInfo: SyncInfo) {
-        internalSyncHandlers[syncInfo.appInfo.appInstanceId]?.let { syncHandler ->
-            realTimeSyncScope.launch(CoroutineName("UpdateSyncInfo")) {
-                if (!syncRuntimeInfoDao.insertOrUpdate(syncInfo)) {
+        realTimeSyncScope.launch(CoroutineName("UpdateSyncInfo")) {
+            if (!syncRuntimeInfoDao.insertOrUpdate(syncInfo)) {
+                internalSyncHandlers[syncInfo.appInfo.appInstanceId]?.let { syncHandler ->
                     doResolveSync(syncHandler)
                 }
             }
