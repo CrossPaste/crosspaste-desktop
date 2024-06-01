@@ -184,6 +184,13 @@ fun Routing.syncRouting() {
             successResponse(call)
         }
     }
+
+    get("sync/notifyRemove") {
+        getAppInstanceId(call)?.let { appInstanceId ->
+            syncManager.removeSyncHandler(appInstanceId)
+            successResponse(call)
+        }
+    }
 }
 
 fun PreKeyBundle.getDescString(): String {

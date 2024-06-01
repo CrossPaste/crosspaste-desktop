@@ -97,4 +97,13 @@ class DesktopSyncClientApi(
             })
         }, transformData = { true })
     }
+
+    override suspend fun notifyRemove(toUrl: URLBuilder.(URLBuilder) -> Unit) {
+        request(logger, request = {
+            clipClient.get(urlBuilder = {
+                toUrl(it)
+                buildUrl(it, "sync", "notifyRemove")
+            })
+        }, transformData = { true })
+    }
 }

@@ -1,5 +1,6 @@
 package com.clipevery.sync
 
+import com.clipevery.dao.signal.SignalDao
 import com.clipevery.dao.sync.SyncRuntimeInfo
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.dao.sync.SyncState
@@ -34,6 +35,7 @@ class DesktopSyncHandler(
     private val syncClientApi: SyncClientApi,
     private val signalProtocolStore: SignalProtocolStore,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
+    private val signalDao: SignalDao,
     scope: CoroutineScope,
 ) : SyncHandler {
 
@@ -375,7 +377,14 @@ class DesktopSyncHandler(
         return SessionBuilder(signalProtocolStore, signalProtocolAddress)
     }
 
-    override fun clearContext() {
+    override suspend fun clearContext() {
+        signalDao.deleteSession(syncRuntimeInfo.appInstanceId)
+        signalDao.deleteIdentity(syncRuntimeInfo.appInstanceId)
+        syncRuntimeInfo.connectHostAddress?.let { host ->
+            syncClientApi.notifyRemove { urlBuilder ->
+                buildUrl(urlBuilder, host, syncRuntimeInfo.port)
+            }
+        }
         job.cancel()
     }
 }

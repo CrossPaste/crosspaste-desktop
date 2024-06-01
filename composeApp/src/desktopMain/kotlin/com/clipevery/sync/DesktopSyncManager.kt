@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.clipevery.dao.signal.SignalDao
 import com.clipevery.dao.sync.SyncRuntimeInfo
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.dao.sync.SyncState
@@ -35,6 +36,7 @@ class DesktopSyncManager(
     private val syncClientApi: SyncClientApi,
     private val signalProtocolStore: SignalProtocolStore,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
+    private val signalDao: SignalDao,
     lazyDeviceManager: Lazy<DeviceManager>,
 ) : SyncManager, SyncRefresher {
 
@@ -74,6 +76,7 @@ class DesktopSyncManager(
                             syncClientApi,
                             signalProtocolStore,
                             syncRuntimeInfoDao,
+                            signalDao,
                             realTimeSyncScope,
                         )
                 },
@@ -104,6 +107,7 @@ class DesktopSyncManager(
                                     syncClientApi,
                                     signalProtocolStore,
                                     syncRuntimeInfoDao,
+                                    signalDao,
                                     realTimeSyncScope,
                                 )
                         }
@@ -170,6 +174,12 @@ class DesktopSyncManager(
 
     override fun getSyncHandlers(): Map<String, SyncHandler> {
         return internalSyncHandlers
+    }
+
+    override fun removeSyncHandler(id: String) {
+        realTimeSyncScope.launch(CoroutineName("RemoveSyncHandler")) {
+            syncRuntimeInfoDao.deleteSyncRuntimeInfo(id)
+        }
     }
 
     override suspend fun trustByToken(

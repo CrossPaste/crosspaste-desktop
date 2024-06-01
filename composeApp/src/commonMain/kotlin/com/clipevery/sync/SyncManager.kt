@@ -15,6 +15,8 @@ interface SyncManager {
 
     fun getSyncHandlers(): Map<String, SyncHandler>
 
+    fun removeSyncHandler(id: String)
+
     fun refreshWaitToVerifySyncRuntimeInfo()
 
     fun ignoreVerify(appInstanceId: String)
