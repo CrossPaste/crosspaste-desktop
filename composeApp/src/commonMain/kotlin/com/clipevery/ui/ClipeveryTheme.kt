@@ -78,3 +78,23 @@ fun Colors.hoverSurfaceColor(): Color {
         Color(0xFF363B3E)
     }
 }
+
+fun connectedColor(): Color {
+    return Color(0xFF95EC69)
+}
+
+fun connectingColor(): Color {
+    return Color(0xFFE6C44D)
+}
+
+fun disconnectedColor(): Color {
+    return Color(0xFFFF6969)
+}
+
+fun unmatchedColor(): Color {
+    return Color(0xFF9A69EC)
+}
+
+fun unverifiedColor(): Color {
+    return Color(0xFF69A9EC)
+}

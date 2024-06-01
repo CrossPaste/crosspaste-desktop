@@ -39,6 +39,7 @@ import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.WindowDecoration
 import com.clipevery.ui.base.CustomSwitch
+import com.clipevery.ui.connectedColor
 
 @Composable
 fun DeviceDetailView(currentPageViewContext: MutableState<PageViewContext>) {
@@ -104,7 +105,7 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
                             this.allowSend = it
                         }?.let { syncRuntimeInfo = it }
                     },
-                    checkedThumbColor = Color.Green,
+                    checkedThumbColor = connectedColor(),
                 )
             }
 
@@ -135,7 +136,7 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
                             this.allowReceive = it
                         }?.let { syncRuntimeInfo = it }
                     },
-                    checkedThumbColor = Color.Green,
+                    checkedThumbColor = connectedColor(),
                 )
             }
         }
