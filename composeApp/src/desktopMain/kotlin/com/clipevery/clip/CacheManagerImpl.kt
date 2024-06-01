@@ -12,9 +12,12 @@ import com.clipevery.utils.getDateUtils
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.util.concurrent.TimeUnit
 
 class CacheManagerImpl(private val clipDao: ClipDao) : CacheManager {
+
+    private val logger = KotlinLogging.logger {}
 
     private val dateUtils: DateUtils = getDateUtils()
 
@@ -46,6 +49,11 @@ class CacheManagerImpl(private val clipDao: ClipDao) : CacheManager {
             )
 
     override fun getFilesIndex(pullFilesKey: PullFilesKey): FilesIndex? {
-        return filesIndexCache.getIfPresent(pullFilesKey)
+        return try {
+            filesIndexCache.get(pullFilesKey)
+        } catch (e: Exception) {
+            logger.warn(e) { "getFilesIndex failed: $pullFilesKey" }
+            null
+        }
     }
 }
