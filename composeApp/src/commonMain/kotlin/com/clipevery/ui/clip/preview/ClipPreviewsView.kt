@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.clipevery.LocalKoinApplication
+import com.clipevery.app.AppWindowManager
 import com.clipevery.clip.ClipPreviewService
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
@@ -48,6 +49,7 @@ import kotlinx.coroutines.launch
 fun ClipPreviewsView() {
     val current = LocalKoinApplication.current
     val clipPreviewService = current.koin.get<ClipPreviewService>()
+    val appWindowManager = current.koin.get<AppWindowManager>()
 
     val listState = rememberLazyListState()
     var isScrolling by remember { mutableStateOf(false) }
@@ -62,6 +64,20 @@ fun ClipPreviewsView() {
         onDispose {
             coroutineScope.launch {
                 clipPreviewService.clearData()
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (rememberClipDataList.isNotEmpty()) {
+            listState.scrollToItem(0)
+        }
+    }
+
+    LaunchedEffect(appWindowManager.showMainWindow) {
+        if (appWindowManager.showMainWindow) {
+            if (rememberClipDataList.isNotEmpty()) {
+                listState.scrollToItem(0)
             }
         }
     }
