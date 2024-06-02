@@ -79,11 +79,11 @@ fun favoriteColor(): Color {
     return Color(0xFFFFCE34)
 }
 
-fun Colors.hoverSurfaceColor(): Color {
+fun Colors.selectColor(): Color {
     return if (isLight) {
         Color(0xFFEBF6FF)
     } else {
-        Color(0xFF363B3E)
+        Color(0xFF2F446F)
     }
 }
 
