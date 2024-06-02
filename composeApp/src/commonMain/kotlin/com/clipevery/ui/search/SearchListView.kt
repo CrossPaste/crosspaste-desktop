@@ -65,6 +65,7 @@ import com.clipevery.ui.base.ToPainterImage
 import com.clipevery.ui.clip.ClipTypeIconBaseView
 import com.clipevery.ui.clip.preview.getClipItem
 import com.clipevery.ui.clip.title.getClipTitle
+import com.clipevery.ui.selectColor
 import com.clipevery.utils.getResourceUtils
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
@@ -208,7 +209,7 @@ fun ClipTitleView(
                         .fillMaxHeight()
                         .padding(horizontal = 10.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(if (selected) MaterialTheme.colors.surface else MaterialTheme.colors.background)
+                        .background(if (selected) MaterialTheme.colors.selectColor() else MaterialTheme.colors.background)
                         .clickable { onClick() },
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically,

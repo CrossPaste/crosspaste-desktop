@@ -52,7 +52,7 @@ import com.clipevery.sync.DeviceManager
 import com.clipevery.ui.base.magnifying
 import com.clipevery.ui.connectedColor
 import com.clipevery.ui.disconnectedColor
-import com.clipevery.ui.hoverSurfaceColor
+import com.clipevery.ui.selectColor
 import com.clipevery.utils.getJsonUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -196,7 +196,7 @@ fun SyncDeviceView(
     var hover by remember { mutableStateOf(false) }
     val backgroundColor =
         if (hover) {
-            MaterialTheme.colors.hoverSurfaceColor()
+            MaterialTheme.colors.selectColor()
         } else {
             MaterialTheme.colors.background
         }

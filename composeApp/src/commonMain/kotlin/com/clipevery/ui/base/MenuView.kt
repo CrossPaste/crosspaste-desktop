@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.ui.devices.measureTextWidth
-import com.clipevery.ui.hoverSurfaceColor
+import com.clipevery.ui.selectColor
 
 val menuItemTextStyle =
     TextStyle(
@@ -42,7 +42,7 @@ fun MenuItem(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
-    val backgroundColor = if (enabledInteraction && isHovered) MaterialTheme.colors.hoverSurfaceColor() else Color.Transparent
+    val backgroundColor = if (enabledInteraction && isHovered) MaterialTheme.colors.selectColor() else Color.Transparent
 
     var modifier =
         Modifier

@@ -67,7 +67,7 @@ import com.clipevery.ui.base.unverified
 import com.clipevery.ui.connectedColor
 import com.clipevery.ui.connectingColor
 import com.clipevery.ui.disconnectedColor
-import com.clipevery.ui.hoverSurfaceColor
+import com.clipevery.ui.selectColor
 import com.clipevery.ui.unmatchedColor
 import com.clipevery.ui.unverifiedColor
 
@@ -94,7 +94,7 @@ fun DeviceConnectView(
     val connectIcon = getAllowSendAndReceiveImage(syncRuntimeInfo)
 
     var hover by remember { mutableStateOf(false) }
-    val backgroundColor = if (hover) MaterialTheme.colors.hoverSurfaceColor() else MaterialTheme.colors.background
+    val backgroundColor = if (hover) MaterialTheme.colors.selectColor() else MaterialTheme.colors.background
 
     var modifier =
         Modifier
