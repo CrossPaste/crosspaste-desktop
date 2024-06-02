@@ -3,13 +3,12 @@ package com.clipevery.ui
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,6 +26,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,11 +51,16 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.clipevery.LocalExitApplication
 import com.clipevery.LocalKoinApplication
+import com.clipevery.app.AppWindowManager
+import com.clipevery.clip.ClipSearchService
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.ClipIconButton
 import com.clipevery.ui.base.MenuItem
 import com.clipevery.ui.base.getMenWidth
+import com.clipevery.ui.base.search
 import com.clipevery.ui.base.settings
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.awt.Desktop
 import java.net.URI
 
@@ -81,6 +86,11 @@ fun TitleView(currentPage: MutableState<PageViewContext>) {
     val current = LocalKoinApplication.current
     val applicationExit = LocalExitApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
+    val appWindowManager = current.koin.get<AppWindowManager>()
+    val clipSearchService = current.koin.get<ClipSearchService>()
+
+    val scope = rememberCoroutineScope()
+
     var showPopup by remember { mutableStateOf(false) }
 
     var buttonPosition by remember { mutableStateOf(Offset.Zero) }
@@ -90,14 +100,13 @@ fun TitleView(currentPage: MutableState<PageViewContext>) {
 
     Box(
         modifier =
-            Modifier.background(Color(0xFF121314))
-                .border(0.dp, Color.Transparent)
+            Modifier.background(decorationColor())
                 .background(
                     brush =
                         Brush.verticalGradient(
                             colors =
                                 listOf(
-                                    Color.White.copy(alpha = 0.6f),
+                                    Color.White.copy(alpha = 0.9f),
                                     Color.Transparent,
                                 ),
                             startY = 0.0f,
@@ -107,56 +116,67 @@ fun TitleView(currentPage: MutableState<PageViewContext>) {
     ) {
         Row(
             modifier =
-                Modifier.align(Alignment.CenterStart)
-                    .wrapContentWidth(),
-            horizontalArrangement = Arrangement.Center,
+                Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight(),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Image(
-                modifier =
-                    Modifier.padding(13.dp, 13.dp, 13.dp, 13.dp)
-                        .align(Alignment.CenterVertically)
-                        .clip(RoundedCornerShape(3.dp))
-                        .size(36.dp),
-                painter = painterResource("clipevery_icon.png"),
-                contentDescription = "clipevery icon",
-            )
-            Column(
-                Modifier.wrapContentWidth()
-                    .align(Alignment.CenterVertically)
-                    .offset(y = 2.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+            Row(
+                modifier = Modifier.wrapContentWidth(),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    modifier = Modifier.align(Alignment.Start),
-                    text = "Compile Future",
-                    color = Color.White,
-                    style = TextStyle(fontWeight = FontWeight.Light),
-                    fontSize = 11.sp,
+                Image(
+                    modifier =
+                        Modifier.padding(13.dp, 13.dp, 13.dp, 13.dp)
+                            .align(Alignment.CenterVertically)
+                            .clip(RoundedCornerShape(3.dp))
+                            .size(36.dp),
+                    painter = painterResource("clipevery_icon.png"),
+                    contentDescription = "clipevery icon",
                 )
-                Text(
-                    modifier = Modifier.align(Alignment.Start),
-                    text = "Clipevery",
-                    color = Color.White,
-                    fontSize = 25.sp,
-                    style = TextStyle(fontWeight = FontWeight.Bold),
-                    fontFamily = customFontFamily,
-                )
+                Column(
+                    Modifier.wrapContentWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        modifier = Modifier.align(Alignment.Start),
+                        text = "Compile Future",
+                        color = Color.White,
+                        style = TextStyle(fontWeight = FontWeight.Light),
+                        fontSize = 11.sp,
+                    )
+                    Text(
+                        modifier = Modifier.align(Alignment.Start),
+                        text = "Clipevery",
+                        color = Color.White,
+                        fontSize = 25.sp,
+                        style = TextStyle(fontWeight = FontWeight.Bold),
+                        fontFamily = customFontFamily,
+                    )
+                }
             }
-            Column(
-                Modifier.fillMaxWidth()
-                    .align(Alignment.CenterVertically)
-                    .offset(y = 2.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Row(
+                Modifier.wrapContentSize(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 ClipIconButton(
-                    radius = 18.dp,
+                    radius = 20.dp,
                     onClick = {
-                        showPopup = !showPopup
+                        scope.launch {
+                            appWindowManager.unActiveMainWindow()
+                            delay(100)
+                            clipSearchService.activeWindow()
+                        }
                     },
                     modifier =
                         Modifier
-                            .padding(13.dp)
-                            .align(Alignment.End)
+                            .size(20.dp)
                             .background(Color.Transparent, CircleShape)
                             .onGloballyPositioned { coordinates ->
                                 buttonPosition = coordinates.localToWindow(Offset.Zero)
@@ -164,12 +184,38 @@ fun TitleView(currentPage: MutableState<PageViewContext>) {
                             },
                 ) {
                     Icon(
-                        settings(),
-                        contentDescription = "info",
-                        modifier = Modifier.padding(3.dp).size(30.dp),
+                        painter = search(),
+                        contentDescription = "open search window",
+                        modifier = Modifier.size(20.dp),
                         tint = Color.White,
                     )
                 }
+
+                Spacer(modifier = Modifier.width(15.dp))
+
+                ClipIconButton(
+                    radius = 20.dp,
+                    onClick = {
+                        showPopup = !showPopup
+                    },
+                    modifier =
+                        Modifier
+                            .size(20.dp)
+                            .background(Color.Transparent, CircleShape)
+                            .onGloballyPositioned { coordinates ->
+                                buttonPosition = coordinates.localToWindow(Offset.Zero)
+                                buttonSize = coordinates.size.toSize()
+                            },
+                ) {
+                    Icon(
+                        painter = settings(),
+                        contentDescription = "info",
+                        modifier = Modifier.size(20.dp),
+                        tint = Color.White,
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(15.dp))
 
                 if (showPopup) {
                     Popup(
@@ -177,7 +223,7 @@ fun TitleView(currentPage: MutableState<PageViewContext>) {
                         offset =
                             IntOffset(
                                 with(density) { ((-14).dp).roundToPx() },
-                                with(density) { (60.dp).roundToPx() },
+                                with(density) { (30.dp).roundToPx() },
                             ),
                         onDismissRequest = {
                             if (showPopup) {

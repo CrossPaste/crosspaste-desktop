@@ -41,8 +41,7 @@ fun WindowDecoration(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(62.dp),
-        color = MaterialTheme.colors.background,
+                .height(60.dp),
         shape =
             RoundedCornerShape(
                 topStart = 10.dp,
@@ -66,13 +65,13 @@ fun DecorationUI(
     Box(
         modifier =
             Modifier
-                .background(Color(0xFF121314))
+                .background(decorationColor())
                 .background(
                     brush =
                         Brush.verticalGradient(
                             colors =
                                 listOf(
-                                    Color.White.copy(alpha = 0.6f),
+                                    Color.White.copy(alpha = 0.9f),
                                     Color.Transparent,
                                 ),
                             startY = 0.0f,
