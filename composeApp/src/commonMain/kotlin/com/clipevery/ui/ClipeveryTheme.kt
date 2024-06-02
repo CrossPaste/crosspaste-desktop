@@ -71,6 +71,10 @@ fun Color.darken(amount: Float): Color {
     )
 }
 
+fun decorationColor(): Color {
+    return Color(0xFF121314)
+}
+
 fun Colors.hoverSurfaceColor(): Color {
     return if (isLight) {
         Color(0xFFEBF6FF)

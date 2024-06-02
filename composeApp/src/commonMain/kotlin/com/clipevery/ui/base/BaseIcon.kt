@@ -10,6 +10,11 @@ fun settings(): Painter {
 }
 
 @Composable
+fun search(): Painter {
+    return painterResource("icon/base/search.svg")
+}
+
+@Composable
 fun question(): Painter {
     return painterResource("icon/base/question.svg")
 }
