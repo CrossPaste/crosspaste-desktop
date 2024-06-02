@@ -23,12 +23,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEvent
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.areAnyPressed
+import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -42,26 +52,75 @@ import com.clipevery.ui.base.MenuItem
 import com.clipevery.ui.base.getMenWidth
 import com.clipevery.ui.base.starRegular
 import com.clipevery.ui.base.starSolid
+import com.clipevery.ui.favoriteColor
 import com.clipevery.ui.search.ClipTypeIconView
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun ClipMenuView(
     clipData: ClipData,
-    hover: Boolean,
+    toShow: (Boolean) -> Unit,
 ) {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
     val clipDao = current.koin.get<ClipDao>()
     val copywriter = current.koin.get<GlobalCopywriter>()
 
+    var parentBounds by remember { mutableStateOf(Rect.Zero) }
+    var cursorPosition by remember { mutableStateOf(Offset.Zero) }
+    var showMenu by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    var job: Job? by remember { mutableStateOf(null) }
+
     var showPopup by remember { mutableStateOf(false) }
+
+    fun startShowing() {
+        if (job?.isActive == true) { // Don't restart the job if it's already active
+            return
+        }
+        job =
+            scope.launch {
+                showMenu = true
+                toShow(true)
+            }
+    }
+
+    fun hide() {
+        job?.cancel()
+        job = null
+        showMenu = false
+        toShow(false)
+    }
+
+    fun hideIfNotHovered(globalPosition: Offset) {
+        if (!parentBounds.contains(globalPosition)) {
+            hide()
+        }
+    }
 
     Column(
         modifier =
             Modifier.fillMaxSize()
-                .background(if (hover) MaterialTheme.colors.surface.copy(alpha = 0.12f) else Color.Transparent)
+                .onGloballyPositioned { parentBounds = it.boundsInWindow() }
+                .onPointerEvent(PointerEventType.Enter) {
+                    cursorPosition = it.position
+                    if (!showMenu && !it.buttons.areAnyPressed) {
+                        startShowing()
+                    }
+                }
+                .onPointerEvent(PointerEventType.Move) {
+                    cursorPosition = it.position
+                    if (!showMenu && !it.buttons.areAnyPressed) {
+                        startShowing()
+                    }
+                }
+                .onPointerEvent(PointerEventType.Exit) {
+                    hideIfNotHovered(parentBounds.topLeft + it.position)
+                }
+                .background(if (showMenu) MaterialTheme.colors.surface.copy(alpha = 0.12f) else Color.Transparent)
                 .padding(vertical = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
@@ -88,6 +147,8 @@ fun ClipMenuView(
                 onDismissRequest = {
                     if (showPopup) {
                         showPopup = false
+                        showMenu = false
+                        toShow(false)
                     }
                 },
                 properties =
@@ -129,19 +190,23 @@ fun ClipMenuView(
                         MenuItem(copywriter.getText(if (clipData.favorite) "Delete_Favorite" else "Favorite")) {
                             clipDao.setFavorite(clipData.id, !clipData.favorite)
                             showPopup = false
+                            showMenu = false
+                            toShow(false)
                         }
                         MenuItem(copywriter.getText("Delete")) {
                             runBlocking {
                                 clipDao.markDeleteClipData(clipData.id)
                             }
                             showPopup = false
+                            showMenu = false
+                            toShow(false)
                         }
                     }
                 }
             }
         }
 
-        if (hover) {
+        if (showMenu) {
             ClipTypeIconView(clipData)
 
             Icon(
@@ -151,8 +216,10 @@ fun ClipMenuView(
                     },
                 painter = if (clipData.favorite) starSolid() else starRegular(),
                 contentDescription = "Favorite",
-                tint = Color(0xFFFFCE34),
+                tint = favoriteColor(),
             )
         }
     }
 }
+
+private val PointerEvent.position get() = changes.first().position

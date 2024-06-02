@@ -58,8 +58,8 @@ fun UrlPreviewView(clipData: ClipData) {
                     )
                 }
             },
-            clipRightInfo = { hover ->
-                ClipMenuView(clipData = clipData, hover = hover)
+            clipRightInfo = { toShow ->
+                ClipMenuView(clipData = clipData, toShow = toShow)
             },
         )
     }
