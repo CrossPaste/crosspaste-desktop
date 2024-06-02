@@ -88,7 +88,7 @@ fun Routing.syncRouting() {
         }
     }
 
-    post("sync/exchangeSyncInfo") {
+    post("/sync/exchangeSyncInfo") {
         getAppInstanceId(call)?.let { appInstanceId ->
             val dataContent = call.receive(DataContent::class)
             val bytes = dataContent.data
@@ -156,7 +156,7 @@ fun Routing.syncRouting() {
         }
     }
 
-    post("sync/trust") {
+    post("/sync/trust") {
         getAppInstanceId(call)?.let { appInstanceId ->
             val requestTrust = call.receive(RequestTrust::class)
 
@@ -178,14 +178,14 @@ fun Routing.syncRouting() {
         }
     }
 
-    get("sync/notifyExit") {
+    get("/sync/notifyExit") {
         getAppInstanceId(call)?.let { appInstanceId ->
             syncManager.markExit(appInstanceId)
             successResponse(call)
         }
     }
 
-    get("sync/notifyRemove") {
+    get("/sync/notifyRemove") {
         getAppInstanceId(call)?.let { appInstanceId ->
             syncManager.removeSyncHandler(appInstanceId)
             successResponse(call)
