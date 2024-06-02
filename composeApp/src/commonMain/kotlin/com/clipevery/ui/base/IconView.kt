@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.ContentAlpha
 import androidx.compose.material.LocalContentAlpha
-import androidx.compose.material.minimumInteractiveComponentSize
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -25,7 +24,7 @@ import kotlin.io.path.name
 
 @Composable
 fun ClipIconButton(
-    radius: Dp,
+    size: Dp,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -35,13 +34,13 @@ fun ClipIconButton(
     Box(
         modifier =
             modifier
-                .minimumInteractiveComponentSize()
+                .size(size)
                 .clickable(
                     onClick = onClick,
                     enabled = enabled,
                     role = Role.Button,
                     interactionSource = interactionSource,
-                    indication = rememberRipple(bounded = false, radius = radius),
+                    indication = rememberRipple(bounded = false, radius = size / 2 + 2.dp),
                 ),
         contentAlignment = Alignment.Center,
     ) {

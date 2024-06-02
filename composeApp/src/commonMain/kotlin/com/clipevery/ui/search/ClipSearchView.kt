@@ -20,7 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.onClick
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Divider
@@ -71,6 +71,8 @@ import com.clipevery.clip.ClipSearchService
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.ClipeveryTheme
+import com.clipevery.ui.base.ClipIconButton
+import com.clipevery.ui.base.ClipTooltipAreaView
 import com.clipevery.ui.base.KeyboardView
 import com.clipevery.ui.base.MenuItem
 import com.clipevery.ui.base.enter
@@ -279,27 +281,55 @@ fun ClipeverySearchWindow() {
                                     horizontalArrangement = Arrangement.Start,
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Icon(
-                                        modifier =
-                                            Modifier.size(20.dp)
-                                                .onClick(onClick = {
-                                                    clipSearchService.switchFavorite()
-                                                }),
-                                        painter = if (clipSearchService.searchFavorite) starSolid() else starRegular(),
-                                        contentDescription = "Favorite",
-                                        tint = if (clipSearchService.searchFavorite) Color(0xFFFFCE34) else MaterialTheme.colors.onSurface,
-                                    )
+                                    ClipTooltipAreaView(
+                                        text = copywriter.getText("Whether_to_search_only_favorites"),
+                                    ) {
+                                        ClipIconButton(
+                                            size = 20.dp,
+                                            onClick = {
+                                                clipSearchService.switchFavorite()
+                                            },
+                                            modifier =
+                                                Modifier
+                                                    .background(Color.Transparent, CircleShape),
+                                        ) {
+                                            Icon(
+                                                modifier = Modifier.size(20.dp),
+                                                painter = if (clipSearchService.searchFavorite) starSolid() else starRegular(),
+                                                contentDescription = "Favorite",
+                                                tint =
+                                                    if (clipSearchService.searchFavorite) {
+                                                        Color(
+                                                            0xFFFFCE34,
+                                                        )
+                                                    } else {
+                                                        MaterialTheme.colors.onSurface
+                                                    },
+                                            )
+                                        }
+                                    }
                                     Spacer(modifier = Modifier.width(10.dp))
-                                    Icon(
-                                        modifier =
-                                            Modifier.size(30.dp)
-                                                .onClick(onClick = {
-                                                    clipSearchService.switchSort()
-                                                }),
-                                        painter = if (clipSearchService.searchSort) expandCircleDown() else expandCircleUp(),
-                                        contentDescription = "Favorite",
-                                        tint = MaterialTheme.colors.primary,
-                                    )
+
+                                    ClipTooltipAreaView(
+                                        text = copywriter.getText("Sort_by_creation_time"),
+                                    ) {
+                                        ClipIconButton(
+                                            size = 20.dp,
+                                            onClick = {
+                                                clipSearchService.switchSort()
+                                            },
+                                            modifier =
+                                                Modifier
+                                                    .background(Color.Transparent, CircleShape),
+                                        ) {
+                                            Icon(
+                                                modifier = Modifier.size(20.dp),
+                                                painter = if (clipSearchService.searchSort) expandCircleDown() else expandCircleUp(),
+                                                contentDescription = "Sort by creation time",
+                                                tint = MaterialTheme.colors.primary,
+                                            )
+                                        }
+                                    }
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Row(
                                         modifier =

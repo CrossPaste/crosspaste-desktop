@@ -258,7 +258,7 @@ fun BlackListDeviceView(
 ) {
     SyncDeviceView(syncInfo = syncInfo) {
         ClipIconButton(
-            radius = 18.dp,
+            size = 20.dp,
             onClick = {
                 clickable()
             },
@@ -270,7 +270,7 @@ fun BlackListDeviceView(
                 painter = remove(),
                 contentDescription = "remove blacklist",
                 tint = Color.Red,
-                modifier = Modifier.size(30.dp),
+                modifier = Modifier.size(20.dp),
             )
         }
         Spacer(modifier = Modifier.width(16.dp))

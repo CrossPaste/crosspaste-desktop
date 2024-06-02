@@ -164,7 +164,7 @@ fun DeviceConnectView(
                 var buttonSize by remember { mutableStateOf(Size(0.0f, 0.0f)) }
 
                 ClipIconButton(
-                    radius = 18.dp,
+                    size = 32.dp,
                     onClick = {
                         showPopup = !showPopup
                     },
@@ -179,7 +179,7 @@ fun DeviceConnectView(
                     Icon(
                         Icons.Outlined.MoreVert,
                         contentDescription = "info",
-                        modifier = Modifier.padding(3.dp).size(18.dp),
+                        modifier = Modifier.size(18.dp),
                         tint = MaterialTheme.colors.primary,
                     )
                 }
