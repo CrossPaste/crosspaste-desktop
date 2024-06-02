@@ -42,8 +42,8 @@ fun FilesPreviewView(clipData: ClipData) {
                     }
                 }
             },
-            clipRightInfo = { hover ->
-                ClipMenuView(clipData = clipData, hover)
+            clipRightInfo = { toShow ->
+                ClipMenuView(clipData = clipData, toShow = toShow)
             },
         )
     }

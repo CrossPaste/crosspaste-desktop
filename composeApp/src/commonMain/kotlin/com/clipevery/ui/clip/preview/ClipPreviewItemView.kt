@@ -1,5 +1,6 @@
 package com.clipevery.ui.clip.preview
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -24,12 +25,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.dp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.clip.ClipboardService
@@ -158,36 +156,25 @@ fun getTypeText(clipType: Int): String {
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ClipSpecificPreviewContentView(
     backgroundColor: Color = MaterialTheme.colors.background,
     clipMainContent: @Composable () -> Unit,
-    clipRightInfo: @Composable (Boolean) -> Unit,
+    clipRightInfo: @Composable ((Boolean) -> Unit) -> Unit,
 ) {
-    var hover by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
+    val width = animateDpAsState(targetValue = if (showMenu) 380.dp else 420.dp)
 
     Box(
         modifier =
-            Modifier.fillMaxSize()
-                .onPointerEvent(
-                    eventType = PointerEventType.Enter,
-                    onEvent = {
-                        hover = true
-                    },
-                )
-                .onPointerEvent(
-                    eventType = PointerEventType.Exit,
-                    onEvent = {
-                        hover = false
-                    },
-                ),
+            Modifier.fillMaxSize(),
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
             BoxWithConstraints(
                 modifier =
                     Modifier
-                        .fillMaxHeight().width(420.dp)
+                        .fillMaxHeight()
+                        .width(width.value)
                         .clip(RoundedCornerShape(5.dp))
                         .background(color = backgroundColor),
             ) {
@@ -203,7 +190,7 @@ fun ClipSpecificPreviewContentView(
                 modifier = Modifier.width(30.dp),
                 verticalArrangement = Arrangement.Top,
             ) {
-                clipRightInfo(hover)
+                clipRightInfo { showMenu = it }
             }
         }
     }
