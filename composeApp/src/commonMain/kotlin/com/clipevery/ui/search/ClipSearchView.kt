@@ -245,10 +245,10 @@ fun ClipeverySearchWindow() {
 
                             val textStyle =
                                 TextStyle(
-                                    fontWeight = FontWeight.Normal,
+                                    fontWeight = FontWeight.Light,
                                     fontFamily = FontFamily.SansSerif,
                                     color = MaterialTheme.colors.onBackground,
-                                    fontSize = 16.sp,
+                                    fontSize = 15.sp,
                                 )
 
                             var showTypes by remember { mutableStateOf(false) }
@@ -275,37 +275,10 @@ fun ClipeverySearchWindow() {
                             ) {
                                 Spacer(modifier = Modifier.weight(1f))
                                 Row(
-                                    modifier = Modifier.width(90.dp + maxWidth).height(50.dp).padding(10.dp),
+                                    modifier = Modifier.width(80.dp + maxWidth).height(50.dp).padding(10.dp),
                                     horizontalArrangement = Arrangement.Start,
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    ClipTooltipAreaView(
-                                        text = copywriter.getText("Whether_to_search_only_favorites"),
-                                    ) {
-                                        ClipIconButton(
-                                            size = 20.dp,
-                                            onClick = {
-                                                clipSearchService.switchFavorite()
-                                            },
-                                            modifier =
-                                                Modifier
-                                                    .background(Color.Transparent, CircleShape),
-                                        ) {
-                                            Icon(
-                                                modifier = Modifier.size(20.dp),
-                                                painter = if (clipSearchService.searchFavorite) starSolid() else starRegular(),
-                                                contentDescription = "Favorite",
-                                                tint =
-                                                    if (clipSearchService.searchFavorite) {
-                                                        favoriteColor()
-                                                    } else {
-                                                        MaterialTheme.colors.primary
-                                                    },
-                                            )
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.width(10.dp))
-
                                     ClipTooltipAreaView(
                                         text = copywriter.getText("Sort_by_creation_time"),
                                     ) {
@@ -313,6 +286,7 @@ fun ClipeverySearchWindow() {
                                             size = 20.dp,
                                             onClick = {
                                                 clipSearchService.switchSort()
+                                                focusRequester.requestFocus() // keep textField focus
                                             },
                                             modifier =
                                                 Modifier
@@ -326,6 +300,36 @@ fun ClipeverySearchWindow() {
                                             )
                                         }
                                     }
+
+                                    Spacer(modifier = Modifier.width(10.dp))
+
+                                    ClipTooltipAreaView(
+                                        text = copywriter.getText("Whether_to_search_only_favorites"),
+                                    ) {
+                                        ClipIconButton(
+                                            size = 18.dp,
+                                            onClick = {
+                                                clipSearchService.switchFavorite()
+                                                focusRequester.requestFocus() // keep textField focus
+                                            },
+                                            modifier =
+                                                Modifier
+                                                    .background(Color.Transparent, CircleShape),
+                                        ) {
+                                            Icon(
+                                                modifier = Modifier.size(18.dp),
+                                                painter = if (clipSearchService.searchFavorite) starSolid() else starRegular(),
+                                                contentDescription = "Favorite",
+                                                tint =
+                                                    if (clipSearchService.searchFavorite) {
+                                                        favoriteColor()
+                                                    } else {
+                                                        MaterialTheme.colors.primary
+                                                    },
+                                            )
+                                        }
+                                    }
+
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Row(
                                         modifier =
@@ -337,6 +341,7 @@ fun ClipeverySearchWindow() {
                                                 )
                                                 .clickable {
                                                     showTypes = true
+                                                    focusRequester.requestFocus() // keep textField focus
                                                 }
                                                 .padding(10.dp, 5.dp, 10.dp, 5.dp),
                                         horizontalArrangement = Arrangement.Start,
@@ -346,10 +351,10 @@ fun ClipeverySearchWindow() {
                                             text = copywriter.getText(currentType),
                                             style =
                                                 TextStyle(
-                                                    fontWeight = FontWeight.Normal,
+                                                    fontWeight = FontWeight.Light,
                                                     fontFamily = FontFamily.SansSerif,
                                                     color = MaterialTheme.colors.onBackground,
-                                                    fontSize = 16.sp,
+                                                    fontSize = 15.sp,
                                                 ),
                                         )
                                     }
@@ -402,26 +407,31 @@ fun ClipeverySearchWindow() {
                                                         clipSearchService.setClipType(ClipType.TEXT)
                                                         currentType = "Text"
                                                         showTypes = false
+                                                        focusRequester.requestFocus() // keep textField focus
                                                     }
                                                     MenuItem(copywriter.getText("Link"), textStyle, paddingValues) {
                                                         clipSearchService.setClipType(ClipType.URL)
                                                         currentType = "Link"
                                                         showTypes = false
+                                                        focusRequester.requestFocus() // keep textField focus
                                                     }
                                                     MenuItem(copywriter.getText("Html"), textStyle, paddingValues) {
                                                         clipSearchService.setClipType(ClipType.HTML)
                                                         currentType = "Html"
                                                         showTypes = false
+                                                        focusRequester.requestFocus() // keep textField focus
                                                     }
                                                     MenuItem(copywriter.getText("Image"), textStyle, paddingValues) {
                                                         clipSearchService.setClipType(ClipType.IMAGE)
                                                         currentType = "Image"
                                                         showTypes = false
+                                                        focusRequester.requestFocus() // keep textField focus
                                                     }
                                                     MenuItem(copywriter.getText("File"), textStyle, paddingValues) {
                                                         clipSearchService.setClipType(ClipType.FILE)
                                                         currentType = "File"
                                                         showTypes = false
+                                                        focusRequester.requestFocus() // keep textField focus
                                                     }
                                                 }
                                             }
