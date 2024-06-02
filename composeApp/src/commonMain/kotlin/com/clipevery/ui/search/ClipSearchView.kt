@@ -485,7 +485,16 @@ fun ClipeverySearchWindow() {
                                     ),
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            KeyboardView(keyboardValue = enter)
+                            Row(
+                                modifier =
+                                    Modifier.clickable {
+                                        runBlocking {
+                                            clipSearchService.toPaste()
+                                        }
+                                    },
+                            ) {
+                                KeyboardView(keyboardValue = enter)
+                            }
                         }
                     }
                 }
