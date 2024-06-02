@@ -45,11 +45,6 @@ fun add(): Painter {
 }
 
 @Composable
-fun warning(): Painter {
-    return painterResource("icon/base/warning.svg")
-}
-
-@Composable
 fun remove(): Painter {
     return painterResource("icon/base/remove.svg")
 }
@@ -75,13 +70,13 @@ fun percent(): Painter {
 }
 
 @Composable
-fun expandCircleDown(): Painter {
-    return painterResource("icon/base/expand_circle_down.svg")
+fun descSort(): Painter {
+    return painterResource("icon/base/sort-desc.svg")
 }
 
 @Composable
-fun expandCircleUp(): Painter {
-    return painterResource("icon/base/expand_circle_up.svg")
+fun ascSort(): Painter {
+    return painterResource("icon/base/sort-asc.svg")
 }
 
 @Composable

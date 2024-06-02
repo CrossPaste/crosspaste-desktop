@@ -75,6 +75,10 @@ fun decorationColor(): Color {
     return Color(0xFF121314)
 }
 
+fun favoriteColor(): Color {
+    return Color(0xFFFFCE34)
+}
+
 fun Colors.hoverSurfaceColor(): Color {
     return if (isLight) {
         Color(0xFFEBF6FF)
