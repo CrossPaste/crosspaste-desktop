@@ -35,7 +35,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -85,7 +84,7 @@ import com.clipevery.ui.darken
 import com.clipevery.ui.favoriteColor
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.koin.core.KoinApplication
 import java.awt.event.KeyEvent
 
@@ -114,8 +113,6 @@ fun ClipeverySearchWindow() {
     val focusRequester = remember { FocusRequester() }
 
     val searchWindowDpSize by remember { mutableStateOf(appWindowManager.searchWindowDpSize) }
-
-    val mainScope = rememberCoroutineScope()
 
     LaunchedEffect(appWindowManager.showSearchWindow) {
         if (appWindowManager.showSearchWindow) {
@@ -153,7 +150,28 @@ fun ClipeverySearchWindow() {
                     .background(Color.Transparent)
                     .clip(RoundedCornerShape(10.dp))
                     .size(searchWindowDpSize)
-                    .padding(10.dp),
+                    .padding(10.dp)
+                    .onKeyEvent {
+                        when (it.key) {
+                            Key(KeyEvent.VK_ENTER) -> {
+                                runBlocking {
+                                    clipSearchService.toPaste()
+                                }
+                                true
+                            }
+                            Key(KeyEvent.VK_UP) -> {
+                                clipSearchService.upSelectedIndex()
+                                true
+                            }
+                            Key(KeyEvent.VK_DOWN) -> {
+                                clipSearchService.downSelectedIndex()
+                                true
+                            }
+                            else -> {
+                                false
+                            }
+                        }
+                    },
             contentAlignment = Alignment.Center,
         ) {
             Box(
@@ -184,27 +202,6 @@ fun ClipeverySearchWindow() {
                                         }
                                         .onFocusChanged {
                                             logger.debug { "onFocusChanged $it" }
-                                        }
-                                        .onKeyEvent {
-                                            when (it.key) {
-                                                Key(KeyEvent.VK_ENTER) -> {
-                                                    mainScope.launch {
-                                                        clipSearchService.toPaste()
-                                                    }
-                                                    true
-                                                }
-                                                Key(KeyEvent.VK_UP) -> {
-                                                    clipSearchService.upSelectedIndex()
-                                                    true
-                                                }
-                                                Key(KeyEvent.VK_DOWN) -> {
-                                                    clipSearchService.downSelectedIndex()
-                                                    true
-                                                }
-                                                else -> {
-                                                    false
-                                                }
-                                            }
                                         }
                                         .fillMaxSize(),
                                 value = clipSearchService.inputSearch,
@@ -438,6 +435,7 @@ fun ClipeverySearchWindow() {
                     Row(modifier = Modifier.size(searchWindowDpSize.minus(DpSize(20.dp, 120.dp)))) {
                         SearchListView {
                             clipSearchService.clickSetSelectedIndex(it)
+                            focusRequester.requestFocus()
                         }
                         Divider(
                             modifier = Modifier.fillMaxHeight().width(1.dp),
