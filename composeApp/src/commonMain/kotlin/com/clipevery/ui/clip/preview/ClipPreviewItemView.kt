@@ -1,5 +1,6 @@
 package com.clipevery.ui.clip.preview
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -162,6 +163,7 @@ fun ClipSpecificPreviewContentView(
     clipRightInfo: @Composable ((Boolean) -> Unit) -> Unit,
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    val width = animateDpAsState(targetValue = if (showMenu) 380.dp else 420.dp)
 
     Box(
         modifier =
@@ -171,7 +173,8 @@ fun ClipSpecificPreviewContentView(
             BoxWithConstraints(
                 modifier =
                     Modifier
-                        .fillMaxHeight().width(if (showMenu) 380.dp else 420.dp)
+                        .fillMaxHeight()
+                        .width(width.value)
                         .clip(RoundedCornerShape(5.dp))
                         .background(color = backgroundColor),
             ) {
