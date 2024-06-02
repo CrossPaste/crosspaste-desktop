@@ -98,3 +98,8 @@ fun imageCompress(): Painter {
 fun edit(): Painter {
     return painterResource("icon/base/edit.svg")
 }
+
+@Composable
+fun toTop(): Painter {
+    return painterResource("icon/base/to-top.svg")
+}
