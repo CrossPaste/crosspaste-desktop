@@ -1,6 +1,7 @@
 package com.clipevery.ui
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -32,10 +33,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -46,7 +45,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.clipevery.LocalExitApplication
@@ -55,6 +53,7 @@ import com.clipevery.app.AppWindowManager
 import com.clipevery.clip.ClipSearchService
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.ClipIconButton
+import com.clipevery.ui.base.ClipTooltipAreaView
 import com.clipevery.ui.base.MenuItem
 import com.clipevery.ui.base.getMenWidth
 import com.clipevery.ui.base.search
@@ -80,6 +79,7 @@ val customFontFamily =
         Font(resource = "font/BebasNeue.otf", FontWeight.Normal),
     )
 
+@OptIn(ExperimentalFoundationApi::class)
 @Preview
 @Composable
 fun TitleView(currentPage: MutableState<PageViewContext>) {
@@ -92,9 +92,6 @@ fun TitleView(currentPage: MutableState<PageViewContext>) {
     val scope = rememberCoroutineScope()
 
     var showPopup by remember { mutableStateOf(false) }
-
-    var buttonPosition by remember { mutableStateOf(Offset.Zero) }
-    var buttonSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size(0.0f, 0.0f)) }
 
     val density = LocalDensity.current
 
@@ -165,54 +162,48 @@ fun TitleView(currentPage: MutableState<PageViewContext>) {
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                ClipIconButton(
-                    radius = 20.dp,
-                    onClick = {
-                        scope.launch {
-                            appWindowManager.unActiveMainWindow()
-                            delay(100)
-                            clipSearchService.activeWindow()
-                        }
-                    },
-                    modifier =
-                        Modifier
-                            .size(20.dp)
-                            .background(Color.Transparent, CircleShape)
-                            .onGloballyPositioned { coordinates ->
-                                buttonPosition = coordinates.localToWindow(Offset.Zero)
-                                buttonSize = coordinates.size.toSize()
-                            },
+                ClipTooltipAreaView(
+                    text = copywriter.getText("Open_Search_Window"),
                 ) {
-                    Icon(
-                        painter = search(),
-                        contentDescription = "open search window",
-                        modifier = Modifier.size(20.dp),
-                        tint = Color.White,
-                    )
+                    ClipIconButton(
+                        size = 20.dp,
+                        onClick = {
+                            scope.launch {
+                                appWindowManager.unActiveMainWindow()
+                                delay(100)
+                                clipSearchService.activeWindow()
+                            }
+                        },
+                        modifier = Modifier.background(Color.Transparent, CircleShape),
+                    ) {
+                        Icon(
+                            painter = search(),
+                            contentDescription = "open search window",
+                            modifier = Modifier.size(20.dp),
+                            tint = Color.White,
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.width(15.dp))
 
-                ClipIconButton(
-                    radius = 20.dp,
-                    onClick = {
-                        showPopup = !showPopup
-                    },
-                    modifier =
-                        Modifier
-                            .size(20.dp)
-                            .background(Color.Transparent, CircleShape)
-                            .onGloballyPositioned { coordinates ->
-                                buttonPosition = coordinates.localToWindow(Offset.Zero)
-                                buttonSize = coordinates.size.toSize()
-                            },
+                ClipTooltipAreaView(
+                    text = "Clipevery ${copywriter.getText("Menu")}",
                 ) {
-                    Icon(
-                        painter = settings(),
-                        contentDescription = "info",
-                        modifier = Modifier.size(20.dp),
-                        tint = Color.White,
-                    )
+                    ClipIconButton(
+                        size = 20.dp,
+                        onClick = {
+                            showPopup = !showPopup
+                        },
+                        modifier = Modifier.background(Color.Transparent, CircleShape),
+                    ) {
+                        Icon(
+                            painter = settings(),
+                            contentDescription = "info",
+                            modifier = Modifier.size(20.dp),
+                            tint = Color.White,
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.width(15.dp))

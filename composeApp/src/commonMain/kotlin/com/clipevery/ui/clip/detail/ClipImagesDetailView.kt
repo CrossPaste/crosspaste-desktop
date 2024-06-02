@@ -187,7 +187,7 @@ fun ClipImagesDetailView(
                         if (clipFiles.count > 1 && hover) {
                             Row(modifier = Modifier.fillMaxWidth().height(30.dp)) {
                                 ClipIconButton(
-                                    radius = 18.dp,
+                                    size = 18.dp,
                                     onClick = {
                                         coroutineScope.launch {
                                             mutex.withLock {
@@ -206,6 +206,7 @@ fun ClipImagesDetailView(
                                             .background(Color.Transparent, CircleShape),
                                 ) {
                                     Icon(
+                                        modifier = Modifier.size(18.dp),
                                         painter = chevronLeft(),
                                         contentDescription = "chevronLeft",
                                         tint = MaterialTheme.colors.onBackground,
@@ -213,7 +214,7 @@ fun ClipImagesDetailView(
                                 }
                                 Spacer(modifier = Modifier.weight(1f))
                                 ClipIconButton(
-                                    radius = 18.dp,
+                                    size = 18.dp,
                                     onClick = {
                                         coroutineScope.launch {
                                             mutex.withLock {
@@ -232,6 +233,7 @@ fun ClipImagesDetailView(
                                             .background(Color.Transparent, CircleShape),
                                 ) {
                                     Icon(
+                                        modifier = Modifier.size(18.dp),
                                         painter = chevronRight(),
                                         contentDescription = "chevronRight",
                                         tint = MaterialTheme.colors.onBackground,
