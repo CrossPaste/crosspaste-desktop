@@ -75,13 +75,14 @@ import com.clipevery.ui.base.ClipIconButton
 import com.clipevery.ui.base.ClipTooltipAreaView
 import com.clipevery.ui.base.KeyboardView
 import com.clipevery.ui.base.MenuItem
+import com.clipevery.ui.base.ascSort
+import com.clipevery.ui.base.descSort
 import com.clipevery.ui.base.enter
-import com.clipevery.ui.base.expandCircleDown
-import com.clipevery.ui.base.expandCircleUp
 import com.clipevery.ui.base.getMenWidth
 import com.clipevery.ui.base.starRegular
 import com.clipevery.ui.base.starSolid
 import com.clipevery.ui.darken
+import com.clipevery.ui.favoriteColor
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -299,11 +300,9 @@ fun ClipeverySearchWindow() {
                                                 contentDescription = "Favorite",
                                                 tint =
                                                     if (clipSearchService.searchFavorite) {
-                                                        Color(
-                                                            0xFFFFCE34,
-                                                        )
+                                                        favoriteColor()
                                                     } else {
-                                                        MaterialTheme.colors.onSurface
+                                                        MaterialTheme.colors.primary
                                                     },
                                             )
                                         }
@@ -324,7 +323,7 @@ fun ClipeverySearchWindow() {
                                         ) {
                                             Icon(
                                                 modifier = Modifier.size(20.dp),
-                                                painter = if (clipSearchService.searchSort) expandCircleDown() else expandCircleUp(),
+                                                painter = if (clipSearchService.searchSort) descSort() else ascSort(),
                                                 contentDescription = "Sort by creation time",
                                                 tint = MaterialTheme.colors.primary,
                                             )
