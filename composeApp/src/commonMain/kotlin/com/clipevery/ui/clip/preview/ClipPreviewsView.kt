@@ -15,12 +15,16 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -32,22 +36,31 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.dp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.app.AppWindowManager
 import com.clipevery.clip.ClipPreviewService
+import com.clipevery.i18n.GlobalCopywriter
+import com.clipevery.ui.base.ClipIconButton
+import com.clipevery.ui.base.ClipTooltipAreaView
+import com.clipevery.ui.base.toTop
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ClipPreviewsView() {
     val current = LocalKoinApplication.current
+    val copywriter = current.koin.get<GlobalCopywriter>()
     val clipPreviewService = current.koin.get<ClipPreviewService>()
     val appWindowManager = current.koin.get<AppWindowManager>()
 
@@ -56,6 +69,8 @@ fun ClipPreviewsView() {
     var scrollJob: Job? by remember { mutableStateOf(null) }
     val coroutineScope = rememberCoroutineScope()
     val rememberClipDataList = remember(clipPreviewService.refreshTime) { clipPreviewService.clipDataList }
+
+    var showToTop by remember { mutableStateOf(false) }
 
     DisposableEffect(Unit) {
         coroutineScope.launch {
@@ -88,8 +103,11 @@ fun ClipPreviewsView() {
                 listState.firstVisibleItemScrollOffset
         }.distinctUntilChanged().collect { (_, _) ->
             val visibleItems = listState.layoutInfo.visibleItemsInfo
-            if (visibleItems.isNotEmpty() && visibleItems.last().index == rememberClipDataList.size - 1) {
-                clipPreviewService.loadClipPreviewList(force = true, toLoadMore = true)
+            if (visibleItems.isNotEmpty()) {
+                if (visibleItems.last().index == rememberClipDataList.size - 1) {
+                    clipPreviewService.loadClipPreviewList(force = true, toLoadMore = true)
+                }
+                showToTop = visibleItems.last().index >= 30
             }
 
             isScrolling = true
@@ -181,5 +199,53 @@ fun ClipPreviewsView() {
                     hoverColor = MaterialTheme.colors.onBackground,
                 ),
         )
+
+        if (showToTop) {
+            Row(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .padding(end = 30.dp, bottom = 30.dp),
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                var transparency by remember { mutableStateOf(0.5f) }
+
+                Spacer(modifier = Modifier.weight(1f))
+                ClipTooltipAreaView(
+                    text = copywriter.getText("Scroll_to_top"),
+                    delayMillis = 1000,
+                ) {
+                    ClipIconButton(
+                        size = 40.dp,
+                        onClick = {
+                            coroutineScope.launch {
+                                listState.animateScrollToItem(0)
+                            }
+                        },
+                        modifier =
+                            Modifier
+                                .background(MaterialTheme.colors.surface.copy(alpha = transparency), CircleShape)
+                                .onPointerEvent(
+                                    eventType = PointerEventType.Enter,
+                                    onEvent = {
+                                        transparency = 1.0f
+                                    },
+                                )
+                                .onPointerEvent(
+                                    eventType = PointerEventType.Exit,
+                                    onEvent = {
+                                        transparency = 0.5f
+                                    },
+                                ),
+                    ) {
+                        Icon(
+                            painter = toTop(),
+                            contentDescription = "To Top",
+                            modifier = Modifier.size(30.dp),
+                            tint = MaterialTheme.colors.primary.copy(alpha = transparency),
+                        )
+                    }
+                }
+            }
+        }
     }
 }

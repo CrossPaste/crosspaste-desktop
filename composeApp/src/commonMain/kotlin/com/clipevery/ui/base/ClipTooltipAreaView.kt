@@ -23,9 +23,11 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun ClipTooltipAreaView(
     text: String,
+    delayMillis: Int = 500,
     content: @Composable () -> Unit,
 ) {
     TooltipArea(
+        delayMillis = delayMillis,
         tooltip = {
             Box(
                 modifier =
