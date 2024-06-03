@@ -1,6 +1,7 @@
 package com.clipevery.sync
 
 import com.clipevery.dao.signal.SignalDao
+import com.clipevery.dao.sync.HostInfo
 import com.clipevery.dao.sync.SyncRuntimeInfo
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.dao.sync.SyncState
@@ -9,6 +10,7 @@ import com.clipevery.net.SyncInfoFactory
 import com.clipevery.net.clientapi.FailureResult
 import com.clipevery.net.clientapi.SuccessResult
 import com.clipevery.net.clientapi.SyncClientApi
+import com.clipevery.utils.DesktopNetUtils.hostPreFixMatch
 import com.clipevery.utils.TelnetUtils
 import com.clipevery.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -81,9 +83,7 @@ class DesktopSyncHandler(
                 }
             }
 
-            val currentDeviceSyncInfo = getCurrentSyncInfo()
-
-            resolveConnecting(currentDeviceSyncInfo)
+            resolveConnecting()
 
             if (syncRuntimeInfo.connectState != SyncState.CONNECTED) {
                 failTime++
@@ -96,7 +96,17 @@ class DesktopSyncHandler(
     }
 
     private fun getCurrentSyncInfo(): SyncInfo {
-        return syncInfoFactory.createSyncInfo()
+        val hostInfoFilter: (HostInfo) -> Boolean =
+            syncRuntimeInfo.connectHostAddress?.let { hostAddress ->
+                syncRuntimeInfo.connectNetworkPrefixLength?.let { networkPrefixLength ->
+                    { hostInfo ->
+                        networkPrefixLength == hostInfo.networkPrefixLength &&
+                            hostPreFixMatch(hostAddress, hostInfo.hostAddress, networkPrefixLength)
+                    }
+                } ?: { true }
+            } ?: { true }
+
+        return syncInfoFactory.createSyncInfo(hostInfoFilter)
     }
 
     private suspend fun waitNext() {
@@ -144,8 +154,7 @@ class DesktopSyncHandler(
 
     private suspend fun doForceResolve() {
         if (syncRuntimeInfo.connectState == SyncState.CONNECTED) {
-            val currentDeviceSyncInfo = getCurrentSyncInfo()
-            resolveConnecting(currentDeviceSyncInfo)
+            resolveConnecting()
         }
 
         if (syncRuntimeInfo.connectState == SyncState.CONNECTED) {
@@ -161,15 +170,13 @@ class DesktopSyncHandler(
             return
         }
 
-        val currentDeviceSyncInfo = getCurrentSyncInfo()
-
-        resolveConnecting(currentDeviceSyncInfo)
+        resolveConnecting()
 
         if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
             tokenCache.getToken(syncRuntimeInfo.appInstanceId)?.let { token ->
                 trustByToken(token)
             }
-            resolveConnecting(currentDeviceSyncInfo)
+            resolveConnecting()
         }
 
         if (syncRuntimeInfo.connectState != SyncState.CONNECTED) {
@@ -198,22 +205,34 @@ class DesktopSyncHandler(
         }
     }
 
-    override suspend fun directUpdateConnected() {
+    override suspend fun tryDirectUpdateConnected() {
         mutex.withLock {
-            update {
-                this.connectState = SyncState.CONNECTED
-                this.modifyTime = RealmInstant.now()
+            telnetUtils.switchHost(syncRuntimeInfo.hostInfoList, syncRuntimeInfo.port)?.let { hostInfo ->
+                update {
+                    this.connectState = SyncState.CONNECTED
+                    this.connectHostAddress = hostInfo.hostAddress
+                    this.connectNetworkPrefixLength = hostInfo.networkPrefixLength
+                    this.modifyTime = RealmInstant.now()
+                }
+                failTime = 0
+                recommendedRefreshTime = computeRefreshTime()
+            } ?: run {
+                update {
+                    this.connectState = SyncState.DISCONNECTED
+                    this.modifyTime = RealmInstant.now()
+                }
+                failTime++
+                recommendedRefreshTime = computeRefreshTime()
             }
-            failTime = 0
-            recommendedRefreshTime = computeRefreshTime()
         }
     }
 
     private suspend fun resolveDisconnected() {
-        telnetUtils.switchHost(syncRuntimeInfo.hostList, syncRuntimeInfo.port)?.let { hostAddress ->
-            logger.info { "$hostAddress to connecting" }
+        telnetUtils.switchHost(syncRuntimeInfo.hostInfoList, syncRuntimeInfo.port)?.let { hostInfo ->
+            logger.info { "$hostInfo to connecting" }
             update {
-                this.connectHostAddress = hostAddress
+                this.connectHostAddress = hostInfo.hostAddress
+                this.connectNetworkPrefixLength = hostInfo.networkPrefixLength
                 this.connectState = SyncState.CONNECTING
                 this.modifyTime = RealmInstant.now()
             }
@@ -226,14 +245,14 @@ class DesktopSyncHandler(
         }
     }
 
-    private suspend fun resolveConnecting(currentDeviceSyncInfo: SyncInfo) {
+    private suspend fun resolveConnecting() {
         syncRuntimeInfo.connectHostAddress?.let { host ->
             if (isExistSession()) {
-                if (useSession(host, syncRuntimeInfo.port, currentDeviceSyncInfo)) {
+                if (useSession(host, syncRuntimeInfo.port)) {
                     return@resolveConnecting
                 }
             }
-            createSession(host, syncRuntimeInfo.port, currentDeviceSyncInfo)
+            createSession(host, syncRuntimeInfo.port)
         } ?: run {
             logger.info { "${syncRuntimeInfo.platformName} to disconnected" }
             update {
@@ -246,15 +265,13 @@ class DesktopSyncHandler(
     private suspend fun useSession(
         host: String,
         port: Int,
-        syncInfo: SyncInfo,
     ): Boolean {
-        return exchangeSyncInfo(host, port, syncInfo)
+        return exchangeSyncInfo(host, port)
     }
 
     private suspend fun createSession(
         host: String,
         port: Int,
-        syncInfo: SyncInfo,
     ) {
         val result =
             syncClientApi.isTrust { urlBuilder ->
@@ -283,15 +300,13 @@ class DesktopSyncHandler(
                             }
                             return
                         }
-                        exchangeSyncInfo(host, port, syncInfo)
+                        exchangeSyncInfo(host, port)
                     }
                 }
             }
             is FailureResult -> {
                 logger.info { "connect state to unverified $host $port" }
                 update {
-                    this.connectHostAddress = host
-                    this.port = port
                     this.connectState = SyncState.UNVERIFIED
                     this.modifyTime = RealmInstant.now()
                     logger.info { "createSession ${syncRuntimeInfo.platformName} UNVERIFIED" }
@@ -310,11 +325,10 @@ class DesktopSyncHandler(
     private suspend fun exchangeSyncInfo(
         host: String,
         port: Int,
-        syncInfo: SyncInfo,
     ): Boolean {
         val result =
             syncClientApi.exchangeSyncInfo(
-                syncInfo,
+                getCurrentSyncInfo(),
                 sessionCipher,
             ) { urlBuilder ->
                 buildUrl(urlBuilder, host, port)

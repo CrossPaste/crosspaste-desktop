@@ -1,5 +1,6 @@
 package com.clipevery.utils
 
+import com.clipevery.dao.sync.HostInfo
 import com.clipevery.net.ClipClient
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CompletableDeferred
@@ -18,23 +19,23 @@ class TelnetUtils(private val clipClient: ClipClient) {
     private val logger = KotlinLogging.logger {}
 
     suspend fun switchHost(
-        hostList: List<String>,
+        hostInfoList: List<HostInfo>,
         port: Int,
         timeout: Long = 500L,
-    ): String? {
-        if (hostList.isEmpty()) return null
+    ): HostInfo? {
+        if (hostInfoList.isEmpty()) return null
 
-        val result = CompletableDeferred<String?>()
+        val result = CompletableDeferred<HostInfo?>()
         val mutex = Mutex()
         val scope = CoroutineScope(Dispatchers.IO)
 
-        hostList.forEach { hostAddress ->
+        hostInfoList.forEach { hostInfo ->
             scope.launch(CoroutineName("SwitchHost")) {
                 try {
-                    if (telnet(hostAddress, port, timeout)) {
+                    if (telnet(hostInfo, port, timeout)) {
                         mutex.withLock {
                             if (!result.isCompleted) {
-                                result.complete(hostAddress)
+                                result.complete(hostInfo)
                             }
                         }
                     }
@@ -53,21 +54,21 @@ class TelnetUtils(private val clipClient: ClipClient) {
     }
 
     private suspend fun telnet(
-        hostAddress: String,
+        hostInfo: HostInfo,
         port: Int,
         timeout: Long,
     ): Boolean {
         return try {
             val httpResponse =
                 clipClient.get(timeout = timeout) { urlBuilder ->
-                    buildUrl(urlBuilder, hostAddress, port)
+                    buildUrl(urlBuilder, hostInfo.hostAddress, port)
                     buildUrl(urlBuilder, "sync", "telnet")
                 }
-            logger.info { "httpResponse.status = ${httpResponse.status.value} $hostAddress:$port" }
+            logger.info { "httpResponse.status = ${httpResponse.status.value} $hostInfo:$port" }
 
             httpResponse.status.value == 200
         } catch (e: Exception) {
-            logger.debug(e) { "telnet $hostAddress fail" }
+            logger.debug(e) { "telnet $hostInfo fail" }
             false
         }
     }
