@@ -9,6 +9,7 @@ import com.clipevery.dao.signal.SignalDao
 import com.clipevery.dao.sync.SyncRuntimeInfo
 import com.clipevery.dao.sync.SyncRuntimeInfoDao
 import com.clipevery.dao.sync.SyncState
+import com.clipevery.dao.sync.createSyncRuntimeInfo
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.net.SyncInfoFactory
 import com.clipevery.net.SyncRefresher
@@ -211,8 +212,9 @@ class DesktopSyncManager(
 
     override fun updateSyncInfo(syncInfo: SyncInfo) {
         realTimeSyncScope.launch(CoroutineName("UpdateSyncInfo")) {
-            if (!syncRuntimeInfoDao.insertOrUpdate(syncInfo)) {
-                internalSyncHandlers[syncInfo.appInfo.appInstanceId]?.directUpdateConnected()
+            val newSyncRuntimeInfo = createSyncRuntimeInfo(syncInfo)
+            if (!syncRuntimeInfoDao.insertOrUpdate(newSyncRuntimeInfo)) {
+                internalSyncHandlers[syncInfo.appInfo.appInstanceId]?.tryDirectUpdateConnected()
             }
         }
     }

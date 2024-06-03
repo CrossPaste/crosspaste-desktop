@@ -1,5 +1,6 @@
 package com.clipevery.endpoint
 
+import com.clipevery.dao.sync.HostInfo
 import com.clipevery.net.ClipServer
 import com.clipevery.os.macos.api.MacosApi
 import com.clipevery.platform.Platform
@@ -12,15 +13,15 @@ import java.io.IOException
 import java.io.InputStreamReader
 
 class DesktopEndpointInfoFactory(private val clipServer: Lazy<ClipServer>) : EndpointInfoFactory {
-    override fun createEndpointInfo(): EndpointInfo {
+    override fun createEndpointInfo(hostInfoFilter: (HostInfo) -> Boolean): EndpointInfo {
         val platform = currentPlatform()
         val port = clipServer.value.port()
         return if (platform.isMacos()) {
-            getMacEndpointInfo(port, platform)
+            getMacEndpointInfo(port, platform, hostInfoFilter)
         } else if (platform.isWindows()) {
-            getWindowEndpointInfo(port, platform)
+            getWindowEndpointInfo(port, platform, hostInfoFilter)
         } else if (platform.isLinux()) {
-            getLinuxEndpointInfo(port, platform)
+            getLinuxEndpointInfo(port, platform, hostInfoFilter)
         } else {
             throw IllegalStateException("Unsupported platform: $platform")
         }
@@ -30,6 +31,7 @@ class DesktopEndpointInfoFactory(private val clipServer: Lazy<ClipServer>) : End
 private fun getMacEndpointInfo(
     port: Int,
     platform: Platform,
+    hostInfoFilter: (HostInfo) -> Boolean,
 ): EndpointInfo {
     val deviceName = MacosApi.INSTANCE.getComputerName() ?: "Unknown"
     val deviceId = MacosApi.INSTANCE.getHardwareUUID() ?: "Unknown"
@@ -37,7 +39,7 @@ private fun getMacEndpointInfo(
         deviceId = deviceId,
         deviceName = deviceName,
         platform = platform,
-        hostList = DesktopNetUtils.getHostList(),
+        hostInfoList = DesktopNetUtils.getHostInfoList(hostInfoFilter),
         port = port,
     )
 }
@@ -45,6 +47,7 @@ private fun getMacEndpointInfo(
 private fun getWindowEndpointInfo(
     port: Int,
     platform: Platform,
+    hostInfoFilter: (HostInfo) -> Boolean,
 ): EndpointInfo {
     val deviceName = Kernel32Util.getComputerName()
     val deviceId = getWindowDeviceId()
@@ -52,7 +55,7 @@ private fun getWindowEndpointInfo(
         deviceId = deviceId,
         deviceName = deviceName,
         platform = platform,
-        hostList = DesktopNetUtils.getHostList(),
+        hostInfoList = DesktopNetUtils.getHostInfoList(hostInfoFilter),
         port = port,
     )
 }
@@ -77,6 +80,7 @@ fun getWindowDeviceId(): String {
 fun getLinuxEndpointInfo(
     port: Int,
     platform: Platform,
+    hostInfoFilter: (HostInfo) -> Boolean,
 ): EndpointInfo {
     fun getHostName(): String {
         val process = Runtime.getRuntime().exec("hostname")
@@ -92,7 +96,7 @@ fun getLinuxEndpointInfo(
         deviceId = deviceId,
         deviceName = deviceName,
         platform = platform,
-        hostList = DesktopNetUtils.getHostList(),
+        hostInfoList = DesktopNetUtils.getHostInfoList(hostInfoFilter),
         port = port,
     )
 }

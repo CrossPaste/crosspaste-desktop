@@ -244,7 +244,8 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
         Button(
             modifier = Modifier.height(28.dp),
             onClick = {
-                syncRuntimeInfoDao.insertOrUpdate(syncInfo)
+                val newSyncRuntimeInfo = createSyncRuntimeInfo(syncInfo)
+                syncRuntimeInfoDao.insertOrUpdate(newSyncRuntimeInfo)
             },
             shape = RoundedCornerShape(4.dp),
             border = BorderStroke(1.dp, connectedColor()),

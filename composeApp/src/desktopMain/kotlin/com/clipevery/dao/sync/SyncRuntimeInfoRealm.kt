@@ -1,8 +1,6 @@
 package com.clipevery.dao.sync
 
-import com.clipevery.dto.sync.SyncInfo
 import io.realm.kotlin.Realm
-import io.realm.kotlin.ext.toRealmList
 import io.realm.kotlin.query.RealmResults
 import io.realm.kotlin.query.Sort
 import io.realm.kotlin.types.RealmInstant
@@ -49,56 +47,56 @@ class SyncRuntimeInfoRealm(private val realm: Realm) : SyncRuntimeInfoDao {
 
     private fun updateSyncRuntimeInfo(
         syncRuntimeInfo: SyncRuntimeInfo,
-        syncInfo: SyncInfo,
+        newSyncRuntimeInfo: SyncRuntimeInfo,
     ): Boolean {
         var hasModify = false
-        if (syncRuntimeInfo.appVersion != syncInfo.appInfo.appVersion) {
-            syncRuntimeInfo.appVersion = syncInfo.appInfo.appVersion
+        if (syncRuntimeInfo.appVersion != newSyncRuntimeInfo.appVersion) {
+            syncRuntimeInfo.appVersion = newSyncRuntimeInfo.appVersion
             hasModify = true
         }
 
-        if (syncRuntimeInfo.userName != syncInfo.appInfo.userName) {
-            syncRuntimeInfo.userName = syncInfo.appInfo.userName
+        if (syncRuntimeInfo.userName != newSyncRuntimeInfo.userName) {
+            syncRuntimeInfo.userName = newSyncRuntimeInfo.userName
             hasModify = true
         }
 
-        if (syncRuntimeInfo.deviceId != syncInfo.endpointInfo.deviceId) {
-            syncRuntimeInfo.deviceId = syncInfo.endpointInfo.deviceId
+        if (syncRuntimeInfo.deviceId != newSyncRuntimeInfo.deviceId) {
+            syncRuntimeInfo.deviceId = newSyncRuntimeInfo.deviceId
             hasModify = true
         }
 
-        if (syncRuntimeInfo.deviceName != syncInfo.endpointInfo.deviceName) {
-            syncRuntimeInfo.deviceName = syncInfo.endpointInfo.deviceName
+        if (syncRuntimeInfo.deviceName != newSyncRuntimeInfo.deviceName) {
+            syncRuntimeInfo.deviceName = newSyncRuntimeInfo.deviceName
             hasModify = true
         }
 
-        if (syncRuntimeInfo.platformName != syncInfo.endpointInfo.platform.name) {
-            syncRuntimeInfo.platformName = syncInfo.endpointInfo.platform.name
+        if (syncRuntimeInfo.platformName != newSyncRuntimeInfo.platformName) {
+            syncRuntimeInfo.platformName = newSyncRuntimeInfo.platformName
             hasModify = true
         }
 
-        if (syncRuntimeInfo.platformVersion != syncInfo.endpointInfo.platform.version) {
-            syncRuntimeInfo.platformVersion = syncInfo.endpointInfo.platform.version
+        if (syncRuntimeInfo.platformVersion != newSyncRuntimeInfo.platformVersion) {
+            syncRuntimeInfo.platformVersion = newSyncRuntimeInfo.platformVersion
             hasModify = true
         }
 
-        if (syncRuntimeInfo.platformArch != syncInfo.endpointInfo.platform.arch) {
-            syncRuntimeInfo.platformArch = syncInfo.endpointInfo.platform.arch
+        if (syncRuntimeInfo.platformArch != newSyncRuntimeInfo.platformArch) {
+            syncRuntimeInfo.platformArch = newSyncRuntimeInfo.platformArch
             hasModify = true
         }
 
-        if (syncRuntimeInfo.platformBitMode != syncInfo.endpointInfo.platform.bitMode) {
-            syncRuntimeInfo.platformBitMode = syncInfo.endpointInfo.platform.bitMode
+        if (syncRuntimeInfo.platformBitMode != newSyncRuntimeInfo.platformBitMode) {
+            syncRuntimeInfo.platformBitMode = newSyncRuntimeInfo.platformBitMode
             hasModify = true
         }
 
-        if (hostListEqual(syncRuntimeInfo.hostList, syncInfo.endpointInfo.hostList)) {
-            syncRuntimeInfo.hostList = syncInfo.endpointInfo.hostList.toRealmList()
+        if (!hostInfoListEqual(syncRuntimeInfo.hostInfoList, newSyncRuntimeInfo.hostInfoList)) {
+            syncRuntimeInfo.hostInfoList = newSyncRuntimeInfo.hostInfoList
             hasModify = true
         }
 
-        if (syncRuntimeInfo.port != syncInfo.endpointInfo.port) {
-            syncRuntimeInfo.port = syncInfo.endpointInfo.port
+        if (syncRuntimeInfo.port != newSyncRuntimeInfo.port) {
+            syncRuntimeInfo.port = newSyncRuntimeInfo.port
             hasModify = true
         }
 
@@ -110,15 +108,15 @@ class SyncRuntimeInfoRealm(private val realm: Realm) : SyncRuntimeInfoDao {
         return hasModify
     }
 
-    override fun insertOrUpdate(syncInfo: SyncInfo): Boolean {
+    override fun insertOrUpdate(syncRuntimeInfo: SyncRuntimeInfo): Boolean {
         try {
             return realm.writeBlocking {
-                query(SyncRuntimeInfo::class, "appInstanceId == $0", syncInfo.appInfo.appInstanceId)
+                query(SyncRuntimeInfo::class, "appInstanceId == $0", syncRuntimeInfo.appInstanceId)
                     .first()
                     .find()?.let {
-                        return@let updateSyncRuntimeInfo(it, syncInfo)
+                        return@let updateSyncRuntimeInfo(it, syncRuntimeInfo)
                     } ?: run {
-                    copyToRealm(createSyncRuntimeInfo(syncInfo))
+                    copyToRealm(syncRuntimeInfo)
                     return@run true
                 }
             }
