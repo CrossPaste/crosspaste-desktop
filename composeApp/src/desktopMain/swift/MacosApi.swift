@@ -218,7 +218,7 @@ public func bringToFront(windowTitle: UnsafePointer<CChar>) -> UnsafePointer<CCh
 }
 
 @_cdecl("simulatePasteCommand")
-func simulatePasteCommand(keyCodesPointer: UnsafePointer<Int32>, count: Int) {
+public func simulatePasteCommand(keyCodesPointer: UnsafePointer<Int32>, count: Int) {
     if (count <= 0) {
         return
     }
