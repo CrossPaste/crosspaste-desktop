@@ -154,7 +154,13 @@ compose.desktop {
                         else -> "x86_64-apple-macos10.15"
                     }
 
-                val arch = targetArch.split("-")[0]
+                val archDir =
+                    when {
+                        currentArch.contains("arm") || currentArch.contains("aarch64") -> "darwin-aarch64"
+                        else -> "darwin-x86_64"
+                    }
+
+                val libMacosApiFile = layout.buildDirectory.file("classes/kotlin/desktop/main/$archDir/libMacosApi.dylib").get().asFile
 
                 commandLine(
                     "swiftc",
@@ -163,10 +169,10 @@ compose.desktop {
                     "-target",
                     targetArch,
                     "-o",
-                    layout.buildDirectory.file("classes/kotlin/desktop/main/darwin-$arch/libMacosApi.dylib").get().asFile.absolutePath,
+                    libMacosApiFile.absolutePath,
                 )
 
-                outputs.file(layout.buildDirectory.file("classes/kotlin/desktop/main/darwin-$arch/libMacosApi.dylib").get().asFile)
+                outputs.file(libMacosApiFile)
             }
 
             tasks.named("desktopJar") {
