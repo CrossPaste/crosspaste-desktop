@@ -1,4 +1,5 @@
 
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.yaml.snakeyaml.LoaderOptions
@@ -313,6 +314,13 @@ compose.desktop {
 tasks.withType<Test> {
     useJUnitPlatform()
     systemProperty("appEnv", "TEST")
+    testLogging {
+        events = setOf(TestLogEvent.PASSED, TestLogEvent.SKIPPED, TestLogEvent.FAILED)
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showExceptions = true
+        showCauses = true
+        showStackTraces = true
+    }
 }
 
 // region Work around temporary Compose bugs.

@@ -37,7 +37,7 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Build with Gradle
-        run: ./gradlew build --stacktrace
+        run: ./gradlew build
 
       - name: Prepare Conveyor
         run: |
