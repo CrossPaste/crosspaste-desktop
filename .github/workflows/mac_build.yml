@@ -1,0 +1,59 @@
+name: Mac Build
+
+on:
+  push:
+    branches:
+      - 'mac-*'
+  pull_request:
+    branches:
+      - 'mac-*'
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          check-latest: true
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ./composeApp/resources
+            ./composeApp/jbr
+          key: >
+            ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*',
+            '**/gradle-wrapper.properties', '**/libs.versions.toml',
+            '**/webDriver.properties', '**/jbr.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Build with Gradle
+        run: ./gradlew build
+
+      - name: Run tests
+        run: ./gradlew desktopTest
+
+      - name: Prepare Conveyor
+        run: |
+          echo "${{ secrets.DEVELOPER_ID_APPLICATION }}" | base64 --decode > developerID_application.p12
+      - name: Run Conveyor
+        uses: hydraulic-software/conveyor/actions/build@v14.2
+        env:
+          MAC_SIGNING_KEY_FILE_PATH: $PWD/developerID_application.p12
+          APPLE_ASP: ${{ secrets.APPLE_ASP }}
+
+        with:
+          command: make mac-app -Kapp.machines=mac.amd64
+
+          extra_flags: -f ci.conveyor.conf
+
+          agree_to_license: 1
