@@ -126,54 +126,65 @@ class DesktopSyncHandler(
         syncRuntimeInfo.connectHostAddress?.let {
             return it
         } ?: run {
-            forceResolve()
+            mutex.withLock {
+                // getConnectionHostAddress may be called by multiple threads
+                // only one thread enters to solve the connection problem
+                // when other threads enter after the solution is completed
+                // we should check again whether the connection is resolved
+                // and then decide whether to resolve the connection problem again
+                if (syncRuntimeInfo.connectHostAddress != null) {
+                    return syncRuntimeInfo.connectHostAddress
+                } else {
+                    doForceResolve()
+                }
+            }
             return syncRuntimeInfo.connectHostAddress
+        }
+    }
+
+    private suspend fun doForceResolve() {
+        if (syncRuntimeInfo.connectState == SyncState.CONNECTED) {
+            val currentDeviceSyncInfo = getCurrentSyncInfo()
+            resolveConnecting(currentDeviceSyncInfo)
+        }
+
+        if (syncRuntimeInfo.connectState == SyncState.CONNECTED) {
+            failTime = 0
+            recommendedRefreshTime = computeRefreshTime()
+            return
+        }
+
+        resolveDisconnected()
+        if (syncRuntimeInfo.connectState != SyncState.CONNECTING) {
+            failTime++
+            recommendedRefreshTime = computeRefreshTime()
+            return
+        }
+
+        val currentDeviceSyncInfo = getCurrentSyncInfo()
+
+        resolveConnecting(currentDeviceSyncInfo)
+
+        if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
+            tokenCache.getToken(syncRuntimeInfo.appInstanceId)?.let { token ->
+                trustByToken(token)
+            }
+            resolveConnecting(currentDeviceSyncInfo)
+        }
+
+        if (syncRuntimeInfo.connectState != SyncState.CONNECTED) {
+            failTime++
+            recommendedRefreshTime = computeRefreshTime()
+        } else {
+            failTime = 0
+            recommendedRefreshTime = computeRefreshTime()
         }
     }
 
     override suspend fun forceResolve() {
         mutex.withLock {
-            if (syncRuntimeInfo.connectState == SyncState.CONNECTED) {
-                val currentDeviceSyncInfo = getCurrentSyncInfo()
-                resolveConnecting(currentDeviceSyncInfo)
-            }
-
-            if (syncRuntimeInfo.connectState == SyncState.CONNECTED) {
-                failTime = 0
-                recommendedRefreshTime = computeRefreshTime()
-                return@withLock
-            }
-
-            resolveDisconnected()
-            if (syncRuntimeInfo.connectState != SyncState.CONNECTING) {
-                failTime++
-                recommendedRefreshTime = computeRefreshTime()
-                return@withLock
-            }
-
-            val currentDeviceSyncInfo = getCurrentSyncInfo()
-
-            resolveConnecting(currentDeviceSyncInfo)
-
-            if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
-                tokenCache.getToken(syncRuntimeInfo.appInstanceId)?.let { token ->
-                    trustByToken(token)
-                }
-                resolveConnecting(currentDeviceSyncInfo)
-            }
-
-            if (syncRuntimeInfo.connectState != SyncState.CONNECTED) {
-                failTime++
-                recommendedRefreshTime = computeRefreshTime()
-            } else {
-                failTime = 0
-                recommendedRefreshTime = computeRefreshTime()
-            }
+            doForceResolve()
         }
-    }
-
-    override fun updateSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo) {
-        this.syncRuntimeInfo = syncRuntimeInfo
     }
 
     override suspend fun update(block: SyncRuntimeInfo.() -> Unit): SyncRuntimeInfo? {
@@ -184,6 +195,17 @@ class DesktopSyncHandler(
             return it
         } ?: run {
             return null
+        }
+    }
+
+    override suspend fun directUpdateConnected() {
+        mutex.withLock {
+            update {
+                this.connectState = SyncState.CONNECTED
+                this.modifyTime = RealmInstant.now()
+            }
+            failTime = 0
+            recommendedRefreshTime = computeRefreshTime()
         }
     }
 

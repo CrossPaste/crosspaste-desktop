@@ -212,9 +212,7 @@ class DesktopSyncManager(
     override fun updateSyncInfo(syncInfo: SyncInfo) {
         realTimeSyncScope.launch(CoroutineName("UpdateSyncInfo")) {
             if (!syncRuntimeInfoDao.insertOrUpdate(syncInfo)) {
-                internalSyncHandlers[syncInfo.appInfo.appInstanceId]?.let { syncHandler ->
-                    doResolveSync(syncHandler)
-                }
+                internalSyncHandlers[syncInfo.appInfo.appInstanceId]?.directUpdateConnected()
             }
         }
     }

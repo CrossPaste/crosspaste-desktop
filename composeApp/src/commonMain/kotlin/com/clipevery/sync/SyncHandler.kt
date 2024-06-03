@@ -17,7 +17,7 @@ interface SyncHandler {
 
     suspend fun update(block: SyncRuntimeInfo.() -> Unit): SyncRuntimeInfo?
 
-    fun updateSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo)
+    suspend fun directUpdateConnected()
 
     suspend fun clearContext()
 
