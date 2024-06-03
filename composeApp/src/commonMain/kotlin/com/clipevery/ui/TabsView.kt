@@ -26,9 +26,12 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -135,29 +138,48 @@ fun TabView(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun SingleTabView(
     title: String,
     clickable: () -> Unit,
 ) {
+    var hover by remember { mutableStateOf(false) }
+
     Box(
         modifier =
             Modifier
                 .height(30.dp)
-                .wrapContentSize(Alignment.CenterStart)
+                .wrapContentWidth()
+                .onPointerEvent(
+                    eventType = PointerEventType.Enter,
+                    onEvent = {
+                        hover = true
+                    },
+                )
+                .onPointerEvent(
+                    eventType = PointerEventType.Exit,
+                    onEvent = {
+                        hover = false
+                    },
+                )
                 .onClick(onClick = { clickable() }),
     ) {
-        Text(
-            text = title,
-            color = MaterialTheme.colors.onBackground,
-            fontSize = 14.sp,
-            style = TextStyle(fontWeight = FontWeight.Normal),
-            fontFamily = FontFamily.SansSerif,
+        Row(
             modifier =
-                Modifier
-                    .padding(horizontal = 10.dp)
-                    .align(Alignment.BottomStart),
-        )
+                Modifier.wrapContentSize()
+                    .padding(horizontal = 5.dp)
+                    .clip(RoundedCornerShape(5.dp))
+                    .background(if (hover) MaterialTheme.colors.selectColor() else MaterialTheme.colors.background)
+                    .padding(horizontal = 5.dp, vertical = 3.dp),
+        ) {
+            Text(
+                text = title,
+                color = MaterialTheme.colors.onBackground,
+                fontSize = 14.sp,
+                style = TextStyle(fontWeight = FontWeight.Normal),
+                fontFamily = FontFamily.SansSerif,
+            )
+        }
     }
 }
