@@ -3,10 +3,10 @@ name: Mac Build
 on:
   push:
     branches:
-      - 'mac-*'
+      - 'v-*'
   pull_request:
     branches:
-      - 'mac-*'
+      - 'v-*'
 
 jobs:
   build:
@@ -37,10 +37,7 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Build with Gradle
-        run: ./gradlew build
-
-      - name: Run tests
-        run: ./gradlew desktopTest
+        run: ./gradlew build --stacktrace
 
       - name: Prepare Conveyor
         run: |
