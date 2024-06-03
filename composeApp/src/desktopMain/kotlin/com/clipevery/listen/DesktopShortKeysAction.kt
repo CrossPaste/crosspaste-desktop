@@ -86,10 +86,9 @@ class DesktopShortKeysAction(
                 )
 
             if (result.size > 0) {
-                clipboardService.tryWriteClipboard(result[0], localOnly = false)
+                clipboardService.tryWriteClipboard(result[0], localOnly = true)
+                appWindowManager.toPaste()
             }
-
-            clipSearchService.toPaste()
         }
     }
 
