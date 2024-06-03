@@ -169,6 +169,7 @@ compose.desktop {
 
             jvmArgs("--add-opens", "java.desktop/sun.lwawt=ALL-UNNAMED")
             jvmArgs("--add-opens", "java.desktop/sun.lwawt.macosx=ALL-UNNAMED")
+            jvmArgs("-Dapple.awt.enableTemplateImages=true")
         }
 
         val loggerLevel = project.findProperty("loggerLevel")?.toString() ?: "info"
