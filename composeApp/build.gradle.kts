@@ -298,7 +298,7 @@ compose.desktop {
                 linux {
                     targetFormats(TargetFormat.Deb)
 
-                    val buildFullPlatform: Boolean = System.getenv("BUILD_FULL_PLATFORM") == "Yes"
+                    val buildFullPlatform: Boolean = System.getenv("BUILD_FULL_PLATFORM") == "YES"
 
                     val jbrArchList =
                         if (buildFullPlatform) {
