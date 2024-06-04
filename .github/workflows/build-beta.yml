@@ -94,7 +94,7 @@ jobs:
           MAC_SIGNING_KEY_FILE_PATH: $PWD/developerID_application.p12
           APPLE_ASP: ${{ secrets.APPLE_ASP }}
         with:
-          command: make mac-app -Kapp.machines=mac.amd64
+          command: make mac-app
           extra_flags: -f ci.conveyor.conf
           signing_key: "keyring"
           agree_to_license: 1
