@@ -87,13 +87,13 @@ jobs:
       - name: Prepare Conveyor
         run: |
           echo "${{ secrets.DEVELOPER_ID_APPLICATION }}" | base64 --decode > developerID_application.p12
-          sed -i 's/\${RELEASE_TOKEN}/${{ secrets.RELEASE_TOKEN }}/g' conveyor.conf
 
       - name: Run Conveyor
         uses: hydraulic-software/conveyor/actions/build@v14.2
         env:
-          MAC_SIGNING_KEY_FILE_PATH: $PWD/developerID_application.p12
+          MAC_SIGNING_KEY_FILE_PATH: ${{ github.workspace }}/developerID_application.p12
           APPLE_ASP: ${{ secrets.APPLE_ASP }}
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         with:
           command: make site
           extra_flags: -f ci.conveyor.conf
