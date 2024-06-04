@@ -3,10 +3,10 @@ name: "Build Swift Library"
 on:
   push:
     branches:
-      - 'v-*'
+      - 'pre-v-*'
   pull_request:
     branches:
-      - 'v-*'
+      - 'pre-v-*'
 
 jobs:
   build:
@@ -36,9 +36,12 @@ jobs:
           
           swiftc -emit-library composeApp/src/desktopMain/swift/MacosApi.swift -target ${{ matrix.arch }} -o ${{ github.workspace }}/composeApp/build/$LIB_DIR/libMacosApi.dylib
 
+          echo "PREFIX=$LIB_DIR" >> $GITHUB_ENV
         working-directory: ${{ github.workspace }}
 
       - uses: actions/upload-artifact@v3
+        env:
+          LIB_DIR: ${{ steps.build.outputs.lib_dir }}
         with:
-          name: ${{ matrix.arch }}-libMacosApi.dylib
+          name: ${{ env.PREFIX }}-libMacosApi.dylib
           path: composeApp/build/**/libMacosApi.dylib
