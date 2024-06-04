@@ -5,10 +5,13 @@ on:
     workflows: ["Build Swift Library"]
     types:
       - completed
+    branches:
+      - 'v-*'
 
 jobs:
-  build:
+  on-success:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     env:
       BUILD_MAIN_PATH: composeApp/build/classes/kotlin/desktop/main
     steps:
@@ -72,3 +75,9 @@ jobs:
           signing_key: "keyring"
 
           agree_to_license: 1
+
+  on-failure:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+      - run: echo 'Build Swift Library failed.'
