@@ -65,7 +65,7 @@ jobs:
           else
             LIB_DIR="darwin-x86-64"
           fi
-          mkdir -p ${{ github.workspace }}/composeApp/build/$LIB_DIR
+          mkdir -p ${{ github.workspace }}/composeApp/dylib/$LIB_DIR
           swiftc -emit-library composeApp/src/desktopMain/swift/MacosApi.swift -target ${{ matrix.arch }} -o ${{ github.workspace }}/composeApp/dylib/$LIB_DIR/libMacosApi.dylib
           echo "PREFIX=$LIB_DIR" >> $GITHUB_ENV
 
