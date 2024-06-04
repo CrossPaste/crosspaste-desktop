@@ -92,12 +92,11 @@ jobs:
         uses: hydraulic-software/conveyor/actions/build@v14.2
         env:
           MAC_SIGNING_KEY_FILE_PATH: ${{ github.workspace }}/developerID_application.p12
-          APPLE_ASP: ${{ secrets.APPLE_ASP }}
           RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         with:
           command: make site
           extra_flags: -f ci.conveyor.conf
-          signing_key: "keyring"
+          signing_key: ${{ secrets.APPLE_ASP }}
           agree_to_license: 1
 
       - name: Cleanup Conveyor
