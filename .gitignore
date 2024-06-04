@@ -26,3 +26,4 @@ chromedriver-*/
 /composeApp/.user/
 /output/
 /composeApp/jbr/
+/composeApp/dylib/

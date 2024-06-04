@@ -157,7 +157,7 @@ compose.desktop {
                 val archDir =
                     when {
                         currentArch.contains("arm") || currentArch.contains("aarch64") -> "darwin-aarch64"
-                        else -> "darwin-x86_64"
+                        else -> "darwin-x86-64"
                     }
 
                 val libMacosApiFile = layout.buildDirectory.file("classes/kotlin/desktop/main/$archDir/libMacosApi.dylib").get().asFile

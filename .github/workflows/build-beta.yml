@@ -9,8 +9,36 @@ on:
       - 'v-*-beta'
 
 jobs:
-  build-macos:
+  check-dylib-cache:
+    runs-on: ubuntu-latest
+    outputs:
+      cache-hit: ${{ steps.check-dylib-cache.outputs.cache-hit }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: check-dylib-cache
+        id: cache-check
+        uses: actions/cache@v4
+        with:
+          path: ./composeApp/dylib
+          key: mac-dylib-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
+
+      - uses: actions/upload-artifact@v3
+        if: steps.cache-check.outputs.cache-hit == 'true'
+        with:
+          name: darwin-x86-64-libMacosApi.dylib
+          path: composeApp/dylib/darwin-x86-64/libMacosApi.dylib
+
+      - uses: actions/upload-artifact@v3
+        if: steps.cache-check.outputs.cache-hit == 'true'
+        with:
+          name: darwin-aarch64-libMacosApi.dylib
+          path: composeApp/dylib/darwin-aarch64/libMacosApi.dylib
+
+  build-x86-64-macos:
+    needs: check-cache
     runs-on: macos-latest
+    if: needs.check-cache.outputs.cache-hit != 'true'
     strategy:
       matrix:
         arch:
@@ -18,6 +46,12 @@ jobs:
           - arm64-apple-macos11
     steps:
       - uses: actions/checkout@v3
+
+      - name: check-dylib-cache
+        uses: actions/cache@v4
+        with:
+          path: ./composeApp/dylib
+          key: mac-dylib-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
 
       - name: Set up Swift environment
         run: brew install swift
@@ -29,16 +63,16 @@ jobs:
           if [[ "$ARCH_DIR" == *"arm64"* ]]; then
             LIB_DIR="darwin-aarch64"
           else
-            LIB_DIR="darwin-x86_64"
+            LIB_DIR="darwin-x86-64"
           fi
           mkdir -p ${{ github.workspace }}/composeApp/build/$LIB_DIR
-          swiftc -emit-library composeApp/src/desktopMain/swift/MacosApi.swift -target ${{ matrix.arch }} -o ${{ github.workspace }}/composeApp/build/$LIB_DIR/libMacosApi.dylib
+          swiftc -emit-library composeApp/src/desktopMain/swift/MacosApi.swift -target ${{ matrix.arch }} -o ${{ github.workspace }}/composeApp/dylib/$LIB_DIR/libMacosApi.dylib
           echo "PREFIX=$LIB_DIR" >> $GITHUB_ENV
 
       - uses: actions/upload-artifact@v3
         with:
           name: ${{ env.PREFIX }}-libMacosApi.dylib
-          path: composeApp/build/**/libMacosApi.dylib
+          path: composeApp/dylib/${{ env.PREFIX }}/libMacosApi.dylib
 
   build-ubuntu:
     needs: build-macos
@@ -70,11 +104,11 @@ jobs:
             '**/webDriver.properties', '**/jbr.yaml') }}
           restore-keys: ${{ runner.os }}-gradle-
 
-      - name: Download x86_64 macOS dylib
+      - name: Download x86-64 macOS dylib
         uses: actions/download-artifact@v3
         with:
-          name: darwin-x86_64-libMacosApi.dylib
-          path: ${{ env.BUILD_MAIN_PATH }}/darwin-x86_64
+          name: darwin-x86-64-libMacosApi.dylib
+          path: ${{ env.BUILD_MAIN_PATH }}/darwin-x86-64
 
       - name: Download arm64 macOS dylib
         uses: actions/download-artifact@v3
@@ -104,3 +138,18 @@ jobs:
       - name: Cleanup Conveyor
         if: always()
         run: rm -f developerID_application.p12
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: clipevery-mac-amd64
+          path: output/clipevery-*-mac-amd64.zip
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: clipevery-windows
+          path: output/clipevery-*-windows-amd64.zip
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: clipevery-linux
+          path: output/clipevery-*-linux-amd64.tar.gz
