@@ -16,9 +16,6 @@ jobs:
         arch:
           - x86_64-apple-macos10.15
           - arm64-apple-macos11
-    outputs:
-      x86_64-path: ${{ steps.set-x86_64-path.outputs.dylib-path }}
-      arm64-path: ${{ steps.set-arm64-path.outputs.dylib-path }}
     steps:
       - uses: actions/checkout@v3
 
@@ -26,6 +23,7 @@ jobs:
         run: brew install swift
 
       - name: Build dylib
+        working-directory: ${{ github.workspace }}
         run: |
           ARCH_DIR=${{ matrix.arch }}
           if [[ "$ARCH_DIR" == *"arm64"* ]]; then
@@ -35,20 +33,18 @@ jobs:
           fi
           mkdir -p ${{ github.workspace }}/composeApp/build/$LIB_DIR
           swiftc -emit-library composeApp/src/desktopMain/swift/MacosApi.swift -target ${{ matrix.arch }} -o ${{ github.workspace }}/composeApp/build/$LIB_DIR/libMacosApi.dylib
+          echo "PREFIX=$LIB_DIR" >> $GITHUB_ENV
 
-      - name: Set output path for x86_64
-        if: ${{ matrix.arch == 'x86_64-apple-macos10.15' }}
-        id: set-x86_64-path
-        run: echo "::set-output name=dylib-path::${{ github.workspace }}/composeApp/build/darwin-x86_64/libMacosApi.dylib"
-
-      - name: Set output path for arm64
-        if: ${{ matrix.arch == 'arm64-apple-macos11' }}
-        id: set-arm64-path
-        run: echo "::set-output name=dylib-path::${{ github.workspace }}/composeApp/build/darwin-aarch64/libMacosApi.dylib"
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.PREFIX }}-libMacosApi.dylib
+          path: composeApp/build/**/libMacosApi.dylib
 
   build-ubuntu:
     needs: build-macos
     runs-on: ubuntu-latest
+    env:
+      BUILD_MAIN_PATH: ${{ github.workspace }}/composeApp/build/classes/kotlin/desktop/main
     steps:
       - uses: actions/checkout@v3
 
@@ -67,20 +63,28 @@ jobs:
             ~/.gradle/wrapper
             ./composeApp/resources
             ./composeApp/jbr
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml', '**/webDriver.properties', '**/jbr.yaml') }}
+          key: >
+            ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*',
+            '**/gradle-wrapper.properties', '**/libs.versions.toml',
+            '**/webDriver.properties', '**/jbr.yaml') }}
           restore-keys: ${{ runner.os }}-gradle-
 
       - name: Download x86_64 macOS dylib
         uses: actions/download-artifact@v3
         with:
-          name: ${{ needs.build-macos.outputs.x86_64-path }}
-          path: ${{ github.workspace }}/composeApp/build/classes/kotlin/desktop/main/darwin-x86_64
+          name: darwin-x86_64-libMacosApi.dylib
+          path: ${{ env.BUILD_MAIN_PATH }}/darwin-x86_64
 
       - name: Download arm64 macOS dylib
         uses: actions/download-artifact@v3
         with:
-          name: ${{ needs.build-macos.outputs.arm64-path }}
-          path: ${{ github.workspace }}/composeApp/build/classes/kotlin/desktop/main/darwin-aarch64
+          name: darwin-x86_64-libMacosApi.dylib
+          path: ${{ env.BUILD_MAIN_PATH }}/darwin-aarch64
+
+      - name: Rename downloaded dylib
+        run: |
+          mv ${{ env.BUILD_MAIN_PATH }}/darwin-x86_64/darwin-x86_64-libMacosApi.dylib ${{ env.BUILD_MAIN_PATH }}/darwin-x86_64/libMacosApi.dylib    
+          mv ${{ env.BUILD_MAIN_PATH }}/darwin-aarch64/darwin-x86_64-libMacosApi.dylib ${{ env.BUILD_MAIN_PATH }}/darwin-aarch64/libMacosApi.dylib
 
       - name: Build with Gradle
         run: ./gradlew build
