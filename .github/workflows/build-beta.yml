@@ -91,12 +91,13 @@ jobs:
       - name: Run Conveyor
         uses: hydraulic-software/conveyor/actions/build@v14.2
         env:
+          APPLE_ASP: ${{ secrets.APPLE_ASP }}
           MAC_SIGNING_KEY_FILE_PATH: ${{ github.workspace }}/developerID_application.p12
           RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         with:
           command: make site
           extra_flags: -f ci.conveyor.conf
-          signing_key: ${{ secrets.APPLE_ASP }}
+          signing_key: ${{ secrets.SIGNING_KEY }}
           agree_to_license: 1
 
       - name: Cleanup Conveyor
