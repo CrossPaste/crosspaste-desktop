@@ -35,8 +35,8 @@ jobs:
           name: darwin-aarch64-libMacosApi.dylib
           path: composeApp/dylib/darwin-aarch64/libMacosApi.dylib
 
-  build-x86-64-macos:
-    needs: check-cache
+  build-macos:
+    needs: check-dylib-cache
     runs-on: macos-latest
     if: needs.check-cache.outputs.cache-hit != 'true'
     strategy:
