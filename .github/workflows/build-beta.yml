@@ -1,0 +1,105 @@
+name: "Build Beta"
+
+on:
+  push:
+    branches:
+      - 'v-*-beta'
+  pull_request:
+    branches:
+      - 'v-*-beta'
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch:
+          - x86_64-apple-macos10.15
+          - arm64-apple-macos11
+    outputs:
+      x86_64-path: ${{ steps.set-x86_64-path.outputs.dylib-path }}
+      arm64-path: ${{ steps.set-arm64-path.outputs.dylib-path }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Swift environment
+        run: brew install swift
+
+      - name: Build dylib
+        run: |
+          ARCH_DIR=${{ matrix.arch }}
+          if [[ "$ARCH_DIR" == *"arm64"* ]]; then
+            LIB_DIR="darwin-aarch64"
+          else
+            LIB_DIR="darwin-x86_64"
+          fi
+          mkdir -p ${{ github.workspace }}/composeApp/build/$LIB_DIR
+          swiftc -emit-library composeApp/src/desktopMain/swift/MacosApi.swift -target ${{ matrix.arch }} -o ${{ github.workspace }}/composeApp/build/$LIB_DIR/libMacosApi.dylib
+
+      - name: Set output path for x86_64
+        if: ${{ matrix.arch == 'x86_64-apple-macos10.15' }}
+        id: set-x86_64-path
+        run: echo "::set-output name=dylib-path::${{ github.workspace }}/composeApp/build/darwin-x86_64/libMacosApi.dylib"
+
+      - name: Set output path for arm64
+        if: ${{ matrix.arch == 'arm64-apple-macos11' }}
+        id: set-arm64-path
+        run: echo "::set-output name=dylib-path::${{ github.workspace }}/composeApp/build/darwin-aarch64/libMacosApi.dylib"
+
+  build-ubuntu:
+    needs: build-macos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          check-latest: true
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ./composeApp/resources
+            ./composeApp/jbr
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml', '**/webDriver.properties', '**/jbr.yaml') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      - name: Download x86_64 macOS dylib
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ needs.build-macos.outputs.x86_64-path }}
+          path: ${{ github.workspace }}/composeApp/build/classes/kotlin/desktop/main/darwin-x86_64
+
+      - name: Download arm64 macOS dylib
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ needs.build-macos.outputs.arm64-path }}
+          path: ${{ github.workspace }}/composeApp/build/classes/kotlin/desktop/main/darwin-aarch64
+
+      - name: Build with Gradle
+        run: ./gradlew build
+
+      - name: Prepare Conveyor
+        run: |
+          echo "${{ secrets.DEVELOPER_ID_APPLICATION }}" | base64 --decode > developerID_application.p12
+
+      - name: Run Conveyor
+        uses: hydraulic-software/conveyor/actions/build@v14.2
+        env:
+          MAC_SIGNING_KEY_FILE_PATH: $PWD/developerID_application.p12
+          APPLE_ASP: ${{ secrets.APPLE_ASP }}
+        with:
+          command: make mac-app -Kapp.machines=mac.amd64
+          extra_flags: -f ci.conveyor.conf
+          signing_key: "keyring"
+          agree_to_license: 1
+
+      - name: Cleanup Conveyor
+        if: always()
+        run: rm -f developerID_application.p12
