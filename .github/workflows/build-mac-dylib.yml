@@ -1,4 +1,4 @@
-name: Build Swift Library
+name: "Build Swift Library"
 
 on:
   push:

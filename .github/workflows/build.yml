@@ -1,4 +1,4 @@
-name: Build beta version
+name: "Build Beta Version"
 
 on:
   workflow_run:
@@ -61,6 +61,7 @@ jobs:
       - name: Prepare Conveyor
         run: |
           echo "${{ secrets.DEVELOPER_ID_APPLICATION }}" | base64 --decode > developerID_application.p12
+
       - name: Run Conveyor
         uses: hydraulic-software/conveyor/actions/build@v14.2
         env:
@@ -75,6 +76,10 @@ jobs:
           signing_key: "keyring"
 
           agree_to_license: 1
+
+      - name: Cleanup Conveyor
+        if: always()
+        run: rm -f developerID_application.p12
 
   on-failure:
     runs-on: ubuntu-latest
