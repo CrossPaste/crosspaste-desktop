@@ -1,17 +1,16 @@
-name: Mac Build
+name: Build beta version
 
 on:
-  push:
-    branches:
-      - 'v-*'
-  pull_request:
-    branches:
-      - 'v-*'
+  workflow_run:
+    workflows: ["Build Swift Library"]
+    types:
+      - completed
 
 jobs:
   build:
-    runs-on: macos-latest
-
+    runs-on: ubuntu-latest
+    env:
+      BUILD_MAIN_PATH: composeApp/build/classes/kotlin/desktop/main
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 17
@@ -39,6 +38,23 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build
 
+      - name: Download x86_64 macOS dylib
+        uses: actions/download-artifact@v3
+        with:
+          name: darwin-x86_64-libMacosApi.dylib
+          path: ${{ env.BUILD_MAIN_PATH }}/darwin-x86_64/darwin-x86_64-libMacosApi.dylib
+
+      - name: Download arm64 macOS dylib
+        uses: actions/download-artifact@v3
+        with:
+          name: darwin-aarch64-libMacosApi.dylib
+          path: ${{ env.BUILD_MAIN_PATH }}/darwin-aarch64/darwin-aarch64-libMacosApi.dylib
+
+      - name: Rename downloaded dylib
+        run: |
+          mv ${{ env.BUILD_MAIN_PATH }}/darwin-x86_64/darwin-x86_64-libMacosApi.dylib ${{ env.BUILD_MAIN_PATH }}/darwin-x86_64/libMacosApi.dylib    
+          mv ${{ env.BUILD_MAIN_PATH }}/main/darwin-aarch64/darwin-x86_64-libMacosApi.dylib ${{ env.BUILD_MAIN_PATH }}/darwin-aarch64/libMacosApi.dylib
+
       - name: Prepare Conveyor
         run: |
           echo "${{ secrets.DEVELOPER_ID_APPLICATION }}" | base64 --decode > developerID_application.p12
@@ -52,5 +68,7 @@ jobs:
           command: make mac-app -Kapp.machines=mac.amd64
 
           extra_flags: -f ci.conveyor.conf
+
+          signing_key: "keyring"
 
           agree_to_license: 1
