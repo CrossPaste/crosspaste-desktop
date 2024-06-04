@@ -6,7 +6,7 @@ on:
     types:
       - completed
     branches:
-      - 'v-*'
+      - 'pre-v-*'
 
 jobs:
   on-success:
