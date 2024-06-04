@@ -32,6 +32,8 @@ jobs:
             LIB_DIR="darwin-x86_64"
           fi
           
+          mkdir -p ${{ github.workspace }}/composeApp/build/$LIB_DIR
+          
           swiftc -emit-library composeApp/src/desktopMain/swift/MacosApi.swift -target ${{ matrix.arch }} -o ${{ github.workspace }}/composeApp/build/$LIB_DIR/libMacosApi.dylib
 
         working-directory: ${{ github.workspace }}
