@@ -78,13 +78,8 @@ jobs:
       - name: Download arm64 macOS dylib
         uses: actions/download-artifact@v3
         with:
-          name: darwin-x86_64-libMacosApi.dylib
+          name: darwin-aarch64-libMacosApi.dylib
           path: ${{ env.BUILD_MAIN_PATH }}/darwin-aarch64
-
-      - name: Rename downloaded dylib
-        run: |
-          mv ${{ env.BUILD_MAIN_PATH }}/darwin-x86_64/darwin-x86_64-libMacosApi.dylib ${{ env.BUILD_MAIN_PATH }}/darwin-x86_64/libMacosApi.dylib    
-          mv ${{ env.BUILD_MAIN_PATH }}/darwin-aarch64/darwin-x86_64-libMacosApi.dylib ${{ env.BUILD_MAIN_PATH }}/darwin-aarch64/libMacosApi.dylib
 
       - name: Build with Gradle
         run: ./gradlew build
