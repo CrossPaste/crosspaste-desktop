@@ -1,0 +1,88 @@
+name: "Build Beta Version"
+
+on:
+  workflow_run:
+    workflows: ["Build Swift Library"]
+    types:
+      - completed
+    branches:
+      - 'v-*'
+
+jobs:
+  on-success:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    env:
+      BUILD_MAIN_PATH: composeApp/build/classes/kotlin/desktop/main
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          check-latest: true
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ./composeApp/resources
+            ./composeApp/jbr
+          key: >
+            ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*',
+            '**/gradle-wrapper.properties', '**/libs.versions.toml',
+            '**/webDriver.properties', '**/jbr.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Build with Gradle
+        run: ./gradlew build
+
+      - name: Download x86_64 macOS dylib
+        uses: actions/download-artifact@v3
+        with:
+          name: darwin-x86_64-libMacosApi.dylib
+          path: ${{ env.BUILD_MAIN_PATH }}/darwin-x86_64/darwin-x86_64-libMacosApi.dylib
+
+      - name: Download arm64 macOS dylib
+        uses: actions/download-artifact@v3
+        with:
+          name: darwin-aarch64-libMacosApi.dylib
+          path: ${{ env.BUILD_MAIN_PATH }}/darwin-aarch64/darwin-aarch64-libMacosApi.dylib
+
+      - name: Rename downloaded dylib
+        run: |
+          mv ${{ env.BUILD_MAIN_PATH }}/darwin-x86_64/darwin-x86_64-libMacosApi.dylib ${{ env.BUILD_MAIN_PATH }}/darwin-x86_64/libMacosApi.dylib    
+          mv ${{ env.BUILD_MAIN_PATH }}/main/darwin-aarch64/darwin-x86_64-libMacosApi.dylib ${{ env.BUILD_MAIN_PATH }}/darwin-aarch64/libMacosApi.dylib
+
+      - name: Prepare Conveyor
+        run: |
+          echo "${{ secrets.DEVELOPER_ID_APPLICATION }}" | base64 --decode > developerID_application.p12
+
+      - name: Run Conveyor
+        uses: hydraulic-software/conveyor/actions/build@v14.2
+        env:
+          MAC_SIGNING_KEY_FILE_PATH: $PWD/developerID_application.p12
+          APPLE_ASP: ${{ secrets.APPLE_ASP }}
+
+        with:
+          command: make mac-app -Kapp.machines=mac.amd64
+
+          extra_flags: -f ci.conveyor.conf
+
+          signing_key: "keyring"
+
+          agree_to_license: 1
+
+      - name: Cleanup Conveyor
+        if: always()
+        run: rm -f developerID_application.p12
+
+  on-failure:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+      - run: echo 'Build Swift Library failed.'

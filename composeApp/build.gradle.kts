@@ -1,4 +1,5 @@
 
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.yaml.snakeyaml.LoaderOptions
@@ -146,18 +147,32 @@ compose.desktop {
                 group = "build"
                 description = "Compile Swift code and output the dylib to the build directory."
 
-                // 定义编译命令
+                val currentArch = System.getProperty("os.arch")
+                val targetArch =
+                    when {
+                        currentArch.contains("arm") || currentArch.contains("aarch64") -> "arm64-apple-macos11"
+                        else -> "x86_64-apple-macos10.15"
+                    }
+
+                val archDir =
+                    when {
+                        currentArch.contains("arm") || currentArch.contains("aarch64") -> "darwin-aarch64"
+                        else -> "darwin-x86_64"
+                    }
+
+                val libMacosApiFile = layout.buildDirectory.file("classes/kotlin/desktop/main/$archDir/libMacosApi.dylib").get().asFile
+
                 commandLine(
                     "swiftc",
                     "-emit-library",
                     "src/desktopMain/swift/MacosApi.swift",
                     "-target",
-                    "x86_64-apple-macos10.15",
+                    targetArch,
                     "-o",
-                    layout.buildDirectory.file("classes/kotlin/desktop/main/darwin-x86-64/libMacosApi.dylib").get().asFile.absolutePath,
+                    libMacosApiFile.absolutePath,
                 )
 
-                outputs.file(layout.buildDirectory.file("classes/kotlin/desktop/main/darwin-x86-64/libMacosApi.dylib").get().asFile)
+                outputs.file(libMacosApiFile)
             }
 
             tasks.named("desktopJar") {
@@ -313,6 +328,13 @@ compose.desktop {
 tasks.withType<Test> {
     useJUnitPlatform()
     systemProperty("appEnv", "TEST")
+    testLogging {
+        events = setOf(TestLogEvent.PASSED, TestLogEvent.SKIPPED, TestLogEvent.FAILED)
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showExceptions = true
+        showCauses = true
+        showStackTraces = true
+    }
 }
 
 // region Work around temporary Compose bugs.
