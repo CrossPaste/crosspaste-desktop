@@ -1,0 +1,106 @@
+name: "Build Beta"
+
+on:
+  push:
+    branches:
+      - 'v-*-beta'
+  pull_request:
+    branches:
+      - 'v-*-beta'
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch:
+          - x86_64-apple-macos10.15
+          - arm64-apple-macos11
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Swift environment
+        run: brew install swift
+
+      - name: Build dylib
+        working-directory: ${{ github.workspace }}
+        run: |
+          ARCH_DIR=${{ matrix.arch }}
+          if [[ "$ARCH_DIR" == *"arm64"* ]]; then
+            LIB_DIR="darwin-aarch64"
+          else
+            LIB_DIR="darwin-x86_64"
+          fi
+          mkdir -p ${{ github.workspace }}/composeApp/build/$LIB_DIR
+          swiftc -emit-library composeApp/src/desktopMain/swift/MacosApi.swift -target ${{ matrix.arch }} -o ${{ github.workspace }}/composeApp/build/$LIB_DIR/libMacosApi.dylib
+          echo "PREFIX=$LIB_DIR" >> $GITHUB_ENV
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.PREFIX }}-libMacosApi.dylib
+          path: composeApp/build/**/libMacosApi.dylib
+
+  build-ubuntu:
+    needs: build-macos
+    runs-on: ubuntu-latest
+    env:
+      BUILD_FULL_PLATFORM: YES
+      BUILD_MAIN_PATH: ${{ github.workspace }}/composeApp/build/classes/kotlin/desktop/main
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          check-latest: true
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ./composeApp/resources
+            ./composeApp/jbr
+          key: >
+            ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*',
+            '**/gradle-wrapper.properties', '**/libs.versions.toml',
+            '**/webDriver.properties', '**/jbr.yaml') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      - name: Download x86_64 macOS dylib
+        uses: actions/download-artifact@v3
+        with:
+          name: darwin-x86_64-libMacosApi.dylib
+          path: ${{ env.BUILD_MAIN_PATH }}/darwin-x86_64
+
+      - name: Download arm64 macOS dylib
+        uses: actions/download-artifact@v3
+        with:
+          name: darwin-aarch64-libMacosApi.dylib
+          path: ${{ env.BUILD_MAIN_PATH }}/darwin-aarch64
+
+      - name: Build with Gradle
+        run: ./gradlew build
+
+      - name: Prepare Conveyor
+        run: |
+          echo "${{ secrets.DEVELOPER_ID_APPLICATION }}" | base64 --decode > developerID_application.p12
+
+      - name: Run Conveyor
+        uses: hydraulic-software/conveyor/actions/build@v14.2
+        env:
+          APPLE_ASP: ${{ secrets.APPLE_ASP }}
+          MAC_SIGNING_KEY_FILE_PATH: ${{ github.workspace }}/developerID_application.p12
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        with:
+          command: make site
+          extra_flags: -f ci.conveyor.conf
+          signing_key: ${{ secrets.SIGNING_KEY }}
+          agree_to_license: 1
+
+      - name: Cleanup Conveyor
+        if: always()
+        run: rm -f developerID_application.p12

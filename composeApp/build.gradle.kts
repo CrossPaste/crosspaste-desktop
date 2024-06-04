@@ -244,32 +244,26 @@ compose.desktop {
 
                     when (result) {
                         "x86_64" -> {
-                            getJbrReleases(
-                                "osx-x64",
+                            getAllDependencies(
                                 jbrReleases,
                                 jbrDir,
-                            )
-                            getChromeDriver(
-                                "mac-x64",
                                 webDriverProperties,
-                                appResourcesRootDir
-                                    .get()
-                                    .dir("macos-x64"),
+                                appResourcesRootDir.get(),
+                                listOf("osx-x64"),
+                                listOf("mac-x64"),
+                                listOf("macos-x64"),
                             )
                         }
 
                         "arm64" -> {
-                            getJbrReleases(
-                                "osx-aarch64",
+                            getAllDependencies(
                                 jbrReleases,
                                 jbrDir,
-                            )
-                            getChromeDriver(
-                                "mac-arm64",
                                 webDriverProperties,
-                                appResourcesRootDir
-                                    .get()
-                                    .dir("macos-arm64"),
+                                appResourcesRootDir.get(),
+                                listOf("osx-aarch64"),
+                                listOf("mac-arm64"),
+                                listOf("macos-arm64"),
                             )
                         }
                     }
@@ -283,17 +277,14 @@ compose.desktop {
                     val architecture = System.getProperty("os.arch")
 
                     if (architecture.contains("64")) {
-                        getJbrReleases(
-                            "windows-x64",
+                        getAllDependencies(
                             jbrReleases,
                             jbrDir,
-                        )
-                        getChromeDriver(
-                            "win64",
                             webDriverProperties,
-                            appResourcesRootDir
-                                .get()
-                                .dir("windows-x64"),
+                            appResourcesRootDir.get(),
+                            listOf("windows-x64"),
+                            listOf("win64"),
+                            listOf("windows-x64"),
                         )
                     } else {
                         throw IllegalArgumentException("Unsupported architecture: $architecture")
@@ -307,17 +298,37 @@ compose.desktop {
                 linux {
                     targetFormats(TargetFormat.Deb)
 
-                    getJbrReleases(
-                        "linux-x64",
+                    val buildFullPlatform: Boolean = System.getenv("BUILD_FULL_PLATFORM") == "YES"
+
+                    val jbrArchList =
+                        if (buildFullPlatform) {
+                            listOf("osx-x64", "osx-aarch64", "windows-x64", "linux-x64")
+                        } else {
+                            listOf("linux-x64")
+                        }
+
+                    val chromeArchList =
+                        if (buildFullPlatform) {
+                            listOf("mac-x64", "mac-arm64", "win64", "linux64")
+                        } else {
+                            listOf("linux64")
+                        }
+
+                    val chromeDirNameList =
+                        if (buildFullPlatform) {
+                            listOf("macos-x64", "macos-arm64", "windows-x64", "linux-x64")
+                        } else {
+                            listOf("linux-x64")
+                        }
+
+                    getAllDependencies(
                         jbrReleases,
                         jbrDir,
-                    )
-                    getChromeDriver(
-                        "linux64",
                         webDriverProperties,
-                        appResourcesRootDir
-                            .get()
-                            .dir("linux-x64"),
+                        appResourcesRootDir.get(),
+                        jbrArchList,
+                        chromeArchList,
+                        chromeDirNameList,
                     )
                 }
             }
@@ -345,12 +356,38 @@ configurations.all {
     }
 }
 
+fun getAllDependencies(
+    jbrReleases: JbrReleases,
+    jbrDir: File,
+    webDriverProperties: Properties,
+    chromeDir: Directory,
+    jbrArchList: List<String>,
+    chromeArchList: List<String>,
+    chromeDirNameList: List<String>,
+) {
+    assert(jbrArchList.size == chromeArchList.size)
+    assert(jbrArchList.size == chromeDirNameList.size)
+
+    for (i in jbrArchList.indices) {
+        getJbrReleases(
+            jbrArchList[i],
+            jbrReleases,
+            jbrDir,
+        )
+        getChromeDriver(
+            chromeArchList[i],
+            webDriverProperties,
+            chromeDir.dir(chromeDirNameList[i]),
+        )
+    }
+}
+
 fun getJbrReleases(
-    platform: String,
+    arch: String,
     jbrReleases: JbrReleases,
     downDir: File,
 ) {
-    val jbrDetails = jbrReleases.jbr[platform]!!
+    val jbrDetails = jbrReleases.jbr[arch]!!
     val fileName = jbrDetails.url.substringAfterLast("/")
     downJbrReleases(jbrDetails.url, downDir) {
         !downDir.resolve(fileName).exists()
@@ -373,12 +410,12 @@ fun downJbrReleases(
 }
 
 fun getChromeDriver(
-    driverOsArch: String,
+    arch: String,
     properties: Properties,
     downDir: Directory,
 ) {
-    val chromeDriver = "chromedriver-$driverOsArch"
-    val chromeHeadlessShell = "chrome-headless-shell-$driverOsArch"
+    val chromeDriver = "chromedriver-$arch"
+    val chromeHeadlessShell = "chrome-headless-shell-$arch"
 
     downloadChromeDriver(chromeDriver, properties.getProperty(chromeDriver)!!, downDir) {
         downDir.dir(chromeDriver).asFileTree.isEmpty
