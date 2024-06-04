@@ -300,23 +300,26 @@ compose.desktop {
 
                     val buildFullPlatform: Boolean = System.getenv("BUILD_FULL_PLATFORM") == "Yes"
 
-                    val jbrArchList = if (buildFullPlatform) {
-                        listOf("osx-x64", "osx-aarch64", "windows-x64", "linux-x64")
-                    } else {
-                        listOf("linux-x64")
-                    }
+                    val jbrArchList =
+                        if (buildFullPlatform) {
+                            listOf("osx-x64", "osx-aarch64", "windows-x64", "linux-x64")
+                        } else {
+                            listOf("linux-x64")
+                        }
 
-                    val chromeArchList = if (buildFullPlatform) {
-                        listOf("mac-x64", "mac-arm64", "win64", "linux64")
-                    } else {
-                        listOf("linux64")
-                    }
+                    val chromeArchList =
+                        if (buildFullPlatform) {
+                            listOf("mac-x64", "mac-arm64", "win64", "linux64")
+                        } else {
+                            listOf("linux64")
+                        }
 
-                    val chromeDirNameList = if (buildFullPlatform) {
-                        listOf("macos-x64", "macos-arm64", "windows-x64", "linux-x64")
-                    } else {
-                        listOf("linux-x64")
-                    }
+                    val chromeDirNameList =
+                        if (buildFullPlatform) {
+                            listOf("macos-x64", "macos-arm64", "windows-x64", "linux-x64")
+                        } else {
+                            listOf("linux-x64")
+                        }
 
                     getAllDependencies(
                         jbrReleases,
@@ -360,7 +363,8 @@ fun getAllDependencies(
     chromeDir: Directory,
     jbrArchList: List<String>,
     chromeArchList: List<String>,
-    chromeDirNameList: List<String>) {
+    chromeDirNameList: List<String>,
+) {
     assert(jbrArchList.size == chromeArchList.size)
     assert(jbrArchList.size == chromeDirNameList.size)
 
