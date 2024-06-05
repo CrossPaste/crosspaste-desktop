@@ -63,8 +63,9 @@ jobs:
           path: composeApp/dylib/${{ env.PREFIX }}/libMacosApi.dylib
 
   build-ubuntu:
-    needs: build-macos
+    needs: [check-dylib-cache, build-macos]
     runs-on: ubuntu-latest
+    if: always()
     env:
       BUILD_FULL_PLATFORM: YES
       BUILD_MAIN_PATH: ${{ github.workspace }}/composeApp/build/classes/kotlin/desktop/main
