@@ -104,6 +104,9 @@ jobs:
             '**/webDriver.properties', '**/jbr.yaml') }}
           restore-keys: ${{ runner.os }}-gradle-
 
+      - name: Build with Gradle
+        run: ./gradlew build
+
       - name: Download x86-64 macOS dylib
         uses: actions/download-artifact@v3
         with:
@@ -115,9 +118,6 @@ jobs:
         with:
           name: darwin-aarch64-libMacosApi.dylib
           path: ${{ env.BUILD_MAIN_PATH }}/darwin-aarch64
-
-      - name: Build with Gradle
-        run: ./gradlew build
 
       - name: Prepare Conveyor
         run: |
@@ -139,17 +139,16 @@ jobs:
         if: always()
         run: rm -f developerID_application.p12
 
-      - uses: actions/upload-artifact@v3
-        with:
-          name: clipevery-mac-amd64
-          path: output/clipevery-*-mac-amd64.zip
+      - name: Get Timestamp
+        id: timestamp
+        run: echo "::set-output name=timestamp::$(date +%Y-%m-%d-%H-%M-%S)"
 
-      - uses: actions/upload-artifact@v3
+      - uses: ryand56/r2-upload-action@latest
         with:
-          name: clipevery-windows
-          path: output/clipevery-*-windows-amd64.zip
-
-      - uses: actions/upload-artifact@v3
-        with:
-          name: clipevery-linux
-          path: output/clipevery-*-linux-amd64.tar.gz
+          r2-account-id: ${{ secrets.R2_ACCOUNT_ID }}
+          r2-access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          r2-bucket: ${{ secrets.R2_BUCKET }}
+          source-dir: output
+          destination-dir: desktop-${{ steps.timestamp.outputs.timestamp }}
+          output-file-url: 'true'
