@@ -36,13 +36,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: check-dylib-cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ github.workspace }}/composeApp/dylib
-          key: mac-dylib-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
-          enableCrossOsArchive: true
-
       - name: Set up Swift environment
         run: brew install swift
 
@@ -62,10 +55,13 @@ jobs:
       - name: List dylib directory2
         run: ls -la ${{ github.workspace }}/composeApp/dylib
 
-      - uses: actions/upload-artifact@v3
+      - name: Save dylib to cache
+        id: cache-dylib-save
+        uses: actions/cache/save@v4
         with:
-          name: ${{ env.PREFIX }}-libMacosApi.dylib
-          path: composeApp/dylib/${{ env.PREFIX }}/libMacosApi.dylib
+          path: ${{ github.workspace }}/composeApp/dylib/${{ env.PREFIX }}/libMacosApi.dylib
+          key: mac-dylib-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
+          enableCrossOsArchive: true
 
   build-ubuntu:
     needs: [check-dylib-cache, build-macos]
