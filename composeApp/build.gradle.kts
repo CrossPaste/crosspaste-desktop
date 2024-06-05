@@ -308,6 +308,12 @@ compose.desktop {
                             from("dylib/")
                             into(layout.buildDirectory.file("classes/kotlin/desktop/main"))
                         }
+                        tasks.named("desktopJar") {
+                            dependsOn("copyDylibs")
+                        }
+                        tasks.named("desktopTest") {
+                            dependsOn("copyDylibs")
+                        }
                     }
 
                     val jbrArchList =
