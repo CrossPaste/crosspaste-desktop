@@ -20,7 +20,7 @@ jobs:
         id: cache-check
         uses: actions/cache@v4
         with:
-          path: ${{ github.workspace }}/composeApp/dylib/darwin-x86-64/libMacosApi.dylib
+          path: ./composeApp/dylib/darwin-x86-64/libMacosApi.dylib
           key: mac-dylib-darwin-x86-64-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
@@ -59,7 +59,7 @@ jobs:
         id: cache-dylib-save
         uses: actions/cache/save@v4
         with:
-          path: ${{ github.workspace }}/composeApp/dylib/${{ env.PREFIX }}/libMacosApi.dylib
+          path: ./composeApp/dylib/${{ env.PREFIX }}/libMacosApi.dylib
           key: mac-dylib-${{ env.PREFIX }}-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
@@ -98,14 +98,14 @@ jobs:
       - name: check-dylib-cache
         uses: actions/cache@v4
         with:
-          path: ${{ github.workspace }}/composeApp/dylib/darwin-x86-64/libMacosApi.dylib
+          path: ./composeApp/dylib/darwin-x86-64/libMacosApi.dylib
           key: mac-dylib-darwin-x86-64-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
       - name: check-dylib-cache
         uses: actions/cache@v4
         with:
-          path: ${{ github.workspace }}/composeApp/dylib/darwin-aarch64/libMacosApi.dylib
+          path: ./composeApp/dylib/darwin-aarch64/libMacosApi.dylib
           key: mac-dylib-darwin-aarch64-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
@@ -118,13 +118,13 @@ jobs:
       - name: Check if specific file exists
         id: file_check
         run: |
-          if [ -f "${{ github.workspace }}/composeApp/dylib/darwin-x86-64/libMacosApi.dylib" ]; then
+          if [ -f "./composeApp/dylib/darwin-x86-64/libMacosApi.dylib" ]; then
             echo "::set-output name=x86-64-exists::true"
           else
             echo "::set-output name=x86-64-exists::false"
           fi
           
-          if [ -f "${{ github.workspace }}/composeApp/dylib/darwin-aarch64/libMacosApi.dylib" ]; then
+          if [ -f "./composeApp/dylib/darwin-aarch64/libMacosApi.dylib" ]; then
             echo "::set-output name=aarch64-exists::true"
           else
             echo "::set-output name=aarch64-exists::false"
