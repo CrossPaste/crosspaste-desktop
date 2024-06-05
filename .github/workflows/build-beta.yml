@@ -98,7 +98,14 @@ jobs:
       - name: check-dylib-cache
         uses: actions/cache@v4
         with:
-          path: ${{ github.workspace }}/composeApp/dylib
+          path: ${{ github.workspace }}/composeApp/dylib/darwin-x86-64/libMacosApi.dylib
+          key: mac-dylib-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
+          enableCrossOsArchive: true
+
+      - name: check-dylib-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/composeApp/dylib/darwin-aarch64/libMacosApi.dylib
           key: mac-dylib-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
