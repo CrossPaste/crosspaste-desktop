@@ -20,7 +20,7 @@ jobs:
         id: cache-check
         uses: actions/cache@v4
         with:
-          path: ./composeApp/dylib
+          path: ${{ github.workspace }}/composeApp/dylib
           key: mac-dylib-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
 
   build-macos:
@@ -38,7 +38,7 @@ jobs:
       - name: check-dylib-cache
         uses: actions/cache@v4
         with:
-          path: ./composeApp/dylib
+          path: ${{ github.workspace }}/composeApp/dylib
           key: mac-dylib-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
 
       - name: Set up Swift environment
@@ -92,6 +92,12 @@ jobs:
             '**/gradle-wrapper.properties', '**/libs.versions.toml',
             '**/webDriver.properties', '**/jbr.yaml') }}
           restore-keys: ${{ runner.os }}-gradle-
+
+      - name: check-dylib-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/composeApp/dylib
+          key: mac-dylib-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
 
 #      - name: Build with Gradle
 #        run: ./gradlew build
