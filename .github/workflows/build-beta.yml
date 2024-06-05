@@ -23,6 +23,9 @@ jobs:
           path: ${{ github.workspace }}/composeApp/dylib
           key: mac-dylib-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
 
+      - name: List dylib directory1
+        run: ls -la ${{ github.workspace }}/composeApp/dylib
+
   build-macos:
     needs: check-dylib-cache
     runs-on: macos-latest
@@ -56,6 +59,9 @@ jobs:
           mkdir -p ${{ github.workspace }}/composeApp/dylib/$LIB_DIR
           swiftc -emit-library composeApp/src/desktopMain/swift/MacosApi.swift -target ${{ matrix.arch }} -o ${{ github.workspace }}/composeApp/dylib/$LIB_DIR/libMacosApi.dylib
           echo "PREFIX=$LIB_DIR" >> $GITHUB_ENV
+
+      - name: List dylib directory2
+        run: ls -la ${{ github.workspace }}/composeApp/dylib
 
       - uses: actions/upload-artifact@v3
         with:
@@ -98,6 +104,9 @@ jobs:
         with:
           path: ${{ github.workspace }}/composeApp/dylib
           key: mac-dylib-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
+
+      - name: List dylib directory3
+        run: ls -la ${{ github.workspace }}/composeApp/dylib
 
 #      - name: Build with Gradle
 #        run: ./gradlew build
