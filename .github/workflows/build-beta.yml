@@ -22,9 +22,7 @@ jobs:
         with:
           path: ${{ github.workspace }}/composeApp/dylib
           key: mac-dylib-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
-
-      - name: List dylib directory1
-        run: ls -la ${{ github.workspace }}/composeApp/dylib
+          enableCrossOsArchive: true
 
   build-macos:
     needs: check-dylib-cache
@@ -43,6 +41,7 @@ jobs:
         with:
           path: ${{ github.workspace }}/composeApp/dylib
           key: mac-dylib-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
+          enableCrossOsArchive: true
 
       - name: Set up Swift environment
         run: brew install swift
@@ -98,12 +97,14 @@ jobs:
             '**/gradle-wrapper.properties', '**/libs.versions.toml',
             '**/webDriver.properties', '**/jbr.yaml') }}
           restore-keys: ${{ runner.os }}-gradle-
+          enableCrossOsArchive: true
 
       - name: check-dylib-cache
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/composeApp/dylib
           key: mac-dylib-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
+          enableCrossOsArchive: true
 
       - name: List dylib directory3
         run: ls -la ${{ github.workspace }}/composeApp/dylib
