@@ -99,13 +99,13 @@ jobs:
       - name: Check if specific file exists
         id: file_check
         run: |
-          if [ -f "${{ env.BUILD_MAIN_PATH }}/darwin-x86-64/libMacosApi.dylib" ]; then
+          if [ -f "${{ github.workspace }}/composeApp/dylib/darwin-x86-64/libMacosApi.dylib" ]; then
             echo "::set-output name=x86-64-exists::true"
           else
             echo "::set-output name=x86-64-exists::false"
           fi
           
-          if [ -f "${{ env.BUILD_MAIN_PATH }}/darwin-aarch64/libMacosApi.dylib" ]; then
+          if [ -f "${{ github.workspace }}/composeApp/dylib/darwin-aarch64/libMacosApi.dylib" ]; then
             echo "::set-output name=aarch64-exists::true"
           else
             echo "::set-output name=aarch64-exists::false"
