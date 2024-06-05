@@ -12,7 +12,7 @@ jobs:
   check-dylib-cache:
     runs-on: ubuntu-latest
     outputs:
-      cache-hit: ${{ steps.check-dylib-cache.outputs.cache-hit }}
+      cache-hit: ${{ steps.cache-check.outputs.cache-hit }}
     steps:
       - uses: actions/checkout@v3
 
@@ -23,22 +23,10 @@ jobs:
           path: ./composeApp/dylib
           key: mac-dylib-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
 
-      - uses: actions/upload-artifact@v3
-        if: steps.cache-check.outputs.cache-hit == 'true'
-        with:
-          name: darwin-x86-64-libMacosApi.dylib
-          path: composeApp/dylib/darwin-x86-64/libMacosApi.dylib
-
-      - uses: actions/upload-artifact@v3
-        if: steps.cache-check.outputs.cache-hit == 'true'
-        with:
-          name: darwin-aarch64-libMacosApi.dylib
-          path: composeApp/dylib/darwin-aarch64/libMacosApi.dylib
-
   build-macos:
     needs: check-dylib-cache
     runs-on: macos-latest
-    if: needs.check-cache.outputs.cache-hit != 'true'
+    if: needs.check-dylib-cache.outputs.cache-hit != 'true'
     strategy:
       matrix:
         arch:
@@ -104,52 +92,82 @@ jobs:
             '**/webDriver.properties', '**/jbr.yaml') }}
           restore-keys: ${{ runner.os }}-gradle-
 
-      - name: Download x86-64 macOS dylib
-        uses: actions/download-artifact@v3
-        with:
-          name: darwin-x86-64-libMacosApi.dylib
-          path: ${{ env.BUILD_MAIN_PATH }}/darwin-x86-64
-
-      - name: Download arm64 macOS dylib
-        uses: actions/download-artifact@v3
-        with:
-          name: darwin-aarch64-libMacosApi.dylib
-          path: ${{ env.BUILD_MAIN_PATH }}/darwin-aarch64
-
       - name: Build with Gradle
         run: ./gradlew build
 
-      - name: Prepare Conveyor
+      - name: Check if specific file exists
+        id: file_check
         run: |
-          echo "${{ secrets.DEVELOPER_ID_APPLICATION }}" | base64 --decode > developerID_application.p12
+          if [ -f "${{ env.BUILD_MAIN_PATH }}/darwin-x86-64/libMacosApi.dylib" ]; then
+            echo "::set-output name=x86-64-exists::true"
+          else
+            echo "::set-output name=x86-64-exists::false"
+          fi
+          
+          if [ -f "${{ env.BUILD_MAIN_PATH }}/darwin-aarch64/libMacosApi.dylib" ]; then
+            echo "::set-output name=aarch64-exists::true"
+          else
+            echo "::set-output name=aarch64-exists::false"
+          fi
 
-      - name: Run Conveyor
-        uses: hydraulic-software/conveyor/actions/build@v14.2
-        env:
-          APPLE_ASP: ${{ secrets.APPLE_ASP }}
-          MAC_SIGNING_KEY_FILE_PATH: ${{ github.workspace }}/developerID_application.p12
-          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-        with:
-          command: make site
-          extra_flags: -f ci.conveyor.conf
-          signing_key: ${{ secrets.SIGNING_KEY }}
-          agree_to_license: 1
+      - name: Print result
+        run: |
+          if [ "${{ steps.file_check.outputs.x86-64-exists }}" == "true" ]; then
+            echo "x86-64 File exists."
+          else
+            echo "x86-64 File does not exist."
+          fi
+          
+          if [ "${{ steps.file_check.outputs.aarch64-exists }}" == "true" ]; then
+            echo "aarch64 File exists."
+          else
+            echo "aarch64 File does not exist."
+          fi 
 
-      - name: Cleanup Conveyor
-        if: always()
-        run: rm -f developerID_application.p12
-
-      - uses: actions/upload-artifact@v3
-        with:
-          name: clipevery-mac-amd64
-          path: output/clipevery-*-mac-amd64.zip
-
-      - uses: actions/upload-artifact@v3
-        with:
-          name: clipevery-windows
-          path: output/clipevery-*-windows-amd64.zip
-
-      - uses: actions/upload-artifact@v3
-        with:
-          name: clipevery-linux
-          path: output/clipevery-*-linux-amd64.tar.gz
+#      - name: Download x86-64 macOS dylib
+#        uses: actions/download-artifact@v3
+#        with:
+#          name: darwin-x86-64-libMacosApi.dylib
+#          path: ${{ env.BUILD_MAIN_PATH }}/darwin-x86-64
+#
+#      - name: Download arm64 macOS dylib
+#        uses: actions/download-artifact@v3
+#        with:
+#          name: darwin-aarch64-libMacosApi.dylib
+#          path: ${{ env.BUILD_MAIN_PATH }}/darwin-aarch64
+#
+#      - name: Prepare Conveyor
+#        run: |
+#          echo "${{ secrets.DEVELOPER_ID_APPLICATION }}" | base64 --decode > developerID_application.p12
+#
+#      - name: Run Conveyor
+#        uses: hydraulic-software/conveyor/actions/build@v14.2
+#        env:
+#          APPLE_ASP: ${{ secrets.APPLE_ASP }}
+#          MAC_SIGNING_KEY_FILE_PATH: ${{ github.workspace }}/developerID_application.p12
+#          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+#        with:
+#          command: make site
+#          extra_flags: -f ci.conveyor.conf
+#          signing_key: ${{ secrets.SIGNING_KEY }}
+#          agree_to_license: 1
+#
+#      - name: Cleanup Conveyor
+#        if: always()
+#        run: rm -f developerID_application.p12
+#
+#      - name: Get Timestamp
+#        id: timestamp
+#        run: echo "::set-output name=timestamp::$(date +%Y-%m-%d-%H-%M-%S)"
+#
+#      - uses: ryand56/r2-upload-action@latest
+#        env:
+#          max_old_space_size: 4096
+#        with:
+#          r2-account-id: ${{ secrets.R2_ACCOUNT_ID }}
+#          r2-access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+#          r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+#          r2-bucket: ${{ secrets.R2_BUCKET }}
+#          source-dir: output
+#          destination-dir: desktop-${{ steps.timestamp.outputs.timestamp }}
+#          output-file-url: 'true'
