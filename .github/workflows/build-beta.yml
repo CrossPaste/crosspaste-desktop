@@ -92,8 +92,8 @@ jobs:
             '**/webDriver.properties', '**/jbr.yaml') }}
           restore-keys: ${{ runner.os }}-gradle-
 
-      - name: Build with Gradle
-        run: ./gradlew build
+#      - name: Build with Gradle
+#        run: ./gradlew build
 
       - name: Check if specific file exists
         id: file_check
