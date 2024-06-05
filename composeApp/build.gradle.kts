@@ -300,6 +300,16 @@ compose.desktop {
 
                     val buildFullPlatform: Boolean = System.getenv("BUILD_FULL_PLATFORM") == "YES"
 
+                    if (buildFullPlatform) {
+                        // If it is to build the full platform
+                        // then the GitHub action will prepare the dylibs files compiled under
+                        // the Intel and ARM architectures to the dylib directory
+                        tasks.register<Copy>("copyDylibs") {
+                            from("dylib/")
+                            into(layout.buildDirectory.file("classes/kotlin/desktop/main"))
+                        }
+                    }
+
                     val jbrArchList =
                         if (buildFullPlatform) {
                             listOf("osx-x64", "osx-aarch64", "windows-x64", "linux-x64")

@@ -78,6 +78,13 @@ jobs:
       BUILD_MAIN_PATH: ${{ github.workspace }}/composeApp/build/classes/kotlin/desktop/main
     steps:
       - uses: actions/checkout@v3
+      # https://github.com/actions/runner-images/issues/2840
+      - name: Clear unnecessary files to free up space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"  
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3
@@ -101,9 +108,6 @@ jobs:
           restore-keys: ${{ runner.os }}-gradle-
           enableCrossOsArchive: true
 
-      - name: Build with Gradle
-        run: ./gradlew build
-
       - name: check-darwin-x86-64-dylib-cache
         uses: actions/cache@v4
         with:
@@ -117,6 +121,9 @@ jobs:
           path: ./composeApp/dylib/darwin-aarch64/libMacosApi.dylib
           key: mac-dylib-darwin-aarch64-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
+
+      - name: Build with Gradle
+        run: ./gradlew build
 
       - name: Prepare Conveyor
         run: |
@@ -138,14 +145,20 @@ jobs:
         if: always()
         run: rm -f developerID_application.p12
 
-      - name: Get Timestamp
-        id: timestamp
-        run: echo "::set-output name=timestamp::$(date +%Y-%m-%d-%H-%M-%S)"
+      - name: Display file tree with sizes
+        run: |
+          echo "Displaying the size of files and directories in 'output' directory:"
+          du -ah output | sort -rh
 
       - uses: actions/upload-artifact@v3
         with:
           name: clipevery-mac-amd64
           path: output/clipevery-*-mac-amd64.zip
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: clipevery-mac-aarch64
+          path: output/clipevery-*-mac-aarch64.zip
 
       - uses: actions/upload-artifact@v3
         with:
@@ -155,4 +168,9 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: clipevery-linux
-          path: output/clipevery-*-linux-amd64.tar.gz
+          path: output/debian/clipevery_*_amd64.deb
+
+      # delete output directory to free up space, Github Action only has 14G space,
+      # to avoid the failure of insufficient space in the subsequent post recycling steps
+      - name: Delete output directory
+        run: rm -rf output
