@@ -20,8 +20,8 @@ jobs:
         id: cache-check
         uses: actions/cache@v4
         with:
-          path: ${{ github.workspace }}/composeApp/dylib
-          key: mac-dylib-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
+          path: ${{ github.workspace }}/composeApp/dylib/darwin-x86-64/libMacosApi.dylib
+          key: mac-dylib-darwin-x86-64-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
   build-macos:
@@ -60,7 +60,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ${{ github.workspace }}/composeApp/dylib/${{ env.PREFIX }}/libMacosApi.dylib
-          key: mac-dylib-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
+          key: mac-dylib-${{ env.PREFIX }}-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
   build-ubuntu:
@@ -99,14 +99,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/composeApp/dylib/darwin-x86-64/libMacosApi.dylib
-          key: mac-dylib-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
+          key: mac-dylib-darwin-x86-64-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
       - name: check-dylib-cache
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/composeApp/dylib/darwin-aarch64/libMacosApi.dylib
-          key: mac-dylib-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
+          key: mac-dylib-darwin-aarch64-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
       - name: List dylib directory3
