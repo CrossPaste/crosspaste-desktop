@@ -293,7 +293,7 @@ compose.desktop {
                 }
             }
 
-            if (os.isWindows) {
+            if (os.isWindows || buildFullPlatform) {
                 windows {
                     targetFormats(TargetFormat.Msi)
 
@@ -317,7 +317,7 @@ compose.desktop {
                 }
             }
 
-            if (os.isLinux) {
+            if (os.isLinux || buildFullPlatform) {
                 linux {
                     targetFormats(TargetFormat.Deb)
 
