@@ -123,7 +123,7 @@ jobs:
           enableCrossOsArchive: true
 
       - name: Build with Gradle
-        run: ./gradlew desktopJar
+        run: ./gradlew build
 
       - name: Prepare Conveyor
         run: |
