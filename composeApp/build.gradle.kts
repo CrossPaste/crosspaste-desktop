@@ -246,7 +246,6 @@ compose.desktop {
                 targetFormats(TargetFormat.Dmg)
 
                 macOS {
-                    iconFile = project.projectDir.toPath().parent.resolve("icon/clipevery.icns").toFile()
                     bundleID = "com.clipevery.mac"
                     appCategory = "public.app-category.utilities"
                     infoPlist {
@@ -312,8 +311,6 @@ compose.desktop {
                     } else {
                         throw IllegalArgumentException("Unsupported architecture: $architecture")
                     }
-
-                    iconFile = file("src/desktopMain/resources/icons/clipevery.ico")
                 }
             }
 
