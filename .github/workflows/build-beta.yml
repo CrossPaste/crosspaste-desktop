@@ -123,7 +123,7 @@ jobs:
           enableCrossOsArchive: true
 
       - name: Build with Gradle
-        run: ./gradlew build
+        run: ./gradlew desktopJar
 
       - name: Prepare Conveyor
         run: |
@@ -150,22 +150,26 @@ jobs:
           echo "Displaying the size of files and directories in 'output' directory:"
           du -ah output | sort -rh
 
-      - uses: actions/upload-artifact@v3
+      - name: Upload Mac amd64
+        uses: actions/upload-artifact@v3
         with:
           name: clipevery-mac-amd64
           path: output/clipevery-*-mac-amd64.zip
 
-      - uses: actions/upload-artifact@v3
+      - name: Upload Mac aarch64
+        uses: actions/upload-artifact@v3
         with:
           name: clipevery-mac-aarch64
           path: output/clipevery-*-mac-aarch64.zip
 
-      - uses: actions/upload-artifact@v3
+      - name: Upload Windows amd64
+        uses: actions/upload-artifact@v3
         with:
           name: clipevery-windows
           path: output/clipevery-*-windows-amd64.zip
 
-      - uses: actions/upload-artifact@v3
+      - name: Upload Linux amd64
+        uses: actions/upload-artifact@v3
         with:
           name: clipevery-linux
           path: output/debian/clipevery_*_amd64.deb

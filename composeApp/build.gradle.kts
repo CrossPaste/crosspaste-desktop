@@ -123,8 +123,10 @@ kotlin {
 
 dependencies {
     // Use the configurations created by the Conveyor plugin to tell Gradle/Conveyor where to find the artifacts for each platform.
+    macAmd64(compose.desktop.macos_x64)
     macAarch64(compose.desktop.macos_arm64)
     windowsAmd64(compose.desktop.windows_x64)
+    linuxAmd64(compose.desktop.linux_x64)
 }
 
 compose.desktop {
@@ -265,30 +267,28 @@ compose.desktop {
                     val process = Runtime.getRuntime().exec("uname -m")
                     val result = process.inputStream.bufferedReader().use { it.readText() }.trim()
 
-                    when (result) {
-                        "x86_64" -> {
-                            getAllDependencies(
-                                jbrReleases,
-                                jbrDir,
-                                webDriverProperties,
-                                appResourcesRootDir.get(),
-                                "osx-x64",
-                                "mac-x64",
-                                "macos-x64",
-                            )
-                        }
+                    if (result == "x86_64" || buildFullPlatform) {
+                        getAllDependencies(
+                            jbrReleases,
+                            jbrDir,
+                            webDriverProperties,
+                            appResourcesRootDir.get(),
+                            "osx-x64",
+                            "mac-x64",
+                            "macos-x64",
+                        )
+                    }
 
-                        "arm64" -> {
-                            getAllDependencies(
-                                jbrReleases,
-                                jbrDir,
-                                webDriverProperties,
-                                appResourcesRootDir.get(),
-                                "osx-aarch64",
-                                "mac-arm64",
-                                "macos-arm64",
-                            )
-                        }
+                    if (result == "arm64" || buildFullPlatform) {
+                        getAllDependencies(
+                            jbrReleases,
+                            jbrDir,
+                            webDriverProperties,
+                            appResourcesRootDir.get(),
+                            "osx-aarch64",
+                            "mac-arm64",
+                            "macos-arm64",
+                        )
                     }
                 }
             }
