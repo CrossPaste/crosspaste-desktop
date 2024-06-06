@@ -123,11 +123,16 @@ kotlin {
 
 dependencies {
     // Use the configurations created by the Conveyor plugin to tell Gradle/Conveyor where to find the artifacts for each platform.
+    macAmd64(compose.desktop.macos_x64)
     macAarch64(compose.desktop.macos_arm64)
     windowsAmd64(compose.desktop.windows_x64)
+    linuxAmd64(compose.desktop.linux_x64)
 }
 
 compose.desktop {
+
+    val buildFullPlatform: Boolean = System.getenv("BUILD_FULL_PLATFORM") == "YES"
+
     application {
 
         val os: OperatingSystem = DefaultNativePlatform.getCurrentOperatingSystem()
@@ -138,65 +143,64 @@ compose.desktop {
 
         mainClass = "com.clipevery.Clipevery"
 
-        jvmArgs("--add-opens", "java.desktop/sun.awt=ALL-UNNAMED")
-        jvmArgs("--add-opens", "java.desktop/java.awt.peer=ALL-UNNAMED")
+        if (os.isMacOsX || buildFullPlatform) {
+            if (!buildFullPlatform) {
+                tasks.register<Exec>("compileSwift") {
+                    group = "build"
+                    description = "Compile Swift code and output the dylib to the build directory."
 
-        if (os.isMacOsX) {
+                    val currentArch = System.getProperty("os.arch")
+                    val targetArch =
+                        when {
+                            currentArch.contains("arm") || currentArch.contains("aarch64") -> "arm64-apple-macos11"
+                            else -> "x86_64-apple-macos10.15"
+                        }
 
-            tasks.register<Exec>("compileSwift") {
-                group = "build"
-                description = "Compile Swift code and output the dylib to the build directory."
+                    val archDir =
+                        when {
+                            currentArch.contains("arm") || currentArch.contains("aarch64") -> "darwin-aarch64"
+                            else -> "darwin-x86-64"
+                        }
 
-                val currentArch = System.getProperty("os.arch")
-                val targetArch =
-                    when {
-                        currentArch.contains("arm") || currentArch.contains("aarch64") -> "arm64-apple-macos11"
-                        else -> "x86_64-apple-macos10.15"
-                    }
+                    val libMacosApiFile =
+                        layout.buildDirectory.file("classes/kotlin/desktop/main/$archDir/libMacosApi.dylib")
+                            .get().asFile
 
-                val archDir =
-                    when {
-                        currentArch.contains("arm") || currentArch.contains("aarch64") -> "darwin-aarch64"
-                        else -> "darwin-x86-64"
-                    }
+                    commandLine(
+                        "swiftc",
+                        "-emit-library",
+                        "src/desktopMain/swift/MacosApi.swift",
+                        "-target",
+                        targetArch,
+                        "-o",
+                        libMacosApiFile.absolutePath,
+                    )
 
-                val libMacosApiFile = layout.buildDirectory.file("classes/kotlin/desktop/main/$archDir/libMacosApi.dylib").get().asFile
+                    outputs.file(libMacosApiFile)
+                }
 
-                commandLine(
-                    "swiftc",
-                    "-emit-library",
-                    "src/desktopMain/swift/MacosApi.swift",
-                    "-target",
-                    targetArch,
-                    "-o",
-                    libMacosApiFile.absolutePath,
-                )
-
-                outputs.file(libMacosApiFile)
+                tasks.named("desktopJar") {
+                    dependsOn("compileSwift")
+                }
+                tasks.named("desktopTest") {
+                    dependsOn("compileSwift")
+                }
+            } else {
+                // If it is to build the full platform
+                // then the GitHub action will prepare the dylibs files compiled under
+                // the Intel and ARM architectures to the dylib directory
+                tasks.register<Copy>("copyDylibs") {
+                    from("dylib/")
+                    into(layout.buildDirectory.file("classes/kotlin/desktop/main"))
+                }
+                tasks.named("desktopJar") {
+                    dependsOn("copyDylibs")
+                }
+                tasks.named("desktopTest") {
+                    dependsOn("copyDylibs")
+                }
             }
-
-            tasks.named("desktopJar") {
-                dependsOn("compileSwift")
-            }
-            tasks.named("desktopTest") {
-                dependsOn("compileSwift")
-            }
-
-            jvmArgs("--add-opens", "java.desktop/sun.lwawt=ALL-UNNAMED")
-            jvmArgs("--add-opens", "java.desktop/sun.lwawt.macosx=ALL-UNNAMED")
-            jvmArgs("-Dapple.awt.enableTemplateImages=true")
         }
-
-        val loggerLevel = project.findProperty("loggerLevel")?.toString() ?: "info"
-        val appEnv = project.findProperty("appEnv")?.toString() ?: "DEVELOPMENT"
-        val globalListener = project.findProperty("globalListener")?.toString() ?: "true"
-
-        jvmArgs("-DloggerLevel=$loggerLevel")
-        jvmArgs("-DappEnv=$appEnv")
-        jvmArgs("-DglobalListener=$globalListener")
-        jvmArgs("-Dcompose.interop.blending=true")
-        jvmArgs("-Dio.netty.maxDirectMemory=268435456")
-        jvmArgs("-DloggerDebugPackages=com.clipevery.routing,com.clipevery.net.clientapi")
 
         nativeDistributions {
 
@@ -209,6 +213,23 @@ compose.desktop {
             // includeAllModules = true
             modules("jdk.charsets", "java.net.http")
 
+            // Open modules required for all platforms
+            jvmArgs("--add-opens", "java.desktop/sun.awt=ALL-UNNAMED")
+            jvmArgs("--add-opens", "java.desktop/java.awt.peer=ALL-UNNAMED")
+
+            // Add system properties that need to be set for all platforms
+            val loggerLevel = project.findProperty("loggerLevel")?.toString() ?: "info"
+            val appEnv = project.findProperty("appEnv")?.toString() ?: "DEVELOPMENT"
+            val globalListener = project.findProperty("globalListener")?.toString() ?: "true"
+
+            jvmArgs("-DloggerLevel=$loggerLevel")
+            jvmArgs("-DappEnv=$appEnv")
+            jvmArgs("-DglobalListener=$globalListener")
+            jvmArgs("-Dcompose.interop.blending=true")
+            jvmArgs("-Dio.netty.maxDirectMemory=268435456")
+            jvmArgs("-DloggerDebugPackages=com.clipevery.routing,com.clipevery.net.clientapi")
+
+            // Add download info of jbr on all platforms
             val jbrYamlFile = project.projectDir.toPath().resolve("jbr.yaml").toFile()
             val jbrReleases = loadJbrReleases(jbrYamlFile)
             val jbrDir = project.projectDir.resolve("jbr")
@@ -216,11 +237,12 @@ compose.desktop {
                 jbrDir.mkdirs()
             }
 
+            // Add download info of chrome-driver and chrome-headless-shell on all platforms
             val webDriverProperties = Properties()
             val webDriverFile = project.projectDir.toPath().resolve("webDriver.properties").toFile()
             webDriverProperties.load(FileReader(webDriverFile))
 
-            if (os.isMacOsX) {
+            if (os.isMacOsX || buildFullPlatform) {
                 targetFormats(TargetFormat.Dmg)
 
                 macOS {
@@ -237,40 +259,41 @@ compose.desktop {
                     """
                     }
 
+                    jvmArgs("--add-opens", "java.desktop/sun.lwawt=ALL-UNNAMED")
+                    jvmArgs("--add-opens", "java.desktop/sun.lwawt.macosx=ALL-UNNAMED")
+                    jvmArgs("-Dapple.awt.enableTemplateImages=true")
                     jvmArgs("-Dmac.bundleID=$bundleID")
 
                     val process = Runtime.getRuntime().exec("uname -m")
                     val result = process.inputStream.bufferedReader().use { it.readText() }.trim()
 
-                    when (result) {
-                        "x86_64" -> {
-                            getAllDependencies(
-                                jbrReleases,
-                                jbrDir,
-                                webDriverProperties,
-                                appResourcesRootDir.get(),
-                                listOf("osx-x64"),
-                                listOf("mac-x64"),
-                                listOf("macos-x64"),
-                            )
-                        }
+                    if (result == "x86_64" || buildFullPlatform) {
+                        getAllDependencies(
+                            jbrReleases,
+                            jbrDir,
+                            webDriverProperties,
+                            appResourcesRootDir.get(),
+                            "osx-x64",
+                            "mac-x64",
+                            "macos-x64",
+                        )
+                    }
 
-                        "arm64" -> {
-                            getAllDependencies(
-                                jbrReleases,
-                                jbrDir,
-                                webDriverProperties,
-                                appResourcesRootDir.get(),
-                                listOf("osx-aarch64"),
-                                listOf("mac-arm64"),
-                                listOf("macos-arm64"),
-                            )
-                        }
+                    if (result == "arm64" || buildFullPlatform) {
+                        getAllDependencies(
+                            jbrReleases,
+                            jbrDir,
+                            webDriverProperties,
+                            appResourcesRootDir.get(),
+                            "osx-aarch64",
+                            "mac-arm64",
+                            "macos-arm64",
+                        )
                     }
                 }
             }
 
-            if (os.isWindows) {
+            if (os.isWindows || buildFullPlatform) {
                 windows {
                     targetFormats(TargetFormat.Msi)
 
@@ -282,9 +305,9 @@ compose.desktop {
                             jbrDir,
                             webDriverProperties,
                             appResourcesRootDir.get(),
-                            listOf("windows-x64"),
-                            listOf("win64"),
-                            listOf("windows-x64"),
+                            "windows-x64",
+                            "win64",
+                            "windows-x64",
                         )
                     } else {
                         throw IllegalArgumentException("Unsupported architecture: $architecture")
@@ -294,41 +317,18 @@ compose.desktop {
                 }
             }
 
-            if (os.isLinux) {
+            if (os.isLinux || buildFullPlatform) {
                 linux {
                     targetFormats(TargetFormat.Deb)
-
-                    val buildFullPlatform: Boolean = System.getenv("BUILD_FULL_PLATFORM") == "YES"
-
-                    val jbrArchList =
-                        if (buildFullPlatform) {
-                            listOf("osx-x64", "osx-aarch64", "windows-x64", "linux-x64")
-                        } else {
-                            listOf("linux-x64")
-                        }
-
-                    val chromeArchList =
-                        if (buildFullPlatform) {
-                            listOf("mac-x64", "mac-arm64", "win64", "linux64")
-                        } else {
-                            listOf("linux64")
-                        }
-
-                    val chromeDirNameList =
-                        if (buildFullPlatform) {
-                            listOf("macos-x64", "macos-arm64", "windows-x64", "linux-x64")
-                        } else {
-                            listOf("linux-x64")
-                        }
 
                     getAllDependencies(
                         jbrReleases,
                         jbrDir,
                         webDriverProperties,
                         appResourcesRootDir.get(),
-                        jbrArchList,
-                        chromeArchList,
-                        chromeDirNameList,
+                        "linux-x64",
+                        "linux64",
+                        "linux-x64",
                     )
                 }
             }
@@ -361,25 +361,20 @@ fun getAllDependencies(
     jbrDir: File,
     webDriverProperties: Properties,
     chromeDir: Directory,
-    jbrArchList: List<String>,
-    chromeArchList: List<String>,
-    chromeDirNameList: List<String>,
+    jbrArch: String,
+    chromeArch: String,
+    chromeDirName: String,
 ) {
-    assert(jbrArchList.size == chromeArchList.size)
-    assert(jbrArchList.size == chromeDirNameList.size)
-
-    for (i in jbrArchList.indices) {
-        getJbrReleases(
-            jbrArchList[i],
-            jbrReleases,
-            jbrDir,
-        )
-        getChromeDriver(
-            chromeArchList[i],
-            webDriverProperties,
-            chromeDir.dir(chromeDirNameList[i]),
-        )
-    }
+    getJbrReleases(
+        jbrArch,
+        jbrReleases,
+        jbrDir,
+    )
+    getChromeDriver(
+        chromeArch,
+        webDriverProperties,
+        chromeDir.dir(chromeDirName),
+    )
 }
 
 fun getJbrReleases(
