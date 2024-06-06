@@ -360,9 +360,9 @@ class Clipevery {
 
                     val trayIcon =
                         if (currentPlatform().isMacos()) {
-                            painterResource("clipevery_mac_tray.png")
+                            painterResource("icon/clipevery.tray.mac.png")
                         } else {
-                            painterResource("com.clipevery.win.png")
+                            painterResource("icon/clipevery.tray.win.png")
                         }
 
                     Tray(
@@ -392,11 +392,11 @@ class Clipevery {
 
                 val windowIcon: Painter? =
                     if (platform.isMacos()) {
-                        painterResource("com.clipevery.mac.png")
+                        painterResource("icon/clipevery.mac.png")
                     } else if (platform.isWindows()) {
-                        painterResource("com.clipevery.win.png")
+                        painterResource("icon/clipevery.win.png")
                     } else if (platform.isLinux()) {
-                        painterResource("com.clipevery.linux.png")
+                        painterResource("icon/clipevery.linux.png")
                     } else {
                         null
                     }
@@ -414,7 +414,7 @@ class Clipevery {
                 ) {
                     DisposableEffect(Unit) {
                         if (platform.isLinux()) {
-                            systemTray?.setImage(resourceUtils.resourceInputStream("com.clipevery.linux.png"))
+                            systemTray?.setImage(resourceUtils.resourceInputStream("icon/clipevery.tray.linux.png"))
                             systemTray?.setTooltip("Clipevery")
                             systemTray?.menu?.add(
                                 MenuItem("Open Clipevery") { appWindowManager.activeMainWindow() },
