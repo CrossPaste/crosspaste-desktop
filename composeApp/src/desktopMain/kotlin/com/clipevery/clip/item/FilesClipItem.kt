@@ -1,10 +1,12 @@
 package com.clipevery.clip.item
 
 import com.clipevery.app.AppFileType
+import com.clipevery.clip.LinuxClipboardService.Companion.GNOME_COPIED_FILES_FLAVOR
 import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipState
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.path.DesktopPathProvider
+import com.clipevery.platform.currentPlatform
 import com.clipevery.presist.DesktopOneFilePersist
 import com.clipevery.presist.FileInfoTree
 import com.clipevery.serializer.PathStringRealmListSerializer
@@ -22,7 +24,9 @@ import kotlinx.serialization.Transient
 import org.mongodb.kbson.BsonObjectId
 import org.mongodb.kbson.ObjectId
 import java.awt.datatransfer.DataFlavor
+import java.io.ByteArrayInputStream
 import java.io.File
+import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -118,5 +122,15 @@ class FilesClipItem : RealmObject, ClipAppearItem, ClipFiles {
     override fun fillDataFlavor(map: MutableMap<DataFlavor, Any>) {
         val fileList: List<File> = getFilePaths().map { it.toFile() }
         map[DataFlavor.javaFileListFlavor] = fileList
+
+        if (currentPlatform().isLinux()) {
+            val content =
+                fileList.joinToString(
+                    separator = "\n",
+                    prefix = "copy\n",
+                ) { it.toURI().toString() }
+            val inputStream = ByteArrayInputStream(content.toByteArray(StandardCharsets.UTF_8))
+            map[GNOME_COPIED_FILES_FLAVOR] = inputStream
+        }
     }
 }
