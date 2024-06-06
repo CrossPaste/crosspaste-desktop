@@ -137,7 +137,7 @@ jobs:
           RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         with:
           command: make site
-          extra_flags: -f ci.conveyor.conf --show-log=report
+          extra_flags: -f ci.conveyor.conf --rerun
           signing_key: ${{ secrets.SIGNING_KEY }}
           agree_to_license: 1
 
