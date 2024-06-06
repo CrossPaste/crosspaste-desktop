@@ -25,6 +25,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
+import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 
 class LinuxClipboardService(
@@ -37,6 +38,8 @@ class LinuxClipboardService(
 
     companion object {
         const val XFIXES_SET_SELECTION_OWNER_NOTIFY_MASK = (1 shl 0).toLong()
+
+        val GNOME_COPIED_FILES_FLAVOR = DataFlavor("x-special/gnome-copied-files;class=java.io.InputStream")
     }
 
     override val logger: KLogger = KotlinLogging.logger {}
