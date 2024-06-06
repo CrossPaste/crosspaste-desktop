@@ -13,7 +13,6 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
-import com.clipevery.platform.currentPlatform
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.launchIn
@@ -28,26 +27,7 @@ import java.awt.TrayIcon
 import java.awt.event.MouseListener
 import java.util.Locale
 
-// In fact, this size doesn't affect anything on Windows/Linux, because they request what they
-// need, and not what we provide. It only affects macOs. This size will be scaled in asAwtImage to
-// support DPI=2.0
-// Unfortunately I hadn't enough time to find sources from the official docs
-
-private val iconSize =
-    run {
-        // https://doc.qt.io/qt-5/qtwidgets-desktop-systray-example.html (search 22x22)
-        if (currentPlatform().isWindows()) {
-            Size(22f, 22f)
-        } // https://doc.qt.io/qt-5/qtwidgets-desktop-systray-example.html (search 16x16)
-        else if (currentPlatform().isLinux()) {
-            Size(16f, 16f)
-        } // https://medium.com/@acwrightdesign/creating-a-macos-menu-bar-application-using-swiftui-54572a5d5f87
-        else if (currentPlatform().isMacos()) {
-            Size(22f, 22f)
-        } else {
-            Size(32f, 32f)
-        }
-    }
+private val iconSize = Size(512f, 512f)
 
 internal val GlobalDensity get() =
     GraphicsEnvironment.getLocalGraphicsEnvironment()

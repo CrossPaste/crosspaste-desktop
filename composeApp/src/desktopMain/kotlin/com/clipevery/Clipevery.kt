@@ -3,6 +3,7 @@ package com.clipevery
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
@@ -359,9 +360,9 @@ class Clipevery {
 
                     val trayIcon =
                         if (currentPlatform().isMacos()) {
-                            painterResource("clipevery_mac_tray.png")
+                            painterResource("icon/clipevery.tray.mac.png")
                         } else {
-                            painterResource("clipevery_icon.png")
+                            painterResource("icon/clipevery.tray.win.png")
                         }
 
                     Tray(
@@ -389,12 +390,23 @@ class Clipevery {
                     }
                 }
 
+                val windowIcon: Painter? =
+                    if (platform.isMacos()) {
+                        painterResource("icon/clipevery.mac.png")
+                    } else if (platform.isWindows()) {
+                        painterResource("icon/clipevery.win.png")
+                    } else if (platform.isLinux()) {
+                        painterResource("icon/clipevery.linux.png")
+                    } else {
+                        null
+                    }
+
                 Window(
                     onCloseRequest = exitApplication,
                     visible = appWindowManager.showMainWindow,
                     state = windowState,
                     title = MAIN_WINDOW_TITLE,
-                    icon = painterResource("clipevery_icon.png"),
+                    icon = windowIcon,
                     alwaysOnTop = true,
                     undecorated = true,
                     transparent = true,
@@ -402,7 +414,7 @@ class Clipevery {
                 ) {
                     DisposableEffect(Unit) {
                         if (platform.isLinux()) {
-                            systemTray?.setImage(resourceUtils.resourceInputStream("clipevery_icon.png"))
+                            systemTray?.setImage(resourceUtils.resourceInputStream("icon/clipevery.tray.linux.png"))
                             systemTray?.setTooltip("Clipevery")
                             systemTray?.menu?.add(
                                 MenuItem("Open Clipevery") { appWindowManager.activeMainWindow() },
