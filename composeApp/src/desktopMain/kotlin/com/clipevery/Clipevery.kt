@@ -394,7 +394,7 @@ class Clipevery {
                     if (platform.isMacos()) {
                         painterResource("com.clipevery.mac.png")
                     } else if (platform.isWindows()) {
-                        painterResource("com.clipevery_icon.png")
+                        painterResource("com.clipevery.win.png")
                     } else if (platform.isLinux()) {
                         painterResource("com.clipevery.linux.png")
                     } else {
