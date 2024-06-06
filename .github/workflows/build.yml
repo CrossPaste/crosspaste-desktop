@@ -165,25 +165,25 @@ jobs:
       - name: Upload Mac amd64
         uses: actions/upload-artifact@v3
         with:
-          name: clipevery-mac-amd64
+          name: clipevery-mac-amd64-$PACKAGE_VERSION
           path: output/clipevery-*-mac-amd64.zip
 
       - name: Upload Mac aarch64
         uses: actions/upload-artifact@v3
         with:
-          name: clipevery-mac-aarch64
+          name: clipevery-mac-aarch64-$PACKAGE_VERSION
           path: output/clipevery-*-mac-aarch64.zip
 
       - name: Upload Windows amd64
         uses: actions/upload-artifact@v3
         with:
-          name: clipevery-windows
+          name: clipevery-windows-$PACKAGE_VERSION
           path: output/clipevery-*-windows-amd64.zip
 
       - name: Upload Linux amd64
         uses: actions/upload-artifact@v3
         with:
-          name: clipevery-linux
+          name: clipevery-linux-$PACKAGE_VERSION
           path: output/debian/clipevery_*_amd64.deb
 
       # delete output directory to free up space, Github Action only has 14G space,
