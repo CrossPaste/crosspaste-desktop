@@ -1,4 +1,3 @@
-
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
@@ -11,11 +10,12 @@ import java.util.Properties
 val versionProperties = Properties()
 versionProperties.load(
     FileReader(
-        project.projectDir.toPath().resolve("src/desktopMain/resources/version.properties").toFile()
-    )
+        project.projectDir.toPath().resolve("src/desktopMain/resources/version.properties").toFile(),
+    ),
 )
 val group: String = "com.clipevery"
 val version: String = versionProperties.getProperty("version")
+val beta: Boolean = versionProperties.getProperty("beta") == "true"
 
 repositories {
     mavenCentral()
@@ -91,8 +91,6 @@ kotlin {
             implementation(libs.zxing.core)
             implementation(libs.zxing.javase)
         }
-        desktopMain.resources.filter.exclude("development.properties")
-
         commonMain.dependencies {
             implementation(compose.runtime)
             implementation(compose.foundation)

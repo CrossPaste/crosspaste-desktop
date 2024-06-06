@@ -25,7 +25,15 @@ class DesktopAppInfoFactory(private val configManager: ConfigManager) : AppInfoF
                 Thread.currentThread().contextClassLoader
                     .getResourceAsStream("version.properties"),
             )
-            return properties.getProperty("version", "Unknown")
+
+            val isBeta = properties.getProperty("beta", "false") == "true"
+
+            val version = properties.getProperty("version", "Unknown")
+            return if (isBeta) {
+                "$version-beta"
+            } else {
+                version
+            }
         } catch (e: IOException) {
             logger.error(e) { "Failed to read version" }
         }
