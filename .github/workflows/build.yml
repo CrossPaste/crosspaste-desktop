@@ -1,12 +1,12 @@
-name: "Build Beta"
+name: "Build Package"
 
 on:
   push:
     branches:
-      - 'v-*-beta'
+      - 'v-*'
   pull_request:
     branches:
-      - 'v-*-beta'
+      - 'v-*'
 
 jobs:
   check-dylib-cache:
@@ -86,6 +86,18 @@ jobs:
           sudo rm -rf /usr/local/share/boost
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"  
 
+      - name: Read version properties
+        id: versioning
+        run: |
+          VERSION=$(grep 'version=' version.properties | cut -d'=' -f2)
+          BETA=$(grep 'beta=' version.properties | cut -d'=' -f2)
+          if [ "$BETA" == "true" ]; then
+            PACKAGE_VERSION="${VERSION}-beta"
+          else
+            PACKAGE_VERSION="${VERSION}"
+          fi
+          echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> $GITHUB_ENV
+
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
@@ -153,25 +165,25 @@ jobs:
       - name: Upload Mac amd64
         uses: actions/upload-artifact@v3
         with:
-          name: clipevery-mac-amd64
+          name: clipevery-mac-amd64-$PACKAGE_VERSION
           path: output/clipevery-*-mac-amd64.zip
 
       - name: Upload Mac aarch64
         uses: actions/upload-artifact@v3
         with:
-          name: clipevery-mac-aarch64
+          name: clipevery-mac-aarch64-$PACKAGE_VERSION
           path: output/clipevery-*-mac-aarch64.zip
 
       - name: Upload Windows amd64
         uses: actions/upload-artifact@v3
         with:
-          name: clipevery-windows
+          name: clipevery-windows-$PACKAGE_VERSION
           path: output/clipevery-*-windows-amd64.zip
 
       - name: Upload Linux amd64
         uses: actions/upload-artifact@v3
         with:
-          name: clipevery-linux
+          name: clipevery-linux-$PACKAGE_VERSION
           path: output/debian/clipevery_*_amd64.deb
 
       # delete output directory to free up space, Github Action only has 14G space,

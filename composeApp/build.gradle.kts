@@ -1,4 +1,3 @@
-
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
@@ -8,8 +7,15 @@ import org.yaml.snakeyaml.constructor.Constructor
 import java.io.FileReader
 import java.util.Properties
 
-group = "com.clipevery"
-version = "1.0"
+val versionProperties = Properties()
+versionProperties.load(
+    FileReader(
+        project.projectDir.toPath().resolve("src/desktopMain/resources/version.properties").toFile(),
+    ),
+)
+val group: String = "com.clipevery"
+val version: String = versionProperties.getProperty("version")
+val beta: Boolean = versionProperties.getProperty("beta") == "true"
 
 repositories {
     mavenCentral()
@@ -206,7 +212,7 @@ compose.desktop {
 
             appResourcesRootDir = project.layout.projectDirectory.dir("resources")
             packageName = "clipevery"
-            packageVersion = "1.0.0"
+            packageVersion = version
 
             // If we want to use arthas attach application in production environment,
             // we need to use
