@@ -9,8 +9,9 @@ import kotlinx.coroutines.launch
 
 abstract class ConfigManager(
     private val configFilePersist: OneFilePersist,
-    private val appEnv: AppEnv,
 ) {
+    private val appEnv = AppEnv.getAppEnv()
+
     private val deviceUtils = getDeviceUtils()
 
     var config: AppConfig
@@ -18,7 +19,7 @@ abstract class ConfigManager(
     init {
         config =
             try {
-                loadConfig() ?: AppConfig(appEnv, deviceUtils.createAppInstanceId())
+                loadConfig() ?: AppConfig(AppEnv.getAppEnv(), deviceUtils.createAppInstanceId())
             } catch (e: Exception) {
                 AppConfig(appEnv, deviceUtils.createAppInstanceId())
             }

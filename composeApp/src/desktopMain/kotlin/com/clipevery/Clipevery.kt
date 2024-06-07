@@ -197,7 +197,6 @@ class Clipevery {
                     single<ConfigManager> {
                         DefaultConfigManager(
                             get<FilePersist>().getPersist("appConfig.json", AppFileType.USER),
-                            get(),
                         )
                     }
                     single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }

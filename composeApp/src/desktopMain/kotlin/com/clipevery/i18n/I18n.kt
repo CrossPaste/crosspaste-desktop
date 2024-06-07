@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.clipevery.config.ConfigManager
+import com.clipevery.i18n.GlobalCopywriterImpl.Companion.EN
 import com.clipevery.utils.getDateUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.FileNotFoundException
@@ -14,19 +15,24 @@ import java.util.Locale
 import java.util.Properties
 import java.util.concurrent.ConcurrentHashMap
 
-val logger = KotlinLogging.logger {}
+class GlobalCopywriterImpl(private val configManager: ConfigManager) : GlobalCopywriter {
 
-const val en = "en"
+    companion object {
+        val logger = KotlinLogging.logger {}
 
-val languageList = listOf(en, "es", "jp", "zh")
+        const val EN = "en"
 
-val languageMap = ConcurrentHashMap<String, Copywriter>()
+        val languageList = listOf(EN, "es", "jp", "zh")
 
-fun getText(id: String): String {
-    return languageMap.computeIfAbsent(en) { CopywriterImpl(en) }.getText(id)
-}
+        val languageMap = ConcurrentHashMap<String, Copywriter>()
+    }
 
-open class GlobalCopywriterImpl(private val configManager: ConfigManager) : GlobalCopywriter {
+    init {
+        val language = configManager.config.language
+        if (!languageList.contains(language)) {
+            configManager.updateConfig { it.copy(language = EN) }
+        }
+    }
 
     private var copywriter: Copywriter by mutableStateOf(
         languageMap
@@ -72,11 +78,13 @@ open class GlobalCopywriterImpl(private val configManager: ConfigManager) : Glob
 
 class CopywriterImpl(private val language: String) : Copywriter {
 
+    val logger = KotlinLogging.logger {}
+
     private val dateUtils = getDateUtils()
 
     private val properties: Properties = loadProperties()
 
-    private var currentLanguage: String = en
+    private var currentLanguage: String = EN
 
     private fun load(
         properties: Properties,
@@ -101,8 +109,8 @@ class CopywriterImpl(private val language: String) : Copywriter {
                 language
             } catch (e: Exception) {
                 logger.error(e) { "Error loading $language properties: ${e.message}" }
-                load(properties, en)
-                en
+                load(properties, EN)
+                EN
             }
         return properties
     }
