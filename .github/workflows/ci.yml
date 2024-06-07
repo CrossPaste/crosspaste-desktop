@@ -19,6 +19,9 @@ jobs:
           java-version: '17'
           check-latest: true
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
       - name: Cache Gradle dependencies
         uses: actions/cache@v4
         with:
