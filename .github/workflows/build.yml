@@ -72,7 +72,7 @@ jobs:
   build-ubuntu:
     needs: [check-dylib-cache, build-macos]
     runs-on: ubuntu-latest
-    if: always()
+    if: ${{ !cancelled() && (success() || needs.build-macos.result == 'skipped') }}
     env:
       BUILD_FULL_PLATFORM: YES
       BUILD_MAIN_PATH: ${{ github.workspace }}/composeApp/build/classes/kotlin/desktop/main
