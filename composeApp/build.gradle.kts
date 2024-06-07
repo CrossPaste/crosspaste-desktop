@@ -13,9 +13,8 @@ versionProperties.load(
         project.projectDir.toPath().resolve("src/desktopMain/resources/version.properties").toFile(),
     ),
 )
-val group: String = "com.clipevery"
-val version: String = versionProperties.getProperty("version")
-val beta: Boolean = versionProperties.getProperty("beta") == "true"
+group = "com.clipevery"
+version = versionProperties.getProperty("version")
 
 repositories {
     mavenCentral()
@@ -212,7 +211,7 @@ compose.desktop {
 
             appResourcesRootDir = project.layout.projectDirectory.dir("resources")
             packageName = "clipevery"
-            packageVersion = version
+            packageVersion = version.toString()
 
             // If we want to use arthas attach application in production environment,
             // we need to use
