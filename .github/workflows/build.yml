@@ -15,7 +15,7 @@ jobs:
       cache-hit-x86: ${{ steps.cache-check-x86.outputs.cache-hit }}
       cache-hit-aarch64: ${{ steps.cache-check-aarch64.outputs.cache-hit }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: check-dylib-cache-x86
         id: cache-check-x86
@@ -43,7 +43,7 @@ jobs:
           - x86_64-apple-macos10.15
           - arm64-apple-macos11
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Swift environment
         run: brew install swift
@@ -77,7 +77,7 @@ jobs:
       BUILD_FULL_PLATFORM: YES
       BUILD_MAIN_PATH: ${{ github.workspace }}/composeApp/build/classes/kotlin/desktop/main
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       # https://github.com/actions/runner-images/issues/2840
       - name: Clear unnecessary files to free up space
         run: |
@@ -89,10 +89,12 @@ jobs:
       - name: Read version properties
         id: versioning
         run: |
-          VERSION=$(grep 'version=' version.properties | cut -d'=' -f2)
-          BETA=$(grep 'beta=' version.properties | cut -d'=' -f2)
-          if [ "$BETA" == "true" ]; then
+          VERSION=$(grep 'version=' ${{ github.workspace }}/composeApp/src/desktopMain/resources/version.properties | cut -d'=' -f2)
+          BETA=$(grep 'beta=' ${{ github.workspace }}/composeApp/src/desktopMain/resources/version.properties | cut -d'=' -f2)
+          if [ "$BETA" == "0" ]; then
             PACKAGE_VERSION="${VERSION}-beta"
+          elif [ -n "$BETA" ]; then
+            PACKAGE_VERSION="${VERSION}-beta${BETA}"
           else
             PACKAGE_VERSION="${VERSION}"
           fi
@@ -163,27 +165,27 @@ jobs:
           du -ah output | sort -rh
 
       - name: Upload Mac amd64
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: clipevery-mac-amd64-$PACKAGE_VERSION
+          name: clipevery-mac-amd64-${{ env.PACKAGE_VERSION }}
           path: output/clipevery-*-mac-amd64.zip
 
       - name: Upload Mac aarch64
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: clipevery-mac-aarch64-$PACKAGE_VERSION
+          name: clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}
           path: output/clipevery-*-mac-aarch64.zip
 
       - name: Upload Windows amd64
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: clipevery-windows-$PACKAGE_VERSION
+          name: clipevery-windows-${{ env.PACKAGE_VERSION }}
           path: output/clipevery-*-windows-amd64.zip
 
       - name: Upload Linux amd64
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: clipevery-linux-$PACKAGE_VERSION
+          name: clipevery-linux-${{ env.PACKAGE_VERSION }}
           path: output/debian/clipevery_*_amd64.deb
 
       # delete output directory to free up space, Github Action only has 14G space,

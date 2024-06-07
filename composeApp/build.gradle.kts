@@ -15,7 +15,6 @@ versionProperties.load(
 )
 group = "com.clipevery"
 version = versionProperties.getProperty("version")
-val beta = versionProperties.getProperty("beta") == "true"
 
 repositories {
     mavenCentral()
@@ -48,10 +47,13 @@ ktlint {
     android = false
     ignoreFailures = true
     filter {
-        exclude("**/build/**")
-        exclude("**/src/*Test/**")
-        exclude("**/src/*Main/kotlin/androidx/**")
-        include("**/src/**/*.kt")
+        include { element -> element.path.contains("composeApp/src") || element.path.contains("composeApp\\src") }
+        exclude { element ->
+            val path = element.path
+            path.contains("\\build\\") || path.contains("/build/") ||
+                path.contains("\\desktopTest\\") || path.contains("/desktopTest/") ||
+                path.contains("\\commonMain\\kotlin\\androidx\\") || path.contains("/commonMain/kotlin/androidx/")
+        }
     }
 }
 
