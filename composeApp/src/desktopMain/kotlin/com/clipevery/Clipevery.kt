@@ -322,6 +322,7 @@ class Clipevery {
         }
 
         private fun exitClipEveryApplication(exitApplication: () -> Unit) {
+            koinApplication.koin.get<AppLock>().releaseLock()
             koinApplication.koin.get<ChromeService>().quit()
             koinApplication.koin.get<ClipboardService>().stop()
             koinApplication.koin.get<ClipBonjourService>().unregisterService()
