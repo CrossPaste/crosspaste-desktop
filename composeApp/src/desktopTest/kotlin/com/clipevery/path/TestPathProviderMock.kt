@@ -12,13 +12,33 @@ class TestPathProviderMock {
 
     @Test
     fun testMockTestPathProvider() {
-        testUseMockTestPathProvider { tempClipAppPath, tempUserHome, tempClipAppJarPath, tempUserPath ->
+        try {
+            mockkObject(TestPathProvider)
+
+            // Create temporary directories
+            val tempClipAppPath = Files.createTempDirectory("tempClipAppPath")
+            val tempUserHome = Files.createTempDirectory("tempUserHome")
+            val tempClipAppJarPath = Files.createTempDirectory("tempClipAppJarPath")
+            val tempUserPath = Files.createTempDirectory("tempUserPath")
+
+            tempClipAppPath.toFile().deleteOnExit()
+            tempUserHome.toFile().deleteOnExit()
+            tempClipAppJarPath.toFile().deleteOnExit()
+            tempUserPath.toFile().deleteOnExit()
+
+            every { TestPathProvider.needMockClipAppPath() } returns tempClipAppPath
+            every { TestPathProvider.needMockUserHome() } returns tempUserHome
+            every { TestPathProvider.needMockClipAppJarPath() } returns tempClipAppJarPath
+            every { TestPathProvider.needMockUserPath() } returns tempUserPath
+
             val pathProvider = DesktopPathProvider
 
             assertEquals(tempClipAppPath, pathProvider.clipAppPath)
             assertEquals(tempUserHome, pathProvider.userHome)
             assertEquals(tempClipAppJarPath, pathProvider.clipAppJarPath)
             assertEquals(tempUserPath, pathProvider.clipUserPath)
+        } finally {
+            unmockkAll()
         }
     }
 }
