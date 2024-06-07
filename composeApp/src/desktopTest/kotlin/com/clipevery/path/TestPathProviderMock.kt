@@ -2,8 +2,9 @@ package com.clipevery.path
 
 import io.mockk.every
 import io.mockk.mockkObject
-import io.mockk.unmockkAll
+import io.mockk.unmockkObject
 import java.nio.file.Files
+import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -11,33 +12,40 @@ class TestPathProviderMock {
 
     @Test
     fun testMockTestPathProvider() {
-        try {
-            mockkObject(TestPathProvider)
+        testUseMockTestPathProvider { tempClipAppPath, tempUserHome, tempClipAppJarPath, tempUserPath ->
+            assertEquals(tempClipAppPath, DesktopPathProvider.clipAppPath)
+            assertEquals(tempUserHome, DesktopPathProvider.userHome)
+            assertEquals(tempClipAppJarPath, DesktopPathProvider.clipAppJarPath)
+            assertEquals(tempUserPath, DesktopPathProvider.clipUserPath)
+        }
+    }
 
-            // Create temporary directories
-            val tempClipAppPath = Files.createTempDirectory("tempClipAppPath")
-            val tempUserHome = Files.createTempDirectory("tempUserHome")
-            val tempClipAppJarPath = Files.createTempDirectory("tempClipAppJarPath")
-            val tempUserPath = Files.createTempDirectory("tempUserPath")
+    companion object {
+        @Synchronized
+        fun testUseMockTestPathProvider(testAction: (Path, Path, Path, Path) -> Unit) {
+            try {
+                mockkObject(DesktopPathProvider)
 
-            tempClipAppPath.toFile().deleteOnExit()
-            tempUserHome.toFile().deleteOnExit()
-            tempClipAppJarPath.toFile().deleteOnExit()
-            tempUserPath.toFile().deleteOnExit()
+                // Create temporary directories
+                val tempClipAppPath = Files.createTempDirectory("tempClipAppPath")
+                val tempUserHome = Files.createTempDirectory("tempUserHome")
+                val tempClipAppJarPath = Files.createTempDirectory("tempClipAppJarPath")
+                val tempUserPath = Files.createTempDirectory("tempUserPath")
 
-            every { TestPathProvider.needMockClipAppPath() } returns tempClipAppPath
-            every { TestPathProvider.needMockUserHome() } returns tempUserHome
-            every { TestPathProvider.needMockClipAppJarPath() } returns tempClipAppJarPath
-            every { TestPathProvider.needMockUserPath() } returns tempUserPath
+                tempClipAppPath.toFile().deleteOnExit()
+                tempUserHome.toFile().deleteOnExit()
+                tempClipAppJarPath.toFile().deleteOnExit()
+                tempUserPath.toFile().deleteOnExit()
 
-            val pathProvider = DesktopPathProvider
+                every { DesktopPathProvider.clipAppPath } returns tempClipAppPath
+                every { DesktopPathProvider.userHome } returns tempUserHome
+                every { DesktopPathProvider.clipAppJarPath } returns tempClipAppJarPath
+                every { DesktopPathProvider.clipUserPath } returns tempUserPath
 
-            assertEquals(tempClipAppPath, pathProvider.clipAppPath)
-            assertEquals(tempUserHome, pathProvider.userHome)
-            assertEquals(tempClipAppJarPath, pathProvider.clipAppJarPath)
-            assertEquals(tempUserPath, pathProvider.clipUserPath)
-        } finally {
-            unmockkAll()
+                testAction(tempClipAppPath, tempUserHome, tempClipAppJarPath, tempUserPath)
+            } finally {
+                unmockkObject(DesktopPathProvider)
+            }
         }
     }
 }
