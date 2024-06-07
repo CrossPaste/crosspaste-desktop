@@ -9,7 +9,6 @@ import com.clipevery.utils.getSystemProperty
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import kotlin.reflect.KClass
 
 object DesktopPathProvider : PathProvider {
 
@@ -17,13 +16,13 @@ object DesktopPathProvider : PathProvider {
 
     override val fileUtils: FileUtils = getFileUtils()
 
-    override val userHome: Path = pathProvider.userHome
+    override val userHome: Path get() = pathProvider.userHome
 
-    override val clipAppPath: Path = pathProvider.clipAppPath
+    override val clipAppPath: Path get() = pathProvider.clipAppPath
 
-    override val clipAppJarPath: Path = pathProvider.clipAppJarPath
+    override val clipAppJarPath: Path get() = pathProvider.clipAppJarPath
 
-    override val clipUserPath: Path = pathProvider.clipUserPath
+    override val clipUserPath: Path get() = pathProvider.clipUserPath
 
     override val clipLogPath: Path get() = pathProvider.clipLogPath
 
@@ -31,14 +30,13 @@ object DesktopPathProvider : PathProvider {
 
     override val clipDataPath get() = pathProvider.clipDataPath
 
-    @Suppress("UNCHECKED_CAST")
     private fun getPathProvider(): PathProvider {
         val appEnv = AppEnv.getAppEnv()
         return if (appEnv == AppEnv.DEVELOPMENT) {
             DevelopmentPathProvider()
         } else if (appEnv == AppEnv.TEST) {
-            val kClass = Class.forName("com.clipevery.path.TestPathProvider").kotlin as KClass<PathProvider>
-            kClass.objectInstance ?: throw IllegalStateException("Expected a singleton instance")
+            // In the test environment, DesktopPathProvider will be mocked
+            this
         } else {
             if (currentPlatform().isWindows()) {
                 WindowsPathProvider()

@@ -1,15 +1,16 @@
 package com.clipevery.app
 
-import com.clipevery.path.testUseMockTestPathProvider
+import com.clipevery.path.TestPathProviderMock.Companion.testUseMockTestPathProvider
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class AppLockTest {
 
-//    @Test
+    @Test
     fun testSingleInstanceLock() {
         testUseMockTestPathProvider { _, _, _, _ ->
             runBlocking {
@@ -36,7 +37,7 @@ class AppLockTest {
         }
     }
 
-//    @Test
+    @Test
     fun testLockRelease() {
         testUseMockTestPathProvider { _, _, _, _ ->
             runBlocking {
