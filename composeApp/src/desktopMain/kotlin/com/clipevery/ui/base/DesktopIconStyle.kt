@@ -21,11 +21,9 @@ object DesktopIconStyle : IconStyle {
                     override fun load(key: String): Boolean {
                         val iconPath = DesktopPathProvider.resolve("$key.png", AppFileType.ICON)
                         if (iconPath.exists()) {
-                            println("exist $key")
                             val imageBitmap = iconPath.inputStream().use { it.buffered().use(::loadImageBitmap) }
                             return checkMacStyleIcon(imageBitmap)
                         } else {
-                            println("no exist $key")
                             return false
                         }
                     }

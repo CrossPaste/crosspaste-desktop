@@ -202,8 +202,8 @@ class WindowsClipboardService(
                         HWND(
                             Pointer.createConstant(lParam!!.toLong()),
                         )
-                } // Otherwise, pass the message to the next link.
-                else if (nextViewer != null) {
+                } else if (nextViewer != null) {
+                    // Otherwise, pass the message to the next link
                     User32.INSTANCE.SendMessage(nextViewer, uMsg, uParam, lParam)
                 }
                 return 0

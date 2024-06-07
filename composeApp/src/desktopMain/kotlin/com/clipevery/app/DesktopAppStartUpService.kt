@@ -151,7 +151,10 @@ class WindowsAppStartUpService(private val configManager: ConfigManager) : AppSt
     override fun makeAutoStatUp() {
         try {
             if (!isAutoStartUp()) {
-                val command = "reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v \"$AppName\" /d \"${appExePath.absolutePathString()}\" /f"
+                val command = (
+                    "reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v " +
+                        "\"$AppName\" /d \"${appExePath.absolutePathString()}\" /f"
+                )
                 val process = Runtime.getRuntime().exec(command)
                 process.waitFor()
                 logger.info { "Command executed successfully: $command" }

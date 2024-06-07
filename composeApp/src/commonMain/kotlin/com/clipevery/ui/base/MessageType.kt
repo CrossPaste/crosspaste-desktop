@@ -11,17 +11,17 @@ enum class MessageType {
 
     fun getMessageStyle(): MessageStyle {
         return when (this) {
-            Error -> MessageStyle.error
-            Info -> MessageStyle.info
-            Success -> MessageStyle.success
-            Warning -> MessageStyle.warning
+            Error -> MessageStyle.Error
+            Info -> MessageStyle.Info
+            Success -> MessageStyle.Success
+            Warning -> MessageStyle.Warning
         }
     }
 }
 
 enum class MessageStyle(val iconFileName: String, val messageColor: Color) {
-    error("icon/toast/error.svg", Color.Red),
-    info("icon/toast/info.svg", Color.Blue),
-    success("icon/toast/success.svg", Color.Green),
-    warning("icon/toast/warning.svg", Color.Yellow),
+    Error("icon/toast/error.svg", Color.Red),
+    Info("icon/toast/info.svg", Color.Blue),
+    Success("icon/toast/success.svg", Color.Green),
+    Warning("icon/toast/warning.svg", Color.Yellow),
 }

@@ -29,7 +29,8 @@ class DesktopPullClientApi(
                 messageType = typeInfo<PullFileRequest>(),
                 targetAppInstanceId = pullFileRequest.appInstanceId,
                 encrypt = configManager.config.isEncryptSync,
-                timeout = 5000L, // pull file timeout is 5s
+                // pull file timeout is 5s
+                timeout = 5000L,
                 urlBuilder = {
                     toUrl(it)
                     buildUrl(it, "pull", "file")
