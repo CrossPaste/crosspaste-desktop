@@ -14,10 +14,12 @@ import androidx.compose.ui.window.rememberWindowState
 import com.clipevery.app.AppEnv
 import com.clipevery.app.AppFileType
 import com.clipevery.app.AppInfo
+import com.clipevery.app.AppLock
 import com.clipevery.app.AppRestartService
 import com.clipevery.app.AppStartUpService
 import com.clipevery.app.AppWindowManager
 import com.clipevery.app.DesktopAppInfoFactory
+import com.clipevery.app.DesktopAppLock
 import com.clipevery.app.DesktopAppRestartService
 import com.clipevery.app.DesktopAppStartUpService
 import com.clipevery.app.DesktopAppWindowManager
@@ -162,6 +164,7 @@ import org.signal.libsignal.protocol.state.SignedPreKeyStore
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import kotlin.io.path.pathString
+import kotlin.system.exitProcess
 
 class Clipevery {
 
@@ -184,6 +187,7 @@ class Clipevery {
                     // simple component
                     single<AppEnv> { appEnv }
                     single<AppInfo> { DesktopAppInfoFactory(get()).createAppInfo() }
+                    single<AppLock> { DesktopAppLock }
                     single<AppStartUpService> { DesktopAppStartUpService(get()) }
                     single<AppRestartService> { DesktopAppRestartService }
                     single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<ClipServer>() }) }
@@ -297,15 +301,24 @@ class Clipevery {
 
         @Throws(Exception::class)
         private fun initInject() {
-            koinApplication.koin.get<ClipboardService>().start()
-            koinApplication.koin.get<QRCodeGenerator>()
-            koinApplication.koin.get<ClipServer>().start()
-            koinApplication.koin.get<ClipClient>()
-            // bonjour service should be registered after clip server started
-            // only server started, bonjour service can get the port
-            koinApplication.koin.get<ClipBonjourService>().registerService()
-            koinApplication.koin.get<CleanClipScheduler>().start()
-            koinApplication.koin.get<AppStartUpService>().followConfig()
+            try {
+                if (koinApplication.koin.get<AppLock>().acquireLock()) {
+                    koinApplication.koin.get<ClipboardService>().start()
+                    koinApplication.koin.get<QRCodeGenerator>()
+                    koinApplication.koin.get<ClipServer>().start()
+                    koinApplication.koin.get<ClipClient>()
+                    // bonjour service should be registered after clip server started
+                    // only server started, bonjour service can get the port
+                    koinApplication.koin.get<ClipBonjourService>().registerService()
+                    koinApplication.koin.get<CleanClipScheduler>().start()
+                    koinApplication.koin.get<AppStartUpService>().followConfig()
+                } else {
+                    exitProcess(0)
+                }
+            } catch (throwable: Throwable) {
+                logger.error(throwable) { "cant start clipevery" }
+                exitProcess(0)
+            }
         }
 
         private fun exitClipEveryApplication(exitApplication: () -> Unit) {
@@ -326,11 +339,8 @@ class Clipevery {
             }
 
             logger.info { "Starting Clipevery" }
-            try {
-                initInject()
-            } catch (throwable: Throwable) {
-                logger.error(throwable) { "cant start clipevery" }
-            }
+            initInject()
+            logger.info { "Clipevery started" }
 
             val appWindowManager = koinApplication.koin.get<AppWindowManager>()
 
