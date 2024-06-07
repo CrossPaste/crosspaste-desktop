@@ -80,7 +80,7 @@ class SessionBuilderTest {
         aliceSessionBuilder.process(anotherBundle)
         outgoingMessage = aliceSessionCipher.encrypt(originalMessage.toByteArray())
         try {
-            plaintext = bobSessionCipher.decrypt(PreKeySignalMessage(outgoingMessage.serialize()))
+            bobSessionCipher.decrypt(PreKeySignalMessage(outgoingMessage.serialize()))
             fail("shouldn't be trusted!")
         } catch (uie: UntrustedIdentityException) {
             bobStore.saveIdentity(

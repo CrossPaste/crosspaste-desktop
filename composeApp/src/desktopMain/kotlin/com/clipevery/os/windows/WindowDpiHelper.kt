@@ -39,7 +39,7 @@ object WindowDpiHelper {
                     val dpiX = IntByReference()
                     val dpiY = IntByReference()
 
-                    Shcore.INSTANCE.GetDpiForMonitor(hMonitor, 0, /* MDT_EFFECTIVE_DPI */dpiX, dpiY)
+                    Shcore.INSTANCE.GetDpiForMonitor(hMonitor, 0, dpiX, dpiY)
                     val currentDpiX = dpiX.getValue()
                     val currentDpiY = dpiY.getValue()
                     maxDpi = Math.max(maxDpi, max(currentDpiX, currentDpiY))

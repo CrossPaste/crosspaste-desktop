@@ -105,12 +105,14 @@ internal class HTMLCodec(
 
         bufferedStream.mark(BYTE_BUFFER_LEN)
         val astEntries =
-            arrayOf( // common
+            arrayOf(
+                // common
                 VERSION,
                 START_HTML,
                 END_HTML,
                 START_FRAGMENT,
-                END_FRAGMENT, // ver 1.0
+                END_FRAGMENT,
+                // ver 1.0
                 START_SELECTION,
                 END_SELECTION,
                 SOURCE_URL,
@@ -403,7 +405,14 @@ internal class HTMLCodec(
                         SOURCE_URL.length + stBaseUrl.length + EOLN.length
                 )
 
-            val nStartFragment = nStartHTML + htmlPrefix.length + (if (searchStartFragment > 0) searchStartFragment + START_FRAGMENT_CMT.length else 0)
+            val startFragment =
+                if (searchStartFragment > 0) {
+                    searchStartFragment + START_FRAGMENT_CMT.length
+                } else {
+                    0
+                }
+
+            val nStartFragment = nStartHTML + htmlPrefix.length + startFragment
             val nEndFragment =
                 if (searchEndFragment > 0) {
                     nStartHTML + htmlPrefix.length + searchEndFragment

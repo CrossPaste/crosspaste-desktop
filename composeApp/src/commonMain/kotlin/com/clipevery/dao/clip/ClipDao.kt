@@ -77,7 +77,8 @@ interface ClipDao {
         favorite: Boolean? = null,
         appInstanceIdQuery: (RealmQuery<ClipData>) -> RealmQuery<ClipData> = { it },
         clipType: Int? = null,
-        sort: Boolean = true, // sort createTime, true: desc, false: asc
+        // sort createTime, true: desc, false: asc
+        sort: Boolean = true,
         limit: Int,
     ): RealmResults<ClipData>
 }

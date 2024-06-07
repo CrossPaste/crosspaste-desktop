@@ -1,10 +1,12 @@
-package com.clipevery.utils
+package com.clipevery.sync
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.clipevery.app.AppInfo
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.endpoint.EndpointInfoFactory
+import com.clipevery.utils.QRCodeGenerator
+import com.clipevery.utils.getEncryptUtils
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import kotlinx.serialization.encodeToString

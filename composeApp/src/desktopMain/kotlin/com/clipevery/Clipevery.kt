@@ -107,6 +107,7 @@ import com.clipevery.signal.DesktopSignalProtocolStore
 import com.clipevery.signal.DesktopSignedPreKeyStore
 import com.clipevery.signal.getClipIdentityKeyStoreFactory
 import com.clipevery.sync.DesktopDeviceManager
+import com.clipevery.sync.DesktopQRCodeGenerator
 import com.clipevery.sync.DesktopSyncManager
 import com.clipevery.sync.DeviceManager
 import com.clipevery.sync.SyncManager
@@ -137,7 +138,6 @@ import com.clipevery.ui.getTrayMouseAdapter
 import com.clipevery.ui.resource.ClipResourceLoader
 import com.clipevery.ui.resource.DesktopAbsoluteClipResourceLoader
 import com.clipevery.ui.search.ClipeveryAppSearchView
-import com.clipevery.utils.DesktopQRCodeGenerator
 import com.clipevery.utils.IDGenerator
 import com.clipevery.utils.IDGeneratorFactory
 import com.clipevery.utils.QRCodeGenerator
