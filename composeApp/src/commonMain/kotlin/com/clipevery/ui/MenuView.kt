@@ -25,7 +25,10 @@ import com.clipevery.ui.base.UISupport
 import com.clipevery.ui.base.getMenWidth
 
 @Composable
-fun MenuView(close: () -> Unit) {
+fun MenuView(
+    openMainWindow: () -> Unit = {},
+    close: () -> Unit,
+) {
     val current = LocalKoinApplication.current
     val currentPage = LocalPageViewContent.current
     val applicationExit = LocalExitApplication.current
@@ -64,14 +67,17 @@ fun MenuView(close: () -> Unit) {
                 close()
             }
             MenuItem(copywriter.getText("Settings")) {
+                openMainWindow()
                 currentPage.value = PageViewContext(PageViewType.SETTINGS, currentPage.value)
                 close()
             }
             MenuItem(copywriter.getText("Shortcut_Keys")) {
+                openMainWindow()
                 currentPage.value = PageViewContext(PageViewType.SHORTCUT_KEYS, currentPage.value)
                 close()
             }
             MenuItem(copywriter.getText("About")) {
+                openMainWindow()
                 currentPage.value = PageViewContext(PageViewType.ABOUT, currentPage.value)
                 close()
             }

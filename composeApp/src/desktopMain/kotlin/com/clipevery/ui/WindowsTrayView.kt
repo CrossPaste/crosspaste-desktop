@@ -164,10 +164,10 @@ fun WindowTrayMenu(hideMenu: () -> Unit) {
                         },
                 contentAlignment = Alignment.Center,
             ) {
-                MenuView {
-                    appWindowManager.activeMainWindow()
-                    hideMenu()
-                }
+                MenuView(
+                    openMainWindow = { appWindowManager.activeMainWindow() },
+                    close = { hideMenu() },
+                )
             }
         }
     }
