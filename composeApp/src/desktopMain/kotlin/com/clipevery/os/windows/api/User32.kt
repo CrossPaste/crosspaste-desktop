@@ -235,6 +235,8 @@ interface User32 : StdCallLibrary {
 
         private val logger = KotlinLogging.logger {}
 
+        private var mainHWND: HWND? = null
+
         private var searchHWND: HWND? = null
 
         fun getActiveWindowProcessFilePath(): String? {
@@ -415,6 +417,10 @@ interface User32 : StdCallLibrary {
                 }
 
                 if (windowTitle == MAIN_WINDOW_TITLE) {
+                    if (mainHWND == null) {
+                        mainHWND = findClipWindow(MAIN_WINDOW_TITLE)
+                    }
+
                     if (filePath != null) {
                         return@bringToFront WinAppInfo(previousHwnd, filePath)
                     } else {
@@ -423,7 +429,7 @@ interface User32 : StdCallLibrary {
                 }
 
                 if (searchHWND == null) {
-                    searchHWND = INSTANCE.FindWindow(null, SEARCH_WINDOW_TITLE)
+                    searchHWND = findClipWindow(SEARCH_WINDOW_TITLE)
                 }
 
                 if (searchHWND != null) {
@@ -514,6 +520,13 @@ interface User32 : StdCallLibrary {
             }
 
             INSTANCE.SendInput(DWORD(inputs.size.toLong()), inputs, inputs[0].size())
+        }
+
+        fun findClipWindow(windowTitle: String): HWND? {
+            return INSTANCE.FindWindow(null, windowTitle)?.also { hwnd ->
+                val style = com.sun.jna.platform.win32.User32.INSTANCE.GetWindowLong(hwnd, WinUser.GWL_EXSTYLE)
+                com.sun.jna.platform.win32.User32.INSTANCE.SetWindowLong(hwnd, WinUser.GWL_EXSTYLE, style or 0x00000080)
+            }
         }
     }
 }
