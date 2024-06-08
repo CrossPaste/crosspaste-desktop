@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ApplicationScope
@@ -17,6 +18,7 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.rememberWindowState
 import com.clipevery.LocalKoinApplication
@@ -37,6 +39,12 @@ fun ApplicationScope.WindowsTray(windowState: WindowState) {
 
     var showMenu by remember { mutableStateOf(false) }
 
+    val menuWindowState =
+        rememberWindowState(
+            placement = WindowPlacement.Floating,
+            size = DpSize(150.dp, 168.dp),
+        )
+
     Tray(
         state = remember { notificationManager.trayState },
         icon = trayIcon,
@@ -47,12 +55,14 @@ fun ApplicationScope.WindowsTray(windowState: WindowState) {
                     appWindowManager.switchMainWindow()
                 } else {
                     showMenu = true
+                    menuWindowState.position =
+                        WindowPosition(
+                            x = (event.x - insets.left).dp,
+                            y = 30.dp,
+                        )
                 }
             },
     )
-
-    val menuWindowState =
-        rememberWindowState(placement = WindowPlacement.Floating)
 
     Window(
         onCloseRequest = ::exitApplication,
