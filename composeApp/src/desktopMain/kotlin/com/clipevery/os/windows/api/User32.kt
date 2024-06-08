@@ -524,6 +524,7 @@ interface User32 : StdCallLibrary {
 
         fun findClipWindow(windowTitle: String): HWND? {
             return INSTANCE.FindWindow(null, windowTitle)?.also { hwnd ->
+                // Set the window icon not to be displayed on the taskbar
                 val style = com.sun.jna.platform.win32.User32.INSTANCE.GetWindowLong(hwnd, WinUser.GWL_EXSTYLE)
                 com.sun.jna.platform.win32.User32.INSTANCE.SetWindowLong(hwnd, WinUser.GWL_EXSTYLE, style or 0x00000080)
             }

@@ -58,6 +58,10 @@ fun ApplicationScope.MacTray(windowState: WindowState) {
                 if (event.button == MouseEvent.BUTTON1) {
                     appWindowManager.switchMainWindow()
                 } else {
+                    if (appWindowManager.showMainWindow) {
+                        appWindowManager.unActiveMainWindow()
+                    }
+
                     val stepWidth = with(density) { 32.dp.roundToPx() }
                     val position: Int = ((event.x) / stepWidth) * stepWidth
                     if (event.x - position > stepWidth / 2) {
