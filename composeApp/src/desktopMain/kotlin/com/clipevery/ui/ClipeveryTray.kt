@@ -51,29 +51,63 @@ fun ApplicationScope.ClipeveryTray(
     val menu by remember { mutableStateOf(createPopupMenu()) }
     val frame by remember { mutableStateOf(createFrame(menu)) }
 
-    Tray(
-        state = remember { notificationManager.trayState },
-        icon = trayIcon,
-        tooltip = "Clipevery",
-        mouseListener =
-            getTrayMouseAdapter(appWindowManager, windowState) { event, insets ->
-                event.point
-                if (event.button == MouseEvent.BUTTON1) {
-                    switchMainWindow()
-                } else {
-                    val stepWidth = with(density) { 32.dp.roundToPx() }
-                    val position: Int = ((event.x) / stepWidth) * stepWidth
+    val platform = currentPlatform()
 
-                    println("event.x: ${event.x}, position: $position, stepWidth: $stepWidth")
-
-                    if (event.x - position > stepWidth / 2) {
-                        menu.show(frame, position - insets.left, 5)
+    if (platform.isMacos()) {
+        Tray(
+            state = remember { notificationManager.trayState },
+            icon = trayIcon,
+            tooltip = "Clipevery",
+            mouseListener =
+                getTrayMouseAdapter(appWindowManager, windowState) { event, insets ->
+                    event.point
+                    if (event.button == MouseEvent.BUTTON1) {
+                        switchMainWindow()
                     } else {
-                        menu.show(frame, position - (stepWidth / 2) - insets.left, 5)
+                        val stepWidth = with(density) { 32.dp.roundToPx() }
+                        val position: Int = ((event.x) / stepWidth) * stepWidth
+
+                        println("event.x: ${event.x}, position: $position, stepWidth: $stepWidth")
+
+                        if (event.x - position > stepWidth / 2) {
+                            menu.show(frame, position - insets.left, 5)
+                        } else {
+                            menu.show(frame, position - (stepWidth / 2) - insets.left, 5)
+                        }
                     }
-                }
+                },
+        )
+    } else if (platform.isWindows()) {
+        Tray(
+            state = remember { notificationManager.trayState },
+            icon = trayIcon,
+            tooltip = "Clipevery",
+            mouseListener =
+                getTrayMouseAdapter(appWindowManager, windowState) { event, insets ->
+                    event.point
+                    if (event.button == MouseEvent.BUTTON1) {
+                        switchMainWindow()
+                    }
+                },
+            menu = {
+                Item(
+                    "Increment value",
+                    onClick = {
+                    },
+                )
+                Item(
+                    "Send notification",
+                    onClick = {
+                    },
+                )
+                Item(
+                    "Exit",
+                    onClick = {
+                    },
+                )
             },
-    )
+        )
+    }
 }
 
 fun createFrame(menu: PopupMenu): Frame {
