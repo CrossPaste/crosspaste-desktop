@@ -34,6 +34,11 @@ import androidx.compose.ui.window.rememberWindowState
 import com.clipevery.LocalKoinApplication
 import com.clipevery.app.AppWindowManager
 import com.clipevery.ui.base.NotificationManager
+import java.awt.GraphicsEnvironment
+import java.awt.Insets
+import java.awt.Rectangle
+import java.awt.Toolkit
+import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
@@ -63,15 +68,15 @@ fun ApplicationScope.WindowsTray(windowState: WindowState) {
         icon = trayIcon,
         tooltip = "Clipevery",
         mouseListener =
-            getTrayMouseAdapter(appWindowManager, windowState) { event, insets ->
+            WindowsTrayMouseClicked(appWindowManager, windowState) { event, bound, insets ->
                 if (event.button == MouseEvent.BUTTON1) {
                     appWindowManager.switchMainWindow()
                 } else {
                     showMenu = true
                     menuWindowState.position =
                         WindowPosition(
-                            x = ((event.x - insets.left) / densityFloat).dp,
-                            y = ((event.y - insets.bottom) / densityFloat).dp - 204.dp,
+                            x = ((event.x - insets.left) / densityFloat).dp - 32.dp,
+                            y = (bound.height - insets.bottom).dp - 204.dp,
                         )
                 }
             },
@@ -165,5 +170,33 @@ fun WindowTrayMenu(hideMenu: () -> Unit) {
                 }
             }
         }
+    }
+}
+
+class WindowsTrayMouseClicked(
+    private val appWindowManager: AppWindowManager,
+    private val windowState: WindowState,
+    private val mouseClickedAction: (MouseEvent, Rectangle, Insets) -> Unit,
+) : MouseAdapter() {
+
+    override fun mouseClicked(e: MouseEvent) {
+        val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
+        val bounds = gd.defaultConfiguration.bounds
+        val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
+        mouseClickedAction(e, bounds, insets)
+
+        val usableWidth = bounds.width - insets.right
+        val usableHeight = bounds.height - insets.bottom
+
+        val windowWidth = windowState.size.width
+        val windowHeight = windowState.size.height
+
+        appWindowManager.mainWindowPosition =
+            WindowPosition.Absolute(
+                x = usableWidth.dp - windowWidth + 8.dp,
+                y = usableHeight.dp - windowHeight + 8.dp,
+            )
+
+        windowState.position = appWindowManager.mainWindowPosition
     }
 }

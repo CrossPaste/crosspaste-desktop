@@ -124,6 +124,7 @@ import com.clipevery.task.SyncClipTaskExecutor
 import com.clipevery.task.TaskExecutor
 import com.clipevery.ui.DesktopThemeDetector
 import com.clipevery.ui.LinuxTrayWindowState
+import com.clipevery.ui.LinuxTrayWindowState.initSystemTray
 import com.clipevery.ui.MacTray
 import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.PageViewType
@@ -148,9 +149,7 @@ import com.clipevery.utils.IDGenerator
 import com.clipevery.utils.IDGeneratorFactory
 import com.clipevery.utils.QRCodeGenerator
 import com.clipevery.utils.TelnetUtils
-import com.clipevery.utils.getResourceUtils
 import com.clipevery.utils.ioDispatcher
-import dorkbox.systemTray.MenuItem
 import dorkbox.systemTray.SystemTray
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -353,8 +352,6 @@ class Clipevery {
             val isWindows = platform.isWindows()
             val isLinux = platform.isLinux()
 
-            val resourceUtils = getResourceUtils()
-
             val systemTray: SystemTray? =
                 if (platform.isLinux()) {
                     SystemTray.get() ?: throw RuntimeException("Unable to load SystemTray!")
@@ -419,17 +416,9 @@ class Clipevery {
                     ) {
                         DisposableEffect(Unit) {
                             if (platform.isLinux()) {
-                                systemTray?.setImage(resourceUtils.resourceInputStream("icon/clipevery.tray.linux.png"))
-                                systemTray?.setTooltip("Clipevery")
-                                systemTray?.menu?.add(
-                                    MenuItem("Open Clipevery") { appWindowManager.activeMainWindow() },
-                                )
-
-                                systemTray?.menu?.add(
-                                    MenuItem("Quit Clipevery") {
-                                        exitApplication()
-                                    },
-                                )
+                                systemTray?.let { tray ->
+                                    initSystemTray(tray, koinApplication, exitApplication)
+                                }
                             }
 
                             koinApplication.koin.get<GlobalListener>().start()

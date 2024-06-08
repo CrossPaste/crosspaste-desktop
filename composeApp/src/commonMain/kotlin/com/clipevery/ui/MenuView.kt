@@ -73,6 +73,7 @@ fun MenuView(close: () -> Unit) {
             }
             MenuItem(copywriter.getText("About")) {
                 currentPage.value = PageViewContext(PageViewType.ABOUT, currentPage.value)
+                close()
             }
             MenuItem(copywriter.getText("FQA")) {
                 uiSupport.openUrlInBrowser("https://www.clipevery.com/FQA")

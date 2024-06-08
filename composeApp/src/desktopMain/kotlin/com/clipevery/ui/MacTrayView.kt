@@ -9,9 +9,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.times
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.Tray
+import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.clipevery.LocalExitApplication
 import com.clipevery.LocalKoinApplication
@@ -22,8 +25,12 @@ import com.clipevery.ui.base.NotificationManager
 import com.clipevery.ui.base.UISupport
 import org.koin.core.KoinApplication
 import java.awt.Frame
+import java.awt.GraphicsEnvironment
+import java.awt.Insets
 import java.awt.MenuItem
 import java.awt.PopupMenu
+import java.awt.Toolkit
+import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.JFrame
 
@@ -54,7 +61,7 @@ fun ApplicationScope.MacTray(windowState: WindowState) {
         icon = trayIcon,
         tooltip = "Clipevery",
         mouseListener =
-            getTrayMouseAdapter(appWindowManager, windowState) { event, insets ->
+            MacTrayMouseClicked(appWindowManager, windowState) { event, insets ->
                 if (event.button == MouseEvent.BUTTON1) {
                     appWindowManager.switchMainWindow()
                 } else {
@@ -139,4 +146,37 @@ fun createFrame(): Frame {
     frame.isVisible = true
     frame.setResizable(false)
     return frame
+}
+
+class MacTrayMouseClicked(
+    private val appWindowManager: AppWindowManager,
+    private val windowState: WindowState,
+    private val mouseClickedAction: (MouseEvent, Insets) -> Unit,
+) : MouseAdapter() {
+
+    override fun mouseClicked(e: MouseEvent) {
+        val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
+        val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
+        mouseClickedAction(e, insets)
+
+        appWindowManager.mainWindowPosition =
+            WindowPosition.Absolute(
+                x = calculatePosition(e.x.dp, windowState.size.width),
+                y = 30.dp,
+            )
+        windowState.position = appWindowManager.mainWindowPosition
+    }
+
+    private fun calculatePosition(
+        x: Dp,
+        width: Dp,
+    ): Dp {
+        val fNum = x / 32.dp
+        val iNum = fNum.toInt()
+        return if (fNum - iNum < 0.5f) {
+            iNum * 32.dp - (width / 2)
+        } else {
+            (iNum + 1) * 32.dp - (width / 2)
+        }
+    }
 }
