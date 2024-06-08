@@ -1,6 +1,9 @@
 package com.clipevery
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
@@ -119,10 +122,13 @@ import com.clipevery.task.PullFileTaskExecutor
 import com.clipevery.task.PullIconTaskExecutor
 import com.clipevery.task.SyncClipTaskExecutor
 import com.clipevery.task.TaskExecutor
-import com.clipevery.ui.ClipeveryTray
 import com.clipevery.ui.DesktopThemeDetector
 import com.clipevery.ui.LinuxTrayWindowState
+import com.clipevery.ui.MacTray
+import com.clipevery.ui.PageViewContext
+import com.clipevery.ui.PageViewType
 import com.clipevery.ui.ThemeDetector
+import com.clipevery.ui.WindowsTray
 import com.clipevery.ui.base.DesktopDialogService
 import com.clipevery.ui.base.DesktopIconStyle
 import com.clipevery.ui.base.DesktopMessageManager
@@ -137,7 +143,7 @@ import com.clipevery.ui.base.ToastManager
 import com.clipevery.ui.base.UISupport
 import com.clipevery.ui.resource.ClipResourceLoader
 import com.clipevery.ui.resource.DesktopAbsoluteClipResourceLoader
-import com.clipevery.ui.search.ClipeveryAppSearchView
+import com.clipevery.ui.search.ClipeverySearchWindow
 import com.clipevery.utils.IDGenerator
 import com.clipevery.utils.IDGeneratorFactory
 import com.clipevery.utils.QRCodeGenerator
@@ -159,9 +165,6 @@ import org.signal.libsignal.protocol.state.PreKeyStore
 import org.signal.libsignal.protocol.state.SessionStore
 import org.signal.libsignal.protocol.state.SignalProtocolStore
 import org.signal.libsignal.protocol.state.SignedPreKeyStore
-import java.awt.CheckboxMenuItem
-import java.awt.Menu
-import java.awt.PopupMenu
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import kotlin.io.path.pathString
@@ -344,9 +347,10 @@ class Clipevery {
             logger.info { "Clipevery started" }
 
             val appWindowManager = koinApplication.koin.get<AppWindowManager>()
-            val notificationManager = koinApplication.koin.get<NotificationManager>()
             val platform = currentPlatform()
 
+            val isMacos = platform.isMacos()
+            val isWindows = platform.isWindows()
             val isLinux = platform.isLinux()
 
             val resourceUtils = getResourceUtils()
@@ -361,23 +365,6 @@ class Clipevery {
             application {
                 val ioScope = rememberCoroutineScope { ioDispatcher }
 
-                val windowState =
-                    rememberWindowState(
-                        placement = WindowPlacement.Floating,
-                        position = WindowPosition.PlatformDefault,
-                        size = appWindowManager.mainWindowDpSize,
-                    )
-
-                if (!isLinux) {
-                    ClipeveryTray(
-                        notificationManager = notificationManager,
-                        appWindowManager = appWindowManager,
-                        windowState = windowState,
-                    )
-                } else {
-                    LinuxTrayWindowState.setWindowPosition(appWindowManager, windowState)
-                }
-
                 val exitApplication: () -> Unit = {
                     appWindowManager.showMainWindow = false
                     appWindowManager.showSearchWindow = false
@@ -386,136 +373,129 @@ class Clipevery {
                     }
                 }
 
-                val windowIcon: Painter? =
-                    if (platform.isMacos()) {
-                        painterResource("icon/clipevery.mac.png")
-                    } else if (platform.isWindows()) {
-                        painterResource("icon/clipevery.win.png")
-                    } else if (platform.isLinux()) {
-                        painterResource("icon/clipevery.linux.png")
-                    } else {
-                        null
+                val currentPageViewContext = remember { mutableStateOf(PageViewContext(PageViewType.CLIP_PREVIEW)) }
+
+                CompositionLocalProvider(
+                    LocalKoinApplication provides koinApplication,
+                    LocalExitApplication provides exitApplication,
+                    LocalPageViewContent provides currentPageViewContext,
+                ) {
+                    val windowState =
+                        rememberWindowState(
+                            placement = WindowPlacement.Floating,
+                            position = WindowPosition.PlatformDefault,
+                            size = appWindowManager.mainWindowDpSize,
+                        )
+
+                    if (isMacos) {
+                        MacTray(windowState)
+                    } else if (isWindows) {
+                        WindowsTray(windowState)
+                    } else if (isLinux) {
+                        LinuxTrayWindowState.setWindowPosition(appWindowManager, windowState)
                     }
 
-                Window(
-                    onCloseRequest = exitApplication,
-                    visible = appWindowManager.showMainWindow,
-                    state = windowState,
-                    title = MAIN_WINDOW_TITLE,
-                    icon = windowIcon,
-                    alwaysOnTop = true,
-                    undecorated = true,
-                    transparent = true,
-                    resizable = false,
-                ) {
-                    DisposableEffect(Unit) {
-                        if (platform.isLinux()) {
-                            systemTray?.setImage(resourceUtils.resourceInputStream("icon/clipevery.tray.linux.png"))
-                            systemTray?.setTooltip("Clipevery")
-                            systemTray?.menu?.add(
-                                MenuItem("Open Clipevery") { appWindowManager.activeMainWindow() },
-                            )
-
-                            systemTray?.menu?.add(
-                                MenuItem("Quit Clipevery") {
-                                    exitApplication()
-                                },
-                            )
+                    val windowIcon: Painter? =
+                        if (platform.isMacos()) {
+                            painterResource("icon/clipevery.mac.png")
+                        } else if (platform.isWindows()) {
+                            painterResource("icon/clipevery.win.png")
+                        } else if (platform.isLinux()) {
+                            painterResource("icon/clipevery.linux.png")
+                        } else {
+                            null
                         }
 
-                        koinApplication.koin.get<GlobalListener>().start()
+                    Window(
+                        onCloseRequest = exitApplication,
+                        visible = appWindowManager.showMainWindow,
+                        state = windowState,
+                        title = MAIN_WINDOW_TITLE,
+                        icon = windowIcon,
+                        alwaysOnTop = true,
+                        undecorated = true,
+                        transparent = true,
+                        resizable = false,
+                    ) {
+                        DisposableEffect(Unit) {
+                            if (platform.isLinux()) {
+                                systemTray?.setImage(resourceUtils.resourceInputStream("icon/clipevery.tray.linux.png"))
+                                systemTray?.setTooltip("Clipevery")
+                                systemTray?.menu?.add(
+                                    MenuItem("Open Clipevery") { appWindowManager.activeMainWindow() },
+                                )
 
-                        val windowListener =
-                            object : WindowAdapter() {
-                                override fun windowGainedFocus(e: WindowEvent?) {
-                                    appWindowManager.showMainWindow = true
-                                }
-
-                                override fun windowLostFocus(e: WindowEvent?) {
-//                                    if (!appWindowManager.showMainDialog) {
-//                                        appWindowManager.unActiveMainWindow()
-//                                    }
-                                }
+                                systemTray?.menu?.add(
+                                    MenuItem("Quit Clipevery") {
+                                        exitApplication()
+                                    },
+                                )
                             }
 
-                        window.addWindowFocusListener(windowListener)
+                            koinApplication.koin.get<GlobalListener>().start()
 
-                        onDispose {
-                            window.removeWindowFocusListener(windowListener)
-                        }
-                    }
-                    ClipeveryApp(
-                        koinApplication,
-                        hideWindow = { appWindowManager.unActiveMainWindow() },
-                        exitApplication = exitApplication,
-                    )
-                }
+                            val windowListener =
+                                object : WindowAdapter() {
+                                    override fun windowGainedFocus(e: WindowEvent?) {
+                                        appWindowManager.showMainWindow = true
+                                    }
 
-                val searchWindowState =
-                    rememberWindowState(
-                        placement = WindowPlacement.Floating,
-                        position = appWindowManager.searchWindowPosition,
-                        size = appWindowManager.searchWindowDpSize,
-                    )
-
-                Window(
-                    onCloseRequest = ::exitApplication,
-                    visible = appWindowManager.showSearchWindow,
-                    state = searchWindowState,
-                    title = SEARCH_WINDOW_TITLE,
-                    alwaysOnTop = true,
-                    undecorated = true,
-                    transparent = true,
-                    resizable = false,
-                ) {
-                    DisposableEffect(Unit) {
-                        val windowListener =
-                            object : WindowAdapter() {
-                                override fun windowGainedFocus(e: WindowEvent?) {
-                                    appWindowManager.showSearchWindow = true
+                                    override fun windowLostFocus(e: WindowEvent?) {
+                                        if (!appWindowManager.showMainDialog) {
+                                            appWindowManager.unActiveMainWindow()
+                                        }
+                                    }
                                 }
 
-                                override fun windowLostFocus(e: WindowEvent?) {
-                                    appWindowManager.showSearchWindow = false
-                                }
+                            window.addWindowFocusListener(windowListener)
+
+                            onDispose {
+                                window.removeWindowFocusListener(windowListener)
                             }
-
-                        window.addWindowFocusListener(windowListener)
-
-                        onDispose {
-                            window.removeWindowFocusListener(windowListener)
                         }
+                        ClipeveryWindow { appWindowManager.unActiveMainWindow() }
                     }
 
-                    ClipeveryAppSearchView(koinApplication)
+                    val searchWindowState =
+                        rememberWindowState(
+                            placement = WindowPlacement.Floating,
+                            position = appWindowManager.searchWindowPosition,
+                            size = appWindowManager.searchWindowDpSize,
+                        )
+
+                    Window(
+                        onCloseRequest = ::exitApplication,
+                        visible = appWindowManager.showSearchWindow,
+                        state = searchWindowState,
+                        title = SEARCH_WINDOW_TITLE,
+                        alwaysOnTop = true,
+                        undecorated = true,
+                        transparent = true,
+                        resizable = false,
+                    ) {
+                        DisposableEffect(Unit) {
+                            val windowListener =
+                                object : WindowAdapter() {
+                                    override fun windowGainedFocus(e: WindowEvent?) {
+                                        appWindowManager.showSearchWindow = true
+                                    }
+
+                                    override fun windowLostFocus(e: WindowEvent?) {
+                                        appWindowManager.showSearchWindow = false
+                                    }
+                                }
+
+                            window.addWindowFocusListener(windowListener)
+
+                            onDispose {
+                                window.removeWindowFocusListener(windowListener)
+                            }
+                        }
+
+                        ClipeverySearchWindow()
+                    }
                 }
             }
         }
     }
-}
-
-fun createPopupMenu(): PopupMenu {
-    val popup = PopupMenu()
-    val aboutItem = java.awt.MenuItem("About")
-    val cb1 = CheckboxMenuItem("Set auto size")
-    val cb2 = CheckboxMenuItem("Set tooltip")
-    val displayMenu = Menu("Display")
-    val errorItem = java.awt.MenuItem("Error")
-    val warningItem = java.awt.MenuItem("Warning")
-    val infoItem = java.awt.MenuItem("Info")
-    val noneItem = java.awt.MenuItem("None")
-    val exitItem = java.awt.MenuItem("Exit")
-    // Add components to pop-up menu
-    popup.add(aboutItem)
-    popup.addSeparator()
-    popup.add(cb1)
-    popup.add(cb2)
-    popup.addSeparator()
-    popup.add(displayMenu)
-    displayMenu.add(errorItem)
-    displayMenu.add(warningItem)
-    displayMenu.add(infoItem)
-    displayMenu.add(noneItem)
-    popup.add(exitItem)
-    return popup
 }

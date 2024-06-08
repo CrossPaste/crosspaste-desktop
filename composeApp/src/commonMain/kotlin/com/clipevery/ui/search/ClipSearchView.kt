@@ -1,6 +1,5 @@
 package com.clipevery.ui.search
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -30,7 +29,6 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -85,19 +83,9 @@ import com.clipevery.ui.favoriteColor
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import org.koin.core.KoinApplication
 import java.awt.event.KeyEvent
 
-@Composable
-fun ClipeveryAppSearchView(koinApplication: KoinApplication) {
-    CompositionLocalProvider(
-        LocalKoinApplication provides koinApplication,
-    ) {
-        ClipeverySearchWindow()
-    }
-}
-
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ClipeverySearchWindow() {
     val current = LocalKoinApplication.current

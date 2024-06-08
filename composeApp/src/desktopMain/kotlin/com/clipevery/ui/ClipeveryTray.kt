@@ -14,10 +14,8 @@ import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.clipevery.app.AppWindowManager
-import com.clipevery.createPopupMenu
 import com.clipevery.platform.currentPlatform
 import com.clipevery.ui.base.NotificationManager
-import java.awt.Frame
 import java.awt.GraphicsEnvironment
 import java.awt.Insets
 import java.awt.PopupMenu
@@ -33,14 +31,6 @@ fun ApplicationScope.ClipeveryTray(
 ) {
     val density = LocalDensity.current
 
-    fun switchMainWindow() {
-        if (appWindowManager.showMainWindow) {
-            appWindowManager.unActiveMainWindow()
-        } else {
-            appWindowManager.activeMainWindow()
-        }
-    }
-
     val trayIcon =
         if (currentPlatform().isMacos()) {
             painterResource("icon/clipevery.tray.mac.png")
@@ -48,8 +38,8 @@ fun ApplicationScope.ClipeveryTray(
             painterResource("icon/clipevery.tray.win.png")
         }
 
-    val menu by remember { mutableStateOf(createPopupMenu()) }
-    val frame by remember { mutableStateOf(createFrame(menu)) }
+    val menu by remember { mutableStateOf(PopupMenu()) }
+    val frame by remember { mutableStateOf(createFrame()) }
 
     val platform = currentPlatform()
 
@@ -62,13 +52,10 @@ fun ApplicationScope.ClipeveryTray(
                 getTrayMouseAdapter(appWindowManager, windowState) { event, insets ->
                     event.point
                     if (event.button == MouseEvent.BUTTON1) {
-                        switchMainWindow()
+                        appWindowManager.switchMainWindow()
                     } else {
                         val stepWidth = with(density) { 32.dp.roundToPx() }
                         val position: Int = ((event.x) / stepWidth) * stepWidth
-
-                        println("event.x: ${event.x}, position: $position, stepWidth: $stepWidth")
-
                         if (event.x - position > stepWidth / 2) {
                             menu.show(frame, position - insets.left, 5)
                         } else {
@@ -86,7 +73,7 @@ fun ApplicationScope.ClipeveryTray(
                 getTrayMouseAdapter(appWindowManager, windowState) { event, insets ->
                     event.point
                     if (event.button == MouseEvent.BUTTON1) {
-                        switchMainWindow()
+                        appWindowManager.switchMainWindow()
                     }
                 },
             menu = {
@@ -108,15 +95,6 @@ fun ApplicationScope.ClipeveryTray(
             },
         )
     }
-}
-
-fun createFrame(menu: PopupMenu): Frame {
-    val frame = Frame()
-    frame.isUndecorated = true
-    frame.isVisible = true
-    frame.setResizable(false)
-    frame.add(menu)
-    return frame
 }
 
 fun getTrayMouseAdapter(

@@ -11,10 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import com.clipevery.ui.AboutView
 import com.clipevery.ui.ClipeveryTheme
 import com.clipevery.ui.HomeView
-import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.PageViewType
 import com.clipevery.ui.base.DialogService
 import com.clipevery.ui.base.MessageView
@@ -35,21 +31,6 @@ import com.clipevery.ui.devices.DeviceDetailView
 import com.clipevery.ui.devices.TokenView
 import com.clipevery.ui.settings.SettingsView
 import com.clipevery.ui.settings.ShortcutKeysView
-import org.koin.core.KoinApplication
-
-@Composable
-fun ClipeveryApp(
-    koinApplication: KoinApplication,
-    hideWindow: () -> Unit,
-    exitApplication: () -> Unit,
-) {
-    CompositionLocalProvider(
-        LocalKoinApplication provides koinApplication,
-        LocalExitApplication provides exitApplication,
-    ) {
-        ClipeveryWindow(hideWindow)
-    }
-}
 
 @Composable
 fun ClipeveryWindow(hideWindow: () -> Unit) {
@@ -125,7 +106,8 @@ fun ClipeveryWindow(hideWindow: () -> Unit) {
 
 @Composable
 fun ClipeveryContent() {
-    val currentPageViewContext = remember { mutableStateOf(PageViewContext(PageViewType.CLIP_PREVIEW)) }
+    val currentPageViewContext = LocalPageViewContent.current
+
     TokenView()
     when (currentPageViewContext.value.pageViewType) {
         PageViewType.CLIP_PREVIEW,
