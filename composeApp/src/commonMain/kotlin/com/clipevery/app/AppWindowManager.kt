@@ -33,9 +33,17 @@ interface AppWindowManager {
 
     fun activeMainWindow()
 
-    suspend fun activeSearchWindow()
-
     fun unActiveMainWindow()
+
+    fun switchMainWindow() {
+        if (showMainWindow) {
+            unActiveMainWindow()
+        } else {
+            activeMainWindow()
+        }
+    }
+
+    suspend fun activeSearchWindow()
 
     suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean)
 
