@@ -1,5 +1,13 @@
 package com.clipevery.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -7,6 +15,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpSize
@@ -43,7 +56,7 @@ fun ApplicationScope.WindowsTray(windowState: WindowState) {
     val menuWindowState =
         rememberWindowState(
             placement = WindowPlacement.Floating,
-            size = DpSize(150.dp, 168.dp),
+            size = DpSize(150.dp, 200.dp),
         )
 
     val densityFloat = density.density
@@ -61,7 +74,7 @@ fun ApplicationScope.WindowsTray(windowState: WindowState) {
                     menuWindowState.position =
                         WindowPosition(
                             x = ((event.x - insets.left) / densityFloat).dp,
-                            y = ((event.x - insets.bottom) / densityFloat).dp - 168.dp,
+                            y = ((event.x - insets.bottom) / densityFloat).dp - 200.dp,
                         )
                 }
             },
@@ -104,26 +117,67 @@ fun ApplicationScope.WindowsTray(windowState: WindowState) {
 
 @Composable
 fun WindowTrayMenu(hideMenu: () -> Unit) {
-    val density = LocalDensity.current
+    val current = LocalKoinApplication.current
+    val appWindowManager = current.koin.get<AppWindowManager>()
 
-    Popup(
-        alignment = Alignment.TopEnd,
-        offset =
-            IntOffset(
-                with(density) { ((-14).dp).roundToPx() },
-                with(density) { (30.dp).roundToPx() },
-            ),
-        onDismissRequest = {
-        },
-        properties =
-            PopupProperties(
-                focusable = true,
-                dismissOnBackPress = true,
-                dismissOnClickOutside = true,
-            ),
-    ) {
-        MenuView {
-            hideMenu()
+    ClipeveryTheme {
+        Box(
+            modifier =
+                Modifier
+                    .background(Color.Transparent)
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onDoubleTap = {
+                                hideMenu()
+                            },
+                            onTap = {
+                                hideMenu()
+                            },
+                            onLongPress = {
+                                hideMenu()
+                            },
+                            onPress = {},
+                        )
+                    }
+                    .clip(RoundedCornerShape(10.dp))
+                    .fillMaxSize()
+                    .padding(10.dp, 0.dp, 10.dp, 10.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .shadow(5.dp, RoundedCornerShape(10.dp), false)
+                        .fillMaxSize()
+                        .border(1.dp, MaterialTheme.colors.onSurface.copy(alpha = 0.12f), RoundedCornerShape(10.dp))
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onDoubleTap = {},
+                                onTap = {},
+                                onLongPress = {},
+                                onPress = {},
+                            )
+                        },
+                contentAlignment = Alignment.Center,
+            ) {
+                Popup(
+                    alignment = Alignment.TopEnd,
+                    offset = IntOffset(0, 0),
+                    onDismissRequest = {
+                    },
+                    properties =
+                        PopupProperties(
+                            focusable = true,
+                            dismissOnBackPress = true,
+                            dismissOnClickOutside = true,
+                        ),
+                ) {
+                    MenuView {
+                        appWindowManager.activeMainWindow()
+                        hideMenu()
+                    }
+                }
+            }
         }
     }
 }
