@@ -23,11 +23,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ApplicationScope
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
@@ -56,7 +53,7 @@ fun ApplicationScope.WindowsTray(windowState: WindowState) {
     val menuWindowState =
         rememberWindowState(
             placement = WindowPlacement.Floating,
-            size = DpSize(150.dp, 200.dp),
+            size = DpSize(170.dp, 204.dp),
         )
 
     val densityFloat = density.density
@@ -74,43 +71,45 @@ fun ApplicationScope.WindowsTray(windowState: WindowState) {
                     menuWindowState.position =
                         WindowPosition(
                             x = ((event.x - insets.left) / densityFloat).dp,
-                            y = ((event.x - insets.bottom) / densityFloat).dp - 200.dp,
+                            y = ((event.y - insets.bottom) / densityFloat).dp - 204.dp,
                         )
                 }
             },
     )
 
-    Window(
-        onCloseRequest = ::exitApplication,
-        visible = showMenu,
-        state = menuWindowState,
-        title = "Clipevery Menu",
-        alwaysOnTop = true,
-        undecorated = true,
-        transparent = true,
-        resizable = false,
-    ) {
-        DisposableEffect(Unit) {
-            val windowListener =
-                object : WindowAdapter() {
-                    override fun windowGainedFocus(e: WindowEvent?) {
-                        showMenu = true
+    if (showMenu) {
+        Window(
+            onCloseRequest = ::exitApplication,
+            visible = true,
+            state = menuWindowState,
+            title = "Clipevery Menu",
+            alwaysOnTop = true,
+            undecorated = true,
+            transparent = true,
+            resizable = false,
+        ) {
+            DisposableEffect(Unit) {
+                val windowListener =
+                    object : WindowAdapter() {
+                        override fun windowGainedFocus(e: WindowEvent?) {
+                            showMenu = true
+                        }
+
+                        override fun windowLostFocus(e: WindowEvent?) {
+                            showMenu = false
+                        }
                     }
 
-                    override fun windowLostFocus(e: WindowEvent?) {
-                        showMenu = false
-                    }
+                window.addWindowFocusListener(windowListener)
+
+                onDispose {
+                    window.removeWindowFocusListener(windowListener)
                 }
-
-            window.addWindowFocusListener(windowListener)
-
-            onDispose {
-                window.removeWindowFocusListener(windowListener)
             }
-        }
 
-        WindowTrayMenu {
-            showMenu = false
+            WindowTrayMenu {
+                showMenu = false
+            }
         }
     }
 }
@@ -160,22 +159,9 @@ fun WindowTrayMenu(hideMenu: () -> Unit) {
                         },
                 contentAlignment = Alignment.Center,
             ) {
-                Popup(
-                    alignment = Alignment.TopEnd,
-                    offset = IntOffset(0, 0),
-                    onDismissRequest = {
-                    },
-                    properties =
-                        PopupProperties(
-                            focusable = true,
-                            dismissOnBackPress = true,
-                            dismissOnClickOutside = true,
-                        ),
-                ) {
-                    MenuView {
-                        appWindowManager.activeMainWindow()
-                        hideMenu()
-                    }
+                MenuView {
+                    appWindowManager.activeMainWindow()
+                    hideMenu()
                 }
             }
         }
