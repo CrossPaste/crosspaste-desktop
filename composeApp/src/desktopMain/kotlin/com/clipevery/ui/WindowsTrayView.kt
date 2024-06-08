@@ -31,6 +31,7 @@ import java.awt.event.WindowEvent
 @Composable
 fun ApplicationScope.WindowsTray(windowState: WindowState) {
     val current = LocalKoinApplication.current
+    val density = LocalDensity.current
 
     val appWindowManager = current.koin.get<AppWindowManager>()
     val notificationManager = current.koin.get<NotificationManager>()
@@ -45,6 +46,8 @@ fun ApplicationScope.WindowsTray(windowState: WindowState) {
             size = DpSize(150.dp, 168.dp),
         )
 
+    val densityFloat = density.density
+
     Tray(
         state = remember { notificationManager.trayState },
         icon = trayIcon,
@@ -57,8 +60,8 @@ fun ApplicationScope.WindowsTray(windowState: WindowState) {
                     showMenu = true
                     menuWindowState.position =
                         WindowPosition(
-                            x = (event.x - insets.left).dp,
-                            y = 30.dp,
+                            x = ((event.x - insets.left) / densityFloat).dp,
+                            y = ((event.x - insets.bottom) / densityFloat).dp - 168.dp,
                         )
                 }
             },
