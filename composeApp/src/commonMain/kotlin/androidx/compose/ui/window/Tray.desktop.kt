@@ -24,6 +24,7 @@ import java.awt.GraphicsEnvironment
 import java.awt.PopupMenu
 import java.awt.SystemTray
 import java.awt.TrayIcon
+import java.awt.event.ActionEvent
 import java.awt.event.MouseListener
 import java.util.Locale
 
@@ -86,7 +87,7 @@ fun ApplicationScope.Tray(
     icon: Painter,
     state: TrayState = rememberTrayState(),
     tooltip: String? = null,
-    onAction: () -> Unit = {},
+    onAction: (ActionEvent) -> Unit = {},
     mouseListener: MouseListener,
     menu: @Composable MenuScope.() -> Unit = {},
 ) {
@@ -125,8 +126,8 @@ fun ApplicationScope.Tray(
             TrayIcon(awtIcon).apply {
                 isImageAutoSize = true
 
-                addActionListener {
-                    currentOnAction()
+                addActionListener { e ->
+                    currentOnAction(e)
                 }
 
                 addMouseListener(mouseListener)

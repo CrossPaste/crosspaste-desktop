@@ -1,11 +1,9 @@
 package com.clipevery
 
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
@@ -121,6 +119,7 @@ import com.clipevery.task.PullFileTaskExecutor
 import com.clipevery.task.PullIconTaskExecutor
 import com.clipevery.task.SyncClipTaskExecutor
 import com.clipevery.task.TaskExecutor
+import com.clipevery.ui.ClipeveryTray
 import com.clipevery.ui.DesktopThemeDetector
 import com.clipevery.ui.LinuxTrayWindowState
 import com.clipevery.ui.ThemeDetector
@@ -136,7 +135,6 @@ import com.clipevery.ui.base.MessageManager
 import com.clipevery.ui.base.NotificationManager
 import com.clipevery.ui.base.ToastManager
 import com.clipevery.ui.base.UISupport
-import com.clipevery.ui.getTrayMouseAdapter
 import com.clipevery.ui.resource.ClipResourceLoader
 import com.clipevery.ui.resource.DesktopAbsoluteClipResourceLoader
 import com.clipevery.ui.search.ClipeveryAppSearchView
@@ -161,6 +159,9 @@ import org.signal.libsignal.protocol.state.PreKeyStore
 import org.signal.libsignal.protocol.state.SessionStore
 import org.signal.libsignal.protocol.state.SignalProtocolStore
 import org.signal.libsignal.protocol.state.SignedPreKeyStore
+import java.awt.CheckboxMenuItem
+import java.awt.Menu
+import java.awt.PopupMenu
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import kotlin.io.path.pathString
@@ -343,8 +344,10 @@ class Clipevery {
             logger.info { "Clipevery started" }
 
             val appWindowManager = koinApplication.koin.get<AppWindowManager>()
-
+            val notificationManager = koinApplication.koin.get<NotificationManager>()
             val platform = currentPlatform()
+
+            val isLinux = platform.isLinux()
 
             val resourceUtils = getResourceUtils()
 
@@ -365,28 +368,11 @@ class Clipevery {
                         size = appWindowManager.mainWindowDpSize,
                     )
 
-                if (!platform.isLinux()) {
-                    val notificationManager = koinApplication.koin.get<NotificationManager>()
-
-                    val trayIcon =
-                        if (currentPlatform().isMacos()) {
-                            painterResource("icon/clipevery.tray.mac.png")
-                        } else {
-                            painterResource("icon/clipevery.tray.win.png")
-                        }
-
-                    Tray(
-                        state = remember { notificationManager.trayState },
-                        icon = trayIcon,
-                        tooltip = "Clipevery",
-                        mouseListener =
-                            getTrayMouseAdapter(appWindowManager, windowState) {
-                                if (appWindowManager.showMainWindow) {
-                                    appWindowManager.unActiveMainWindow()
-                                } else {
-                                    appWindowManager.activeMainWindow()
-                                }
-                            },
+                if (!isLinux) {
+                    ClipeveryTray(
+                        notificationManager = notificationManager,
+                        appWindowManager = appWindowManager,
+                        windowState = windowState,
                     )
                 } else {
                     LinuxTrayWindowState.setWindowPosition(appWindowManager, windowState)
@@ -446,9 +432,9 @@ class Clipevery {
                                 }
 
                                 override fun windowLostFocus(e: WindowEvent?) {
-                                    if (!appWindowManager.showMainDialog) {
-                                        appWindowManager.unActiveMainWindow()
-                                    }
+//                                    if (!appWindowManager.showMainDialog) {
+//                                        appWindowManager.unActiveMainWindow()
+//                                    }
                                 }
                             }
 
@@ -506,4 +492,30 @@ class Clipevery {
             }
         }
     }
+}
+
+fun createPopupMenu(): PopupMenu {
+    val popup = PopupMenu()
+    val aboutItem = java.awt.MenuItem("About")
+    val cb1 = CheckboxMenuItem("Set auto size")
+    val cb2 = CheckboxMenuItem("Set tooltip")
+    val displayMenu = Menu("Display")
+    val errorItem = java.awt.MenuItem("Error")
+    val warningItem = java.awt.MenuItem("Warning")
+    val infoItem = java.awt.MenuItem("Info")
+    val noneItem = java.awt.MenuItem("None")
+    val exitItem = java.awt.MenuItem("Exit")
+    // Add components to pop-up menu
+    popup.add(aboutItem)
+    popup.addSeparator()
+    popup.add(cb1)
+    popup.add(cb2)
+    popup.addSeparator()
+    popup.add(displayMenu)
+    displayMenu.add(errorItem)
+    displayMenu.add(warningItem)
+    displayMenu.add(infoItem)
+    displayMenu.add(noneItem)
+    popup.add(exitItem)
+    return popup
 }
