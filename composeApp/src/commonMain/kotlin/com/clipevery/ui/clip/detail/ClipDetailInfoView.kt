@@ -53,8 +53,8 @@ import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.path.PathProvider
 import com.clipevery.ui.base.AppImageIcon
 import com.clipevery.ui.base.IconStyle
-import com.clipevery.ui.base.starRegular
-import com.clipevery.ui.base.starSolid
+import com.clipevery.ui.base.favorite
+import com.clipevery.ui.base.noFavorite
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -97,7 +97,7 @@ fun ClipDetailInfoView(
                 Modifier.size(15.dp).onClick {
                     clipDao.setFavorite(clipData.id, !clipData.favorite)
                 },
-            painter = if (clipData.favorite) starSolid() else starRegular(),
+            painter = if (clipData.favorite) favorite() else noFavorite(),
             contentDescription = "Favorite",
             tint = if (clipData.favorite) Color(0xFFFFCE34) else MaterialTheme.colors.onSurface,
         )

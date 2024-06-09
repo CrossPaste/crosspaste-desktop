@@ -54,9 +54,9 @@ import com.clipevery.ui.base.MessageType
 import com.clipevery.ui.base.Toast
 import com.clipevery.ui.base.ToastManager
 import com.clipevery.ui.base.copy
+import com.clipevery.ui.base.favorite
 import com.clipevery.ui.base.getMenWidth
-import com.clipevery.ui.base.starRegular
-import com.clipevery.ui.base.starSolid
+import com.clipevery.ui.base.noFavorite
 import com.clipevery.ui.favoriteColor
 import com.clipevery.ui.search.ClipTypeIconView
 import kotlinx.coroutines.Job
@@ -240,7 +240,7 @@ fun ClipMenuView(
                     Modifier.size(16.dp).onClick {
                         clipDao.setFavorite(clipData.id, !clipData.favorite)
                     },
-                painter = if (clipData.favorite) starSolid() else starRegular(),
+                painter = if (clipData.favorite) favorite() else noFavorite(),
                 contentDescription = "Favorite",
                 tint = favoriteColor(),
             )

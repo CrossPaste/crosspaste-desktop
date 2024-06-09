@@ -75,9 +75,9 @@ import com.clipevery.ui.base.MenuItem
 import com.clipevery.ui.base.ascSort
 import com.clipevery.ui.base.descSort
 import com.clipevery.ui.base.enter
+import com.clipevery.ui.base.favorite
 import com.clipevery.ui.base.getMenWidth
-import com.clipevery.ui.base.starRegular
-import com.clipevery.ui.base.starSolid
+import com.clipevery.ui.base.noFavorite
 import com.clipevery.ui.darken
 import com.clipevery.ui.favoriteColor
 import io.github.oshai.kotlinlogging.KLogger
@@ -306,7 +306,7 @@ fun ClipeverySearchWindow() {
                                         ) {
                                             Icon(
                                                 modifier = Modifier.size(18.dp),
-                                                painter = if (clipSearchService.searchFavorite) starSolid() else starRegular(),
+                                                painter = if (clipSearchService.searchFavorite) favorite() else noFavorite(),
                                                 contentDescription = "Favorite",
                                                 tint =
                                                     if (clipSearchService.searchFavorite) {

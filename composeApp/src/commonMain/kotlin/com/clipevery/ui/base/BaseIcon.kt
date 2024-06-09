@@ -50,16 +50,6 @@ fun remove(): Painter {
 }
 
 @Composable
-fun starRegular(): Painter {
-    return painterResource("icon/base/star-regular.svg")
-}
-
-@Composable
-fun starSolid(): Painter {
-    return painterResource("icon/base/star-solid.svg")
-}
-
-@Composable
 fun database(): Painter {
     return painterResource("icon/base/database.svg")
 }
@@ -107,4 +97,14 @@ fun toTop(): Painter {
 @Composable
 fun copy(): Painter {
     return painterResource("icon/base/copy.svg")
+}
+
+@Composable
+fun noFavorite(): Painter {
+    return painterResource("icon/base/no_favorite.svg")
+}
+
+@Composable
+fun favorite(): Painter {
+    return painterResource("icon/base/favorite.svg")
 }
