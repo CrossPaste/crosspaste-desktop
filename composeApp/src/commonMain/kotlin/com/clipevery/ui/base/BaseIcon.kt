@@ -103,3 +103,8 @@ fun edit(): Painter {
 fun toTop(): Painter {
     return painterResource("icon/base/to-top.svg")
 }
+
+@Composable
+fun copy(): Painter {
+    return painterResource("icon/base/copy.svg")
+}
