@@ -2,14 +2,24 @@ package com.clipevery.clip
 
 import com.clipevery.app.AppEnv
 import com.clipevery.app.AppWindowManager
+import com.clipevery.os.windows.WinProcessUtils
+import com.clipevery.os.windows.WinProcessUtils.killProcessSet
 import com.clipevery.os.windows.WindowDpiHelper
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.platform.currentPlatform
 import com.clipevery.utils.HtmlUtils.dataUrl
 import com.clipevery.utils.Retry
+import com.clipevery.utils.ioDispatcher
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import org.openqa.selenium.Dimension
 import org.openqa.selenium.OutputType
 import org.openqa.selenium.chrome.ChromeDriver
+import org.openqa.selenium.chrome.ChromeDriverService
 import org.openqa.selenium.chrome.ChromeOptions
 import java.io.File
 import java.nio.file.Path
@@ -22,6 +32,8 @@ class DesktopChromeService(private val appWindowManager: AppWindowManager) : Chr
         private const val CHROME_DRIVER = "chromedriver"
 
         private const val CHROME_HEADLESS_SHELL = "chrome-headless-shell"
+
+        private val logger = KotlinLogging.logger {}
     }
 
     private val currentPlatform = currentPlatform()
@@ -98,6 +110,8 @@ class DesktopChromeService(private val appWindowManager: AppWindowManager) : Chr
             }
         }
 
+    private var chromeDriverService: ChromeDriverService? = null
+
     private var chromeDriver: ChromeDriver? = null
 
     init {
@@ -138,7 +152,9 @@ class DesktopChromeService(private val appWindowManager: AppWindowManager) : Chr
             }
         }
 
-        chromeDriver = ChromeDriver(options)
+        chromeDriverService = ChromeDriverService.createDefaultService()
+
+        chromeDriver = ChromeDriver(chromeDriverService, options)
     }
 
     @Synchronized
@@ -146,13 +162,75 @@ class DesktopChromeService(private val appWindowManager: AppWindowManager) : Chr
         return Retry.retry(1, {
             doHtml2Image(html)
         }) {
-            chromeDriver?.quit()
+            quit()
             initChromeDriver()
         }
     }
 
+    private val quitSupervisorJob = SupervisorJob()
+
+    private val quitScope = CoroutineScope(ioDispatcher + quitSupervisorJob)
+
     override fun quit() {
-        chromeDriver?.quit()
+        chromeDriver?.let { driver ->
+            if (currentPlatform.isWindows()) {
+                val shellPids = collectChromeHeadlessShellProcessIds()
+
+                val deferred =
+                    quitScope.async {
+                        driver.quit()
+                        true
+                    }
+
+                runBlocking {
+                    try {
+                        val result =
+                            withTimeoutOrNull(1000) {
+                                deferred.await()
+                            }
+                        if (result == null) {
+                            killProcessSet(shellPids)
+                        }
+                    } catch (e: Exception) {
+                        logger.error(e) { "chromeDriver & chromeHeadlessShell quit fail" }
+                    }
+                }
+            } else {
+                driver.quit()
+            }
+        }
+    }
+
+    private fun collectChromeHeadlessShellProcessIds(): Set<Long> {
+        val pid = ProcessHandle.current().pid()
+        val chromeHeadlessSHellProcessIds = mutableSetOf<Long>()
+
+        val chromeDriverPid =
+            WinProcessUtils.getChildProcessIds(pid)
+                .firstOrNull { it.first == "chromedriver.exe" }?.second
+
+        if (chromeDriverPid == null) {
+            return chromeHeadlessSHellProcessIds
+        }
+
+        val currentPids = mutableSetOf<Long>()
+
+        currentPids.add(chromeDriverPid)
+
+        while (currentPids.isNotEmpty()) {
+            val shellPids =
+                currentPids.map { parentPid ->
+                    WinProcessUtils.getChildProcessIds(parentPid)
+                        .filter { it.first == "chrome-headless-shell.exe" }
+                        .map { it.second }
+                }.flatten().toSet()
+
+            chromeHeadlessSHellProcessIds.addAll(shellPids)
+            currentPids.clear()
+            currentPids.addAll(shellPids)
+        }
+
+        return chromeHeadlessSHellProcessIds
     }
 
     @Suppress("UNCHECKED_CAST")
