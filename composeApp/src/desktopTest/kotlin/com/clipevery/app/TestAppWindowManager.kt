@@ -25,30 +25,29 @@ class TestAppWindowManager {
     }
 
     @Test
-    fun testMockTestAppWindowManager() =
-        runBlocking {
-            assertNull(testAppWindowManager.getPrevAppName())
-            runBlocking { testAppWindowManager.toPaste() }
-            assertEquals(1, TestWindowManager.pasterId)
-            assertNull(testAppWindowManager.getCurrentActiveAppName())
-            testAppWindowManager.activeMainWindow()
-            assertEquals("Clipevery", testAppWindowManager.getCurrentActiveAppName())
-            testAppWindowManager.unActiveMainWindow()
-            assertNull(testAppWindowManager.getCurrentActiveAppName())
-            TestWindowManager.activeApp("Chrome")
-            runBlocking { testAppWindowManager.activeSearchWindow() }
-            assertEquals("Clipevery", testAppWindowManager.getCurrentActiveAppName())
-            assertEquals("Chrome", testAppWindowManager.getPrevAppName())
-            runBlocking { testAppWindowManager.unActiveSearchWindow(preparePaste = { true }) }
-            assertEquals(2, TestWindowManager.pasterId)
-            assertEquals("Chrome", testAppWindowManager.getCurrentActiveAppName())
-            testAppWindowManager.activeMainWindow()
-            runBlocking { testAppWindowManager.activeSearchWindow() }
-            assertEquals("Clipevery", testAppWindowManager.getCurrentActiveAppName())
-            assertEquals("Chrome", testAppWindowManager.getPrevAppName())
-            runBlocking { testAppWindowManager.unActiveSearchWindow(preparePaste = { false }) }
-            assertEquals(2, TestWindowManager.pasterId)
-            runBlocking { testAppWindowManager.toPaste() }
-            assertEquals(3, TestWindowManager.pasterId)
-        }
+    fun testMockTestAppWindowManager() {
+        assertNull(testAppWindowManager.getPrevAppName())
+        runBlocking { testAppWindowManager.toPaste() }
+        assertEquals(1, TestWindowManager.pasterId)
+        assertNull(testAppWindowManager.getCurrentActiveAppName())
+        testAppWindowManager.activeMainWindow()
+        assertEquals("Clipevery", testAppWindowManager.getCurrentActiveAppName())
+        testAppWindowManager.unActiveMainWindow()
+        assertNull(testAppWindowManager.getCurrentActiveAppName())
+        TestWindowManager.activeApp("Chrome")
+        runBlocking { testAppWindowManager.activeSearchWindow() }
+        assertEquals("Clipevery", testAppWindowManager.getCurrentActiveAppName())
+        assertEquals("Chrome", testAppWindowManager.getPrevAppName())
+        runBlocking { testAppWindowManager.unActiveSearchWindow(preparePaste = { true }) }
+        assertEquals(2, TestWindowManager.pasterId)
+        assertEquals("Chrome", testAppWindowManager.getCurrentActiveAppName())
+        testAppWindowManager.activeMainWindow()
+        runBlocking { testAppWindowManager.activeSearchWindow() }
+        assertEquals("Clipevery", testAppWindowManager.getCurrentActiveAppName())
+        assertEquals("Chrome", testAppWindowManager.getPrevAppName())
+        runBlocking { testAppWindowManager.unActiveSearchWindow(preparePaste = { false }) }
+        assertEquals(2, TestWindowManager.pasterId)
+        runBlocking { testAppWindowManager.toPaste() }
+        assertEquals(3, TestWindowManager.pasterId)
+    }
 }
