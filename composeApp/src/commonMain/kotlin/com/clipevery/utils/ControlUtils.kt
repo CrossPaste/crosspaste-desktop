@@ -27,4 +27,14 @@ interface ControlUtils {
         isValidResult: (T) -> Boolean,
         action: () -> T,
     ): T
+
+    fun blockDebounce(
+        delay: Long,
+        action: () -> Unit,
+    ): () -> Unit
+
+    fun debounce(
+        delay: Long,
+        action: suspend () -> Unit,
+    ): suspend () -> Unit
 }
