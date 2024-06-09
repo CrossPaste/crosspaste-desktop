@@ -1,8 +1,9 @@
 package com.clipevery.sync
 
-import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.clipevery.app.AppInfo
 import com.clipevery.config.ConfigManager
 import com.clipevery.dto.sync.SyncInfo
@@ -22,9 +23,7 @@ class DesktopDeviceManager(
 
     private val logger = KotlinLogging.logger {}
 
-    private var _searching = mutableStateOf(false)
-
-    override val isSearching: State<Boolean> get() = _searching
+    override var searching by mutableStateOf(false)
 
     private val allSyncInfos: MutableMap<String, SyncInfo> = mutableMapOf()
 
@@ -51,12 +50,12 @@ class DesktopDeviceManager(
 
     override fun refresh() {
         lock.lock()
-        _searching.value = true
+        searching = true
         try {
             syncInfos.clear()
             syncInfos.addAll(allSyncInfos.filter { isNew(it.key) && !isBlackListed(it.key) }.values)
         } finally {
-            _searching.value = false
+            searching = false
             lock.unlock()
         }
     }
