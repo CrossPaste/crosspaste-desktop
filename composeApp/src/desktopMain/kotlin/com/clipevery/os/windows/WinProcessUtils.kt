@@ -15,7 +15,7 @@ object WinProcessUtils {
         val lines = reader.readLines()
         val processIds = mutableListOf<Pair<String, Long>>()
         for (line in lines) {
-            val parts = line.split("\\s+".toRegex())
+            val parts = line.trim().split("\\s+".toRegex())
             if (parts.size == 2) {
                 val processName = parts[0]
                 val processId = parts[1].toLongOrNull()
