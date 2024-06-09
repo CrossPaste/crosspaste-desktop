@@ -37,4 +37,9 @@ interface ControlUtils {
         delay: Long,
         action: suspend () -> Unit,
     ): suspend () -> Unit
+
+    fun <T> debounce(
+        delay: Long,
+        action: suspend (T) -> Unit,
+    ): suspend (T) -> Unit
 }

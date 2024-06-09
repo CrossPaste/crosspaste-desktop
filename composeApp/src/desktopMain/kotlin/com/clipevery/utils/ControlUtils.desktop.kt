@@ -106,4 +106,19 @@ object DesktopControlUtils : ControlUtils {
             }
         }
     }
+
+    override fun <T> debounce(
+        delay: Long,
+        action: suspend (T) -> Unit,
+    ): suspend (T) -> Unit {
+        val long = AtomicLong(0)
+        return { key ->
+            val currentTime = System.currentTimeMillis()
+            val previousTime = long.get()
+            if (currentTime - previousTime > delay || previousTime == 0L) {
+                long.set(currentTime)
+                action(key)
+            }
+        }
+    }
 }

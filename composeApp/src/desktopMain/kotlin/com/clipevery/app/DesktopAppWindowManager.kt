@@ -27,7 +27,10 @@ import kotlinx.coroutines.withContext
 import kotlin.random.Random
 import kotlin.reflect.KClass
 
-class DesktopAppWindowManager(private val lazyShortcutKeys: Lazy<ShortcutKeys>) : AppWindowManager {
+class DesktopAppWindowManager(
+    private val lazyShortcutKeys: Lazy<ShortcutKeys>,
+    debounceDelay: Long = 100L,
+) : AppWindowManager {
 
     companion object {
         const val MAIN_WINDOW_TITLE: String = "Clipevery"
@@ -85,8 +88,6 @@ class DesktopAppWindowManager(private val lazyShortcutKeys: Lazy<ShortcutKeys>) 
     override var showToken by mutableStateOf(false)
 
     override var token by mutableStateOf(charArrayOf('0', '0', '0', '0', '0', '0'))
-
-    private val debounceDelay = 100L
 
     private suspend fun refreshToken() {
         withContext(mainDispatcher) {
@@ -186,16 +187,14 @@ class DesktopAppWindowManager(private val lazyShortcutKeys: Lazy<ShortcutKeys>) 
     }
 
     private val debounceUnActiveSearchWindow: suspend (suspend () -> Boolean) -> Unit =
-        { preparePaste ->
-            debounce(
-                delay = debounceDelay,
-            ) {
-                withContext(ioDispatcher) {
-                    val toPaste = preparePaste()
-                    windowManager.bringToBack(SEARCH_WINDOW_TITLE, toPaste)
-                }
-                showSearchWindow = false
+        debounce(
+            delay = debounceDelay,
+        ) { preparePaste ->
+            withContext(ioDispatcher) {
+                val toPaste = preparePaste()
+                windowManager.bringToBack(SEARCH_WINDOW_TITLE, toPaste)
             }
+            showSearchWindow = false
         }
 
     override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
