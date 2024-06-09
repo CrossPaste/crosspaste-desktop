@@ -143,7 +143,7 @@ fun WindowTrayMenu(hideMenu: () -> Unit) {
                             onPress = {},
                         )
                     }
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(5.dp))
                     .fillMaxSize()
                     .padding(10.dp, 0.dp, 10.dp, 10.dp),
             contentAlignment = Alignment.Center,
@@ -151,9 +151,9 @@ fun WindowTrayMenu(hideMenu: () -> Unit) {
             Box(
                 modifier =
                     Modifier
-                        .shadow(5.dp, RoundedCornerShape(10.dp), false)
+                        .shadow(5.dp, RoundedCornerShape(5.dp), false)
                         .fillMaxSize()
-                        .border(1.dp, MaterialTheme.colors.onSurface.copy(alpha = 0.12f), RoundedCornerShape(10.dp))
+                        .border(1.dp, MaterialTheme.colors.onSurface.copy(alpha = 0.12f), RoundedCornerShape(5.dp))
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onDoubleTap = {},
