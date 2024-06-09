@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
@@ -242,7 +243,11 @@ fun ClipTitleView(
 }
 
 @Composable
-fun ClipTypeIconView(clipData: ClipData) {
+fun ClipTypeIconView(
+    clipData: ClipData,
+    padding: Dp = 2.dp,
+    size: Dp = 20.dp,
+) {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
     val iconStyle = current.koin.get<IconStyle>()
@@ -278,7 +283,7 @@ fun ClipTypeIconView(clipData: ClipData) {
                     Icon(
                         painter = loadView.toPainterImage.toPainter(),
                         contentDescription = "Clip Icon",
-                        modifier = Modifier.padding(2.dp).size(20.dp),
+                        modifier = Modifier.padding(padding).size(size),
                         tint = MaterialTheme.colors.onBackground,
                     )
                 }
@@ -286,7 +291,7 @@ fun ClipTypeIconView(clipData: ClipData) {
                     Image(
                         painter = loadView.toPainterImage.toPainter(),
                         contentDescription = "Clip Icon",
-                        modifier = Modifier.padding(2.dp).size(20.dp),
+                        modifier = Modifier.padding(padding).size(size),
                     )
                 }
             }
@@ -295,7 +300,7 @@ fun ClipTypeIconView(clipData: ClipData) {
         Icon(
             painter = loadIconData.toPainterImage.toPainter(),
             contentDescription = "Clip Icon",
-            modifier = Modifier.padding(2.dp).size(20.dp),
+            modifier = Modifier.padding(padding).size(size),
             tint = MaterialTheme.colors.onBackground,
         )
     } else {
@@ -303,12 +308,12 @@ fun ClipTypeIconView(clipData: ClipData) {
             val path = pathProvider.resolve("$it.png", AppFileType.ICON)
             if (path.exists()) {
                 val isMacStyleIcon by remember(it) { mutableStateOf(iconStyle.isMacStyleIcon(it)) }
-                AppImageIcon(path = path, isMacStyleIcon = isMacStyleIcon)
+                AppImageIcon(path = path, isMacStyleIcon = isMacStyleIcon, size = size + 2.dp)
             } else {
                 Icon(
                     painter = loadIconData.toPainterImage.toPainter(),
                     contentDescription = "Clip Icon",
-                    modifier = Modifier.padding(2.dp).size(20.dp),
+                    modifier = Modifier.padding(padding).size(size),
                     tint = MaterialTheme.colors.onBackground,
                 )
             }
@@ -316,7 +321,7 @@ fun ClipTypeIconView(clipData: ClipData) {
             Icon(
                 painter = loadIconData.toPainterImage.toPainter(),
                 contentDescription = "Clip Icon",
-                modifier = Modifier.padding(2.dp).size(20.dp),
+                modifier = Modifier.padding(padding).size(size),
                 tint = MaterialTheme.colors.onBackground,
             )
         }

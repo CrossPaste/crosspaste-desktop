@@ -45,10 +45,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.clipevery.LocalKoinApplication
+import com.clipevery.clip.ClipboardService
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.MenuItem
+import com.clipevery.ui.base.MessageType
+import com.clipevery.ui.base.Toast
+import com.clipevery.ui.base.ToastManager
+import com.clipevery.ui.base.copy
 import com.clipevery.ui.base.getMenWidth
 import com.clipevery.ui.base.starRegular
 import com.clipevery.ui.base.starSolid
@@ -67,7 +72,9 @@ fun ClipMenuView(
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
     val clipDao = current.koin.get<ClipDao>()
+    val clipboardService = current.koin.get<ClipboardService>()
     val copywriter = current.koin.get<GlobalCopywriter>()
+    val toastManager = current.koin.get<ToastManager>()
 
     var parentBounds by remember { mutableStateOf(Rect.Zero) }
     var cursorPosition by remember { mutableStateOf(Offset.Zero) }
@@ -121,7 +128,7 @@ fun ClipMenuView(
                     hideIfNotHovered(parentBounds.topLeft + it.position)
                 }
                 .background(if (showMenu) MaterialTheme.colors.surface.copy(alpha = 0.12f) else Color.Transparent)
-                .padding(vertical = 10.dp),
+                .padding(vertical = 5.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -207,7 +214,26 @@ fun ClipMenuView(
         }
 
         if (showMenu) {
-            ClipTypeIconView(clipData)
+            ClipTypeIconView(clipData, size = 16.dp)
+
+            Icon(
+                modifier =
+                    Modifier.size(16.dp).onClick {
+                        runBlocking {
+                            clipboardService.tryWriteClipboard(clipData, localOnly = true, filterFile = false)
+                        }
+                        toastManager.setToast(
+                            Toast(
+                                MessageType.Success,
+                                copywriter.getText("Copy_Successful"),
+                                3000,
+                            ),
+                        )
+                    },
+                painter = copy(),
+                contentDescription = "Copy",
+                tint = MaterialTheme.colors.onBackground,
+            )
 
             Icon(
                 modifier =
