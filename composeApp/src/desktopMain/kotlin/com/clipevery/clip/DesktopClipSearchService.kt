@@ -30,7 +30,15 @@ class DesktopClipSearchService(
 
     private val ioScope = CoroutineScope(ioDispatcher)
 
-    private var searchHash by mutableStateOf(0)
+    private var searchParams by mutableStateOf(
+        SearchParams(
+            emptyList(),
+            favorite = false,
+            sort = false,
+            clipType = null,
+            limit = 50,
+        ),
+    )
 
     override var selectedIndex by mutableStateOf(0)
 
@@ -68,15 +76,6 @@ class DesktopClipSearchService(
         searchClipType = clipType
     }
 
-    private fun searchHash(): Int {
-        var hashCode = inputSearch.hashCode()
-        hashCode = 31 * hashCode + searchFavorite.hashCode()
-        hashCode = 31 * hashCode + searchSort.hashCode()
-        hashCode = 31 * hashCode + searchClipType.hashCode()
-        hashCode = 31 * hashCode + searchLimit.hashCode()
-        return hashCode
-    }
-
     override fun tryAddLimit(): Boolean {
         if (searchLimit == searchResult.size) {
             searchLimit += 50
@@ -90,13 +89,20 @@ class DesktopClipSearchService(
         val searchTerms =
             inputSearch.trim().lowercase().split("\\s+".toRegex()).filterNot { it.isEmpty() }.distinct()
 
-        val currentSearchHash = searchHash()
+        val currentSearchParams =
+            SearchParams(
+                searchTerms = searchTerms,
+                favorite = searchFavorite,
+                sort = searchSort,
+                clipType = searchClipType,
+                limit = searchLimit,
+            )
 
-        if (searchHash == currentSearchHash) {
+        if (searchParams == currentSearchParams) {
             return
         }
 
-        searchHash = currentSearchHash
+        searchParams = currentSearchParams
 
         searchJob?.cancel()
 
@@ -219,5 +225,40 @@ class DesktopClipSearchService(
             } ?: false
         }
         innerSetSelectedIndex(0)
+    }
+}
+
+data class SearchParams(
+    val searchTerms: List<String>,
+    val favorite: Boolean,
+    val sort: Boolean,
+    val clipType: Int?,
+    val limit: Int,
+) {
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is SearchParams) return false
+
+        if (searchTerms != other.searchTerms) return false
+        if (favorite != other.favorite) return false
+        if (sort != other.sort) return false
+        if (clipType != other.clipType) return false
+        if (limit != other.limit) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = searchTerms.hashCode()
+        result = 31 * result + favorite.hashCode()
+        result = 31 * result + sort.hashCode()
+        result = 31 * result + (clipType ?: 0)
+        result = 31 * result + limit
+        return result
+    }
+
+    override fun toString(): String {
+        return "SearchParams(searchTerms=$searchTerms, favorite=$favorite, sort=$sort, clipType=$clipType, limit=$limit)"
     }
 }
