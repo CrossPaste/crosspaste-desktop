@@ -11,7 +11,7 @@ import org.koin.core.KoinApplication
 import java.awt.GraphicsEnvironment
 import java.awt.Toolkit
 
-object LinuxTrayWindowState {
+object LinuxTrayView {
 
     fun initSystemTray(
         systemTray: SystemTray,
