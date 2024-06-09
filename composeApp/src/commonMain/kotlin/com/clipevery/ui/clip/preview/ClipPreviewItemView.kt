@@ -60,19 +60,19 @@ fun ClipPreviewItemView(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(110.dp)
+                .height(105.dp)
                 .background(color = MaterialTheme.colors.surface),
     ) {
         Column(
             modifier =
                 Modifier.fillMaxWidth()
-                    .height(110.dp),
+                    .height(105.dp),
         ) {
             Row(
                 modifier =
                     Modifier.fillMaxWidth()
-                        .height(110.dp)
-                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                        .height(105.dp)
+                        .padding(horizontal = 5.dp, vertical = 2.5.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 clipData.clipContent()
@@ -128,7 +128,7 @@ fun ClipSpecificPreviewContentView(
     clipRightInfo: @Composable ((Boolean) -> Unit) -> Unit,
 ) {
     var showMenu by remember { mutableStateOf(false) }
-    val width = animateDpAsState(targetValue = if (showMenu) 380.dp else 420.dp)
+    val width = animateDpAsState(targetValue = if (showMenu) 395.dp else 430.dp)
 
     Box(
         modifier =
