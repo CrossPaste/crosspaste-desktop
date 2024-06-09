@@ -10,7 +10,10 @@ import com.clipevery.utils.ioDispatcher
 import io.ktor.util.collections.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.net.InetAddress
 import javax.jmdns.JmDNS
 import javax.jmdns.ServiceInfo
@@ -65,12 +68,16 @@ class DesktopClipBonjourService(
     }
 
     override fun unregisterService(): ClipBonjourService {
-        for (jmDNS in jmdnsMap) {
-            scope.launch {
-                jmDNS.value.unregisterAllServices()
-                jmDNS.value.close()
+        val deferred =
+            scope.async {
+                jmdnsMap.values.map { jmDNS ->
+                    async {
+                        jmDNS.unregisterAllServices()
+                        jmDNS.close()
+                    }
+                }.awaitAll()
             }
-        }
+        runBlocking { deferred.await() }
         jmdnsMap.clear()
         return this
     }
