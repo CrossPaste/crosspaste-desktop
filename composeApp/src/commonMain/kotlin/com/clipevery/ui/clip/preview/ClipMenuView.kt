@@ -128,7 +128,7 @@ fun ClipMenuView(
                     hideIfNotHovered(parentBounds.topLeft + it.position)
                 }
                 .background(if (showMenu) MaterialTheme.colors.surface.copy(alpha = 0.12f) else Color.Transparent)
-                .padding(vertical = 10.dp),
+                .padding(vertical = 5.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -214,7 +214,7 @@ fun ClipMenuView(
         }
 
         if (showMenu) {
-            ClipTypeIconView(clipData)
+            ClipTypeIconView(clipData, size = 16.dp)
 
             Icon(
                 modifier =
