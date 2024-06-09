@@ -62,11 +62,10 @@ import kotlinx.serialization.encodeToString
 fun NearbyDevicesView() {
     val current = LocalKoinApplication.current
     val deviceManager = current.koin.get<DeviceManager>()
-    val isSearching by deviceManager.isSearching
 
     val nearbyDevicesList = remember { deviceManager.syncInfos }
 
-    if (isSearching) {
+    if (deviceManager.searching) {
         SearchNearByDevices()
     } else if (nearbyDevicesList.isEmpty()) {
         NotFoundNearByDevices()
@@ -120,12 +119,11 @@ fun SearchNearByDevices() {
     val copywriter = current.koin.get<GlobalCopywriter>()
     val deviceManager = current.koin.get<DeviceManager>()
 
-    val isSearching by deviceManager.isSearching
     val offsetX = remember { Animatable(0f) }
     val offsetY = remember { Animatable(0f) }
 
-    LaunchedEffect(isSearching) {
-        if (isSearching) {
+    LaunchedEffect(deviceManager.searching) {
+        if (deviceManager.searching) {
             while (true) {
                 launch {
                     offsetX.animateTo(

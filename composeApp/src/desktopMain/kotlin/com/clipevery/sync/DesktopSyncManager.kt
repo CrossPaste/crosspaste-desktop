@@ -1,6 +1,5 @@
 package com.clipevery.sync
 
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -59,9 +58,7 @@ class DesktopSyncManager(
 
     private val deviceManager: DeviceManager by lazyDeviceManager
 
-    private var _refreshing = mutableStateOf(false)
-
-    override val isRefreshing: State<Boolean> get() = _refreshing
+    override var refreshing by mutableStateOf(false)
 
     init {
         realTimeSyncScope.launch(CoroutineName("SyncManagerListenChanger")) {
@@ -220,7 +217,7 @@ class DesktopSyncManager(
     }
 
     override fun refresh() {
-        _refreshing.value = true
+        refreshing = true
         realTimeSyncScope.launch(CoroutineName("SyncManagerRefresh")) {
             logger.info { "start launch" }
             try {
@@ -230,7 +227,7 @@ class DesktopSyncManager(
             }
             delay(1000)
             logger.info { "set refreshing false" }
-            _refreshing.value = false
+            refreshing = false
         }
     }
 }
