@@ -1,5 +1,6 @@
 package com.clipevery.utils
 
+import co.touchlab.stately.concurrency.AtomicLong
 import kotlinx.coroutines.delay
 
 actual fun getControlUtils(): ControlUtils {
@@ -74,5 +75,50 @@ object DesktopControlUtils : ControlUtils {
             result = action()
         }
         return result
+    }
+
+    override fun blockDebounce(
+        delay: Long,
+        action: () -> Unit,
+    ): () -> Unit {
+        val long = AtomicLong(0)
+        return {
+            val currentTime = System.currentTimeMillis()
+            val previousTime = long.get()
+            if (currentTime - previousTime > delay || previousTime == 0L) {
+                long.set(currentTime)
+                action()
+            }
+        }
+    }
+
+    override fun debounce(
+        delay: Long,
+        action: suspend () -> Unit,
+    ): suspend () -> Unit {
+        val long = AtomicLong(0)
+        return {
+            val currentTime = System.currentTimeMillis()
+            val previousTime = long.get()
+            if (currentTime - previousTime > delay || previousTime == 0L) {
+                long.set(currentTime)
+                action()
+            }
+        }
+    }
+
+    override fun <T> debounce(
+        delay: Long,
+        action: suspend (T) -> Unit,
+    ): suspend (T) -> Unit {
+        val long = AtomicLong(0)
+        return { key ->
+            val currentTime = System.currentTimeMillis()
+            val previousTime = long.get()
+            if (currentTime - previousTime > delay || previousTime == 0L) {
+                long.set(currentTime)
+                action(key)
+            }
+        }
     }
 }

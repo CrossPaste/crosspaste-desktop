@@ -9,6 +9,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
 import com.clipevery.listener.ShortcutKeys
 import com.clipevery.platform.currentPlatform
+import com.clipevery.utils.DesktopControlUtils.blockDebounce
+import com.clipevery.utils.DesktopControlUtils.debounce
 import com.clipevery.utils.ioDispatcher
 import com.clipevery.utils.mainDispatcher
 import io.github.oshai.kotlinlogging.KLogger
@@ -25,7 +27,10 @@ import kotlinx.coroutines.withContext
 import kotlin.random.Random
 import kotlin.reflect.KClass
 
-class DesktopAppWindowManager(private val lazyShortcutKeys: Lazy<ShortcutKeys>) : AppWindowManager {
+class DesktopAppWindowManager(
+    private val lazyShortcutKeys: Lazy<ShortcutKeys>,
+    debounceDelay: Long = 100L,
+) : AppWindowManager {
 
     companion object {
         const val MAIN_WINDOW_TITLE: String = "Clipevery"
@@ -128,45 +133,71 @@ class DesktopAppWindowManager(private val lazyShortcutKeys: Lazy<ShortcutKeys>) 
         }
     }
 
-    override fun activeMainWindow() {
-        if (currentPlatform.isWindows()) {
-            val currentTimeMillis = System.currentTimeMillis()
-            val fastClick = currentTimeMillis - mainWindowActionTime < 500
-            mainWindowActionTime = currentTimeMillis
-            if (fastClick) {
-                return
+    private val debounceActiveMainWindow =
+        blockDebounce(
+            delay = debounceDelay,
+        ) {
+            if (currentPlatform.isWindows()) {
+                val currentTimeMillis = System.currentTimeMillis()
+                val fastClick = currentTimeMillis - mainWindowActionTime < 500
+                mainWindowActionTime = currentTimeMillis
+                if (fastClick) {
+                    return@blockDebounce
+                }
+            }
+            showMainWindow = true
+            runBlocking {
+                windowManager.bringToFront(MAIN_WINDOW_TITLE)
             }
         }
-        showMainWindow = true
-        runBlocking {
-            windowManager.bringToFront(MAIN_WINDOW_TITLE)
-        }
+
+    override fun activeMainWindow() {
+        debounceActiveMainWindow()
     }
+
+    private val debounceActiveSearchWindow =
+        debounce(
+            delay = debounceDelay,
+        ) {
+            showSearchWindow = true
+            windowManager.bringToFront(SEARCH_WINDOW_TITLE)
+        }
 
     override suspend fun activeSearchWindow() {
-        showSearchWindow = true
-        windowManager.bringToFront(SEARCH_WINDOW_TITLE)
+        debounceActiveSearchWindow()
     }
+
+    private val debounceUnActiveMainWindow =
+        blockDebounce(
+            delay = debounceDelay,
+        ) {
+            runBlocking {
+                withContext(ioDispatcher) {
+                    windowManager.bringToBack(MAIN_WINDOW_TITLE, false)
+                }
+            }
+            if (currentPlatform.isWindows()) {
+                mainWindowActionTime = System.currentTimeMillis()
+            }
+            showMainWindow = false
+        }
 
     override fun unActiveMainWindow() {
-        runBlocking {
-            withContext(ioDispatcher) {
-                windowManager.bringToBack(MAIN_WINDOW_TITLE, false)
-            }
-        }
-        if (currentPlatform.isWindows()) {
-            mainWindowActionTime = System.currentTimeMillis()
-        }
-        showMainWindow = false
+        debounceUnActiveMainWindow()
     }
 
-    override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
-        if (showSearchWindow) {
+    private val debounceUnActiveSearchWindow: suspend (suspend () -> Boolean) -> Unit =
+        debounce(
+            delay = debounceDelay,
+        ) { preparePaste ->
             withContext(ioDispatcher) {
                 val toPaste = preparePaste()
                 windowManager.bringToBack(SEARCH_WINDOW_TITLE, toPaste)
             }
             showSearchWindow = false
         }
+
+    override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
+        debounceUnActiveSearchWindow(preparePaste)
     }
 }

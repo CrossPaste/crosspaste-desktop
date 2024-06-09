@@ -15,6 +15,7 @@ class TestAppWindowManager {
         var testAppWindowManager: AppWindowManager =
             DesktopAppWindowManager(
                 lazy { throw NotImplementedError("not invoke") },
+                -1,
             )
 
         @BeforeEach
