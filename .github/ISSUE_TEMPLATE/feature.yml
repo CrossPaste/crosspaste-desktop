@@ -1,0 +1,34 @@
+name: Feature Request
+description: Request a new feature or enhancement
+labels: [capability]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to suggest improvements to Clipevery!
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solution
+      description: Describe the solution you envision, including API and usage example if possible.
+    validations:
+      required: false
+  - type: textarea
+    id: alternative-solution
+    attributes:
+      label: Alternatives
+      description: Describe the alternative solutions or features you have considered
+    validations:
+      required: false
+  - type: dropdown
+    id: importance
+    attributes:
+      label: How important is this improvement for you?
+      options:
+        - -- select --
+        - Dealbreaker
+        - Would be a major improvement
+        - I would like to have it but have a workaround
+        - Fairly niche but nice to have anyway
+    validations:
+      required: true
