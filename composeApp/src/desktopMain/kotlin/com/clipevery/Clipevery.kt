@@ -123,8 +123,8 @@ import com.clipevery.task.PullIconTaskExecutor
 import com.clipevery.task.SyncClipTaskExecutor
 import com.clipevery.task.TaskExecutor
 import com.clipevery.ui.DesktopThemeDetector
-import com.clipevery.ui.LinuxTrayWindowState
-import com.clipevery.ui.LinuxTrayWindowState.initSystemTray
+import com.clipevery.ui.LinuxTrayView.initSystemTray
+import com.clipevery.ui.LinuxTrayView.setWindowPosition
 import com.clipevery.ui.MacTray
 import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.PageViewType
@@ -389,7 +389,7 @@ class Clipevery {
                     } else if (isWindows) {
                         WindowsTray(windowState)
                     } else if (isLinux) {
-                        LinuxTrayWindowState.setWindowPosition(appWindowManager, windowState)
+                        setWindowPosition(appWindowManager, windowState)
                     }
 
                     val windowIcon: Painter? =

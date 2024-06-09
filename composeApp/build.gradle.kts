@@ -47,10 +47,12 @@ ktlint {
     android = false
     ignoreFailures = true
     filter {
-        exclude("**/build/**")
-        exclude("**/src/*Test/**")
-        exclude("**/src/*Main/kotlin/androidx/**")
-        include("**/src/**/*.kt")
+        exclude { element ->
+            val path = element.path
+            path.contains("\\generated\\") || path.contains("/generated/") ||
+                path.contains("\\desktopTest\\") || path.contains("/desktopTest/") ||
+                path.contains("\\commonMain\\kotlin\\androidx\\") || path.contains("/commonMain/kotlin/androidx/")
+        }
     }
 }
 
