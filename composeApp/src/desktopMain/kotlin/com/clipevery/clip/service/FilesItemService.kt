@@ -6,6 +6,7 @@ import com.clipevery.clip.ClipCollector
 import com.clipevery.clip.ClipItemService
 import com.clipevery.clip.item.FilesClipItem
 import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.path.DesktopPathProvider
 import com.clipevery.presist.FileInfoTree
 import com.clipevery.utils.DesktopFileUtils
 import com.clipevery.utils.DesktopFileUtils.copyPath
@@ -19,6 +20,7 @@ import kotlinx.serialization.encodeToString
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import java.io.File
+import kotlin.io.path.absolutePathString
 
 class FilesItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
 
@@ -62,6 +64,12 @@ class FilesItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
             val relativePathList = mutableListOf<String>()
 
             for (file in files) {
+                val path = file.toPath()
+
+                if (path.absolutePathString().startsWith(DesktopPathProvider.clipUserPath.absolutePathString())) {
+                    continue
+                }
+
                 val fileName = file.name
                 val relativePath =
                     createClipRelativePath(
@@ -71,7 +79,7 @@ class FilesItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
                     )
                 relativePathList.add(relativePath)
                 val filePath = DesktopFileUtils.createClipPath(relativePath, isFile = true, AppFileType.FILE)
-                if (copyPath(file.toPath(), filePath)) {
+                if (copyPath(path, filePath)) {
                     fileInfoTrees[file.name] = DesktopFileUtils.getFileInfoTree(filePath)
                 } else {
                     throw IllegalStateException("Failed to copy file")
