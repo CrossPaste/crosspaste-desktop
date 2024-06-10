@@ -8,6 +8,7 @@ import com.clipevery.config.ConfigManager
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.listener.ShortcutKeysAction
+import com.clipevery.ui.base.DialogService
 import com.clipevery.utils.mainDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.query.RealmQuery
@@ -20,6 +21,7 @@ class DesktopShortKeysAction(
     private val clipDao: ClipDao,
     private val configManager: ConfigManager,
     private val appWindowManager: AppWindowManager,
+    private val dialogService: DialogService,
     private val clipSearchService: ClipSearchService,
     private val clipboardService: ClipboardService,
 ) : ShortcutKeysAction {
@@ -57,7 +59,7 @@ class DesktopShortKeysAction(
     private fun hideWindow() {
         logger.info { "Hide window" }
         mainDispatcherScope.launch(CoroutineName("HideWindow")) {
-            if (appWindowManager.showMainWindow) {
+            if (appWindowManager.showMainWindow && dialogService.dialogs.isEmpty()) {
                 appWindowManager.unActiveMainWindow()
             }
 
