@@ -76,6 +76,9 @@ jobs:
     env:
       BUILD_FULL_PLATFORM: YES
       BUILD_MAIN_PATH: ${{ github.workspace }}/composeApp/build/classes/kotlin/desktop/main
+      APPLE_ASP: ${{ secrets.APPLE_ASP }}
+      MAC_SIGNING_KEY_FILE_PATH: ${{ github.workspace }}/developerID_application.p12
+      RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       # https://github.com/actions/runner-images/issues/2840
@@ -143,17 +146,65 @@ jobs:
         run: |
           echo "${{ secrets.DEVELOPER_ID_APPLICATION }}" | base64 --decode > developerID_application.p12
 
-      - name: Run Conveyor
+      - name: Conveyor build Windows
         uses: hydraulic-software/conveyor/actions/build@v14.2
-        env:
-          APPLE_ASP: ${{ secrets.APPLE_ASP }}
-          MAC_SIGNING_KEY_FILE_PATH: ${{ github.workspace }}/developerID_application.p12
-          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         with:
-          command: make site --rerun
+          command: make windows-app --output-dir=./output/clipevery-windows-${{ env.PACKAGE_VERSION }}
           extra_flags: -f ci.conveyor.conf
           signing_key: ${{ secrets.SIGNING_KEY }}
           agree_to_license: 1
+
+      - name: Upload Windows
+        uses: actions/upload-artifact@v4
+        with:
+          name: clipevery-windows-${{ env.PACKAGE_VERSION }}
+          path: output/clipevery-windows-${{ env.PACKAGE_VERSION }}
+          if-no-files-found: error
+
+      - name: Conveyor build Mac amd64
+        uses: hydraulic-software/conveyor/actions/build@v14.2
+        with:
+          command: make mac-app --output-dir=./output/clipevery-mac-adm64-${{ env.PACKAGE_VERSION }}
+          extra_flags: -f ci.conveyor.conf -Kapp.machines=mac.amd64
+          signing_key: ${{ secrets.SIGNING_KEY }}
+          agree_to_license: 1
+
+      - name: Upload Mac amd64
+        uses: actions/upload-artifact@v4
+        with:
+          name: clipevery-mac-amd64-${{ env.PACKAGE_VERSION }}
+          path: output/clipevery-mac-adm64-${{ env.PACKAGE_VERSION }}
+          if-no-files-found: error
+
+      - name: Conveyor build Mac aarch64
+        uses: hydraulic-software/conveyor/actions/build@v14.2
+        with:
+          command: make mac-app --output-dir=./output/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}
+          extra_flags: -f ci.conveyor.conf -Kapp.machines=mac.aarch64
+          signing_key: ${{ secrets.SIGNING_KEY }}
+          agree_to_license: 1
+
+      - name: Upload Mac aarch64
+        uses: actions/upload-artifact@v4
+        with:
+          name: clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}
+          path: output/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}
+          if-no-files-found: error
+
+      - name: Conveyor build Linux
+        uses: hydraulic-software/conveyor/actions/build@v14.2
+        with:
+          command: make linux-app --output-dir=./output/clipevery-linux-${{ env.PACKAGE_VERSION }}
+          extra_flags: -f ci.conveyor.conf
+          signing_key: ${{ secrets.SIGNING_KEY }}
+          agree_to_license: 1
+
+      - name: Upload Linux
+        uses: actions/upload-artifact@v4
+        with:
+          name: clipevery-linux-${{ env.PACKAGE_VERSION }}
+          path: output/clipevery-linux-${{ env.PACKAGE_VERSION }}
+          if-no-files-found: error
 
       - name: Cleanup Conveyor
         if: always()
@@ -163,30 +214,6 @@ jobs:
         run: |
           echo "Displaying the size of files and directories in 'output' directory:"
           du -ah output | sort -rh
-
-      - name: Upload Mac amd64
-        uses: actions/upload-artifact@v4
-        with:
-          name: clipevery-mac-amd64-${{ env.PACKAGE_VERSION }}
-          path: output/clipevery-*-mac-amd64.zip
-
-      - name: Upload Mac aarch64
-        uses: actions/upload-artifact@v4
-        with:
-          name: clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}
-          path: output/clipevery-*-mac-aarch64.zip
-
-      - name: Upload Windows amd64
-        uses: actions/upload-artifact@v4
-        with:
-          name: clipevery-windows-${{ env.PACKAGE_VERSION }}
-          path: output/clipevery-*-windows-amd64.zip
-
-      - name: Upload Linux amd64
-        uses: actions/upload-artifact@v4
-        with:
-          name: clipevery-linux-${{ env.PACKAGE_VERSION }}
-          path: output/debian/clipevery_*_amd64.deb
 
       # delete output directory to free up space, Github Action only has 14G space,
       # to avoid the failure of insufficient space in the subsequent post recycling steps
