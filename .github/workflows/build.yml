@@ -2,10 +2,7 @@ name: "Build Package"
 
 on:
   push:
-    branches:
-      - 'v-*'
-  pull_request:
-    branches:
+    tags:
       - 'v-*'
 
 jobs:
@@ -22,7 +19,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ./composeApp/dylib/darwin-x86-64/libMacosApi.dylib
-          key: mac-dylib-darwin-x86-64-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
+          key: mac-dylib-darwin-x86-64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
       - name: check-dylib-cache-aarch64
@@ -30,7 +27,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ./composeApp/dylib/darwin-aarch64/libMacosApi.dylib
-          key: mac-dylib-darwin-aarch64-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
+          key: mac-dylib-darwin-aarch64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
   build-macos:
@@ -66,7 +63,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ./composeApp/dylib/${{ env.PREFIX }}/libMacosApi.dylib
-          key: mac-dylib-${{ env.PREFIX }}-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
+          key: mac-dylib-${{ env.PREFIX }}-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
   build-ubuntu:
@@ -129,14 +126,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ./composeApp/dylib/darwin-x86-64/libMacosApi.dylib
-          key: mac-dylib-darwin-x86-64-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
+          key: mac-dylib-darwin-x86-64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
       - name: check-darwin-aarch64-dylib-cache
         uses: actions/cache@v4
         with:
           path: ./composeApp/dylib/darwin-aarch64/libMacosApi.dylib
-          key: mac-dylib-darwin-aarch64-${{ hashFiles('**/*.swift*', '**/dylib-mini-sys.properties') }}
+          key: mac-dylib-darwin-aarch64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
       - name: Build with Gradle
