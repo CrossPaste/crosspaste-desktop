@@ -1,4 +1,4 @@
-package androidx.compose.ui.window
+package com.clipevery.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -13,11 +13,12 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
+import androidx.compose.ui.window.MenuScope
+import androidx.compose.ui.window.Notification
+import androidx.compose.ui.window.setContent
+import com.clipevery.ui.base.ClipeveryTrayState
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.receiveAsFlow
 import java.awt.ComponentOrientation
 import java.awt.GraphicsConfiguration
 import java.awt.GraphicsEnvironment
@@ -83,13 +84,13 @@ val isTraySupported: Boolean get() = SystemTray.isSupported()
  */
 @Suppress("unused")
 @Composable
-fun ApplicationScope.Tray(
+fun ClipeveryTray(
     icon: Painter,
-    state: TrayState = rememberTrayState(),
+    state: ClipeveryTrayState = rememberTrayState(),
     tooltip: String? = null,
     onAction: (ActionEvent) -> Unit = {},
     mouseListener: MouseListener,
-    menu: @Composable MenuScope.() -> Unit = {},
+    menu: @Composable (MenuScope.() -> Unit) = {},
 ) {
     if (!isTraySupported) {
         DisposableEffect(Unit) {
@@ -165,39 +166,11 @@ fun ApplicationScope.Tray(
     }
 }
 
-/**
- * Creates a [WindowState] that is remembered across compositions.
- */
 @Composable
 fun rememberTrayState() =
     remember {
-        TrayState()
+        ClipeveryTrayState()
     }
-
-/**
- * A state object that can be hoisted to control tray and show notifications.
- *
- * In most cases, this will be created via [rememberTrayState].
- */
-class TrayState {
-    private val notificationChannel = Channel<Notification>(0)
-
-    /**
-     * Flow of notifications sent by [sendNotification].
-     * This flow doesn't have a buffer, so all previously sent notifications will not appear in
-     * this flow.
-     */
-    val notificationFlow: Flow<Notification>
-        get() = notificationChannel.receiveAsFlow()
-
-    /**
-     * Send notification to tray. If [TrayState] is attached to [Tray], notification will be sent to
-     * the platform. If [TrayState] is not attached then notification will be lost.
-     */
-    fun sendNotification(notification: Notification) {
-        notificationChannel.trySend(notification)
-    }
-}
 
 private fun TrayIcon.displayMessage(notification: Notification) {
     val messageType =

@@ -12,8 +12,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
-import androidx.compose.ui.window.ApplicationScope
-import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.clipevery.LocalExitApplication
@@ -35,7 +33,7 @@ import java.awt.event.MouseEvent
 import javax.swing.JFrame
 
 @Composable
-fun ApplicationScope.MacTray(windowState: WindowState) {
+fun MacTray(windowState: WindowState) {
     val current = LocalKoinApplication.current
     val pageViewContext = LocalPageViewContent.current
     val applicationExit = LocalExitApplication.current
@@ -56,9 +54,9 @@ fun ApplicationScope.MacTray(windowState: WindowState) {
         frame.add(menu)
     }
 
-    Tray(
-        state = remember { notificationManager.trayState },
+    ClipeveryTray(
         icon = trayIcon,
+        state = remember { notificationManager.trayState },
         tooltip = "Clipevery",
         mouseListener =
             MacTrayMouseClicked(appWindowManager, windowState) { event, insets ->

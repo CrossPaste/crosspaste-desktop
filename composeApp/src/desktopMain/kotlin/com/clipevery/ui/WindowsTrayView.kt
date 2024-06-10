@@ -24,8 +24,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.ApplicationScope
-import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
@@ -44,7 +42,7 @@ import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 
 @Composable
-fun ApplicationScope.WindowsTray(windowState: WindowState) {
+fun WindowsTray(windowState: WindowState) {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
 
@@ -63,9 +61,9 @@ fun ApplicationScope.WindowsTray(windowState: WindowState) {
 
     val densityFloat = density.density
 
-    Tray(
-        state = remember { notificationManager.trayState },
+    ClipeveryTray(
         icon = trayIcon,
+        state = remember { notificationManager.trayState },
         tooltip = "Clipevery",
         mouseListener =
             WindowsTrayMouseClicked(appWindowManager, windowState) { event, bound, insets ->
@@ -84,7 +82,7 @@ fun ApplicationScope.WindowsTray(windowState: WindowState) {
 
     if (showMenu) {
         Window(
-            onCloseRequest = ::exitApplication,
+            onCloseRequest = { },
             visible = true,
             state = menuWindowState,
             title = "Clipevery Menu",
