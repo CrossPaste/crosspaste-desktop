@@ -58,11 +58,15 @@ fun SingleFilePreviewView(
     val existFile by remember { mutableStateOf(filePath.toFile().exists()) }
 
     val optionPainter: Painter? =
-        if (imagePath != null) {
-            resourceUtils.loadPainter(imagePath, density).toPainter()
-        } else if (existFile) {
-            FileExtUtils.getExtPreviewImagePainter(filePath.extension)
-        } else {
+        try {
+            if (imagePath != null) {
+                resourceUtils.loadPainter(imagePath, density).toPainter()
+            } else if (existFile) {
+                FileExtUtils.getExtPreviewImagePainter(filePath.extension)
+            } else {
+                fileSlash()
+            }
+        } catch (e: Exception) {
             fileSlash()
         }
 
