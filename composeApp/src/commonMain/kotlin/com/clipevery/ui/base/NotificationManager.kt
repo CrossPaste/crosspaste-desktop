@@ -1,11 +1,10 @@
 package com.clipevery.ui.base
 
 import androidx.compose.ui.window.Notification
-import androidx.compose.ui.window.TrayState
 
 interface NotificationManager {
 
-    val trayState: TrayState
+    val trayState: ClipeveryTrayState
 
     fun addNotification(
         title: String,

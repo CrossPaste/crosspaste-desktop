@@ -1,11 +1,10 @@
 package com.clipevery.ui.base
 
 import androidx.compose.ui.window.Notification
-import androidx.compose.ui.window.TrayState
 
 object DesktopNotificationManager : NotificationManager {
 
-    override val trayState = TrayState()
+    override val trayState = ClipeveryTrayState()
 
     override fun addNotification(
         title: String,
