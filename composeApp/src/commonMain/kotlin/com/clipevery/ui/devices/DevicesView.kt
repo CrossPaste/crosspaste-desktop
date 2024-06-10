@@ -53,18 +53,15 @@ fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
 
     LaunchedEffect(syncManager.waitToVerifySyncRuntimeInfo?.deviceId) {
         syncManager.waitToVerifySyncRuntimeInfo?.let { info ->
-            if (dialogService.dialog == null ||
-                dialogService.dialog?.key != info.deviceId
-            ) {
-                dialogService.dialog =
-                    ClipDialog(
-                        key = info.deviceId,
-                        title = "Do_you_trust_this_device?",
-                        width = 320.dp,
-                    ) {
-                        DeviceVerifyView(info)
-                    }
-            }
+            dialogService.pushDialog(
+                ClipDialog(
+                    key = info.deviceId,
+                    title = "Do_you_trust_this_device?",
+                    width = 320.dp,
+                ) {
+                    DeviceVerifyView(info)
+                },
+            )
         }
     }
 
@@ -95,7 +92,7 @@ fun MyDevicesView(currentPageViewContext: MutableState<PageViewContext>) {
     val dialogService = current.koin.get<DialogService>()
     Box(contentAlignment = Alignment.TopCenter) {
         DevicesListView(currentPageViewContext) { syncRuntimeInfo ->
-            dialogService.dialog =
+            dialogService.pushDialog(
                 ClipDialog(
                     key = syncRuntimeInfo.deviceId,
                     title = "Input_Note_Name",
@@ -160,7 +157,7 @@ fun MyDevicesView(currentPageViewContext: MutableState<PageViewContext>) {
                             DialogButtonsView(
                                 height = 50.dp,
                                 cancelAction = {
-                                    dialogService.dialog = null
+                                    dialogService.popDialog()
                                 },
                                 confirmAction = {
                                     if (inputNoteName == "") {
@@ -169,13 +166,14 @@ fun MyDevicesView(currentPageViewContext: MutableState<PageViewContext>) {
                                         syncRuntimeInfoDao.update(syncRuntimeInfo) {
                                             this.noteName = inputNoteName
                                         }
-                                        dialogService.dialog = null
+                                        dialogService.popDialog()
                                     }
                                 },
                             )
                         }
                     }
-                }
+                },
+            )
         }
     }
 }
