@@ -293,7 +293,7 @@ class Clipevery {
                     single<UISupport> { DesktopUISupport(get(), get()) }
                     single<ShortcutKeys> { DesktopShortcutKeys(get(), get()) }
                     single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get()) }
-                    single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get()) }
+                    single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get(), get()) }
                     single<DialogService> { DesktopDialogService() }
                 }
             return GlobalContext.startKoin {

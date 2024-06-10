@@ -34,6 +34,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -49,6 +52,7 @@ import com.clipevery.ui.base.CustomTextField
 import com.clipevery.ui.base.DialogButtonsView
 import com.clipevery.ui.base.DialogService
 import kotlinx.coroutines.launch
+import java.awt.event.KeyEvent
 
 @Composable
 fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
@@ -64,6 +68,24 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
 
     LaunchedEffect(Unit) {
         syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]?.showToken()
+    }
+
+    val confirmAction = {
+        tokens.joinToString("").let { token ->
+            if (token.length == tokenCount) {
+                coroutineScope.launch {
+                    syncManager.trustByToken(syncRuntimeInfo.appInstanceId, token.toInt())
+                }
+                dialogService.popDialog()
+            } else {
+                isError = true
+            }
+        }
+    }
+
+    val cancelAction = {
+        syncManager.ignoreVerify(syncRuntimeInfo.appInstanceId)
+        dialogService.popDialog()
     }
 
     Box(
@@ -143,7 +165,22 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
                                     ),
                                 modifier =
                                     Modifier.fillMaxSize()
-                                        .focusRequester(focusRequesters[index]),
+                                        .focusRequester(focusRequesters[index])
+                                        .onKeyEvent {
+                                            when (it.key) {
+                                                Key(KeyEvent.VK_ENTER) -> {
+                                                    confirmAction()
+                                                    true
+                                                }
+                                                Key(KeyEvent.VK_ESCAPE) -> {
+                                                    cancelAction()
+                                                    true
+                                                }
+                                                else -> {
+                                                    false
+                                                }
+                                            }
+                                        },
                                 colors =
                                     TextFieldDefaults.textFieldColors(
                                         textColor = MaterialTheme.colors.onBackground,
@@ -162,22 +199,8 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
             Spacer(modifier = Modifier.height(10.dp))
             DialogButtonsView(
                 height = 50.dp,
-                cancelAction = {
-                    syncManager.ignoreVerify(syncRuntimeInfo.appInstanceId)
-                    dialogService.popDialog()
-                },
-                confirmAction = {
-                    tokens.joinToString("").let { token ->
-                        if (token.length == tokenCount) {
-                            coroutineScope.launch {
-                                syncManager.trustByToken(syncRuntimeInfo.appInstanceId, token.toInt())
-                            }
-                            dialogService.popDialog()
-                        } else {
-                            isError = true
-                        }
-                    }
-                },
+                cancelAction = cancelAction,
+                confirmAction = confirmAction,
             )
         }
     }

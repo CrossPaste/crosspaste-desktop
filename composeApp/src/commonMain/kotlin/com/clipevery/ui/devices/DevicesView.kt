@@ -25,7 +25,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -40,6 +45,7 @@ import com.clipevery.ui.base.ClipDialog
 import com.clipevery.ui.base.DialogButtonsView
 import com.clipevery.ui.base.DialogService
 import com.clipevery.ui.base.ExpandView
+import java.awt.event.KeyEvent
 
 @Composable
 fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
@@ -102,6 +108,27 @@ fun MyDevicesView(currentPageViewContext: MutableState<PageViewContext>) {
                     var inputNoteName by remember { mutableStateOf("") }
                     var isError by remember { mutableStateOf(false) }
 
+                    val focusRequester = remember { FocusRequester() }
+
+                    val cancelAction = {
+                        dialogService.popDialog()
+                    }
+
+                    val confirmAction = {
+                        if (inputNoteName == "") {
+                            isError = true
+                        } else {
+                            syncRuntimeInfoDao.update(syncRuntimeInfo) {
+                                this.noteName = inputNoteName
+                            }
+                            dialogService.popDialog()
+                        }
+                    }
+
+                    LaunchedEffect(Unit) {
+                        focusRequester.requestFocus()
+                    }
+
                     Column(
                         modifier =
                             Modifier.fillMaxWidth()
@@ -109,7 +136,24 @@ fun MyDevicesView(currentPageViewContext: MutableState<PageViewContext>) {
                     ) {
                         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp)) {
                             TextField(
-                                modifier = Modifier.wrapContentSize(),
+                                modifier =
+                                    Modifier.wrapContentSize()
+                                        .focusRequester(focusRequester)
+                                        .onKeyEvent {
+                                            when (it.key) {
+                                                Key(KeyEvent.VK_ENTER) -> {
+                                                    confirmAction()
+                                                    true
+                                                }
+                                                Key(KeyEvent.VK_ESCAPE) -> {
+                                                    cancelAction()
+                                                    true
+                                                }
+                                                else -> {
+                                                    false
+                                                }
+                                            }
+                                        },
                                 value = inputNoteName,
                                 onValueChange = { inputNoteName = it },
                                 placeholder = {
@@ -156,19 +200,8 @@ fun MyDevicesView(currentPageViewContext: MutableState<PageViewContext>) {
                         ) {
                             DialogButtonsView(
                                 height = 50.dp,
-                                cancelAction = {
-                                    dialogService.popDialog()
-                                },
-                                confirmAction = {
-                                    if (inputNoteName == "") {
-                                        isError = true
-                                    } else {
-                                        syncRuntimeInfoDao.update(syncRuntimeInfo) {
-                                            this.noteName = inputNoteName
-                                        }
-                                        dialogService.popDialog()
-                                    }
-                                },
+                                cancelAction = cancelAction,
+                                confirmAction = confirmAction,
                             )
                         }
                     }
