@@ -164,7 +164,7 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
                 height = 50.dp,
                 cancelAction = {
                     syncManager.ignoreVerify(syncRuntimeInfo.appInstanceId)
-                    dialogService.dialog = null
+                    dialogService.popDialog()
                 },
                 confirmAction = {
                     tokens.joinToString("").let { token ->
@@ -172,7 +172,7 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
                             coroutineScope.launch {
                                 syncManager.trustByToken(syncRuntimeInfo.appInstanceId, token.toInt())
                             }
-                            dialogService.dialog = null
+                            dialogService.popDialog()
                         } else {
                             isError = true
                         }

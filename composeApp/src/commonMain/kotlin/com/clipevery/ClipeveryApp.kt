@@ -98,7 +98,7 @@ fun ClipeveryWindow(hideWindow: () -> Unit) {
                     }
                 }
 
-                dialogService.dialog?.content()
+                dialogService.dialogs.firstOrNull()?.content()
             }
         }
     }

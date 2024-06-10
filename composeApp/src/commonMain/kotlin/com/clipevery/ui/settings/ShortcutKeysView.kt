@@ -173,7 +173,7 @@ fun ShortcutKeyRow(name: String) {
             modifier =
                 Modifier.size(16.dp)
                     .clickable {
-                        dialogService.dialog =
+                        dialogService.pushDialog(
                             ClipDialog(
                                 key = name,
                                 width = 300.dp,
@@ -217,17 +217,18 @@ fun ShortcutKeyRow(name: String) {
                                     Row(modifier = Modifier.fillMaxWidth()) {
                                         DialogButtonsView(
                                             cancelAction = {
-                                                dialogService.dialog = null
+                                                dialogService.popDialog()
                                             },
                                             confirmAction = {
                                                 shortcutKeys.update(name, shortcutKeysListener.currentKeys)
                                                 shortcutKeysListener.currentKeys.clear()
-                                                dialogService.dialog = null
+                                                dialogService.popDialog()
                                             },
                                         )
                                     }
                                 }
-                            }
+                            },
+                        )
                     },
             painter = edit(),
             contentDescription = "edit shortcut key",

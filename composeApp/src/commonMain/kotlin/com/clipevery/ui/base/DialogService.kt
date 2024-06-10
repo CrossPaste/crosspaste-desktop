@@ -2,5 +2,9 @@ package com.clipevery.ui.base
 
 interface DialogService {
 
-    var dialog: ClipDialog?
+    var dialogs: MutableList<ClipDialog>
+
+    fun pushDialog(dialog: ClipDialog)
+
+    fun popDialog()
 }
