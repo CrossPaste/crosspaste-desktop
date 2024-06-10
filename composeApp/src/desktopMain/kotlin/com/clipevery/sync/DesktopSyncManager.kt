@@ -83,6 +83,7 @@ class DesktopSyncManager(
                 realTimeSyncRuntimeInfos.addAll(syncRuntimeInfos)
                 refreshWaitToVerifySyncRuntimeInfo()
                 deviceManager.refresh()
+                resolveSyncs()
             }
             val syncRuntimeInfosFlow = syncRuntimeInfos.asFlow()
             syncRuntimeInfosFlow.collect { changes: ResultsChange<SyncRuntimeInfo> ->
