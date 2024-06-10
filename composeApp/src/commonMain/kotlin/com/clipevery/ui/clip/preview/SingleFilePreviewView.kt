@@ -21,7 +21,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -29,15 +28,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.i18n.GlobalCopywriter
+import com.clipevery.ui.base.AsyncView
+import com.clipevery.ui.base.LoadIconData
+import com.clipevery.ui.base.LoadImageData
 import com.clipevery.ui.base.SketchBackground
 import com.clipevery.ui.base.UISupport
-import com.clipevery.ui.base.file
 import com.clipevery.ui.base.fileSlash
-import com.clipevery.ui.base.folder
-import com.clipevery.utils.FileExtUtils
+import com.clipevery.ui.base.loadIconData
+import com.clipevery.ui.base.loadImageData
 import com.clipevery.utils.getFileUtils
-import com.clipevery.utils.getResourceUtils
-import io.ktor.util.*
 import java.nio.file.Path
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -53,18 +52,7 @@ fun SingleFilePreviewView(
 
     val fileUtils = getFileUtils()
 
-    val resourceUtils = getResourceUtils()
-
     val existFile by remember { mutableStateOf(filePath.toFile().exists()) }
-
-    val optionPainter: Painter? =
-        if (imagePath != null) {
-            resourceUtils.loadPainter(imagePath, density).toPainter()
-        } else if (existFile) {
-            FileExtUtils.getExtPreviewImagePainter(filePath.extension)
-        } else {
-            fileSlash()
-        }
 
     Row(
         modifier =
@@ -74,26 +62,43 @@ fun SingleFilePreviewView(
     ) {
         Box(modifier = Modifier.size(100.dp)) {
             SketchBackground(100.dp, 100.dp, 5.dp, MaterialTheme.colors.primary)
-            optionPainter?.let { painter ->
-                Image(
-                    modifier =
-                        Modifier.size(100.dp)
-                            .clip(RoundedCornerShape(5.dp)),
-                    painter = painter,
-                    contentDescription = "fileType",
-                )
-            } ?: run {
-                val isFile: Boolean =
-                    remember(filePath) {
-                        filePath.toFile().isFile
+            AsyncView(
+                key = filePath,
+                load = {
+                    if (imagePath != null) {
+                        loadImageData(imagePath, density)
+                    } else {
+                        loadIconData(filePath, existFile, density)
                     }
-                Icon(
-                    modifier = Modifier.size(100.dp),
-                    painter = if (isFile) file() else folder(),
-                    contentDescription = "fileType",
-                    tint = MaterialTheme.colors.onBackground,
-                )
-            }
+                },
+                loadFor = { loadStateData ->
+                    if (loadStateData.isSuccess()) {
+                        if (loadStateData is LoadImageData) {
+                            Image(
+                                modifier =
+                                    Modifier.size(100.dp)
+                                        .clip(RoundedCornerShape(5.dp)),
+                                painter = loadStateData.toPainterImage.toPainter(),
+                                contentDescription = "fileType",
+                            )
+                        } else if (loadStateData is LoadIconData) {
+                            Icon(
+                                modifier = Modifier.size(100.dp),
+                                painter = loadStateData.toPainterImage.toPainter(),
+                                contentDescription = "fileType",
+                                tint = MaterialTheme.colors.onBackground,
+                            )
+                        }
+                    } else if (loadStateData.isError()) {
+                        Icon(
+                            modifier = Modifier.size(100.dp),
+                            painter = fileSlash(),
+                            contentDescription = "fileType",
+                            tint = MaterialTheme.colors.onBackground,
+                        )
+                    }
+                },
+            )
         }
 
         Column(

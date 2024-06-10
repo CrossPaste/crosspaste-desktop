@@ -271,8 +271,11 @@ fun ClipTypeIconView(
             load = {
                 clipData.getClipItem()?.let {
                     it as ClipUrl
-                    faviconLoader.getFaviconPath(it.url)?.let { path ->
-                        return@AsyncView LoadImageData(path, getResourceUtils().loadPainter(path, density))
+                    try {
+                        faviconLoader.getFaviconPath(it.url)?.let { path ->
+                            return@AsyncView LoadImageData(path, getResourceUtils().loadPainter(path, density))
+                        }
+                    } catch (ignore: Exception) {
                     }
                 }
                 loadIconData

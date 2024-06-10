@@ -40,6 +40,7 @@ import com.clipevery.ui.base.LoadIconData
 import com.clipevery.ui.base.LoadImageData
 import com.clipevery.ui.base.chevronLeft
 import com.clipevery.ui.base.chevronRight
+import com.clipevery.ui.base.fileSlash
 import com.clipevery.ui.base.loadIconData
 import com.clipevery.utils.getDateUtils
 import com.clipevery.utils.getFileUtils
@@ -142,6 +143,13 @@ fun ClipFilesDetailView(
                                             tint = MaterialTheme.colors.onBackground,
                                         )
                                     }
+                                } else if (loadStateData.isError()) {
+                                    Icon(
+                                        modifier = Modifier.size(150.dp),
+                                        painter = fileSlash(),
+                                        contentDescription = "fileType",
+                                        tint = MaterialTheme.colors.onBackground,
+                                    )
                                 }
                             },
                         )
