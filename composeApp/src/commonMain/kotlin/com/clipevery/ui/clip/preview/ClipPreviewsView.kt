@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -26,6 +27,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -42,7 +44,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.app.AppWindowManager
 import com.clipevery.clip.ClipPreviewService
@@ -56,11 +63,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ClipPreviewsView() {
     val current = LocalKoinApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
     val clipPreviewService = current.koin.get<ClipPreviewService>()
     val appWindowManager = current.koin.get<AppWindowManager>()
 
@@ -139,41 +144,11 @@ fun ClipPreviewsView() {
             }
         }
 
-        Column(modifier = Modifier.fillMaxSize()) {
-            Row(
-                modifier =
-                    Modifier
-                        .height(12.dp)
-                        .fillMaxWidth()
-                        .background(
-                            brush =
-                                Brush.verticalGradient(
-                                    colors =
-                                        listOf(
-                                            MaterialTheme.colors.surface.copy(alpha = 0.32f),
-                                            MaterialTheme.colors.surface.copy(alpha = 0.0f),
-                                        ),
-                                ),
-                        ),
-            ) { }
-            Spacer(modifier = Modifier.weight(1f))
-            Row(
-                modifier =
-                    Modifier
-                        .height(12.dp)
-                        .fillMaxWidth()
-                        .background(
-                            brush =
-                                Brush.verticalGradient(
-                                    colors =
-                                        listOf(
-                                            MaterialTheme.colors.surface.copy(alpha = 0.0f),
-                                            MaterialTheme.colors.surface.copy(alpha = 0.32f),
-                                        ),
-                                ),
-                        ),
-            ) { }
+        if (rememberClipDataList.isEmpty()) {
+            EmptyScreenView()
         }
+
+        ShadowClipPreviewView(rememberClipDataList.size)
 
         VerticalScrollbar(
             modifier =
@@ -201,50 +176,135 @@ fun ClipPreviewsView() {
         )
 
         if (showToTop) {
+            ToTop {
+                coroutineScope.launch {
+                    listState.animateScrollToItem(0)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun EmptyScreenView() {
+    val current = LocalKoinApplication.current
+    val copywriter = current.koin.get<GlobalCopywriter>()
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        Box(
+            modifier = Modifier.wrapContentSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                modifier =
+                    Modifier
+                        .fillMaxWidth(0.8f),
+                textAlign = TextAlign.Center,
+                text = copywriter.getText("Haven't_listened_to_any_pasteboard_data_yet"),
+                maxLines = 3,
+                style =
+                    TextStyle(
+                        fontFamily = FontFamily.SansSerif,
+                        fontWeight = FontWeight.Light,
+                        color = MaterialTheme.colors.onBackground.copy(alpha = 0.5f),
+                        fontSize = 20.sp,
+                        lineHeight = 24.sp,
+                    ),
+            )
+        }
+    }
+}
+
+@Composable
+fun ShadowClipPreviewView(size: Int) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        if (size > 0) {
             Row(
                 modifier =
-                    Modifier.fillMaxSize()
-                        .padding(end = 30.dp, bottom = 30.dp),
-                verticalAlignment = Alignment.Bottom,
-            ) {
-                var transparency by remember { mutableStateOf(0.5f) }
-
-                Spacer(modifier = Modifier.weight(1f))
-                ClipTooltipAreaView(
-                    text = copywriter.getText("Scroll_to_top"),
-                    delayMillis = 1000,
-                ) {
-                    ClipIconButton(
-                        size = 40.dp,
-                        onClick = {
-                            coroutineScope.launch {
-                                listState.animateScrollToItem(0)
-                            }
-                        },
-                        modifier =
-                            Modifier
-                                .background(MaterialTheme.colors.surface.copy(alpha = transparency), CircleShape)
-                                .onPointerEvent(
-                                    eventType = PointerEventType.Enter,
-                                    onEvent = {
-                                        transparency = 1.0f
-                                    },
-                                )
-                                .onPointerEvent(
-                                    eventType = PointerEventType.Exit,
-                                    onEvent = {
-                                        transparency = 0.5f
-                                    },
+                    Modifier
+                        .height(12.dp)
+                        .fillMaxWidth()
+                        .background(
+                            brush =
+                                Brush.verticalGradient(
+                                    colors =
+                                        listOf(
+                                            MaterialTheme.colors.surface.copy(alpha = 0.32f),
+                                            MaterialTheme.colors.surface.copy(alpha = 0.0f),
+                                        ),
                                 ),
-                    ) {
-                        Icon(
-                            painter = toTop(),
-                            contentDescription = "To Top",
-                            modifier = Modifier.size(30.dp),
-                            tint = MaterialTheme.colors.primary.copy(alpha = transparency),
+                        ),
+            ) { }
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        if (size >= 7) {
+            Row(
+                modifier =
+                    Modifier
+                        .height(12.dp)
+                        .fillMaxWidth()
+                        .background(
+                            brush =
+                                Brush.verticalGradient(
+                                    colors =
+                                        listOf(
+                                            MaterialTheme.colors.surface.copy(alpha = 0.0f),
+                                            MaterialTheme.colors.surface.copy(alpha = 0.32f),
+                                        ),
+                                ),
+                        ),
+            ) { }
+        }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+fun ToTop(toTopAction: () -> Unit) {
+    val current = LocalKoinApplication.current
+    val copywriter = current.koin.get<GlobalCopywriter>()
+    Row(
+        modifier =
+            Modifier.fillMaxSize()
+                .padding(end = 30.dp, bottom = 30.dp),
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        var transparency by remember { mutableStateOf(0.5f) }
+
+        Spacer(modifier = Modifier.weight(1f))
+        ClipTooltipAreaView(
+            text = copywriter.getText("Scroll_to_top"),
+            delayMillis = 1000,
+        ) {
+            ClipIconButton(
+                size = 40.dp,
+                onClick = {
+                    toTopAction()
+                },
+                modifier =
+                    Modifier
+                        .background(MaterialTheme.colors.surface.copy(alpha = transparency), CircleShape)
+                        .onPointerEvent(
+                            eventType = PointerEventType.Enter,
+                            onEvent = {
+                                transparency = 1.0f
+                            },
                         )
-                    }
-                }
+                        .onPointerEvent(
+                            eventType = PointerEventType.Exit,
+                            onEvent = {
+                                transparency = 0.5f
+                            },
+                        ),
+            ) {
+                Icon(
+                    painter = toTop(),
+                    contentDescription = "To Top",
+                    modifier = Modifier.size(30.dp),
+                    tint = MaterialTheme.colors.primary.copy(alpha = transparency),
+                )
             }
         }
     }
