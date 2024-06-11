@@ -215,9 +215,13 @@ jobs:
           path: output/clipevery-linux-${{ env.PACKAGE_VERSION }}
           if-no-files-found: error
 
+      # conveyor default cache directory is .conveyor/cache
+      # Avoid caching it, causing Github space payment
       - name: Cleanup Conveyor
         if: always()
-        run: rm -f developerID_application.p12
+        run: | 
+          rm -f developerID_application.p12
+          rm -rf .conveyor/cache/*
 
       - name: Display file tree with sizes
         run: |
