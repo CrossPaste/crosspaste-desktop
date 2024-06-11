@@ -3,7 +3,7 @@ name: "Build Package"
 on:
   push:
     tags:
-      - 'v-*'
+      - 'v-*-beta*'
 
 jobs:
   check-dylib-cache:
@@ -16,7 +16,7 @@ jobs:
 
       - name: check-dylib-cache-x86
         id: cache-check-x86
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: ./composeApp/dylib/darwin-x86-64/libMacosApi.dylib
           key: mac-dylib-darwin-x86-64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
@@ -24,7 +24,7 @@ jobs:
 
       - name: check-dylib-cache-aarch64
         id: cache-check-aarch64
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: ./composeApp/dylib/darwin-aarch64/libMacosApi.dylib
           key: mac-dylib-darwin-aarch64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
@@ -86,19 +86,31 @@ jobs:
           sudo rm -rf /usr/local/share/boost
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"  
 
-      - name: Read version properties
+      - name: check version properties
         id: versioning
         run: |
-          VERSION=$(grep 'version=' ${{ github.workspace }}/composeApp/src/desktopMain/resources/version.properties | cut -d'=' -f2)
-          BETA=$(grep 'beta=' ${{ github.workspace }}/composeApp/src/desktopMain/resources/version.properties | cut -d'=' -f2)
-          if [ "$BETA" == "0" ]; then
-            PACKAGE_VERSION="${VERSION}-beta"
-          elif [ -n "$BETA" ]; then
-            PACKAGE_VERSION="${VERSION}-beta${BETA}"
+          TAG_NAME=${GITHUB_REF/refs\/tags\//}
+          echo "Full tag: $TAG_NAME"
+          TAG_VERSION=$(echo $TAG_NAME | sed -E 's/v-([0-9]+\.[0-9]+\.[0-9]+)-beta([0-9]+)/\1/')
+          BETA=$(echo $TAG_NAME | sed -E 's/v-([0-9]+\.[0-9]+\.[0-9]+)-beta([0-9]+)/\2/')
+          echo "Tag Version: $TAG_VERSION"
+          echo "Tag Beta: $BETA"
+          
+          PROPERTIES_VERSION=$(grep 'version=' ${{ github.workspace }}/composeApp/src/desktopMain/resources/version.properties | cut -d'=' -f2)
+          
+          echo "Properties Version: $PROPERTIES_VERSION"
+          
+          if [ "$TAG_VERSION" != "$PROPERTIES_VERSION" ]; then
+            echo "Error: Tag version does not match properties version."
+            exit 1
           else
-            PACKAGE_VERSION="${VERSION}"
+            echo "Versions match. Proceeding to update beta value in properties file."
+            echo -e "\nbeta=$BETA" >> ${{ github.workspace }}/composeApp/src/desktopMain/resources/version.properties
+            echo "Beta value added to properties file."
           fi
-          echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> $GITHUB_ENV
+          
+          echo "VERSION=PROPERTIES_VERSION" >> $GITHUB_ENV
+          echo "BETA=$BETA" >> $GITHUB_ENV
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3
@@ -123,14 +135,14 @@ jobs:
           enableCrossOsArchive: true
 
       - name: check-darwin-x86-64-dylib-cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: ./composeApp/dylib/darwin-x86-64/libMacosApi.dylib
           key: mac-dylib-darwin-x86-64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
       - name: check-darwin-aarch64-dylib-cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: ./composeApp/dylib/darwin-aarch64/libMacosApi.dylib
           key: mac-dylib-darwin-aarch64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}

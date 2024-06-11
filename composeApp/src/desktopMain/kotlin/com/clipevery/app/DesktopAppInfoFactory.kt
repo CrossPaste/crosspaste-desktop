@@ -26,19 +26,25 @@ class DesktopAppInfoFactory(private val configManager: ConfigManager) : AppInfoF
                     .getResourceAsStream("version.properties"),
             )
 
-            val beta: String? = properties.getProperty("beta")
-
-            val betaSuffix =
-                if (beta == "0") {
-                    "-beta"
-                } else if (beta != null) {
-                    "-beta$beta"
-                } else {
-                    ""
-                }
-
             val version = properties.getProperty("version", "Unknown")
-            return "$version$betaSuffix"
+
+            if (AppEnv.isDevelopment()) {
+                return "$version-dev"
+            } else if (AppEnv.isTest()) {
+                return "$version-test"
+            } else {
+                val beta: String? = properties.getProperty("beta")
+
+                val betaSuffix =
+                    if (beta == "0") {
+                        "-beta"
+                    } else if (beta != null) {
+                        "-beta$beta"
+                    } else {
+                        ""
+                    }
+                return "$version$betaSuffix"
+            }
         } catch (e: IOException) {
             logger.error(e) { "Failed to read version" }
         }
