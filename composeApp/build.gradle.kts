@@ -45,7 +45,7 @@ buildscript {
 ktlint {
     verbose = true
     android = false
-    ignoreFailures = true
+    ignoreFailures = false
     filter {
         exclude { element ->
             val path = element.path
