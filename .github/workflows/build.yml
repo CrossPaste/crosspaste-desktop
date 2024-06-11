@@ -157,7 +157,7 @@ jobs:
         run: |
           echo "${{ secrets.DEVELOPER_ID_APPLICATION }}" | base64 --decode > developerID_application.p12
 
-      - name: Conveyor build Windows
+      - name: Conveyor build Windows app
         uses: hydraulic-software/conveyor/actions/build@v14.2
         with:
           command: make windows-app --output-dir=./output/clipevery-windows-${{ env.PACKAGE_VERSION }}
@@ -165,14 +165,14 @@ jobs:
           signing_key: ${{ secrets.SIGNING_KEY }}
           agree_to_license: 1
 
-      - name: Upload Windows
+      - name: Upload Windows app
         uses: actions/upload-artifact@v4
         with:
           name: clipevery-windows-${{ env.PACKAGE_VERSION }}
           path: output/clipevery-windows-${{ env.PACKAGE_VERSION }}
           if-no-files-found: error
 
-      - name: Conveyor build Mac amd64
+      - name: Conveyor build Mac amd64 app
         uses: hydraulic-software/conveyor/actions/build@v14.2
         with:
           command: make mac-app --output-dir=./output/clipevery-mac-adm64-${{ env.PACKAGE_VERSION }}
@@ -180,14 +180,20 @@ jobs:
           signing_key: ${{ secrets.SIGNING_KEY }}
           agree_to_license: 1
 
-      - name: Upload Mac amd64
+      # Preserve the file permissions of Clipevery.app
+      # directly use upload-artifact to compress zip and lose file permissions
+      # https://github.com/actions/upload-artifact?tab=readme-ov-file#permission-loss
+      - name: Tar Mac amd64 app
+        run: tar -cvf Clipevery.tar -C output/clipevery-mac-adm64-${{ env.PACKAGE_VERSION }} Clipevery.app
+
+      - name: Upload Mac amd64 app
         uses: actions/upload-artifact@v4
         with:
           name: clipevery-mac-amd64-${{ env.PACKAGE_VERSION }}
-          path: output/clipevery-mac-adm64-${{ env.PACKAGE_VERSION }}
+          path: output/clipevery-mac-adm64-${{ env.PACKAGE_VERSION }}/Clipevery.tar
           if-no-files-found: error
 
-      - name: Conveyor build Mac aarch64
+      - name: Conveyor build Mac aarch64 app
         uses: hydraulic-software/conveyor/actions/build@v14.2
         with:
           command: make mac-app --output-dir=./output/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}
@@ -195,26 +201,29 @@ jobs:
           signing_key: ${{ secrets.SIGNING_KEY }}
           agree_to_license: 1
 
-      - name: Upload Mac aarch64
+      - name: Tar Mac aarch64 app
+        run: tar -cvf Clipevery.tar -C output/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }} Clipevery.app
+
+      - name: Upload Mac aarch64 app
         uses: actions/upload-artifact@v4
         with:
           name: clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}
-          path: output/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}
+          path: output/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}/Clipevery.tar
           if-no-files-found: error
 
-      - name: Conveyor build Linux
+      - name: Conveyor build Linux app
         uses: hydraulic-software/conveyor/actions/build@v14.2
         with:
-          command: make linux-app --output-dir=./output/clipevery-linux-${{ env.PACKAGE_VERSION }}
+          command: make debian-package --output-dir=./output/clipevery-linux-${{ env.PACKAGE_VERSION }}
           extra_flags: -f ci.conveyor.conf
           signing_key: ${{ secrets.SIGNING_KEY }}
           agree_to_license: 1
 
-      - name: Upload Linux
+      - name: Upload Linux app
         uses: actions/upload-artifact@v4
         with:
           name: clipevery-linux-${{ env.PACKAGE_VERSION }}
-          path: output/clipevery-linux-${{ env.PACKAGE_VERSION }}
+          path: output/clipevery-linux-${{ env.PACKAGE_VERSION }}/*.deb
           if-no-files-found: error
 
       # conveyor default cache directory is .conveyor/cache
