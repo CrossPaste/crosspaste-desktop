@@ -160,17 +160,20 @@ jobs:
       - name: Conveyor build Windows app
         uses: hydraulic-software/conveyor/actions/build@v14.2
         with:
-          command: make windows-app --output-dir=./output/clipevery-windows-${{ env.PACKAGE_VERSION }}
+          command: make windows-zip --output-dir=./output/clipevery-windows-${{ env.PACKAGE_VERSION }}
           extra_flags: -f ci.conveyor.conf
           signing_key: ${{ secrets.SIGNING_KEY }}
           agree_to_license: 1
 
       - name: Upload Windows app
-        uses: actions/upload-artifact@v4
+        id: upload_window_app
+        uses: JohnGuan/oss-upload-action@main
         with:
-          name: clipevery-windows-${{ env.PACKAGE_VERSION }}
-          path: output/clipevery-windows-${{ env.PACKAGE_VERSION }}
-          if-no-files-found: error
+          key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
+          key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
+          region: oss-cn-shenzhen
+          bucket: clipevery-desktop
+          assets: output/clipevery-windows-${{ env.PACKAGE_VERSION }}/**:/${{ env.PACKAGE_VERSION }}/
 
       - name: Conveyor build Mac amd64 app
         uses: hydraulic-software/conveyor/actions/build@v14.2
@@ -184,14 +187,17 @@ jobs:
       # directly use upload-artifact to compress zip and lose file permissions
       # https://github.com/actions/upload-artifact?tab=readme-ov-file#permission-loss
       - name: Tar Mac amd64 app
-        run: tar -cvf Clipevery.tar -C output/clipevery-mac-adm64-${{ env.PACKAGE_VERSION }} Clipevery.app
+        run: tar -cvf clipevery-mac-adm64-${{ env.PACKAGE_VERSION }}.tar -C output/clipevery-mac-adm64-${{ env.PACKAGE_VERSION }} Clipevery.app
 
       - name: Upload Mac amd64 app
-        uses: actions/upload-artifact@v4
+        id: upload_mac_adm64_app
+        uses: JohnGuan/oss-upload-action@main
         with:
-          name: clipevery-mac-amd64-${{ env.PACKAGE_VERSION }}
-          path: output/clipevery-mac-adm64-${{ env.PACKAGE_VERSION }}/Clipevery.tar
-          if-no-files-found: error
+          key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
+          key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
+          region: oss-cn-shenzhen
+          bucket: clipevery-desktop
+          assets: output/clipevery-mac-adm64-${{ env.PACKAGE_VERSION }}/clipevery-mac-adm64-${{ env.PACKAGE_VERSION }}.tar:/${{ env.PACKAGE_VERSION }}/
 
       - name: Conveyor build Mac aarch64 app
         uses: hydraulic-software/conveyor/actions/build@v14.2
@@ -202,14 +208,17 @@ jobs:
           agree_to_license: 1
 
       - name: Tar Mac aarch64 app
-        run: tar -cvf Clipevery.tar -C output/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }} Clipevery.app
+        run: tar -cvf clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}.tar -C output/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }} Clipevery.app
 
-      - name: Upload Mac aarch64 app
-        uses: actions/upload-artifact@v4
+      - name: Upload Mac aaarch64 app
+        id: upload_mac_aarch64_app
+        uses: JohnGuan/oss-upload-action@main
         with:
-          name: clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}
-          path: output/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}/Clipevery.tar
-          if-no-files-found: error
+          key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
+          key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
+          region: oss-cn-shenzhen
+          bucket: clipevery-desktop
+          assets: output/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}.tar:/${{ env.PACKAGE_VERSION }}/
 
       - name: Conveyor build Linux app
         uses: hydraulic-software/conveyor/actions/build@v14.2
@@ -220,17 +229,20 @@ jobs:
           agree_to_license: 1
 
       - name: Upload Linux app
-        uses: actions/upload-artifact@v4
+        id: upload_linux_app
+        uses: JohnGuan/oss-upload-action@main
         with:
-          name: clipevery-linux-${{ env.PACKAGE_VERSION }}
-          path: output/clipevery-linux-${{ env.PACKAGE_VERSION }}/*.deb
-          if-no-files-found: error
+          key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
+          key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
+          region: oss-cn-shenzhen
+          bucket: clipevery-desktop
+          assets: output/clipevery-linux-${{ env.PACKAGE_VERSION }}/**:/${{ env.PACKAGE_VERSION }}/
 
       # conveyor default cache directory is .conveyor/cache
       # Avoid caching it, causing Github space payment
       - name: Cleanup Conveyor
         if: always()
-        run: | 
+        run: |
           rm -f developerID_application.p12
           rm -rf .conveyor/cache/*
 
