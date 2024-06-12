@@ -17,25 +17,26 @@ object DesktopAppLock : AppLock {
     private var channel: FileChannel? = null
     private var lock: FileLock? = null
 
-    override fun acquireLock(): Boolean {
+    override fun acquireLock(): Pair<Boolean, Boolean> {
         val appLock = pathProvider.clipUserPath.resolve("app.lock").toFile()
-
+        val firstLaunch = !appLock.exists()
         try {
             channel = FileChannel.open(appLock.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE)
             lock = channel?.tryLock()
             if (lock == null) {
                 channel?.close()
                 logger.error { "Another instance of the application is already running." }
-                return false
+                return Pair(false, firstLaunch)
             }
             logger.info { "Application lock acquired." }
-            return true
+
+            return Pair(true, firstLaunch)
         } catch (e: OverlappingFileLockException) {
             logger.error(e) { "Another instance of the application is already running." }
-            return false
+            return Pair(false, firstLaunch)
         } catch (e: Exception) {
             logger.error(e) { "Failed to create and lock file: ${e.message}" }
-            return false
+            return Pair(false, firstLaunch)
         }
     }
 
