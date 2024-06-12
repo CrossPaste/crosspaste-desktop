@@ -106,7 +106,7 @@ fun WindowsTray(windowState: WindowState) {
 
                 window.addWindowFocusListener(windowListener)
 
-                (appWindowManager.windowManager as WinWindowManager).getMenuHWND()
+                (appWindowManager.windowManager as WinWindowManager).initMenuHWND()
 
                 onDispose {
                     window.removeWindowFocusListener(windowListener)

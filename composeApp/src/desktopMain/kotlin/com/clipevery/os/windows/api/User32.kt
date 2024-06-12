@@ -1,7 +1,6 @@
 package com.clipevery.os.windows.api
 
 import com.clipevery.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
-import com.clipevery.app.DesktopAppWindowManager.Companion.MENU_WINDOW_TITLE
 import com.clipevery.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.clipevery.app.WinAppInfo
 import com.sun.jna.Memory
@@ -393,14 +392,12 @@ interface User32 : StdCallLibrary {
             windowTitle: String,
             mainWindow: HWND?,
             searchWindow: HWND?,
-            menuWindow: HWND?,
         ): WinAppInfo? {
             INSTANCE.GetForegroundWindow()?.let { previousHwnd ->
                 var filePath: String? = null
 
                 if (previousHwnd.pointer != mainWindow?.pointer &&
-                    previousHwnd.pointer != searchWindow?.pointer &&
-                    previousHwnd.pointer != menuWindow?.pointer
+                    previousHwnd.pointer != searchWindow?.pointer
                 ) {
                     val processIdRef = IntByReference()
                     val processThreadId = INSTANCE.GetWindowThreadProcessId(previousHwnd, processIdRef)
@@ -464,7 +461,6 @@ interface User32 : StdCallLibrary {
             windowTitle: String,
             mainWindow: HWND?,
             searchWindow: HWND?,
-            menuWindow: HWND?,
             previousHwnd: HWND?,
             toPaste: Boolean,
             keyCodes: List<Int>,
@@ -477,11 +473,6 @@ interface User32 : StdCallLibrary {
                 }
                 SEARCH_WINDOW_TITLE -> {
                     searchWindow?.let { hwnd ->
-                        INSTANCE.ShowWindow(hwnd, SW_HIDE)
-                    }
-                }
-                MENU_WINDOW_TITLE -> {
-                    menuWindow?.let { hwnd ->
                         INSTANCE.ShowWindow(hwnd, SW_HIDE)
                     }
                 }
