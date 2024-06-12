@@ -304,7 +304,8 @@ class Clipevery {
         @Throws(Exception::class)
         private fun initInject() {
             try {
-                if (koinApplication.koin.get<AppLock>().acquireLock()) {
+                val pair = koinApplication.koin.get<AppLock>().acquireLock()
+                if (pair.first) {
                     koinApplication.koin.get<ClipboardService>().start()
                     koinApplication.koin.get<QRCodeGenerator>()
                     koinApplication.koin.get<ClipServer>().start()

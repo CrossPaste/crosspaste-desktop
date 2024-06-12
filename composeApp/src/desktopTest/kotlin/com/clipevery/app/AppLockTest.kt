@@ -16,17 +16,21 @@ class AppLockTest {
             runBlocking {
                 val job1 =
                     launch {
-                        assertTrue(DesktopAppLock.acquireLock(), "First instance should be able to acquire the lock")
+                        val pair = DesktopAppLock.acquireLock()
+                        assertTrue(pair.first, "First instance should be able to acquire the lock")
+                        assertTrue(pair.second, "First instance should be considered as the first launch")
                     }
 
                 delay(100)
 
                 val job2 =
                     launch {
+                        val pair = DesktopAppLock.acquireLock()
                         assertFalse(
-                            DesktopAppLock.acquireLock(),
+                            pair.first,
                             "Second instance should not be able to acquire the lock while the first one holds it",
                         )
+                        assertFalse(pair.second, "Second instance should not be considered as the first launch")
                     }
 
                 job1.join()
@@ -41,15 +45,17 @@ class AppLockTest {
     fun testLockRelease() {
         testUseMockTestPathProvider { _, _, _, _ ->
             runBlocking {
-                assertTrue(DesktopAppLock.acquireLock(), "Instance should be able to acquire the lock initially")
+                assertTrue(DesktopAppLock.acquireLock().first, "Instance should be able to acquire the lock initially")
                 DesktopAppLock.releaseLock()
 
                 val job =
                     launch {
+                        val pair = DesktopAppLock.acquireLock()
                         assertTrue(
-                            DesktopAppLock.acquireLock(),
+                            pair.first,
                             "Instance should be able to reacquire the lock after it was released",
                         )
+                        assertFalse(pair.second, "Instance should not be considered as the first launch")
                     }
 
                 job.join()
