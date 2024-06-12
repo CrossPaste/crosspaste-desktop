@@ -1,5 +1,7 @@
 package com.clipevery.app
 
+import com.clipevery.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
+import com.clipevery.app.DesktopAppWindowManager.Companion.MENU_WINDOW_TITLE
 import com.clipevery.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.clipevery.listener.ShortcutKeys
 import com.clipevery.os.windows.api.User32
@@ -13,7 +15,6 @@ import com.sun.jna.platform.win32.WinDef.HWND
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.io.path.absolutePathString
 
@@ -28,6 +29,18 @@ class WinWindowManager(
     private val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
     private var prevWinAppInfo: WinAppInfo? = null
+
+    private val mainHWND: HWND? by lazy {
+        User32.findClipWindow(MAIN_WINDOW_TITLE)
+    }
+
+    private val searchHWND: HWND? by lazy {
+        User32.findClipWindow(SEARCH_WINDOW_TITLE)
+    }
+
+    private val menuHWND: HWND? by lazy {
+        User32.findClipWindow(MENU_WINDOW_TITLE)
+    }
 
     private val fileDescriptorCache: LoadingCache<String, String> =
         CacheBuilder.newBuilder()
@@ -79,11 +92,11 @@ class WinWindowManager(
 
     override suspend fun bringToFront(windowTitle: String) {
         logger.info { "$windowTitle bringToFront Clipevery" }
-        if (windowTitle == SEARCH_WINDOW_TITLE) {
-            // to wait for the search window to be ready
-            delay(500)
-        }
-        prevWinAppInfo = User32.bringToFront(windowTitle)
+//        if (windowTitle == SEARCH_WINDOW_TITLE) {
+//            // to wait for the search window to be ready
+//            delay(500)
+//        }
+        prevWinAppInfo = User32.bringToFront(windowTitle, mainHWND, searchHWND, menuHWND)
     }
 
     override suspend fun bringToBack(
@@ -95,7 +108,7 @@ class WinWindowManager(
             shortcutKeys.shortcutKeysCore.keys["Paste"]?.let {
                 it.map { key -> key.rawCode }
             } ?: listOf()
-        User32.bringToBack(windowTitle, prevWinAppInfo?.hwnd, toPaste, keyCodes)
+        User32.bringToBack(windowTitle, mainHWND, searchHWND, menuHWND, prevWinAppInfo?.hwnd, toPaste, keyCodes)
     }
 
     override suspend fun toPaste() {
@@ -105,6 +118,10 @@ class WinWindowManager(
             } ?: listOf()
 
         User32.paste(keyCodes)
+    }
+
+    fun getMenuHWND(): HWND? {
+        return menuHWND
     }
 }
 
