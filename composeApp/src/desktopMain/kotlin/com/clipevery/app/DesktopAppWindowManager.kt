@@ -37,6 +37,9 @@ class DesktopAppWindowManager(
 
         const val SEARCH_WINDOW_TITLE: String = "Clipevery Search"
 
+        // only use in Windows
+        const val MENU_WINDOW_TITLE: String = "Clipevery Menu"
+
         val currentPlatform = currentPlatform()
 
         @Suppress("UNCHECKED_CAST")
@@ -57,7 +60,7 @@ class DesktopAppWindowManager(
 
     private val logger: KLogger = KotlinLogging.logger {}
 
-    private val windowManager: WindowManager by lazy {
+    override val windowManager: WindowManager by lazy {
         create(lazyShortcutKeys)
     }
 

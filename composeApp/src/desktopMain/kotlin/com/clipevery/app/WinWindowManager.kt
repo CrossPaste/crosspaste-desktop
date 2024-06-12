@@ -1,5 +1,7 @@
 package com.clipevery.app
 
+import com.clipevery.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
+import com.clipevery.app.DesktopAppWindowManager.Companion.MENU_WINDOW_TITLE
 import com.clipevery.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.clipevery.listener.ShortcutKeys
 import com.clipevery.os.windows.api.User32
@@ -28,6 +30,14 @@ class WinWindowManager(
     private val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
     private var prevWinAppInfo: WinAppInfo? = null
+
+    private val mainHWND: HWND? by lazy {
+        User32.findClipWindow(MAIN_WINDOW_TITLE)
+    }
+
+    private val searchHWND: HWND? by lazy {
+        User32.findClipWindow(SEARCH_WINDOW_TITLE)
+    }
 
     private val fileDescriptorCache: LoadingCache<String, String> =
         CacheBuilder.newBuilder()
@@ -83,7 +93,7 @@ class WinWindowManager(
             // to wait for the search window to be ready
             delay(500)
         }
-        prevWinAppInfo = User32.bringToFront(windowTitle)
+        prevWinAppInfo = User32.bringToFront(windowTitle, mainHWND, searchHWND)
     }
 
     override suspend fun bringToBack(
@@ -95,7 +105,7 @@ class WinWindowManager(
             shortcutKeys.shortcutKeysCore.keys["Paste"]?.let {
                 it.map { key -> key.rawCode }
             } ?: listOf()
-        User32.bringToBack(windowTitle, prevWinAppInfo?.hwnd, toPaste, keyCodes)
+        User32.bringToBack(windowTitle, mainHWND, searchHWND, prevWinAppInfo?.hwnd, toPaste, keyCodes)
     }
 
     override suspend fun toPaste() {
@@ -105,6 +115,10 @@ class WinWindowManager(
             } ?: listOf()
 
         User32.paste(keyCodes)
+    }
+
+    fun initMenuHWND(): HWND? {
+        return User32.findClipWindow(MENU_WINDOW_TITLE)
     }
 }
 

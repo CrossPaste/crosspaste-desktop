@@ -235,10 +235,6 @@ interface User32 : StdCallLibrary {
 
         private val logger = KotlinLogging.logger {}
 
-        private var mainHWND: HWND? = null
-
-        private var searchHWND: HWND? = null
-
         fun getActiveWindowProcessFilePath(): String? {
             INSTANCE.GetForegroundWindow()?.let { hwnd ->
                 val processIdRef = IntByReference()
@@ -392,77 +388,70 @@ interface User32 : StdCallLibrary {
         }
 
         @Synchronized
-        fun bringToFront(windowTitle: String): WinAppInfo? {
+        fun bringToFront(
+            windowTitle: String,
+            mainWindow: HWND?,
+            searchWindow: HWND?,
+        ): WinAppInfo? {
             INSTANCE.GetForegroundWindow()?.let { previousHwnd ->
-                val processIdRef = IntByReference()
-                val processThreadId = INSTANCE.GetWindowThreadProcessId(previousHwnd, processIdRef)
-
-                val processHandle =
-                    Kernel32.INSTANCE.OpenProcess(
-                        WinNT.PROCESS_QUERY_INFORMATION or WinNT.PROCESS_VM_READ,
-                        false,
-                        processIdRef.value,
-                    )
-
                 var filePath: String? = null
 
-                try {
-                    val bufferSize = 1024
-                    val memory = Memory((bufferSize * 2).toLong())
-                    if (Psapi.INSTANCE.GetModuleFileNameEx(processHandle, null, memory, bufferSize) > 0) {
-                        filePath = memory.getWideString(0)
+                if (previousHwnd.pointer != mainWindow?.pointer &&
+                    previousHwnd.pointer != searchWindow?.pointer
+                ) {
+                    val processIdRef = IntByReference()
+                    val processThreadId = INSTANCE.GetWindowThreadProcessId(previousHwnd, processIdRef)
+
+                    val processHandle =
+                        Kernel32.INSTANCE.OpenProcess(
+                            WinNT.PROCESS_QUERY_INFORMATION or WinNT.PROCESS_VM_READ,
+                            false,
+                            processIdRef.value,
+                        )
+
+                    try {
+                        val bufferSize = 1024
+                        val memory = Memory((bufferSize * 2).toLong())
+                        if (Psapi.INSTANCE.GetModuleFileNameEx(processHandle, null, memory, bufferSize) > 0) {
+                            filePath = memory.getWideString(0)
+                        }
+                    } finally {
+                        Kernel32.INSTANCE.CloseHandle(processHandle)
                     }
-                } finally {
-                    Kernel32.INSTANCE.CloseHandle(processHandle)
+
+                    if (windowTitle == SEARCH_WINDOW_TITLE) {
+                        searchWindow?.let { searchHWND ->
+                            val curThreadId = Kernel32.INSTANCE.GetCurrentThreadId()
+                            INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), true)
+
+                            INSTANCE.ShowWindow(searchHWND, SW_RESTORE)
+
+                            val screenWidth = INSTANCE.GetSystemMetrics(SM_CXSCREEN)
+                            val screenHeight = INSTANCE.GetSystemMetrics(SM_CYSCREEN)
+
+                            INSTANCE.mouse_event(
+                                DWORD(0x0001),
+                                DWORD((screenWidth / 2).toLong()),
+                                DWORD((screenHeight / 2).toLong()),
+                                DWORD(0),
+                                ULONG_PTR(0),
+                            )
+
+                            val result = INSTANCE.SetForegroundWindow(searchHWND)
+                            INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), false)
+                            if (!result) {
+                                logger.info { "Failed to set foreground window. Please switch manually" }
+                            } else {
+                                logger.info { "Foreground window set successfully" }
+                            }
+                        } ?: run {
+                            logger.info { "search Window not found" }
+                        }
+                    }
                 }
 
-                if (windowTitle == MAIN_WINDOW_TITLE) {
-                    if (mainHWND == null) {
-                        mainHWND = findClipWindow(MAIN_WINDOW_TITLE)
-                    }
-
-                    if (filePath != null) {
-                        return@bringToFront WinAppInfo(previousHwnd, filePath)
-                    } else {
-                        return null
-                    }
-                }
-
-                if (searchHWND == null) {
-                    searchHWND = findClipWindow(SEARCH_WINDOW_TITLE)
-                }
-
-                if (searchHWND != null) {
-                    val curThreadId = Kernel32.INSTANCE.GetCurrentThreadId()
-                    INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), true)
-
-                    INSTANCE.ShowWindow(searchHWND!!, SW_RESTORE)
-
-                    val screenWidth = INSTANCE.GetSystemMetrics(SM_CXSCREEN)
-                    val screenHeight = INSTANCE.GetSystemMetrics(SM_CYSCREEN)
-
-                    INSTANCE.mouse_event(
-                        DWORD(0x0001),
-                        DWORD((screenWidth / 2).toLong()),
-                        DWORD((screenHeight / 2).toLong()),
-                        DWORD(0),
-                        ULONG_PTR(0),
-                    )
-
-                    val result = INSTANCE.SetForegroundWindow(searchHWND!!)
-                    INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), false)
-                    if (!result) {
-                        logger.info { "Failed to set foreground window. Please switch manually" }
-                    } else {
-                        logger.info { "Foreground window set successfully" }
-                    }
-                } else {
-                    logger.info { "Window not found" }
-                }
-                if (filePath != null) {
-                    return@bringToFront WinAppInfo(previousHwnd, filePath)
-                } else {
-                    return null
+                return filePath?.let {
+                    WinAppInfo(previousHwnd, filePath)
                 }
             }
             return null
@@ -470,18 +459,28 @@ interface User32 : StdCallLibrary {
 
         fun bringToBack(
             windowTitle: String,
+            mainWindow: HWND?,
+            searchWindow: HWND?,
             previousHwnd: HWND?,
             toPaste: Boolean,
             keyCodes: List<Int>,
         ) {
-            val hWnd = INSTANCE.FindWindow(null, windowTitle)
-            if (hWnd != null) {
-                INSTANCE.ShowWindow(hWnd, SW_HIDE)
+            when (windowTitle) {
+                MAIN_WINDOW_TITLE -> {
+                    mainWindow?.let { hwnd ->
+                        INSTANCE.ShowWindow(hwnd, SW_HIDE)
+                    }
+                }
+                SEARCH_WINDOW_TITLE -> {
+                    searchWindow?.let { hwnd ->
+                        INSTANCE.ShowWindow(hwnd, SW_HIDE)
+                    }
+                }
             }
 
-            if (previousHwnd != null) {
-                INSTANCE.ShowWindow(previousHwnd, WinUser.SW_SHOW)
-                INSTANCE.SetForegroundWindow(previousHwnd)
+            previousHwnd?.let { hwnd ->
+                INSTANCE.ShowWindow(hwnd, WinUser.SW_SHOW)
+                INSTANCE.SetForegroundWindow(hwnd)
             }
 
             if (toPaste) {

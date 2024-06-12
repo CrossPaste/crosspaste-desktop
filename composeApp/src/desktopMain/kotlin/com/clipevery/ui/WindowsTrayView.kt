@@ -31,6 +31,7 @@ import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.rememberWindowState
 import com.clipevery.LocalKoinApplication
 import com.clipevery.app.AppWindowManager
+import com.clipevery.app.WinWindowManager
 import com.clipevery.ui.base.NotificationManager
 import java.awt.GraphicsEnvironment
 import java.awt.Insets
@@ -104,6 +105,8 @@ fun WindowsTray(windowState: WindowState) {
                     }
 
                 window.addWindowFocusListener(windowListener)
+
+                (appWindowManager.windowManager as WinWindowManager).initMenuHWND()
 
                 onDispose {
                     window.removeWindowFocusListener(windowListener)

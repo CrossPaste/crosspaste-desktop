@@ -50,4 +50,6 @@ interface AppWindowManager {
     fun getPrevAppName(): String?
 
     suspend fun toPaste()
+
+    val windowManager: WindowManager
 }
