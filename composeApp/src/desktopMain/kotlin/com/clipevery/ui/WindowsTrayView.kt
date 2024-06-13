@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
-import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.rememberWindowState
 import com.clipevery.LocalKoinApplication
 import com.clipevery.app.AppWindowManager
@@ -43,7 +42,7 @@ import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 
 @Composable
-fun WindowsTray(windowState: WindowState) {
+fun WindowsTray() {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
 
@@ -67,7 +66,7 @@ fun WindowsTray(windowState: WindowState) {
         state = remember { notificationManager.trayState },
         tooltip = "Clipevery",
         mouseListener =
-            WindowsTrayMouseClicked(appWindowManager, windowState) { event, bound, insets ->
+            WindowsTrayMouseClicked(appWindowManager) { event, bound, insets ->
                 if (event.button == MouseEvent.BUTTON1) {
                     appWindowManager.switchMainWindow()
                 } else {
@@ -176,7 +175,6 @@ fun WindowTrayMenu(hideMenu: () -> Unit) {
 
 class WindowsTrayMouseClicked(
     private val appWindowManager: AppWindowManager,
-    private val windowState: WindowState,
     private val mouseClickedAction: (MouseEvent, Rectangle, Insets) -> Unit,
 ) : MouseAdapter() {
 
@@ -189,15 +187,13 @@ class WindowsTrayMouseClicked(
         val usableWidth = bounds.width - insets.right
         val usableHeight = bounds.height - insets.bottom
 
-        val windowWidth = windowState.size.width
-        val windowHeight = windowState.size.height
+        val windowWidth = appWindowManager.mainWindowState.size.width
+        val windowHeight = appWindowManager.mainWindowState.size.height
 
-        appWindowManager.mainWindowPosition =
+        appWindowManager.mainWindowState.position =
             WindowPosition.Absolute(
                 x = usableWidth.dp - windowWidth + 8.dp,
                 y = usableHeight.dp - windowHeight + 8.dp,
             )
-
-        windowState.position = appWindowManager.mainWindowPosition
     }
 }

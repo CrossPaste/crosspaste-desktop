@@ -8,10 +8,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowPlacement
-import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
-import androidx.compose.ui.window.rememberWindowState
 import com.clipevery.app.AppEnv
 import com.clipevery.app.AppFileType
 import com.clipevery.app.AppInfo
@@ -68,7 +65,9 @@ import com.clipevery.endpoint.DesktopEndpointInfoFactory
 import com.clipevery.endpoint.EndpointInfoFactory
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.i18n.GlobalCopywriterImpl
+import com.clipevery.listen.ActiveGraphicsDevice
 import com.clipevery.listen.DesktopGlobalListener
+import com.clipevery.listen.DesktopMouseListener
 import com.clipevery.listen.DesktopShortKeysAction
 import com.clipevery.listen.DesktopShortcutKeys
 import com.clipevery.listen.DesktopShortcutKeysListener
@@ -150,6 +149,8 @@ import com.clipevery.utils.IDGeneratorFactory
 import com.clipevery.utils.QRCodeGenerator
 import com.clipevery.utils.TelnetUtils
 import com.clipevery.utils.ioDispatcher
+import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
+import com.github.kwhat.jnativehook.mouse.NativeMouseListener
 import dorkbox.systemTray.SystemTray
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -280,10 +281,15 @@ class Clipevery {
                     }
 
                     // ui component
-                    single<AppWindowManager> { DesktopAppWindowManager(lazy { get() }) }
+                    single<AppWindowManager> { DesktopAppWindowManager(lazy { get() }, get()) }
                     single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
-                    single<ShortcutKeysListener> { DesktopShortcutKeysListener(get()) }
-                    single<GlobalListener> { DesktopGlobalListener(get()) }
+                    single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get()) }
+                    single<ShortcutKeysListener> { get<DesktopShortcutKeysListener>() }
+                    single<NativeKeyListener> { get<DesktopShortcutKeysListener>() }
+                    single<DesktopMouseListener> { DesktopMouseListener }
+                    single<NativeMouseListener> { get<DesktopMouseListener>() }
+                    single<ActiveGraphicsDevice> { get<DesktopMouseListener>() }
+                    single<GlobalListener> { DesktopGlobalListener(get(), get()) }
                     single<ThemeDetector> { DesktopThemeDetector(get()) }
                     single<ClipResourceLoader> { DesktopAbsoluteClipResourceLoader }
                     single<ToastManager> { DesktopToastManager() }
@@ -347,6 +353,7 @@ class Clipevery {
             logger.info { "Clipevery started" }
 
             val appWindowManager = koinApplication.koin.get<AppWindowManager>()
+            val globalListener = koinApplication.koin.get<GlobalListener>()
             val platform = currentPlatform()
 
             val isMacos = platform.isMacos()
@@ -378,19 +385,12 @@ class Clipevery {
                     LocalExitApplication provides exitApplication,
                     LocalPageViewContent provides currentPageViewContext,
                 ) {
-                    val windowState =
-                        rememberWindowState(
-                            placement = WindowPlacement.Floating,
-                            position = WindowPosition.PlatformDefault,
-                            size = appWindowManager.mainWindowDpSize,
-                        )
-
                     if (isMacos) {
-                        MacTray(windowState)
+                        MacTray()
                     } else if (isWindows) {
-                        WindowsTray(windowState)
+                        WindowsTray()
                     } else if (isLinux) {
-                        setWindowPosition(appWindowManager, windowState)
+                        setWindowPosition(appWindowManager)
                     }
 
                     val windowIcon: Painter? =
@@ -407,7 +407,7 @@ class Clipevery {
                     Window(
                         onCloseRequest = exitApplication,
                         visible = appWindowManager.showMainWindow,
-                        state = windowState,
+                        state = appWindowManager.mainWindowState,
                         title = MAIN_WINDOW_TITLE,
                         icon = windowIcon,
                         alwaysOnTop = true,
@@ -422,7 +422,7 @@ class Clipevery {
                                 }
                             }
 
-                            koinApplication.koin.get<GlobalListener>().start()
+                            globalListener.start()
 
                             val windowListener =
                                 object : WindowAdapter() {
@@ -446,17 +446,10 @@ class Clipevery {
                         ClipeveryWindow { appWindowManager.unActiveMainWindow() }
                     }
 
-                    val searchWindowState =
-                        rememberWindowState(
-                            placement = WindowPlacement.Floating,
-                            position = appWindowManager.searchWindowPosition,
-                            size = appWindowManager.searchWindowDpSize,
-                        )
-
                     Window(
                         onCloseRequest = ::exitApplication,
                         visible = appWindowManager.showSearchWindow,
-                        state = searchWindowState,
+                        state = appWindowManager.searchWindowState,
                         title = SEARCH_WINDOW_TITLE,
                         alwaysOnTop = true,
                         undecorated = true,

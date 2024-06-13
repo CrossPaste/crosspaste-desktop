@@ -1,23 +1,21 @@
 package com.clipevery.app
 
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.window.WindowPosition
+import androidx.compose.ui.window.WindowState
 
 interface AppWindowManager {
 
     var showMainWindow: Boolean
 
-    var mainWindowPosition: WindowPosition
-
-    val mainWindowDpSize: DpSize
+    var mainWindowState: WindowState
 
     var showMainDialog: Boolean
 
+    val windowManager: WindowManager
+
     var showSearchWindow: Boolean
 
-    val searchWindowPosition: WindowPosition
-
-    val searchWindowDpSize: DpSize
+    var searchWindowState: WindowState
 
     val searchWindowDetailViewDpSize: DpSize
 
@@ -50,6 +48,4 @@ interface AppWindowManager {
     fun getPrevAppName(): String?
 
     suspend fun toPaste()
-
-    val windowManager: WindowManager
 }

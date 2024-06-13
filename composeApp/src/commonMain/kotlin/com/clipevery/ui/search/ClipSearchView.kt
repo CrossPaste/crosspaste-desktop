@@ -100,8 +100,6 @@ fun ClipeverySearchWindow() {
 
     val focusRequester = remember { FocusRequester() }
 
-    val searchWindowDpSize by remember { mutableStateOf(appWindowManager.searchWindowDpSize) }
-
     LaunchedEffect(appWindowManager.showSearchWindow) {
         if (appWindowManager.showSearchWindow) {
             delay(200)
@@ -137,7 +135,7 @@ fun ClipeverySearchWindow() {
                 Modifier
                     .background(Color.Transparent)
                     .clip(RoundedCornerShape(10.dp))
-                    .size(searchWindowDpSize)
+                    .size(appWindowManager.searchWindowState.size)
                     .padding(10.dp)
                     .onKeyEvent {
                         when (it.key) {
@@ -166,7 +164,7 @@ fun ClipeverySearchWindow() {
                 modifier =
                     Modifier
                         .shadow(5.dp, RoundedCornerShape(10.dp))
-                        .size(searchWindowDpSize.minus(DpSize(20.dp, 20.dp)))
+                        .size(appWindowManager.searchWindowState.size.minus(DpSize(20.dp, 20.dp)))
                         .background(MaterialTheme.colors.background)
                         .border(1.dp, MaterialTheme.colors.onSurface.copy(alpha = 0.12f), RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center,
@@ -430,7 +428,7 @@ fun ClipeverySearchWindow() {
                         }
                     }
 
-                    Row(modifier = Modifier.size(searchWindowDpSize.minus(DpSize(20.dp, 120.dp)))) {
+                    Row(modifier = Modifier.size(appWindowManager.searchWindowState.size.minus(DpSize(20.dp, 120.dp)))) {
                         SearchListView {
                             clipSearchService.clickSetSelectedIndex(it)
                             focusRequester.requestFocus()
