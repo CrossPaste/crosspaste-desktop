@@ -20,6 +20,7 @@ import com.clipevery.app.AppWindowManager
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.NotificationManager
 import com.clipevery.ui.base.UISupport
+import com.clipevery.utils.contains
 import org.koin.core.KoinApplication
 import java.awt.Frame
 import java.awt.GraphicsEnvironment
@@ -151,7 +152,7 @@ class MacTrayMouseClicked(
 
         val clickedDevice =
             scDevices.firstOrNull { device ->
-                device.defaultConfiguration.bounds.contains(e.point)
+                device.contains(e.point)
             }
 
         val gd = clickedDevice ?: ge.defaultScreenDevice

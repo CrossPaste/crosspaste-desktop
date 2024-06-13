@@ -20,7 +20,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -32,9 +31,9 @@ import com.clipevery.LocalKoinApplication
 import com.clipevery.app.AppWindowManager
 import com.clipevery.app.WinWindowManager
 import com.clipevery.ui.base.NotificationManager
+import java.awt.GraphicsDevice
 import java.awt.GraphicsEnvironment
 import java.awt.Insets
-import java.awt.Rectangle
 import java.awt.Toolkit
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -44,7 +43,6 @@ import java.awt.event.WindowEvent
 @Composable
 fun WindowsTray() {
     val current = LocalKoinApplication.current
-    val density = LocalDensity.current
 
     val appWindowManager = current.koin.get<AppWindowManager>()
     val notificationManager = current.koin.get<NotificationManager>()
@@ -59,22 +57,22 @@ fun WindowsTray() {
             size = DpSize(170.dp, 204.dp),
         )
 
-    val densityFloat = density.density
-
     ClipeveryTray(
         icon = trayIcon,
         state = remember { notificationManager.trayState },
         tooltip = "Clipevery",
         mouseListener =
-            WindowsTrayMouseClicked(appWindowManager) { event, bound, insets ->
+            WindowsTrayMouseClicked(appWindowManager) { event, gd, insets ->
                 if (event.button == MouseEvent.BUTTON1) {
                     appWindowManager.switchMainWindow()
                 } else {
                     showMenu = true
+                    val bounds = gd.defaultConfiguration.bounds
+                    val density: Float = gd.displayMode.width.toFloat() / bounds.width
                     menuWindowState.position =
                         WindowPosition(
-                            x = ((event.x - insets.left) / densityFloat).dp - 32.dp,
-                            y = (bound.height - insets.bottom).dp - 204.dp,
+                            x = ((event.x / density) - insets.left).dp - 32.dp,
+                            y = (bounds.height - insets.bottom).dp - 204.dp,
                         )
                 }
             },
@@ -175,15 +173,15 @@ fun WindowTrayMenu(hideMenu: () -> Unit) {
 
 class WindowsTrayMouseClicked(
     private val appWindowManager: AppWindowManager,
-    private val mouseClickedAction: (MouseEvent, Rectangle, Insets) -> Unit,
+    private val mouseClickedAction: (MouseEvent, GraphicsDevice, Insets) -> Unit,
 ) : MouseAdapter() {
 
     override fun mouseClicked(e: MouseEvent) {
         val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
-        val bounds = gd.defaultConfiguration.bounds
         val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
-        mouseClickedAction(e, bounds, insets)
+        mouseClickedAction(e, gd, insets)
 
+        val bounds = gd.defaultConfiguration.bounds
         val usableWidth = bounds.width - insets.right
         val usableHeight = bounds.height - insets.bottom
 

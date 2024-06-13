@@ -4,5 +4,5 @@ import java.awt.GraphicsDevice
 
 interface ActiveGraphicsDevice {
 
-    fun getGraphicsDevice(): GraphicsDevice
+    fun getGraphicsDevice(): GraphicsDevice?
 }

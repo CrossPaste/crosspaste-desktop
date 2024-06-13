@@ -1,5 +1,6 @@
 package com.clipevery.listen
 
+import com.clipevery.utils.contains
 import com.github.kwhat.jnativehook.mouse.NativeMouseEvent
 import com.github.kwhat.jnativehook.mouse.NativeMouseListener
 import java.awt.GraphicsDevice
@@ -14,16 +15,14 @@ object DesktopMouseListener : NativeMouseListener, ActiveGraphicsDevice {
         point = nativeEvent.point
     }
 
-    override fun getGraphicsDevice(): GraphicsDevice {
+    override fun getGraphicsDevice(): GraphicsDevice? {
         val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
         val scDevices = ge.screenDevices
 
         return point?.let {
-            val clickedDevice =
-                scDevices.firstOrNull { device ->
-                    device.defaultConfiguration.bounds.contains(it)
-                }
-            clickedDevice ?: ge.defaultScreenDevice
-        } ?: ge.defaultScreenDevice
+            scDevices.firstOrNull { device ->
+                device.contains(it)
+            }
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.clipevery.app
 
+import com.clipevery.listen.ActiveGraphicsDevice
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInstance
@@ -15,6 +16,9 @@ class TestAppWindowManager {
         var testAppWindowManager: AppWindowManager =
             DesktopAppWindowManager(
                 lazy { throw NotImplementedError("not invoke") },
+                object : ActiveGraphicsDevice {
+                    override fun getGraphicsDevice() = null
+                },
                 -1,
             )
 

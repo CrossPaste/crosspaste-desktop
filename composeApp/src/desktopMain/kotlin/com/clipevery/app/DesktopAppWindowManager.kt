@@ -187,7 +187,7 @@ class DesktopAppWindowManager(
         ) {
             showSearchWindow = true
 
-            activeGraphicsDevice.getGraphicsDevice().let { graphicsDevice ->
+            activeGraphicsDevice.getGraphicsDevice()?.let { graphicsDevice ->
                 searchWindowState.position = calPosition(graphicsDevice.defaultConfiguration.bounds)
             }
 
