@@ -45,7 +45,7 @@ object LinuxTrayView {
         appWindowManager.mainWindowState.position =
             WindowPosition.Absolute(
                 x = usableWidth.dp - windowWidth,
-                y = 0.dp,
+                y = bounds.y.dp + insets.top.dp + 30.dp,
             )
     }
 }

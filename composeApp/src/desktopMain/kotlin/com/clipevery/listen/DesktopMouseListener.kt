@@ -17,11 +17,12 @@ object DesktopMouseListener : NativeMouseListener, ActiveGraphicsDevice {
 
     override fun getGraphicsDevice(): GraphicsDevice? {
         val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
+        val bounds = ge.defaultScreenDevice.defaultConfiguration.bounds
         val scDevices = ge.screenDevices
 
         return point?.let {
             scDevices.firstOrNull { device ->
-                device.contains(it)
+                device.contains(it, bounds.x, bounds.y)
             }
         }
     }
