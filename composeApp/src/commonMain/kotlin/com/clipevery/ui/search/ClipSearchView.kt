@@ -35,22 +35,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -85,30 +81,16 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import java.awt.event.KeyEvent
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ClipeverySearchWindow() {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
-    val inputModeManager = LocalInputModeManager.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val clipSearchService = current.koin.get<ClipSearchService>()
     val appWindowManager = clipSearchService.appWindowManager
     val logger = current.koin.get<KLogger>()
 
     var lastInputTime by remember { mutableStateOf(0L) }
-
-    val focusRequester = remember { FocusRequester() }
-
-    LaunchedEffect(appWindowManager.showSearchWindow) {
-        if (appWindowManager.showSearchWindow) {
-            delay(200)
-            inputModeManager.requestInputMode(InputMode.Keyboard)
-            focusRequester.requestFocus()
-        } else {
-            focusRequester.freeFocus()
-        }
-    }
 
     LaunchedEffect(clipSearchService.inputSearch) {
         val currentTime = System.currentTimeMillis()
@@ -182,7 +164,7 @@ fun ClipeverySearchWindow() {
                             TextField(
                                 modifier =
                                     Modifier.focusTarget()
-                                        .focusRequester(focusRequester)
+                                        .focusRequester(appWindowManager.focusRequester)
                                         .onFocusEvent {
                                             logger.debug { "onFocusEvent $it" }
                                         }
@@ -272,7 +254,7 @@ fun ClipeverySearchWindow() {
                                             size = 20.dp,
                                             onClick = {
                                                 clipSearchService.switchSort()
-                                                focusRequester.requestFocus() // keep textField focus
+                                                appWindowManager.focusRequester.requestFocus() // keep textField focus
                                             },
                                             modifier =
                                                 Modifier
@@ -296,7 +278,7 @@ fun ClipeverySearchWindow() {
                                             size = 18.dp,
                                             onClick = {
                                                 clipSearchService.switchFavorite()
-                                                focusRequester.requestFocus() // keep textField focus
+                                                appWindowManager.focusRequester.requestFocus() // keep textField focus
                                             },
                                             modifier =
                                                 Modifier
@@ -327,7 +309,7 @@ fun ClipeverySearchWindow() {
                                                 )
                                                 .clickable {
                                                     showTypes = true
-                                                    focusRequester.requestFocus() // keep textField focus
+                                                    appWindowManager.focusRequester.requestFocus() // keep textField focus
                                                 }
                                                 .padding(10.dp, 5.dp, 10.dp, 5.dp),
                                         horizontalArrangement = Arrangement.Start,
@@ -393,31 +375,31 @@ fun ClipeverySearchWindow() {
                                                         clipSearchService.setClipType(ClipType.TEXT)
                                                         currentType = "Text"
                                                         showTypes = false
-                                                        focusRequester.requestFocus() // keep textField focus
+                                                        appWindowManager.focusRequester.requestFocus() // keep textField focus
                                                     }
                                                     MenuItem(copywriter.getText("Link"), textStyle, paddingValues) {
                                                         clipSearchService.setClipType(ClipType.URL)
                                                         currentType = "Link"
                                                         showTypes = false
-                                                        focusRequester.requestFocus() // keep textField focus
+                                                        appWindowManager.focusRequester.requestFocus() // keep textField focus
                                                     }
                                                     MenuItem(copywriter.getText("Html"), textStyle, paddingValues) {
                                                         clipSearchService.setClipType(ClipType.HTML)
                                                         currentType = "Html"
                                                         showTypes = false
-                                                        focusRequester.requestFocus() // keep textField focus
+                                                        appWindowManager.focusRequester.requestFocus() // keep textField focus
                                                     }
                                                     MenuItem(copywriter.getText("Image"), textStyle, paddingValues) {
                                                         clipSearchService.setClipType(ClipType.IMAGE)
                                                         currentType = "Image"
                                                         showTypes = false
-                                                        focusRequester.requestFocus() // keep textField focus
+                                                        appWindowManager.focusRequester.requestFocus() // keep textField focus
                                                     }
                                                     MenuItem(copywriter.getText("File"), textStyle, paddingValues) {
                                                         clipSearchService.setClipType(ClipType.FILE)
                                                         currentType = "File"
                                                         showTypes = false
-                                                        focusRequester.requestFocus() // keep textField focus
+                                                        appWindowManager.focusRequester.requestFocus() // keep textField focus
                                                     }
                                                 }
                                             }
@@ -431,7 +413,7 @@ fun ClipeverySearchWindow() {
                     Row(modifier = Modifier.size(appWindowManager.searchWindowState.size.minus(DpSize(20.dp, 120.dp)))) {
                         SearchListView {
                             clipSearchService.clickSetSelectedIndex(it)
-                            focusRequester.requestFocus()
+                            appWindowManager.focusRequester.requestFocus()
                         }
                         Divider(
                             modifier = Modifier.fillMaxHeight().width(1.dp),
