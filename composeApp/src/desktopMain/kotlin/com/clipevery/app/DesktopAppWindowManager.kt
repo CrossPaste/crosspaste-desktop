@@ -6,11 +6,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
+import androidx.compose.ui.window.WindowState
+import com.clipevery.listen.ActiveGraphicsDevice
 import com.clipevery.listener.ShortcutKeys
 import com.clipevery.platform.currentPlatform
 import com.clipevery.utils.DesktopControlUtils.blockDebounce
 import com.clipevery.utils.DesktopControlUtils.debounce
+import com.clipevery.utils.Memoize
 import com.clipevery.utils.ioDispatcher
 import com.clipevery.utils.mainDispatcher
 import io.github.oshai.kotlinlogging.KLogger
@@ -24,11 +28,13 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import java.awt.Rectangle
 import kotlin.random.Random
 import kotlin.reflect.KClass
 
 class DesktopAppWindowManager(
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
+    private val activeGraphicsDevice: ActiveGraphicsDevice,
     debounceDelay: Long = 100L,
 ) : AppWindowManager {
 
@@ -72,19 +78,27 @@ class DesktopAppWindowManager(
 
     override var showMainWindow by mutableStateOf(false)
 
-    override var mainWindowPosition by mutableStateOf<WindowPosition>(WindowPosition.PlatformDefault)
+    override var mainWindowState: WindowState by mutableStateOf(
+        WindowState(
+            placement = WindowPlacement.Floating,
+            position = WindowPosition.PlatformDefault,
+            size = DpSize(width = 460.dp, height = 710.dp),
+        ),
+    )
 
     private var mainWindowActionTime = System.currentTimeMillis()
-
-    override val mainWindowDpSize = DpSize(width = 460.dp, height = 710.dp)
 
     override var showMainDialog by mutableStateOf(false)
 
     override var showSearchWindow by mutableStateOf(false)
 
-    override val searchWindowPosition: WindowPosition by mutableStateOf(WindowPosition.Aligned(Alignment.Center))
-
-    override val searchWindowDpSize = DpSize(width = 800.dp, height = 520.dp)
+    override var searchWindowState: WindowState by mutableStateOf(
+        WindowState(
+            placement = WindowPlacement.Floating,
+            position = WindowPosition.Aligned(Alignment.Center),
+            size = DpSize(width = 800.dp, height = 520.dp),
+        ),
+    )
 
     override val searchWindowDetailViewDpSize = DpSize(width = 500.dp, height = 240.dp)
 
@@ -158,11 +172,25 @@ class DesktopAppWindowManager(
         debounceActiveMainWindow()
     }
 
+    private val calPosition: (Rectangle) -> WindowPosition =
+        Memoize.memoize { bounds ->
+            val windowSize = searchWindowState.size
+            WindowPosition(
+                x = (bounds.x.dp + ((bounds.width.dp - windowSize.width) / 2)),
+                y = (bounds.y.dp + ((bounds.height.dp - windowSize.height) / 2)),
+            )
+        }
+
     private val debounceActiveSearchWindow =
         debounce(
             delay = debounceDelay,
         ) {
             showSearchWindow = true
+
+            activeGraphicsDevice.getGraphicsDevice()?.let { graphicsDevice ->
+                searchWindowState.position = calPosition(graphicsDevice.defaultConfiguration.bounds)
+            }
+
             windowManager.bringToFront(SEARCH_WINDOW_TITLE)
         }
 

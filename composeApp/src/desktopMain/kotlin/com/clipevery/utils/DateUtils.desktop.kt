@@ -57,16 +57,20 @@ object DesktopDateUtils : DateUtils {
         return null
     }
 
+    private val formatter: (Pair<String, Locale>) -> (LocalDateTime) -> String = { pair ->
+        { date: LocalDateTime ->
+            DateTimeFormatter.ofPattern(pair.first, pair.second).format(date)
+        }
+    }
+
+    private val memoizeFormat = Memoize.memoize(formatter)
+
     override fun getDateText(
         date: LocalDateTime,
         pattern: String,
         locale: Locale,
     ): String {
-        val formatter: DateTimeFormatter =
-            Memoize.memoize(pattern, locale) {
-                DateTimeFormatter.ofPattern(pattern, locale)
-            }()
-        return formatter.format(date)
+        return memoizeFormat(Pair(pattern, locale))(date)
     }
 
     override fun getYYYYMMDD(date: LocalDateTime): String {

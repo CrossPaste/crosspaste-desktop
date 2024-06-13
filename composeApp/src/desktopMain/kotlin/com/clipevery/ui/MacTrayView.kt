@@ -13,7 +13,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
 import androidx.compose.ui.window.WindowPosition
-import androidx.compose.ui.window.WindowState
 import com.clipevery.LocalExitApplication
 import com.clipevery.LocalKoinApplication
 import com.clipevery.LocalPageViewContent
@@ -21,19 +20,21 @@ import com.clipevery.app.AppWindowManager
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.NotificationManager
 import com.clipevery.ui.base.UISupport
+import com.clipevery.utils.contains
 import org.koin.core.KoinApplication
 import java.awt.Frame
 import java.awt.GraphicsEnvironment
 import java.awt.Insets
 import java.awt.MenuItem
 import java.awt.PopupMenu
+import java.awt.Rectangle
 import java.awt.Toolkit
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.JFrame
 
 @Composable
-fun MacTray(windowState: WindowState) {
+fun MacTray() {
     val current = LocalKoinApplication.current
     val pageViewContext = LocalPageViewContent.current
     val applicationExit = LocalExitApplication.current
@@ -59,21 +60,15 @@ fun MacTray(windowState: WindowState) {
         state = remember { notificationManager.trayState },
         tooltip = "Clipevery",
         mouseListener =
-            MacTrayMouseClicked(appWindowManager, windowState) { event, insets ->
+            MacTrayMouseClicked(appWindowManager) { event, rectangle, _ ->
                 if (event.button == MouseEvent.BUTTON1) {
                     appWindowManager.switchMainWindow()
                 } else {
                     if (appWindowManager.showMainWindow) {
                         appWindowManager.unActiveMainWindow()
                     }
-
-                    val stepWidth = with(density) { 32.dp.roundToPx() }
-                    val position: Int = ((event.x) / stepWidth) * stepWidth
-                    if (event.x - position > stepWidth / 2) {
-                        menu.show(frame, position - insets.left, 5)
-                    } else {
-                        menu.show(frame, position - (stepWidth / 2) - insets.left, 5)
-                    }
+                    val stepWidth = with(density) { 48.dp.roundToPx() }
+                    menu.show(frame, event.x - stepWidth, rectangle.y + 5)
                 }
             },
     )
@@ -148,21 +143,27 @@ fun createFrame(): Frame {
 
 class MacTrayMouseClicked(
     private val appWindowManager: AppWindowManager,
-    private val windowState: WindowState,
-    private val mouseClickedAction: (MouseEvent, Insets) -> Unit,
+    private val mouseClickedAction: (MouseEvent, Rectangle, Insets) -> Unit,
 ) : MouseAdapter() {
 
     override fun mouseClicked(e: MouseEvent) {
-        val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
-        val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
-        mouseClickedAction(e, insets)
+        val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
+        val scDevices = ge.screenDevices
 
-        appWindowManager.mainWindowPosition =
+        val clickedDevice =
+            scDevices.firstOrNull { device ->
+                device.contains(e.point)
+            }
+
+        val gd = clickedDevice ?: ge.defaultScreenDevice
+        val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
+        mouseClickedAction(e, gd.defaultConfiguration.bounds, insets)
+
+        appWindowManager.mainWindowState.position =
             WindowPosition.Absolute(
-                x = calculatePosition(e.x.dp, windowState.size.width),
-                y = 30.dp,
+                x = calculatePosition(e.x.dp, appWindowManager.mainWindowState.size.width),
+                y = (clickedDevice?.defaultConfiguration?.bounds?.y?.dp ?: 0.dp) + 30.dp,
             )
-        windowState.position = appWindowManager.mainWindowPosition
     }
 
     private fun calculatePosition(

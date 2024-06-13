@@ -17,14 +17,10 @@ class OnceFunction<T>(private val function: () -> T) {
 }
 
 object Memoize {
-    fun <R, T> memoize(
-        vararg inputs: T,
-        function: () -> R,
-    ): () -> R {
-        val cache = mutableMapOf<List<T>, R>()
+    fun <T, R> memoize(function: (T) -> R): (T) -> R {
+        val cache = mutableMapOf<T, R>()
         return {
-            val key = inputs.toList()
-            cache.getOrPut(key) { function() }
+            cache.getOrPut(it) { function(it) }
         }
     }
 }

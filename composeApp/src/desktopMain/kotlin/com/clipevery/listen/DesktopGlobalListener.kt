@@ -40,13 +40,13 @@ import com.clipevery.app.AppRestartService
 import com.clipevery.app.AppWindowManager
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.listener.GlobalListener
-import com.clipevery.listener.ShortcutKeysListener
 import com.clipevery.ui.base.ComposeMessageViewFactory
 import com.clipevery.ui.base.MessageType
 import com.clipevery.utils.getSystemProperty
 import com.github.kwhat.jnativehook.GlobalScreen
 import com.github.kwhat.jnativehook.NativeHookException
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
+import com.github.kwhat.jnativehook.mouse.NativeMouseListener
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
 import java.awt.Desktop
@@ -55,7 +55,8 @@ import java.net.URI
 val logger = KotlinLogging.logger {}
 
 class DesktopGlobalListener(
-    private val listener: ShortcutKeysListener,
+    private val shortcutKeysListener: NativeKeyListener,
+    private val mouseListener: NativeMouseListener,
 ) : GlobalListener {
 
     private val systemProperty = getSystemProperty()
@@ -73,7 +74,8 @@ class DesktopGlobalListener(
             try {
                 if (!isRegistered()) {
                     GlobalScreen.registerNativeHook()
-                    GlobalScreen.addNativeKeyListener(listener as NativeKeyListener)
+                    GlobalScreen.addNativeKeyListener(shortcutKeysListener)
+                    GlobalScreen.addNativeMouseListener(mouseListener)
                 }
             } catch (e: NativeHookException) {
                 errorCode = e.code
@@ -86,7 +88,8 @@ class DesktopGlobalListener(
         if (systemProperty.get("globalListener", false.toString()).toBoolean()) {
             try {
                 if (isRegistered()) {
-                    GlobalScreen.removeNativeKeyListener(listener as NativeKeyListener)
+                    GlobalScreen.removeNativeKeyListener(shortcutKeysListener)
+                    GlobalScreen.removeNativeMouseListener(mouseListener)
                     GlobalScreen.unregisterNativeHook()
                 }
             } catch (e: NativeHookException) {
