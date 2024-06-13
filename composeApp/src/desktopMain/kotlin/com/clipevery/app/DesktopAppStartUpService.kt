@@ -137,8 +137,14 @@ class WindowsAppStartUpService(private val configManager: ConfigManager) : AppSt
             var line: String?
             while (reader.readLine().also { line = it } != null) {
                 if (line!!.contains("REG_SZ")) {
-                    logger.info { "$AppName is set to start on boot." }
-                    return true
+                    val registryPath = line!!.substringAfter("REG_SZ").trim()
+                    if (registryPath.equals(appExePath.absolutePathString(), ignoreCase = true)) {
+                        logger.info { "$AppName is set to start on boot with the correct path." }
+                        return true
+                    } else {
+                        logger.info { "$AppName is set to start on boot with the path is not current path." }
+                        return false
+                    }
                 }
             }
         } catch (e: Exception) {
