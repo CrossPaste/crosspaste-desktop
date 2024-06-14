@@ -66,13 +66,15 @@ class WinAppWindowManager(
         }
     }
 
-    override fun activeMainWindow() {
+    override suspend fun activeMainWindow() {
         logger.info { "active main window" }
         showMainWindow = true
         prevWinAppInfo = User32.bringToFront(MAIN_WINDOW_TITLE, mainHWND, searchHWND)
+        delay(500)
+        mainFocusRequester.requestFocus()
     }
 
-    override fun unActiveMainWindow() {
+    override suspend fun unActiveMainWindow() {
         logger.info { "unActive main window" }
         val keyCodes =
             lazyShortcutKeys.value.shortcutKeysCore.keys["Paste"]?.let {
@@ -80,6 +82,7 @@ class WinAppWindowManager(
             } ?: listOf()
         User32.bringToBack(MAIN_WINDOW_TITLE, mainHWND, searchHWND, prevWinAppInfo?.hwnd, false, keyCodes)
         showMainWindow = false
+        mainFocusRequester.freeFocus()
     }
 
     override suspend fun activeSearchWindow() {

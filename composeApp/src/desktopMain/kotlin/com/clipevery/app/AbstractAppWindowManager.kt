@@ -47,6 +47,8 @@ abstract class AbstractAppWindowManager : AppWindowManager {
         ),
     )
 
+    override var mainFocusRequester = FocusRequester()
+
     override var showMainDialog by mutableStateOf(false)
 
     override var showSearchWindow by mutableStateOf(false)

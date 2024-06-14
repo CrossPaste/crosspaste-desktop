@@ -146,6 +146,9 @@ import com.clipevery.ui.base.UISupport
 import com.clipevery.ui.resource.ClipResourceLoader
 import com.clipevery.ui.resource.DesktopAbsoluteClipResourceLoader
 import com.clipevery.ui.search.ClipeverySearchWindow
+import com.clipevery.utils.GlobalCoroutineScope
+import com.clipevery.utils.GlobalCoroutineScopeImpl
+import com.clipevery.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
 import com.clipevery.utils.IDGenerator
 import com.clipevery.utils.IDGeneratorFactory
 import com.clipevery.utils.QRCodeGenerator
@@ -197,6 +200,7 @@ class Clipevery {
                     single<AppStartUpService> { DesktopAppStartUpService(get()) }
                     single<AppRestartService> { DesktopAppRestartService }
                     single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<ClipServer>() }) }
+                    single<GlobalCoroutineScope> { GlobalCoroutineScopeImpl }
                     single<SyncInfoFactory> { DesktopSyncInfoFactory(get(), get()) }
                     single<PathProvider> { DesktopPathProvider }
                     single<FilePersist> { DesktopFilePersist }
@@ -434,8 +438,10 @@ class Clipevery {
                                     }
 
                                     override fun windowLostFocus(e: WindowEvent?) {
-                                        if (!appWindowManager.showMainDialog) {
-                                            appWindowManager.unActiveMainWindow()
+                                        mainCoroutineDispatcher.launch(CoroutineName("Hide Clipevery")) {
+                                            if (!appWindowManager.showMainDialog) {
+                                                appWindowManager.unActiveMainWindow()
+                                            }
                                         }
                                     }
                                 }

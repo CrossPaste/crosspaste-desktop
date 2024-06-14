@@ -169,19 +169,14 @@ public func saveAppIcon(bundleIdentifier: UnsafePointer<CChar>, path: UnsafePoin
     }
 }
 
-@_cdecl("bringToBack")
-public func bringToBack(
-    windowTitle: UnsafePointer<CChar>,
-    appName: UnsafePointer<CChar>,
-    toPaste: Bool,
-    keyCodesPointer: UnsafePointer<Int32>,
-    count: Int
+@_cdecl("mainToBack")
+public func mainToBack(
+    appName: UnsafePointer<CChar>
 ) {
     DispatchQueue.main.async {
-        let title = String(cString: windowTitle)
         let windows = NSApplication.shared.windows
         for window in windows {
-            if window.title == title {
+            if window.title == "Clipevery" {
                 if (NSApp.isActive) {
                     window.orderBack(nil)
                     NSApp.hide(nil)
@@ -190,8 +185,35 @@ public func bringToBack(
             }
         }
 
-        if (toPaste) {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        let appNameString = String(cString: appName)
+        let apps = NSRunningApplication.runningApplications(withBundleIdentifier: appNameString)
+        if let app = apps.first {
+            app.activate(options: [.activateIgnoringOtherApps])
+        }
+    }
+}
+
+@_cdecl("searchToBack")
+public func searchToBack(
+    appName: UnsafePointer<CChar>,
+    toPaste: Bool,
+    keyCodesPointer: UnsafePointer<Int32>,
+    count: Int
+) {
+    DispatchQueue.main.async {
+        let windows = NSApplication.shared.windows
+        for window in windows {
+            if window.title == "Clipevery Search" {
+                if (NSApp.isActive) {
+                    window.orderBack(nil)
+                    NSApp.hide(nil)
+                }
+                break
+            }
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            if (toPaste) {
                 simulatePasteCommand(keyCodesPointer: keyCodesPointer, count: count)
             }
         }
@@ -209,10 +231,9 @@ public func bringToFront(windowTitle: UnsafePointer<CChar>) -> UnsafePointer<CCh
         let windows = NSApplication.shared.windows
         for window in windows {
             if window.title == title {
-                if (!NSApp.isActive) {
-                    window.makeKeyAndOrderFront(nil)
-                    NSApp.activate(ignoringOtherApps: true)
-                }
+                window.makeKeyAndOrderFront(nil)
+                NSApp.setActivationPolicy(.accessory)
+                NSApp.activate(ignoringOtherApps: true)
                 break
             }
         }

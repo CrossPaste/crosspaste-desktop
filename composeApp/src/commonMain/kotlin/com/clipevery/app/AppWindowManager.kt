@@ -10,6 +10,8 @@ interface AppWindowManager {
 
     var mainWindowState: WindowState
 
+    var mainFocusRequester: FocusRequester
+
     var showMainDialog: Boolean
 
     var showSearchWindow: Boolean
@@ -22,11 +24,11 @@ interface AppWindowManager {
 
     fun getCurrentActiveAppName(): String?
 
-    fun activeMainWindow()
+    suspend fun activeMainWindow()
 
-    fun unActiveMainWindow()
+    suspend fun unActiveMainWindow()
 
-    fun switchMainWindow() {
+    suspend fun switchMainWindow() {
         if (showMainWindow) {
             unActiveMainWindow()
         } else {

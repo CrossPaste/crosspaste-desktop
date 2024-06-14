@@ -16,9 +16,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import com.clipevery.app.AppWindowManager
 import com.clipevery.ui.AboutView
 import com.clipevery.ui.ClipeveryTheme
 import com.clipevery.ui.HomeView
@@ -31,13 +34,18 @@ import com.clipevery.ui.devices.DeviceDetailView
 import com.clipevery.ui.devices.TokenView
 import com.clipevery.ui.settings.SettingsView
 import com.clipevery.ui.settings.ShortcutKeysView
+import com.clipevery.utils.GlobalCoroutineScope
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.launch
 
 @Composable
-fun ClipeveryWindow(hideWindow: () -> Unit) {
+fun ClipeveryWindow(hideWindow: suspend () -> Unit) {
     val current = LocalKoinApplication.current
+    val appWindowManager = current.koin.get<AppWindowManager>()
     val toastManager = current.koin.get<ToastManager>()
     val dialogService = current.koin.get<DialogService>()
-
+    val globalCoroutineScope = current.koin.get<GlobalCoroutineScope>()
+    val mainCoroutineDispatcher = globalCoroutineScope.mainCoroutineDispatcher
     val toast by toastManager.toast
 
     ClipeveryTheme {
@@ -48,13 +56,19 @@ fun ClipeveryWindow(hideWindow: () -> Unit) {
                     .pointerInput(Unit) {
                         detectTapGestures(
                             onDoubleTap = {
-                                hideWindow()
+                                mainCoroutineDispatcher.launch(CoroutineName("Hide Clipevery")) {
+                                    hideWindow()
+                                }
                             },
                             onTap = {
-                                hideWindow()
+                                mainCoroutineDispatcher.launch(CoroutineName("Hide Clipevery")) {
+                                    hideWindow()
+                                }
                             },
                             onLongPress = {
-                                hideWindow()
+                                mainCoroutineDispatcher.launch(CoroutineName("Hide Clipevery")) {
+                                    hideWindow()
+                                }
                             },
                             onPress = {},
                         )
@@ -84,7 +98,9 @@ fun ClipeveryWindow(hideWindow: () -> Unit) {
                     Modifier
                         .clip(RoundedCornerShape(10.dp))
                         .background(MaterialTheme.colors.background)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .focusTarget()
+                        .focusRequester(appWindowManager.mainFocusRequester),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     ClipeveryContent()

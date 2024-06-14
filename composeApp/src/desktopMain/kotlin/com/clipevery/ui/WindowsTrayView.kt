@@ -31,6 +31,9 @@ import com.clipevery.LocalKoinApplication
 import com.clipevery.app.AppWindowManager
 import com.clipevery.app.WinAppWindowManager
 import com.clipevery.ui.base.NotificationManager
+import com.clipevery.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.launch
 import java.awt.GraphicsDevice
 import java.awt.GraphicsEnvironment
 import java.awt.Insets
@@ -64,7 +67,9 @@ fun WindowsTray() {
         mouseListener =
             WindowsTrayMouseClicked(appWindowManager) { event, gd, insets ->
                 if (event.button == MouseEvent.BUTTON1) {
-                    appWindowManager.switchMainWindow()
+                    mainCoroutineDispatcher.launch(CoroutineName("Switch Clipevery")) {
+                        appWindowManager.switchMainWindow()
+                    }
                 } else {
                     showMenu = true
                     val bounds = gd.defaultConfiguration.bounds
@@ -163,7 +168,11 @@ fun WindowTrayMenu(hideMenu: () -> Unit) {
                 contentAlignment = Alignment.Center,
             ) {
                 MenuView(
-                    openMainWindow = { appWindowManager.activeMainWindow() },
+                    openMainWindow = {
+                        mainCoroutineDispatcher.launch(CoroutineName("Open Menu")) {
+                            appWindowManager.activeMainWindow()
+                        }
+                    },
                     close = { hideMenu() },
                 )
             }

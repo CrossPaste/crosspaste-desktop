@@ -46,8 +46,9 @@ interface MacosApi : Library {
         path: String,
     )
 
-    fun bringToBack(
-        windowTitle: String,
+    fun mainToBack(appName: String)
+
+    fun searchToBack(
         appName: String,
         toPaste: Boolean,
         array: Pointer,
