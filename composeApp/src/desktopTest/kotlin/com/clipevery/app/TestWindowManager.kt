@@ -1,33 +1,63 @@
 package com.clipevery.app
 
-object TestWindowManager : WindowManager {
+import kotlinx.coroutines.runBlocking
+
+class TestWindowManager(
+    private val mockOS: MockOS,
+) : AbstractAppWindowManager() {
 
     var prevApp: String? = null
 
-    var currentApp: String? = null
-
     var pasterId: Int = 0
+
+    var currentTitle: String? = null
 
     override fun getPrevAppName(): String? {
         return prevApp
     }
 
     override fun getCurrentActiveAppName(): String? {
-        return currentApp
+        return mockOS.currentApp
     }
 
-    override suspend fun bringToFront(windowTitle: String) {
-        if (currentApp != "Clipevery") {
-            prevApp = currentApp
+    override fun activeMainWindow() {
+        showMainWindow = true
+        bringToFront(MAIN_WINDOW_TITLE)
+    }
+
+    override fun unActiveMainWindow() {
+        runBlocking {
+            bringToBack(MAIN_WINDOW_TITLE, false)
         }
-        currentApp = "Clipevery"
+        showMainWindow = false
     }
 
-    override suspend fun bringToBack(
+    override suspend fun activeSearchWindow() {
+        showSearchWindow = true
+
+        bringToFront(SEARCH_WINDOW_TITLE)
+    }
+
+    override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
+        val toPaste = preparePaste()
+        bringToBack(SEARCH_WINDOW_TITLE, toPaste)
+        showSearchWindow = false
+    }
+
+    private fun bringToFront(windowTitle: String) {
+        currentTitle = windowTitle
+        if (mockOS.currentApp != "Clipevery") {
+            prevApp = mockOS.currentApp
+        }
+        mockOS.currentApp = "Clipevery"
+    }
+
+    private suspend fun bringToBack(
         windowTitle: String,
         toPaste: Boolean,
     ) {
-        currentApp = prevApp
+        currentTitle = windowTitle
+        mockOS.currentApp = prevApp
         if (toPaste) {
             toPaste()
         }
@@ -36,14 +66,6 @@ object TestWindowManager : WindowManager {
     override suspend fun toPaste() {
         pasterId++
     }
-
-    fun init() {
-        prevApp = null
-        currentApp = null
-        pasterId = 0
-    }
-
-    fun activeApp(appName: String) {
-        currentApp = appName
-    }
 }
+
+class MockOS(var currentApp: String? = null)

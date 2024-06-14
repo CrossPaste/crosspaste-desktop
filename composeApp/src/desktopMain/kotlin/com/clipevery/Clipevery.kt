@@ -9,20 +9,22 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import com.clipevery.app.AbstractAppWindowManager.Companion.MAIN_WINDOW_TITLE
+import com.clipevery.app.AbstractAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.clipevery.app.AppEnv
 import com.clipevery.app.AppFileType
 import com.clipevery.app.AppInfo
 import com.clipevery.app.AppLock
 import com.clipevery.app.AppRestartService
 import com.clipevery.app.AppStartUpService
+import com.clipevery.app.AppTokenService
 import com.clipevery.app.AppWindowManager
 import com.clipevery.app.DesktopAppInfoFactory
 import com.clipevery.app.DesktopAppLock
 import com.clipevery.app.DesktopAppRestartService
 import com.clipevery.app.DesktopAppStartUpService
-import com.clipevery.app.DesktopAppWindowManager
-import com.clipevery.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
-import com.clipevery.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
+import com.clipevery.app.DesktopAppTokenService
+import com.clipevery.app.getDesktopAppWindowManager
 import com.clipevery.clean.CleanClipScheduler
 import com.clipevery.clean.DesktopCleanClipScheduler
 import com.clipevery.clip.CacheManager
@@ -281,7 +283,8 @@ class Clipevery {
                     }
 
                     // ui component
-                    single<AppWindowManager> { DesktopAppWindowManager(lazy { get() }, get()) }
+                    single<AppWindowManager> { getDesktopAppWindowManager(lazy { get() }, get()) }
+                    single<AppTokenService> { DesktopAppTokenService() }
                     single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
                     single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get()) }
                     single<ShortcutKeysListener> { get<DesktopShortcutKeysListener>() }

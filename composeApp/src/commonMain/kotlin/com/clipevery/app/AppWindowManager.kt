@@ -12,23 +12,13 @@ interface AppWindowManager {
 
     var showMainDialog: Boolean
 
-    val windowManager: WindowManager
-
     var showSearchWindow: Boolean
 
     var searchWindowState: WindowState
 
-    var focusRequester: FocusRequester
+    var searchFocusRequester: FocusRequester
 
     val searchWindowDetailViewDpSize: DpSize
-
-    var showToken: Boolean
-
-    var token: CharArray
-
-    fun startRefreshToken()
-
-    fun stopRefreshToken()
 
     fun getCurrentActiveAppName(): String?
 

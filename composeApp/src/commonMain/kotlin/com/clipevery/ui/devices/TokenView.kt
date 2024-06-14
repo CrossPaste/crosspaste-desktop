@@ -41,7 +41,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.clipevery.LocalKoinApplication
-import com.clipevery.app.AppWindowManager
+import com.clipevery.app.AppTokenService
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.customFontFamily
 
@@ -50,12 +50,12 @@ fun TokenView() {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
     val copywriter = current.koin.get<GlobalCopywriter>()
-    val appWindowManager = current.koin.get<AppWindowManager>()
+    val appTokenService = current.koin.get<AppTokenService>()
 
     val offsetY =
         animateIntOffsetAsState(
             targetValue =
-                if (appWindowManager.showToken) {
+                if (appTokenService.showToken) {
                     IntOffset(
                         with(density) { (0.dp).roundToPx() },
                         with(density) { (50.dp).roundToPx() },
@@ -70,7 +70,7 @@ fun TokenView() {
         )
 
     val alpha by animateFloatAsState(
-        targetValue = if (appWindowManager.showToken) 1f else 0f,
+        targetValue = if (appTokenService.showToken) 1f else 0f,
         animationSpec =
             tween(
                 durationMillis = 500,
@@ -78,13 +78,13 @@ fun TokenView() {
             ),
     )
 
-    LaunchedEffect(appWindowManager.showToken) {
-        appWindowManager.startRefreshToken()
+    LaunchedEffect(appTokenService.showToken) {
+        appTokenService.startRefreshToken()
     }
 
-    DisposableEffect(appWindowManager.showToken) {
+    DisposableEffect(appTokenService.showToken) {
         onDispose {
-            appWindowManager.stopRefreshToken()
+            appTokenService.stopRefreshToken()
         }
     }
 
@@ -124,7 +124,7 @@ fun TokenView() {
                         fontFamily = customFontFamily,
                     )
                     IconButton(
-                        onClick = { appWindowManager.showToken = false },
+                        onClick = { appTokenService.showToken = false },
                         modifier =
                             Modifier.align(Alignment.TopEnd)
                                 .offset(y = (-8).dp)
@@ -146,7 +146,7 @@ fun TokenView() {
                         Modifier.align(Alignment.CenterHorizontally)
                             .padding(12.dp),
                 ) {
-                    OTPCodeBox(appWindowManager)
+                    OTPCodeBox(appTokenService)
                 }
             }
         }
@@ -154,9 +154,9 @@ fun TokenView() {
 }
 
 @Composable
-fun OTPCodeBox(appWindowManager: AppWindowManager) {
+fun OTPCodeBox(appTokenService: AppTokenService) {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        appWindowManager.token.forEach { char ->
+        appTokenService.token.forEach { char ->
             Box(
                 contentAlignment = Alignment.Center,
                 modifier =
