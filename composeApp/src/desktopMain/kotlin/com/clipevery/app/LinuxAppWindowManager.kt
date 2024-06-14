@@ -4,6 +4,7 @@ import com.clipevery.listen.ActiveGraphicsDevice
 import com.clipevery.listener.ShortcutKeys
 import com.clipevery.os.linux.api.X11Api
 import com.sun.jna.platform.unix.X11.Window
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class LinuxAppWindowManager(
@@ -70,6 +71,9 @@ class LinuxAppWindowManager(
         }
 
         prevLinuxAppInfo = X11Api.bringToFront(SEARCH_WINDOW_TITLE)
+
+        delay(500)
+        searchFocusRequester.requestFocus()
     }
 
     override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
