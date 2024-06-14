@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.clipevery.LocalKoinApplication
+import com.clipevery.app.AppWindowManager
 import com.clipevery.clip.ClipSearchService
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.i18n.GlobalCopywriter
@@ -86,9 +87,10 @@ fun ClipeverySearchWindow() {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
     val copywriter = current.koin.get<GlobalCopywriter>()
+    val appWindowManager = current.koin.get<AppWindowManager>()
     val clipSearchService = current.koin.get<ClipSearchService>()
-    val appWindowManager = clipSearchService.appWindowManager
     val logger = current.koin.get<KLogger>()
+    val focusRequester = appWindowManager.focusRequester
 
     var lastInputTime by remember { mutableStateOf(0L) }
 
@@ -164,7 +166,7 @@ fun ClipeverySearchWindow() {
                             TextField(
                                 modifier =
                                     Modifier.focusTarget()
-                                        .focusRequester(appWindowManager.focusRequester)
+                                        .focusRequester(focusRequester)
                                         .onFocusEvent {
                                             logger.debug { "onFocusEvent $it" }
                                         }
@@ -254,7 +256,7 @@ fun ClipeverySearchWindow() {
                                             size = 20.dp,
                                             onClick = {
                                                 clipSearchService.switchSort()
-                                                appWindowManager.focusRequester.requestFocus() // keep textField focus
+                                                focusRequester.requestFocus() // keep textField focus
                                             },
                                             modifier =
                                                 Modifier
@@ -278,7 +280,7 @@ fun ClipeverySearchWindow() {
                                             size = 18.dp,
                                             onClick = {
                                                 clipSearchService.switchFavorite()
-                                                appWindowManager.focusRequester.requestFocus() // keep textField focus
+                                                focusRequester.requestFocus() // keep textField focus
                                             },
                                             modifier =
                                                 Modifier
@@ -309,7 +311,7 @@ fun ClipeverySearchWindow() {
                                                 )
                                                 .clickable {
                                                     showTypes = true
-                                                    appWindowManager.focusRequester.requestFocus() // keep textField focus
+                                                    focusRequester.requestFocus() // keep textField focus
                                                 }
                                                 .padding(10.dp, 5.dp, 10.dp, 5.dp),
                                         horizontalArrangement = Arrangement.Start,
@@ -375,31 +377,31 @@ fun ClipeverySearchWindow() {
                                                         clipSearchService.setClipType(ClipType.TEXT)
                                                         currentType = "Text"
                                                         showTypes = false
-                                                        appWindowManager.focusRequester.requestFocus() // keep textField focus
+                                                        focusRequester.requestFocus() // keep textField focus
                                                     }
                                                     MenuItem(copywriter.getText("Link"), textStyle, paddingValues) {
                                                         clipSearchService.setClipType(ClipType.URL)
                                                         currentType = "Link"
                                                         showTypes = false
-                                                        appWindowManager.focusRequester.requestFocus() // keep textField focus
+                                                        focusRequester.requestFocus() // keep textField focus
                                                     }
                                                     MenuItem(copywriter.getText("Html"), textStyle, paddingValues) {
                                                         clipSearchService.setClipType(ClipType.HTML)
                                                         currentType = "Html"
                                                         showTypes = false
-                                                        appWindowManager.focusRequester.requestFocus() // keep textField focus
+                                                        focusRequester.requestFocus() // keep textField focus
                                                     }
                                                     MenuItem(copywriter.getText("Image"), textStyle, paddingValues) {
                                                         clipSearchService.setClipType(ClipType.IMAGE)
                                                         currentType = "Image"
                                                         showTypes = false
-                                                        appWindowManager.focusRequester.requestFocus() // keep textField focus
+                                                        focusRequester.requestFocus() // keep textField focus
                                                     }
                                                     MenuItem(copywriter.getText("File"), textStyle, paddingValues) {
                                                         clipSearchService.setClipType(ClipType.FILE)
                                                         currentType = "File"
                                                         showTypes = false
-                                                        appWindowManager.focusRequester.requestFocus() // keep textField focus
+                                                        focusRequester.requestFocus() // keep textField focus
                                                     }
                                                 }
                                             }
@@ -413,7 +415,7 @@ fun ClipeverySearchWindow() {
                     Row(modifier = Modifier.size(appWindowManager.searchWindowState.size.minus(DpSize(20.dp, 120.dp)))) {
                         SearchListView {
                             clipSearchService.clickSetSelectedIndex(it)
-                            appWindowManager.focusRequester.requestFocus()
+                            focusRequester.requestFocus()
                         }
                         Divider(
                             modifier = Modifier.fillMaxHeight().width(1.dp),
