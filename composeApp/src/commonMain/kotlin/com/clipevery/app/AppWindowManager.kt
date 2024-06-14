@@ -1,5 +1,6 @@
 package com.clipevery.app
 
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.window.WindowState
 
@@ -16,6 +17,8 @@ interface AppWindowManager {
     var showSearchWindow: Boolean
 
     var searchWindowState: WindowState
+
+    var focusRequester: FocusRequester
 
     val searchWindowDetailViewDpSize: DpSize
 

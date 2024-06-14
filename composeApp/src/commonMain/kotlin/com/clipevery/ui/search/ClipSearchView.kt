@@ -35,22 +35,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -64,6 +60,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.clipevery.LocalKoinApplication
+import com.clipevery.app.AppWindowManager
 import com.clipevery.clip.ClipSearchService
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.i18n.GlobalCopywriter
@@ -85,30 +82,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import java.awt.event.KeyEvent
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ClipeverySearchWindow() {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
-    val inputModeManager = LocalInputModeManager.current
     val copywriter = current.koin.get<GlobalCopywriter>()
+    val appWindowManager = current.koin.get<AppWindowManager>()
     val clipSearchService = current.koin.get<ClipSearchService>()
-    val appWindowManager = clipSearchService.appWindowManager
     val logger = current.koin.get<KLogger>()
+    val focusRequester = appWindowManager.focusRequester
 
     var lastInputTime by remember { mutableStateOf(0L) }
-
-    val focusRequester = remember { FocusRequester() }
-
-    LaunchedEffect(appWindowManager.showSearchWindow) {
-        if (appWindowManager.showSearchWindow) {
-            delay(200)
-            inputModeManager.requestInputMode(InputMode.Keyboard)
-            focusRequester.requestFocus()
-        } else {
-            focusRequester.freeFocus()
-        }
-    }
 
     LaunchedEffect(clipSearchService.inputSearch) {
         val currentTime = System.currentTimeMillis()

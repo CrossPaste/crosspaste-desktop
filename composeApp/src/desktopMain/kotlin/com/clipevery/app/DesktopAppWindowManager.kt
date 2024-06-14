@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPlacement
@@ -100,6 +101,8 @@ class DesktopAppWindowManager(
         ),
     )
 
+    override var focusRequester = FocusRequester()
+
     override val searchWindowDetailViewDpSize = DpSize(width = 500.dp, height = 240.dp)
 
     override var showToken by mutableStateOf(false)
@@ -192,6 +195,11 @@ class DesktopAppWindowManager(
             }
 
             windowManager.bringToFront(SEARCH_WINDOW_TITLE)
+
+            if (!AppEnv.isTest()) {
+                delay(500)
+                focusRequester.requestFocus()
+            }
         }
 
     override suspend fun activeSearchWindow() {
@@ -226,6 +234,10 @@ class DesktopAppWindowManager(
                 windowManager.bringToBack(SEARCH_WINDOW_TITLE, toPaste)
             }
             showSearchWindow = false
+
+            if (!AppEnv.isTest()) {
+                focusRequester.freeFocus()
+            }
         }
 
     override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
