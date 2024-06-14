@@ -170,7 +170,13 @@ public func saveAppIcon(bundleIdentifier: UnsafePointer<CChar>, path: UnsafePoin
 }
 
 @_cdecl("bringToBack")
-public func bringToBack(windowTitle: UnsafePointer<CChar>, appName: UnsafePointer<CChar>, toPaste: Bool, keyCodesPointer: UnsafePointer<Int32>, count: Int) {
+public func bringToBack(
+    windowTitle: UnsafePointer<CChar>,
+    appName: UnsafePointer<CChar>,
+    toPaste: Bool,
+    keyCodesPointer: UnsafePointer<Int32>,
+    count: Int
+) {
     DispatchQueue.main.async {
         let title = String(cString: windowTitle)
         let windows = NSApplication.shared.windows
@@ -184,11 +190,8 @@ public func bringToBack(windowTitle: UnsafePointer<CChar>, appName: UnsafePointe
             }
         }
 
-        let appNameString = String(cString: appName)
-        let apps = NSRunningApplication.runningApplications(withBundleIdentifier: appNameString)
-        if let app = apps.first {
-            app.activate(options: [.activateIgnoringOtherApps])
-            if (toPaste) {
+        if (toPaste) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 simulatePasteCommand(keyCodesPointer: keyCodesPointer, count: count)
             }
         }
@@ -199,7 +202,7 @@ public func bringToBack(windowTitle: UnsafePointer<CChar>, appName: UnsafePointe
 public func bringToFront(windowTitle: UnsafePointer<CChar>) -> UnsafePointer<CChar> {
 
     let currentApp = NSWorkspace.shared.frontmostApplication
-    let currentAppInfo = "\(currentApp?.bundleIdentifier ?? "") \(currentApp?.localizedName ?? "")"
+    let currentAppInfo = "\(currentApp?.bundleIdentifier ?? "")\n\(currentApp?.localizedName ?? "")"
 
     DispatchQueue.main.async {
         let title = String(cString: windowTitle)
