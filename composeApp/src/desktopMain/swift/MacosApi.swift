@@ -1,7 +1,6 @@
 import AppKit
 import Cocoa
 import Security
-import ApplicationServices
 
 @_cdecl("getClipboardChangeCount")
 public func getClipboardChangeCount(currentChangeCount: Int,
