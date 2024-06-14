@@ -196,8 +196,10 @@ class DesktopAppWindowManager(
 
             windowManager.bringToFront(SEARCH_WINDOW_TITLE)
 
-            delay(500)
-            focusRequester.requestFocus()
+            if (!AppEnv.isTest()) {
+                delay(500)
+                focusRequester.requestFocus()
+            }
         }
 
     override suspend fun activeSearchWindow() {
@@ -232,7 +234,10 @@ class DesktopAppWindowManager(
                 windowManager.bringToBack(SEARCH_WINDOW_TITLE, toPaste)
             }
             showSearchWindow = false
-            focusRequester.freeFocus()
+
+            if (!AppEnv.isTest()) {
+                focusRequester.freeFocus()
+            }
         }
 
     override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
