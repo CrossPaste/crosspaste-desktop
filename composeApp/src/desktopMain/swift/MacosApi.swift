@@ -190,8 +190,8 @@ public func bringToBack(
             }
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            if (toPaste) {
+        if (toPaste) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 simulatePasteCommand(keyCodesPointer: keyCodesPointer, count: count)
             }
         }
