@@ -42,8 +42,8 @@ class MacAppWindowManager(
     }
 
     private fun createMacAppInfo(info: String): MacAppInfo? {
-        val result = info.split(" ", limit = 2)
-        if (result.size > 1) {
+        val result = info.split("\n", limit = 2)
+        if (result.size == 3) {
             val bundleIdentifier = result[0]
             val localizedName = result[1]
             return MacAppInfo(bundleIdentifier, localizedName)
