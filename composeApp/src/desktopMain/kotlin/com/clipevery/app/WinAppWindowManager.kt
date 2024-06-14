@@ -1,33 +1,20 @@
 package com.clipevery.app
 
-import com.clipevery.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
-import com.clipevery.app.DesktopAppWindowManager.Companion.MENU_WINDOW_TITLE
-import com.clipevery.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
+import com.clipevery.listen.ActiveGraphicsDevice
 import com.clipevery.listener.ShortcutKeys
 import com.clipevery.os.windows.api.User32
-import com.clipevery.path.DesktopPathProvider
-import com.clipevery.path.PathProvider
-import com.clipevery.utils.ioDispatcher
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
 import com.sun.jna.platform.win32.WinDef.HWND
-import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.io.path.absolutePathString
 
-class WinWindowManager(
-    private val shortcutKeys: ShortcutKeys,
-) : WindowManager {
-
-    private val logger = KotlinLogging.logger {}
-
-    private val pathProvider: PathProvider = DesktopPathProvider
-
-    private val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
+class WinAppWindowManager(
+    private val lazyShortcutKeys: Lazy<ShortcutKeys>,
+    private val activeGraphicsDevice: ActiveGraphicsDevice,
+) : AbstractAppWindowManager() {
 
     private var prevWinAppInfo: WinAppInfo? = null
 
@@ -56,26 +43,6 @@ class WinWindowManager(
                 },
             )
 
-    override fun getPrevAppName(): String? {
-        prevWinAppInfo?.filePath?.let {
-            return fileDescriptorCache[it].ifEmpty {
-                null
-            }
-        } ?: run {
-            return null
-        }
-    }
-
-    override fun getCurrentActiveAppName(): String? {
-        User32.getActiveWindowProcessFilePath()?.let {
-            return fileDescriptorCache[it].ifEmpty {
-                null
-            }
-        } ?: run {
-            return null
-        }
-    }
-
     @Synchronized
     private fun saveAppImage(
         exeFilePath: String,
@@ -87,30 +54,63 @@ class WinWindowManager(
         }
     }
 
-    override suspend fun bringToFront(windowTitle: String) {
-        logger.info { "$windowTitle bringToFront Clipevery" }
-        if (windowTitle == SEARCH_WINDOW_TITLE) {
-            // to wait for the search window to be ready
-            delay(500)
+    override fun getPrevAppName(): String? {
+        return prevWinAppInfo?.filePath?.let {
+            fileDescriptorCache[it].ifEmpty { null }
         }
-        prevWinAppInfo = User32.bringToFront(windowTitle, mainHWND, searchHWND)
     }
 
-    override suspend fun bringToBack(
-        windowTitle: String,
-        toPaste: Boolean,
-    ) {
-        logger.info { "$windowTitle bringToBack Clipevery" }
+    override fun getCurrentActiveAppName(): String? {
+        return User32.getActiveWindowProcessFilePath()?.let {
+            fileDescriptorCache[it].ifEmpty { null }
+        }
+    }
+
+    override fun activeMainWindow() {
+        logger.info { "active main window" }
+        showMainWindow = true
+        prevWinAppInfo = User32.bringToFront(MAIN_WINDOW_TITLE, mainHWND, searchHWND)
+    }
+
+    override fun unActiveMainWindow() {
+        logger.info { "unActive main window" }
         val keyCodes =
-            shortcutKeys.shortcutKeysCore.keys["Paste"]?.let {
+            lazyShortcutKeys.value.shortcutKeysCore.keys["Paste"]?.let {
                 it.map { key -> key.rawCode }
             } ?: listOf()
-        User32.bringToBack(windowTitle, mainHWND, searchHWND, prevWinAppInfo?.hwnd, toPaste, keyCodes)
+        User32.bringToBack(MAIN_WINDOW_TITLE, mainHWND, searchHWND, prevWinAppInfo?.hwnd, false, keyCodes)
+        showMainWindow = false
+    }
+
+    override suspend fun activeSearchWindow() {
+        logger.info { "active search window" }
+        showSearchWindow = true
+
+        activeGraphicsDevice.getGraphicsDevice()?.let { graphicsDevice ->
+            searchWindowState.position = calPosition(graphicsDevice.defaultConfiguration.bounds)
+        }
+
+        prevWinAppInfo = User32.bringToFront(SEARCH_WINDOW_TITLE, mainHWND, searchHWND)
+
+        delay(500)
+        searchFocusRequester.requestFocus()
+    }
+
+    override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
+        logger.info { "unActive search window" }
+        val toPaste = preparePaste()
+        val keyCodes =
+            lazyShortcutKeys.value.shortcutKeysCore.keys["Paste"]?.let {
+                it.map { key -> key.rawCode }
+            } ?: listOf()
+        User32.bringToBack(SEARCH_WINDOW_TITLE, mainHWND, searchHWND, prevWinAppInfo?.hwnd, toPaste, keyCodes)
+        showSearchWindow = false
+        searchFocusRequester.freeFocus()
     }
 
     override suspend fun toPaste() {
         val keyCodes =
-            shortcutKeys.shortcutKeysCore.keys["Paste"]?.let {
+            lazyShortcutKeys.value.shortcutKeysCore.keys["Paste"]?.let {
                 it.map { key -> key.rawCode }
             } ?: listOf()
 

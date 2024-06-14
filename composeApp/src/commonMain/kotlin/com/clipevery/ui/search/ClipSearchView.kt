@@ -90,7 +90,7 @@ fun ClipeverySearchWindow() {
     val appWindowManager = current.koin.get<AppWindowManager>()
     val clipSearchService = current.koin.get<ClipSearchService>()
     val logger = current.koin.get<KLogger>()
-    val focusRequester = appWindowManager.focusRequester
+    val focusRequester = appWindowManager.searchFocusRequester
 
     var lastInputTime by remember { mutableStateOf(0L) }
 

@@ -1,7 +1,7 @@
 package com.clipevery.os.windows.api
 
-import com.clipevery.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
-import com.clipevery.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
+import com.clipevery.app.AbstractAppWindowManager.Companion.MAIN_WINDOW_TITLE
+import com.clipevery.app.AbstractAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.clipevery.app.WinAppInfo
 import com.sun.jna.Memory
 import com.sun.jna.Native

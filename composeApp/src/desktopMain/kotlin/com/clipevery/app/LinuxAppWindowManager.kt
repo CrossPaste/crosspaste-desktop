@@ -1,39 +1,29 @@
 package com.clipevery.app
 
+import com.clipevery.listen.ActiveGraphicsDevice
 import com.clipevery.listener.ShortcutKeys
 import com.clipevery.os.linux.api.X11Api
-import com.clipevery.path.DesktopPathProvider
-import com.clipevery.path.PathProvider
-import com.clipevery.utils.ioDispatcher
 import com.sun.jna.platform.unix.X11.Window
-import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
-class LinuxWindowManager(
-    private val shortcutKeys: ShortcutKeys,
-) : WindowManager {
-
-    private val logger = KotlinLogging.logger {}
-
-    private val pathProvider: PathProvider = DesktopPathProvider
-
-    private val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
+class LinuxAppWindowManager(
+    private val lazyShortcutKeys: Lazy<ShortcutKeys>,
+    private val activeGraphicsDevice: ActiveGraphicsDevice,
+) : AbstractAppWindowManager() {
 
     private var prevLinuxAppInfo: LinuxAppInfo? = null
 
     private val classNameSet: MutableSet<String> = mutableSetOf()
 
-    override fun getPrevAppName(): String? {
-        return prevLinuxAppInfo?.let {
-            getAppName(it)
-        }
-    }
-
     override fun getCurrentActiveAppName(): String? {
         return X11Api.getActiveWindow()?.let { linuxAppInfo ->
             getAppName(linuxAppInfo)
+        }
+    }
+
+    override fun getPrevAppName(): String? {
+        return prevLinuxAppInfo?.let {
+            getAppName(it)
         }
     }
 
@@ -59,27 +49,44 @@ class LinuxWindowManager(
         }
     }
 
-    override suspend fun bringToFront(windowTitle: String) {
-        logger.info { "$windowTitle bringToFront Clipevery" }
-
-        prevLinuxAppInfo = X11Api.bringToFront(windowTitle)
+    override fun activeMainWindow() {
+        logger.info { "active main window" }
+        showMainWindow = true
+        prevLinuxAppInfo = X11Api.bringToFront(MAIN_WINDOW_TITLE)
     }
 
-    override suspend fun bringToBack(
-        windowTitle: String,
-        toPaste: Boolean,
-    ) {
-        logger.info { "$windowTitle bringToBack Clipevery" }
+    override fun unActiveMainWindow() {
+        logger.info { "unActive main window" }
+        X11Api.bringToBack(prevLinuxAppInfo)
+        showMainWindow = false
+    }
+
+    override suspend fun activeSearchWindow() {
+        logger.info { "active search window" }
+        showSearchWindow = true
+
+        activeGraphicsDevice.getGraphicsDevice()?.let { graphicsDevice ->
+            searchWindowState.position = calPosition(graphicsDevice.defaultConfiguration.bounds)
+        }
+
+        prevLinuxAppInfo = X11Api.bringToFront(SEARCH_WINDOW_TITLE)
+    }
+
+    override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
+        logger.info { "unActive search window" }
+        val toPaste = preparePaste()
         val keyCodes =
-            shortcutKeys.shortcutKeysCore.keys["Paste"]?.let {
+            lazyShortcutKeys.value.shortcutKeysCore.keys["Paste"]?.let {
                 it.map { key -> key.rawCode }
             } ?: listOf()
         X11Api.bringToBack(prevLinuxAppInfo, toPaste, keyCodes)
+        showSearchWindow = false
+        searchFocusRequester.freeFocus()
     }
 
     override suspend fun toPaste() {
         val keyCodes =
-            shortcutKeys.shortcutKeysCore.keys["Paste"]?.let {
+            lazyShortcutKeys.value.shortcutKeysCore.keys["Paste"]?.let {
                 it.map { key -> key.rawCode }
             } ?: listOf()
         X11Api.toPaste(keyCodes)

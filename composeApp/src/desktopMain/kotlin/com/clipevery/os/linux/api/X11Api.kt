@@ -1,7 +1,7 @@
 package com.clipevery.os.linux.api
 
-import com.clipevery.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
-import com.clipevery.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
+import com.clipevery.app.AbstractAppWindowManager.Companion.MAIN_WINDOW_TITLE
+import com.clipevery.app.AbstractAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.clipevery.app.LinuxAppInfo
 import com.clipevery.os.linux.api.WMCtrl.getActiveWindow
 import com.sun.jna.Native
@@ -65,6 +65,15 @@ interface X11Api : X11 {
 
                 INSTANCE.XCloseDisplay(display)
                 return linuxAppInfo
+            }
+        }
+
+        fun bringToBack(prevLinuxAppInfo: LinuxAppInfo?) {
+            INSTANCE.XOpenDisplay(null)?.let { display ->
+                prevLinuxAppInfo?.let {
+                    WMCtrl.activeWindow(display, it.window)
+                }
+                INSTANCE.XCloseDisplay(display)
             }
         }
 
