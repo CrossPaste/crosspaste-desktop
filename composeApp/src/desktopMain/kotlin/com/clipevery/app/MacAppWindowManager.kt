@@ -43,7 +43,7 @@ class MacAppWindowManager(
 
     private fun createMacAppInfo(info: String): MacAppInfo? {
         val result = info.split("\n", limit = 2)
-        if (result.size == 3) {
+        if (result.size == 2) {
             val bundleIdentifier = result[0]
             val localizedName = result[1]
             return MacAppInfo(bundleIdentifier, localizedName)
