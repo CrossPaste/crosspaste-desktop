@@ -20,7 +20,10 @@ import com.clipevery.app.AppWindowManager
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.NotificationManager
 import com.clipevery.ui.base.UISupport
+import com.clipevery.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
 import com.clipevery.utils.contains
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.launch
 import org.koin.core.KoinApplication
 import java.awt.Frame
 import java.awt.GraphicsEnvironment
@@ -62,10 +65,14 @@ fun MacTray() {
         mouseListener =
             MacTrayMouseClicked(appWindowManager) { event, rectangle, _ ->
                 if (event.button == MouseEvent.BUTTON1) {
-                    appWindowManager.switchMainWindow()
+                    mainCoroutineDispatcher.launch(CoroutineName("Switch Clipevery")) {
+                        appWindowManager.switchMainWindow()
+                    }
                 } else {
-                    if (appWindowManager.showMainWindow) {
-                        appWindowManager.unActiveMainWindow()
+                    mainCoroutineDispatcher.launch(CoroutineName("Hide Clipevery")) {
+                        if (appWindowManager.showMainWindow) {
+                            appWindowManager.unActiveMainWindow()
+                        }
                     }
                     val stepWidth = with(density) { 48.dp.roundToPx() }
                     menu.show(frame, event.x - stepWidth, rectangle.y + 5)
@@ -87,22 +94,28 @@ fun createPopupMenu(
 
     popup.add(
         createMenuItem(copywriter.getText("Settings")) {
-            appWindowManager.activeMainWindow()
-            currentPage.value = PageViewContext(PageViewType.SETTINGS, currentPage.value)
+            mainCoroutineDispatcher.launch(CoroutineName("Open settings")) {
+                appWindowManager.activeMainWindow()
+                currentPage.value = PageViewContext(PageViewType.SETTINGS, currentPage.value)
+            }
         },
     )
 
     popup.add(
         createMenuItem(copywriter.getText("Shortcut_Keys")) {
-            appWindowManager.activeMainWindow()
-            currentPage.value = PageViewContext(PageViewType.SHORTCUT_KEYS, currentPage.value)
+            mainCoroutineDispatcher.launch(CoroutineName("Open shortcut keys")) {
+                appWindowManager.activeMainWindow()
+                currentPage.value = PageViewContext(PageViewType.SHORTCUT_KEYS, currentPage.value)
+            }
         },
     )
 
     popup.add(
         createMenuItem(copywriter.getText("About")) {
-            appWindowManager.activeMainWindow()
-            currentPage.value = PageViewContext(PageViewType.ABOUT, currentPage.value)
+            mainCoroutineDispatcher.launch(CoroutineName("Open about")) {
+                appWindowManager.activeMainWindow()
+                currentPage.value = PageViewContext(PageViewType.ABOUT, currentPage.value)
+            }
         },
     )
 

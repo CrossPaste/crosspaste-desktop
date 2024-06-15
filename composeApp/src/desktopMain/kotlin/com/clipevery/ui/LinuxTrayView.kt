@@ -3,9 +3,12 @@ package com.clipevery.ui
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
 import com.clipevery.app.AppWindowManager
+import com.clipevery.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
 import com.clipevery.utils.getResourceUtils
 import dorkbox.systemTray.MenuItem
 import dorkbox.systemTray.SystemTray
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.launch
 import org.koin.core.KoinApplication
 import java.awt.GraphicsEnvironment
 import java.awt.Toolkit
@@ -23,7 +26,11 @@ object LinuxTrayView {
         systemTray.setImage(resourceUtils.resourceInputStream("icon/clipevery.tray.linux.png"))
         systemTray.setTooltip("Clipevery")
         systemTray.menu?.add(
-            MenuItem("Open Clipevery") { appWindowManager.activeMainWindow() },
+            MenuItem("Open Clipevery") {
+                mainCoroutineDispatcher.launch(CoroutineName("Open Clipevery")) {
+                    appWindowManager.activeMainWindow()
+                }
+            },
         )
 
         systemTray.menu?.add(

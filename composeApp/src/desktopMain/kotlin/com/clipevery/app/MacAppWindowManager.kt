@@ -62,7 +62,7 @@ class MacAppWindowManager(
         }
     }
 
-    override fun activeMainWindow() {
+    override suspend fun activeMainWindow() {
         logger.info { "active main window" }
         showMainWindow = true
         MacosApi.INSTANCE.bringToFront(MAIN_WINDOW_TITLE).let {
@@ -73,19 +73,17 @@ class MacAppWindowManager(
                 }
             }
         }
+        delay(500)
+        mainFocusRequester.requestFocus()
     }
 
-    override fun unActiveMainWindow() {
+    override suspend fun unActiveMainWindow() {
         logger.info { "unActive main window" }
-        val pair = macPasteUtils.getPasteMemory()
-        MacosApi.INSTANCE.bringToBack(
-            MAIN_WINDOW_TITLE,
+        MacosApi.INSTANCE.mainToBack(
             prevMacAppInfo?.bundleIdentifier ?: "",
-            toPaste = false,
-            pair.first,
-            pair.second,
         )
         showMainWindow = false
+        mainFocusRequester.freeFocus()
     }
 
     override suspend fun activeSearchWindow() {
@@ -113,8 +111,7 @@ class MacAppWindowManager(
         logger.info { "unActive search window" }
         val toPaste = preparePaste()
         val pair = macPasteUtils.getPasteMemory()
-        MacosApi.INSTANCE.bringToBack(
-            SEARCH_WINDOW_TITLE,
+        MacosApi.INSTANCE.searchToBack(
             prevMacAppInfo?.bundleIdentifier ?: "",
             toPaste = toPaste,
             pair.first,

@@ -1,7 +1,5 @@
 package com.clipevery.app
 
-import kotlinx.coroutines.runBlocking
-
 class TestWindowManager(
     private val mockOS: MockOS,
 ) : AbstractAppWindowManager() {
@@ -20,15 +18,13 @@ class TestWindowManager(
         return mockOS.currentApp
     }
 
-    override fun activeMainWindow() {
+    override suspend fun activeMainWindow() {
         showMainWindow = true
         bringToFront(MAIN_WINDOW_TITLE)
     }
 
-    override fun unActiveMainWindow() {
-        runBlocking {
-            bringToBack(MAIN_WINDOW_TITLE, false)
-        }
+    override suspend fun unActiveMainWindow() {
+        bringToBack(MAIN_WINDOW_TITLE, false)
         showMainWindow = false
     }
 

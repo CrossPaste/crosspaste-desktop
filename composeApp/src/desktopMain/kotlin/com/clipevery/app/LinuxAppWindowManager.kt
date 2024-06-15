@@ -50,16 +50,19 @@ class LinuxAppWindowManager(
         }
     }
 
-    override fun activeMainWindow() {
+    override suspend fun activeMainWindow() {
         logger.info { "active main window" }
         showMainWindow = true
         prevLinuxAppInfo = X11Api.bringToFront(MAIN_WINDOW_TITLE)
+        delay(500)
+        mainFocusRequester.requestFocus()
     }
 
-    override fun unActiveMainWindow() {
+    override suspend fun unActiveMainWindow() {
         logger.info { "unActive main window" }
         X11Api.bringToBack(prevLinuxAppInfo)
         showMainWindow = false
+        mainFocusRequester.freeFocus()
     }
 
     override suspend fun activeSearchWindow() {

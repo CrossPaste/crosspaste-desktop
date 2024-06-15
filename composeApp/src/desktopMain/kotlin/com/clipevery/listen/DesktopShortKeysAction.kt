@@ -9,11 +9,10 @@ import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.listener.ShortcutKeysAction
 import com.clipevery.ui.base.DialogService
-import com.clipevery.utils.mainDispatcher
+import com.clipevery.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.query.RealmQuery
 import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 class DesktopShortKeysAction(
@@ -27,8 +26,6 @@ class DesktopShortKeysAction(
 ) : ShortcutKeysAction {
 
     private val logger = KotlinLogging.logger {}
-
-    private val mainDispatcherScope = CoroutineScope(mainDispatcher)
 
     override val action: (String) -> Unit = { actionName ->
         when (actionName) {
@@ -44,21 +41,21 @@ class DesktopShortKeysAction(
 
     private fun showMainWindow() {
         logger.info { "Open main window" }
-        mainDispatcherScope.launch(CoroutineName("OpenMainWindow")) {
+        mainCoroutineDispatcher.launch(CoroutineName("OpenMainWindow")) {
             appWindowManager.activeMainWindow()
         }
     }
 
     private fun showSearchWindow() {
         logger.info { "Open search window" }
-        mainDispatcherScope.launch(CoroutineName("OpenSearchWindow")) {
+        mainCoroutineDispatcher.launch(CoroutineName("OpenSearchWindow")) {
             clipSearchService.activeWindow()
         }
     }
 
     private fun hideWindow() {
         logger.info { "Hide window" }
-        mainDispatcherScope.launch(CoroutineName("HideWindow")) {
+        mainCoroutineDispatcher.launch(CoroutineName("HideWindow")) {
             if (appWindowManager.showMainWindow && dialogService.dialogs.isEmpty()) {
                 appWindowManager.unActiveMainWindow()
             }
@@ -78,7 +75,7 @@ class DesktopShortKeysAction(
             } else {
                 { it.query("appInstanceId != $0", appInfo.appInstanceId) }
             }
-        mainDispatcherScope.launch(CoroutineName("Paste")) {
+        mainCoroutineDispatcher.launch(CoroutineName("Paste")) {
             val result =
                 clipDao.searchClipData(
                     searchTerms = listOf(),
@@ -96,14 +93,14 @@ class DesktopShortKeysAction(
 
     private fun switchMonitorPasteboard() {
         logger.info { "Switch Monitor Pasteboard" }
-        mainDispatcherScope.launch(CoroutineName("SwitchMonitorPasteboard")) {
+        mainCoroutineDispatcher.launch(CoroutineName("SwitchMonitorPasteboard")) {
             clipboardService.toggle()
         }
     }
 
     private fun switchEncrypt() {
         logger.info { "Switch Encrypt" }
-        mainDispatcherScope.launch(CoroutineName("SwitchEncrypt")) {
+        mainCoroutineDispatcher.launch(CoroutineName("SwitchEncrypt")) {
             configManager.updateConfig { config -> config.copy(isEncryptSync = !configManager.config.isEncryptSync) }
         }
     }
