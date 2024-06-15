@@ -187,7 +187,7 @@ jobs:
       # directly use upload-artifact to compress zip and lose file permissions
       # https://github.com/actions/upload-artifact?tab=readme-ov-file#permission-loss
       - name: Tar Mac amd64 app
-        run: tar -cvf clipevery-mac-adm64-${{ env.PACKAGE_VERSION }}.tar -C output/clipevery-mac-adm64-${{ env.PACKAGE_VERSION }} Clipevery.app
+        run: tar -cvf output/clipevery-mac-adm64-${{ env.PACKAGE_VERSION }}/clipevery-mac-adm64-${{ env.PACKAGE_VERSION }}.tar -C output/clipevery-mac-adm64-${{ env.PACKAGE_VERSION }} Clipevery.app
 
       - name: Upload Mac amd64 app
         id: upload_mac_adm64_app
@@ -208,7 +208,7 @@ jobs:
           agree_to_license: 1
 
       - name: Tar Mac aarch64 app
-        run: tar -cvf clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}.tar -C output/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }} Clipevery.app
+        run: tar -cvf output/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}.tar -C output/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }} Clipevery.app
 
       - name: Upload Mac aaarch64 app
         id: upload_mac_aarch64_app
