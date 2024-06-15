@@ -21,9 +21,23 @@ object LinuxTrayView {
         exitApplication: () -> Unit,
     ) {
         val appWindowManager = koinApplication.koin.get<AppWindowManager>()
+        val themeDetector = koinApplication.koin.get<ThemeDetector>()
         val resourceUtils = getResourceUtils()
 
-        systemTray.setImage(resourceUtils.resourceInputStream("icon/clipevery.tray.linux.png"))
+        themeDetector.addListener {
+            if (it) {
+                systemTray.setImage(resourceUtils.resourceInputStream("icon/clipevery.tray.linux.dark.png"))
+            } else {
+                systemTray.setImage(resourceUtils.resourceInputStream("icon/clipevery.tray.linux.light.png"))
+            }
+        }
+
+        if (themeDetector.isCurrentThemeDark()) {
+            systemTray.setImage(resourceUtils.resourceInputStream("icon/clipevery.tray.linux.dark.png"))
+        } else {
+            systemTray.setImage(resourceUtils.resourceInputStream("icon/clipevery.tray.linux.light.png"))
+        }
+
         systemTray.setTooltip("Clipevery")
         systemTray.menu?.add(
             MenuItem("Open Clipevery") {
