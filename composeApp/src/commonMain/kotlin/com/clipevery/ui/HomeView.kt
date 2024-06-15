@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -114,7 +115,7 @@ fun TitleView() {
             ) {
                 Image(
                     modifier =
-                        Modifier.padding(13.dp, 13.dp, 13.dp, 13.dp)
+                        Modifier.padding(start = 13.dp, top = 13.dp, end = 10.dp, bottom = 13.dp)
                             .align(Alignment.CenterVertically)
                             .clip(RoundedCornerShape(3.dp))
                             .size(36.dp),
@@ -122,23 +123,31 @@ fun TitleView() {
                     contentDescription = "clipevery icon",
                 )
                 Column(
-                    Modifier.wrapContentWidth(),
+                    Modifier.wrapContentWidth()
+                        .height(36.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
                         modifier = Modifier.align(Alignment.Start),
                         text = "Compile Future",
                         color = Color.White,
-                        style = TextStyle(fontWeight = FontWeight.Light),
-                        fontSize = 11.sp,
+                        fontSize = 10.sp,
+                        style =
+                            TextStyle(
+                                fontFamily = FontFamily.SansSerif,
+                                fontWeight = FontWeight.Light,
+                            ),
                     )
                     Text(
                         modifier = Modifier.align(Alignment.Start),
                         text = "Clipevery",
                         color = Color.White,
                         fontSize = 25.sp,
-                        style = TextStyle(fontWeight = FontWeight.Bold),
-                        fontFamily = customFontFamily,
+                        style =
+                            TextStyle(
+                                fontFamily = customFontFamily,
+                                fontWeight = FontWeight.Bold,
+                            ),
                     )
                 }
             }
