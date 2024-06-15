@@ -93,9 +93,10 @@ class WinAppWindowManager(
             searchWindowState.position = calPosition(graphicsDevice.defaultConfiguration.bounds)
         }
 
-        prevWinAppInfo = User32.bringToFront(SEARCH_WINDOW_TITLE, mainHWND, searchHWND)
-
+        // Wait for the window to be ready, otherwise bringToFront may cause the window to fail to get focus
         delay(500)
+
+        prevWinAppInfo = User32.bringToFront(SEARCH_WINDOW_TITLE, mainHWND, searchHWND)
         searchFocusRequester.requestFocus()
     }
 
