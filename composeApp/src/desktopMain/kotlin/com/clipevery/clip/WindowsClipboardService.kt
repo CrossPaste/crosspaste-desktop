@@ -33,7 +33,7 @@ class WindowsClipboardService(
     override val configManager: ConfigManager,
     override val clipConsumer: TransferableConsumer,
     override val clipProducer: TransferableProducer,
-) : ClipboardService, User32.WNDPROC {
+) : AbstractClipboardService(), User32.WNDPROC {
     override val logger: KLogger = KotlinLogging.logger {}
 
     @Volatile
@@ -131,13 +131,11 @@ class WindowsClipboardService(
     }
 
     override fun start() {
-        if (configManager.config.enableClipboardListening) {
-            if (job?.isActive != true) {
-                job =
-                    serviceScope.launch(CoroutineName("WindowsClipboardService")) {
-                        run()
-                    }
-            }
+        if (job?.isActive != true) {
+            job =
+                serviceScope.launch(CoroutineName("WindowsClipboardService")) {
+                    run()
+                }
         }
     }
 
@@ -145,17 +143,6 @@ class WindowsClipboardService(
         Kernel32.INSTANCE.SetEvent(event)
         job?.cancel()
         configManager.updateConfig { it.copy(lastClipboardChangeCount = changeCount) }
-    }
-
-    @Synchronized
-    override fun toggle() {
-        val enableClipboardListening = configManager.config.enableClipboardListening
-        if (enableClipboardListening) {
-            stop()
-        } else {
-            start()
-        }
-        configManager.updateConfig { it.copy(enableClipboardListening = !enableClipboardListening) }
     }
 
     private fun onChange() {

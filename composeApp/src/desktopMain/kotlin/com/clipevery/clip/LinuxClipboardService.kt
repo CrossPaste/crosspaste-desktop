@@ -34,7 +34,7 @@ class LinuxClipboardService(
     override val configManager: ConfigManager,
     override val clipConsumer: TransferableConsumer,
     override val clipProducer: TransferableProducer,
-) : ClipboardService {
+) : AbstractClipboardService() {
 
     companion object {
         const val XFIXES_SET_SELECTION_OWNER_NOTIFY_MASK = (1 shl 0).toLong()
@@ -159,16 +159,6 @@ class LinuxClipboardService(
     override fun stop() {
         job?.cancel()
         configManager.updateConfig { it.copy(lastClipboardChangeCount = changeCount) }
-    }
-
-    override fun toggle() {
-        val enableClipboardListening = configManager.config.enableClipboardListening
-        if (enableClipboardListening) {
-            stop()
-        } else {
-            start()
-        }
-        configManager.updateConfig { it.copy(enableClipboardListening = !enableClipboardListening) }
     }
 
     override fun lostOwnership(

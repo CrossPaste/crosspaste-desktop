@@ -326,8 +326,8 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                                 .height(20.dp),
                         checked = enableClipboardListening,
                         onCheckedChange = {
-                            enableClipboardListening = it
                             clipboardService.toggle()
+                            enableClipboardListening = configManager.config.enableClipboardListening
                         },
                     )
                 }
