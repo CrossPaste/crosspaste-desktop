@@ -319,7 +319,9 @@ class Clipevery {
             try {
                 val pair = koinApplication.koin.get<AppLock>().acquireLock()
                 if (pair.first) {
-                    koinApplication.koin.get<ClipboardService>().start()
+                    if (koinApplication.koin.get<ConfigManager>().config.enableClipboardListening) {
+                        koinApplication.koin.get<ClipboardService>().start()
+                    }
                     koinApplication.koin.get<QRCodeGenerator>()
                     koinApplication.koin.get<ClipServer>().start()
                     koinApplication.koin.get<ClipClient>()

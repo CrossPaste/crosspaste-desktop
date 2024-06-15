@@ -28,7 +28,7 @@ class MacosClipboardService(
     override val configManager: ConfigManager,
     override val clipConsumer: TransferableConsumer,
     override val clipProducer: TransferableProducer,
-) : ClipboardService {
+) : AbstractClipboardService() {
     override val logger: KLogger = KotlinLogging.logger {}
 
     private var changeCount = configManager.config.lastClipboardChangeCount
@@ -110,10 +110,8 @@ class MacosClipboardService(
 
     @Synchronized
     override fun start() {
-        if (configManager.config.enableClipboardListening) {
-            if (job?.isActive != true) {
-                job = run()
-            }
+        if (job?.isActive != true) {
+            job = run()
         }
     }
 
@@ -121,16 +119,5 @@ class MacosClipboardService(
     override fun stop() {
         job?.cancel()
         configManager.updateConfig { it.copy(lastClipboardChangeCount = changeCount) }
-    }
-
-    @Synchronized
-    override fun toggle() {
-        val enableClipboardListening = configManager.config.enableClipboardListening
-        configManager.updateConfig { it.copy(enableClipboardListening = !enableClipboardListening) }
-        if (!enableClipboardListening) {
-            start()
-        } else {
-            stop()
-        }
     }
 }

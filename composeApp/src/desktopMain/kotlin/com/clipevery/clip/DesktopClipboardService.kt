@@ -11,7 +11,7 @@ fun getDesktopClipboardService(
     configManager: ConfigManager,
     clipConsumer: TransferableConsumer,
     clipProducer: TransferableProducer,
-): ClipboardService {
+): AbstractClipboardService {
     val currentPlatform = currentPlatform()
     return if (currentPlatform.isMacos()) {
         MacosClipboardService(appWindowManager, clipDao, configManager, clipConsumer, clipProducer)
