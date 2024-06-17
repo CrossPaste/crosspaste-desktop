@@ -1,6 +1,6 @@
 [versions]
 conveyor = "1.10"
-compose = "1.6.7"
+compose = "1.6.8"
 compose-plugin = "1.6.11"
 compose-compiler = "1.5.8"
 compose-shimmer = "1.3.0"
