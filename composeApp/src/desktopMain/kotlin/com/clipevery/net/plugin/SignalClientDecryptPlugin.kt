@@ -1,6 +1,8 @@
 package com.clipevery.net.plugin
 
 import com.clipevery.Clipevery
+import io.github.oshai.kotlinlogging.KLogger
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.plugins.*
 import io.ktor.client.statement.*
@@ -13,6 +15,8 @@ import org.signal.libsignal.protocol.message.SignalMessage
 import org.signal.libsignal.protocol.state.SignalProtocolStore
 
 object SignalClientDecryptPlugin : HttpClientPlugin<SignalConfig, SignalClientDecryptPlugin> {
+
+    private val logger: KLogger = KotlinLogging.logger {}
 
     override val key = AttributeKey<SignalClientDecryptPlugin>("SignalClientDecryptPlugin")
 
@@ -34,6 +38,7 @@ object SignalClientDecryptPlugin : HttpClientPlugin<SignalConfig, SignalClientDe
             headers["targetAppInstanceId"]?.let { appInstanceId ->
                 headers["signal"]?.let { signal ->
                     if (signal == "1") {
+                        logger.debug { "signal client decrypt $appInstanceId" }
                         val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
                         val signalMessage = SignalMessage(bytes)
                         val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)

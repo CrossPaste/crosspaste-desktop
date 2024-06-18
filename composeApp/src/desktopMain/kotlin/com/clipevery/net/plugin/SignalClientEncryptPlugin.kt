@@ -1,6 +1,8 @@
 package com.clipevery.net.plugin
 
 import com.clipevery.Clipevery
+import io.github.oshai.kotlinlogging.KLogger
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.plugins.*
 import io.ktor.client.request.*
@@ -12,6 +14,9 @@ import org.signal.libsignal.protocol.SignalProtocolAddress
 import org.signal.libsignal.protocol.state.SignalProtocolStore
 
 object SignalClientEncryptPlugin : HttpClientPlugin<SignalConfig, SignalClientEncryptPlugin> {
+
+    private val logger: KLogger = KotlinLogging.logger {}
+
     override val key = AttributeKey<SignalClientEncryptPlugin>("SignalClientEncryptPlugin")
 
     private val signalProtocolStore: SignalProtocolStore = Clipevery.koinApplication.koin.get()
@@ -26,12 +31,14 @@ object SignalClientEncryptPlugin : HttpClientPlugin<SignalConfig, SignalClientEn
         scope: HttpClient,
     ) {
         scope.sendPipeline.intercept(HttpSendPipeline.State) {
+            println("sendPipeline")
             context.headers["appInstanceId"]?.let {
                 context.headers["signal"]?.let { signal ->
                     if (signal == "1") {
                         val originalContent = context.body as? OutgoingContent.ByteArrayContent
                         originalContent?.let {
                             context.headers["targetAppInstanceId"]?.let { targetAppInstanceId ->
+                                logger.debug { "signal client encrypt $targetAppInstanceId" }
                                 val signalProtocolAddress = SignalProtocolAddress(targetAppInstanceId, 1)
                                 val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
                                 val ciphertextMessage = sessionCipher.encrypt(it.bytes())

@@ -1,5 +1,7 @@
 package com.clipevery.net.plugin
 
+import io.github.oshai.kotlinlogging.KLogger
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.*
 import io.ktor.server.application.hooks.*
 import io.ktor.utils.io.*
@@ -16,13 +18,17 @@ val SIGNAL_SERVER_DECRYPT_PLUGIN: ApplicationPlugin<SignalConfig> =
         ::SignalConfig,
     ) {
 
+        val logger: KLogger = KotlinLogging.logger {}
+
         val signalProtocolStore: SignalProtocolStore = pluginConfig.signalProtocolStore
 
         on(ReceiveRequestBytes) { call, body ->
             val headers = call.request.headers
+            println("ReceiveRequestBytes")
             headers["appInstanceId"]?.let { appInstanceId ->
                 headers["signal"]?.let { signal ->
                     if (signal == "1") {
+                        logger.debug { "signal server decrypt $appInstanceId" }
                         return@on application.writer {
                             val encryptedContent = body.readRemaining().readBytes()
                             val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
