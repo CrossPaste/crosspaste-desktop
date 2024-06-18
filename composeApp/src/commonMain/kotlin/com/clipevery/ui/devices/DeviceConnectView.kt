@@ -164,7 +164,7 @@ fun DeviceConnectView(
                 var buttonSize by remember { mutableStateOf(Size(0.0f, 0.0f)) }
 
                 ClipIconButton(
-                    size = 32.dp,
+                    size = 20.dp,
                     onClick = {
                         showPopup = !showPopup
                     },
@@ -174,7 +174,7 @@ fun DeviceConnectView(
                             .onGloballyPositioned { coordinates ->
                                 buttonPosition = coordinates.localToWindow(Offset.Zero)
                                 buttonSize = coordinates.size.toSize()
-                            },
+                            }.padding(horizontal = 12.dp),
                 ) {
                     Icon(
                         Icons.Outlined.MoreVert,
