@@ -11,14 +11,14 @@ import com.clipevery.LocalKoinApplication
 private val LightColorPalette =
     lightColors(
         primary = Color(0xFF167DFF),
-        surface = Color(0xFFF3F2F7),
+        surface = Color(0xFFF0F0F0),
     )
 
 private val DarkColorPalette =
     darkColors(
         primary = Color(0xFFBB86FC),
         background = Color(0xFF23272A),
-        surface = Color(0xFF353A40),
+        surface = Color(0xFF323232),
     )
 
 @Composable
