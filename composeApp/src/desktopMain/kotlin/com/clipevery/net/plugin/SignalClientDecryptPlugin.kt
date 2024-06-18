@@ -33,12 +33,12 @@ object SignalClientDecryptPlugin : HttpClientPlugin<SignalConfig, SignalClientDe
     ) {
         scope.receivePipeline.intercept(HttpReceivePipeline.State) {
             val byteReadChannel: ByteReadChannel = it.content
-            val bytes = byteReadChannel.readRemaining().readBytes()
             val headers = it.call.request.headers
             headers["targetAppInstanceId"]?.let { appInstanceId ->
                 headers["signal"]?.let { signal ->
                     if (signal == "1") {
                         logger.debug { "signal client decrypt $appInstanceId" }
+                        val bytes = byteReadChannel.readRemaining().readBytes()
                         val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
                         val signalMessage = SignalMessage(bytes)
                         val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)

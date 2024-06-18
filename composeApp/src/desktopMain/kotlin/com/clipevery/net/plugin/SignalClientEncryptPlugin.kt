@@ -31,7 +31,6 @@ object SignalClientEncryptPlugin : HttpClientPlugin<SignalConfig, SignalClientEn
         scope: HttpClient,
     ) {
         scope.sendPipeline.intercept(HttpSendPipeline.State) {
-            println("sendPipeline")
             context.headers["appInstanceId"]?.let {
                 context.headers["signal"]?.let { signal ->
                     if (signal == "1") {

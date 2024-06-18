@@ -24,7 +24,6 @@ val SIGNAL_SERVER_DECRYPT_PLUGIN: ApplicationPlugin<SignalConfig> =
 
         on(ReceiveRequestBytes) { call, body ->
             val headers = call.request.headers
-            println("ReceiveRequestBytes")
             headers["appInstanceId"]?.let { appInstanceId ->
                 headers["signal"]?.let { signal ->
                     if (signal == "1") {
