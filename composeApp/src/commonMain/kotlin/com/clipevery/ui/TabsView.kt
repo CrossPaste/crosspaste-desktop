@@ -46,6 +46,13 @@ import com.clipevery.ui.clip.preview.ClipPreviewsView
 import com.clipevery.ui.devices.DevicesView
 import com.clipevery.ui.devices.bindingQRCode
 
+val tabTextStyle =
+    TextStyle(
+        fontSize = 14.sp,
+        fontWeight = FontWeight.Normal,
+        fontFamily = FontFamily.SansSerif,
+    )
+
 @Composable
 fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
     val current = LocalKoinApplication.current
@@ -76,7 +83,13 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
             Spacer(modifier = Modifier.fillMaxWidth())
         }
 
-        val widthArray = tabs.map { textMeasurer.measure(copywriter.getText(it.second)).size.width }
+        val widthArray =
+            tabs.map {
+                textMeasurer.measure(
+                    copywriter.getText(it.second),
+                    tabTextStyle,
+                ).size.width
+            }
 
         val selectedIndex by remember(currentPageViewContext.value.pageViewType) {
             mutableStateOf(
@@ -176,9 +189,7 @@ fun SingleTabView(
             Text(
                 text = title,
                 color = MaterialTheme.colors.onBackground,
-                fontSize = 14.sp,
-                style = TextStyle(fontWeight = FontWeight.Normal),
-                fontFamily = FontFamily.SansSerif,
+                style = tabTextStyle,
             )
         }
     }
