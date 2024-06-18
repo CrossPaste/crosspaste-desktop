@@ -71,7 +71,7 @@ fun DeviceBarView(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
-            modifier = Modifier.weight(0.6f),
+            modifier = Modifier.weight(0.5f),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -134,7 +134,7 @@ fun DeviceBarView(
         }
 
         Row(
-            modifier = Modifier.weight(0.4f),
+            modifier = Modifier.weight(0.5f),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
