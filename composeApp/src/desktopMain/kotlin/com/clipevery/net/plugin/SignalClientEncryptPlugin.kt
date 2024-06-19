@@ -31,22 +31,19 @@ object SignalClientEncryptPlugin : HttpClientPlugin<SignalConfig, SignalClientEn
         scope: HttpClient,
     ) {
         scope.sendPipeline.intercept(HttpSendPipeline.State) {
-            context.headers["appInstanceId"]?.let {
+            context.headers["targetAppInstanceId"]?.let { targetAppInstanceId ->
                 context.headers["signal"]?.let { signal ->
                     if (signal == "1") {
                         val originalContent = context.body as? OutgoingContent.ByteArrayContent
                         originalContent?.let {
-                            context.headers["targetAppInstanceId"]?.let { targetAppInstanceId ->
-                                logger.debug { "signal client encrypt $targetAppInstanceId" }
-                                val signalProtocolAddress = SignalProtocolAddress(targetAppInstanceId, 1)
-                                val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
-                                val ciphertextMessage = sessionCipher.encrypt(it.bytes())
-                                val encryptedData = ciphertextMessage.serialize()
-                                context.body = ByteArrayContent(encryptedData, contentType = ContentType.Application.Json)
-                                proceedWith(context.body)
-                            } ?: run {
-                                throw IllegalStateException("targetAppInstanceId is null")
-                            }
+                            logger.debug { "signal client encrypt $targetAppInstanceId" }
+                            val signalProtocolAddress = SignalProtocolAddress(targetAppInstanceId, 1)
+                            val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
+                            val ciphertextMessage = sessionCipher.encrypt(it.bytes())
+                            val encryptedData = ciphertextMessage.serialize()
+                            // Current all client requests use the Json protocol
+                            context.body = ByteArrayContent(encryptedData, contentType = ContentType.Application.Json)
+                            proceedWith(context.body)
                         }
                     }
                 }

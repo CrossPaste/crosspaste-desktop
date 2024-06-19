@@ -62,8 +62,8 @@ class DesktopClipServer(private val configManager: ConfigManager) : ClipServer {
                 }
                 signalExceptionHandler()
             }
-            install(SIGNAL_SERVER_DECRYPT_PLUGIN) {}
-            install(SIGNAL_SERVER_ENCRYPT_PLUGIN) {}
+            install(SIGNAL_SERVER_ENCRYPT_PLUGIN)
+            install(SIGNAL_SERVER_DECRYPT_PLUGIN)
             intercept(ApplicationCallPipeline.Setup) {
                 logger.info { "Received request: ${call.request.httpMethod.value} ${call.request.uri} ${call.request.contentType()}" }
             }

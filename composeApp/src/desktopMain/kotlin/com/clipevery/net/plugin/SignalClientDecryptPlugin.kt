@@ -5,6 +5,7 @@ import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.plugins.*
+import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.util.*
 import io.ktor.utils.io.*
@@ -31,19 +32,31 @@ object SignalClientDecryptPlugin : HttpClientPlugin<SignalConfig, SignalClientDe
         plugin: SignalClientDecryptPlugin,
         scope: HttpClient,
     ) {
-        scope.receivePipeline.intercept(HttpReceivePipeline.State) {
-            val byteReadChannel: ByteReadChannel = it.content
+        scope.receivePipeline.intercept(HttpReceivePipeline.Before) {
             val headers = it.call.request.headers
             headers["targetAppInstanceId"]?.let { appInstanceId ->
                 headers["signal"]?.let { signal ->
                     if (signal == "1") {
                         logger.debug { "signal client decrypt $appInstanceId" }
+                        val byteReadChannel: ByteReadChannel = it.content
                         val bytes = byteReadChannel.readRemaining().readBytes()
                         val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
                         val signalMessage = SignalMessage(bytes)
                         val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
                         val decrypt = sessionCipher.decrypt(signalMessage)
-                        it.content.readFully(decrypt)
+
+                        // Create a new ByteReadChannel to contain the decrypted content
+                        val newChannel = ByteReadChannel(decrypt)
+                        val responseData =
+                            HttpResponseData(
+                                it.status,
+                                it.requestTime,
+                                it.headers,
+                                it.version,
+                                newChannel,
+                                it.coroutineContext,
+                            )
+                        proceedWith(DefaultHttpResponse(it.call, responseData))
                     }
                 }
             }
