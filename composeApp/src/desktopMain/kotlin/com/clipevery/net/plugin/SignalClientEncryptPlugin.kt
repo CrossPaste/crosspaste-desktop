@@ -34,16 +34,18 @@ object SignalClientEncryptPlugin : HttpClientPlugin<SignalConfig, SignalClientEn
             context.headers["targetAppInstanceId"]?.let { targetAppInstanceId ->
                 context.headers["signal"]?.let { signal ->
                     if (signal == "1") {
-                        val originalContent = context.body as? OutgoingContent.ByteArrayContent
-                        originalContent?.let {
-                            logger.debug { "signal client encrypt $targetAppInstanceId" }
-                            val signalProtocolAddress = SignalProtocolAddress(targetAppInstanceId, 1)
-                            val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
-                            val ciphertextMessage = sessionCipher.encrypt(it.bytes())
-                            val encryptedData = ciphertextMessage.serialize()
+                        logger.debug { "signal client encrypt $targetAppInstanceId" }
+                        when (context.body) {
                             // Current all client requests use the Json protocol
-                            context.body = ByteArrayContent(encryptedData, contentType = ContentType.Application.Json)
-                            proceedWith(context.body)
+                            is OutgoingContent.ByteArrayContent -> {
+                                val originalContent = context.body as OutgoingContent.ByteArrayContent
+                                val signalProtocolAddress = SignalProtocolAddress(targetAppInstanceId, 1)
+                                val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
+                                val ciphertextMessage = sessionCipher.encrypt(originalContent.bytes())
+                                val encryptedData = ciphertextMessage.serialize()
+                                context.body = ByteArrayContent(encryptedData, contentType = ContentType.Application.Json)
+                                proceedWith(context.body)
+                            }
                         }
                     }
                 }

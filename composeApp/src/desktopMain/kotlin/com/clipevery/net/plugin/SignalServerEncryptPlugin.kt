@@ -8,8 +8,12 @@ import io.ktor.server.response.*
 import io.ktor.util.pipeline.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.SignalProtocolAddress
+import java.nio.ByteBuffer
 
 val SIGNAL_SERVER_ENCRYPT_PLUGIN: ApplicationPlugin<SignalConfig> =
     createApplicationPlugin(
@@ -26,9 +30,9 @@ val SIGNAL_SERVER_ENCRYPT_PLUGIN: ApplicationPlugin<SignalConfig> =
             headers["appInstanceId"]?.let { appInstanceId ->
                 headers["signal"]?.let {
                     logger.debug { "signal server encrypt $appInstanceId" }
+                    val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
+                    val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
                     transformBodyTo(body) { bytes ->
-                        val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
-                        val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
                         val ciphertextMessage = sessionCipher.encrypt(bytes)
                         ciphertextMessage.serialize()
                     }
@@ -39,6 +43,9 @@ val SIGNAL_SERVER_ENCRYPT_PLUGIN: ApplicationPlugin<SignalConfig> =
 
 object EncryptResponse :
     Hook<suspend EncryptResponse.Context.(ApplicationCall, OutgoingContent) -> Unit> {
+
+    val ioCoroutineDispatcher = CoroutineScope(Dispatchers.IO)
+
     class Context(private val context: PipelineContext<Any, ApplicationCall>) {
         suspend fun transformBodyTo(
             body: OutgoingContent,
@@ -56,12 +63,49 @@ object EncryptResponse :
                 }
 
                 is OutgoingContent.WriteChannelContent -> {
-                    val byteChannel = ByteChannel(true)
-                    body.writeTo(byteChannel)
-                    byteChannel.flush()
-                    byteChannel.close()
-                    val bytes = byteChannel.readRemaining().readBytes()
-                    context.subject = ByteArrayContent(encrypt(bytes), contentType = body.contentType, status = body.status)
+                    val producer: suspend ByteWriteChannel.() -> Unit = {
+                        val encryptChannel: ByteWriteChannel = this
+                        val originChannel = ByteChannel(true)
+                        val byteBuffer = ByteBuffer.allocateDirect(81920)
+
+                        val deferred =
+                            ioCoroutineDispatcher.async {
+                                while (true) {
+                                    byteBuffer.clear()
+                                    val size = originChannel.readAvailable(byteBuffer)
+                                    if (size < 0) break
+                                    if (size == 0) continue
+                                    byteBuffer.flip()
+                                    val byteArray = ByteArray(byteBuffer.remaining())
+                                    byteBuffer.get(byteArray)
+                                    var offset = 0
+                                    do {
+                                        val transformedBytes = encrypt(byteArray)
+                                        encryptChannel.writeInt(transformedBytes.size)
+                                        val availableSize =
+                                            encryptChannel.writeAvailable(
+                                                transformedBytes,
+                                                offset,
+                                                transformedBytes.size - offset,
+                                            )
+                                        offset += availableSize
+                                    } while (size > offset)
+                                }
+                            }
+
+                        body.writeTo(originChannel)
+                        originChannel.close()
+
+                        deferred.await()
+                    }
+
+                    val content =
+                        ChannelWriterContent(
+                            body = producer,
+                            contentType = body.contentType,
+                            status = body.status,
+                        )
+                    context.subject = content
                 }
 
                 else -> {
