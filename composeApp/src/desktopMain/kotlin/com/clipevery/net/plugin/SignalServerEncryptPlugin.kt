@@ -78,10 +78,10 @@ object EncryptResponse :
                                     byteBuffer.flip()
                                     val byteArray = ByteArray(byteBuffer.remaining())
                                     byteBuffer.get(byteArray)
+                                    val transformedBytes = encrypt(byteArray)
+                                    encryptChannel.writeInt(transformedBytes.size)
                                     var offset = 0
                                     do {
-                                        val transformedBytes = encrypt(byteArray)
-                                        encryptChannel.writeInt(transformedBytes.size)
                                         val availableSize =
                                             encryptChannel.writeAvailable(
                                                 transformedBytes,
@@ -89,7 +89,7 @@ object EncryptResponse :
                                                 transformedBytes.size - offset,
                                             )
                                         offset += availableSize
-                                    } while (size > offset)
+                                    } while (transformedBytes.size > offset)
                                 }
                             }
 
