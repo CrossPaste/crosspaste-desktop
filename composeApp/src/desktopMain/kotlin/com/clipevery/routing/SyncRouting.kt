@@ -10,6 +10,7 @@ import com.clipevery.dto.sync.RequestTrust
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.exception.StandardErrorCode
 import com.clipevery.serializer.PreKeyBundleSerializer
+import com.clipevery.signal.SignalProcessorCache
 import com.clipevery.sync.SyncManager
 import com.clipevery.utils.DesktopJsonUtils
 import com.clipevery.utils.failResponse
@@ -21,7 +22,6 @@ import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import org.signal.libsignal.protocol.InvalidMessageException
 import org.signal.libsignal.protocol.NoSessionException
-import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.SignalProtocolAddress
 import org.signal.libsignal.protocol.message.PreKeySignalMessage
 import org.signal.libsignal.protocol.message.SignalMessage
@@ -40,6 +40,8 @@ fun Routing.syncRouting() {
     val signalDao = koinApplication.koin.get<SignalDao>()
 
     val signalProtocolStore = koinApplication.koin.get<SignalProtocolStore>()
+
+    val signalProcessorCache = koinApplication.koin.get<SignalProcessorCache>()
 
     val syncManager = koinApplication.koin.get<SyncManager>()
 
@@ -93,14 +95,13 @@ fun Routing.syncRouting() {
         getAppInstanceId(call)?.let { appInstanceId ->
             val dataContent = call.receive(DataContent::class)
             val bytes = dataContent.data
-            val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
-            val identityKey = signalProtocolStore.getIdentity(signalProtocolAddress)
-            val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
+            val processor = signalProcessorCache.getSignalMessageProcessor(appInstanceId)
+            val identityKey = signalProtocolStore.getIdentity(processor.signalProtocolAddress)
             var decrypt: ByteArray? = null
             if (identityKey != null) {
                 try {
                     val signalMessage = SignalMessage(bytes)
-                    decrypt = sessionCipher.decrypt(signalMessage)
+                    decrypt = processor.decrypt(signalMessage)
                 } catch (ignore: InvalidMessageException) {
                 } catch (ignore: NoSessionException) {
                 }
@@ -113,10 +114,10 @@ fun Routing.syncRouting() {
 
                 if (signalProtocolStore.containsSignedPreKey(signedPreKeyId)) {
                     signalProtocolStore.saveIdentity(
-                        signalProtocolAddress,
+                        processor.signalProtocolAddress,
                         preKeySignalMessage.identityKey,
                     )
-                    decrypt = sessionCipher.decrypt(preKeySignalMessage)
+                    decrypt = processor.decrypt(preKeySignalMessage)
                 } else {
                     logger.debug { "$appInstanceId exchangeSyncInfo to ${appInfo.appInstanceId}, not contain signedPreKeyId" }
                     failResponse(call, StandardErrorCode.SIGNAL_INVALID_KEY_ID.toErrorCode())
@@ -125,7 +126,7 @@ fun Routing.syncRouting() {
             }
 
             try {
-                val syncInfo = DesktopJsonUtils.JSON.decodeFromString<SyncInfo>(String(decrypt!!, Charsets.UTF_8))
+                val syncInfo = DesktopJsonUtils.JSON.decodeFromString<SyncInfo>(String(decrypt, Charsets.UTF_8))
                 syncManager.updateSyncInfo(syncInfo)
                 logger.debug { "$appInstanceId exchangeSyncInfo to ${appInfo.appInstanceId} success" }
                 successResponse(call)

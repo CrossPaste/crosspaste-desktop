@@ -1,15 +1,13 @@
 package com.clipevery.net.plugin
 
+import com.clipevery.signal.SignalProcessorCache
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.*
 import io.ktor.server.application.hooks.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
-import org.signal.libsignal.protocol.SessionCipher
-import org.signal.libsignal.protocol.SignalProtocolAddress
 import org.signal.libsignal.protocol.message.SignalMessage
-import org.signal.libsignal.protocol.state.SignalProtocolStore
 import java.nio.ByteBuffer
 
 val SIGNAL_SERVER_DECRYPT_PLUGIN: ApplicationPlugin<SignalConfig> =
@@ -20,7 +18,7 @@ val SIGNAL_SERVER_DECRYPT_PLUGIN: ApplicationPlugin<SignalConfig> =
 
         val logger: KLogger = KotlinLogging.logger {}
 
-        val signalProtocolStore: SignalProtocolStore = pluginConfig.signalProtocolStore
+        val signalProcessorCache: SignalProcessorCache = pluginConfig.signalProcessorCache
 
         on(ReceiveRequestBytes) { call, body ->
             val headers = call.request.headers
@@ -29,12 +27,15 @@ val SIGNAL_SERVER_DECRYPT_PLUGIN: ApplicationPlugin<SignalConfig> =
                     if (signal == "1") {
                         logger.debug { "signal server decrypt $appInstanceId" }
                         return@on application.writer {
-                            val encryptedContent = body.readRemaining().readBytes()
-                            val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
-                            val signalMessage = SignalMessage(encryptedContent)
-                            val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
-                            val decrypt = sessionCipher.decrypt(signalMessage)
-                            channel.writeFully(ByteBuffer.wrap(decrypt))
+                            try {
+                                val processor = signalProcessorCache.getSignalMessageProcessor(appInstanceId)
+                                val encryptedContent = body.readRemaining().readBytes()
+                                val signalMessage = SignalMessage(encryptedContent)
+                                val decrypt = processor.decrypt(signalMessage)
+                                channel.writeFully(ByteBuffer.wrap(decrypt))
+                            } catch (e: Exception) {
+                                logger.error { "Error decrypting $appInstanceId signal message: $e" }
+                            }
                         }.channel
                     }
                 }

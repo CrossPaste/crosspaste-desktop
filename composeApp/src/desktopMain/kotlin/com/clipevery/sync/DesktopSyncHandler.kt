@@ -10,6 +10,7 @@ import com.clipevery.net.SyncInfoFactory
 import com.clipevery.net.clientapi.FailureResult
 import com.clipevery.net.clientapi.SuccessResult
 import com.clipevery.net.clientapi.SyncClientApi
+import com.clipevery.signal.SignalProcessorCache
 import com.clipevery.utils.DesktopNetUtils.hostPreFixMatch
 import com.clipevery.utils.TelnetUtils
 import com.clipevery.utils.buildUrl
@@ -23,8 +24,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.signal.libsignal.protocol.SessionBuilder
-import org.signal.libsignal.protocol.SessionCipher
-import org.signal.libsignal.protocol.SignalProtocolAddress
 import org.signal.libsignal.protocol.state.PreKeyBundle
 import org.signal.libsignal.protocol.state.SignalProtocolStore
 import kotlin.math.min
@@ -36,6 +35,7 @@ class DesktopSyncHandler(
     private val syncInfoFactory: SyncInfoFactory,
     private val syncClientApi: SyncClientApi,
     private val signalProtocolStore: SignalProtocolStore,
+    private val signalProcessorCache: SignalProcessorCache,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
     private val signalDao: SignalDao,
     scope: CoroutineScope,
@@ -43,9 +43,7 @@ class DesktopSyncHandler(
 
     private val logger = KotlinLogging.logger {}
 
-    private val signalProtocolAddress = SignalProtocolAddress(syncRuntimeInfo.appInstanceId, 1)
-
-    override val sessionCipher: SessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
+    override val signalProcessor = signalProcessorCache.getSignalMessageProcessor(syncRuntimeInfo.appInstanceId)
 
     override var recommendedRefreshTime: Long = 0L
 
@@ -290,7 +288,7 @@ class DesktopSyncHandler(
                         val preKeyBundle = preKeyBundleResult.getResult<PreKeyBundle>()
                         val sessionBuilder = createSessionBuilder()
                         try {
-                            signalProtocolStore.saveIdentity(signalProtocolAddress, preKeyBundle.identityKey)
+                            signalProtocolStore.saveIdentity(signalProcessor.signalProtocolAddress, preKeyBundle.identityKey)
                             sessionBuilder.process(preKeyBundle)
                         } catch (e: Exception) {
                             logger.warn(e) { "createSession exchangeSyncInfo fail" }
@@ -329,7 +327,7 @@ class DesktopSyncHandler(
         val result =
             syncClientApi.exchangeSyncInfo(
                 getCurrentSyncInfo(),
-                sessionCipher,
+                signalProcessor,
             ) { urlBuilder ->
                 buildUrl(urlBuilder, host, port)
             }
@@ -408,14 +406,15 @@ class DesktopSyncHandler(
     }
 
     private fun isExistSession(): Boolean {
-        return signalProtocolStore.loadSession(signalProtocolAddress) != null
+        return signalProtocolStore.loadSession(signalProcessor.signalProtocolAddress) != null
     }
 
     private fun createSessionBuilder(): SessionBuilder {
-        return SessionBuilder(signalProtocolStore, signalProtocolAddress)
+        return SessionBuilder(signalProtocolStore, signalProcessor.signalProtocolAddress)
     }
 
     override suspend fun clearContext() {
+        signalProcessorCache.removeSignalMessageProcessor(syncRuntimeInfo.appInstanceId)
         signalDao.deleteSession(syncRuntimeInfo.appInstanceId)
         signalDao.deleteIdentity(syncRuntimeInfo.appInstanceId)
         syncRuntimeInfo.connectHostAddress?.let { host ->

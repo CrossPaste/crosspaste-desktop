@@ -1,11 +1,11 @@
 package com.clipevery.net.plugin
 
 import com.clipevery.Clipevery
+import com.clipevery.signal.SignalProcessorCache
 import io.ktor.util.*
-import org.signal.libsignal.protocol.state.SignalProtocolStore
 
 @KtorDsl
 class SignalConfig {
 
-    val signalProtocolStore: SignalProtocolStore = Clipevery.koinApplication.koin.get()
+    val signalProcessorCache: SignalProcessorCache = Clipevery.koinApplication.koin.get()
 }

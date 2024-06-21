@@ -98,6 +98,8 @@ import com.clipevery.net.clientapi.DesktopSyncClientApi
 import com.clipevery.net.clientapi.PullClientApi
 import com.clipevery.net.clientapi.SendClipClientApi
 import com.clipevery.net.clientapi.SyncClientApi
+import com.clipevery.net.plugin.SignalClientDecryptPlugin
+import com.clipevery.net.plugin.SignalClientEncryptPlugin
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.path.PathProvider
 import com.clipevery.platform.currentPlatform
@@ -109,6 +111,8 @@ import com.clipevery.signal.DesktopPreKeyStore
 import com.clipevery.signal.DesktopSessionStore
 import com.clipevery.signal.DesktopSignalProtocolStore
 import com.clipevery.signal.DesktopSignedPreKeyStore
+import com.clipevery.signal.SignalProcessorCache
+import com.clipevery.signal.SignalProcessorCacheImpl
 import com.clipevery.signal.getClipIdentityKeyStoreFactory
 import com.clipevery.sync.DesktopDeviceManager
 import com.clipevery.sync.DesktopQRCodeGenerator
@@ -223,14 +227,14 @@ class Clipevery {
                     single<ClipTaskDao> { ClipTaskRealm(get<RealmManager>().realm) }
 
                     // net component
-                    single<ClipClient> { DesktopClipClient(get<AppInfo>()) }
+                    single<ClipClient> { DesktopClipClient(get<AppInfo>(), get(), get()) }
                     single<ClipServer> { DesktopClipServer(get<ConfigManager>()) }
                     single<ClipBonjourService> { DesktopClipBonjourService(get(), get(), get()) }
                     single<TelnetUtils> { TelnetUtils(get<ClipClient>()) }
                     single<SyncClientApi> { DesktopSyncClientApi(get(), get()) }
                     single<SendClipClientApi> { DesktopSendClipClientApi(get(), get()) }
                     single<PullClientApi> { DesktopPullClientApi(get(), get()) }
-                    single { DesktopSyncManager(get(), get(), get(), get(), get(), get(), lazy { get() }) }
+                    single { DesktopSyncManager(get(), get(), get(), get(), get(), get(), get(), lazy { get() }) }
                     single<SyncRefresher> { get<DesktopSyncManager>() }
                     single<SyncManager> { get<DesktopSyncManager>() }
                     single<DeviceManager> { DesktopDeviceManager(get(), get(), get()) }
@@ -242,6 +246,9 @@ class Clipevery {
                     single<PreKeyStore> { DesktopPreKeyStore(get()) }
                     single<SignedPreKeyStore> { DesktopSignedPreKeyStore(get()) }
                     single<SignalProtocolStore> { DesktopSignalProtocolStore(get(), get(), get(), get()) }
+                    single<SignalProcessorCache> { SignalProcessorCacheImpl(get()) }
+                    single<SignalClientEncryptPlugin> { SignalClientEncryptPlugin(get()) }
+                    single<SignalClientDecryptPlugin> { SignalClientDecryptPlugin(get()) }
 
                     // clip component
                     single<ClipboardService> { getDesktopClipboardService(get(), get(), get(), get(), get()) }

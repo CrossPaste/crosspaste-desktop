@@ -1,8 +1,8 @@
 package com.clipevery.net.clientapi
 
 import com.clipevery.dto.sync.SyncInfo
+import com.clipevery.signal.SignalMessageProcessor
 import io.ktor.http.*
-import org.signal.libsignal.protocol.SessionCipher
 
 interface SyncClientApi {
 
@@ -10,7 +10,7 @@ interface SyncClientApi {
 
     suspend fun exchangeSyncInfo(
         syncInfo: SyncInfo,
-        sessionCipher: SessionCipher,
+        signalMessageProcessor: SignalMessageProcessor,
         toUrl: URLBuilder.(URLBuilder) -> Unit,
     ): ClientApiResult
 

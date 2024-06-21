@@ -16,7 +16,11 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.util.reflect.*
 
-class DesktopClipClient(private val appInfo: AppInfo) : ClipClient {
+class DesktopClipClient(
+    private val appInfo: AppInfo,
+    private val signalClientEncryptPlugin: SignalClientEncryptPlugin,
+    private val signalClientDecryptPlugin: SignalClientDecryptPlugin,
+) : ClipClient {
 
     private val clientLogger = KotlinLogging.logger {}
 
@@ -36,8 +40,8 @@ class DesktopClipClient(private val appInfo: AppInfo) : ClipClient {
             install(ContentNegotiation) {
                 json(DesktopJsonUtils.JSON, ContentType.Application.Json)
             }
-            install(SignalClientEncryptPlugin)
-            install(SignalClientDecryptPlugin)
+            install(signalClientEncryptPlugin)
+            install(signalClientDecryptPlugin)
         }
 
     override suspend fun <T : Any> post(

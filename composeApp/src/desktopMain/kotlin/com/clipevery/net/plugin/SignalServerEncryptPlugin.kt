@@ -1,5 +1,6 @@
 package com.clipevery.net.plugin
 
+import com.clipevery.signal.SignalProcessorCache
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.content.*
@@ -11,8 +12,6 @@ import io.ktor.utils.io.core.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import org.signal.libsignal.protocol.SessionCipher
-import org.signal.libsignal.protocol.SignalProtocolAddress
 import java.nio.ByteBuffer
 
 val SIGNAL_SERVER_ENCRYPT_PLUGIN: ApplicationPlugin<SignalConfig> =
@@ -23,18 +22,16 @@ val SIGNAL_SERVER_ENCRYPT_PLUGIN: ApplicationPlugin<SignalConfig> =
 
         val logger: KLogger = KotlinLogging.logger {}
 
-        val signalProtocolStore = pluginConfig.signalProtocolStore
+        val signalProcessorCache: SignalProcessorCache = pluginConfig.signalProcessorCache
 
         on(EncryptResponse) { call, body ->
             val headers = call.request.headers
             headers["appInstanceId"]?.let { appInstanceId ->
                 headers["signal"]?.let {
                     logger.debug { "signal server encrypt $appInstanceId" }
-                    val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
-                    val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
+                    val processor = signalProcessorCache.getSignalMessageProcessor(appInstanceId)
                     transformBodyTo(body) { bytes ->
-                        val ciphertextMessage = sessionCipher.encrypt(bytes)
-                        ciphertextMessage.serialize()
+                        processor.encrypt(bytes).serialize()
                     }
                 }
             }

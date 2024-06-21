@@ -13,6 +13,7 @@ import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.net.SyncInfoFactory
 import com.clipevery.net.SyncRefresher
 import com.clipevery.net.clientapi.SyncClientApi
+import com.clipevery.signal.SignalProcessorCache
 import com.clipevery.utils.TelnetUtils
 import com.clipevery.utils.ioDispatcher
 import com.clipevery.utils.mainDispatcher
@@ -35,6 +36,7 @@ class DesktopSyncManager(
     private val syncInfoFactory: SyncInfoFactory,
     private val syncClientApi: SyncClientApi,
     private val signalProtocolStore: SignalProtocolStore,
+    private val signalProcessorCache: SignalProcessorCache,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
     private val signalDao: SignalDao,
     lazyDeviceManager: Lazy<DeviceManager>,
@@ -73,6 +75,7 @@ class DesktopSyncManager(
                             syncInfoFactory,
                             syncClientApi,
                             signalProtocolStore,
+                            signalProcessorCache,
                             syncRuntimeInfoDao,
                             signalDao,
                             realTimeSyncScope,
@@ -105,6 +108,7 @@ class DesktopSyncManager(
                                     syncInfoFactory,
                                     syncClientApi,
                                     signalProtocolStore,
+                                    signalProcessorCache,
                                     syncRuntimeInfoDao,
                                     signalDao,
                                     realTimeSyncScope,

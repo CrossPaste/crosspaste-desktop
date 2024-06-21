@@ -1,6 +1,6 @@
 package com.clipevery.net.plugin
 
-import com.clipevery.Clipevery
+import com.clipevery.signal.SignalProcessorCache
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
@@ -11,22 +11,18 @@ import io.ktor.http.*
 import io.ktor.util.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
-import org.signal.libsignal.protocol.SessionCipher
-import org.signal.libsignal.protocol.SignalProtocolAddress
 import org.signal.libsignal.protocol.message.SignalMessage
-import org.signal.libsignal.protocol.state.SignalProtocolStore
 import java.io.ByteArrayOutputStream
 
-object SignalClientDecryptPlugin : HttpClientPlugin<SignalConfig, SignalClientDecryptPlugin> {
+class SignalClientDecryptPlugin(private val signalProcessorCache: SignalProcessorCache) :
+    HttpClientPlugin<SignalConfig, SignalClientDecryptPlugin> {
 
     private val logger: KLogger = KotlinLogging.logger {}
 
     override val key = AttributeKey<SignalClientDecryptPlugin>("SignalClientDecryptPlugin")
 
-    private val signalProtocolStore: SignalProtocolStore = Clipevery.koinApplication.koin.get()
-
     override fun prepare(block: SignalConfig.() -> Unit): SignalClientDecryptPlugin {
-        return SignalClientDecryptPlugin
+        return this
     }
 
     @OptIn(InternalAPI::class)
@@ -44,12 +40,12 @@ object SignalClientDecryptPlugin : HttpClientPlugin<SignalConfig, SignalClientDe
 
                         val contentType = it.call.response.contentType()
 
+                        val processor = signalProcessorCache.getSignalMessageProcessor(appInstanceId)
+
                         if (contentType == ContentType.Application.Json) {
                             val bytes = byteReadChannel.readRemaining().readBytes()
-                            val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
                             val signalMessage = SignalMessage(bytes)
-                            val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
-                            val decrypt = sessionCipher.decrypt(signalMessage)
+                            val decrypt = processor.decrypt(signalMessage)
 
                             // Create a new ByteReadChannel to contain the decrypted content
                             val newChannel = ByteReadChannel(decrypt)
@@ -64,9 +60,6 @@ object SignalClientDecryptPlugin : HttpClientPlugin<SignalConfig, SignalClientDe
                                 )
                             proceedWith(DefaultHttpResponse(it.call, responseData))
                         } else if (contentType == ContentType.Application.OctetStream) {
-                            val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
-                            val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
-
                             val result = ByteArrayOutputStream()
                             while (!byteReadChannel.isClosedForRead) {
                                 val size = byteReadChannel.readInt()
@@ -78,7 +71,7 @@ object SignalClientDecryptPlugin : HttpClientPlugin<SignalConfig, SignalClientDe
                                     bytesRead += currentRead
                                 }
                                 val signalMessage = SignalMessage(byteArray)
-                                result.write(sessionCipher.decrypt(signalMessage))
+                                result.write(processor.decrypt(signalMessage))
                             }
                             val newChannel = ByteReadChannel(result.toByteArray())
                             val responseData =
