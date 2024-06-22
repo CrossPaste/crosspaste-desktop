@@ -234,7 +234,7 @@ compose.desktop {
             jvmArgs("-DglobalListener=$globalListener")
             jvmArgs("-Dcompose.interop.blending=true")
             jvmArgs("-Dio.netty.maxDirectMemory=268435456")
-            jvmArgs("-DloggerDebugPackages=com.clipevery.routing,com.clipevery.net.clientapi")
+            jvmArgs("-DloggerDebugPackages=com.clipevery.routing,com.clipevery.net.clientapi,com.clipevery.net.plugin")
 
             // Add download info of jbr on all platforms
             val jbrYamlFile = project.projectDir.toPath().resolve("jbr.yaml").toFile()

@@ -5,6 +5,7 @@ import com.clipevery.dto.sync.RequestTrust
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.net.ClipClient
 import com.clipevery.serializer.PreKeyBundleSerializer
+import com.clipevery.signal.SignalMessageProcessor
 import com.clipevery.utils.DesktopJsonUtils
 import com.clipevery.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -12,7 +13,6 @@ import io.ktor.client.call.*
 import io.ktor.http.*
 import io.ktor.util.reflect.*
 import kotlinx.serialization.encodeToString
-import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.state.SignalProtocolStore
 
 class DesktopSyncClientApi(
@@ -33,21 +33,41 @@ class DesktopSyncClientApi(
         }
     }
 
-    override suspend fun exchangeSyncInfo(
+    override suspend fun createSession(
         syncInfo: SyncInfo,
-        sessionCipher: SessionCipher,
+        signalMessageProcessor: SignalMessageProcessor,
         toUrl: URLBuilder.(URLBuilder) -> Unit,
     ): ClientApiResult {
         return request(logger, request = {
             val data = DesktopJsonUtils.JSON.encodeToString(syncInfo).toByteArray()
-            val ciphertextMessage = sessionCipher.encrypt(data)
+            val ciphertextMessage = signalMessageProcessor.encrypt(data)
             val dataContent = DataContent(data = ciphertextMessage.serialize())
             clipClient.post(
                 dataContent,
                 typeInfo<DataContent>(),
                 urlBuilder = {
                     toUrl(it)
-                    buildUrl(it, "sync", "exchangeSyncInfo")
+                    buildUrl(it, "sync", "createSession")
+                },
+            )
+        }, transformData = { true })
+    }
+
+    override suspend fun heartbeat(
+        syncInfo: SyncInfo,
+        signalMessageProcessor: SignalMessageProcessor,
+        toUrl: URLBuilder.(URLBuilder) -> Unit,
+    ): ClientApiResult {
+        return request(logger, request = {
+            val data = DesktopJsonUtils.JSON.encodeToString(syncInfo).toByteArray()
+            val ciphertextMessage = signalMessageProcessor.encrypt(data)
+            val dataContent = DataContent(data = ciphertextMessage.serialize())
+            clipClient.post(
+                dataContent,
+                typeInfo<DataContent>(),
+                urlBuilder = {
+                    toUrl(it)
+                    buildUrl(it, "sync", "heartbeat")
                 },
             )
         }, transformData = { true })

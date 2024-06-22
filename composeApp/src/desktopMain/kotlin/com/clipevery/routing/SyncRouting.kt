@@ -10,6 +10,7 @@ import com.clipevery.dto.sync.RequestTrust
 import com.clipevery.dto.sync.SyncInfo
 import com.clipevery.exception.StandardErrorCode
 import com.clipevery.serializer.PreKeyBundleSerializer
+import com.clipevery.signal.SignalProcessorCache
 import com.clipevery.sync.SyncManager
 import com.clipevery.utils.DesktopJsonUtils
 import com.clipevery.utils.failResponse
@@ -19,9 +20,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
-import org.signal.libsignal.protocol.InvalidMessageException
-import org.signal.libsignal.protocol.NoSessionException
-import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.SignalProtocolAddress
 import org.signal.libsignal.protocol.message.PreKeySignalMessage
 import org.signal.libsignal.protocol.message.SignalMessage
@@ -40,6 +38,8 @@ fun Routing.syncRouting() {
     val signalDao = koinApplication.koin.get<SignalDao>()
 
     val signalProtocolStore = koinApplication.koin.get<SignalProtocolStore>()
+
+    val signalProcessorCache = koinApplication.koin.get<SignalProcessorCache>()
 
     val syncManager = koinApplication.koin.get<SyncManager>()
 
@@ -89,48 +89,56 @@ fun Routing.syncRouting() {
         }
     }
 
-    post("/sync/exchangeSyncInfo") {
+    post("/sync/createSession") {
         getAppInstanceId(call)?.let { appInstanceId ->
             val dataContent = call.receive(DataContent::class)
             val bytes = dataContent.data
-            val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
-            val identityKey = signalProtocolStore.getIdentity(signalProtocolAddress)
-            val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
-            var decrypt: ByteArray? = null
-            if (identityKey != null) {
+            signalProcessorCache.removeSignalMessageProcessor(appInstanceId)
+            val processor = signalProcessorCache.getSignalMessageProcessor(appInstanceId)
+            val preKeySignalMessage = PreKeySignalMessage(bytes)
+
+            val signedPreKeyId = preKeySignalMessage.signedPreKeyId
+
+            if (signalProtocolStore.containsSignedPreKey(signedPreKeyId)) {
+                signalProtocolStore.saveIdentity(
+                    processor.signalProtocolAddress,
+                    preKeySignalMessage.identityKey,
+                )
+                val decrypt = processor.decrypt(preKeySignalMessage)
+
                 try {
-                    val signalMessage = SignalMessage(bytes)
-                    decrypt = sessionCipher.decrypt(signalMessage)
-                } catch (ignore: InvalidMessageException) {
-                } catch (ignore: NoSessionException) {
+                    val syncInfo = DesktopJsonUtils.JSON.decodeFromString<SyncInfo>(String(decrypt, Charsets.UTF_8))
+                    syncManager.updateSyncInfo(syncInfo)
+                    logger.info { "$appInstanceId createSession to ${appInfo.appInstanceId} success" }
+                    successResponse(call)
+                } catch (e: Exception) {
+                    logger.error(e) { "$appInstanceId createSession to ${appInfo.appInstanceId} fail" }
+                    failResponse(call, StandardErrorCode.SIGNAL_EXCHANGE_FAIL.toErrorCode())
                 }
+            } else {
+                logger.error { "$appInstanceId createSession to ${appInfo.appInstanceId}, not contain signedPreKeyId" }
+                failResponse(call, StandardErrorCode.SIGNAL_INVALID_KEY_ID.toErrorCode())
+                return@let
             }
+        }
+    }
 
-            if (decrypt == null) {
-                val preKeySignalMessage = PreKeySignalMessage(bytes)
-
-                val signedPreKeyId = preKeySignalMessage.signedPreKeyId
-
-                if (signalProtocolStore.containsSignedPreKey(signedPreKeyId)) {
-                    signalProtocolStore.saveIdentity(
-                        signalProtocolAddress,
-                        preKeySignalMessage.identityKey,
-                    )
-                    decrypt = sessionCipher.decrypt(preKeySignalMessage)
-                } else {
-                    logger.debug { "$appInstanceId exchangeSyncInfo to ${appInfo.appInstanceId}, not contain signedPreKeyId" }
-                    failResponse(call, StandardErrorCode.SIGNAL_INVALID_KEY_ID.toErrorCode())
-                    return@let
-                }
-            }
+    post("/sync/heartbeat") {
+        getAppInstanceId(call)?.let { appInstanceId ->
+            val dataContent = call.receive(DataContent::class)
+            val bytes = dataContent.data
+            val processor = signalProcessorCache.getSignalMessageProcessor(appInstanceId)
+            val signalMessage = SignalMessage(bytes)
+            val decrypt = processor.decrypt(signalMessage)
 
             try {
-                val syncInfo = DesktopJsonUtils.JSON.decodeFromString<SyncInfo>(String(decrypt!!, Charsets.UTF_8))
+                val syncInfo = DesktopJsonUtils.JSON.decodeFromString<SyncInfo>(String(decrypt, Charsets.UTF_8))
+                // todo check diff time to update
                 syncManager.updateSyncInfo(syncInfo)
-                logger.debug { "$appInstanceId exchangeSyncInfo to ${appInfo.appInstanceId} success" }
+                logger.debug { "$appInstanceId heartbeat to ${appInfo.appInstanceId} success" }
                 successResponse(call)
             } catch (e: Exception) {
-                logger.debug(e) { "$appInstanceId exchangeSyncInfo to ${appInfo.appInstanceId} fail" }
+                logger.error(e) { "$appInstanceId heartbeat to ${appInfo.appInstanceId} fail" }
                 failResponse(call, StandardErrorCode.SIGNAL_EXCHANGE_FAIL.toErrorCode())
             }
         }

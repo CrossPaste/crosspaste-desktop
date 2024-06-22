@@ -3,7 +3,8 @@ package com.clipevery.net
 import com.clipevery.config.ConfigManager
 import com.clipevery.exception.StandardErrorCode
 import com.clipevery.net.exception.signalExceptionHandler
-import com.clipevery.net.plugin.SignalServerDecryption
+import com.clipevery.net.plugin.SIGNAL_SERVER_DECRYPT_PLUGIN
+import com.clipevery.net.plugin.SIGNAL_SERVER_ENCRYPT_PLUGIN
 import com.clipevery.routing.clipRouting
 import com.clipevery.routing.pullRouting
 import com.clipevery.routing.syncRouting
@@ -61,8 +62,8 @@ class DesktopClipServer(private val configManager: ConfigManager) : ClipServer {
                 }
                 signalExceptionHandler()
             }
-            install(SignalServerDecryption) {
-            }
+            install(SIGNAL_SERVER_ENCRYPT_PLUGIN)
+            install(SIGNAL_SERVER_DECRYPT_PLUGIN)
             intercept(ApplicationCallPipeline.Setup) {
                 logger.info { "Received request: ${call.request.httpMethod.value} ${call.request.uri} ${call.request.contentType()}" }
             }

@@ -1,7 +1,8 @@
 package com.clipevery.net
 
 import com.clipevery.app.AppInfo
-import com.clipevery.net.plugin.SignalClientEncryption
+import com.clipevery.net.plugin.SignalClientDecryptPlugin
+import com.clipevery.net.plugin.SignalClientEncryptPlugin
 import com.clipevery.utils.DesktopJsonUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
@@ -15,7 +16,11 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.util.reflect.*
 
-class DesktopClipClient(private val appInfo: AppInfo) : ClipClient {
+class DesktopClipClient(
+    private val appInfo: AppInfo,
+    private val signalClientEncryptPlugin: SignalClientEncryptPlugin,
+    private val signalClientDecryptPlugin: SignalClientDecryptPlugin,
+) : ClipClient {
 
     private val clientLogger = KotlinLogging.logger {}
 
@@ -35,7 +40,8 @@ class DesktopClipClient(private val appInfo: AppInfo) : ClipClient {
             install(ContentNegotiation) {
                 json(DesktopJsonUtils.JSON, ContentType.Application.Json)
             }
-            install(SignalClientEncryption)
+            install(signalClientEncryptPlugin)
+            install(signalClientDecryptPlugin)
         }
 
     override suspend fun <T : Any> post(

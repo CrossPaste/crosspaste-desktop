@@ -1,7 +1,7 @@
 package com.clipevery.sync
 
 import com.clipevery.dao.sync.SyncRuntimeInfo
-import org.signal.libsignal.protocol.SessionCipher
+import com.clipevery.signal.SignalMessageProcessor
 
 interface SyncHandler {
 
@@ -9,7 +9,7 @@ interface SyncHandler {
 
     var syncRuntimeInfo: SyncRuntimeInfo
 
-    val sessionCipher: SessionCipher
+    val signalProcessor: SignalMessageProcessor
 
     suspend fun getConnectHostAddress(): String?
 
