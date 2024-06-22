@@ -12,6 +12,7 @@ import io.ktor.utils.io.core.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 
 val SIGNAL_SERVER_ENCRYPT_PLUGIN: ApplicationPlugin<SignalConfig> =
@@ -61,39 +62,41 @@ object EncryptResponse :
 
                 is OutgoingContent.WriteChannelContent -> {
                     val producer: suspend ByteWriteChannel.() -> Unit = {
-                        val encryptChannel: ByteWriteChannel = this
                         val originChannel = ByteChannel(true)
-                        val byteBuffer = ByteBuffer.allocateDirect(81920)
+                        val encryptChannel = this
+                        val targetBufferSize = 81920 // Target buffer size for each encryption operation
 
                         val deferred =
                             ioCoroutineDispatcher.async {
+                                val largeBuffer = ByteArrayOutputStream(targetBufferSize)
+                                val tempBuffer = ByteBuffer.allocateDirect(4096) // Temporary buffer for reading from the channel
+
                                 while (true) {
-                                    byteBuffer.clear()
-                                    val size = originChannel.readAvailable(byteBuffer)
-                                    if (size < 0) break
-                                    if (size == 0) continue
-                                    byteBuffer.flip()
-                                    val byteArray = ByteArray(byteBuffer.remaining())
-                                    byteBuffer.get(byteArray)
-                                    val transformedBytes = encrypt(byteArray)
-                                    encryptChannel.writeInt(transformedBytes.size)
-                                    var offset = 0
-                                    do {
-                                        val availableSize =
-                                            encryptChannel.writeAvailable(
-                                                transformedBytes,
-                                                offset,
-                                                transformedBytes.size - offset,
-                                            )
-                                        offset += availableSize
-                                    } while (transformedBytes.size > offset)
+                                    tempBuffer.clear()
+                                    val readSize = originChannel.readAvailable(tempBuffer)
+                                    if (readSize < 0 && largeBuffer.size() == 0) break // No more data to read and buffer is empty
+                                    if (readSize > 0) {
+                                        tempBuffer.flip()
+                                        val bytes = ByteArray(tempBuffer.remaining())
+                                        tempBuffer.get(bytes)
+                                        largeBuffer.write(bytes, 0, bytes.size) // Accumulate bytes into the large buffer
+                                    }
+
+                                    // Check if largeBuffer is filled or no more data is available to read
+                                    if (largeBuffer.size() >= targetBufferSize || (readSize < 0 && largeBuffer.size() > 0)) {
+                                        val byteArray = largeBuffer.toByteArray()
+                                        val encryptedData = encrypt(byteArray)
+                                        println("encryptedData.size = ${encryptedData.size}")
+                                        encryptChannel.writeInt(encryptedData.size)
+                                        encryptChannel.writeFully(encryptedData, 0, encryptedData.size)
+                                        largeBuffer.reset() // Reset the buffer after processing
+                                    }
                                 }
                             }
 
                         body.writeTo(originChannel)
-                        originChannel.close()
-
-                        deferred.await()
+                        originChannel.close() // Close the original channel after all data is written
+                        deferred.await() // Wait for all encryption and writing to complete
                     }
 
                     val content =

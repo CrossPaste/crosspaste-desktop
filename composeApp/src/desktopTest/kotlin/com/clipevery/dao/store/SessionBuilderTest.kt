@@ -1,5 +1,11 @@
 package com.clipevery.dao.store
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.signal.libsignal.protocol.DuplicateMessageException
 import org.signal.libsignal.protocol.InvalidKeyException
 import org.signal.libsignal.protocol.InvalidKeyIdException
@@ -192,6 +198,52 @@ class SessionBuilderTest {
             val outOfOrderPlaintext =
                 bobSessionCipher.decrypt(SignalMessage(aliceOutOfOrderMessage.second().serialize()))
             assertTrue(String(outOfOrderPlaintext) == aliceOutOfOrderMessage.first())
+        }
+    }
+
+    @Test
+    fun testConcurrent() {
+        val aliceStore: SignalProtocolStore = TestInMemorySignalProtocolStore()
+        val aliceSessionBuilder = SessionBuilder(aliceStore, aliceStore, aliceStore, aliceStore, BOB_ADDRESS)
+        val bobStore: SignalProtocolStore = TestInMemorySignalProtocolStore()
+        val bundleFactory = X3DHBundleFactory()
+        val bobPreKey: PreKeyBundle = bundleFactory.createBundle(bobStore)
+        aliceSessionBuilder.process(bobPreKey)
+        aliceStore.loadSession(BOB_ADDRESS)
+        val originalMessage = "Good, fast, cheap: pick two"
+        val aliceSessionCipher = SessionCipher(aliceStore, BOB_ADDRESS)
+        val outgoingMessage = aliceSessionCipher.encrypt(originalMessage.toByteArray())
+        val incomingMessage = PreKeySignalMessage(outgoingMessage.serialize())
+        val bobSessionCipher = SessionCipher(bobStore, ALICE_ADDRESS)
+        bobSessionCipher.decrypt(incomingMessage)
+        bobStore.loadSession(ALICE_ADDRESS)
+
+        val bobOutgoingMessage = bobSessionCipher.encrypt(originalMessage.toByteArray())
+        aliceSessionCipher.decrypt(SignalMessage(bobOutgoingMessage.serialize()))
+
+        val mutex = Mutex()
+
+        runBlocking {
+            // Encrypting the same message concurrently multiple times
+            val encryptedMessages =
+                List(10) {
+                    async(Dispatchers.Default) {
+                        mutex.withLock {
+                            aliceSessionCipher.encrypt(originalMessage.toByteArray())
+                        }
+                    }
+                }.awaitAll()
+
+            val counterSet: MutableSet<Int> = mutableSetOf()
+
+            encryptedMessages.forEachIndexed { index, encryptedMessage ->
+                val message = SignalMessage(encryptedMessage.serialize())
+                if (counterSet.contains(message.counter)) {
+                    fail("Duplicate message counter $index ${message.counter}")
+                } else {
+                    counterSet.add(message.counter)
+                }
+            }
         }
     }
 }

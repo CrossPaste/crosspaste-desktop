@@ -119,7 +119,7 @@ fun Routing.syncRouting() {
                     )
                     decrypt = processor.decrypt(preKeySignalMessage)
                 } else {
-                    logger.debug { "$appInstanceId exchangeSyncInfo to ${appInfo.appInstanceId}, not contain signedPreKeyId" }
+                    logger.error { "$appInstanceId exchangeSyncInfo to ${appInfo.appInstanceId}, not contain signedPreKeyId" }
                     failResponse(call, StandardErrorCode.SIGNAL_INVALID_KEY_ID.toErrorCode())
                     return@let
                 }
@@ -131,7 +131,7 @@ fun Routing.syncRouting() {
                 logger.debug { "$appInstanceId exchangeSyncInfo to ${appInfo.appInstanceId} success" }
                 successResponse(call)
             } catch (e: Exception) {
-                logger.debug(e) { "$appInstanceId exchangeSyncInfo to ${appInfo.appInstanceId} fail" }
+                logger.error(e) { "$appInstanceId exchangeSyncInfo to ${appInfo.appInstanceId} fail" }
                 failResponse(call, StandardErrorCode.SIGNAL_EXCHANGE_FAIL.toErrorCode())
             }
         }

@@ -249,8 +249,12 @@ class DesktopSyncHandler(
                 if (useSession(host, syncRuntimeInfo.port)) {
                     return@resolveConnecting
                 }
+                if (syncRuntimeInfo.connectState == SyncState.UNMATCHED) {
+                    createSession(host, syncRuntimeInfo.port)
+                }
+            } else {
+                createSession(host, syncRuntimeInfo.port)
             }
-            createSession(host, syncRuntimeInfo.port)
         } ?: run {
             logger.info { "${syncRuntimeInfo.platformName} to disconnected" }
             update {
