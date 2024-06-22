@@ -86,7 +86,6 @@ object EncryptResponse :
                                     if (largeBuffer.size() >= targetBufferSize || (readSize < 0 && largeBuffer.size() > 0)) {
                                         val byteArray = largeBuffer.toByteArray()
                                         val encryptedData = encrypt(byteArray)
-                                        println("encryptedData.size = ${encryptedData.size}")
                                         encryptChannel.writeInt(encryptedData.size)
                                         encryptChannel.writeFully(encryptedData, 0, encryptedData.size)
                                         largeBuffer.reset() // Reset the buffer after processing
