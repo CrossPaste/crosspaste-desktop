@@ -47,7 +47,7 @@ object EncryptResponse :
     class Context(private val context: PipelineContext<Any, ApplicationCall>) {
         suspend fun transformBodyTo(
             body: OutgoingContent,
-            encrypt: (ByteArray) -> ByteArray,
+            encrypt: suspend (ByteArray) -> ByteArray,
         ) {
             when (body) {
                 is OutgoingContent.ByteArrayContent -> {

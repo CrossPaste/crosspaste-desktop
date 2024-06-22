@@ -27,15 +27,11 @@ val SIGNAL_SERVER_DECRYPT_PLUGIN: ApplicationPlugin<SignalConfig> =
                     if (signal == "1") {
                         logger.debug { "signal server decrypt $appInstanceId" }
                         return@on application.writer {
-                            try {
-                                val processor = signalProcessorCache.getSignalMessageProcessor(appInstanceId)
-                                val encryptedContent = body.readRemaining().readBytes()
-                                val signalMessage = SignalMessage(encryptedContent)
-                                val decrypt = processor.decrypt(signalMessage)
-                                channel.writeFully(ByteBuffer.wrap(decrypt))
-                            } catch (e: Exception) {
-                                logger.error { "Error decrypting $appInstanceId signal message: $e" }
-                            }
+                            val processor = signalProcessorCache.getSignalMessageProcessor(appInstanceId)
+                            val encryptedContent = body.readRemaining().readBytes()
+                            val signalMessage = SignalMessage(encryptedContent)
+                            val decrypt = processor.decrypt(signalMessage)
+                            channel.writeFully(ByteBuffer.wrap(decrypt))
                         }.channel
                     }
                 }

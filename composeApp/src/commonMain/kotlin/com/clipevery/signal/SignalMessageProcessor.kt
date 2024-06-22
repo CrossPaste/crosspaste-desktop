@@ -9,7 +9,7 @@ interface SignalMessageProcessor {
 
     val signalProtocolAddress: SignalProtocolAddress
 
-    fun encrypt(data: ByteArray): CiphertextMessage
+    suspend fun encrypt(data: ByteArray): CiphertextMessage
 
     suspend fun decrypt(signalMessage: SignalMessage): ByteArray
 
