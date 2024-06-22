@@ -246,13 +246,17 @@ class DesktopSyncHandler(
     private suspend fun resolveConnecting() {
         syncRuntimeInfo.connectHostAddress?.let { host ->
             if (isExistSession()) {
-                if (useSession(host, syncRuntimeInfo.port)) {
+                if (heartbeat(host, syncRuntimeInfo.port)) {
                     return@resolveConnecting
                 }
                 if (syncRuntimeInfo.connectState == SyncState.UNMATCHED) {
+                    logger.info { "heartbeat fail and connectState is unmatched, create new session $host ${syncRuntimeInfo.port}" }
                     createSession(host, syncRuntimeInfo.port)
+                } else {
+                    logger.info { "heartbeat fail $host ${syncRuntimeInfo.port}" }
                 }
             } else {
+                logger.info { "not exist session to create session $host ${syncRuntimeInfo.port}" }
                 createSession(host, syncRuntimeInfo.port)
             }
         } ?: run {
@@ -264,11 +268,45 @@ class DesktopSyncHandler(
         }
     }
 
-    private suspend fun useSession(
+    private suspend fun heartbeat(
         host: String,
         port: Int,
     ): Boolean {
-        return exchangeSyncInfo(host, port)
+        val result =
+            syncClientApi.heartbeat(
+                getCurrentSyncInfo(),
+                signalProcessor,
+            ) { urlBuilder ->
+                buildUrl(urlBuilder, host, port)
+            }
+
+        when (result) {
+            is SuccessResult -> {
+                update {
+                    this.connectState = SyncState.CONNECTED
+                    this.modifyTime = RealmInstant.now()
+                }
+                return true
+            }
+
+            is FailureResult -> {
+                logger.info { "exchangeSyncInfo return fail state to unmatched $host $port" }
+                update {
+                    this.connectState = SyncState.UNMATCHED
+                    this.modifyTime = RealmInstant.now()
+                }
+                return false
+            }
+
+            else -> {
+                logger.info { "exchangeSyncInfo connect fail state to unmatched $host $port" }
+                update {
+                    this.connectState = SyncState.DISCONNECTED
+                    this.modifyTime = RealmInstant.now()
+                }
+                return false
+            }
+        }
     }
 
     private suspend fun createSession(
@@ -302,7 +340,37 @@ class DesktopSyncHandler(
                             }
                             return
                         }
-                        exchangeSyncInfo(host, port)
+                        val resultCreateSession =
+                            syncClientApi.createSession(
+                                getCurrentSyncInfo(),
+                                signalProcessor,
+                            ) { urlBuilder ->
+                                buildUrl(urlBuilder, host, port)
+                            }
+                        when (resultCreateSession) {
+                            is SuccessResult -> {
+                                update {
+                                    this.connectState = SyncState.CONNECTED
+                                    this.modifyTime = RealmInstant.now()
+                                }
+                            }
+
+                            is FailureResult -> {
+                                logger.info { "createSession return fail state to unmatched $host $port" }
+                                update {
+                                    this.connectState = SyncState.UNMATCHED
+                                    this.modifyTime = RealmInstant.now()
+                                }
+                            }
+
+                            else -> {
+                                logger.info { "createSession connect fail state to unmatched $host $port" }
+                                update {
+                                    this.connectState = SyncState.DISCONNECTED
+                                    this.modifyTime = RealmInstant.now()
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -320,47 +388,6 @@ class DesktopSyncHandler(
                     this.connectState = SyncState.DISCONNECTED
                     this.modifyTime = RealmInstant.now()
                 }
-            }
-        }
-    }
-
-    private suspend fun exchangeSyncInfo(
-        host: String,
-        port: Int,
-    ): Boolean {
-        val result =
-            syncClientApi.exchangeSyncInfo(
-                getCurrentSyncInfo(),
-                signalProcessor,
-            ) { urlBuilder ->
-                buildUrl(urlBuilder, host, port)
-            }
-
-        when (result) {
-            is SuccessResult -> {
-                update {
-                    this.connectState = SyncState.CONNECTED
-                    this.modifyTime = RealmInstant.now()
-                }
-                return true
-            }
-
-            is FailureResult -> {
-                logger.info { "exchangeSyncInfo return fail state to unmatched $host $port" }
-                update {
-                    this.connectState = SyncState.UNMATCHED
-                    this.modifyTime = RealmInstant.now()
-                }
-                return false
-            }
-
-            else -> {
-                logger.info { "exchangeSyncInfo connect fail state to unmatched $host $port" }
-                update {
-                    this.connectState = SyncState.DISCONNECTED
-                    this.modifyTime = RealmInstant.now()
-                }
-                return false
             }
         }
     }

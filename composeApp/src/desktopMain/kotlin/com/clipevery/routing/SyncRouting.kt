@@ -20,8 +20,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
-import org.signal.libsignal.protocol.InvalidMessageException
-import org.signal.libsignal.protocol.NoSessionException
 import org.signal.libsignal.protocol.SignalProtocolAddress
 import org.signal.libsignal.protocol.message.PreKeySignalMessage
 import org.signal.libsignal.protocol.message.SignalMessage
@@ -91,47 +89,56 @@ fun Routing.syncRouting() {
         }
     }
 
-    post("/sync/exchangeSyncInfo") {
+    post("/sync/createSession") {
+        getAppInstanceId(call)?.let { appInstanceId ->
+            val dataContent = call.receive(DataContent::class)
+            val bytes = dataContent.data
+            signalProcessorCache.removeSignalMessageProcessor(appInstanceId)
+            val processor = signalProcessorCache.getSignalMessageProcessor(appInstanceId)
+            val preKeySignalMessage = PreKeySignalMessage(bytes)
+
+            val signedPreKeyId = preKeySignalMessage.signedPreKeyId
+
+            if (signalProtocolStore.containsSignedPreKey(signedPreKeyId)) {
+                signalProtocolStore.saveIdentity(
+                    processor.signalProtocolAddress,
+                    preKeySignalMessage.identityKey,
+                )
+                val decrypt = processor.decrypt(preKeySignalMessage)
+
+                try {
+                    val syncInfo = DesktopJsonUtils.JSON.decodeFromString<SyncInfo>(String(decrypt, Charsets.UTF_8))
+                    syncManager.updateSyncInfo(syncInfo)
+                    logger.info { "$appInstanceId createSession to ${appInfo.appInstanceId} success" }
+                    successResponse(call)
+                } catch (e: Exception) {
+                    logger.error(e) { "$appInstanceId createSession to ${appInfo.appInstanceId} fail" }
+                    failResponse(call, StandardErrorCode.SIGNAL_EXCHANGE_FAIL.toErrorCode())
+                }
+            } else {
+                logger.error { "$appInstanceId createSession to ${appInfo.appInstanceId}, not contain signedPreKeyId" }
+                failResponse(call, StandardErrorCode.SIGNAL_INVALID_KEY_ID.toErrorCode())
+                return@let
+            }
+        }
+    }
+
+    post("/sync/heartbeat") {
         getAppInstanceId(call)?.let { appInstanceId ->
             val dataContent = call.receive(DataContent::class)
             val bytes = dataContent.data
             val processor = signalProcessorCache.getSignalMessageProcessor(appInstanceId)
-            val identityKey = signalProtocolStore.getIdentity(processor.signalProtocolAddress)
-            var decrypt: ByteArray? = null
-            if (identityKey != null) {
-                try {
-                    val signalMessage = SignalMessage(bytes)
-                    decrypt = processor.decrypt(signalMessage)
-                } catch (ignore: InvalidMessageException) {
-                } catch (ignore: NoSessionException) {
-                }
-            }
-
-            if (decrypt == null) {
-                val preKeySignalMessage = PreKeySignalMessage(bytes)
-
-                val signedPreKeyId = preKeySignalMessage.signedPreKeyId
-
-                if (signalProtocolStore.containsSignedPreKey(signedPreKeyId)) {
-                    signalProtocolStore.saveIdentity(
-                        processor.signalProtocolAddress,
-                        preKeySignalMessage.identityKey,
-                    )
-                    decrypt = processor.decrypt(preKeySignalMessage)
-                } else {
-                    logger.error { "$appInstanceId exchangeSyncInfo to ${appInfo.appInstanceId}, not contain signedPreKeyId" }
-                    failResponse(call, StandardErrorCode.SIGNAL_INVALID_KEY_ID.toErrorCode())
-                    return@let
-                }
-            }
+            val signalMessage = SignalMessage(bytes)
+            val decrypt = processor.decrypt(signalMessage)
 
             try {
                 val syncInfo = DesktopJsonUtils.JSON.decodeFromString<SyncInfo>(String(decrypt, Charsets.UTF_8))
+                // todo check diff time to update
                 syncManager.updateSyncInfo(syncInfo)
-                logger.debug { "$appInstanceId exchangeSyncInfo to ${appInfo.appInstanceId} success" }
+                logger.debug { "$appInstanceId heartbeat to ${appInfo.appInstanceId} success" }
                 successResponse(call)
             } catch (e: Exception) {
-                logger.error(e) { "$appInstanceId exchangeSyncInfo to ${appInfo.appInstanceId} fail" }
+                logger.error(e) { "$appInstanceId heartbeat to ${appInfo.appInstanceId} fail" }
                 failResponse(call, StandardErrorCode.SIGNAL_EXCHANGE_FAIL.toErrorCode())
             }
         }

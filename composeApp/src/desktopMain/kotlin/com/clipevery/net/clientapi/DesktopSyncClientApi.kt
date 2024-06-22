@@ -33,7 +33,7 @@ class DesktopSyncClientApi(
         }
     }
 
-    override suspend fun exchangeSyncInfo(
+    override suspend fun createSession(
         syncInfo: SyncInfo,
         signalMessageProcessor: SignalMessageProcessor,
         toUrl: URLBuilder.(URLBuilder) -> Unit,
@@ -47,7 +47,27 @@ class DesktopSyncClientApi(
                 typeInfo<DataContent>(),
                 urlBuilder = {
                     toUrl(it)
-                    buildUrl(it, "sync", "exchangeSyncInfo")
+                    buildUrl(it, "sync", "createSession")
+                },
+            )
+        }, transformData = { true })
+    }
+
+    override suspend fun heartbeat(
+        syncInfo: SyncInfo,
+        signalMessageProcessor: SignalMessageProcessor,
+        toUrl: URLBuilder.(URLBuilder) -> Unit,
+    ): ClientApiResult {
+        return request(logger, request = {
+            val data = DesktopJsonUtils.JSON.encodeToString(syncInfo).toByteArray()
+            val ciphertextMessage = signalMessageProcessor.encrypt(data)
+            val dataContent = DataContent(data = ciphertextMessage.serialize())
+            clipClient.post(
+                dataContent,
+                typeInfo<DataContent>(),
+                urlBuilder = {
+                    toUrl(it)
+                    buildUrl(it, "sync", "heartbeat")
                 },
             )
         }, transformData = { true })

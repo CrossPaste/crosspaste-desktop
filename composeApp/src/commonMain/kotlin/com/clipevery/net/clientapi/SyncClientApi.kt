@@ -8,7 +8,13 @@ interface SyncClientApi {
 
     suspend fun getPreKeyBundle(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult
 
-    suspend fun exchangeSyncInfo(
+    suspend fun createSession(
+        syncInfo: SyncInfo,
+        signalMessageProcessor: SignalMessageProcessor,
+        toUrl: URLBuilder.(URLBuilder) -> Unit,
+    ): ClientApiResult
+
+    suspend fun heartbeat(
         syncInfo: SyncInfo,
         signalMessageProcessor: SignalMessageProcessor,
         toUrl: URLBuilder.(URLBuilder) -> Unit,
