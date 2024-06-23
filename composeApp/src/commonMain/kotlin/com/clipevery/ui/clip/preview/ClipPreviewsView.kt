@@ -148,8 +148,6 @@ fun ClipPreviewsView() {
             EmptyScreenView()
         }
 
-        ShadowClipPreviewView(rememberClipDataList.size)
-
         VerticalScrollbar(
             modifier =
                 Modifier.background(color = Color.Transparent)
@@ -213,49 +211,6 @@ fun EmptyScreenView() {
                         lineHeight = 24.sp,
                     ),
             )
-        }
-    }
-}
-
-@Composable
-fun ShadowClipPreviewView(size: Int) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        if (size > 0) {
-            Row(
-                modifier =
-                    Modifier
-                        .height(12.dp)
-                        .fillMaxWidth()
-                        .background(
-                            brush =
-                                Brush.verticalGradient(
-                                    colors =
-                                        listOf(
-                                            MaterialTheme.colors.surface.copy(alpha = 0.32f),
-                                            MaterialTheme.colors.surface.copy(alpha = 0.0f),
-                                        ),
-                                ),
-                        ),
-            ) { }
-        }
-        Spacer(modifier = Modifier.weight(1f))
-        if (size >= 7) {
-            Row(
-                modifier =
-                    Modifier
-                        .height(12.dp)
-                        .fillMaxWidth()
-                        .background(
-                            brush =
-                                Brush.verticalGradient(
-                                    colors =
-                                        listOf(
-                                            MaterialTheme.colors.surface.copy(alpha = 0.0f),
-                                            MaterialTheme.colors.surface.copy(alpha = 0.32f),
-                                        ),
-                                ),
-                        ),
-            ) { }
         }
     }
 }

@@ -43,7 +43,7 @@ abstract class AbstractAppWindowManager : AppWindowManager {
         WindowState(
             placement = WindowPlacement.Floating,
             position = WindowPosition.PlatformDefault,
-            size = DpSize(width = 460.dp, height = 710.dp),
+            size = DpSize(width = 480.dp, height = 740.dp),
         ),
     )
 

@@ -75,13 +75,13 @@ fun ClipeveryWindow(hideWindow: suspend () -> Unit) {
                     }
                     .clip(RoundedCornerShape(10.dp))
                     .fillMaxSize()
-                    .padding(10.dp, 0.dp, 10.dp, 10.dp),
+                    .padding(20.dp, 0.dp, 20.dp, 30.dp),
             contentAlignment = Alignment.Center,
         ) {
             Box(
                 modifier =
                     Modifier
-                        .shadow(5.dp, RoundedCornerShape(10.dp), false)
+                        .shadow(10.dp, RoundedCornerShape(10.dp))
                         .fillMaxSize()
                         .border(1.dp, MaterialTheme.colors.onSurface.copy(alpha = 0.12f), RoundedCornerShape(10.dp))
                         .pointerInput(Unit) {
