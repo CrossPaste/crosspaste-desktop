@@ -24,6 +24,7 @@ repositories {
 }
 
 plugins {
+    alias(libs.plugins.compose.compiler)
     alias(libs.plugins.conveyor)
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.kotlinMultiplatform)

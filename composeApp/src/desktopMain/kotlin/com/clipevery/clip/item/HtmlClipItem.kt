@@ -26,6 +26,8 @@ import java.nio.file.Path
 @SerialName("html")
 class HtmlClipItem : RealmObject, ClipAppearItem, ClipHtml {
 
+    companion object {}
+
     @PrimaryKey
     @Transient
     override var id: ObjectId = BsonObjectId()

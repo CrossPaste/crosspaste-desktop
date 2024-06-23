@@ -34,6 +34,8 @@ import java.nio.file.Paths
 @SerialName("files")
 class FilesClipItem : RealmObject, ClipAppearItem, ClipFiles {
 
+    companion object {}
+
     @PrimaryKey
     @Transient
     override var id: ObjectId = BsonObjectId()

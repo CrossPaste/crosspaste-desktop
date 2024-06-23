@@ -5,6 +5,9 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 class HostInfo : EmbeddedRealmObject {
+
+    companion object {}
+
     var networkPrefixLength: Short = 0
     var hostAddress: String = ""
 
