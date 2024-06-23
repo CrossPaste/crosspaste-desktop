@@ -11,8 +11,11 @@ import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -149,19 +152,23 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
         }
     }
 
-    Box(modifier = Modifier.width(280.dp).height(400.dp)) {
-        LazyColumn(
-            state = searchListState,
-            modifier = Modifier.width(280.dp).height(400.dp),
-        ) {
-            itemsIndexed(
-                searchResult,
-                key = { _, item -> item.id },
-            ) { index, clipData ->
-                ClipTitleView(clipData, index == clipSearchService.selectedIndex) {
-                    setSelectedIndex(index)
+    Box(modifier = Modifier.width(280.dp).height(420.dp)) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Spacer(modifier = Modifier.height(10.dp))
+            LazyColumn(
+                state = searchListState,
+                modifier = Modifier.width(280.dp).height(400.dp),
+            ) {
+                itemsIndexed(
+                    searchResult,
+                    key = { _, item -> item.id },
+                ) { index, clipData ->
+                    ClipTitleView(clipData, index == clipSearchService.selectedIndex) {
+                        setSelectedIndex(index)
+                    }
                 }
             }
+            Spacer(modifier = Modifier.height(10.dp))
         }
 
         VerticalScrollbar(
