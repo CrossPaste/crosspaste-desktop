@@ -2,6 +2,7 @@ package com.clipevery.ui.clip.preview
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -63,20 +64,14 @@ fun ClipPreviewItemView(
                 .height(105.dp)
                 .background(color = MaterialTheme.colors.surface),
     ) {
-        Column(
+        Row(
             modifier =
-                Modifier.fillMaxWidth()
-                    .height(105.dp),
+                Modifier.fillMaxSize()
+                    .padding(horizontal = 5.dp, vertical = 2.5.dp)
+                    .clip(RoundedCornerShape(5.dp)),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .height(105.dp)
-                        .padding(horizontal = 5.dp, vertical = 2.5.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                clipData.clipContent()
-            }
+            clipData.clipContent()
         }
     }
 }
@@ -141,6 +136,7 @@ fun ClipSpecificPreviewContentView(
                         .fillMaxHeight()
                         .width(width.value)
                         .clip(RoundedCornerShape(5.dp))
+                        .border(1.dp, MaterialTheme.colors.onSurface.copy(alpha = 0.12f), RoundedCornerShape(5.dp))
                         .background(color = backgroundColor),
             ) {
                 clipMainContent()
