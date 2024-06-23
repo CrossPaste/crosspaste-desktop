@@ -224,39 +224,21 @@ fun ShadowClipPreviewView(size: Int) {
             Row(
                 modifier =
                     Modifier
-                        .height(12.dp)
+                        .height(24.dp)
                         .fillMaxWidth()
                         .background(
                             brush =
                                 Brush.verticalGradient(
                                     colors =
                                         listOf(
-                                            MaterialTheme.colors.surface.copy(alpha = 0.32f),
-                                            MaterialTheme.colors.surface.copy(alpha = 0.0f),
+                                            MaterialTheme.colors.onBackground.copy(alpha = 0.18f),
+                                            MaterialTheme.colors.onBackground.copy(alpha = 0.0f),
                                         ),
                                 ),
                         ),
             ) { }
         }
         Spacer(modifier = Modifier.weight(1f))
-        if (size >= 7) {
-            Row(
-                modifier =
-                    Modifier
-                        .height(12.dp)
-                        .fillMaxWidth()
-                        .background(
-                            brush =
-                                Brush.verticalGradient(
-                                    colors =
-                                        listOf(
-                                            MaterialTheme.colors.surface.copy(alpha = 0.0f),
-                                            MaterialTheme.colors.surface.copy(alpha = 0.32f),
-                                        ),
-                                ),
-                        ),
-            ) { }
-        }
     }
 }
 
