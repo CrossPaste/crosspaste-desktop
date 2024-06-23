@@ -369,39 +369,58 @@ fun ClipeverySearchWindow() {
                                                             clipSearchService.setClipType(null)
                                                             currentType = "All_Types"
                                                             showTypes = false
+                                                            focusRequester.requestFocus()
                                                         }
                                                         Divider()
                                                     }
 
-                                                    MenuItem(copywriter.getText("Text"), textStyle, paddingValues) {
-                                                        clipSearchService.setClipType(ClipType.TEXT)
-                                                        currentType = "Text"
-                                                        showTypes = false
-                                                        focusRequester.requestFocus() // keep textField focus
+                                                    if (currentType != "Text") {
+                                                        MenuItem(copywriter.getText("Text"), textStyle, paddingValues) {
+                                                            clipSearchService.setClipType(ClipType.TEXT)
+                                                            currentType = "Text"
+                                                            showTypes = false
+                                                            focusRequester.requestFocus() // keep textField focus
+                                                        }
                                                     }
-                                                    MenuItem(copywriter.getText("Link"), textStyle, paddingValues) {
-                                                        clipSearchService.setClipType(ClipType.URL)
-                                                        currentType = "Link"
-                                                        showTypes = false
-                                                        focusRequester.requestFocus() // keep textField focus
+
+                                                    if (currentType != "Link") {
+                                                        MenuItem(copywriter.getText("Link"), textStyle, paddingValues) {
+                                                            clipSearchService.setClipType(ClipType.URL)
+                                                            currentType = "Link"
+                                                            showTypes = false
+                                                            focusRequester.requestFocus() // keep textField focus
+                                                        }
                                                     }
-                                                    MenuItem(copywriter.getText("Html"), textStyle, paddingValues) {
-                                                        clipSearchService.setClipType(ClipType.HTML)
-                                                        currentType = "Html"
-                                                        showTypes = false
-                                                        focusRequester.requestFocus() // keep textField focus
+
+                                                    if (currentType != "Html") {
+                                                        MenuItem(copywriter.getText("Html"), textStyle, paddingValues) {
+                                                            clipSearchService.setClipType(ClipType.HTML)
+                                                            currentType = "Html"
+                                                            showTypes = false
+                                                            focusRequester.requestFocus() // keep textField focus
+                                                        }
                                                     }
-                                                    MenuItem(copywriter.getText("Image"), textStyle, paddingValues) {
-                                                        clipSearchService.setClipType(ClipType.IMAGE)
-                                                        currentType = "Image"
-                                                        showTypes = false
-                                                        focusRequester.requestFocus() // keep textField focus
+
+                                                    if (currentType != "Image") {
+                                                        MenuItem(
+                                                            copywriter.getText("Image"),
+                                                            textStyle,
+                                                            paddingValues,
+                                                        ) {
+                                                            clipSearchService.setClipType(ClipType.IMAGE)
+                                                            currentType = "Image"
+                                                            showTypes = false
+                                                            focusRequester.requestFocus() // keep textField focus
+                                                        }
                                                     }
-                                                    MenuItem(copywriter.getText("File"), textStyle, paddingValues) {
-                                                        clipSearchService.setClipType(ClipType.FILE)
-                                                        currentType = "File"
-                                                        showTypes = false
-                                                        focusRequester.requestFocus() // keep textField focus
+
+                                                    if (currentType != "File") {
+                                                        MenuItem(copywriter.getText("File"), textStyle, paddingValues) {
+                                                            clipSearchService.setClipType(ClipType.FILE)
+                                                            currentType = "File"
+                                                            showTypes = false
+                                                            focusRequester.requestFocus() // keep textField focus
+                                                        }
                                                     }
                                                 }
                                             }
