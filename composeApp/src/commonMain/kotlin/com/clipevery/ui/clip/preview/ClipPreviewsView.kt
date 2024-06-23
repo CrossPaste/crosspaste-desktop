@@ -148,8 +148,6 @@ fun ClipPreviewsView() {
             EmptyScreenView()
         }
 
-        ShadowClipPreviewView(rememberClipDataList.size)
-
         VerticalScrollbar(
             modifier =
                 Modifier.background(color = Color.Transparent)
@@ -214,31 +212,6 @@ fun EmptyScreenView() {
                     ),
             )
         }
-    }
-}
-
-@Composable
-fun ShadowClipPreviewView(size: Int) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        if (size > 0) {
-            Row(
-                modifier =
-                    Modifier
-                        .height(24.dp)
-                        .fillMaxWidth()
-                        .background(
-                            brush =
-                                Brush.verticalGradient(
-                                    colors =
-                                        listOf(
-                                            MaterialTheme.colors.onBackground.copy(alpha = 0.18f),
-                                            MaterialTheme.colors.onBackground.copy(alpha = 0.0f),
-                                        ),
-                                ),
-                        ),
-            ) { }
-        }
-        Spacer(modifier = Modifier.weight(1f))
     }
 }
 
