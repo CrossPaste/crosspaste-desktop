@@ -14,6 +14,9 @@ import org.mongodb.kbson.ObjectId
 @Serializable
 @SerialName("label")
 class ClipLabel : RealmObject {
+
+    companion object {}
+
     @PrimaryKey
     @Transient
     var id: ObjectId = ObjectId()

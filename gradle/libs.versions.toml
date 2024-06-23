@@ -11,14 +11,14 @@ jna = "5.14.0"
 jnativehook = "2.2.2"
 jsoup = "1.17.2"
 koin = "3.5.6"
-kotlin = "1.9.23"
+kotlin = "2.0.0"
 kotlin-logging = "7.0.0"
 kotlinx-coroutines = "1.8.1"
-kotlinx-serialization = "1.6.3"
+kotlinx-serialization = "1.7.0"
 ktor = "2.3.12"
 logback = "1.5.6"
 mockk = "1.13.11"
-realm = "1.16.0"
+realm = "2.0.0"
 selenium = "4.22.0"
 signal = "0.50.0"
 system-tray = "4.4"
@@ -73,6 +73,7 @@ kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotl
 io-mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 
 [plugins]
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 conveyor = { id = "dev.hydraulic.conveyor", version.ref = "conveyor" }
 download = { id = "de.undercouch.download", version.ref = "download" }
 jetbrainsCompose = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }

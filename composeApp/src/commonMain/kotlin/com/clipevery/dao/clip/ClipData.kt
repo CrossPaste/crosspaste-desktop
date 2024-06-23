@@ -19,6 +19,9 @@ import org.mongodb.kbson.ObjectId
 
 @Serializable(with = ClipDataSerializer::class)
 class ClipData : RealmObject {
+
+    companion object {}
+
     @PrimaryKey
     var id: ObjectId = ObjectId()
 

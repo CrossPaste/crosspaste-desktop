@@ -19,6 +19,8 @@ import java.net.URL
 @SerialName("url")
 class UrlClipItem : RealmObject, ClipAppearItem, ClipUrl {
 
+    companion object {}
+
     @PrimaryKey
     @Transient
     override var id: ObjectId = BsonObjectId()

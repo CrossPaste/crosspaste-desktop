@@ -27,3 +27,4 @@ chromedriver-*/
 /output/
 /composeApp/jbr/
 /composeApp/dylib/
+.kotlin/

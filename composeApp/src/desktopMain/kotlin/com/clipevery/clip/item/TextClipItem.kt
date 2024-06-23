@@ -18,6 +18,8 @@ import java.awt.datatransfer.DataFlavor
 @SerialName("text")
 class TextClipItem : RealmObject, ClipAppearItem, ClipText {
 
+    companion object {}
+
     @PrimaryKey
     @Transient
     override var id: ObjectId = BsonObjectId()
