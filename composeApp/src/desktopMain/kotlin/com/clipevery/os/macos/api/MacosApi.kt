@@ -62,6 +62,8 @@ interface MacosApi : Library {
         count: Int,
     )
 
+    fun checkAccessibilityPermissions(): Boolean
+
     companion object {
         val INSTANCE: MacosApi = Native.load("MacosApi", MacosApi::class.java)
     }
