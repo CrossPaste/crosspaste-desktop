@@ -31,8 +31,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.clip.item.ClipFiles
-import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipData
+import com.clipevery.dao.clip.ClipItem
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.AsyncView
 import com.clipevery.ui.base.ClipIconButton
@@ -62,7 +62,7 @@ fun ClipFilesDetailView(
         val density = LocalDensity.current
         val copywriter = current.koin.get<GlobalCopywriter>()
 
-        val clipAppearItem = clipFiles as ClipAppearItem
+        val clipItem = clipFiles as ClipItem
 
         val dateUtils = getDateUtils()
         val fileUtils = getFileUtils()
@@ -222,7 +222,7 @@ fun ClipFilesDetailView(
                         listOf(
                             ClipDetailInfoItem("File_Name", "${filePath.fileName}"),
                             ClipDetailInfoItem("Type", copywriter.getText("File")),
-                            ClipDetailInfoItem("Size", fileUtils.formatBytes(clipAppearItem.size)),
+                            ClipDetailInfoItem("Size", fileUtils.formatBytes(clipItem.size)),
                             ClipDetailInfoItem("Remote", copywriter.getText(if (clipData.remote) "Yes" else "No")),
                             ClipDetailInfoItem(
                                 "Date",

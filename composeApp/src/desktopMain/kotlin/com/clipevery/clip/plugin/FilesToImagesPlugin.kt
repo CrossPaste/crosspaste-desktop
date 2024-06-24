@@ -4,7 +4,7 @@ import com.clipevery.app.AppFileType
 import com.clipevery.clip.ClipPlugin
 import com.clipevery.clip.item.FilesClipItem
 import com.clipevery.clip.item.ImagesClipItem
-import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.dao.clip.ClipItem
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.utils.DesktopFileUtils
 import com.clipevery.utils.FileExtUtils.canPreviewImage
@@ -18,10 +18,10 @@ object FilesToImagesPlugin : ClipPlugin {
     private val imageBasePath = DesktopPathProvider.resolve(appFileType = AppFileType.IMAGE)
 
     override fun pluginProcess(
-        clipAppearItems: List<ClipAppearItem>,
+        clipItems: List<ClipItem>,
         realm: MutableRealm,
-    ): List<ClipAppearItem> {
-        return clipAppearItems.map { clipAppearItem ->
+    ): List<ClipItem> {
+        return clipItems.map { clipAppearItem ->
             if (clipAppearItem is FilesClipItem) {
                 if (clipAppearItem.getFilePaths().map { path -> path.extension }.all { canPreviewImage(it) }) {
                     clipAppearItem.relativePathList.map {

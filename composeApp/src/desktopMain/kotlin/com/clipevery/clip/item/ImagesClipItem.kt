@@ -2,7 +2,7 @@ package com.clipevery.clip.item
 
 import com.clipevery.app.AppFileType
 import com.clipevery.clip.LinuxClipboardService.Companion.GNOME_COPIED_FILES_FLAVOR
-import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.dao.clip.ClipItem
 import com.clipevery.dao.clip.ClipState
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.path.DesktopPathProvider
@@ -32,7 +32,7 @@ import java.nio.file.Paths
 
 @Serializable
 @SerialName("images")
-class ImagesClipItem : RealmObject, ClipAppearItem, ClipImages {
+class ImagesClipItem : RealmObject, ClipItem, ClipImages {
 
     companion object {}
 

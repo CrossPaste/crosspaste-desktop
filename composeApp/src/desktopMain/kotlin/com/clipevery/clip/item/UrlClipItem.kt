@@ -1,6 +1,6 @@
 package com.clipevery.clip.item
 
-import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.dao.clip.ClipItem
 import com.clipevery.dao.clip.ClipState
 import com.clipevery.dao.clip.ClipType
 import io.realm.kotlin.MutableRealm
@@ -17,7 +17,7 @@ import java.net.URL
 
 @Serializable
 @SerialName("url")
-class UrlClipItem : RealmObject, ClipAppearItem, ClipUrl {
+class UrlClipItem : RealmObject, ClipItem, ClipUrl {
 
     companion object {}
 

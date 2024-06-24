@@ -1,7 +1,7 @@
 package com.clipevery.clip.plugin
 
 import com.clipevery.clip.ClipPlugin
-import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.dao.clip.ClipItem
 import com.clipevery.dao.clip.ClipType
 import io.realm.kotlin.MutableRealm
 
@@ -18,9 +18,9 @@ object SortPlugin : ClipPlugin {
         )
 
     override fun pluginProcess(
-        clipAppearItems: List<ClipAppearItem>,
+        clipItems: List<ClipItem>,
         realm: MutableRealm,
-    ): List<ClipAppearItem> {
-        return clipAppearItems.sortedByDescending { itemPriorityMap[it.getClipType()]!! }
+    ): List<ClipItem> {
+        return clipItems.sortedByDescending { itemPriorityMap[it.getClipType()]!! }
     }
 }

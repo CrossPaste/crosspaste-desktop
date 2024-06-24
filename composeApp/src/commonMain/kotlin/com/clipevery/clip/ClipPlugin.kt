@@ -1,12 +1,12 @@
 package com.clipevery.clip
 
-import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.dao.clip.ClipItem
 import io.realm.kotlin.MutableRealm
 
 interface ClipPlugin {
 
     fun pluginProcess(
-        clipAppearItems: List<ClipAppearItem>,
+        clipItems: List<ClipItem>,
         realm: MutableRealm,
-    ): List<ClipAppearItem>
+    ): List<ClipItem>
 }

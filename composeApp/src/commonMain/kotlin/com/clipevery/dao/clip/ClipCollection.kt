@@ -12,33 +12,33 @@ import kotlinx.serialization.Serializable
 import java.io.IOException
 
 @Serializable
-@SerialName("content")
-class ClipContent : RealmObject {
+@SerialName("collection")
+class ClipCollection : RealmObject {
 
     @Serializable(with = RealmAnyRealmListSerializer::class)
-    var clipAppearItems: RealmList<RealmAny?> = realmListOf()
+    var clipItems: RealmList<RealmAny?> = realmListOf()
 
     @Throws(IOException::class)
     fun clear(
         realm: MutableRealm,
         clearResource: Boolean = true,
     ) {
-        val iterator = clipAppearItems.iterator()
+        val iterator = clipItems.iterator()
         while (iterator.hasNext()) {
-            val clipAppearItem = iterator.next()
+            val clipItem = iterator.next()
             iterator.remove()
-            getClipItem(clipAppearItem)?.clear(realm, clearResource)
+            getClipItem(clipItem)?.clear(realm, clearResource)
         }
         realm.delete(this)
     }
 
     companion object {
-        fun getClipItem(anyValue: RealmAny?): ClipAppearItem? {
+        fun getClipItem(anyValue: RealmAny?): ClipItem? {
             return anyValue?.let {
                 return when (it.type) {
                     RealmAny.Type.OBJECT -> {
                         val asRealmObject = anyValue.asRealmObject<RealmObject>()
-                        if (asRealmObject is ClipAppearItem) {
+                        if (asRealmObject is ClipItem) {
                             asRealmObject
                         } else {
                             null

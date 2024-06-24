@@ -4,7 +4,7 @@ import com.clipevery.app.AppInfo
 import com.clipevery.clip.ClipCollector
 import com.clipevery.clip.ClipItemService
 import com.clipevery.clip.item.UrlClipItem
-import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.dao.clip.ClipItem
 import com.clipevery.utils.getEncryptUtils
 import io.realm.kotlin.MutableRealm
 import java.awt.datatransfer.DataFlavor
@@ -48,7 +48,7 @@ class UrlItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
         if (transferData is String) {
             val urlBytes = transferData.toByteArray()
             val md5 = encryptUtils.md5(urlBytes)
-            val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
+            val update: (ClipItem, MutableRealm) -> Unit = { clipItem, realm ->
                 realm.query(UrlClipItem::class, "id == $0", clipItem.id).first().find()?.apply {
                     this.url = transferData
                     this.size = urlBytes.size.toLong()

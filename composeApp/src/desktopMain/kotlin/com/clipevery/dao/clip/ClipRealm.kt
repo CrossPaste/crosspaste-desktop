@@ -255,12 +255,12 @@ class ClipRealm(
     ) {
         realm.write {
             query(ClipData::class, "id == $0 AND clipState == $1", id, ClipState.LOADING).first().find()?.let { clipData ->
-                clipData.clipContent?.let { clipContent ->
-                    // remove not update appearItems
-                    val iterator = clipContent.clipAppearItems.iterator()
+                clipData.clipCollection?.let { clipCollection ->
+                    // remove not update clipItems
+                    val iterator = clipCollection.clipItems.iterator()
                     while (iterator.hasNext()) {
                         val anyValue = iterator.next()
-                        ClipContent.getClipItem(anyValue)?.let {
+                        ClipCollection.getClipItem(anyValue)?.let {
                             if (it.md5 == "") {
                                 iterator.remove()
                                 it.clear(this)
@@ -268,13 +268,13 @@ class ClipRealm(
                         } ?: iterator.remove()
                     }
 
-                    // use plugin to process clipAppearItems
+                    // use plugin to process clipItems
                     var clipAppearItems =
-                        clipContent.clipAppearItems.mapNotNull { anyValue ->
-                            ClipContent.getClipItem(anyValue)
+                        clipCollection.clipItems.mapNotNull { anyValue ->
+                            ClipCollection.getClipItem(anyValue)
                         }
                     assert(clipAppearItems.isNotEmpty())
-                    clipContent.clipAppearItems.clear()
+                    clipCollection.clipItems.clear()
                     for (clipPlugin in clipPlugins) {
                         clipAppearItems = clipPlugin.pluginProcess(clipAppearItems, this)
                     }
@@ -284,15 +284,15 @@ class ClipRealm(
                         clipAppearItem.clipState = ClipState.LOADED
                     }
 
-                    // first appearItem as clipAppearContent
-                    // remaining appearItems as clipContent
-                    val firstItem: ClipAppearItem = clipAppearItems.first()
-                    val remainingItems: List<ClipAppearItem> = clipAppearItems.drop(1)
-                    val clipAppearContent: RealmAny = RealmAny.create(firstItem as RealmObject)
+                    // first item as clipAppearItem
+                    // remaining items as clipContent
+                    val firstItem: ClipItem = clipAppearItems.first()
+                    val remainingItems: List<ClipItem> = clipAppearItems.drop(1)
+                    val clipAppearItem: RealmAny = RealmAny.create(firstItem as RealmObject)
 
                     // update realm data
-                    clipData.clipAppearContent = clipAppearContent
-                    clipContent.clipAppearItems.addAll(remainingItems.map { RealmAny.create(it as RealmObject) })
+                    clipData.clipAppearItem = clipAppearItem
+                    clipCollection.clipItems.addAll(remainingItems.map { RealmAny.create(it as RealmObject) })
                     clipData.clipType = firstItem.getClipType()
                     clipData.clipSearchContent = getSearchContent(firstItem, remainingItems)
                     clipData.md5 = firstItem.md5
@@ -314,8 +314,8 @@ class ClipRealm(
     }
 
     private fun getSearchContent(
-        firstItem: ClipAppearItem,
-        remainingItems: List<ClipAppearItem>,
+        firstItem: ClipItem,
+        remainingItems: List<ClipItem>,
     ): String? {
         if (firstItem.getClipType() == ClipType.HTML) {
             remainingItems.firstOrNull { it.getClipType() == ClipType.TEXT }?.let {

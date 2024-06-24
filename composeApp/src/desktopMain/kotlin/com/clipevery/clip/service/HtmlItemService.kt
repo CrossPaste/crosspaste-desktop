@@ -4,7 +4,7 @@ import com.clipevery.app.AppInfo
 import com.clipevery.clip.ClipCollector
 import com.clipevery.clip.ClipItemService
 import com.clipevery.clip.item.HtmlClipItem
-import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.dao.clip.ClipItem
 import com.clipevery.utils.DesktopFileUtils
 import com.clipevery.utils.getEncryptUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -60,7 +60,7 @@ class HtmlItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
                     clipId = clipId,
                     fileName = "html2Image.png",
                 )
-            val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
+            val update: (ClipItem, MutableRealm) -> Unit = { clipItem, realm ->
                 realm.query(HtmlClipItem::class, "id == $0", clipItem.id).first().find()?.apply {
                     this.html = html
                     this.relativePath = relativePath

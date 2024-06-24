@@ -1,6 +1,6 @@
 package com.clipevery.clip.item
 
-import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.dao.clip.ClipItem
 import com.clipevery.dao.clip.ClipState
 import com.clipevery.dao.clip.ClipType
 import io.realm.kotlin.MutableRealm
@@ -16,7 +16,7 @@ import java.awt.datatransfer.DataFlavor
 
 @Serializable
 @SerialName("text")
-class TextClipItem : RealmObject, ClipAppearItem, ClipText {
+class TextClipItem : RealmObject, ClipItem, ClipText {
 
     companion object {}
 
