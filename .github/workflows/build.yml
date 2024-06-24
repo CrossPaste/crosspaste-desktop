@@ -157,23 +157,23 @@ jobs:
         run: |
           echo "${{ secrets.DEVELOPER_ID_APPLICATION }}" | base64 --decode > developerID_application.p12
 
-      - name: Conveyor build Windows app
-        uses: hydraulic-software/conveyor/actions/build@v14.2
-        with:
-          command: make windows-zip --output-dir=./output/clipevery-windows-${{ env.PACKAGE_VERSION }}
-          extra_flags: -f ci.conveyor.conf
-          signing_key: ${{ secrets.SIGNING_KEY }}
-          agree_to_license: 1
-
-      - name: Upload Windows app
-        id: upload_window_app
-        uses: JohnGuan/oss-upload-action@main
-        with:
-          key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
-          key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
-          region: oss-cn-shenzhen
-          bucket: clipevery-desktop
-          assets: output/clipevery-windows-${{ env.PACKAGE_VERSION }}/**:/${{ env.PACKAGE_VERSION }}/
+#      - name: Conveyor build Windows app
+#        uses: hydraulic-software/conveyor/actions/build@v14.2
+#        with:
+#          command: make windows-zip --output-dir=./output/clipevery-windows-${{ env.PACKAGE_VERSION }}
+#          extra_flags: -f ci.conveyor.conf
+#          signing_key: ${{ secrets.SIGNING_KEY }}
+#          agree_to_license: 1
+#
+#      - name: Upload Windows app
+#        id: upload_window_app
+#        uses: JohnGuan/oss-upload-action@main
+#        with:
+#          key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
+#          key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
+#          region: oss-cn-shenzhen
+#          bucket: clipevery-desktop
+#          assets: output/clipevery-windows-${{ env.PACKAGE_VERSION }}/**:/${{ env.PACKAGE_VERSION }}/
 
       - name: Conveyor build Mac amd64 app
         uses: hydraulic-software/conveyor/actions/build@v14.2
@@ -189,6 +189,10 @@ jobs:
       - name: Tar Mac amd64 app
         run: tar -cvf output/clipevery-mac-adm64-${{ env.PACKAGE_VERSION }}/clipevery-mac-adm64-${{ env.PACKAGE_VERSION }}.tar -C output/clipevery-mac-adm64-${{ env.PACKAGE_VERSION }} Clipevery.app
 
+      # Add a step to list files in the directory
+      - name: List output directory
+        run: ls -l output/clipevery-mac-adm64-${{ env.PACKAGE_VERSION }}/
+
       - name: Upload Mac amd64 app
         id: upload_mac_adm64_app
         uses: JohnGuan/oss-upload-action@main
@@ -199,59 +203,59 @@ jobs:
           bucket: clipevery-desktop
           assets: output/clipevery-mac-adm64-${{ env.PACKAGE_VERSION }}/clipevery-mac-adm64-${{ env.PACKAGE_VERSION }}.tar:/${{ env.PACKAGE_VERSION }}/
 
-      - name: Conveyor build Mac aarch64 app
-        uses: hydraulic-software/conveyor/actions/build@v14.2
-        with:
-          command: make mac-app --output-dir=./output/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}
-          extra_flags: -f ci.conveyor.conf -Kapp.machines=mac.aarch64
-          signing_key: ${{ secrets.SIGNING_KEY }}
-          agree_to_license: 1
-
-      - name: Tar Mac aarch64 app
-        run: tar -cvf output/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}.tar -C output/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }} Clipevery.app
-
-      - name: Upload Mac aaarch64 app
-        id: upload_mac_aarch64_app
-        uses: JohnGuan/oss-upload-action@main
-        with:
-          key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
-          key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
-          region: oss-cn-shenzhen
-          bucket: clipevery-desktop
-          assets: output/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}.tar:/${{ env.PACKAGE_VERSION }}/
-
-      - name: Conveyor build Linux app
-        uses: hydraulic-software/conveyor/actions/build@v14.2
-        with:
-          command: make debian-package --output-dir=./output/clipevery-linux-${{ env.PACKAGE_VERSION }}
-          extra_flags: -f ci.conveyor.conf
-          signing_key: ${{ secrets.SIGNING_KEY }}
-          agree_to_license: 1
-
-      - name: Upload Linux app
-        id: upload_linux_app
-        uses: JohnGuan/oss-upload-action@main
-        with:
-          key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
-          key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
-          region: oss-cn-shenzhen
-          bucket: clipevery-desktop
-          assets: output/clipevery-linux-${{ env.PACKAGE_VERSION }}/**:/${{ env.PACKAGE_VERSION }}/
-
-      # conveyor default cache directory is .conveyor/cache
-      # Avoid caching it, causing Github space payment
-      - name: Cleanup Conveyor
-        if: always()
-        run: |
-          rm -f developerID_application.p12
-          rm -rf .conveyor/cache/*
-
-      - name: Display file tree with sizes
-        run: |
-          echo "Displaying the size of files and directories in 'output' directory:"
-          du -ah output | sort -rh
-
-      # delete output directory to free up space, Github Action only has 14G space,
-      # to avoid the failure of insufficient space in the subsequent post recycling steps
-      - name: Delete output directory
-        run: rm -rf output
+#      - name: Conveyor build Mac aarch64 app
+#        uses: hydraulic-software/conveyor/actions/build@v14.2
+#        with:
+#          command: make mac-app --output-dir=./output/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}
+#          extra_flags: -f ci.conveyor.conf -Kapp.machines=mac.aarch64
+#          signing_key: ${{ secrets.SIGNING_KEY }}
+#          agree_to_license: 1
+#
+#      - name: Tar Mac aarch64 app
+#        run: tar -cvf output/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}.tar -C output/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }} Clipevery.app
+#
+#      - name: Upload Mac aaarch64 app
+#        id: upload_mac_aarch64_app
+#        uses: JohnGuan/oss-upload-action@main
+#        with:
+#          key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
+#          key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
+#          region: oss-cn-shenzhen
+#          bucket: clipevery-desktop
+#          assets: output/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}/clipevery-mac-aarch64-${{ env.PACKAGE_VERSION }}.tar:/${{ env.PACKAGE_VERSION }}/
+#
+#      - name: Conveyor build Linux app
+#        uses: hydraulic-software/conveyor/actions/build@v14.2
+#        with:
+#          command: make debian-package --output-dir=./output/clipevery-linux-${{ env.PACKAGE_VERSION }}
+#          extra_flags: -f ci.conveyor.conf
+#          signing_key: ${{ secrets.SIGNING_KEY }}
+#          agree_to_license: 1
+#
+#      - name: Upload Linux app
+#        id: upload_linux_app
+#        uses: JohnGuan/oss-upload-action@main
+#        with:
+#          key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
+#          key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
+#          region: oss-cn-shenzhen
+#          bucket: clipevery-desktop
+#          assets: output/clipevery-linux-${{ env.PACKAGE_VERSION }}/**:/${{ env.PACKAGE_VERSION }}/
+#
+#      # conveyor default cache directory is .conveyor/cache
+#      # Avoid caching it, causing Github space payment
+#      - name: Cleanup Conveyor
+#        if: always()
+#        run: |
+#          rm -f developerID_application.p12
+#          rm -rf .conveyor/cache/*
+#
+#      - name: Display file tree with sizes
+#        run: |
+#          echo "Displaying the size of files and directories in 'output' directory:"
+#          du -ah output | sort -rh
+#
+#      # delete output directory to free up space, Github Action only has 14G space,
+#      # to avoid the failure of insufficient space in the subsequent post recycling steps
+#      - name: Delete output directory
+#        run: rm -rf output
