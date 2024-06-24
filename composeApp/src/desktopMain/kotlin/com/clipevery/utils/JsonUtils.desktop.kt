@@ -5,7 +5,7 @@ import com.clipevery.clip.item.HtmlClipItem
 import com.clipevery.clip.item.ImagesClipItem
 import com.clipevery.clip.item.TextClipItem
 import com.clipevery.clip.item.UrlClipItem
-import com.clipevery.dao.clip.ClipContent
+import com.clipevery.dao.clip.ClipCollection
 import com.clipevery.dao.clip.ClipLabel
 import com.clipevery.dao.task.ClipTaskExtraInfo
 import com.clipevery.presist.DirFileInfoTree
@@ -55,7 +55,7 @@ object DesktopJsonUtils : JsonUtils {
                         subclass(TextClipItem::class)
                         subclass(UrlClipItem::class)
                         subclass(ClipLabel::class)
-                        subclass(ClipContent::class)
+                        subclass(ClipCollection::class)
                     }
 
                     polymorphic(FileInfoTree::class) {

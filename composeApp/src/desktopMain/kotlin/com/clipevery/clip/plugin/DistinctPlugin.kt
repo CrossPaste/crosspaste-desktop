@@ -1,7 +1,7 @@
 package com.clipevery.clip.plugin
 
 import com.clipevery.clip.ClipPlugin
-import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.dao.clip.ClipItem
 import com.clipevery.dao.clip.ClipType
 import io.realm.kotlin.MutableRealm
 
@@ -17,10 +17,10 @@ object DistinctPlugin : ClipPlugin {
         )
 
     override fun pluginProcess(
-        clipAppearItems: List<ClipAppearItem>,
+        clipItems: List<ClipItem>,
         realm: MutableRealm,
-    ): List<ClipAppearItem> {
-        return clipAppearItems.groupBy { it.getClipType() }.map { (clipType, items) ->
+    ): List<ClipItem> {
+        return clipItems.groupBy { it.getClipType() }.map { (clipType, items) ->
             val plugin = childPlugins[clipType]
             plugin?.pluginProcess(items, realm) ?: items
         }.flatten()
@@ -29,16 +29,16 @@ object DistinctPlugin : ClipPlugin {
 
 object FirstPlugin : ClipPlugin {
     override fun pluginProcess(
-        clipAppearItems: List<ClipAppearItem>,
+        clipItems: List<ClipItem>,
         realm: MutableRealm,
-    ): List<ClipAppearItem> {
-        return if (clipAppearItems.isEmpty()) {
+    ): List<ClipItem> {
+        return if (clipItems.isEmpty()) {
             listOf()
         } else {
-            for (clipAppearItem in clipAppearItems.drop(1)) {
+            for (clipAppearItem in clipItems.drop(1)) {
                 clipAppearItem.clear(realm)
             }
-            listOf(clipAppearItems.first())
+            listOf(clipItems.first())
         }
     }
 }

@@ -1,10 +1,10 @@
 package com.clipevery.clip
 
 import com.clipevery.app.AppInfo
-import com.clipevery.dao.clip.ClipAppearItem
-import com.clipevery.dao.clip.ClipContent
+import com.clipevery.dao.clip.ClipCollection
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipData
+import com.clipevery.dao.clip.ClipItem
 import com.clipevery.dao.clip.ClipState
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.utils.LoggerExtension.logSuspendExecutionTime
@@ -26,7 +26,7 @@ class ClipCollector(
 
     private val logger = KotlinLogging.logger {}
 
-    private val preCollectors: Array<MutableMap<KClass<out ClipItemService>, ClipAppearItem>> = Array(itemCount) { mutableMapOf() }
+    private val preCollectors: Array<MutableMap<KClass<out ClipItemService>, ClipItem>> = Array(itemCount) { mutableMapOf() }
 
     private val updateCollectors: Array<MutableSet<KClass<out ClipItemService>>> = Array(itemCount) { mutableSetOf() }
 
@@ -51,7 +51,7 @@ class ClipCollector(
     fun preCollectItem(
         itemIndex: Int,
         kclass: KClass<out ClipItemService>,
-        clipItem: ClipAppearItem,
+        clipItem: ClipItem,
     ) {
         preCollectors[itemIndex][kclass] = clipItem
     }
@@ -59,7 +59,7 @@ class ClipCollector(
     fun updateCollectItem(
         itemIndex: Int,
         kclass: KClass<out ClipItemService>,
-        update: (ClipAppearItem, MutableRealm) -> Unit,
+        update: (ClipItem, MutableRealm) -> Unit,
     ) {
         preCollectors[itemIndex][kclass]?.let {
             updateCollectors[itemIndex].add(kclass)
@@ -90,17 +90,17 @@ class ClipCollector(
             if (collector.isEmpty()) {
                 return@logSuspendExecutionTime null
             }
-            val clipAppearItems: List<ClipAppearItem> = preCollectors.flatMap { it.values }
+            val clipItems: List<ClipItem> = preCollectors.flatMap { it.values }
 
-            val clipContent =
-                ClipContent().apply {
-                    this.clipAppearItems = clipAppearItems.map { RealmAny.create(it as RealmObject) }.toRealmList()
+            val clipCollection =
+                ClipCollection().apply {
+                    this.clipItems = clipItems.map { RealmAny.create(it as RealmObject) }.toRealmList()
                 }
 
             val clipData =
                 ClipData().apply {
                     this.clipId = clipId
-                    this.clipContent = clipContent
+                    this.clipCollection = clipCollection
                     this.clipType = ClipType.INVALID
                     this.source = source
                     this.md5 = ""

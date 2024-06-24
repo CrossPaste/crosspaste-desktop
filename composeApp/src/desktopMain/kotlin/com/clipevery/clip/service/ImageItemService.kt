@@ -6,7 +6,7 @@ import com.clipevery.clip.ClipCollector
 import com.clipevery.clip.ClipItemService
 import com.clipevery.clip.item.ImagesClipItem
 import com.clipevery.clip.service.HtmlItemService.HtmlItemService.HTML_ID
-import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.dao.clip.ClipItem
 import com.clipevery.image.ImageService.writeImage
 import com.clipevery.utils.DesktopFileUtils
 import com.clipevery.utils.DesktopFileUtils.createClipPath
@@ -81,7 +81,7 @@ class ImageItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
                 val size = fileTree.size
                 val md5 = fileTree.md5
 
-                val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
+                val update: (ClipItem, MutableRealm) -> Unit = { clipItem, realm ->
                     realm.query(ImagesClipItem::class, "id == $0", clipItem.id).first().find()?.apply {
                         this.relativePathList = realmListOf(relativePath)
                         this.fileInfoTree = fileInfoTreeJsonString

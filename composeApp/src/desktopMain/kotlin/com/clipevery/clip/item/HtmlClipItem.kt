@@ -1,7 +1,7 @@
 package com.clipevery.clip.item
 
 import com.clipevery.app.AppFileType
-import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.dao.clip.ClipItem
 import com.clipevery.dao.clip.ClipState
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.os.windows.html.HTMLCodec
@@ -24,7 +24,7 @@ import java.nio.file.Path
 
 @Serializable
 @SerialName("html")
-class HtmlClipItem : RealmObject, ClipAppearItem, ClipHtml {
+class HtmlClipItem : RealmObject, ClipItem, ClipHtml {
 
     companion object {}
 

@@ -1,7 +1,7 @@
 package com.clipevery.dao.clip
 
 import com.clipevery.clip.item.ClipFiles
-import com.clipevery.dao.clip.ClipContent.Companion.getClipItem
+import com.clipevery.dao.clip.ClipCollection.Companion.getClipItem
 import com.clipevery.serializer.ClipDataSerializer
 import com.clipevery.serializer.ClipLabelRealmSetSerializer
 import io.realm.kotlin.MutableRealm
@@ -30,8 +30,8 @@ class ClipData : RealmObject {
 
     @Index
     var clipId: Long = 0
-    var clipAppearContent: RealmAny? = null
-    var clipContent: ClipContent? = null
+    var clipAppearItem: RealmAny? = null
+    var clipCollection: ClipCollection? = null
 
     @Index
     var clipType: Int = ClipType.INVALID
@@ -68,8 +68,8 @@ class ClipData : RealmObject {
         realm: MutableRealm,
         clearResource: Boolean = true,
     ) {
-        getClipItem(clipAppearContent)?.clear(realm, clearResource)
-        clipContent?.clear(realm, clearResource)
+        getClipItem(clipAppearItem)?.clear(realm, clearResource)
+        clipCollection?.clear(realm, clearResource)
         realm.delete(this)
     }
 
@@ -77,15 +77,15 @@ class ClipData : RealmObject {
         return ClipDataSortObject(createTime, clipId, appInstanceId)
     }
 
-    fun getClipAppearItems(): List<ClipAppearItem> {
-        val appearItem: ClipAppearItem? = getClipItem(this.clipAppearContent)
+    fun getClipAppearItems(): List<ClipItem> {
+        val appearItem: ClipItem? = getClipItem(this.clipAppearItem)
 
-        val otherAppearItems: List<ClipAppearItem>? =
-            this.clipContent?.clipAppearItems?.mapNotNull {
+        val otherAppearItems: List<ClipItem>? =
+            this.clipCollection?.clipItems?.mapNotNull {
                 getClipItem(it)
             }
 
-        val mutableList: MutableList<ClipAppearItem> = mutableListOf()
+        val mutableList: MutableList<ClipItem> = mutableListOf()
 
         appearItem?.let {
             mutableList.add(it)

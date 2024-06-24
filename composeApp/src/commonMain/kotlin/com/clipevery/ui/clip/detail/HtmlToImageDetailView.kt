@@ -24,8 +24,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
 import com.clipevery.clip.item.ClipHtml
-import com.clipevery.dao.clip.ClipAppearItem
 import com.clipevery.dao.clip.ClipData
+import com.clipevery.dao.clip.ClipItem
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.ui.base.AsyncView
 import com.clipevery.ui.base.LoadImageData
@@ -45,7 +45,7 @@ fun HtmlToImageDetailView(
     val density = LocalDensity.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val uiSupport = current.koin.get<UISupport>()
-    val clipAppearItem = clipHtml as ClipAppearItem
+    val clipItem = clipHtml as ClipItem
 
     val dateUtils = getDateUtils()
     val fileUtils = getFileUtils()
@@ -115,7 +115,7 @@ fun HtmlToImageDetailView(
                 items =
                     listOf(
                         ClipDetailInfoItem("Type", copywriter.getText("Html")),
-                        ClipDetailInfoItem("Size", fileUtils.formatBytes(clipAppearItem.size)),
+                        ClipDetailInfoItem("Size", fileUtils.formatBytes(clipItem.size)),
                         ClipDetailInfoItem("Remote", copywriter.getText(if (clipData.remote) "Yes" else "No")),
                         ClipDetailInfoItem(
                             "Date",

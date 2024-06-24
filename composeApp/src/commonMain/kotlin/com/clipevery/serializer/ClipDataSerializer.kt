@@ -1,7 +1,7 @@
 package com.clipevery.serializer
 
 import com.clipevery.clip.item.ClipInit
-import com.clipevery.dao.clip.ClipContent
+import com.clipevery.dao.clip.ClipCollection
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.dao.clip.ClipLabel
 import com.clipevery.dao.clip.ClipState
@@ -27,8 +27,8 @@ object ClipDataSerializer : KSerializer<ClipData> {
             element<String>("id")
             element<String>("appInstanceId")
             element<Long>("clipId")
-            element<RealmAny?>("clipAppearContent")
-            element<ClipContent?>("clipContent")
+            element<RealmAny?>("clipAppearItem")
+            element<ClipCollection?>("clipCollection")
             element<Int>("clipType")
             element<String?>("source")
             element<Long>("size")
@@ -44,7 +44,7 @@ object ClipDataSerializer : KSerializer<ClipData> {
         var appInstanceId = ""
         var clipId = 0L
         var clipAppearContent: RealmAny? = null
-        var clipContent: ClipContent? = null
+        var clipCollection: ClipCollection? = null
         var clipType = 0
         var source: String? = null
         var size = 0L
@@ -57,7 +57,7 @@ object ClipDataSerializer : KSerializer<ClipData> {
                 1 -> appInstanceId = dec.decodeStringElement(descriptor, index)
                 2 -> clipId = dec.decodeLongElement(descriptor, index)
                 3 -> clipAppearContent = dec.decodeSerializableElement(descriptor, index, RealmAnyKSerializer)
-                4 -> clipContent = dec.decodeSerializableElement(descriptor, index, ClipContent.serializer())
+                4 -> clipCollection = dec.decodeSerializableElement(descriptor, index, ClipCollection.serializer())
                 5 -> clipType = dec.decodeIntElement(descriptor, index)
                 6 -> source = dec.decodeNullableSerializableElement(descriptor, index, String.serializer())
                 7 -> size = dec.decodeLongElement(descriptor, index)
@@ -73,11 +73,11 @@ object ClipDataSerializer : KSerializer<ClipData> {
                 this.id = BsonObjectId(id)
                 this.appInstanceId = appInstanceId
                 this.clipId = clipId
-                this.clipAppearContent = clipAppearContent
-                this.clipContent = clipContent
+                this.clipAppearItem = clipAppearContent
+                this.clipCollection = clipCollection
                 this.clipType = clipType
                 this.source = source
-                this.clipSearchContent = ClipContent.getClipItem(clipAppearContent)?.getSearchContent()
+                this.clipSearchContent = ClipCollection.getClipItem(clipAppearContent)?.getSearchContent()
                 this.md5 = md5
                 this.size = size
                 this.createTime = RealmInstant.now()
@@ -104,11 +104,11 @@ object ClipDataSerializer : KSerializer<ClipData> {
         compositeOutput.encodeStringElement(descriptor, 1, value.appInstanceId)
 
         compositeOutput.encodeLongElement(descriptor, 2, value.clipId)
-        value.clipAppearContent?.let {
+        value.clipAppearItem?.let {
             compositeOutput.encodeSerializableElement(descriptor, 3, RealmAnyKSerializer, it)
         }
-        value.clipContent?.let {
-            compositeOutput.encodeSerializableElement(descriptor, 4, ClipContent.serializer(), it)
+        value.clipCollection?.let {
+            compositeOutput.encodeSerializableElement(descriptor, 4, ClipCollection.serializer(), it)
         }
         compositeOutput.encodeIntElement(descriptor, 5, value.clipType)
         compositeOutput.encodeNullableSerializableElement(descriptor, 6, String.serializer(), value.source)

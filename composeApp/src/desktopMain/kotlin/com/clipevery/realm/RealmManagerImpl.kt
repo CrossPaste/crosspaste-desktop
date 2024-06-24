@@ -7,7 +7,7 @@ import com.clipevery.clip.item.HtmlClipItem
 import com.clipevery.clip.item.ImagesClipItem
 import com.clipevery.clip.item.TextClipItem
 import com.clipevery.clip.item.UrlClipItem
-import com.clipevery.dao.clip.ClipContent
+import com.clipevery.dao.clip.ClipCollection
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.dao.clip.ClipLabel
 import com.clipevery.dao.signal.ClipIdentityKey
@@ -46,7 +46,7 @@ class RealmManagerImpl private constructor(private val config: RealmConfiguratio
         private val CLIP_TYPES: Set<KClass<out TypedRealmObject>> =
             setOf(
                 ClipData::class,
-                ClipContent::class,
+                ClipCollection::class,
                 ClipLabel::class,
                 FilesClipItem::class,
                 HtmlClipItem::class,

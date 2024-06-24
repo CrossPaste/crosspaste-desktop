@@ -27,9 +27,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.clipevery.dao.clip.ClipAppearItem
-import com.clipevery.dao.clip.ClipContent
+import com.clipevery.dao.clip.ClipCollection
 import com.clipevery.dao.clip.ClipData
+import com.clipevery.dao.clip.ClipItem
 import com.clipevery.dao.clip.ClipState
 import com.clipevery.dao.clip.ClipType
 import com.clipevery.i18n.Copywriter
@@ -39,7 +39,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.cast
 
 fun <T : Any> ClipData.getClipItem(kclass: KClass<T>): T? {
-    return ClipContent.getClipItem(this.clipAppearContent)?.let {
+    return ClipCollection.getClipItem(this.clipAppearItem)?.let {
         if (kclass.isInstance(it)) {
             kclass.cast(it)
         } else {
@@ -48,8 +48,8 @@ fun <T : Any> ClipData.getClipItem(kclass: KClass<T>): T? {
     }
 }
 
-fun ClipData.getClipItem(): ClipAppearItem? {
-    return ClipContent.getClipItem(this.clipAppearContent)
+fun ClipData.getClipItem(): ClipItem? {
+    return ClipCollection.getClipItem(this.clipAppearItem)
 }
 
 @Composable

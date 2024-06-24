@@ -5,7 +5,7 @@ import com.clipevery.app.AppInfo
 import com.clipevery.clip.ClipCollector
 import com.clipevery.clip.ClipItemService
 import com.clipevery.clip.item.FilesClipItem
-import com.clipevery.dao.clip.ClipAppearItem
+import com.clipevery.dao.clip.ClipItem
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.presist.FileInfoTree
 import com.clipevery.utils.DesktopFileUtils
@@ -92,7 +92,7 @@ class FilesItemService(appInfo: AppInfo) : ClipItemService(appInfo) {
             val count = fileInfoTrees.map { it.value.getCount() }.sum()
             val size = fileInfoTrees.map { it.value.size }.sum()
 
-            val update: (ClipAppearItem, MutableRealm) -> Unit = { clipItem, realm ->
+            val update: (ClipItem, MutableRealm) -> Unit = { clipItem, realm ->
                 realm.query(FilesClipItem::class, "id == $0", clipItem.id).first().find()?.apply {
                     this.relativePathList = relativePathRealmList
                     this.fileInfoTree = fileInfoTreeJsonString

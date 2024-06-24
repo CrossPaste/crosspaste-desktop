@@ -2,7 +2,7 @@ package com.clipevery.serializer
 
 import com.clipevery.clip.item.TextClipItem
 import com.clipevery.clip.service.TextItemService
-import com.clipevery.dao.clip.ClipContent
+import com.clipevery.dao.clip.ClipCollection
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.dao.clip.ClipState
 import com.clipevery.dao.clip.ClipType
@@ -33,10 +33,10 @@ class SerializerTest {
         val clipData =
             ClipData().apply {
                 this.clipId = 0
-                this.clipAppearContent = RealmAny.Companion.create(textClipItem)
-                this.clipContent =
-                    ClipContent().apply {
-                        this.clipAppearItems = realmListOf()
+                this.clipAppearItem = RealmAny.Companion.create(textClipItem)
+                this.clipCollection =
+                    ClipCollection().apply {
+                        this.clipItems = realmListOf()
                     }
                 this.clipSearchContent = textClipItem.text.lowercase()
                 this.clipType = ClipType.TEXT
@@ -50,7 +50,7 @@ class SerializerTest {
         println(json)
         val newClipData: ClipData = DesktopJsonUtils.JSON.decodeFromString(json)
         assertEquals(clipData.clipId, newClipData.clipId)
-        val newTextClipItem = ClipContent.getClipItem(newClipData.clipAppearContent)
+        val newTextClipItem = ClipCollection.getClipItem(newClipData.clipAppearItem)
         assertTrue(newTextClipItem is TextClipItem)
         assertEquals(textClipItem.text, newTextClipItem.text)
         assertEquals(textClipItem.md5, newTextClipItem.md5)
