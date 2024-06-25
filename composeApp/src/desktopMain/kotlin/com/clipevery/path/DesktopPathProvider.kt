@@ -31,10 +31,9 @@ object DesktopPathProvider : PathProvider {
     override val clipDataPath get() = pathProvider.clipDataPath
 
     private fun getPathProvider(): PathProvider {
-        val appEnv = AppEnv.getAppEnv()
-        return if (appEnv == AppEnv.DEVELOPMENT) {
+        return if (AppEnv.CURRENT.isDevelopment()) {
             DevelopmentPathProvider()
-        } else if (appEnv == AppEnv.TEST) {
+        } else if (AppEnv.CURRENT.isTest()) {
             // In the test environment, DesktopPathProvider will be mocked
             this
         } else {

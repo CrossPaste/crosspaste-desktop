@@ -68,7 +68,7 @@ class RealmManagerImpl private constructor(private val config: RealmConfiguratio
                     .name("clipevery.realm")
                     .schemaVersion(1)
 
-            if (!AppEnv.isProduction()) {
+            if (!AppEnv.CURRENT.isProduction()) {
                 builder.deleteRealmIfMigrationNeeded()
             }
 

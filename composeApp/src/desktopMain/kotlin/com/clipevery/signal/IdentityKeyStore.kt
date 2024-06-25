@@ -121,7 +121,7 @@ class MacosIdentityKeyStoreFactory(
         )
 
     override fun createIdentityKeyStore(): IdentityKeyStore {
-        val service = "clipevery-${AppEnv.getAppEnv().name}-${appInfo.appInstanceId}"
+        val service = "clipevery-${AppEnv.CURRENT.name}-${appInfo.appInstanceId}"
         val file = filePersist.path.toFile()
         if (file.exists()) {
             logger.info { "Found identityKey encrypt file" }

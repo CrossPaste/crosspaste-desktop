@@ -8,11 +8,25 @@ enum class AppEnv {
     TEST,
     ;
 
+    fun isProduction(): Boolean {
+        return this == PRODUCTION
+    }
+
+    fun isDevelopment(): Boolean {
+        return this == DEVELOPMENT
+    }
+
+    fun isTest(): Boolean {
+        return this == TEST
+    }
+
     companion object {
 
         private val SYSTEM_PROPERTY = getSystemProperty()
 
-        fun getAppEnv(): AppEnv {
+        val CURRENT = getAppEnv()
+
+        private fun getAppEnv(): AppEnv {
             return SYSTEM_PROPERTY.getOption("appEnv")?.let {
                 try {
                     AppEnv.valueOf(it)
@@ -20,18 +34,6 @@ enum class AppEnv {
                     PRODUCTION
                 }
             } ?: PRODUCTION
-        }
-
-        fun isProduction(): Boolean {
-            return getAppEnv() == PRODUCTION
-        }
-
-        fun isDevelopment(): Boolean {
-            return getAppEnv() == DEVELOPMENT
-        }
-
-        fun isTest(): Boolean {
-            return getAppEnv() == TEST
         }
     }
 }

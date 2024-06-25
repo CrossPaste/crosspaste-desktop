@@ -181,7 +181,7 @@ class Clipevery {
 
     companion object {
 
-        private val appEnv = AppEnv.getAppEnv()
+        private val appEnv = AppEnv.CURRENT
 
         private val clipLogger =
             initLogger(

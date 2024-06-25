@@ -19,40 +19,53 @@ class DesktopAppInfoFactory(private val configManager: ConfigManager) : AppInfoF
     }
 
     private fun getVersion(): String {
-        val properties = Properties()
-        return try {
+        return getVersion(AppEnv.CURRENT) {
+            val properties = Properties()
             properties.load(
                 Thread.currentThread().contextClassLoader
                     .getResourceAsStream("version.properties"),
             )
-
-            val version = properties.getProperty("version", "Unknown")
-
-            if (AppEnv.isDevelopment()) {
-                "$version-dev"
-            } else if (AppEnv.isTest()) {
-                "$version-test"
-            } else {
-                val beta: String? = properties.getProperty("beta")
-
-                val betaSuffix =
-                    if (beta == "0") {
-                        "-beta"
-                    } else if (beta != null) {
-                        "-beta$beta"
-                    } else {
-                        ""
-                    }
-                "$version$betaSuffix"
-            }
-        } catch (e: IOException) {
-            logger.error(e) { "Failed to read version" }
-            "Unknown"
+            properties
         }
     }
 
     private fun getUserName(): String {
         val userHome = systemProperty.get("user.home")
         return Paths.get(userHome).toFile().name
+    }
+
+    companion object {
+
+        fun getVersion(
+            appEnv: AppEnv = AppEnv.PRODUCTION,
+            load: () -> Properties,
+        ): String {
+            return try {
+                val properties = load()
+
+                val version = properties.getProperty("version", "Unknown")
+
+                if (appEnv.isDevelopment()) {
+                    "$version-dev"
+                } else if (appEnv.isTest()) {
+                    "$version-test"
+                } else {
+                    val beta: String? = properties.getProperty("beta")
+
+                    val betaSuffix =
+                        if (beta == "0") {
+                            "-beta"
+                        } else if (beta != null) {
+                            "-beta$beta"
+                        } else {
+                            ""
+                        }
+                    "$version$betaSuffix"
+                }
+            } catch (e: IOException) {
+                logger.error(e) { "Failed to read version" }
+                "Unknown"
+            }
+        }
     }
 }
