@@ -191,7 +191,7 @@ jobs:
       # https://github.com/actions/upload-artifact?tab=readme-ov-file#permission-loss
       - name: Tar Mac amd64 app
         run: |
-          tar -cvf output/clipevery-${{ env.PACKAGE_VERSION }}-mac-amd64/clipevery-${{ env.PACKAGE_VERSION }}-mac-amd64.tar -C output/clipevery-${{ env.PACKAGE_VERSION }}-mac-amd64 Clipevery.app
+          tar -czvf output/clipevery-${{ env.PACKAGE_VERSION }}-mac-amd64/clipevery-${{ env.PACKAGE_VERSION }}-mac-amd64.tar.gz -C output/clipevery-${{ env.PACKAGE_VERSION }}-mac-amd64 Clipevery.app
           rm -rf output/clipevery-${{ env.PACKAGE_VERSION }}-mac-amd64/Clipevery.app
 
       - name: Upload Mac amd64 app
@@ -214,7 +214,7 @@ jobs:
 
       - name: Tar Mac aarch64 app
         run: |
-          tar -cvf output/clipevery-${{ env.PACKAGE_VERSION }}-mac-aarch64/clipevery-${{ env.PACKAGE_VERSION }}-mac-aarch64.tar -C output/clipevery-${{ env.PACKAGE_VERSION }}-mac-aarch64 Clipevery.app
+          tar -czvf output/clipevery-${{ env.PACKAGE_VERSION }}-mac-aarch64/clipevery-${{ env.PACKAGE_VERSION }}-mac-aarch64.tar.gz -C output/clipevery-${{ env.PACKAGE_VERSION }}-mac-aarch64 Clipevery.app
           rm -rf output/clipevery-${{ env.PACKAGE_VERSION }}-mac-aarch64/Clipevery.app
 
       - name: Upload Mac aaarch64 app
