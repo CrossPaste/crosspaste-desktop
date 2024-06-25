@@ -13,3 +13,15 @@ English / [简体中文](./README.zh-CN.md)
 - **🧹 Automatic Cleanup**: Features various automatic cleanup options to efficiently manage clipboard space without manual effort.
 - **🔌 Software Compatibility**: Supports clipboard formats of mainstream software, such as Microsoft Office, Apple iWork, and LibreOffice.
 
+## 🤝 Support the project
+
+- **🌟 Star this repository**: This is the easiest way to support Clipevery and costs nothing.
+- **🪲 Report bugs**: Report any bugs you find on the [issue tracker](https://github.com/clipevery/clipevery-desktop/issues/new/choose).
+- **📖 Translate**: Help translate and polish Clipevery into your [language](https://github.com/clipevery/clipevery-desktop/tree/main/composeApp/src/desktopMain/resources/i18n).
+- **📝 Contribute**: Contribute code, comment on issues, and any contributions that can help the project are welcome.
+
+
+
+
+
+
