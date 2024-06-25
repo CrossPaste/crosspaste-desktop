@@ -7,6 +7,6 @@ class AppEnvTest {
 
     @Test
     fun testGetAppEnv() {
-        assertTrue { AppEnv.getAppEnv() == AppEnv.TEST }
+        assertTrue { AppEnv.CURRENT == AppEnv.TEST }
     }
 }

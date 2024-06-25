@@ -22,7 +22,7 @@ object DesktopAppRestartService : AppRestartService {
         }
 
     override fun restart(exitApplication: () -> Unit) {
-        if (AppEnv.isProduction()) {
+        if (AppEnv.CURRENT.isProduction()) {
             appRestartService.restart(exitApplication)
         } else {
             exitApplication()
