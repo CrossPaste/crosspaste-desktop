@@ -109,7 +109,7 @@ jobs:
             echo "Beta value added to properties file."
           fi
           
-          echo "VERSION=${PROPERTIES_VERSION}" >> $GITHUB_ENV
+          echo "VERSION=$PROPERTIES_VERSION" >> $GITHUB_ENV
           echo "BETA=$BETA" >> $GITHUB_ENV
           PACKAGE_VERSION="${PROPERTIES_VERSION}-beta${BETA}"
           echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> $GITHUB_ENV
