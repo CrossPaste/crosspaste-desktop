@@ -158,7 +158,7 @@ jobs:
           echo "${{ secrets.DEVELOPER_ID_APPLICATION }}" | base64 --decode > developerID_application.p12
 
       - name: Conveyor build Windows app
-        uses: hydraulic-software/conveyor/actions/build@v14.2
+        uses: hydraulic-software/conveyor/actions/build@v14.3
         with:
           command: make windows-zip --output-dir=./output/clipevery-${{ env.PACKAGE_VERSION }}-windows
           extra_flags: -f ci.conveyor.conf
@@ -179,7 +179,7 @@ jobs:
           assets: output/clipevery-${{ env.PACKAGE_VERSION }}-windows/**:/${{ env.PACKAGE_VERSION }}/
 
       - name: Conveyor build Mac amd64 app
-        uses: hydraulic-software/conveyor/actions/build@v14.2
+        uses: hydraulic-software/conveyor/actions/build@v14.3
         with:
           command: make mac-app --output-dir=./output/clipevery-${{ env.PACKAGE_VERSION }}-mac-amd64
           extra_flags: -f ci.conveyor.conf -Kapp.machines=mac.amd64
@@ -205,7 +205,7 @@ jobs:
           assets: output/clipevery-${{ env.PACKAGE_VERSION }}-mac-amd64/**:/${{ env.PACKAGE_VERSION }}/
 
       - name: Conveyor build Mac aarch64 app
-        uses: hydraulic-software/conveyor/actions/build@v14.2
+        uses: hydraulic-software/conveyor/actions/build@v14.3
         with:
           command: make mac-app --output-dir=./output/clipevery-${{ env.PACKAGE_VERSION }}-mac-aarch64
           extra_flags: -f ci.conveyor.conf -Kapp.machines=mac.aarch64
@@ -228,7 +228,7 @@ jobs:
           assets: output/clipevery-${{ env.PACKAGE_VERSION }}-mac-aarch64/**:/${{ env.PACKAGE_VERSION }}/
 
       - name: Conveyor build Linux app
-        uses: hydraulic-software/conveyor/actions/build@v14.2
+        uses: hydraulic-software/conveyor/actions/build@v14.3
         with:
           command: make debian-package --output-dir=./output/clipevery-${{ env.PACKAGE_VERSION }}-linux
           extra_flags: -f ci.conveyor.conf
