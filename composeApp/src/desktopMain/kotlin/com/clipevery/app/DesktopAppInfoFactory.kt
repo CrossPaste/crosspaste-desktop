@@ -20,7 +20,7 @@ class DesktopAppInfoFactory(private val configManager: ConfigManager) : AppInfoF
 
     private fun getVersion(): String {
         val properties = Properties()
-        try {
+        return try {
             properties.load(
                 Thread.currentThread().contextClassLoader
                     .getResourceAsStream("version.properties"),
@@ -29,9 +29,9 @@ class DesktopAppInfoFactory(private val configManager: ConfigManager) : AppInfoF
             val version = properties.getProperty("version", "Unknown")
 
             if (AppEnv.isDevelopment()) {
-                return "$version-dev"
+                "$version-dev"
             } else if (AppEnv.isTest()) {
-                return "$version-test"
+                "$version-test"
             } else {
                 val beta: String? = properties.getProperty("beta")
 
@@ -43,12 +43,12 @@ class DesktopAppInfoFactory(private val configManager: ConfigManager) : AppInfoF
                     } else {
                         ""
                     }
-                return "$version$betaSuffix"
+                "$version$betaSuffix"
             }
         } catch (e: IOException) {
             logger.error(e) { "Failed to read version" }
+            "Unknown"
         }
-        return "Unknown"
     }
 
     private fun getUserName(): String {
