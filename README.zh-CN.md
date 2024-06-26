@@ -13,6 +13,43 @@
 - **🧹 自动清理**：提供各种自动清理选项，以有效管理剪贴板空间，无需手动操作。
 - **🔌 软件兼容性**：支持主流软件的粘贴板格式，例如 Microsoft Office 、Apple iWork 和 LibreOffice。
 
+## 🏗 开发起步
+
+1. 克隆仓库
+
+   ```bash
+   git clone https://github.com/clipevery/clipevery-desktop.git
+   ```
+
+2. 编译并启动应用
+
+   ```bash
+   cd clipevery-desktop
+   ./gradlew clean composeApp:run
+   ```
+
+首次启动将下载 [JBR](https://github.com/JetBrains/JetBrainsRuntime) / [chromeDriver](https://googlechromelabs.github.io/chrome-for-testing/) / [chrome-headless-shell](https://googlechromelabs.github.io/chrome-for-testing/) / gradle 依赖.
+
+如果遇到如下错误:
+```log
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+java.net.SocketException: Connection reset
+> java.net.SocketException: Connection reset
+```
+你可能需要 vpn 来下载这些依赖
+
+为 gradle 配置代理，在 [gradle.properties](./gradle.properties) 内添加如下配置，并修改参数为你的代理配置:
+```properties
+systemProp.https.proxyHost=localhost
+systemProp.https.proxyPort=8080
+systemProp.https.proxyUser=userid
+systemProp.https.proxyPassword=password
+systemProp.http.nonProxyHosts=*.nonproxyrepos.com|localhost
+```
+
+
 ## 🤝 支持项目
 
 - **🌟 Star 这个项目**：这是支持 Clipevery 最简单的方法。
