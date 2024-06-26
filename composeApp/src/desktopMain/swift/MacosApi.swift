@@ -278,7 +278,7 @@ public func simulatePasteCommand(keyCodesPointer: UnsafePointer<Int32>, count: I
 
     for keyCode in keyCodes.reversed() {
         if let keyUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(UInt16(keyCode)), keyDown: false) {
-            keyUp.flags = flags
+            keyUp.flags = []
             keyUp.post(tap: .cghidEventTap)
         }
     }
