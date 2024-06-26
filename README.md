@@ -13,6 +13,42 @@ English / [简体中文](./README.zh-CN.md)
 - **🧹 Automatic Cleanup**: Features various automatic cleanup options to efficiently manage clipboard space without manual effort.
 - **🔌 Software Compatibility**: Supports clipboard formats of mainstream software, such as Microsoft Office, Apple iWork, and LibreOffice.
 
+## 🏗 Getting Started with Development
+
+1. clone the repository
+
+   ```bash
+   git clone https://github.com/clipevery/clipevery-desktop.git
+   ```
+
+2. Compile and run the application
+
+   ```bash
+   cd clipevery-desktop
+   ./gradlew composeApp:run
+   ```
+   
+First start will download [JBR](https://github.com/JetBrains/JetBrainsRuntime) / [chromeDriver](https://googlechromelabs.github.io/chrome-for-testing/) / [chrome-headless-shell](https://googlechromelabs.github.io/chrome-for-testing/) / gradle dependencies.
+
+If you encounter the following error:
+```log
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+java.net.SocketException: Connection reset
+> java.net.SocketException: Connection reset
+```
+you might need a VPN to download these dependencies.
+
+To configure a proxy for gradle, add the following settings to [gradle.properties](./gradle.properties), and adjust the parameters to match your proxy configuration:
+```properties
+systemProp.https.proxyHost=localhost
+systemProp.https.proxyPort=8080
+systemProp.https.proxyUser=userid
+systemProp.https.proxyPassword=password
+systemProp.http.nonProxyHosts=*.nonproxyrepos.com|localhost
+```
+
 ## 🤝 Support the project
 
 - **🌟 Star this repository**: This is the easiest way to support Clipevery and costs nothing.
