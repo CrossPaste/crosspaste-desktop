@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the application path relative to this script
-app_path="$(dirname "$(dirname "$0")")"
+app_path="$(dirname "$(dirname "$(dirname "$0")")")"
 
 # Check if a PID is provided and if it is a number
 if [ $# -eq 1 ]; then
