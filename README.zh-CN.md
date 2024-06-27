@@ -57,4 +57,4 @@ systemProp.http.nonProxyHosts=*.nonproxyrepos.com|localhost
 - **🌟 Star 这个项目**：这是支持 Clipevery 最简单的方法。
 - **🪲 报告错误**：在[问题追踪器](https://github.com/clipevery/clipevery-desktop/issues/new/choose)上报告你发现的任何错误。
 - **📖 翻译**：帮助 Clipevery 翻译、润色到你的[语言](https://github.com/clipevery/clipevery-desktop/tree/main/composeApp/src/desktopMain/resources/i18n)。
-- **📝 贡献**：贡献代码、评论 issue，欢迎一切可以帮助到项目的贡献。
+- **📝 贡献**：[贡献代码](./Contributing.zh-CN.md)、评论 issue，欢迎一切可以帮助到项目的贡献。
