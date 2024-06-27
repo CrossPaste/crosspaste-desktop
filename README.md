@@ -1,13 +1,10 @@
-English / [简体中文](./README.zh-CN.md)
-
-<h1 align="center">
+<div align="center">
    <img src="clipevery_logo.webp" width=200 height=200>
-   <br><br><strong>Clipevery</strong>
-   <p align="center">
-      Universal Clipboard Across Devices: Copy anything and paste it on any device, seamlessly.
-   </p>
-</h1>
+   <h1>Clipevery: Universal Clipboard Across Devices</h1>
+   <h4>Copy anything and paste it on any device, seamlessly.</h4>
+</div>
 
+English / [简体中文](./README.zh-CN.md)
 
 ## ✨ Features
 

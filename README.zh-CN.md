@@ -1,13 +1,10 @@
-简体中文 / [English](./README.md)
-
-<h1 align="center">
+<div align="center">
    <img src="clipevery_logo.webp" width=200 height=200>
-   <br><br><strong>Clipevery</strong>
-   <p align="center">
-      跨设备通用剪贴板: 拷贝任何事物，在任何设备上粘贴，一切自然而然。
-   </p>
-</h1>
+   <h1>Clipevery: 跨设备通用剪贴板</h1>
+   <h4>在任何设备上粘贴，一切自然而然。</h4>
+</div>
 
+简体中文 / [English](./README.md)
 
 ## ✨ 特性
 
