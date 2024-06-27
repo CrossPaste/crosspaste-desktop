@@ -1,8 +1,13 @@
-# Clipevery: Universal Clipboard Across Devices
-
-Copy anything and paste it on any device, seamlessly.
-
 English / [简体中文](./README.zh-CN.md)
+
+<h1 align="center">
+   <img src="clipevery_logo.webp" width=200 height=200>
+   <br><br><strong>Clipevery</strong>
+   <p align="center">
+      Universal Clipboard Across Devices: Copy anything and paste it on any device, seamlessly.
+   </p>
+</h1>
+
 
 ## ✨ Features
 
