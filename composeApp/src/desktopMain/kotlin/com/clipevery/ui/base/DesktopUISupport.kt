@@ -1,7 +1,15 @@
 package com.clipevery.ui.base
 
+import com.clipevery.clip.item.FilesClipItem
+import com.clipevery.clip.item.HtmlClipItem
+import com.clipevery.clip.item.ImagesClipItem
+import com.clipevery.clip.item.TextClipItem
+import com.clipevery.clip.item.UrlClipItem
+import com.clipevery.dao.clip.ClipData
+import com.clipevery.dao.clip.ClipType
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.platform.currentPlatform
+import com.clipevery.ui.clip.preview.getClipItem
 import com.clipevery.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.awt.Desktop
@@ -143,6 +151,28 @@ class DesktopUISupport(
                     copywriter.getText("Failed_to_open_Text_pasteboard"),
                 ),
             )
+        }
+    }
+
+    override fun openClipData(clipData: ClipData) {
+        clipData.getClipItem()?.let { item ->
+            when (clipData.clipType) {
+                ClipType.TEXT -> openText((item as TextClipItem).text)
+                ClipType.URL -> openUrlInBrowser((item as UrlClipItem).url)
+                ClipType.HTML -> openHtml((item as HtmlClipItem).html)
+                ClipType.FILE -> {
+                    val relativePathList = (item as FilesClipItem).relativePathList
+                    if (relativePathList.size > 0) {
+                        browseFile(Path.of(relativePathList[0]))
+                    }
+                }
+                ClipType.IMAGE -> {
+                    val relativePathList = (item as ImagesClipItem).relativePathList
+                    if (relativePathList.size > 0) {
+                        browseFile(Path.of(relativePathList[0]))
+                    }
+                }
+            }
         }
     }
 }

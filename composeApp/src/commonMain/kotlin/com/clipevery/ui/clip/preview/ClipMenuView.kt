@@ -1,6 +1,5 @@
 package com.clipevery.ui.clip.preview
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -12,9 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Divider
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.icons.Icons
@@ -49,11 +46,13 @@ import com.clipevery.clip.ClipboardService
 import com.clipevery.dao.clip.ClipDao
 import com.clipevery.dao.clip.ClipData
 import com.clipevery.i18n.GlobalCopywriter
+import com.clipevery.ui.base.ClipTooltipAreaView
 import com.clipevery.ui.base.MenuItem
 import com.clipevery.ui.base.MessageType
 import com.clipevery.ui.base.Toast
 import com.clipevery.ui.base.ToastManager
-import com.clipevery.ui.base.copy
+import com.clipevery.ui.base.UISupport
+import com.clipevery.ui.base.clipboard
 import com.clipevery.ui.base.favorite
 import com.clipevery.ui.base.getMenWidth
 import com.clipevery.ui.base.noFavorite
@@ -63,7 +62,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ClipMenuView(
     clipData: ClipData,
@@ -75,6 +74,7 @@ fun ClipMenuView(
     val clipboardService = current.koin.get<ClipboardService>()
     val copywriter = current.koin.get<GlobalCopywriter>()
     val toastManager = current.koin.get<ToastManager>()
+    val uiSupport = current.koin.get<UISupport>()
 
     var parentBounds by remember { mutableStateOf(Rect.Zero) }
     var cursorPosition by remember { mutableStateOf(Offset.Zero) }
@@ -132,16 +132,20 @@ fun ClipMenuView(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        Icon(
-            Icons.Outlined.MoreVert,
-            contentDescription = "info",
-            modifier =
-                Modifier.size(18.dp)
-                    .clickable {
-                        showPopup = !showPopup
-                    },
-            tint = MaterialTheme.colors.primary,
-        )
+        ClipTooltipAreaView(
+            text = copywriter.getText("Menu"),
+        ) {
+            Icon(
+                Icons.Outlined.MoreVert,
+                contentDescription = "info",
+                modifier =
+                    Modifier.size(18.dp)
+                        .clickable {
+                            showPopup = !showPopup
+                        },
+                tint = MaterialTheme.colors.primary,
+            )
+        }
 
         if (showPopup) {
             Popup(
@@ -174,10 +178,8 @@ fun ClipMenuView(
                 ) {
                     val menuTexts =
                         arrayOf(
-                            copywriter.getText(getTypeText(clipData.clipType)),
-                            copywriter.getText(if (clipData.favorite) "Delete_Favorite" else "Favorite"),
+                            copywriter.getText("Open"),
                             copywriter.getText("Delete"),
-                            copywriter.getText("Remove_Device"),
                         )
 
                     val maxWidth = getMenWidth(menuTexts)
@@ -190,12 +192,8 @@ fun ClipMenuView(
                                 .clip(RoundedCornerShape(5.dp))
                                 .background(MaterialTheme.colors.surface),
                     ) {
-                        MenuItem(copywriter.getText(getTypeText(clipData.clipType)), enabledInteraction = false) {}
-
-                        Divider()
-
-                        MenuItem(copywriter.getText(if (clipData.favorite) "Delete_Favorite" else "Favorite")) {
-                            clipDao.setFavorite(clipData.id, !clipData.favorite)
+                        MenuItem(copywriter.getText("Open")) {
+                            uiSupport.openClipData(clipData)
                             showPopup = false
                             showMenu = false
                             toShow(false)
@@ -214,36 +212,48 @@ fun ClipMenuView(
         }
 
         if (showMenu) {
-            ClipTypeIconView(clipData, size = 16.dp)
+            ClipTooltipAreaView(
+                text = copywriter.getText("Copy"),
+            ) {
+                Icon(
+                    modifier =
+                        Modifier.size(16.dp).clickable {
+                            runBlocking {
+                                clipboardService.tryWriteClipboard(clipData, localOnly = true, filterFile = false)
+                            }
+                            toastManager.setToast(
+                                Toast(
+                                    MessageType.Success,
+                                    copywriter.getText("Copy_Successful"),
+                                    3000,
+                                ),
+                            )
+                        },
+                    painter = clipboard(),
+                    contentDescription = "Copy",
+                    tint = MaterialTheme.colors.onBackground,
+                )
+            }
 
-            Icon(
-                modifier =
-                    Modifier.size(16.dp).onClick {
-                        runBlocking {
-                            clipboardService.tryWriteClipboard(clipData, localOnly = true, filterFile = false)
-                        }
-                        toastManager.setToast(
-                            Toast(
-                                MessageType.Success,
-                                copywriter.getText("Copy_Successful"),
-                                3000,
-                            ),
-                        )
-                    },
-                painter = copy(),
-                contentDescription = "Copy",
-                tint = MaterialTheme.colors.onBackground,
-            )
+            ClipTooltipAreaView(
+                text = copywriter.getText(if (clipData.favorite) "Delete_Favorite" else "Favorite"),
+            ) {
+                Icon(
+                    modifier =
+                        Modifier.size(16.dp).clickable {
+                            clipDao.setFavorite(clipData.id, !clipData.favorite)
+                        },
+                    painter = if (clipData.favorite) favorite() else noFavorite(),
+                    contentDescription = "Favorite",
+                    tint = favoriteColor(),
+                )
+            }
 
-            Icon(
-                modifier =
-                    Modifier.size(16.dp).onClick {
-                        clipDao.setFavorite(clipData.id, !clipData.favorite)
-                    },
-                painter = if (clipData.favorite) favorite() else noFavorite(),
-                contentDescription = "Favorite",
-                tint = favoriteColor(),
-            )
+            ClipTooltipAreaView(
+                text = copywriter.getText(getTypeText(clipData.clipType)),
+            ) {
+                ClipTypeIconView(clipData, size = 16.dp)
+            }
         }
     }
 }

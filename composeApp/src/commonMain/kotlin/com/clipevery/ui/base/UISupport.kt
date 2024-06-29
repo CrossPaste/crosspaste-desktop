@@ -1,5 +1,6 @@
 package com.clipevery.ui.base
 
+import com.clipevery.dao.clip.ClipData
 import java.nio.file.Path
 
 interface UISupport {
@@ -15,4 +16,6 @@ interface UISupport {
     fun openImage(imagePath: Path)
 
     fun openText(text: String)
+
+    fun openClipData(clipData: ClipData)
 }
