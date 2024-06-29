@@ -145,7 +145,7 @@ private func IOPlatformUUID() -> String? {
 public func getCurrentActiveApp() -> UnsafePointer<CChar>? {
     if let currentApp = NSWorkspace.shared.frontmostApplication {
         if let bundleIdentifier = currentApp.bundleIdentifier, let localizedName = currentApp.localizedName {
-            return UnsafePointer<CChar>(strdup("\(bundleIdentifier) \(localizedName)"))
+            return UnsafePointer<CChar>(strdup("\(bundleIdentifier)\n\(localizedName)"))
         }
     }
     return nil
