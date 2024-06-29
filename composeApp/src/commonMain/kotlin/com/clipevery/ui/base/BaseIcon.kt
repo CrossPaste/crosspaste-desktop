@@ -95,11 +95,6 @@ fun toTop(): Painter {
 }
 
 @Composable
-fun copy(): Painter {
-    return painterResource("icon/base/copy.svg")
-}
-
-@Composable
 fun noFavorite(): Painter {
     return painterResource("icon/base/no_favorite.svg")
 }
