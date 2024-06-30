@@ -60,11 +60,6 @@ fun HomeView(currentPageViewContext: MutableState<PageViewContext>) {
     TabsView(currentPageViewContext)
 }
 
-@Composable
-fun HomeWindowDecoration() {
-    TitleView()
-}
-
 val customFontFamily =
     FontFamily(
         Font(resource = "font/BebasNeue.otf", FontWeight.Normal),
@@ -72,7 +67,7 @@ val customFontFamily =
 
 @Preview
 @Composable
-fun TitleView() {
+fun HomeWindowDecoration() {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val appWindowManager = current.koin.get<AppWindowManager>()
