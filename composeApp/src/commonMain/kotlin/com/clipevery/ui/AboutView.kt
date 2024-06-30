@@ -24,6 +24,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clipevery.LocalKoinApplication
@@ -59,24 +62,32 @@ fun AboutContentView() {
             ) {
                 Image(
                     modifier =
-                        Modifier.clip(RoundedCornerShape(3.dp))
+                        Modifier.clip(RoundedCornerShape(6.dp))
                             .size(72.dp),
                     painter = painterResource("clipevery_icon.png"),
                     contentDescription = "clipevery icon",
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(14.dp))
                 Text(
                     text = "Clipevery",
-                    style = MaterialTheme.typography.subtitle1,
+                    style =
+                        TextStyle(
+                            fontFamily = FontFamily.SansSerif,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                        ),
                     color = MaterialTheme.colors.onBackground,
-                    fontSize = 14.sp,
                 )
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "Version ${appInfo.appVersion}",
-                    style = MaterialTheme.typography.subtitle2,
+                    text = "version: ${appInfo.appVersion}",
+                    style =
+                        TextStyle(
+                            fontFamily = FontFamily.SansSerif,
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 15.sp,
+                        ),
                     color = MaterialTheme.colors.onBackground,
-                    fontSize = 14.sp,
                 )
                 Spacer(modifier = Modifier.height(30.dp))
 
