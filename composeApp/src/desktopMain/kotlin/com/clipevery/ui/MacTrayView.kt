@@ -172,7 +172,6 @@ class MacTrayMouseClicked(
             }
 
         val gd = clickedDevice ?: ge.defaultScreenDevice
-
         val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
         mouseClickedAction(e, gd.defaultConfiguration.bounds, insets)
 
