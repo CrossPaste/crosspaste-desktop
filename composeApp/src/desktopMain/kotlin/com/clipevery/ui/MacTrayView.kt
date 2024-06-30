@@ -32,6 +32,7 @@ import java.awt.MenuItem
 import java.awt.PopupMenu
 import java.awt.Rectangle
 import java.awt.Toolkit
+import java.awt.event.InputEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.JFrame
@@ -64,7 +65,8 @@ fun MacTray() {
         tooltip = "Clipevery",
         mouseListener =
             MacTrayMouseClicked(appWindowManager) { event, rectangle, _ ->
-                if (event.button == MouseEvent.BUTTON1) {
+                val isCtrlDown = (event.modifiersEx and InputEvent.CTRL_DOWN_MASK) != 0
+                if (event.button == MouseEvent.BUTTON1 && !isCtrlDown) {
                     mainCoroutineDispatcher.launch(CoroutineName("Switch Clipevery")) {
                         appWindowManager.switchMainWindow()
                     }
