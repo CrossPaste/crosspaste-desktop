@@ -175,7 +175,7 @@ jobs:
           key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
           key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
           region: oss-cn-shenzhen
-          bucket: clipevery-desktop
+          bucket: clipevery-desktop-semi
           assets: output/clipevery-${{ env.PACKAGE_VERSION }}-windows/**:/${{ env.PACKAGE_VERSION }}/
 
       - name: Conveyor build Mac amd64 app
@@ -201,7 +201,7 @@ jobs:
           key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
           key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
           region: oss-cn-shenzhen
-          bucket: clipevery-desktop
+          bucket: clipevery-desktop-semi
           assets: output/clipevery-${{ env.PACKAGE_VERSION }}-mac-amd64/**:/${{ env.PACKAGE_VERSION }}/
 
       - name: Conveyor build Mac aarch64 app
@@ -224,7 +224,7 @@ jobs:
           key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
           key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
           region: oss-cn-shenzhen
-          bucket: clipevery-desktop
+          bucket: clipevery-desktop-semi
           assets: output/clipevery-${{ env.PACKAGE_VERSION }}-mac-aarch64/**:/${{ env.PACKAGE_VERSION }}/
 
       - name: Conveyor build Linux app
@@ -245,7 +245,7 @@ jobs:
           key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
           key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
           region: oss-cn-shenzhen
-          bucket: clipevery-desktop
+          bucket: clipevery-desktop-semi
           assets: output/clipevery-${{ env.PACKAGE_VERSION }}-linux/**:/${{ env.PACKAGE_VERSION }}/
 
       # conveyor default cache directory is .conveyor/cache
