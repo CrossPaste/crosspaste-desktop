@@ -163,14 +163,16 @@ class MacTrayMouseClicked(
 
     override fun mouseClicked(e: MouseEvent) {
         val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
+        val bounds = ge.defaultScreenDevice.defaultConfiguration.bounds
         val scDevices = ge.screenDevices
 
         val clickedDevice =
             scDevices.firstOrNull { device ->
-                device.contains(e.point)
+                device.contains(e.point, bounds.x, bounds.y)
             }
 
         val gd = clickedDevice ?: ge.defaultScreenDevice
+
         val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
         mouseClickedAction(e, gd.defaultConfiguration.bounds, insets)
 
