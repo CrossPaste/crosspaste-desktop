@@ -124,6 +124,7 @@ kotlin {
                 exclude(group = "org.seleniumhq.selenium", module = "selenium-firefox-driver")
                 exclude(group = "org.seleniumhq.selenium", module = "selenium-edge-driver")
                 exclude(group = "org.seleniumhq.selenium", module = "selenium-ie-driver")
+                exclude(group = "org.seleniumhq.selenium", module = "selenium-manager")
             }
         }
     }
