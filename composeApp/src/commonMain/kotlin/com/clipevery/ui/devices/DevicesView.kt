@@ -199,7 +199,6 @@ fun MyDevicesView(currentPageViewContext: MutableState<PageViewContext>) {
                                     .wrapContentHeight(),
                         ) {
                             DialogButtonsView(
-                                height = 50.dp,
                                 cancelAction = cancelAction,
                                 confirmAction = confirmAction,
                             )

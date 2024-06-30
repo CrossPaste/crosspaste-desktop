@@ -76,7 +76,7 @@ class ClipDialog(
                         Row(
                             modifier =
                                 Modifier.fillMaxWidth()
-                                    .height(30.dp)
+                                    .height(40.dp)
                                     .background(MaterialTheme.colors.surface),
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically,
