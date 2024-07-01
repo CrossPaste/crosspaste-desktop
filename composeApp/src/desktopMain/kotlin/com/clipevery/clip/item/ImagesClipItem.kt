@@ -12,6 +12,8 @@ import com.clipevery.presist.FileInfoTree
 import com.clipevery.serializer.PathStringRealmListSerializer
 import com.clipevery.serializer.StringRealmListSerializer
 import com.clipevery.utils.DesktopJsonUtils
+import io.github.oshai.kotlinlogging.KLogger
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.types.RealmList
@@ -29,12 +31,15 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.nio.file.Paths
+import javax.imageio.ImageIO
 
 @Serializable
 @SerialName("images")
 class ImagesClipItem : RealmObject, ClipItem, ClipImages {
 
-    companion object {}
+    companion object {
+        private val logger: KLogger = KotlinLogging.logger {}
+    }
 
     @PrimaryKey
     @Transient
@@ -125,6 +130,14 @@ class ImagesClipItem : RealmObject, ClipItem, ClipImages {
         val filePaths = getFilePaths()
         val fileList: List<File> = filePaths.map { it.toFile() }
         map[DataFlavor.javaFileListFlavor] = fileList
+
+        if (fileList.size == 1) {
+            try {
+                map[DataFlavor.imageFlavor] = ImageIO.read(fileList[0])
+            } catch (e: Exception) {
+                logger.error(e) { "read image fail" }
+            }
+        }
 
         if (currentPlatform().isLinux()) {
             val content =

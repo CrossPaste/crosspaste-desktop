@@ -15,7 +15,7 @@ class DesktopTransferableProducer : TransferableProducer {
 
         val clipAppearItems = clipData.getClipAppearItems()
 
-        for (clipAppearItem in clipAppearItems) {
+        for (clipAppearItem in clipAppearItems.reversed()) {
             if (filterFile) {
                 if (clipAppearItem is ClipFiles) {
                     continue
