@@ -34,36 +34,34 @@ jobs:
     needs: check-dylib-cache
     runs-on: macos-latest
     if: needs.check-dylib-cache.outputs.cache-hit-x86 != 'true' && needs.check-dylib-cache.outputs.cache-hit-aarch64 != 'true'
-    strategy:
-      matrix:
-        arch:
-          - x86_64-apple-macos10.15
-          - arm64-apple-macos11
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Swift environment
         run: brew install swift
 
-      - name: Build dylib
-        working-directory: ${{ github.workspace }}
+      - name: Build dylib for x86_64
         run: |
-          ARCH_DIR=${{ matrix.arch }}
-          if [[ "$ARCH_DIR" == *"arm64"* ]]; then
-            LIB_DIR="darwin-aarch64"
-          else
-            LIB_DIR="darwin-x86-64"
-          fi
-          mkdir -p ${{ github.workspace }}/composeApp/dylib/$LIB_DIR
-          swiftc -emit-library composeApp/src/desktopMain/swift/MacosApi.swift -target ${{ matrix.arch }} -o ${{ github.workspace }}/composeApp/dylib/$LIB_DIR/libMacosApi.dylib
-          echo "PREFIX=$LIB_DIR" >> $GITHUB_ENV
+          mkdir -p composeApp/dylib/darwin-x86-64
+          swiftc -emit-library composeApp/src/desktopMain/swift/MacosApi.swift -target x86_64-apple-macos10.15 -o composeApp/dylib/darwin-x86-64/libMacosApi.dylib
 
-      - name: Save dylib to cache
-        id: cache-dylib-save
+      - name: Build dylib for arm64
+        run: |
+          mkdir -p composeApp/dylib/darwin-aarch64
+          swiftc -emit-library composeApp/src/desktopMain/swift/MacosApi.swift -target arm64-apple-macos11 -o composeApp/dylib/darwin-aarch64/libMacosApi.dylib
+
+      - name: Save dylib to cache for x86_64
         uses: actions/cache/save@v4
         with:
-          path: ./composeApp/dylib/${{ env.PREFIX }}/libMacosApi.dylib
-          key: mac-dylib-${{ env.PREFIX }}-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
+          path: ./composeApp/dylib/darwin-x86-64/libMacosApi.dylib
+          key: mac-dylib-x86-64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
+          enableCrossOsArchive: true
+
+      - name: Save dylib to cache for arm64
+        uses: actions/cache/save@v4
+        with:
+          path: ./composeApp/dylib/darwin-aarch64/libMacosApi.dylib
+          key: mac-dylib-aarch64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
   build-ubuntu:
