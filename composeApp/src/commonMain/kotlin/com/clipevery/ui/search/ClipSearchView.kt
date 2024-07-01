@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.clipevery.LocalKoinApplication
+import com.clipevery.app.AppInfo
 import com.clipevery.app.AppWindowManager
 import com.clipevery.clip.ClipSearchService
 import com.clipevery.dao.clip.ClipType
@@ -86,6 +87,7 @@ import java.awt.event.KeyEvent
 fun ClipeverySearchWindow() {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
+    val appInfo = current.koin.get<AppInfo>()
     val copywriter = current.koin.get<GlobalCopywriter>()
     val appWindowManager = current.koin.get<AppWindowManager>()
     val clipSearchService = current.koin.get<ClipSearchService>()
@@ -458,6 +460,19 @@ fun ClipeverySearchWindow() {
                             modifier =
                                 Modifier.size(25.dp)
                                     .clip(RoundedCornerShape(5.dp)),
+                        )
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        Text(
+                            text = "Clipevery ${appInfo.appVersion}",
+                            style =
+                                TextStyle(
+                                    fontWeight = FontWeight.Normal,
+                                    fontFamily = FontFamily.SansSerif,
+                                    color = MaterialTheme.colors.onBackground,
+                                    fontSize = 14.sp,
+                                ),
                         )
 
                         Spacer(modifier = Modifier.weight(1f))
