@@ -23,7 +23,7 @@ class DesktopAppInfoFactory(private val configManager: ConfigManager) : AppInfoF
             val properties = Properties()
             properties.load(
                 Thread.currentThread().contextClassLoader
-                    .getResourceAsStream("version.properties"),
+                    .getResourceAsStream("clipevery-version.properties"),
             )
             properties
         }

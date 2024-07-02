@@ -94,7 +94,7 @@ jobs:
           echo "Tag Version: $TAG_VERSION"
           echo "Tag Beta: $BETA"
           
-          PROPERTIES_VERSION=$(grep 'version=' ${{ github.workspace }}/composeApp/src/desktopMain/resources/version.properties | cut -d'=' -f2)
+          PROPERTIES_VERSION=$(grep 'version=' composeApp/src/desktopMain/resources/clipevery-version.properties | cut -d'=' -f2)
           
           echo "Properties Version: $PROPERTIES_VERSION"
           
@@ -103,7 +103,7 @@ jobs:
             exit 1
           else
             echo "Versions match. Proceeding to update beta value in properties file."
-            echo -e "\nbeta=$BETA" >> ${{ github.workspace }}/composeApp/src/desktopMain/resources/version.properties
+            echo -e "\nbeta=$BETA" >> composeApp/src/desktopMain/resources/clipevery-version.properties
             echo "Beta value added to properties file."
           fi
           
