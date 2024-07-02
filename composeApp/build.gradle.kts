@@ -10,7 +10,7 @@ import java.util.Properties
 val versionProperties = Properties()
 versionProperties.load(
     FileReader(
-        project.projectDir.toPath().resolve("src/desktopMain/resources/version.properties").toFile(),
+        project.projectDir.toPath().resolve("src/desktopMain/resources/clipevery-version.properties").toFile(),
     ),
 )
 group = "com.clipevery"
