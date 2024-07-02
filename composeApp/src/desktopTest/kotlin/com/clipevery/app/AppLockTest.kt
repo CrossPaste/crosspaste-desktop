@@ -16,7 +16,7 @@ class AppLockTest {
             runBlocking {
                 val job1 =
                     launch {
-                        val pair = DesktopAppLock.acquireLock()
+                        val pair = DesktopAppLaunch.acquireLock()
                         assertTrue(pair.first, "First instance should be able to acquire the lock")
                         assertTrue(pair.second, "First instance should be considered as the first launch")
                     }
@@ -25,7 +25,7 @@ class AppLockTest {
 
                 val job2 =
                     launch {
-                        val pair = DesktopAppLock.acquireLock()
+                        val pair = DesktopAppLaunch.acquireLock()
                         assertFalse(
                             pair.first,
                             "Second instance should not be able to acquire the lock while the first one holds it",
@@ -36,7 +36,7 @@ class AppLockTest {
                 job1.join()
                 job2.join()
 
-                DesktopAppLock.releaseLock()
+                DesktopAppLaunch.releaseLock()
             }
         }
     }
@@ -45,12 +45,12 @@ class AppLockTest {
     fun testLockRelease() {
         testUseMockTestPathProvider { _, _, _, _ ->
             runBlocking {
-                assertTrue(DesktopAppLock.acquireLock().first, "Instance should be able to acquire the lock initially")
-                DesktopAppLock.releaseLock()
+                assertTrue(DesktopAppLaunch.acquireLock().first, "Instance should be able to acquire the lock initially")
+                DesktopAppLaunch.releaseLock()
 
                 val job =
                     launch {
-                        val pair = DesktopAppLock.acquireLock()
+                        val pair = DesktopAppLaunch.acquireLock()
                         assertTrue(
                             pair.first,
                             "Instance should be able to reacquire the lock after it was released",
@@ -59,7 +59,7 @@ class AppLockTest {
                     }
 
                 job.join()
-                DesktopAppLock.releaseLock()
+                DesktopAppLaunch.releaseLock()
             }
         }
     }

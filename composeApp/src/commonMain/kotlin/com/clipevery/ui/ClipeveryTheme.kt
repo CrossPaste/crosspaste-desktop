@@ -108,3 +108,7 @@ fun unmatchedColor(): Color {
 fun unverifiedColor(): Color {
     return Color(0xFF69A9EC)
 }
+
+fun grantPermissionColor(): Color {
+    return Color(0xFF95EC69)
+}

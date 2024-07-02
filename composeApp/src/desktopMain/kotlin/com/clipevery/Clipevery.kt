@@ -7,20 +7,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
 import com.clipevery.app.AbstractAppWindowManager.Companion.MAIN_WINDOW_TITLE
 import com.clipevery.app.AbstractAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.clipevery.app.AppEnv
 import com.clipevery.app.AppFileType
 import com.clipevery.app.AppInfo
+import com.clipevery.app.AppLaunchState
 import com.clipevery.app.AppLock
 import com.clipevery.app.AppRestartService
 import com.clipevery.app.AppStartUpService
 import com.clipevery.app.AppTokenService
 import com.clipevery.app.AppWindowManager
 import com.clipevery.app.DesktopAppInfoFactory
-import com.clipevery.app.DesktopAppLock
+import com.clipevery.app.DesktopAppLaunch
 import com.clipevery.app.DesktopAppRestartService
 import com.clipevery.app.DesktopAppStartUpService
 import com.clipevery.app.DesktopAppTokenService
@@ -100,6 +106,7 @@ import com.clipevery.net.clientapi.SendClipClientApi
 import com.clipevery.net.clientapi.SyncClientApi
 import com.clipevery.net.plugin.SignalClientDecryptPlugin
 import com.clipevery.net.plugin.SignalClientEncryptPlugin
+import com.clipevery.os.macos.api.MacosApi
 import com.clipevery.path.DesktopPathProvider
 import com.clipevery.path.PathProvider
 import com.clipevery.platform.currentPlatform
@@ -135,6 +142,7 @@ import com.clipevery.ui.PageViewContext
 import com.clipevery.ui.PageViewType
 import com.clipevery.ui.ThemeDetector
 import com.clipevery.ui.WindowsTray
+import com.clipevery.ui.base.ClipeveryGrantAccessibilityPermissions
 import com.clipevery.ui.base.DesktopDialogService
 import com.clipevery.ui.base.DesktopIconStyle
 import com.clipevery.ui.base.DesktopNotificationManager
@@ -198,7 +206,8 @@ class Clipevery {
                     // simple component
                     single<AppEnv> { appEnv }
                     single<AppInfo> { DesktopAppInfoFactory(get()).createAppInfo() }
-                    single<AppLock> { DesktopAppLock }
+                    single<AppLock> { DesktopAppLaunch }
+                    single<AppLaunchState> { DesktopAppLaunch.launch() }
                     single<AppStartUpService> { DesktopAppStartUpService(get()) }
                     single<AppRestartService> { DesktopAppRestartService }
                     single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<ClipServer>() }) }
@@ -321,8 +330,8 @@ class Clipevery {
         @Throws(Exception::class)
         private fun initInject() {
             try {
-                val pair = koinApplication.koin.get<AppLock>().acquireLock()
-                if (pair.first) {
+                val appLaunchState = koinApplication.koin.get<AppLaunchState>()
+                if (appLaunchState.acquireLock) {
                     if (koinApplication.koin.get<ConfigManager>().config.enableClipboardListening) {
                         koinApplication.koin.get<ClipboardService>().start()
                     }
@@ -365,6 +374,7 @@ class Clipevery {
             initInject()
             logger.info { "Clipevery started" }
 
+            val appLaunchState = koinApplication.koin.get<AppLaunchState>()
             val appWindowManager = koinApplication.koin.get<AppWindowManager>()
             val globalListener = koinApplication.koin.get<GlobalListener>()
             val platform = currentPlatform()
@@ -398,14 +408,6 @@ class Clipevery {
                     LocalExitApplication provides exitApplication,
                     LocalPageViewContent provides currentPageViewContext,
                 ) {
-                    if (isMacos) {
-                        MacTray()
-                    } else if (isWindows) {
-                        WindowsTray()
-                    } else if (isLinux) {
-                        setWindowPosition(appWindowManager)
-                    }
-
                     val windowIcon: Painter? =
                         if (platform.isMacos()) {
                             painterResource("icon/clipevery.mac.png")
@@ -417,80 +419,123 @@ class Clipevery {
                             null
                         }
 
-                    Window(
-                        onCloseRequest = exitApplication,
-                        visible = appWindowManager.showMainWindow,
-                        state = appWindowManager.mainWindowState,
-                        title = MAIN_WINDOW_TITLE,
-                        icon = windowIcon,
-                        alwaysOnTop = true,
-                        undecorated = true,
-                        transparent = true,
-                        resizable = false,
-                    ) {
-                        DisposableEffect(Unit) {
-                            if (platform.isLinux()) {
-                                systemTray?.let { tray ->
-                                    initSystemTray(tray, koinApplication, exitApplication)
-                                }
-                            }
+                    if (appLaunchState.accessibilityPermissions) {
+                        if (isMacos) {
+                            MacTray()
+                        } else if (isWindows) {
+                            WindowsTray()
+                        } else if (isLinux) {
+                            setWindowPosition(appWindowManager)
+                        }
 
-                            globalListener.start()
-
-                            val windowListener =
-                                object : WindowAdapter() {
-                                    override fun windowGainedFocus(e: WindowEvent?) {
-                                        appWindowManager.showMainWindow = true
+                        Window(
+                            onCloseRequest = exitApplication,
+                            visible = appWindowManager.showMainWindow,
+                            state = appWindowManager.mainWindowState,
+                            title = MAIN_WINDOW_TITLE,
+                            icon = windowIcon,
+                            alwaysOnTop = true,
+                            undecorated = true,
+                            transparent = true,
+                            resizable = false,
+                        ) {
+                            DisposableEffect(Unit) {
+                                if (platform.isLinux()) {
+                                    systemTray?.let { tray ->
+                                        initSystemTray(tray, koinApplication, exitApplication)
                                     }
+                                }
 
-                                    override fun windowLostFocus(e: WindowEvent?) {
-                                        mainCoroutineDispatcher.launch(CoroutineName("Hide Clipevery")) {
-                                            if (!appWindowManager.showMainDialog) {
-                                                appWindowManager.unActiveMainWindow()
+                                globalListener.start()
+
+                                val windowListener =
+                                    object : WindowAdapter() {
+                                        override fun windowGainedFocus(e: WindowEvent?) {
+                                            appWindowManager.showMainWindow = true
+                                        }
+
+                                        override fun windowLostFocus(e: WindowEvent?) {
+                                            mainCoroutineDispatcher.launch(CoroutineName("Hide Clipevery")) {
+                                                if (!appWindowManager.showMainDialog) {
+                                                    appWindowManager.unActiveMainWindow()
+                                                }
                                             }
                                         }
                                     }
+
+                                window.addWindowFocusListener(windowListener)
+
+                                onDispose {
+                                    window.removeWindowFocusListener(windowListener)
                                 }
-
-                            window.addWindowFocusListener(windowListener)
-
-                            onDispose {
-                                window.removeWindowFocusListener(windowListener)
                             }
-                        }
-                        ClipeveryWindow { appWindowManager.unActiveMainWindow() }
-                    }
-
-                    Window(
-                        onCloseRequest = ::exitApplication,
-                        visible = appWindowManager.showSearchWindow,
-                        state = appWindowManager.searchWindowState,
-                        title = SEARCH_WINDOW_TITLE,
-                        alwaysOnTop = true,
-                        undecorated = true,
-                        transparent = true,
-                        resizable = false,
-                    ) {
-                        DisposableEffect(Unit) {
-                            val windowListener =
-                                object : WindowAdapter() {
-                                    override fun windowGainedFocus(e: WindowEvent?) {
-                                        appWindowManager.showSearchWindow = true
-                                    }
-
-                                    override fun windowLostFocus(e: WindowEvent?) {
-                                        appWindowManager.showSearchWindow = false
-                                    }
-                                }
-
-                            window.addWindowFocusListener(windowListener)
-
-                            onDispose {
-                                window.removeWindowFocusListener(windowListener)
-                            }
+                            ClipeveryWindow { appWindowManager.unActiveMainWindow() }
                         }
 
-                        ClipeverySearchWindow()
+                        Window(
+                            onCloseRequest = ::exitApplication,
+                            visible = appWindowManager.showSearchWindow,
+                            state = appWindowManager.searchWindowState,
+                            title = SEARCH_WINDOW_TITLE,
+                            icon = windowIcon,
+                            alwaysOnTop = true,
+                            undecorated = true,
+                            transparent = true,
+                            resizable = false,
+                        ) {
+                            DisposableEffect(Unit) {
+                                val windowListener =
+                                    object : WindowAdapter() {
+                                        override fun windowGainedFocus(e: WindowEvent?) {
+                                            appWindowManager.showSearchWindow = true
+                                        }
+
+                                        override fun windowLostFocus(e: WindowEvent?) {
+                                            appWindowManager.showSearchWindow = false
+                                        }
+                                    }
+
+                                window.addWindowFocusListener(windowListener)
+
+                                onDispose {
+                                    window.removeWindowFocusListener(windowListener)
+                                }
+                            }
+
+                            ClipeverySearchWindow()
+                        }
+                    } else {
+                        val windowState =
+                            rememberWindowState(
+                                placement = WindowPlacement.Floating,
+                                position = WindowPosition.PlatformDefault,
+                                size = DpSize(width = 360.dp, height = 200.dp),
+                            )
+
+                        Window(
+                            onCloseRequest = ::exitApplication,
+                            visible = true,
+                            state = windowState,
+                            title = "Apply Accessibility Permissions",
+                            icon = windowIcon,
+                            alwaysOnTop = true,
+                            undecorated = false,
+                            resizable = false,
+                        ) {
+                            DisposableEffect(Unit) {
+                                window.rootPane.apply {
+                                    rootPane.putClientProperty("apple.awt.fullWindowContent", true)
+                                    rootPane.putClientProperty("apple.awt.transparentTitleBar", true)
+                                    rootPane.putClientProperty("apple.awt.windowTitleVisible", false)
+                                }
+
+                                onDispose {}
+                            }
+
+                            ClipeveryGrantAccessibilityPermissions {
+                                MacosApi.INSTANCE.checkAccessibilityPermissions()
+                            }
+                        }
                     }
                 }
             }

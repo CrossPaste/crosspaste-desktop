@@ -1,6 +1,8 @@
 package com.clipevery.app
 
+import com.clipevery.os.macos.api.MacosApi
 import com.clipevery.path.DesktopPathProvider
+import com.clipevery.platform.currentPlatform
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.nio.channels.FileChannel
@@ -8,7 +10,7 @@ import java.nio.channels.FileLock
 import java.nio.channels.OverlappingFileLockException
 import java.nio.file.StandardOpenOption
 
-object DesktopAppLock : AppLock {
+object DesktopAppLaunch : AppLaunch, AppLock {
 
     private val logger: KLogger = KotlinLogging.logger {}
 
@@ -46,6 +48,17 @@ object DesktopAppLock : AppLock {
             channel?.close()
         } catch (e: Exception) {
             logger.error { "Failed to release lock: ${e.message}" }
+        }
+    }
+
+    override fun launch(): AppLaunchState {
+        val pair = acquireLock()
+        val platform = currentPlatform()
+        if (platform.isMacos()) {
+            val accessibilityPermissions = MacosApi.INSTANCE.checkAccessibilityPermissions()
+            return AppLaunchState(pair.first, pair.second, accessibilityPermissions)
+        } else {
+            return AppLaunchState(pair.first, pair.second, true)
         }
     }
 }
