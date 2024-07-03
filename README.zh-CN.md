@@ -1,6 +1,6 @@
 <div align="center">
    <img src="crosspaste_logo.webp" width=200 height=200>
-   <h1>Clipevery: 跨设备通用剪贴板</h1>
+   <h1>CrossPaste: 跨设备通用剪贴板</h1>
    <h4>在任何设备上粘贴，一切自然而然。</h4>
 </div>
 
