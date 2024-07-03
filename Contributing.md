@@ -1,10 +1,10 @@
 # Contributing
 
 ## Introduction
-Welcome to the contribution guide for Clipevery. We appreciate your participation and hope your contributions will help us improve the project.
+Welcome to the contribution guide for CrossPaste. We appreciate your participation and hope your contributions will help us improve the project.
 
 ## Getting Started
-Before you start contributing, you need to [set up your development environment](https://github.com/clipevery/clipevery-desktop?tab=readme-ov-file#-getting-started-with-development). 
+Before you start contributing, you need to [set up your development environment](https://github.com/CrossPaste/crosspaste-desktop?tab=readme-ov-file#-getting-started-with-development). 
 
 ## How to Contribute
 We welcome various forms of contributions, including but not limited to:
@@ -23,7 +23,7 @@ Steps to contribute:
 5. Open a Pull Request
 
 ## Reporting Issues
-If you find a bug, please submit an [issue](https://github.com/clipevery/clipevery-desktop/issues/new?assignees=&labels=bug&projects=&template=bug.yml). Before submitting, ensure the issue hasn't been reported and provide as much detail as possible.
+If you find a bug, please submit an [issue](https://github.com/CrossPaste/crosspaste-desktop/issues/new?assignees=&labels=bug&projects=&template=bug.yml). Before submitting, ensure the issue hasn't been reported and provide as much detail as possible.
 
 ## Pull Request Guidelines
 To ensure high-quality code, we have the following pull request guidelines:
@@ -36,4 +36,4 @@ To ensure high-quality code, we have the following pull request guidelines:
 If you have any questions or need further assistance, please contact us:
 
 - Email: compile.future@gmail.com
-- GitHub Issues: [link to issues](https://github.com/clipevery/clipevery-desktop/issues)
+- GitHub Issues: [link to issues](https://github.com/CrossPaste/crosspaste-desktop/issues)

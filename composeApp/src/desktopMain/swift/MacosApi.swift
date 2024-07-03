@@ -6,20 +6,20 @@ import Security
 @_cdecl("getClipboardChangeCount")
 public func getClipboardChangeCount(currentChangeCount: Int,
                                     isRemote: UnsafeMutablePointer<Bool>,
-                                    isClipevery: UnsafeMutablePointer<Bool>) -> Int {
+                                    isCrossPaste: UnsafeMutablePointer<Bool>) -> Int {
     let pasteboard = NSPasteboard.general
     let newChangeCount = pasteboard.changeCount
 
     isRemote.pointee = false
-    isClipevery.pointee = false
+    isCrossPaste.pointee = false
 
     if newChangeCount != currentChangeCount, let items = pasteboard.pasteboardItems {
         for item in items {
             for type in item.types {
                 if type.rawValue == "com.apple.is-remote-clipboard" {
                     isRemote.pointee = true
-                } else if type.rawValue == "com.clipevery" {
-                    isClipevery.pointee = true
+                } else if type.rawValue == "com.crosspaste" {
+                    isCrossPaste.pointee = true
                 }
             }
         }
@@ -177,7 +177,7 @@ public func mainToBack(
     DispatchQueue.main.async {
         let windows = NSApplication.shared.windows
         for window in windows {
-            if window.title == "Clipevery" {
+            if window.title == "CrossPaste" {
                 if (NSApp.isActive) {
                     window.orderBack(nil)
                     NSApp.hide(nil)
@@ -204,7 +204,7 @@ public func searchToBack(
     DispatchQueue.main.async {
         let windows = NSApplication.shared.windows
         for window in windows {
-            if window.title == "Clipevery Search" {
+            if window.title == "CrossPaste Search" {
                 if (NSApp.isActive) {
                     window.orderBack(nil)
                     NSApp.hide(nil)

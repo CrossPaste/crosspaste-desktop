@@ -1,4 +1,4 @@
-rootProject.name = "clipevery-desktop"
+rootProject.name = "crosspaste-desktop"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {

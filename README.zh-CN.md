@@ -1,5 +1,5 @@
 <div align="center">
-   <img src="clipevery_logo.webp" width=200 height=200>
+   <img src="crosspaste_logo.webp" width=200 height=200>
    <h1>Clipevery: 跨设备通用剪贴板</h1>
    <h4>在任何设备上粘贴，一切自然而然。</h4>
 </div>
@@ -20,13 +20,13 @@
 1. 克隆仓库
 
    ```bash
-   git clone https://github.com/clipevery/clipevery-desktop.git
+   git clone https://github.com/CrossPaste/crosspaste-desktop.git
    ```
 
 2. 编译并启动应用
 
    ```bash
-   cd clipevery-desktop
+   cd crosspaste-desktop
    ./gradlew clean composeApp:run
    ```
 
@@ -55,6 +55,6 @@ systemProp.http.nonProxyHosts=*.nonproxyrepos.com|localhost
 ## 🤝 支持项目
 
 - **🌟 Star 这个项目**：这是支持 Clipevery 最简单的方法。
-- **🪲 报告错误**：在[问题追踪器](https://github.com/clipevery/clipevery-desktop/issues/new/choose)上报告你发现的任何错误。
-- **📖 翻译**：帮助 Clipevery 翻译、润色到你的[语言](https://github.com/clipevery/clipevery-desktop/tree/main/composeApp/src/desktopMain/resources/i18n)。
+- **🪲 报告错误**：在[问题追踪器](https://github.com/CrossPaste/crosspaste-desktop/issues/new/choose)上报告你发现的任何错误。
+- **📖 翻译**：帮助 Clipevery 翻译、润色到你的[语言](https://github.com/CrossPaste/crosspaste-desktop/tree/main/composeApp/src/desktopMain/resources/i18n)。
 - **📝 贡献**：[贡献代码](./Contributing.zh-CN.md)、评论 issue，欢迎一切可以帮助到项目的贡献。

@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to suggest improvements to Clipevery!
+        Thanks for taking the time to suggest improvements to CrossPaste!
   - type: textarea
     id: solution
     attributes:
