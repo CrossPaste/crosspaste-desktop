@@ -1,11 +1,8 @@
 package com.clipevery.listen
 
-import androidx.compose.ui.unit.dp
+import com.clipevery.app.AppLaunchState
 import com.clipevery.i18n.GlobalCopywriter
 import com.clipevery.listener.GlobalListener
-import com.clipevery.ui.base.ClipDialog
-import com.clipevery.ui.base.DialogService
-import com.clipevery.ui.base.MacAcessibilityView
 import com.clipevery.ui.base.MessageType
 import com.clipevery.ui.base.Toast
 import com.clipevery.ui.base.ToastManager
@@ -20,9 +17,9 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 val logger = KotlinLogging.logger {}
 
 class DesktopGlobalListener(
+    private val appLaunchState: AppLaunchState,
     private val shortcutKeysListener: NativeKeyListener,
     private val mouseListener: NativeMouseListener,
-    private val dialogService: DialogService,
     private val toastManager: ToastManager,
     private val copywriter: GlobalCopywriter,
 ) : GlobalListener {
@@ -36,22 +33,16 @@ class DesktopGlobalListener(
     override fun start() {
         if (systemProperty.get("globalListener", false.toString()).toBoolean()) {
             try {
-                if (!isRegistered()) {
+                if (appLaunchState.accessibilityPermissions && !isRegistered()) {
                     GlobalScreen.registerNativeHook()
                     GlobalScreen.addNativeKeyListener(shortcutKeysListener)
                     GlobalScreen.addNativeMouseListener(mouseListener)
+                } else {
+                    grantAccessibilityPermissions()
                 }
             } catch (e: NativeHookException) {
                 if (e.code == DARWIN_AXAPI_DISABLED) {
-                    dialogService.pushDialog(
-                        ClipDialog(
-                            key = e.code,
-                            title = "Global_Shortcut_Activation_Failed",
-                            width = 320.dp,
-                        ) {
-                            MacAcessibilityView()
-                        },
-                    )
+                    grantAccessibilityPermissions()
                 } else {
                     toastManager.setToast(
                         Toast(
@@ -65,6 +56,10 @@ class DesktopGlobalListener(
                 logger.error(e) { "There was a problem registering the native hook" }
             }
         }
+    }
+
+    private fun grantAccessibilityPermissions() {
+        appLaunchState.accessibilityPermissions = false
     }
 
     override fun stop() {
