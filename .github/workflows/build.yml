@@ -54,14 +54,14 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ./composeApp/dylib/darwin-x86-64/libMacosApi.dylib
-          key: mac-dylib-x86-64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
+          key: mac-dylib-darwin-x86-64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
       - name: Save dylib to cache for arm64
         uses: actions/cache/save@v4
         with:
           path: ./composeApp/dylib/darwin-aarch64/libMacosApi.dylib
-          key: mac-dylib-aarch64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
+          key: mac-dylib-darwin-aarch64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
   build-ubuntu:
@@ -215,7 +215,7 @@ jobs:
           tar -czvf output/crosspaste-${{ env.PACKAGE_VERSION }}-mac-aarch64/crosspaste-${{ env.PACKAGE_VERSION }}-mac-aarch64.tar.gz -C output/crosspaste-${{ env.PACKAGE_VERSION }}-mac-aarch64 CrossPaste.app
           rm -rf output/crosspaste-${{ env.PACKAGE_VERSION }}-mac-aarch64/CrossPaste.app
 
-      - name: Upload Mac aaarch64 app
+      - name: Upload Mac aarch64 app
         id: upload_mac_aarch64_app
         uses: JohnGuan/oss-upload-action@main
         with:
