@@ -94,7 +94,7 @@ jobs:
           echo "Tag Version: $TAG_VERSION"
           echo "Tag Beta: $BETA"
           
-          PROPERTIES_VERSION=$(grep 'version=' composeApp/src/desktopMain/resources/clipevery-version.properties | cut -d'=' -f2)
+          PROPERTIES_VERSION=$(grep 'version=' composeApp/src/desktopMain/resources/crosspaste-version.properties | cut -d'=' -f2)
           
           echo "Properties Version: $PROPERTIES_VERSION"
           
@@ -103,7 +103,7 @@ jobs:
             exit 1
           else
             echo "Versions match. Proceeding to update beta value in properties file."
-            echo -e "\nbeta=$BETA" >> composeApp/src/desktopMain/resources/clipevery-version.properties
+            echo -e "\nbeta=$BETA" >> composeApp/src/desktopMain/resources/crosspaste-version.properties
             echo "Beta value added to properties file."
           fi
           
@@ -158,13 +158,13 @@ jobs:
       - name: Conveyor build Windows app
         uses: hydraulic-software/conveyor/actions/build@v14.3
         with:
-          command: make windows-zip --output-dir=./output/clipevery-${{ env.PACKAGE_VERSION }}-windows
+          command: make windows-zip --output-dir=./output/crosspaste-${{ env.PACKAGE_VERSION }}-windows
           extra_flags: -f ci.conveyor.conf
           signing_key: ${{ secrets.SIGNING_KEY }}
           agree_to_license: 1
 
       - name: Rename window package
-        run: mv output/clipevery-${{ env.PACKAGE_VERSION }}-windows/clipevery-${{ env.VERSION }}-windows-amd64.zip output/clipevery-${{ env.PACKAGE_VERSION }}-windows/clipevery-${{ env.PACKAGE_VERSION }}-windows-amd64.zip
+        run: mv output/crosspaste-${{ env.PACKAGE_VERSION }}-windows/crosspaste-${{ env.VERSION }}-windows-amd64.zip output/crosspaste-${{ env.PACKAGE_VERSION }}-windows/crosspaste-${{ env.PACKAGE_VERSION }}-windows-amd64.zip
 
       - name: Upload Windows app
         id: upload_window_app
@@ -173,24 +173,24 @@ jobs:
           key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
           key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
           region: oss-cn-shenzhen
-          bucket: clipevery-desktop-semi
-          assets: output/clipevery-${{ env.PACKAGE_VERSION }}-windows/**:/${{ env.PACKAGE_VERSION }}/
+          bucket: crosspaste-desktop-semi
+          assets: output/crosspaste-${{ env.PACKAGE_VERSION }}-windows/**:/${{ env.PACKAGE_VERSION }}/
 
       - name: Conveyor build Mac amd64 app
         uses: hydraulic-software/conveyor/actions/build@v14.3
         with:
-          command: make mac-app --output-dir=./output/clipevery-${{ env.PACKAGE_VERSION }}-mac-amd64
+          command: make mac-app --output-dir=./output/crosspaste-${{ env.PACKAGE_VERSION }}-mac-amd64
           extra_flags: -f ci.conveyor.conf -Kapp.machines=mac.amd64
           signing_key: ${{ secrets.SIGNING_KEY }}
           agree_to_license: 1
 
-      # Preserve the file permissions of Clipevery.app
+      # Preserve the file permissions of CrossPaste.app
       # directly use upload-artifact to compress zip and lose file permissions
       # https://github.com/actions/upload-artifact?tab=readme-ov-file#permission-loss
       - name: Tar Mac amd64 app
         run: |
-          tar -czvf output/clipevery-${{ env.PACKAGE_VERSION }}-mac-amd64/clipevery-${{ env.PACKAGE_VERSION }}-mac-amd64.tar.gz -C output/clipevery-${{ env.PACKAGE_VERSION }}-mac-amd64 Clipevery.app
-          rm -rf output/clipevery-${{ env.PACKAGE_VERSION }}-mac-amd64/Clipevery.app
+          tar -czvf output/crosspaste-${{ env.PACKAGE_VERSION }}-mac-amd64/crosspaste-${{ env.PACKAGE_VERSION }}-mac-amd64.tar.gz -C output/crosspaste-${{ env.PACKAGE_VERSION }}-mac-amd64 CrossPaste.app
+          rm -rf output/crosspaste-${{ env.PACKAGE_VERSION }}-mac-amd64/CrossPaste.app
 
       - name: Upload Mac amd64 app
         id: upload_mac_amd64_app
@@ -199,21 +199,21 @@ jobs:
           key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
           key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
           region: oss-cn-shenzhen
-          bucket: clipevery-desktop-semi
-          assets: output/clipevery-${{ env.PACKAGE_VERSION }}-mac-amd64/**:/${{ env.PACKAGE_VERSION }}/
+          bucket: crosspaste-desktop-semi
+          assets: output/crosspaste-${{ env.PACKAGE_VERSION }}-mac-amd64/**:/${{ env.PACKAGE_VERSION }}/
 
       - name: Conveyor build Mac aarch64 app
         uses: hydraulic-software/conveyor/actions/build@v14.3
         with:
-          command: make mac-app --output-dir=./output/clipevery-${{ env.PACKAGE_VERSION }}-mac-aarch64
+          command: make mac-app --output-dir=./output/crosspaste-${{ env.PACKAGE_VERSION }}-mac-aarch64
           extra_flags: -f ci.conveyor.conf -Kapp.machines=mac.aarch64
           signing_key: ${{ secrets.SIGNING_KEY }}
           agree_to_license: 1
 
       - name: Tar Mac aarch64 app
         run: |
-          tar -czvf output/clipevery-${{ env.PACKAGE_VERSION }}-mac-aarch64/clipevery-${{ env.PACKAGE_VERSION }}-mac-aarch64.tar.gz -C output/clipevery-${{ env.PACKAGE_VERSION }}-mac-aarch64 Clipevery.app
-          rm -rf output/clipevery-${{ env.PACKAGE_VERSION }}-mac-aarch64/Clipevery.app
+          tar -czvf output/crosspaste-${{ env.PACKAGE_VERSION }}-mac-aarch64/crosspaste-${{ env.PACKAGE_VERSION }}-mac-aarch64.tar.gz -C output/crosspaste-${{ env.PACKAGE_VERSION }}-mac-aarch64 CrossPaste.app
+          rm -rf output/crosspaste-${{ env.PACKAGE_VERSION }}-mac-aarch64/CrossPaste.app
 
       - name: Upload Mac aaarch64 app
         id: upload_mac_aarch64_app
@@ -222,19 +222,19 @@ jobs:
           key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
           key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
           region: oss-cn-shenzhen
-          bucket: clipevery-desktop-semi
-          assets: output/clipevery-${{ env.PACKAGE_VERSION }}-mac-aarch64/**:/${{ env.PACKAGE_VERSION }}/
+          bucket: crosspaste-desktop-semi
+          assets: output/crosspaste-${{ env.PACKAGE_VERSION }}-mac-aarch64/**:/${{ env.PACKAGE_VERSION }}/
 
       - name: Conveyor build Linux app
         uses: hydraulic-software/conveyor/actions/build@v14.3
         with:
-          command: make debian-package --output-dir=./output/clipevery-${{ env.PACKAGE_VERSION }}-linux
+          command: make debian-package --output-dir=./output/crosspaste-${{ env.PACKAGE_VERSION }}-linux
           extra_flags: -f ci.conveyor.conf
           signing_key: ${{ secrets.SIGNING_KEY }}
           agree_to_license: 1
 
       - name: Rename linux package
-        run: mv output/clipevery-${{ env.PACKAGE_VERSION }}-linux/clipevery_${{ env.VERSION }}_amd64.deb output/clipevery-${{ env.PACKAGE_VERSION }}-linux/clipevery-${{ env.PACKAGE_VERSION }}-linux-amd64.deb
+        run: mv output/crosspaste-${{ env.PACKAGE_VERSION }}-linux/crosspaste_${{ env.VERSION }}_amd64.deb output/crosspaste-${{ env.PACKAGE_VERSION }}-linux/crosspaste-${{ env.PACKAGE_VERSION }}-linux-amd64.deb
 
       - name: Upload Linux app
         id: upload_linux_app
@@ -243,8 +243,8 @@ jobs:
           key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
           key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
           region: oss-cn-shenzhen
-          bucket: clipevery-desktop-semi
-          assets: output/clipevery-${{ env.PACKAGE_VERSION }}-linux/**:/${{ env.PACKAGE_VERSION }}/
+          bucket: crosspaste-desktop-semi
+          assets: output/crosspaste-${{ env.PACKAGE_VERSION }}-linux/**:/${{ env.PACKAGE_VERSION }}/
 
       # conveyor default cache directory is .conveyor/cache
       # Avoid caching it, causing Github space payment

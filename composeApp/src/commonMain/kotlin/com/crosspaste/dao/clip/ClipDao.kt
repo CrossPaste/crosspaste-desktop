@@ -1,0 +1,84 @@
+package com.crosspaste.dao.clip
+
+import com.crosspaste.clip.ClipPlugin
+import io.realm.kotlin.MutableRealm
+import io.realm.kotlin.query.RealmQuery
+import io.realm.kotlin.query.RealmResults
+import io.realm.kotlin.types.RealmInstant
+import org.mongodb.kbson.ObjectId
+
+interface ClipDao {
+
+    fun getMaxClipId(): Long
+
+    suspend fun createClipData(clipData: ClipData): ObjectId
+
+    suspend fun markDeleteClipData(id: ObjectId)
+
+    suspend fun deleteClipData(id: ObjectId)
+
+    fun getSize(allOrFavorite: Boolean = false): Long
+
+    fun getClipResourceInfo(allOrFavorite: Boolean = false): ClipResourceInfo
+
+    fun getSizeByTimeLessThan(time: RealmInstant): Long
+
+    fun getMinClipDataCreateTime(): RealmInstant?
+
+    fun getClipData(
+        appInstanceId: String? = null,
+        limit: Int,
+    ): RealmResults<ClipData>
+
+    fun getClipData(id: ObjectId): ClipData?
+
+    fun getClipData(
+        appInstanceId: String,
+        clipId: Long,
+    ): ClipData?
+
+    suspend fun releaseLocalClipData(
+        id: ObjectId,
+        clipPlugins: List<ClipPlugin>,
+    )
+
+    suspend fun releaseRemoteClipData(
+        clipData: ClipData,
+        tryWriteClipboard: (ClipData, Boolean) -> Unit,
+    )
+
+    suspend fun releaseRemoteClipDataWithFile(
+        id: ObjectId,
+        tryWriteClipboard: (ClipData) -> Unit,
+    )
+
+    fun update(update: (MutableRealm) -> Unit)
+
+    suspend fun suspendUpdate(update: (MutableRealm) -> Unit)
+
+    fun getClipDataLessThan(
+        appInstanceId: String? = null,
+        limit: Int,
+        createTime: RealmInstant,
+    ): RealmResults<ClipData>
+
+    suspend fun markDeleteByCleanTime(
+        cleanTime: RealmInstant,
+        clipType: Int? = null,
+    )
+
+    fun setFavorite(
+        id: ObjectId,
+        favorite: Boolean,
+    )
+
+    fun searchClipData(
+        searchTerms: List<String>,
+        favorite: Boolean? = null,
+        appInstanceIdQuery: (RealmQuery<ClipData>) -> RealmQuery<ClipData> = { it },
+        clipType: Int? = null,
+        // sort createTime, true: desc, false: asc
+        sort: Boolean = true,
+        limit: Int,
+    ): RealmResults<ClipData>
+}

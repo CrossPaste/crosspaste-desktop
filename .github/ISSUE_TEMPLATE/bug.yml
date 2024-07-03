@@ -56,13 +56,13 @@ body:
     id: version
     attributes:
       label: Version
-      description: The version of clipevery you're using, you can see it in Menu -> About.
+      description: The version of CrossPaste you're using, you can see it in Menu -> About.
     validations:
       required: true
   - type: input
     id: OS
     attributes:
       label: OS
-      description: Which system are you using clipevery under, Macos (intel or Apple silicon) / Windows / Linux.
+      description: Which system are you using CrossPaste under, Macos (intel or Apple silicon) / Windows / Linux.
     validations:
       required: true

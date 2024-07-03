@@ -10,10 +10,10 @@ import java.util.Properties
 val versionProperties = Properties()
 versionProperties.load(
     FileReader(
-        project.projectDir.toPath().resolve("src/desktopMain/resources/clipevery-version.properties").toFile(),
+        project.projectDir.toPath().resolve("src/desktopMain/resources/crosspaste-version.properties").toFile(),
     ),
 )
-group = "com.clipevery"
+group = "com.crosspaste"
 version = versionProperties.getProperty("version")
 
 repositories {
@@ -150,7 +150,7 @@ compose.desktop {
             configurationFiles.from("compose-desktop.pro")
         }
 
-        mainClass = "com.clipevery.Clipevery"
+        mainClass = "com.crosspaste.CrossPaste"
 
         if (os.isMacOsX || buildFullPlatform) {
             if (!buildFullPlatform) {
@@ -214,7 +214,7 @@ compose.desktop {
         nativeDistributions {
 
             appResourcesRootDir = project.layout.projectDirectory.dir("resources")
-            packageName = "clipevery"
+            packageName = "crosspaste"
             packageVersion = version.toString()
 
             // If we want to use arthas attach application in production environment,
@@ -236,7 +236,7 @@ compose.desktop {
             jvmArgs("-DglobalListener=$globalListener")
             jvmArgs("-Dcompose.interop.blending=true")
             jvmArgs("-Dio.netty.maxDirectMemory=268435456")
-            jvmArgs("-DloggerDebugPackages=com.clipevery.routing,com.clipevery.net.clientapi,com.clipevery.net.plugin")
+            jvmArgs("-DloggerDebugPackages=com.crosspaste.routing,com.crosspaste.net.clientapi,com.crosspaste.net.plugin")
 
             // Add download info of jbr on all platforms
             val jbrYamlFile = project.projectDir.toPath().resolve("jbr.yaml").toFile()
@@ -255,10 +255,10 @@ compose.desktop {
                 targetFormats(TargetFormat.Dmg)
 
                 macOS {
-                    bundleID = "com.clipevery.mac"
+                    bundleID = "com.crosspaste.mac"
                     appCategory = "public.app-category.utilities"
                     infoPlist {
-                        dockName = "Clipevery"
+                        dockName = "CrossPaste"
                         extraKeysRawXml = """
                         <key>LSUIElement</key>
                         <string>true</string>

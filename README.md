@@ -1,5 +1,5 @@
 <div align="center">
-   <img src="clipevery_logo.webp" width=200 height=200>
+   <img src="crosspaste_logo.webp" width=200 height=200>
    <h1>Clipevery: Universal Clipboard Across Devices</h1>
    <h4>Copy anything and paste it on any device, seamlessly.</h4>
 </div>
@@ -20,13 +20,13 @@ English / [简体中文](./README.zh-CN.md)
 1. clone the repository
 
    ```bash
-   git clone https://github.com/clipevery/clipevery-desktop.git
+   git clone https://github.com/CrossPaste/crosspaste-desktop.git
    ```
 
 2. Compile and run the application
 
    ```bash
-   cd clipevery-desktop
+   cd crosspaste-desktop
    ./gradlew composeApp:run
    ```
    
@@ -53,9 +53,9 @@ systemProp.http.nonProxyHosts=*.nonproxyrepos.com|localhost
 
 ## 🤝 Support the project
 
-- **🌟 Star this repository**: This is the easiest way to support Clipevery and costs nothing.
-- **🪲 Report bugs**: Report any bugs you find on the [issue tracker](https://github.com/clipevery/clipevery-desktop/issues/new/choose).
-- **📖 Translate**: Help translate and polish Clipevery into your [language](https://github.com/clipevery/clipevery-desktop/tree/main/composeApp/src/desktopMain/resources/i18n).
+- **🌟 Star this repository**: This is the easiest way to support CrossPaste and costs nothing.
+- **🪲 Report bugs**: Report any bugs you find on the [issue tracker](https://github.com/CrossPaste/crosspaste-desktop/issues/new/choose).
+- **📖 Translate**: Help translate and polish CrossPaste into your [language](https://github.com/CrossPaste/crosspaste-desktop/tree/main/composeApp/src/desktopMain/resources/i18n).
 - **📝 Contribute**: [Contribute code](./Contributing.md), comment on issues, and any contributions that can help the project are welcome.
 
 
