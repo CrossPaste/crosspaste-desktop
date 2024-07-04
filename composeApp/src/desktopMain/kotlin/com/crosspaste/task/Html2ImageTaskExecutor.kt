@@ -1,24 +1,24 @@
 package com.crosspaste.task
 
-import com.crosspaste.clip.ChromeService
-import com.crosspaste.clip.item.ClipHtml
-import com.crosspaste.dao.clip.ClipDao
-import com.crosspaste.dao.task.ClipTask
+import com.crosspaste.dao.paste.PasteDao
+import com.crosspaste.dao.task.PasteTask
 import com.crosspaste.dao.task.TaskType
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.createFailureResult
+import com.crosspaste.paste.ChromeService
+import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.task.extra.BaseExtraInfo
-import com.crosspaste.ui.clip.preview.getClipItem
+import com.crosspaste.ui.paste.preview.getPasteItem
 import com.crosspaste.utils.TaskUtils
-import com.crosspaste.utils.TaskUtils.createFailureClipTaskResult
+import com.crosspaste.utils.TaskUtils.createFailurePasteTaskResult
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 class Html2ImageTaskExecutor(
     private val chromeService: ChromeService,
-    private val clipDao: ClipDao,
+    private val pasteDao: PasteDao,
     private val filePersist: FilePersist,
 ) : SingleTypeTaskExecutor {
 
@@ -28,15 +28,15 @@ class Html2ImageTaskExecutor(
 
     private val mutex = Mutex()
 
-    override suspend fun doExecuteTask(clipTask: ClipTask): ClipTaskResult {
+    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         mutex.withLock {
             try {
-                clipDao.getClipData(clipTask.clipDataId!!)?.let { clipData ->
-                    clipData.getClipItem()?.let { clipItem ->
-                        if (clipItem is ClipHtml) {
-                            val html2ImagePath = clipItem.getHtmlImagePath()
+                pasteDao.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
+                    pasteData.getPasteItem()?.let { pasteItem ->
+                        if (pasteItem is PasteHtml) {
+                            val html2ImagePath = pasteItem.getHtmlImagePath()
                             if (!html2ImagePath.toFile().exists()) {
-                                chromeService.html2Image(clipItem.html)?.let { bytes ->
+                                chromeService.html2Image(pasteItem.html)?.let { bytes ->
                                     filePersist.createOneFilePersist(html2ImagePath).saveBytes(bytes)
                                 }
                             }
@@ -44,15 +44,15 @@ class Html2ImageTaskExecutor(
                     }
                 }
             } catch (e: Throwable) {
-                return createFailureClipTaskResult(
+                return createFailurePasteTaskResult(
                     logger = logger,
                     retryHandler = { false },
-                    startTime = clipTask.modifyTime,
+                    startTime = pasteTask.modifyTime,
                     fails = listOf(createFailureResult(StandardErrorCode.HTML_2_IMAGE_TASK_FAIL, e)),
-                    extraInfo = TaskUtils.getExtraInfo(clipTask, BaseExtraInfo::class),
+                    extraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class),
                 )
             }
         }
-        return SuccessClipTaskResult()
+        return SuccessPasteTaskResult()
     }
 }

@@ -11,6 +11,6 @@ fun DebugView() {
     val current = LocalKoinApplication.current
     val pathProvider = current.koin.get<PathProvider>()
     Text(
-        text = pathProvider.clipAppPath.absolutePathString(),
+        text = pathProvider.pasteAppPath.absolutePathString(),
     )
 }

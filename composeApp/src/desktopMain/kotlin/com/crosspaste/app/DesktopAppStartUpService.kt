@@ -84,7 +84,7 @@ class MacAppStartUpService(private val configManager: ConfigManager) : AppStartU
                             <key>ProgramArguments</key>
                             <array>
                                 <string>${
-                            pathProvider.clipAppPath.resolve("Contents/MacOS/CrossPaste").absolutePathString()
+                            pathProvider.pasteAppPath.resolve("Contents/MacOS/CrossPaste").absolutePathString()
                         }</string>
                                 <string>--minimize</string>
                             </array>
@@ -117,7 +117,7 @@ class WindowsAppStartUpService(private val configManager: ConfigManager) : AppSt
     private val logger: KLogger = KotlinLogging.logger {}
 
     private val appExePath =
-        DesktopPathProvider.clipAppPath
+        DesktopPathProvider.pasteAppPath
             .resolve("bin")
             .resolve("crosspaste.exe")
 
@@ -195,7 +195,7 @@ class LinuxAppStartUpService(private val configManager: ConfigManager) : AppStar
     private val filePersist = DesktopFilePersist
 
     private val appExePath =
-        DesktopPathProvider.clipAppPath
+        DesktopPathProvider.pasteAppPath
             .resolve("bin")
             .resolve("crosspaste")
 

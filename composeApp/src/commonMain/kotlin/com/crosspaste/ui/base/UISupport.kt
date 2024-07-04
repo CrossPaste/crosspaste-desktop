@@ -1,6 +1,6 @@
 package com.crosspaste.ui.base
 
-import com.crosspaste.dao.clip.ClipData
+import com.crosspaste.dao.paste.PasteData
 import java.nio.file.Path
 
 interface UISupport {
@@ -17,5 +17,5 @@ interface UISupport {
 
     fun openText(text: String)
 
-    fun openClipData(clipData: ClipData)
+    fun openPasteData(pasteData: PasteData)
 }

@@ -19,11 +19,11 @@ class WinAppWindowManager(
     private var prevWinAppInfo: WinAppInfo? = null
 
     private val mainHWND: HWND? by lazy {
-        User32.findClipWindow(MAIN_WINDOW_TITLE)
+        User32.findPasteWindow(MAIN_WINDOW_TITLE)
     }
 
     private val searchHWND: HWND? by lazy {
-        User32.findClipWindow(SEARCH_WINDOW_TITLE)
+        User32.findPasteWindow(SEARCH_WINDOW_TITLE)
     }
 
     private val fileDescriptorCache: LoadingCache<String, String> =
@@ -122,7 +122,7 @@ class WinAppWindowManager(
     }
 
     fun initMenuHWND(): HWND? {
-        return User32.findClipWindow(MENU_WINDOW_TITLE)
+        return User32.findPasteWindow(MENU_WINDOW_TITLE)
     }
 }
 

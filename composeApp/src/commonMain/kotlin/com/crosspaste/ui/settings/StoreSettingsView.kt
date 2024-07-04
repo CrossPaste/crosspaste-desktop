@@ -41,7 +41,7 @@ import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.clean.CleanTime
 import com.crosspaste.config.ConfigManager
-import com.crosspaste.dao.clip.ClipDao
+import com.crosspaste.dao.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.Counter
 import com.crosspaste.ui.base.CustomRectangleSwitch
@@ -66,12 +66,12 @@ fun StoreSettingsView() {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
     val configManager = current.koin.get<ConfigManager>()
-    val clipDao = current.koin.get<ClipDao>()
+    val pasteDao = current.koin.get<PasteDao>()
     val copywriter = current.koin.get<GlobalCopywriter>()
     val fileUtils = getFileUtils()
 
-    var clipCount: Long? by remember { mutableStateOf(null) }
-    var clipFormatSize: String? by remember { mutableStateOf(null) }
+    var pasteCount: Long? by remember { mutableStateOf(null) }
+    var pasteFormatSize: String? by remember { mutableStateOf(null) }
 
     var textCount: Long? by remember { mutableStateOf(null) }
     var textFormatSize: String? by remember { mutableStateOf(null) }
@@ -91,24 +91,24 @@ fun StoreSettingsView() {
     var allOrFavorite by remember { mutableStateOf(true) }
 
     val refresh: (Boolean) -> Unit = {
-        val clipResourceInfo = clipDao.getClipResourceInfo(it)
-        clipCount = clipResourceInfo.clipCount
-        clipFormatSize = fileUtils.formatBytes(clipResourceInfo.clipSize)
+        val pasteResourceInfo = pasteDao.getPasteResourceInfo(it)
+        pasteCount = pasteResourceInfo.pasteCount
+        pasteFormatSize = fileUtils.formatBytes(pasteResourceInfo.pasteSize)
 
-        textCount = clipResourceInfo.textCount
-        textFormatSize = fileUtils.formatBytes(clipResourceInfo.textSize)
+        textCount = pasteResourceInfo.textCount
+        textFormatSize = fileUtils.formatBytes(pasteResourceInfo.textSize)
 
-        urlCount = clipResourceInfo.urlCount
-        urlFormatSize = fileUtils.formatBytes(clipResourceInfo.urlSize)
+        urlCount = pasteResourceInfo.urlCount
+        urlFormatSize = fileUtils.formatBytes(pasteResourceInfo.urlSize)
 
-        htmlCount = clipResourceInfo.htmlCount
-        htmlFormatSize = fileUtils.formatBytes(clipResourceInfo.htmlSize)
+        htmlCount = pasteResourceInfo.htmlCount
+        htmlFormatSize = fileUtils.formatBytes(pasteResourceInfo.htmlSize)
 
-        imageCount = clipResourceInfo.imageCount
-        imageFormatSize = fileUtils.formatBytes(clipResourceInfo.imageSize)
+        imageCount = pasteResourceInfo.imageCount
+        imageFormatSize = fileUtils.formatBytes(pasteResourceInfo.imageSize)
 
-        fileCount = clipResourceInfo.fileCount
-        fileFormatSize = fileUtils.formatBytes(clipResourceInfo.fileSize)
+        fileCount = pasteResourceInfo.fileCount
+        fileFormatSize = fileUtils.formatBytes(pasteResourceInfo.fileSize)
     }
 
     LaunchedEffect(Unit) {
@@ -128,9 +128,9 @@ fun StoreSettingsView() {
 
     var nameMaxWidth by remember { mutableStateOf(96.dp) }
 
-    val clipTypes: Array<Quadruple<String, Painter, Long?, String?>> =
+    val pasteTypes: Array<Quadruple<String, Painter, Long?, String?>> =
         arrayOf(
-            Quadruple("Pasteboard", hashtag(), clipCount, clipFormatSize),
+            Quadruple("Pasteboard", hashtag(), pasteCount, pasteFormatSize),
             Quadruple("Text", text(), textCount, textFormatSize),
             Quadruple("Link", link(), urlCount, urlFormatSize),
             Quadruple("Html", html(), htmlCount, htmlFormatSize),
@@ -145,7 +145,7 @@ fun StoreSettingsView() {
             fontFamily = FontFamily.SansSerif,
         )
 
-    for (property in clipTypes) {
+    for (property in pasteTypes) {
         nameMaxWidth = maxOf(nameMaxWidth, measureTextWidth(copywriter.getText(property.first), textStyle))
     }
 
@@ -203,7 +203,7 @@ fun StoreSettingsView() {
 
         Divider(modifier = Modifier.padding(start = 35.dp))
 
-        clipTypes.forEachIndexed { index, quadruple ->
+        pasteTypes.forEachIndexed { index, quadruple ->
             Row(
                 modifier =
                     Modifier.fillMaxWidth()
@@ -247,7 +247,7 @@ fun StoreSettingsView() {
                 }
             }
 
-            if (index != clipTypes.size - 1) {
+            if (index != pasteTypes.size - 1) {
                 Divider(modifier = Modifier.padding(start = 35.dp))
             }
         }

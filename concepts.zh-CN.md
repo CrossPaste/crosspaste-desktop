@@ -6,7 +6,7 @@
 
 ### 粘贴类型的优先级
 
-粘贴类型的预览[默认优先级](./composeApp/src/desktopMain/kotlin/com/crosspaste/clip/plugin/SortPlugin.kt)如下：
+粘贴类型的预览[默认优先级](./composeApp/src/desktopMain/kotlin/com/crosspaste/paste/plugin/SortPlugin.kt)如下：
 
 | 优先级 | 粘贴类型 |
 |-----|------|

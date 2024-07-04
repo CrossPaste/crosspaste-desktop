@@ -2,10 +2,10 @@ package com.crosspaste.routing
 
 import com.crosspaste.CrossPaste
 import com.crosspaste.app.AppFileType
-import com.crosspaste.clip.CacheManager
 import com.crosspaste.dto.pull.PullFileRequest
 import com.crosspaste.dto.pull.PullFilesKey
 import com.crosspaste.exception.StandardErrorCode
+import com.crosspaste.paste.CacheManager
 import com.crosspaste.path.PathProvider
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.failResponse
@@ -36,7 +36,7 @@ fun Routing.pullRouting() {
         getAppInstanceId(call)?.let { fromAppInstanceId ->
             val pullFileRequest: PullFileRequest = call.receive()
             val appInstanceId = pullFileRequest.appInstanceId
-            val clipId = pullFileRequest.clipId
+            val pasteId = pullFileRequest.pasteId
 
             syncManager.getSyncHandlers()[fromAppInstanceId]?.let {
                 if (!it.syncRuntimeInfo.allowSend) {
@@ -50,7 +50,7 @@ fun Routing.pullRouting() {
                 return@post
             }
 
-            cacheManager.getFilesIndex(PullFilesKey(appInstanceId, clipId))?.let { filesIndex ->
+            cacheManager.getFilesIndex(PullFilesKey(appInstanceId, pasteId))?.let { filesIndex ->
                 filesIndex.getChunk(pullFileRequest.chunkIndex)?.let { chunk ->
                     logger.info { "filesIndex ${pullFileRequest.chunkIndex} $chunk" }
                     val producer: suspend ByteWriteChannel.() -> Unit = {

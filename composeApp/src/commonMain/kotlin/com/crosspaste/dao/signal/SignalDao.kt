@@ -4,11 +4,11 @@ import org.signal.libsignal.protocol.ecc.ECPrivateKey
 
 interface SignalDao {
 
-    fun generatePreKeyPair(): ClipPreKey
+    fun generatePreKeyPair(): PastePreKey
 
-    fun generatesSignedPreKeyPair(privateKey: ECPrivateKey): ClipSignedPreKey
+    fun generatesSignedPreKeyPair(privateKey: ECPrivateKey): PasteSignedPreKey
 
-    fun saveIdentities(identityKeys: List<ClipIdentityKey>)
+    fun saveIdentities(identityKeys: List<PasteIdentityKey>)
 
     fun saveIdentity(
         appInstanceId: String,

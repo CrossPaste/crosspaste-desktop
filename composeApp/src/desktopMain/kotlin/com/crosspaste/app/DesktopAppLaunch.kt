@@ -20,7 +20,7 @@ object DesktopAppLaunch : AppLaunch, AppLock {
     private var lock: FileLock? = null
 
     override fun acquireLock(): Pair<Boolean, Boolean> {
-        val appLock = pathProvider.clipUserPath.resolve("app.lock").toFile()
+        val appLock = pathProvider.pasteUserPath.resolve("app.lock").toFile()
         val firstLaunch = !appLock.exists()
         try {
             channel = FileChannel.open(appLock.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE)

@@ -1,6 +1,6 @@
 package com.crosspaste.task
 
-import com.crosspaste.dao.task.ClipTaskDao
+import com.crosspaste.dao.task.PasteTaskDao
 import com.crosspaste.dao.task.TaskStatus
 import com.crosspaste.utils.TaskUtils.createFailExtraInfo
 import com.crosspaste.utils.cpuDispatcher
@@ -16,7 +16,7 @@ import org.mongodb.kbson.ObjectId
 
 class DesktopTaskExecutor(
     singleTypeTaskExecutors: List<SingleTypeTaskExecutor>,
-    private val clipTaskDao: ClipTaskDao,
+    private val pasteTaskDao: PasteTaskDao,
 ) : TaskExecutor {
 
     private val logger = KotlinLogging.logger {}
@@ -47,24 +47,24 @@ class DesktopTaskExecutor(
 
     private suspend fun executeTask(taskId: ObjectId) {
         try {
-            clipTaskDao.update(taskId, copeFromRealm = true) {
+            pasteTaskDao.update(taskId, copeFromRealm = true) {
                 status = TaskStatus.EXECUTING
                 modifyTime = System.currentTimeMillis()
-            }?.let { clipTask ->
-                val executor = getExecutorImpl(clipTask.taskType)
-                executor.executeTask(clipTask, success = {
-                    clipTaskDao.update(taskId) {
+            }?.let { pasteTask ->
+                val executor = getExecutorImpl(pasteTask.taskType)
+                executor.executeTask(pasteTask, success = {
+                    pasteTaskDao.update(taskId) {
                         status = TaskStatus.SUCCESS
                         modifyTime = System.currentTimeMillis()
                         it?.let { newExtraInfo ->
                             extraInfo = newExtraInfo
                         }
                     }
-                }, fail = { clipTaskExtraInfo, needRetry ->
-                    clipTaskDao.update(taskId) {
+                }, fail = { pasteTaskExtraInfo, needRetry ->
+                    pasteTaskDao.update(taskId) {
                         status = if (needRetry) TaskStatus.PREPARING else TaskStatus.FAILURE
                         modifyTime = System.currentTimeMillis()
-                        extraInfo = clipTaskExtraInfo
+                        extraInfo = pasteTaskExtraInfo
                     }
                 }, retry = {
                     submitTask(taskId)
@@ -72,7 +72,7 @@ class DesktopTaskExecutor(
             }
         } catch (e: Throwable) {
             logger.error(e) { "execute task error: $taskId" }
-            clipTaskDao.update(taskId) {
+            pasteTaskDao.update(taskId) {
                 status = TaskStatus.FAILURE
                 extraInfo = createFailExtraInfo(this, e)
             }

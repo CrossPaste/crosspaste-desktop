@@ -64,17 +64,17 @@ object DesktopFileUtils : FileUtils {
         }
     }
 
-    override fun createClipRelativePath(
+    override fun createPasteRelativePath(
         appInstanceId: String,
         date: LocalDateTime,
-        clipId: Long,
+        pasteId: Long,
         fileName: String,
     ): String {
         val dateYYYYMMDD = dateUtils.getYYYYMMDD(date)
-        return Paths.get(appInstanceId, dateYYYYMMDD, clipId.toString(), fileName).pathString
+        return Paths.get(appInstanceId, dateYYYYMMDD, pasteId.toString(), fileName).pathString
     }
 
-    override fun createClipPath(
+    override fun createPastePath(
         fileRelativePath: String,
         isFile: Boolean,
         appFileType: AppFileType,
@@ -214,7 +214,7 @@ object DesktopFileUtils : FileUtils {
         }
     }
 
-    override fun createEmptyClipFile(
+    override fun createEmptyPasteFile(
         path: Path,
         length: Long,
     ): Boolean {

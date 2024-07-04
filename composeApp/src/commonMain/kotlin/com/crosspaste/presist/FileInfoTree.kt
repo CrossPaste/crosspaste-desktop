@@ -1,7 +1,7 @@
 package com.crosspaste.presist
 
-import com.crosspaste.clip.item.ClipFile
-import com.crosspaste.clip.item.ClipFileImpl
+import com.crosspaste.paste.item.PasteFile
+import com.crosspaste.paste.item.PasteFileImpl
 import com.crosspaste.utils.getEncryptUtils
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -17,7 +17,7 @@ interface FileInfoTree {
 
     fun isFile(): Boolean
 
-    fun getClipFileList(path: Path): List<ClipFile>
+    fun getPasteFileList(path: Path): List<PasteFile>
 
     fun getCount(): Long
 }
@@ -40,9 +40,9 @@ class DirFileInfoTree(
         return false
     }
 
-    override fun getClipFileList(path: Path): List<ClipFile> {
+    override fun getPasteFileList(path: Path): List<PasteFile> {
         return tree.map { (name, fileTree) ->
-            fileTree.getClipFileList(path.resolve(name))
+            fileTree.getPasteFileList(path.resolve(name))
         }.flatten()
     }
 
@@ -62,8 +62,8 @@ class SingleFileInfoTree(
         return true
     }
 
-    override fun getClipFileList(path: Path): List<ClipFile> {
-        return listOf(ClipFileImpl(path, md5))
+    override fun getPasteFileList(path: Path): List<PasteFile> {
+        return listOf(PasteFileImpl(path, md5))
     }
 
     override fun getCount(): Long {

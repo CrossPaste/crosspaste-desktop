@@ -7,7 +7,7 @@ import com.sun.jna.ptr.IntByReference
 
 interface MacosApi : Library {
 
-    fun getClipboardChangeCount(
+    fun getPasteboardChangeCount(
         currentChangeCount: Int,
         remote: IntByReference,
         isCrossPaste: IntByReference,

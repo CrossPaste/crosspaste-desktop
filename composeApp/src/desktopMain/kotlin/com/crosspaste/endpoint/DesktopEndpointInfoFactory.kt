@@ -1,7 +1,7 @@
 package com.crosspaste.endpoint
 
 import com.crosspaste.dao.sync.HostInfo
-import com.crosspaste.net.ClipServer
+import com.crosspaste.net.PasteServer
 import com.crosspaste.os.macos.api.MacosApi
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.currentPlatform
@@ -12,10 +12,10 @@ import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 
-class DesktopEndpointInfoFactory(private val clipServer: Lazy<ClipServer>) : EndpointInfoFactory {
+class DesktopEndpointInfoFactory(private val pasteServer: Lazy<PasteServer>) : EndpointInfoFactory {
     override fun createEndpointInfo(hostInfoFilter: (HostInfo) -> Boolean): EndpointInfo {
         val platform = currentPlatform()
-        val port = clipServer.value.port()
+        val port = pasteServer.value.port()
         return if (platform.isMacos()) {
             getMacEndpointInfo(port, platform, hostInfoFilter)
         } else if (platform.isWindows()) {

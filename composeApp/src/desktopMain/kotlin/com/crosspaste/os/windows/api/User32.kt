@@ -521,7 +521,7 @@ interface User32 : StdCallLibrary {
             INSTANCE.SendInput(DWORD(inputs.size.toLong()), inputs, inputs[0].size())
         }
 
-        fun findClipWindow(windowTitle: String): HWND? {
+        fun findPasteWindow(windowTitle: String): HWND? {
             return INSTANCE.FindWindow(null, windowTitle)?.also { hwnd ->
                 // Set the window icon not to be displayed on the taskbar
                 val style = com.sun.jna.platform.win32.User32.INSTANCE.GetWindowLong(hwnd, WinUser.GWL_EXSTYLE)

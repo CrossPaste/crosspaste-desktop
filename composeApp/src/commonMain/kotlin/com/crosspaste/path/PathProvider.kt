@@ -1,9 +1,9 @@
 package com.crosspaste.path
 
 import com.crosspaste.app.AppFileType
-import com.crosspaste.clip.item.ClipFiles
-import com.crosspaste.exception.ClipException
+import com.crosspaste.exception.PasteException
 import com.crosspaste.exception.StandardErrorCode
+import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.presist.DirFileInfoTree
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.FilesIndexBuilder
@@ -18,18 +18,18 @@ interface PathProvider {
     ): Path {
         val path =
             when (appFileType) {
-                AppFileType.APP -> clipAppPath
-                AppFileType.USER -> clipUserPath
-                AppFileType.LOG -> clipLogPath.resolve("logs")
-                AppFileType.ENCRYPT -> clipEncryptPath.resolve("encrypt")
-                AppFileType.DATA -> clipDataPath.resolve("data")
-                AppFileType.HTML -> clipUserPath.resolve("html")
-                AppFileType.ICON -> clipUserPath.resolve("icons")
-                AppFileType.FAVICON -> clipUserPath.resolve("favicon")
-                AppFileType.IMAGE -> clipUserPath.resolve("images")
-                AppFileType.VIDEO -> clipUserPath.resolve("videos")
-                AppFileType.FILE -> clipUserPath.resolve("files")
-                AppFileType.KCEF -> clipUserPath.resolve("kcef")
+                AppFileType.APP -> pasteAppPath
+                AppFileType.USER -> pasteUserPath
+                AppFileType.LOG -> pasteLogPath.resolve("logs")
+                AppFileType.ENCRYPT -> pasteEncryptPath.resolve("encrypt")
+                AppFileType.DATA -> pasteDataPath.resolve("data")
+                AppFileType.HTML -> pasteUserPath.resolve("html")
+                AppFileType.ICON -> pasteUserPath.resolve("icons")
+                AppFileType.FAVICON -> pasteUserPath.resolve("favicon")
+                AppFileType.IMAGE -> pasteUserPath.resolve("images")
+                AppFileType.VIDEO -> pasteUserPath.resolve("videos")
+                AppFileType.FILE -> pasteUserPath.resolve("files")
+                AppFileType.KCEF -> pasteUserPath.resolve("kcef")
             }
 
         autoCreateDir(path)
@@ -59,25 +59,25 @@ interface PathProvider {
     fun resolve(
         appInstanceId: String,
         dateString: String,
-        clipId: Long,
-        clipFiles: ClipFiles,
+        pasteId: Long,
+        pasteFiles: PasteFiles,
         isPull: Boolean,
         filesIndexBuilder: FilesIndexBuilder? = null,
     ) {
-        val basePath = resolve(appFileType = clipFiles.getAppFileType())
-        val clipIdPath =
+        val basePath = resolve(appFileType = pasteFiles.getAppFileType())
+        val pasteIdPath =
             basePath.resolve(appInstanceId)
                 .resolve(dateString)
-                .resolve(clipId.toString())
+                .resolve(pasteId.toString())
         if (isPull) {
-            autoCreateDir(clipIdPath)
+            autoCreateDir(pasteIdPath)
         }
 
-        val fileInfoTreeMap = clipFiles.getFileInfoTreeMap()
+        val fileInfoTreeMap = pasteFiles.getFileInfoTreeMap()
 
-        for (filePath in clipFiles.getFilePaths()) {
+        for (filePath in pasteFiles.getFilePaths()) {
             fileInfoTreeMap[filePath.fileName.name]?.let {
-                resolveFileInfoTree(clipIdPath, filePath.fileName.name, it, isPull, filesIndexBuilder)
+                resolveFileInfoTree(pasteIdPath, filePath.fileName.name, it, isPull, filesIndexBuilder)
             }
         }
     }
@@ -92,8 +92,8 @@ interface PathProvider {
         if (fileInfoTree.isFile()) {
             val filePath = basePath.resolve(name)
             if (isPull) {
-                if (!fileUtils.createEmptyClipFile(filePath, fileInfoTree.size)) {
-                    throw ClipException(
+                if (!fileUtils.createEmptyPasteFile(filePath, fileInfoTree.size)) {
+                    throw PasteException(
                         StandardErrorCode.CANT_CREATE_FILE.toErrorCode(),
                         "Failed to create file: $filePath",
                     )
@@ -115,7 +115,7 @@ interface PathProvider {
     private fun autoCreateDir(path: Path) {
         if (!path.toFile().exists()) {
             if (!path.toFile().mkdirs()) {
-                throw ClipException(StandardErrorCode.CANT_CREATE_DIR.toErrorCode(), "Failed to create directory: $path")
+                throw PasteException(StandardErrorCode.CANT_CREATE_DIR.toErrorCode(), "Failed to create directory: $path")
             }
         }
     }
@@ -124,15 +124,15 @@ interface PathProvider {
 
     val userHome: Path
 
-    val clipAppPath: Path
+    val pasteAppPath: Path
 
-    val clipAppJarPath: Path
+    val pasteAppJarPath: Path
 
-    val clipUserPath: Path
+    val pasteUserPath: Path
 
-    val clipLogPath: Path get() = clipUserPath
+    val pasteLogPath: Path get() = pasteUserPath
 
-    val clipEncryptPath get() = clipUserPath
+    val pasteEncryptPath get() = pasteUserPath
 
-    val clipDataPath get() = clipUserPath
+    val pasteDataPath get() = pasteUserPath
 }

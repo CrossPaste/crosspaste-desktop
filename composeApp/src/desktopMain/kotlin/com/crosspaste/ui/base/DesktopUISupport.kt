@@ -1,15 +1,15 @@
 package com.crosspaste.ui.base
 
-import com.crosspaste.clip.item.FilesClipItem
-import com.crosspaste.clip.item.HtmlClipItem
-import com.crosspaste.clip.item.ImagesClipItem
-import com.crosspaste.clip.item.TextClipItem
-import com.crosspaste.clip.item.UrlClipItem
-import com.crosspaste.dao.clip.ClipData
-import com.crosspaste.dao.clip.ClipType
+import com.crosspaste.dao.paste.PasteData
+import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.paste.item.FilesPasteItem
+import com.crosspaste.paste.item.HtmlPasteItem
+import com.crosspaste.paste.item.ImagesPasteItem
+import com.crosspaste.paste.item.TextPasteItem
+import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.platform.currentPlatform
-import com.crosspaste.ui.clip.preview.getClipItem
+import com.crosspaste.ui.paste.preview.getPasteItem
 import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.awt.Desktop
@@ -154,20 +154,20 @@ class DesktopUISupport(
         }
     }
 
-    override fun openClipData(clipData: ClipData) {
-        clipData.getClipItem()?.let { item ->
-            when (clipData.clipType) {
-                ClipType.TEXT -> openText((item as TextClipItem).text)
-                ClipType.URL -> openUrlInBrowser((item as UrlClipItem).url)
-                ClipType.HTML -> openHtml((item as HtmlClipItem).html)
-                ClipType.FILE -> {
-                    val relativePathList = (item as FilesClipItem).relativePathList
+    override fun openPasteData(pasteData: PasteData) {
+        pasteData.getPasteItem()?.let { item ->
+            when (pasteData.pasteType) {
+                PasteType.TEXT -> openText((item as TextPasteItem).text)
+                PasteType.URL -> openUrlInBrowser((item as UrlPasteItem).url)
+                PasteType.HTML -> openHtml((item as HtmlPasteItem).html)
+                PasteType.FILE -> {
+                    val relativePathList = (item as FilesPasteItem).relativePathList
                     if (relativePathList.size > 0) {
                         browseFile(Path.of(relativePathList[0]))
                     }
                 }
-                ClipType.IMAGE -> {
-                    val relativePathList = (item as ImagesClipItem).relativePathList
+                PasteType.IMAGE -> {
+                    val relativePathList = (item as ImagesPasteItem).relativePathList
                     if (relativePathList.size > 0) {
                         browseFile(Path.of(relativePathList[0]))
                     }

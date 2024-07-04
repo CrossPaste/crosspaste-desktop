@@ -23,8 +23,8 @@ data class AppConfig(
     val cleanupPercentage: Int = 20,
     val isAllowDiscovery: Boolean = true,
     val blacklist: String = "[]",
-    val lastClipboardChangeCount: Int = -1,
-    val enableClipboardListening: Boolean = true,
+    val lastPasteboardChangeCount: Int = -1,
+    val enablePasteboardListening: Boolean = true,
 ) {
 
     constructor(other: AppConfig, appEnv: AppEnv) : this(
@@ -44,7 +44,7 @@ data class AppConfig(
         cleanupPercentage = other.cleanupPercentage,
         isAllowDiscovery = other.isAllowDiscovery,
         blacklist = other.blacklist,
-        lastClipboardChangeCount = other.lastClipboardChangeCount,
-        enableClipboardListening = other.enableClipboardListening,
+        lastPasteboardChangeCount = other.lastPasteboardChangeCount,
+        enablePasteboardListening = other.enablePasteboardListening,
     )
 }

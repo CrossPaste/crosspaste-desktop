@@ -62,9 +62,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Popup
 import com.crosspaste.LocalKoinApplication
-import com.crosspaste.clip.ClipboardService
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.paste.PasteboardService
 import com.crosspaste.ui.PageViewContext
 import com.crosspaste.ui.WindowDecoration
 import com.crosspaste.ui.base.CustomSwitch
@@ -102,7 +102,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
     val current = LocalKoinApplication.current
     val configManager = current.koin.get<ConfigManager>()
     val copywriter = current.koin.get<GlobalCopywriter>()
-    val clipboardService = current.koin.get<ClipboardService>()
+    val pasteboardService = current.koin.get<PasteboardService>()
     var hasBeenClicked by remember { mutableStateOf(false) }
     var showMoreLanguage by remember { mutableStateOf(false) }
 
@@ -309,25 +309,25 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                     Icon(
                         modifier = Modifier.size(15.dp),
                         painter = clipboard(),
-                        contentDescription = "Enable Clipboard Listening",
+                        contentDescription = "Enable Pasteboard Listening",
                         tint = Color(0xFF41B06E),
                     )
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    settingsText(copywriter.getText("Clipboard_Listening"))
+                    settingsText(copywriter.getText("Pasteboard_Listening"))
 
                     Spacer(modifier = Modifier.weight(1f))
 
-                    var enableClipboardListening by remember { mutableStateOf(configManager.config.enableClipboardListening) }
+                    var enablePasteboardListening by remember { mutableStateOf(configManager.config.enablePasteboardListening) }
                     CustomSwitch(
                         modifier =
                             Modifier.width(32.dp)
                                 .height(20.dp),
-                        checked = enableClipboardListening,
+                        checked = enablePasteboardListening,
                         onCheckedChange = {
-                            clipboardService.toggle()
-                            enableClipboardListening = configManager.config.enableClipboardListening
+                            pasteboardService.toggle()
+                            enablePasteboardListening = configManager.config.enablePasteboardListening
                         },
                     )
                 }
@@ -457,7 +457,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                         orientation = Orientation.Vertical,
                         state =
                             rememberDraggableState { delta ->
-                                coroutineScope.launch(CoroutineName("ScrollClip")) {
+                                coroutineScope.launch(CoroutineName("ScrollPaste")) {
                                     scrollState.scrollBy(-delta)
                                 }
                             },

@@ -123,7 +123,7 @@ fun CrossPasteContent() {
 
     TokenView()
     when (currentPageViewContext.value.pageViewType) {
-        PageViewType.CLIP_PREVIEW,
+        PageViewType.PASTE_PREVIEW,
         PageViewType.DEVICES,
         PageViewType.QR_CODE,
         PageViewType.DEBUG,

@@ -1,11 +1,11 @@
 package com.crosspaste.utils
 
-import com.crosspaste.dao.task.ClipTask
-import com.crosspaste.dao.task.ClipTaskExtraInfo
 import com.crosspaste.dao.task.ExecutionHistory
+import com.crosspaste.dao.task.PasteTask
+import com.crosspaste.dao.task.PasteTaskExtraInfo
 import com.crosspaste.dao.task.TaskStatus
 import com.crosspaste.net.clientapi.FailureResult
-import com.crosspaste.task.FailureClipTaskResult
+import com.crosspaste.task.FailurePasteTaskResult
 import com.crosspaste.task.extra.BaseExtraInfo
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.serialization.encodeToString
@@ -22,12 +22,12 @@ import kotlin.reflect.KClass
 object TaskUtils {
 
     fun createTask(
-        clipDataId: ObjectId?,
+        pasteDataId: ObjectId?,
         taskType: Int,
-        extraInfo: ClipTaskExtraInfo = BaseExtraInfo(),
-    ): ClipTask {
-        return ClipTask().apply {
-            this.clipDataId = clipDataId
+        extraInfo: PasteTaskExtraInfo = BaseExtraInfo(),
+    ): PasteTask {
+        return PasteTask().apply {
+            this.pasteDataId = pasteDataId
             this.taskType = taskType
             this.status = TaskStatus.PREPARING
             this.createTime = System.currentTimeMillis()
@@ -37,27 +37,27 @@ object TaskUtils {
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <T : ClipTaskExtraInfo> getExtraInfo(
-        clipTask: ClipTask,
+    fun <T : PasteTaskExtraInfo> getExtraInfo(
+        pasteTask: PasteTask,
         kclass: KClass<T>,
     ): T {
         val serializer = Json.serializersModule.serializer(kclass.java)
-        return DesktopJsonUtils.JSON.decodeFromString(serializer, clipTask.extraInfo) as T
+        return DesktopJsonUtils.JSON.decodeFromString(serializer, pasteTask.extraInfo) as T
     }
 
     fun createFailExtraInfo(
-        clipTask: ClipTask,
+        pasteTask: PasteTask,
         throwable: Throwable,
     ): String {
         val currentTime = System.currentTimeMillis()
         val executionHistory =
             ExecutionHistory(
-                startTime = clipTask.modifyTime,
+                startTime = pasteTask.modifyTime,
                 endTime = currentTime,
                 status = TaskStatus.FAILURE,
                 message = throwable.message ?: "Unknown error",
             )
-        val jsonObject = DesktopJsonUtils.JSON.decodeFromString<JsonObject>(clipTask.extraInfo)
+        val jsonObject = DesktopJsonUtils.JSON.decodeFromString<JsonObject>(pasteTask.extraInfo)
 
         val mutableJsonObject = jsonObject.toMutableMap()
 
@@ -72,13 +72,13 @@ object TaskUtils {
         return DesktopJsonUtils.JSON.encodeToString(JsonObject(mutableJsonObject))
     }
 
-    fun createFailureClipTaskResult(
+    fun createFailurePasteTaskResult(
         logger: KLogger,
         retryHandler: () -> Boolean,
         startTime: Long,
         fails: Collection<FailureResult>,
-        extraInfo: ClipTaskExtraInfo,
-    ): FailureClipTaskResult {
+        extraInfo: PasteTaskExtraInfo,
+    ): FailurePasteTaskResult {
         val needRetry = retryHandler()
 
         val failMessage = fails.joinToString(separator = "\n", limit = 3) { getStackTraceAsString(it.exception) }
@@ -88,7 +88,7 @@ object TaskUtils {
         }
 
         extraInfo.executionHistories.add(ExecutionHistory(startTime, System.currentTimeMillis(), TaskStatus.FAILURE, failMessage))
-        return FailureClipTaskResult(DesktopJsonUtils.JSON.encodeToString(extraInfo), needRetry)
+        return FailurePasteTaskResult(DesktopJsonUtils.JSON.encodeToString(extraInfo), needRetry)
     }
 
     private fun getStackTraceAsString(throwable: Throwable): String {

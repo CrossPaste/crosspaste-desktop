@@ -19,14 +19,14 @@ interface FileUtils {
 
     fun getExtFromFileName(fileName: String): String?
 
-    fun createClipRelativePath(
+    fun createPasteRelativePath(
         appInstanceId: String,
         date: LocalDateTime = LocalDateTime.now(),
-        clipId: Long,
+        pasteId: Long,
         fileName: String,
     ): String
 
-    fun createClipPath(
+    fun createPastePath(
         fileRelativePath: String,
         isFile: Boolean,
         appFileType: AppFileType,
@@ -63,7 +63,7 @@ interface FileUtils {
         name: String,
     ): Path?
 
-    fun createEmptyClipFile(
+    fun createEmptyPasteFile(
         path: Path,
         length: Long,
     ): Boolean

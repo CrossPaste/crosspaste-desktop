@@ -1,11 +1,8 @@
 package com.crosspaste.task
 
-import com.crosspaste.clip.ClipSyncProcessManager
-import com.crosspaste.clip.ClipboardService
-import com.crosspaste.clip.item.ClipFiles
-import com.crosspaste.dao.clip.ClipDao
-import com.crosspaste.dao.clip.ClipData
-import com.crosspaste.dao.task.ClipTask
+import com.crosspaste.dao.paste.PasteDao
+import com.crosspaste.dao.paste.PasteData
+import com.crosspaste.dao.task.PasteTask
 import com.crosspaste.dao.task.TaskType
 import com.crosspaste.dto.pull.PullFileRequest
 import com.crosspaste.exception.StandardErrorCode
@@ -14,6 +11,9 @@ import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.PullClientApi
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.createFailureResult
+import com.crosspaste.paste.PasteSyncProcessManager
+import com.crosspaste.paste.PasteboardService
+import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.DesktopPathProvider
 import com.crosspaste.presist.FilesIndex
 import com.crosspaste.presist.FilesIndexBuilder
@@ -22,7 +22,7 @@ import com.crosspaste.task.extra.PullExtraInfo
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.TaskUtils
-import com.crosspaste.utils.TaskUtils.createFailureClipTaskResult
+import com.crosspaste.utils.TaskUtils.createFailurePasteTaskResult
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
@@ -32,11 +32,11 @@ import io.ktor.utils.io.*
 import org.mongodb.kbson.ObjectId
 
 class PullFileTaskExecutor(
-    private val clipDao: ClipDao,
+    private val pasteDao: PasteDao,
     private val pullClientApi: PullClientApi,
     private val syncManager: SyncManager,
-    private val clipSyncProcessManager: ClipSyncProcessManager<ObjectId>,
-    private val clipboardService: ClipboardService,
+    private val pasteSyncProcessManager: PasteSyncProcessManager<ObjectId>,
+    private val pasteboardService: PasteboardService,
 ) : SingleTypeTaskExecutor {
 
     companion object PullFileTaskExecutor {
@@ -52,26 +52,26 @@ class PullFileTaskExecutor(
 
     override val taskType: Int = TaskType.PULL_FILE_TASK
 
-    override suspend fun doExecuteTask(clipTask: ClipTask): ClipTaskResult {
-        val pullExtraInfo: PullExtraInfo = TaskUtils.getExtraInfo(clipTask, PullExtraInfo::class)
+    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
+        val pullExtraInfo: PullExtraInfo = TaskUtils.getExtraInfo(pasteTask, PullExtraInfo::class)
 
-        clipDao.getClipData(clipTask.clipDataId!!)?.let { clipData ->
-            val fileItems = clipData.getClipAppearItems().filter { it is ClipFiles }
-            val appInstanceId = clipData.appInstanceId
+        pasteDao.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
+            val fileItems = pasteData.getPasteAppearItems().filter { it is PasteFiles }
+            val appInstanceId = pasteData.appInstanceId
             val dateString =
                 dateUtils.getYYYYMMDD(
-                    dateUtils.convertRealmInstantToLocalDateTime(clipData.createTime),
+                    dateUtils.convertRealmInstantToLocalDateTime(pasteData.createTime),
                 )
-            val clipId = clipData.clipId
+            val pasteId = pasteData.pasteId
             val filesIndexBuilder = FilesIndexBuilder(CHUNK_SIZE)
-            for (clipAppearItem in fileItems) {
-                val clipFiles = clipAppearItem as ClipFiles
-                DesktopPathProvider.resolve(appInstanceId, dateString, clipId, clipFiles, true, filesIndexBuilder)
+            for (pasteAppearItem in fileItems) {
+                val pasteFiles = pasteAppearItem as PasteFiles
+                DesktopPathProvider.resolve(appInstanceId, dateString, pasteId, pasteFiles, true, filesIndexBuilder)
             }
             val filesIndex = filesIndexBuilder.build()
 
             if (filesIndex.getChunkCount() == 0) {
-                return SuccessClipTaskResult()
+                return SuccessPasteTaskResult()
             }
 
             if (pullExtraInfo.pullChunks.isEmpty()) {
@@ -84,12 +84,12 @@ class PullFileTaskExecutor(
                 val port = it.syncRuntimeInfo.port
 
                 it.getConnectHostAddress()?.let { host ->
-                    return pullFiles(clipData, host, port, filesIndex, pullExtraInfo)
+                    return pullFiles(pasteData, host, port, filesIndex, pullExtraInfo)
                 } ?: run {
-                    return createFailureClipTaskResult(
+                    return createFailurePasteTaskResult(
                         logger = logger,
                         retryHandler = { pullExtraInfo.executionHistories.size < 3 },
-                        startTime = clipTask.modifyTime,
+                        startTime = pasteTask.modifyTime,
                         fails =
                             listOf(
                                 createFailureResult(
@@ -101,10 +101,10 @@ class PullFileTaskExecutor(
                     )
                 }
             } ?: run {
-                return createFailureClipTaskResult(
+                return createFailurePasteTaskResult(
                     logger = logger,
                     retryHandler = { pullExtraInfo.executionHistories.size < 3 },
-                    startTime = clipTask.modifyTime,
+                    startTime = pasteTask.modifyTime,
                     fails =
                         listOf(
                             createFailureResult(
@@ -116,17 +116,17 @@ class PullFileTaskExecutor(
                 )
             }
         } ?: run {
-            return SuccessClipTaskResult()
+            return SuccessPasteTaskResult()
         }
     }
 
     private suspend fun pullFiles(
-        clipData: ClipData,
+        pasteData: PasteData,
         host: String,
         port: Int,
         filesIndex: FilesIndex,
         pullExtraInfo: PullExtraInfo,
-    ): ClipTaskResult {
+    ): PasteTaskResult {
         val toUrl: URLBuilder.(URLBuilder) -> Unit = { urlBuilder: URLBuilder ->
             buildUrl(urlBuilder, host, port)
         }
@@ -138,7 +138,7 @@ class PullFileTaskExecutor(
                     {
                         try {
                             filesIndex.getChunk(chunkIndex)?.let { filesChunk ->
-                                val pullFileRequest = PullFileRequest(clipData.appInstanceId, clipData.clipId, chunkIndex)
+                                val pullFileRequest = PullFileRequest(pasteData.appInstanceId, pasteData.pasteId, chunkIndex)
                                 val result = pullClientApi.pullFile(pullFileRequest, toUrl)
                                 if (result is SuccessResult) {
                                     val byteReadChannel = result.getResult<ByteReadChannel>()
@@ -164,7 +164,7 @@ class PullFileTaskExecutor(
                     }
                 }
 
-        val map = clipSyncProcessManager.runTask(clipData.id, tasks).toMap()
+        val map = pasteSyncProcessManager.runTask(pasteData.id, tasks).toMap()
 
         val successes = map.filter { it.value is SuccessResult }.map { it.key }
 
@@ -182,10 +182,10 @@ class PullFileTaskExecutor(
 
             if (!needRetry) {
                 logger.error { "exist pull chunk fail" }
-                clipboardService.clearRemoteClipboard(clipData)
+                pasteboardService.clearRemotePasteboard(pasteData)
             }
 
-            createFailureClipTaskResult(
+            createFailurePasteTaskResult(
                 logger = logger,
                 retryHandler = { needRetry },
                 startTime = System.currentTimeMillis(),
@@ -193,9 +193,9 @@ class PullFileTaskExecutor(
                 extraInfo = pullExtraInfo,
             )
         } else {
-            clipSyncProcessManager.cleanProcess(clipData.id)
-            clipboardService.tryWriteRemoteClipboardWithFile(clipData)
-            SuccessClipTaskResult()
+            pasteSyncProcessManager.cleanProcess(pasteData.id)
+            pasteboardService.tryWriteRemotePasteboardWithFile(pasteData)
+            SuccessPasteTaskResult()
         }
     }
 }

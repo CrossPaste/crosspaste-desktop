@@ -23,7 +23,7 @@ import java.nio.file.Path
 import kotlin.io.path.name
 
 @Composable
-fun ClipIconButton(
+fun PasteIconButton(
     size: Dp,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -64,7 +64,7 @@ fun AppImageIcon(
     if (isMacStyleIcon) {
         Image(
             painter = painter,
-            contentDescription = "Clip Icon",
+            contentDescription = "Paste Icon",
             modifier = Modifier.size(size),
         )
     } else {
@@ -72,7 +72,7 @@ fun AppImageIcon(
         val paddingSize = (size / 24) * 2
         Image(
             painter = painter,
-            contentDescription = "Clip Icon",
+            contentDescription = "Paste Icon",
             modifier = Modifier.padding(paddingSize).size(mainSize),
         )
     }

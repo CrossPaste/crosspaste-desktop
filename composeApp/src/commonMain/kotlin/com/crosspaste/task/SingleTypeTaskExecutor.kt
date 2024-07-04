@@ -1,25 +1,25 @@
 package com.crosspaste.task
 
-import com.crosspaste.dao.task.ClipTask
+import com.crosspaste.dao.task.PasteTask
 
 interface SingleTypeTaskExecutor {
 
     val taskType: Int
 
     suspend fun executeTask(
-        clipTask: ClipTask,
+        pasteTask: PasteTask,
         success: suspend (String?) -> Unit,
         fail: suspend (String, Boolean) -> Unit,
         retry: suspend () -> Unit,
     ) {
-        val result = doExecuteTask(clipTask)
+        val result = doExecuteTask(pasteTask)
 
-        if (result is SuccessClipTaskResult) {
+        if (result is SuccessPasteTaskResult) {
             success(result.newExtraInfo)
         } else {
-            val failureClipTaskResult = result as FailureClipTaskResult
-            val newExtraInfo = failureClipTaskResult.newExtraInfo
-            val needRetry = failureClipTaskResult.needRetry
+            val failurePasteTaskResult = result as FailurePasteTaskResult
+            val newExtraInfo = failurePasteTaskResult.newExtraInfo
+            val needRetry = failurePasteTaskResult.needRetry
             fail(newExtraInfo, needRetry)
             if (needRetry) {
                 retry()
@@ -27,11 +27,11 @@ interface SingleTypeTaskExecutor {
         }
     }
 
-    suspend fun doExecuteTask(clipTask: ClipTask): ClipTaskResult
+    suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult
 }
 
-interface ClipTaskResult
+interface PasteTaskResult
 
-data class SuccessClipTaskResult(val newExtraInfo: String? = null) : ClipTaskResult
+data class SuccessPasteTaskResult(val newExtraInfo: String? = null) : PasteTaskResult
 
-data class FailureClipTaskResult(val newExtraInfo: String, val needRetry: Boolean = false) : ClipTaskResult
+data class FailurePasteTaskResult(val newExtraInfo: String, val needRetry: Boolean = false) : PasteTaskResult

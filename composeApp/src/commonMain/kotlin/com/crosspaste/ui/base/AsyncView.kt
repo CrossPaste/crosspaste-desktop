@@ -12,7 +12,7 @@ fun AsyncView(
     load: suspend () -> LoadStateData,
     loadFor: @Composable (LoadStateData) -> Unit,
 ) {
-    val state: LoadStateData by clipProduceState(defaultValue, key) {
+    val state: LoadStateData by pasteProduceState(defaultValue, key) {
         value =
             withContext(ioDispatcher) {
                 try {

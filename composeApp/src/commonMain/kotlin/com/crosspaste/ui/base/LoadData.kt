@@ -59,10 +59,10 @@ fun loadIconData(
             FileExtUtils.getExtPreviewImage(extension)?.let {
                 return LoadImageData(extension, ImageBitmapToPainter(extension, it))
             } ?: run {
-                return LoadIconData("file", getResourceUtils().loadPainter("icon/clip/file.svg", density))
+                return LoadIconData("file", getResourceUtils().loadPainter("icon/paste/file.svg", density))
             }
         } else {
-            return LoadIconData("dir", getResourceUtils().loadPainter("icon/clip/folder.svg", density))
+            return LoadIconData("dir", getResourceUtils().loadPainter("icon/paste/folder.svg", density))
         }
     } catch (e: Exception) {
         return ErrorStateData(e)

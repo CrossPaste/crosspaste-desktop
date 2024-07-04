@@ -2,9 +2,9 @@ package com.crosspaste.ui.base
 
 interface DialogService {
 
-    var dialogs: MutableList<ClipDialog>
+    var dialogs: MutableList<PasteDialog>
 
-    fun pushDialog(dialog: ClipDialog)
+    fun pushDialog(dialog: PasteDialog)
 
     fun popDialog()
 }

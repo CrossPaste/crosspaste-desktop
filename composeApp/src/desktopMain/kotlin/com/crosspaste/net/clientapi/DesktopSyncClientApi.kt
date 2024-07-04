@@ -3,7 +3,7 @@ package com.crosspaste.net.clientapi
 import com.crosspaste.dto.sync.DataContent
 import com.crosspaste.dto.sync.RequestTrust
 import com.crosspaste.dto.sync.SyncInfo
-import com.crosspaste.net.ClipClient
+import com.crosspaste.net.PasteClient
 import com.crosspaste.serializer.PreKeyBundleSerializer
 import com.crosspaste.signal.SignalMessageProcessor
 import com.crosspaste.utils.DesktopJsonUtils
@@ -16,7 +16,7 @@ import kotlinx.serialization.encodeToString
 import org.signal.libsignal.protocol.state.SignalProtocolStore
 
 class DesktopSyncClientApi(
-    private val clipClient: ClipClient,
+    private val pasteClient: PasteClient,
     private val signalProtocolStore: SignalProtocolStore,
 ) : SyncClientApi {
 
@@ -24,7 +24,7 @@ class DesktopSyncClientApi(
 
     override suspend fun getPreKeyBundle(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult {
         return request(logger, request = {
-            clipClient.get(urlBuilder = {
+            pasteClient.get(urlBuilder = {
                 toUrl(it)
                 buildUrl(it, "sync", "preKeyBundle")
             })
@@ -42,7 +42,7 @@ class DesktopSyncClientApi(
             val data = DesktopJsonUtils.JSON.encodeToString(syncInfo).toByteArray()
             val ciphertextMessage = signalMessageProcessor.encrypt(data)
             val dataContent = DataContent(data = ciphertextMessage.serialize())
-            clipClient.post(
+            pasteClient.post(
                 dataContent,
                 typeInfo<DataContent>(),
                 urlBuilder = {
@@ -62,7 +62,7 @@ class DesktopSyncClientApi(
             val data = DesktopJsonUtils.JSON.encodeToString(syncInfo).toByteArray()
             val ciphertextMessage = signalMessageProcessor.encrypt(data)
             val dataContent = DataContent(data = ciphertextMessage.serialize())
-            clipClient.post(
+            pasteClient.post(
                 dataContent,
                 typeInfo<DataContent>(),
                 urlBuilder = {
@@ -75,7 +75,7 @@ class DesktopSyncClientApi(
 
     override suspend fun isTrust(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult {
         return request(logger, request = {
-            clipClient.get(urlBuilder = {
+            pasteClient.get(urlBuilder = {
                 toUrl(it)
                 buildUrl(it, "sync", "isTrust")
             })
@@ -89,7 +89,7 @@ class DesktopSyncClientApi(
         return request(logger, request = {
             val identityKey = signalProtocolStore.identityKeyPair.publicKey
             val requestTrust = RequestTrust(identityKey, token)
-            clipClient.post(
+            pasteClient.post(
                 requestTrust,
                 typeInfo<RequestTrust>(),
                 urlBuilder = {
@@ -102,7 +102,7 @@ class DesktopSyncClientApi(
 
     override suspend fun showToken(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult {
         return request(logger, request = {
-            clipClient.get(urlBuilder = {
+            pasteClient.get(urlBuilder = {
                 toUrl(it)
                 buildUrl(it, "sync", "showToken")
             })
@@ -111,7 +111,7 @@ class DesktopSyncClientApi(
 
     override suspend fun notifyExit(toUrl: URLBuilder.(URLBuilder) -> Unit) {
         request(logger, request = {
-            clipClient.get(urlBuilder = {
+            pasteClient.get(urlBuilder = {
                 toUrl(it)
                 buildUrl(it, "sync", "notifyExit")
             })
@@ -120,7 +120,7 @@ class DesktopSyncClientApi(
 
     override suspend fun notifyRemove(toUrl: URLBuilder.(URLBuilder) -> Unit) {
         request(logger, request = {
-            clipClient.get(urlBuilder = {
+            pasteClient.get(urlBuilder = {
                 toUrl(it)
                 buildUrl(it, "sync", "notifyRemove")
             })

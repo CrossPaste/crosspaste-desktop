@@ -1,7 +1,7 @@
 package com.crosspaste.net.clientapi
 
-import com.crosspaste.exception.ClipException
 import com.crosspaste.exception.ErrorCodeSupplier
+import com.crosspaste.exception.PasteException
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.exception.standardErrorCodeMap
 import io.github.oshai.kotlinlogging.KLogger
@@ -19,7 +19,7 @@ class SuccessResult(private val result: Any? = null) : ClientApiResult {
     }
 }
 
-class FailureResult(val exception: ClipException) : ClientApiResult
+class FailureResult(val exception: PasteException) : ClientApiResult
 
 object ConnectionRefused : ClientApiResult
 
@@ -28,7 +28,7 @@ object UnknownError : ClientApiResult
 fun createFailureResult(failResponse: FailResponse): FailureResult {
     val supplier = standardErrorCodeMap[failResponse.errorCode] ?: StandardErrorCode.UNKNOWN_ERROR
     return FailureResult(
-        ClipException(
+        PasteException(
             supplier.toErrorCode(),
             failResponse.message,
         ),
@@ -39,14 +39,14 @@ fun createFailureResult(
     errorCodeSupplier: ErrorCodeSupplier,
     message: String,
 ): FailureResult {
-    return FailureResult(ClipException(errorCodeSupplier.toErrorCode(), message))
+    return FailureResult(PasteException(errorCodeSupplier.toErrorCode(), message))
 }
 
 fun createFailureResult(
     errorCodeSupplier: ErrorCodeSupplier,
     throwable: Throwable,
 ): FailureResult {
-    return FailureResult(ClipException(errorCodeSupplier.toErrorCode(), throwable))
+    return FailureResult(PasteException(errorCodeSupplier.toErrorCode(), throwable))
 }
 
 suspend inline fun <T> request(

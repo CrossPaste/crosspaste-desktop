@@ -63,7 +63,7 @@ class DesktopIdentityKeyStore(
 
 val logger = KotlinLogging.logger {}
 
-fun getClipIdentityKeyStoreFactory(
+fun getPasteIdentityKeyStoreFactory(
     appInfo: AppInfo,
     signalDao: SignalDao,
 ): IdentityKeyStoreFactory {
