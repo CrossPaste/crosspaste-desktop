@@ -56,8 +56,8 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.PageViewContext
 import com.crosspaste.ui.PageViewType
-import com.crosspaste.ui.base.ClipIconButton
 import com.crosspaste.ui.base.MenuItem
+import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.allowReceive
 import com.crosspaste.ui.base.allowSend
 import com.crosspaste.ui.base.block
@@ -163,7 +163,7 @@ fun DeviceConnectView(
                 var buttonPosition by remember { mutableStateOf(Offset.Zero) }
                 var buttonSize by remember { mutableStateOf(Size(0.0f, 0.0f)) }
 
-                ClipIconButton(
+                PasteIconButton(
                     size = 20.dp,
                     onClick = {
                         showPopup = !showPopup

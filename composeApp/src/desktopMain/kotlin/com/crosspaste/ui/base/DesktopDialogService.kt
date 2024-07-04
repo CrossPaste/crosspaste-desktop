@@ -8,9 +8,9 @@ class DesktopDialogService : DialogService {
 
     private val lock = ReentrantLock()
 
-    override var dialogs: MutableList<ClipDialog> = mutableStateListOf()
+    override var dialogs: MutableList<PasteDialog> = mutableStateListOf()
 
-    override fun pushDialog(dialog: ClipDialog) {
+    override fun pushDialog(dialog: PasteDialog) {
         lock.withLock {
             if (dialogs.map { it.key }.contains(dialog.key)) {
                 return

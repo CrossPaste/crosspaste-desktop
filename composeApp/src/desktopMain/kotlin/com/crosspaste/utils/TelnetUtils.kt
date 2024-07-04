@@ -1,7 +1,7 @@
 package com.crosspaste.utils
 
 import com.crosspaste.dao.sync.HostInfo
-import com.crosspaste.net.ClipClient
+import com.crosspaste.net.PasteClient
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineName
@@ -14,7 +14,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 
-class TelnetUtils(private val clipClient: ClipClient) {
+class TelnetUtils(private val pasteClient: PasteClient) {
 
     private val logger = KotlinLogging.logger {}
 
@@ -60,7 +60,7 @@ class TelnetUtils(private val clipClient: ClipClient) {
     ): Boolean {
         return try {
             val httpResponse =
-                clipClient.get(timeout = timeout) { urlBuilder ->
+                pasteClient.get(timeout = timeout) { urlBuilder ->
                     buildUrl(urlBuilder, hostInfo.hostAddress, port)
                     buildUrl(urlBuilder, "sync", "telnet")
                 }

@@ -2,12 +2,12 @@ package com.crosspaste.listen
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppWindowManager
-import com.crosspaste.clip.ClipSearchService
-import com.crosspaste.clip.ClipboardService
 import com.crosspaste.config.ConfigManager
-import com.crosspaste.dao.clip.ClipDao
-import com.crosspaste.dao.clip.ClipData
+import com.crosspaste.dao.paste.PasteDao
+import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.listener.ShortcutKeysAction
+import com.crosspaste.paste.PasteSearchService
+import com.crosspaste.paste.PasteboardService
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -17,12 +17,12 @@ import kotlinx.coroutines.launch
 
 class DesktopShortKeysAction(
     private val appInfo: AppInfo,
-    private val clipDao: ClipDao,
+    private val pasteDao: PasteDao,
     private val configManager: ConfigManager,
     private val appWindowManager: AppWindowManager,
     private val dialogService: DialogService,
-    private val clipSearchService: ClipSearchService,
-    private val clipboardService: ClipboardService,
+    private val pasteSearchService: PasteSearchService,
+    private val pasteboardService: PasteboardService,
 ) : ShortcutKeysAction {
 
     private val logger = KotlinLogging.logger {}
@@ -49,7 +49,7 @@ class DesktopShortKeysAction(
     private fun showSearchWindow() {
         logger.info { "Open search window" }
         mainCoroutineDispatcher.launch(CoroutineName("OpenSearchWindow")) {
-            clipSearchService.activeWindow()
+            pasteSearchService.activeWindow()
         }
     }
 
@@ -61,7 +61,7 @@ class DesktopShortKeysAction(
             }
 
             if (appWindowManager.showSearchWindow) {
-                clipSearchService.unActiveWindow()
+                pasteSearchService.unActiveWindow()
             }
         }
     }
@@ -69,7 +69,7 @@ class DesktopShortKeysAction(
     private fun pasteLast(local: Boolean) {
         logger.info { "paste ${if (local) "Local" else "Remote"} Last" }
 
-        val appInstanceIdQuery: (RealmQuery<ClipData>) -> RealmQuery<ClipData> =
+        val appInstanceIdQuery: (RealmQuery<PasteData>) -> RealmQuery<PasteData> =
             if (local) {
                 { it.query("appInstanceId == $0", appInfo.appInstanceId) }
             } else {
@@ -77,7 +77,7 @@ class DesktopShortKeysAction(
             }
         mainCoroutineDispatcher.launch(CoroutineName("Paste")) {
             val result =
-                clipDao.searchClipData(
+                pasteDao.searchPasteData(
                     searchTerms = listOf(),
                     favorite = null,
                     appInstanceIdQuery = appInstanceIdQuery,
@@ -85,7 +85,7 @@ class DesktopShortKeysAction(
                 )
 
             if (result.size > 0) {
-                clipboardService.tryWriteClipboard(result[0], localOnly = true)
+                pasteboardService.tryWritePasteboard(result[0], localOnly = true)
                 appWindowManager.toPaste()
             }
         }
@@ -94,7 +94,7 @@ class DesktopShortKeysAction(
     private fun switchMonitorPasteboard() {
         logger.info { "Switch Monitor Pasteboard" }
         mainCoroutineDispatcher.launch(CoroutineName("SwitchMonitorPasteboard")) {
-            clipboardService.toggle()
+            pasteboardService.toggle()
         }
     }
 

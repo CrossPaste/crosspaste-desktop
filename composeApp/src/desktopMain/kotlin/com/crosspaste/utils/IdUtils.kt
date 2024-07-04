@@ -1,12 +1,12 @@
 package com.crosspaste.utils
 
-import com.crosspaste.dao.clip.ClipDao
+import com.crosspaste.dao.paste.PasteDao
 import java.util.concurrent.atomic.AtomicLong
 
-class IDGeneratorFactory(private val clipDao: ClipDao) {
+class IDGeneratorFactory(private val pasteDao: PasteDao) {
 
     fun createIDGenerator(): IDGenerator {
-        val initId = AtomicLong(clipDao.getMaxClipId())
+        val initId = AtomicLong(pasteDao.getMaxPasteId())
         return IDGenerator(initId)
     }
 }

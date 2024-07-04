@@ -18,17 +18,17 @@ object DesktopPathProvider : PathProvider {
 
     override val userHome: Path get() = pathProvider.userHome
 
-    override val clipAppPath: Path get() = pathProvider.clipAppPath
+    override val pasteAppPath: Path get() = pathProvider.pasteAppPath
 
-    override val clipAppJarPath: Path get() = pathProvider.clipAppJarPath
+    override val pasteAppJarPath: Path get() = pathProvider.pasteAppJarPath
 
-    override val clipUserPath: Path get() = pathProvider.clipUserPath
+    override val pasteUserPath: Path get() = pathProvider.pasteUserPath
 
-    override val clipLogPath: Path get() = pathProvider.clipLogPath
+    override val pasteLogPath: Path get() = pathProvider.pasteLogPath
 
-    override val clipEncryptPath get() = pathProvider.clipEncryptPath
+    override val pasteEncryptPath get() = pathProvider.pasteEncryptPath
 
-    override val clipDataPath get() = pathProvider.clipDataPath
+    override val pasteDataPath get() = pathProvider.pasteDataPath
 
     private fun getPathProvider(): PathProvider {
         return if (AppEnv.CURRENT.isDevelopment()) {
@@ -60,18 +60,18 @@ class DevelopmentPathProvider : PathProvider {
 
     private val development = resourceUtils.loadProperties("development.properties")
 
-    override val clipAppPath: Path = getAppPath()
+    override val pasteAppPath: Path = getAppPath()
 
-    override val clipAppJarPath: Path = getAppPath()
+    override val pasteAppJarPath: Path = getAppPath()
 
-    override val clipUserPath: Path = getUserPath()
+    override val pasteUserPath: Path = getUserPath()
 
     override val fileUtils: FileUtils = getFileUtils()
 
     override val userHome: Path = Paths.get(systemProperty.get("user.home"))
 
     private fun getAppPath(): Path {
-        development.getProperty("clipAppPath")?.let {
+        development.getProperty("pasteAppPath")?.let {
             val path = Paths.get(it)
             if (path.isAbsolute) {
                 return path
@@ -84,7 +84,7 @@ class DevelopmentPathProvider : PathProvider {
     }
 
     private fun getUserPath(): Path {
-        development.getProperty("clipUserPath")?.let {
+        development.getProperty("pasteUserPath")?.let {
             val path = Paths.get(it)
             if (path.isAbsolute) {
                 return path
@@ -103,11 +103,11 @@ class WindowsPathProvider : PathProvider {
 
     override val userHome: Path = Paths.get(systemProperty.get("user.home"))
 
-    override val clipAppPath: Path = getAppJarPath().parent
+    override val pasteAppPath: Path = getAppJarPath().parent
 
-    override val clipAppJarPath: Path = getAppJarPath()
+    override val pasteAppJarPath: Path = getAppJarPath()
 
-    override val clipUserPath: Path = userHome.resolve(".crosspaste")
+    override val pasteUserPath: Path = userHome.resolve(".crosspaste")
 
     override val fileUtils: FileUtils = getFileUtils()
 
@@ -138,13 +138,13 @@ class MacosPathProvider : PathProvider {
 
     override val userHome: Path = Paths.get(systemProperty.get("user.home"))
 
-    override val clipAppPath: Path = getAppJarPath().parent.parent
+    override val pasteAppPath: Path = getAppJarPath().parent.parent
 
-    override val clipAppJarPath: Path = getAppJarPath()
+    override val pasteAppJarPath: Path = getAppJarPath()
 
-    override val clipUserPath: Path = getAppSupportPath()
+    override val pasteUserPath: Path = getAppSupportPath()
 
-    override val clipLogPath: Path = getLogPath()
+    override val pasteLogPath: Path = getLogPath()
 
     override val fileUtils: FileUtils = getFileUtils()
 
@@ -192,11 +192,11 @@ class LinuxPathProvider : PathProvider {
 
     override val userHome: Path = Paths.get(systemProperty.get("user.home"))
 
-    override val clipAppPath: Path = getAppJarPath().parent.parent
+    override val pasteAppPath: Path = getAppJarPath().parent.parent
 
-    override val clipAppJarPath: Path = getAppJarPath()
+    override val pasteAppJarPath: Path = getAppJarPath()
 
-    override val clipUserPath: Path = userHome.resolve(".local").resolve("shard").resolve(".crosspaste")
+    override val pasteUserPath: Path = userHome.resolve(".local").resolve("shard").resolve(".crosspaste")
 
     override val fileUtils: FileUtils = getFileUtils()
 

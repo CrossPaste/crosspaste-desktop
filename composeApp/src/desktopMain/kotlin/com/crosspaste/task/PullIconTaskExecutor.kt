@@ -1,8 +1,8 @@
 package com.crosspaste.task
 
 import com.crosspaste.app.AppFileType
-import com.crosspaste.dao.clip.ClipDao
-import com.crosspaste.dao.task.ClipTask
+import com.crosspaste.dao.paste.PasteDao
+import com.crosspaste.dao.task.PasteTask
 import com.crosspaste.dao.task.TaskType
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.PullClientApi
@@ -13,7 +13,7 @@ import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.extra.BaseExtraInfo
 import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.TaskUtils
-import com.crosspaste.utils.TaskUtils.createFailureClipTaskResult
+import com.crosspaste.utils.TaskUtils.createFailurePasteTaskResult
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.path.exists
 
 class PullIconTaskExecutor(
-    private val clipDao: ClipDao,
+    private val pasteDao: PasteDao,
     private val pathProvider: PathProvider,
     private val pullClientApi: PullClientApi,
     private val syncManager: SyncManager,
@@ -42,14 +42,14 @@ class PullIconTaskExecutor(
 
     private val locks: MutableMap<String, Mutex> = ConcurrentHashMap<String, Mutex>()
 
-    override suspend fun doExecuteTask(clipTask: ClipTask): ClipTaskResult {
-        val baseExtraInfo: BaseExtraInfo = TaskUtils.getExtraInfo(clipTask, BaseExtraInfo::class)
+    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
+        val baseExtraInfo: BaseExtraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class)
 
-        clipDao.getClipData(clipTask.clipDataId!!)?.let { clipData ->
-            clipData.source?.let { source ->
+        pasteDao.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
+            pasteData.source?.let { source ->
                 locks.getOrPut(source) { Mutex() }.withLock {
                     try {
-                        val appInstanceId = clipData.appInstanceId
+                        val appInstanceId = pasteData.appInstanceId
 
                         val iconPath = pathProvider.resolve("$source.png", AppFileType.ICON)
                         if (!iconPath.exists()) {
@@ -58,10 +58,10 @@ class PullIconTaskExecutor(
                                 it.getConnectHostAddress()?.let { host ->
                                     return pullIcon(source, iconPath, host, port, baseExtraInfo)
                                 } ?: run {
-                                    return createFailureClipTaskResult(
+                                    return createFailurePasteTaskResult(
                                         logger = logger,
                                         retryHandler = { baseExtraInfo.executionHistories.size < 2 },
-                                        startTime = clipTask.modifyTime,
+                                        startTime = pasteTask.modifyTime,
                                         fails =
                                             listOf(
                                                 createFailureResult(
@@ -73,15 +73,15 @@ class PullIconTaskExecutor(
                                     )
                                 }
                             } ?: run {
-                                return createFailureClipTaskResult(
+                                return createFailurePasteTaskResult(
                                     logger = logger,
                                     retryHandler = { baseExtraInfo.executionHistories.size < 2 },
-                                    startTime = clipTask.modifyTime,
+                                    startTime = pasteTask.modifyTime,
                                     fails =
                                         listOf(
                                             createFailureResult(
                                                 StandardErrorCode.PULL_ICON_TASK_FAIL,
-                                                "Failed to sync clip to $appInstanceId",
+                                                "Failed to sync paste to $appInstanceId",
                                             ),
                                         ),
                                     extraInfo = baseExtraInfo,
@@ -94,7 +94,7 @@ class PullIconTaskExecutor(
                 }
             }
         }
-        return SuccessClipTaskResult()
+        return SuccessPasteTaskResult()
     }
 
     private suspend fun pullIcon(
@@ -103,7 +103,7 @@ class PullIconTaskExecutor(
         host: String,
         port: Int,
         baseExtraInfo: BaseExtraInfo,
-    ): ClipTaskResult {
+    ): PasteTaskResult {
         val toUrl: URLBuilder.(URLBuilder) -> Unit = { urlBuilder: URLBuilder ->
             buildUrl(urlBuilder, host, port)
         }
@@ -115,9 +115,9 @@ class PullIconTaskExecutor(
 
             logger.info { "Success to pull icon" }
 
-            return SuccessClipTaskResult()
+            return SuccessPasteTaskResult()
         } else {
-            return createFailureClipTaskResult(
+            return createFailurePasteTaskResult(
                 logger = logger,
                 retryHandler = { baseExtraInfo.executionHistories.size < 2 },
                 startTime = System.currentTimeMillis(),

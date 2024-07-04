@@ -12,11 +12,11 @@ class TestPathProviderMock {
 
     @Test
     fun testMockTestPathProvider() {
-        testUseMockTestPathProvider { tempClipAppPath, tempUserHome, tempClipAppJarPath, tempUserPath ->
-            assertEquals(tempClipAppPath, DesktopPathProvider.clipAppPath)
+        testUseMockTestPathProvider { tempPasteAppPath, tempUserHome, tempPasteAppJarPath, tempUserPath ->
+            assertEquals(tempPasteAppPath, DesktopPathProvider.pasteAppPath)
             assertEquals(tempUserHome, DesktopPathProvider.userHome)
-            assertEquals(tempClipAppJarPath, DesktopPathProvider.clipAppJarPath)
-            assertEquals(tempUserPath, DesktopPathProvider.clipUserPath)
+            assertEquals(tempPasteAppJarPath, DesktopPathProvider.pasteAppJarPath)
+            assertEquals(tempUserPath, DesktopPathProvider.pasteUserPath)
         }
     }
 
@@ -27,22 +27,22 @@ class TestPathProviderMock {
                 mockkObject(DesktopPathProvider)
 
                 // Create temporary directories
-                val tempClipAppPath = Files.createTempDirectory("tempClipAppPath")
+                val tempPasteAppPath = Files.createTempDirectory("tempPasteAppPath")
                 val tempUserHome = Files.createTempDirectory("tempUserHome")
-                val tempClipAppJarPath = Files.createTempDirectory("tempClipAppJarPath")
+                val tempPasteAppJarPath = Files.createTempDirectory("tempPasteAppJarPath")
                 val tempUserPath = Files.createTempDirectory("tempUserPath")
 
-                tempClipAppPath.toFile().deleteOnExit()
+                tempPasteAppPath.toFile().deleteOnExit()
                 tempUserHome.toFile().deleteOnExit()
-                tempClipAppJarPath.toFile().deleteOnExit()
+                tempPasteAppJarPath.toFile().deleteOnExit()
                 tempUserPath.toFile().deleteOnExit()
 
-                every { DesktopPathProvider.clipAppPath } returns tempClipAppPath
+                every { DesktopPathProvider.pasteAppPath } returns tempPasteAppPath
                 every { DesktopPathProvider.userHome } returns tempUserHome
-                every { DesktopPathProvider.clipAppJarPath } returns tempClipAppJarPath
-                every { DesktopPathProvider.clipUserPath } returns tempUserPath
+                every { DesktopPathProvider.pasteAppJarPath } returns tempPasteAppJarPath
+                every { DesktopPathProvider.pasteUserPath } returns tempUserPath
 
-                testAction(tempClipAppPath, tempUserHome, tempClipAppJarPath, tempUserPath)
+                testAction(tempPasteAppPath, tempUserHome, tempPasteAppJarPath, tempUserPath)
             } finally {
                 unmockkObject(DesktopPathProvider)
             }

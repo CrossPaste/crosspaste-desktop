@@ -1,13 +1,13 @@
 package com.crosspaste.utils
 
-import com.crosspaste.clip.item.FilesClipItem
-import com.crosspaste.clip.item.HtmlClipItem
-import com.crosspaste.clip.item.ImagesClipItem
-import com.crosspaste.clip.item.TextClipItem
-import com.crosspaste.clip.item.UrlClipItem
-import com.crosspaste.dao.clip.ClipCollection
-import com.crosspaste.dao.clip.ClipLabel
-import com.crosspaste.dao.task.ClipTaskExtraInfo
+import com.crosspaste.dao.paste.PasteCollection
+import com.crosspaste.dao.paste.PasteLabel
+import com.crosspaste.dao.task.PasteTaskExtraInfo
+import com.crosspaste.paste.item.FilesPasteItem
+import com.crosspaste.paste.item.HtmlPasteItem
+import com.crosspaste.paste.item.ImagesPasteItem
+import com.crosspaste.paste.item.TextPasteItem
+import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.presist.DirFileInfoTree
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.SingleFileInfoTree
@@ -45,17 +45,17 @@ object DesktopJsonUtils : JsonUtils {
                     serializersModuleOf(PreKeyBundle::class, PreKeyBundleSerializer)
                     serializersModuleOf(IdentityKey::class, IdentityKeySerializer)
 
-                    // use in clip data
+                    // use in paste data
                     serializersModuleOf(MutableRealmIntKSerializer)
                     serializersModuleOf(RealmAnyKSerializer)
                     polymorphic(RealmObject::class) {
-                        subclass(FilesClipItem::class)
-                        subclass(HtmlClipItem::class)
-                        subclass(ImagesClipItem::class)
-                        subclass(TextClipItem::class)
-                        subclass(UrlClipItem::class)
-                        subclass(ClipLabel::class)
-                        subclass(ClipCollection::class)
+                        subclass(FilesPasteItem::class)
+                        subclass(HtmlPasteItem::class)
+                        subclass(ImagesPasteItem::class)
+                        subclass(TextPasteItem::class)
+                        subclass(UrlPasteItem::class)
+                        subclass(PasteLabel::class)
+                        subclass(PasteCollection::class)
                     }
 
                     polymorphic(FileInfoTree::class) {
@@ -63,8 +63,8 @@ object DesktopJsonUtils : JsonUtils {
                         subclass(DirFileInfoTree::class)
                     }
 
-                    // use in clip task
-                    polymorphic(ClipTaskExtraInfo::class) {
+                    // use in paste task
+                    polymorphic(PasteTaskExtraInfo::class) {
                         subclass(BaseExtraInfo::class)
                         subclass(SyncExtraInfo::class)
                         subclass(PullExtraInfo::class)

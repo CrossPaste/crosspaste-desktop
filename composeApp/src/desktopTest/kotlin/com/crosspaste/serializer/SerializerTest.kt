@@ -1,11 +1,11 @@
 package com.crosspaste.serializer
 
-import com.crosspaste.clip.item.TextClipItem
-import com.crosspaste.clip.service.TextItemService
-import com.crosspaste.dao.clip.ClipCollection
-import com.crosspaste.dao.clip.ClipData
-import com.crosspaste.dao.clip.ClipState
-import com.crosspaste.dao.clip.ClipType
+import com.crosspaste.dao.paste.PasteCollection
+import com.crosspaste.dao.paste.PasteData
+import com.crosspaste.dao.paste.PasteState
+import com.crosspaste.dao.paste.PasteType
+import com.crosspaste.paste.item.TextPasteItem
+import com.crosspaste.paste.service.TextItemService
 import com.crosspaste.utils.DesktopJsonUtils
 import com.crosspaste.utils.getEncryptUtils
 import io.realm.kotlin.ext.realmListOf
@@ -21,46 +21,46 @@ import kotlin.test.assertTrue
 class SerializerTest {
 
     @Test
-    fun testClipData() {
+    fun testPasteData() {
         val encryptUtils = getEncryptUtils()
-        val textClipItem =
-            TextClipItem().apply {
+        val textPasteItem =
+            TextPasteItem().apply {
                 this.identifier = TextItemService.TEXT
-                this.text = "testClipData"
+                this.text = "testPasteData"
                 this.md5 = encryptUtils.md5ByString(this.text)
             }
 
-        val clipData =
-            ClipData().apply {
-                this.clipId = 0
-                this.clipAppearItem = RealmAny.Companion.create(textClipItem)
-                this.clipCollection =
-                    ClipCollection().apply {
-                        this.clipItems = realmListOf()
+        val pasteData =
+            PasteData().apply {
+                this.pasteId = 0
+                this.pasteAppearItem = RealmAny.Companion.create(textPasteItem)
+                this.pasteCollection =
+                    PasteCollection().apply {
+                        this.pasteItems = realmListOf()
                     }
-                this.clipSearchContent = textClipItem.text.lowercase()
-                this.clipType = ClipType.TEXT
-                this.md5 = textClipItem.md5
-                this.clipState = ClipState.LOADED
+                this.pasteSearchContent = textPasteItem.text.lowercase()
+                this.pasteType = PasteType.TEXT
+                this.md5 = textPasteItem.md5
+                this.pasteState = PasteState.LOADED
                 this.createTime = RealmInstant.now()
                 this.appInstanceId = UUID.randomUUID().toString()
             }
 
-        val json = DesktopJsonUtils.JSON.encodeToString(clipData)
+        val json = DesktopJsonUtils.JSON.encodeToString(pasteData)
         println(json)
-        val newClipData: ClipData = DesktopJsonUtils.JSON.decodeFromString(json)
-        assertEquals(clipData.clipId, newClipData.clipId)
-        val newTextClipItem = ClipCollection.getClipItem(newClipData.clipAppearItem)
-        assertTrue(newTextClipItem is TextClipItem)
-        assertEquals(textClipItem.text, newTextClipItem.text)
-        assertEquals(textClipItem.md5, newTextClipItem.md5)
-        assertEquals(textClipItem.identifier, newTextClipItem.identifier)
-        assertEquals(clipData.clipSearchContent, newClipData.clipSearchContent)
-        assertEquals(clipData.clipType, newClipData.clipType)
-        assertEquals(clipData.md5, newClipData.md5)
-        assertEquals(ClipState.LOADING, newClipData.clipState)
-        assertNotEquals(clipData.createTime, newClipData.createTime)
-        assertEquals(clipData.appInstanceId, newClipData.appInstanceId)
-        assertTrue(newClipData.remote)
+        val newPasteData: PasteData = DesktopJsonUtils.JSON.decodeFromString(json)
+        assertEquals(pasteData.pasteId, newPasteData.pasteId)
+        val newTextPasteItem = PasteCollection.getPasteItem(newPasteData.pasteAppearItem)
+        assertTrue(newTextPasteItem is TextPasteItem)
+        assertEquals(textPasteItem.text, newTextPasteItem.text)
+        assertEquals(textPasteItem.md5, newTextPasteItem.md5)
+        assertEquals(textPasteItem.identifier, newTextPasteItem.identifier)
+        assertEquals(pasteData.pasteSearchContent, newPasteData.pasteSearchContent)
+        assertEquals(pasteData.pasteType, newPasteData.pasteType)
+        assertEquals(pasteData.md5, newPasteData.md5)
+        assertEquals(PasteState.LOADING, newPasteData.pasteState)
+        assertNotEquals(pasteData.createTime, newPasteData.createTime)
+        assertEquals(pasteData.appInstanceId, newPasteData.appInstanceId)
+        assertTrue(newPasteData.remote)
     }
 }

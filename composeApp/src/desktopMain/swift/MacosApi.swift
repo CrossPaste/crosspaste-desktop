@@ -3,10 +3,10 @@ import ApplicationServices
 import Cocoa
 import Security
 
-@_cdecl("getClipboardChangeCount")
-public func getClipboardChangeCount(currentChangeCount: Int,
-                                    isRemote: UnsafeMutablePointer<Bool>,
-                                    isCrossPaste: UnsafeMutablePointer<Bool>) -> Int {
+@_cdecl("getPasteboardChangeCount")
+public func getPasteboardChangeCount(currentChangeCount: Int,
+                                     isRemote: UnsafeMutablePointer<Bool>,
+                                     isCrossPaste: UnsafeMutablePointer<Bool>) -> Int {
     let pasteboard = NSPasteboard.general
     let newChangeCount = pasteboard.changeCount
 

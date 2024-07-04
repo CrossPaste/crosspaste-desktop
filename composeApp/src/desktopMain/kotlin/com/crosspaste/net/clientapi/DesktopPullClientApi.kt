@@ -3,7 +3,7 @@ package com.crosspaste.net.clientapi
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dto.pull.PullFileRequest
 import com.crosspaste.exception.StandardErrorCode
-import com.crosspaste.net.ClipClient
+import com.crosspaste.net.PasteClient
 import com.crosspaste.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.*
@@ -13,7 +13,7 @@ import io.ktor.util.*
 import io.ktor.util.reflect.*
 
 class DesktopPullClientApi(
-    private val clipClient: ClipClient,
+    private val pasteClient: PasteClient,
     private val configManager: ConfigManager,
 ) : PullClientApi {
 
@@ -24,7 +24,7 @@ class DesktopPullClientApi(
         toUrl: URLBuilder.(URLBuilder) -> Unit,
     ): ClientApiResult {
         val response =
-            clipClient.post(
+            pasteClient.post(
                 message = pullFileRequest,
                 messageType = typeInfo<PullFileRequest>(),
                 targetAppInstanceId = pullFileRequest.appInstanceId,
@@ -45,7 +45,7 @@ class DesktopPullClientApi(
         toUrl: URLBuilder.(URLBuilder) -> Unit,
     ): ClientApiResult {
         val response =
-            clipClient.get(
+            pasteClient.get(
                 timeout = 50000L,
                 urlBuilder = {
                     toUrl(it)

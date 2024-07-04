@@ -45,10 +45,10 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppWindowManager
-import com.crosspaste.clip.ClipSearchService
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.ui.base.ClipIconButton
-import com.crosspaste.ui.base.ClipTooltipAreaView
+import com.crosspaste.paste.PasteSearchService
+import com.crosspaste.ui.base.PasteIconButton
+import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.search
 import com.crosspaste.ui.base.settings
 import kotlinx.coroutines.delay
@@ -71,7 +71,7 @@ fun HomeWindowDecoration() {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val appWindowManager = current.koin.get<AppWindowManager>()
-    val clipSearchService = current.koin.get<ClipSearchService>()
+    val pasteSearchService = current.koin.get<PasteSearchService>()
 
     val scope = rememberCoroutineScope()
 
@@ -154,16 +154,16 @@ fun HomeWindowDecoration() {
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                ClipTooltipAreaView(
+                PasteTooltipAreaView(
                     text = copywriter.getText("Open_Search_Window"),
                 ) {
-                    ClipIconButton(
+                    PasteIconButton(
                         size = 20.dp,
                         onClick = {
                             scope.launch {
                                 appWindowManager.unActiveMainWindow()
                                 delay(100)
-                                clipSearchService.activeWindow()
+                                pasteSearchService.activeWindow()
                             }
                         },
                         modifier = Modifier.background(Color.Transparent, CircleShape),
@@ -179,10 +179,10 @@ fun HomeWindowDecoration() {
 
                 Spacer(modifier = Modifier.width(15.dp))
 
-                ClipTooltipAreaView(
+                PasteTooltipAreaView(
                     text = "CrossPaste ${copywriter.getText("Menu")}",
                 ) {
-                    ClipIconButton(
+                    PasteIconButton(
                         size = 20.dp,
                         onClick = {
                             showPopup = !showPopup

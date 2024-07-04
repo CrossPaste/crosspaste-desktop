@@ -7,7 +7,7 @@ class PageViewContext(val pageViewType: PageViewType, val nextPageViewContext: P
     constructor(pageViewType: PageViewType, nextPageViewContext: PageViewContext) : this(pageViewType, nextPageViewContext, Unit)
 
     fun returnNext(): PageViewContext {
-        return nextPageViewContext ?: PageViewContext(PageViewType.CLIP_PREVIEW)
+        return nextPageViewContext ?: PageViewContext(PageViewType.PASTE_PREVIEW)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -32,7 +32,7 @@ class PageViewContext(val pageViewType: PageViewType, val nextPageViewContext: P
 }
 
 enum class PageViewType {
-    CLIP_PREVIEW,
+    PASTE_PREVIEW,
     DEVICES,
     DEVICE_DETAIL,
     QR_CODE,

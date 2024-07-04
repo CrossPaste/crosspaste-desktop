@@ -41,10 +41,10 @@ import com.crosspaste.dao.sync.SyncRuntimeInfo
 import com.crosspaste.dao.sync.SyncRuntimeInfoDao
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.PageViewContext
-import com.crosspaste.ui.base.ClipDialog
 import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.ExpandView
+import com.crosspaste.ui.base.PasteDialog
 import java.awt.event.KeyEvent
 
 @Composable
@@ -60,7 +60,7 @@ fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
     LaunchedEffect(syncManager.waitToVerifySyncRuntimeInfo?.deviceId) {
         syncManager.waitToVerifySyncRuntimeInfo?.let { info ->
             dialogService.pushDialog(
-                ClipDialog(
+                PasteDialog(
                     key = info.deviceId,
                     title = "Do_you_trust_this_device?",
                     width = 320.dp,
@@ -99,7 +99,7 @@ fun MyDevicesView(currentPageViewContext: MutableState<PageViewContext>) {
     Box(contentAlignment = Alignment.TopCenter) {
         DevicesListView(currentPageViewContext) { syncRuntimeInfo ->
             dialogService.pushDialog(
-                ClipDialog(
+                PasteDialog(
                     key = syncRuntimeInfo.deviceId,
                     title = "Input_Note_Name",
                     width = 260.dp,

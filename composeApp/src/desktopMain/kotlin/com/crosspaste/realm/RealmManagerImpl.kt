@@ -2,21 +2,21 @@ package com.crosspaste.realm
 
 import com.crosspaste.app.AppEnv
 import com.crosspaste.app.AppFileType
-import com.crosspaste.clip.item.FilesClipItem
-import com.crosspaste.clip.item.HtmlClipItem
-import com.crosspaste.clip.item.ImagesClipItem
-import com.crosspaste.clip.item.TextClipItem
-import com.crosspaste.clip.item.UrlClipItem
-import com.crosspaste.dao.clip.ClipCollection
-import com.crosspaste.dao.clip.ClipData
-import com.crosspaste.dao.clip.ClipLabel
-import com.crosspaste.dao.signal.ClipIdentityKey
-import com.crosspaste.dao.signal.ClipPreKey
-import com.crosspaste.dao.signal.ClipSession
-import com.crosspaste.dao.signal.ClipSignedPreKey
+import com.crosspaste.dao.paste.PasteCollection
+import com.crosspaste.dao.paste.PasteData
+import com.crosspaste.dao.paste.PasteLabel
+import com.crosspaste.dao.signal.PasteIdentityKey
+import com.crosspaste.dao.signal.PastePreKey
+import com.crosspaste.dao.signal.PasteSession
+import com.crosspaste.dao.signal.PasteSignedPreKey
 import com.crosspaste.dao.sync.HostInfo
 import com.crosspaste.dao.sync.SyncRuntimeInfo
-import com.crosspaste.dao.task.ClipTask
+import com.crosspaste.dao.task.PasteTask
+import com.crosspaste.paste.item.FilesPasteItem
+import com.crosspaste.paste.item.HtmlPasteItem
+import com.crosspaste.paste.item.ImagesPasteItem
+import com.crosspaste.paste.item.TextPasteItem
+import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.PathProvider
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.Realm
@@ -37,33 +37,33 @@ class RealmManagerImpl private constructor(private val config: RealmConfiguratio
 
         private val SIGNAL_TYPES: Set<KClass<out TypedRealmObject>> =
             setOf(
-                ClipIdentityKey::class,
-                ClipPreKey::class,
-                ClipSession::class,
-                ClipSignedPreKey::class,
+                PasteIdentityKey::class,
+                PastePreKey::class,
+                PasteSession::class,
+                PasteSignedPreKey::class,
             )
 
-        private val CLIP_TYPES: Set<KClass<out TypedRealmObject>> =
+        private val PASTE_TYPES: Set<KClass<out TypedRealmObject>> =
             setOf(
-                ClipData::class,
-                ClipCollection::class,
-                ClipLabel::class,
-                FilesClipItem::class,
-                HtmlClipItem::class,
-                ImagesClipItem::class,
-                TextClipItem::class,
-                UrlClipItem::class,
+                PasteData::class,
+                PasteCollection::class,
+                PasteLabel::class,
+                FilesPasteItem::class,
+                HtmlPasteItem::class,
+                ImagesPasteItem::class,
+                TextPasteItem::class,
+                UrlPasteItem::class,
             )
 
         private val TASK_TYPES: Set<KClass<out TypedRealmObject>> =
             setOf(
-                ClipTask::class,
+                PasteTask::class,
             )
 
         fun createRealmManager(pathProvider: PathProvider): RealmManager {
             val path = pathProvider.resolve(appFileType = AppFileType.DATA)
             val builder =
-                RealmConfiguration.Builder(DTO_TYPES + SIGNAL_TYPES + CLIP_TYPES + TASK_TYPES)
+                RealmConfiguration.Builder(DTO_TYPES + SIGNAL_TYPES + PASTE_TYPES + TASK_TYPES)
                     .directory(path.pathString)
                     .name("crosspaste.realm")
                     .schemaVersion(1)

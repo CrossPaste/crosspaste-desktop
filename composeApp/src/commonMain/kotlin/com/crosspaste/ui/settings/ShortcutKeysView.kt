@@ -46,10 +46,10 @@ import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.ui.PageViewContext
 import com.crosspaste.ui.WindowDecoration
-import com.crosspaste.ui.base.ClipDialog
 import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.KeyboardView
+import com.crosspaste.ui.base.PasteDialog
 import com.crosspaste.ui.base.edit
 
 @Composable
@@ -174,7 +174,7 @@ fun ShortcutKeyRow(name: String) {
                 Modifier.size(16.dp)
                     .clickable {
                         dialogService.pushDialog(
-                            ClipDialog(
+                            PasteDialog(
                                 key = name,
                                 width = 300.dp,
                                 title = "Please_directly_enter_the_new_shortcut_key_you_wish_to_set",

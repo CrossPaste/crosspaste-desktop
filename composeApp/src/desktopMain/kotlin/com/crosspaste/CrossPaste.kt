@@ -31,44 +31,18 @@ import com.crosspaste.app.DesktopAppRestartService
 import com.crosspaste.app.DesktopAppStartUpService
 import com.crosspaste.app.DesktopAppTokenService
 import com.crosspaste.app.getDesktopAppWindowManager
-import com.crosspaste.clean.CleanClipScheduler
-import com.crosspaste.clean.DesktopCleanClipScheduler
-import com.crosspaste.clip.CacheManager
-import com.crosspaste.clip.CacheManagerImpl
-import com.crosspaste.clip.ChromeService
-import com.crosspaste.clip.ClipPreviewService
-import com.crosspaste.clip.ClipSearchService
-import com.crosspaste.clip.ClipSyncProcessManager
-import com.crosspaste.clip.ClipboardService
-import com.crosspaste.clip.DesktopChromeService
-import com.crosspaste.clip.DesktopClipPreviewService
-import com.crosspaste.clip.DesktopClipSearchService
-import com.crosspaste.clip.DesktopClipSyncProcessManager
-import com.crosspaste.clip.DesktopTransferableConsumer
-import com.crosspaste.clip.DesktopTransferableProducer
-import com.crosspaste.clip.TransferableConsumer
-import com.crosspaste.clip.TransferableProducer
-import com.crosspaste.clip.getDesktopClipboardService
-import com.crosspaste.clip.plugin.DistinctPlugin
-import com.crosspaste.clip.plugin.FilesToImagesPlugin
-import com.crosspaste.clip.plugin.GenerateUrlPlugin
-import com.crosspaste.clip.plugin.RemoveFolderImagePlugin
-import com.crosspaste.clip.plugin.SortPlugin
-import com.crosspaste.clip.service.FilesItemService
-import com.crosspaste.clip.service.HtmlItemService
-import com.crosspaste.clip.service.ImageItemService
-import com.crosspaste.clip.service.TextItemService
-import com.crosspaste.clip.service.UrlItemService
+import com.crosspaste.clean.CleanPasteScheduler
+import com.crosspaste.clean.DesktopCleanPasteScheduler
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.config.DefaultConfigManager
-import com.crosspaste.dao.clip.ClipDao
-import com.crosspaste.dao.clip.ClipRealm
+import com.crosspaste.dao.paste.PasteDao
+import com.crosspaste.dao.paste.PasteRealm
 import com.crosspaste.dao.signal.SignalDao
 import com.crosspaste.dao.signal.SignalRealm
 import com.crosspaste.dao.sync.SyncRuntimeInfoDao
 import com.crosspaste.dao.sync.SyncRuntimeInfoRealm
-import com.crosspaste.dao.task.ClipTaskDao
-import com.crosspaste.dao.task.ClipTaskRealm
+import com.crosspaste.dao.task.PasteTaskDao
+import com.crosspaste.dao.task.PasteTaskRealm
 import com.crosspaste.endpoint.DesktopEndpointInfoFactory
 import com.crosspaste.endpoint.EndpointInfoFactory
 import com.crosspaste.i18n.GlobalCopywriter
@@ -87,26 +61,52 @@ import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.log.CrossPasteLogger
 import com.crosspaste.log.initLogger
-import com.crosspaste.net.ClipBonjourService
-import com.crosspaste.net.ClipClient
-import com.crosspaste.net.ClipServer
-import com.crosspaste.net.DesktopClipBonjourService
-import com.crosspaste.net.DesktopClipClient
-import com.crosspaste.net.DesktopClipServer
 import com.crosspaste.net.DesktopFaviconLoader
+import com.crosspaste.net.DesktopPasteBonjourService
+import com.crosspaste.net.DesktopPasteClient
+import com.crosspaste.net.DesktopPasteServer
 import com.crosspaste.net.DesktopSyncInfoFactory
 import com.crosspaste.net.FaviconLoader
+import com.crosspaste.net.PasteBonjourService
+import com.crosspaste.net.PasteClient
+import com.crosspaste.net.PasteServer
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.SyncRefresher
 import com.crosspaste.net.clientapi.DesktopPullClientApi
-import com.crosspaste.net.clientapi.DesktopSendClipClientApi
+import com.crosspaste.net.clientapi.DesktopSendPasteClientApi
 import com.crosspaste.net.clientapi.DesktopSyncClientApi
 import com.crosspaste.net.clientapi.PullClientApi
-import com.crosspaste.net.clientapi.SendClipClientApi
+import com.crosspaste.net.clientapi.SendPasteClientApi
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.plugin.SignalClientDecryptPlugin
 import com.crosspaste.net.plugin.SignalClientEncryptPlugin
 import com.crosspaste.os.macos.api.MacosApi
+import com.crosspaste.paste.CacheManager
+import com.crosspaste.paste.CacheManagerImpl
+import com.crosspaste.paste.ChromeService
+import com.crosspaste.paste.DesktopChromeService
+import com.crosspaste.paste.DesktopPastePreviewService
+import com.crosspaste.paste.DesktopPasteSearchService
+import com.crosspaste.paste.DesktopPasteSyncProcessManager
+import com.crosspaste.paste.DesktopTransferableConsumer
+import com.crosspaste.paste.DesktopTransferableProducer
+import com.crosspaste.paste.PastePreviewService
+import com.crosspaste.paste.PasteSearchService
+import com.crosspaste.paste.PasteSyncProcessManager
+import com.crosspaste.paste.PasteboardService
+import com.crosspaste.paste.TransferableConsumer
+import com.crosspaste.paste.TransferableProducer
+import com.crosspaste.paste.getDesktopPasteboardService
+import com.crosspaste.paste.plugin.DistinctPlugin
+import com.crosspaste.paste.plugin.FilesToImagesPlugin
+import com.crosspaste.paste.plugin.GenerateUrlPlugin
+import com.crosspaste.paste.plugin.RemoveFolderImagePlugin
+import com.crosspaste.paste.plugin.SortPlugin
+import com.crosspaste.paste.service.FilesItemService
+import com.crosspaste.paste.service.HtmlItemService
+import com.crosspaste.paste.service.ImageItemService
+import com.crosspaste.paste.service.TextItemService
+import com.crosspaste.paste.service.UrlItemService
 import com.crosspaste.path.DesktopPathProvider
 import com.crosspaste.path.PathProvider
 import com.crosspaste.platform.currentPlatform
@@ -120,19 +120,19 @@ import com.crosspaste.signal.DesktopSignalProtocolStore
 import com.crosspaste.signal.DesktopSignedPreKeyStore
 import com.crosspaste.signal.SignalProcessorCache
 import com.crosspaste.signal.SignalProcessorCacheImpl
-import com.crosspaste.signal.getClipIdentityKeyStoreFactory
+import com.crosspaste.signal.getPasteIdentityKeyStoreFactory
 import com.crosspaste.sync.DesktopDeviceManager
 import com.crosspaste.sync.DesktopQRCodeGenerator
 import com.crosspaste.sync.DesktopSyncManager
 import com.crosspaste.sync.DeviceManager
 import com.crosspaste.sync.SyncManager
-import com.crosspaste.task.CleanClipTaskExecutor
-import com.crosspaste.task.DeleteClipTaskExecutor
+import com.crosspaste.task.CleanPasteTaskExecutor
+import com.crosspaste.task.DeletePasteTaskExecutor
 import com.crosspaste.task.DesktopTaskExecutor
 import com.crosspaste.task.Html2ImageTaskExecutor
 import com.crosspaste.task.PullFileTaskExecutor
 import com.crosspaste.task.PullIconTaskExecutor
-import com.crosspaste.task.SyncClipTaskExecutor
+import com.crosspaste.task.SyncPasteTaskExecutor
 import com.crosspaste.task.TaskExecutor
 import com.crosspaste.ui.DesktopThemeDetector
 import com.crosspaste.ui.LinuxTrayView.initSystemTray
@@ -153,8 +153,8 @@ import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.ToastManager
 import com.crosspaste.ui.base.UISupport
-import com.crosspaste.ui.resource.ClipResourceLoader
-import com.crosspaste.ui.resource.DesktopAbsoluteClipResourceLoader
+import com.crosspaste.ui.resource.DesktopAbsolutePasteResourceLoader
+import com.crosspaste.ui.resource.PasteResourceLoader
 import com.crosspaste.ui.search.CrossPasteSearchWindow
 import com.crosspaste.utils.GlobalCoroutineScope
 import com.crosspaste.utils.GlobalCoroutineScopeImpl
@@ -191,7 +191,7 @@ class CrossPaste {
 
         private val appEnv = AppEnv.CURRENT
 
-        private val clipLogger =
+        private val crossPasteLogger =
             initLogger(
                 DesktopPathProvider.resolve("crosspaste.log", AppFileType.LOG).pathString,
             )
@@ -210,7 +210,7 @@ class CrossPaste {
                     single<AppLaunchState> { DesktopAppLaunch.launch() }
                     single<AppStartUpService> { DesktopAppStartUpService(get()) }
                     single<AppRestartService> { DesktopAppRestartService }
-                    single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<ClipServer>() }) }
+                    single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<PasteServer>() }) }
                     single<GlobalCoroutineScope> { GlobalCoroutineScopeImpl }
                     single<SyncInfoFactory> { DesktopSyncInfoFactory(get(), get()) }
                     single<PathProvider> { DesktopPathProvider }
@@ -223,23 +223,23 @@ class CrossPaste {
                     single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
                     single<IDGenerator> { IDGeneratorFactory(get()).createIDGenerator() }
                     single<CacheManager> { CacheManagerImpl(get()) }
-                    single<CrossPasteLogger> { clipLogger }
+                    single<CrossPasteLogger> { crossPasteLogger }
                     single<KLogger> { CrossPaste.logger }
 
                     // realm component
                     single<RealmManager> { RealmManagerImpl.createRealmManager(get()) }
                     single<SignalDao> { SignalRealm(get<RealmManager>().realm) }
                     single<SyncRuntimeInfoDao> { SyncRuntimeInfoRealm(get<RealmManager>().realm) }
-                    single<ClipDao> { ClipRealm(get<RealmManager>().realm, get(), lazy { get() }) }
-                    single<ClipTaskDao> { ClipTaskRealm(get<RealmManager>().realm) }
+                    single<PasteDao> { PasteRealm(get<RealmManager>().realm, get(), lazy { get() }) }
+                    single<PasteTaskDao> { PasteTaskRealm(get<RealmManager>().realm) }
 
                     // net component
-                    single<ClipClient> { DesktopClipClient(get<AppInfo>(), get(), get()) }
-                    single<ClipServer> { DesktopClipServer(get<ConfigManager>()) }
-                    single<ClipBonjourService> { DesktopClipBonjourService(get(), get(), get()) }
-                    single<TelnetUtils> { TelnetUtils(get<ClipClient>()) }
+                    single<PasteClient> { DesktopPasteClient(get<AppInfo>(), get(), get()) }
+                    single<PasteServer> { DesktopPasteServer(get<ConfigManager>()) }
+                    single<PasteBonjourService> { DesktopPasteBonjourService(get(), get(), get()) }
+                    single<TelnetUtils> { TelnetUtils(get<PasteClient>()) }
                     single<SyncClientApi> { DesktopSyncClientApi(get(), get()) }
-                    single<SendClipClientApi> { DesktopSendClipClientApi(get(), get()) }
+                    single<SendPasteClientApi> { DesktopSendPasteClientApi(get(), get()) }
                     single<PullClientApi> { DesktopPullClientApi(get(), get()) }
                     single { DesktopSyncManager(get(), get(), get(), get(), get(), get(), get(), lazy { get() }) }
                     single<SyncRefresher> { get<DesktopSyncManager>() }
@@ -248,7 +248,7 @@ class CrossPaste {
                     single<FaviconLoader> { DesktopFaviconLoader }
 
                     // signal component
-                    single<IdentityKeyStore> { getClipIdentityKeyStoreFactory(get(), get()).createIdentityKeyStore() }
+                    single<IdentityKeyStore> { getPasteIdentityKeyStoreFactory(get(), get()).createIdentityKeyStore() }
                     single<SessionStore> { DesktopSessionStore(get()) }
                     single<PreKeyStore> { DesktopPreKeyStore(get()) }
                     single<SignedPreKeyStore> { DesktopSignedPreKeyStore(get()) }
@@ -257,8 +257,8 @@ class CrossPaste {
                     single<SignalClientEncryptPlugin> { SignalClientEncryptPlugin(get()) }
                     single<SignalClientDecryptPlugin> { SignalClientDecryptPlugin(get()) }
 
-                    // clip component
-                    single<ClipboardService> { getDesktopClipboardService(get(), get(), get(), get(), get()) }
+                    // paste component
+                    single<PasteboardService> { getDesktopPasteboardService(get(), get(), get(), get(), get()) }
                     single<TransferableConsumer> {
                         DesktopTransferableConsumer(
                             get(),
@@ -282,17 +282,17 @@ class CrossPaste {
                     }
                     single<TransferableProducer> { DesktopTransferableProducer() }
                     single<ChromeService> { DesktopChromeService(get()) }
-                    single<ClipPreviewService> { DesktopClipPreviewService(get()) }
-                    single<ClipSyncProcessManager<ObjectId>> { DesktopClipSyncProcessManager() }
-                    single<ClipSearchService> { DesktopClipSearchService(get(), get(), get()) }
-                    single<CleanClipScheduler> { DesktopCleanClipScheduler(get(), get(), get()) }
+                    single<PastePreviewService> { DesktopPastePreviewService(get()) }
+                    single<PasteSyncProcessManager<ObjectId>> { DesktopPasteSyncProcessManager() }
+                    single<PasteSearchService> { DesktopPasteSearchService(get(), get(), get()) }
+                    single<CleanPasteScheduler> { DesktopCleanPasteScheduler(get(), get(), get()) }
                     single<TaskExecutor> {
                         DesktopTaskExecutor(
                             listOf(
-                                SyncClipTaskExecutor(get(), get(), get()),
-                                DeleteClipTaskExecutor(get()),
+                                SyncPasteTaskExecutor(get(), get(), get()),
+                                DeletePasteTaskExecutor(get()),
                                 PullFileTaskExecutor(get(), get(), get(), get(), get()),
-                                CleanClipTaskExecutor(get(), get()),
+                                CleanPasteTaskExecutor(get(), get()),
                                 Html2ImageTaskExecutor(get(), get(), get()),
                                 PullIconTaskExecutor(get(), get(), get(), get()),
                             ),
@@ -312,7 +312,7 @@ class CrossPaste {
                     single<ActiveGraphicsDevice> { get<DesktopMouseListener>() }
                     single<GlobalListener> { DesktopGlobalListener(get(), get(), get(), get(), get()) }
                     single<ThemeDetector> { DesktopThemeDetector(get()) }
-                    single<ClipResourceLoader> { DesktopAbsoluteClipResourceLoader }
+                    single<PasteResourceLoader> { DesktopAbsolutePasteResourceLoader }
                     single<ToastManager> { DesktopToastManager() }
                     single<NotificationManager> { DesktopNotificationManager }
                     single<IconStyle> { DesktopIconStyle }
@@ -332,16 +332,16 @@ class CrossPaste {
             try {
                 val appLaunchState = koinApplication.koin.get<AppLaunchState>()
                 if (appLaunchState.acquireLock) {
-                    if (koinApplication.koin.get<ConfigManager>().config.enableClipboardListening) {
-                        koinApplication.koin.get<ClipboardService>().start()
+                    if (koinApplication.koin.get<ConfigManager>().config.enablePasteboardListening) {
+                        koinApplication.koin.get<PasteboardService>().start()
                     }
                     koinApplication.koin.get<QRCodeGenerator>()
-                    koinApplication.koin.get<ClipServer>().start()
-                    koinApplication.koin.get<ClipClient>()
-                    // bonjour service should be registered after clip server started
+                    koinApplication.koin.get<PasteServer>().start()
+                    koinApplication.koin.get<PasteClient>()
+                    // bonjour service should be registered after paste server started
                     // only server started, bonjour service can get the port
-                    koinApplication.koin.get<ClipBonjourService>().registerService()
-                    koinApplication.koin.get<CleanClipScheduler>().start()
+                    koinApplication.koin.get<PasteBonjourService>().registerService()
+                    koinApplication.koin.get<CleanPasteScheduler>().start()
                     koinApplication.koin.get<AppStartUpService>().followConfig()
                 } else {
                     exitProcess(0)
@@ -355,11 +355,11 @@ class CrossPaste {
         private fun exitCrossPasteApplication(exitApplication: () -> Unit) {
             koinApplication.koin.get<AppLock>().releaseLock()
             koinApplication.koin.get<ChromeService>().quit()
-            koinApplication.koin.get<ClipboardService>().stop()
-            koinApplication.koin.get<ClipBonjourService>().unregisterService()
-            koinApplication.koin.get<ClipServer>().stop()
+            koinApplication.koin.get<PasteboardService>().stop()
+            koinApplication.koin.get<PasteBonjourService>().unregisterService()
+            koinApplication.koin.get<PasteServer>().stop()
             koinApplication.koin.get<SyncManager>().notifyExit()
-            koinApplication.koin.get<CleanClipScheduler>().stop()
+            koinApplication.koin.get<CleanPasteScheduler>().stop()
             koinApplication.koin.get<GlobalListener>().stop()
             exitApplication()
         }
@@ -401,7 +401,7 @@ class CrossPaste {
                     }
                 }
 
-                val currentPageViewContext = remember { mutableStateOf(PageViewContext(PageViewType.CLIP_PREVIEW)) }
+                val currentPageViewContext = remember { mutableStateOf(PageViewContext(PageViewType.PASTE_PREVIEW)) }
 
                 CompositionLocalProvider(
                     LocalKoinApplication provides koinApplication,

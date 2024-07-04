@@ -37,8 +37,8 @@ import com.crosspaste.config.ConfigManager
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.DeviceManager
-import com.crosspaste.ui.base.ClipIconButton
 import com.crosspaste.ui.base.CustomSwitch
+import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.link
 import com.crosspaste.ui.base.network
 import com.crosspaste.ui.base.remove
@@ -257,7 +257,7 @@ fun BlackListDeviceView(
     clickable: () -> Unit,
 ) {
     SyncDeviceView(syncInfo = syncInfo) {
-        ClipIconButton(
+        PasteIconButton(
             size = 20.dp,
             onClick = {
                 clickable()

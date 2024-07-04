@@ -43,9 +43,9 @@ import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppEnv
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.ui.clip.preview.ClipPreviewsView
 import com.crosspaste.ui.devices.DevicesView
 import com.crosspaste.ui.devices.bindingQRCode
+import com.crosspaste.ui.paste.preview.PastePreviewsView
 
 val tabTextStyle =
     TextStyle(
@@ -65,7 +65,7 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
     val tabs =
         remember {
             listOfNotNull(
-                Pair(listOf(PageViewType.CLIP_PREVIEW), "Clipboard"),
+                Pair(listOf(PageViewType.PASTE_PREVIEW), "Pasteboard"),
                 Pair(listOf(PageViewType.DEVICES), "Devices"),
                 Pair(listOf(PageViewType.QR_CODE), "Scan"),
                 if (appEnv == AppEnv.DEVELOPMENT) Pair(listOf(PageViewType.DEBUG), "Debug") else null,
@@ -132,11 +132,11 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
         Divider(modifier = Modifier.fillMaxWidth())
 
         when (currentPageViewContext.value.pageViewType) {
-            PageViewType.CLIP_PREVIEW -> ClipPreviewsView()
+            PageViewType.PASTE_PREVIEW -> PastePreviewsView()
             PageViewType.DEVICES -> DevicesView(currentPageViewContext)
             PageViewType.QR_CODE -> bindingQRCode()
             PageViewType.DEBUG -> DebugView()
-            else -> ClipPreviewsView()
+            else -> PastePreviewsView()
         }
     }
 }

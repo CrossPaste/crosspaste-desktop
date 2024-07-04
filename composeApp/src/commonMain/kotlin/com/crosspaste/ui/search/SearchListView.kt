@@ -54,11 +54,11 @@ import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppWindowManager
-import com.crosspaste.clip.ClipSearchService
-import com.crosspaste.clip.item.ClipUrl
-import com.crosspaste.dao.clip.ClipData
-import com.crosspaste.dao.clip.ClipType
+import com.crosspaste.dao.paste.PasteData
+import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.net.FaviconLoader
+import com.crosspaste.paste.PasteSearchService
+import com.crosspaste.paste.item.PasteUrl
 import com.crosspaste.path.PathProvider
 import com.crosspaste.ui.base.AppImageIcon
 import com.crosspaste.ui.base.AsyncView
@@ -66,9 +66,9 @@ import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.base.LoadIconData
 import com.crosspaste.ui.base.LoadImageData
 import com.crosspaste.ui.base.ToPainterImage
-import com.crosspaste.ui.clip.ClipTypeIconBaseView
-import com.crosspaste.ui.clip.preview.getClipItem
-import com.crosspaste.ui.clip.title.getClipTitle
+import com.crosspaste.ui.paste.PasteTypeIconBaseView
+import com.crosspaste.ui.paste.preview.getPasteItem
+import com.crosspaste.ui.paste.title.getPasteTitle
 import com.crosspaste.ui.selectColor
 import com.crosspaste.utils.getResourceUtils
 import kotlinx.coroutines.CoroutineName
@@ -81,7 +81,7 @@ import kotlin.io.path.exists
 @Composable
 fun SearchListView(setSelectedIndex: (Int) -> Unit) {
     val current = LocalKoinApplication.current
-    val clipSearchService = current.koin.get<ClipSearchService>()
+    val pasteSearchService = current.koin.get<PasteSearchService>()
     val appWindowManager = current.koin.get<AppWindowManager>()
     val searchListState = rememberLazyListState()
     val adapter = rememberScrollbarAdapter(scrollState = searchListState)
@@ -90,32 +90,32 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
 
     val coroutineScope = rememberCoroutineScope()
 
-    val searchResult = remember(clipSearchService.searchTime) { clipSearchService.searchResult }
+    val searchResult = remember(pasteSearchService.searchTime) { pasteSearchService.searchResult }
 
     LaunchedEffect(appWindowManager.showSearchWindow) {
         if (appWindowManager.showSearchWindow) {
-            if (clipSearchService.searchResult.size > 0) {
-                clipSearchService.selectedIndex = 0
+            if (pasteSearchService.searchResult.size > 0) {
+                pasteSearchService.selectedIndex = 0
                 searchListState.scrollToItem(0)
             }
         }
     }
 
-    LaunchedEffect(clipSearchService.selectedIndex, appWindowManager.showSearchWindow) {
+    LaunchedEffect(pasteSearchService.selectedIndex, appWindowManager.showSearchWindow) {
         if (appWindowManager.showSearchWindow) {
             val visibleItems = searchListState.layoutInfo.visibleItemsInfo
             if (visibleItems.isNotEmpty()) {
                 val lastIndex = visibleItems.last().index
 
-                if (lastIndex < clipSearchService.selectedIndex) {
-                    searchListState.scrollToItem(clipSearchService.selectedIndex - 9)
-                } else if (visibleItems.first().index > clipSearchService.selectedIndex) {
-                    searchListState.scrollToItem(clipSearchService.selectedIndex)
+                if (lastIndex < pasteSearchService.selectedIndex) {
+                    searchListState.scrollToItem(pasteSearchService.selectedIndex - 9)
+                } else if (visibleItems.first().index > pasteSearchService.selectedIndex) {
+                    searchListState.scrollToItem(pasteSearchService.selectedIndex)
                 }
 
-                if (clipSearchService.searchResult.size - lastIndex <= 10) {
-                    if (clipSearchService.tryAddLimit()) {
-                        clipSearchService.search(keepSelectIndex = true)
+                if (pasteSearchService.searchResult.size - lastIndex <= 10) {
+                    if (pasteSearchService.tryAddLimit()) {
+                        pasteSearchService.search(keepSelectIndex = true)
                     }
                 }
             }
@@ -128,13 +128,13 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
                 searchListState.firstVisibleItemScrollOffset
         }.distinctUntilChanged().collect { (_, _) ->
             val visibleItems = searchListState.layoutInfo.visibleItemsInfo
-            if (visibleItems.isNotEmpty() && clipSearchService.searchResult.size - visibleItems.last().index <= 10) {
-                if (clipSearchService.tryAddLimit()) {
-                    clipSearchService.search(keepSelectIndex = true)
+            if (visibleItems.isNotEmpty() && pasteSearchService.searchResult.size - visibleItems.last().index <= 10) {
+                if (pasteSearchService.tryAddLimit()) {
+                    pasteSearchService.search(keepSelectIndex = true)
                 }
             }
 
-            showScrollbar = clipSearchService.searchResult.size > 10
+            showScrollbar = pasteSearchService.searchResult.size > 10
             if (showScrollbar) {
                 scrollJob?.cancel()
                 scrollJob =
@@ -146,8 +146,8 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
         }
     }
 
-    LaunchedEffect(clipSearchService.searchResult.size) {
-        if (clipSearchService.searchResult.size > 10) {
+    LaunchedEffect(pasteSearchService.searchResult.size) {
+        if (pasteSearchService.searchResult.size > 10) {
             showScrollbar = true
         }
     }
@@ -162,8 +162,8 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
                 itemsIndexed(
                     searchResult,
                     key = { _, item -> item.id },
-                ) { index, clipData ->
-                    ClipTitleView(clipData, index == clipSearchService.selectedIndex) {
+                ) { index, pasteData ->
+                    PasteTitleView(pasteData, index == pasteSearchService.selectedIndex) {
                         setSelectedIndex(index)
                     }
                 }
@@ -179,7 +179,7 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
                         orientation = Orientation.Vertical,
                         state =
                             rememberDraggableState { delta ->
-                                coroutineScope.launch(CoroutineName("ScrollClip")) {
+                                coroutineScope.launch(CoroutineName("ScrollPaste")) {
                                     searchListState.scrollBy(-delta)
                                 }
                             },
@@ -199,12 +199,12 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
 }
 
 @Composable
-fun ClipTitleView(
-    clipData: ClipData,
+fun PasteTitleView(
+    pasteData: PasteData,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    val title by remember(clipData.clipState) { mutableStateOf(getClipTitle(clipData)) }
+    val title by remember(pasteData.pasteState) { mutableStateOf(getPasteTitle(pasteData)) }
 
     title?.let {
         Box(
@@ -227,7 +227,7 @@ fun ClipTitleView(
                     horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    ClipTypeIconView(clipData)
+                    PasteTypeIconView(pasteData)
 
                     Text(
                         modifier = Modifier.padding(start = 10.dp),
@@ -250,8 +250,8 @@ fun ClipTitleView(
 }
 
 @Composable
-fun ClipTypeIconView(
-    clipData: ClipData,
+fun PasteTypeIconView(
+    pasteData: PasteData,
     padding: Dp = 2.dp,
     size: Dp = 20.dp,
 ) {
@@ -262,22 +262,22 @@ fun ClipTypeIconView(
     val faviconLoader = current.koin.get<FaviconLoader>()
     val loadIconData =
         LoadIconData(
-            clipData.clipType,
+            pasteData.pasteType,
             object : ToPainterImage {
                 @Composable
                 override fun toPainter(): Painter {
-                    return ClipTypeIconBaseView(clipData.clipType)
+                    return PasteTypeIconBaseView(pasteData.pasteType)
                 }
             },
         )
 
-    if (clipData.clipType == ClipType.URL) {
+    if (pasteData.pasteType == PasteType.URL) {
         AsyncView(
-            key = clipData.id,
+            key = pasteData.id,
             defaultValue = loadIconData,
             load = {
-                clipData.getClipItem()?.let {
-                    it as ClipUrl
+                pasteData.getPasteItem()?.let {
+                    it as PasteUrl
                     try {
                         faviconLoader.getFaviconPath(it.url)?.let { path ->
                             return@AsyncView LoadImageData(path, getResourceUtils().loadPainter(path, density))
@@ -292,7 +292,7 @@ fun ClipTypeIconView(
                 is LoadIconData -> {
                     Icon(
                         painter = loadView.toPainterImage.toPainter(),
-                        contentDescription = "Clip Icon",
+                        contentDescription = "Paste Icon",
                         modifier = Modifier.padding(padding).size(size),
                         tint = MaterialTheme.colors.onBackground,
                     )
@@ -300,21 +300,21 @@ fun ClipTypeIconView(
                 is LoadImageData -> {
                     Image(
                         painter = loadView.toPainterImage.toPainter(),
-                        contentDescription = "Clip Icon",
+                        contentDescription = "Paste Icon",
                         modifier = Modifier.padding(padding).size(size),
                     )
                 }
             }
         }
-    } else if (clipData.clipType != ClipType.HTML) {
+    } else if (pasteData.pasteType != PasteType.HTML) {
         Icon(
             painter = loadIconData.toPainterImage.toPainter(),
-            contentDescription = "Clip Icon",
+            contentDescription = "Paste Icon",
             modifier = Modifier.padding(padding).size(size),
             tint = MaterialTheme.colors.onBackground,
         )
     } else {
-        clipData.source?.let {
+        pasteData.source?.let {
             val path = pathProvider.resolve("$it.png", AppFileType.ICON)
             if (path.exists()) {
                 val isMacStyleIcon by remember(it) { mutableStateOf(iconStyle.isMacStyleIcon(it)) }
@@ -322,7 +322,7 @@ fun ClipTypeIconView(
             } else {
                 Icon(
                     painter = loadIconData.toPainterImage.toPainter(),
-                    contentDescription = "Clip Icon",
+                    contentDescription = "Paste Icon",
                     modifier = Modifier.padding(padding).size(size),
                     tint = MaterialTheme.colors.onBackground,
                 )
@@ -330,7 +330,7 @@ fun ClipTypeIconView(
         } ?: run {
             Icon(
                 painter = loadIconData.toPainterImage.toPainter(),
-                contentDescription = "Clip Icon",
+                contentDescription = "Paste Icon",
                 modifier = Modifier.padding(padding).size(size),
                 tint = MaterialTheme.colors.onBackground,
             )

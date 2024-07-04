@@ -6,7 +6,7 @@ Every time you copy something, the software sets a series of data to the clipboa
 
 ### Priority of Clipboard Types
 
-[The default priority](./composeApp/src/desktopMain/kotlin/com/crosspaste/clip/plugin/SortPlugin.kt) for previewing clipboard types is as follows:
+[The default priority](./composeApp/src/desktopMain/kotlin/com/crosspaste/paste/plugin/SortPlugin.kt) for previewing clipboard types is as follows:
 
 | Priority | Clipboard Type |
 |----------|----------------|
