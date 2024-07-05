@@ -1,36 +1,13 @@
 package com.crosspaste
 
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowPlacement
-import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
-import androidx.compose.ui.window.rememberWindowState
-import com.crosspaste.app.AbstractAppWindowManager.Companion.MAIN_WINDOW_TITLE
-import com.crosspaste.app.AbstractAppWindowManager.Companion.SEARCH_WINDOW_TITLE
-import com.crosspaste.app.AppEnv
-import com.crosspaste.app.AppFileType
-import com.crosspaste.app.AppInfo
-import com.crosspaste.app.AppLaunchState
-import com.crosspaste.app.AppLock
-import com.crosspaste.app.AppRestartService
-import com.crosspaste.app.AppStartUpService
-import com.crosspaste.app.AppTokenService
-import com.crosspaste.app.AppWindowManager
-import com.crosspaste.app.DesktopAppInfoFactory
-import com.crosspaste.app.DesktopAppLaunch
-import com.crosspaste.app.DesktopAppRestartService
-import com.crosspaste.app.DesktopAppStartUpService
-import com.crosspaste.app.DesktopAppTokenService
-import com.crosspaste.app.getDesktopAppWindowManager
+import com.crosspaste.app.*
 import com.crosspaste.clean.CleanPasteScheduler
 import com.crosspaste.clean.DesktopCleanPasteScheduler
 import com.crosspaste.config.ConfigManager
@@ -47,66 +24,20 @@ import com.crosspaste.endpoint.DesktopEndpointInfoFactory
 import com.crosspaste.endpoint.EndpointInfoFactory
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.i18n.GlobalCopywriterImpl
-import com.crosspaste.listen.ActiveGraphicsDevice
-import com.crosspaste.listen.DesktopGlobalListener
-import com.crosspaste.listen.DesktopMouseListener
-import com.crosspaste.listen.DesktopShortKeysAction
-import com.crosspaste.listen.DesktopShortcutKeys
-import com.crosspaste.listen.DesktopShortcutKeysListener
-import com.crosspaste.listen.DesktopShortcutKeysLoader
-import com.crosspaste.listen.ShortcutKeysLoader
+import com.crosspaste.listen.*
 import com.crosspaste.listener.GlobalListener
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.log.CrossPasteLogger
 import com.crosspaste.log.initLogger
-import com.crosspaste.net.DesktopFaviconLoader
-import com.crosspaste.net.DesktopPasteBonjourService
-import com.crosspaste.net.DesktopPasteClient
-import com.crosspaste.net.DesktopPasteServer
-import com.crosspaste.net.DesktopSyncInfoFactory
-import com.crosspaste.net.FaviconLoader
-import com.crosspaste.net.PasteBonjourService
-import com.crosspaste.net.PasteClient
-import com.crosspaste.net.PasteServer
-import com.crosspaste.net.SyncInfoFactory
-import com.crosspaste.net.SyncRefresher
-import com.crosspaste.net.clientapi.DesktopPullClientApi
-import com.crosspaste.net.clientapi.DesktopSendPasteClientApi
-import com.crosspaste.net.clientapi.DesktopSyncClientApi
-import com.crosspaste.net.clientapi.PullClientApi
-import com.crosspaste.net.clientapi.SendPasteClientApi
-import com.crosspaste.net.clientapi.SyncClientApi
+import com.crosspaste.net.*
+import com.crosspaste.net.clientapi.*
 import com.crosspaste.net.plugin.SignalClientDecryptPlugin
 import com.crosspaste.net.plugin.SignalClientEncryptPlugin
-import com.crosspaste.os.macos.api.MacosApi
-import com.crosspaste.paste.CacheManager
-import com.crosspaste.paste.CacheManagerImpl
-import com.crosspaste.paste.ChromeService
-import com.crosspaste.paste.DesktopChromeService
-import com.crosspaste.paste.DesktopPastePreviewService
-import com.crosspaste.paste.DesktopPasteSearchService
-import com.crosspaste.paste.DesktopPasteSyncProcessManager
-import com.crosspaste.paste.DesktopTransferableConsumer
-import com.crosspaste.paste.DesktopTransferableProducer
-import com.crosspaste.paste.PastePreviewService
-import com.crosspaste.paste.PasteSearchService
-import com.crosspaste.paste.PasteSyncProcessManager
-import com.crosspaste.paste.PasteboardService
-import com.crosspaste.paste.TransferableConsumer
-import com.crosspaste.paste.TransferableProducer
-import com.crosspaste.paste.getDesktopPasteboardService
-import com.crosspaste.paste.plugin.DistinctPlugin
-import com.crosspaste.paste.plugin.FilesToImagesPlugin
-import com.crosspaste.paste.plugin.GenerateUrlPlugin
-import com.crosspaste.paste.plugin.RemoveFolderImagePlugin
-import com.crosspaste.paste.plugin.SortPlugin
-import com.crosspaste.paste.service.FilesItemService
-import com.crosspaste.paste.service.HtmlItemService
-import com.crosspaste.paste.service.ImageItemService
-import com.crosspaste.paste.service.TextItemService
-import com.crosspaste.paste.service.UrlItemService
+import com.crosspaste.paste.*
+import com.crosspaste.paste.plugin.*
+import com.crosspaste.paste.service.*
 import com.crosspaste.path.DesktopPathProvider
 import com.crosspaste.path.PathProvider
 import com.crosspaste.platform.currentPlatform
@@ -114,56 +45,15 @@ import com.crosspaste.presist.DesktopFilePersist
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.realm.RealmManager
 import com.crosspaste.realm.RealmManagerImpl
-import com.crosspaste.signal.DesktopPreKeyStore
-import com.crosspaste.signal.DesktopSessionStore
-import com.crosspaste.signal.DesktopSignalProtocolStore
-import com.crosspaste.signal.DesktopSignedPreKeyStore
-import com.crosspaste.signal.SignalProcessorCache
-import com.crosspaste.signal.SignalProcessorCacheImpl
-import com.crosspaste.signal.getPasteIdentityKeyStoreFactory
-import com.crosspaste.sync.DesktopDeviceManager
-import com.crosspaste.sync.DesktopQRCodeGenerator
-import com.crosspaste.sync.DesktopSyncManager
-import com.crosspaste.sync.DeviceManager
-import com.crosspaste.sync.SyncManager
-import com.crosspaste.task.CleanPasteTaskExecutor
-import com.crosspaste.task.DeletePasteTaskExecutor
-import com.crosspaste.task.DesktopTaskExecutor
-import com.crosspaste.task.Html2ImageTaskExecutor
-import com.crosspaste.task.PullFileTaskExecutor
-import com.crosspaste.task.PullIconTaskExecutor
-import com.crosspaste.task.SyncPasteTaskExecutor
-import com.crosspaste.task.TaskExecutor
-import com.crosspaste.ui.DesktopThemeDetector
-import com.crosspaste.ui.LinuxTrayView.initSystemTray
+import com.crosspaste.signal.*
+import com.crosspaste.sync.*
+import com.crosspaste.task.*
+import com.crosspaste.ui.*
 import com.crosspaste.ui.LinuxTrayView.setWindowPosition
-import com.crosspaste.ui.MacTray
-import com.crosspaste.ui.PageViewContext
-import com.crosspaste.ui.PageViewType
-import com.crosspaste.ui.ThemeDetector
-import com.crosspaste.ui.WindowsTray
-import com.crosspaste.ui.base.CrossPasteGrantAccessibilityPermissions
-import com.crosspaste.ui.base.DesktopDialogService
-import com.crosspaste.ui.base.DesktopIconStyle
-import com.crosspaste.ui.base.DesktopNotificationManager
-import com.crosspaste.ui.base.DesktopToastManager
-import com.crosspaste.ui.base.DesktopUISupport
-import com.crosspaste.ui.base.DialogService
-import com.crosspaste.ui.base.IconStyle
-import com.crosspaste.ui.base.NotificationManager
-import com.crosspaste.ui.base.ToastManager
-import com.crosspaste.ui.base.UISupport
+import com.crosspaste.ui.base.*
 import com.crosspaste.ui.resource.DesktopAbsolutePasteResourceLoader
 import com.crosspaste.ui.resource.PasteResourceLoader
-import com.crosspaste.ui.search.CrossPasteSearchWindow
-import com.crosspaste.utils.GlobalCoroutineScope
-import com.crosspaste.utils.GlobalCoroutineScopeImpl
-import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
-import com.crosspaste.utils.IDGenerator
-import com.crosspaste.utils.IDGeneratorFactory
-import com.crosspaste.utils.QRCodeGenerator
-import com.crosspaste.utils.TelnetUtils
-import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.*
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
 import com.github.kwhat.jnativehook.mouse.NativeMouseListener
 import dorkbox.systemTray.SystemTray
@@ -175,13 +65,7 @@ import org.koin.core.KoinApplication
 import org.koin.core.context.GlobalContext
 import org.koin.dsl.module
 import org.mongodb.kbson.ObjectId
-import org.signal.libsignal.protocol.state.IdentityKeyStore
-import org.signal.libsignal.protocol.state.PreKeyStore
-import org.signal.libsignal.protocol.state.SessionStore
-import org.signal.libsignal.protocol.state.SignalProtocolStore
-import org.signal.libsignal.protocol.state.SignedPreKeyStore
-import java.awt.event.WindowAdapter
-import java.awt.event.WindowEvent
+import org.signal.libsignal.protocol.state.*
 import kotlin.io.path.pathString
 import kotlin.system.exitProcess
 
@@ -376,7 +260,6 @@ class CrossPaste {
 
             val appLaunchState = koinApplication.koin.get<AppLaunchState>()
             val appWindowManager = koinApplication.koin.get<AppWindowManager>()
-            val globalListener = koinApplication.koin.get<GlobalListener>()
             val platform = currentPlatform()
 
             val isMacos = platform.isMacos()
@@ -428,114 +311,11 @@ class CrossPaste {
                             setWindowPosition(appWindowManager)
                         }
 
-                        Window(
-                            onCloseRequest = exitApplication,
-                            visible = appWindowManager.showMainWindow,
-                            state = appWindowManager.mainWindowState,
-                            title = MAIN_WINDOW_TITLE,
-                            icon = windowIcon,
-                            alwaysOnTop = true,
-                            undecorated = true,
-                            transparent = true,
-                            resizable = false,
-                        ) {
-                            DisposableEffect(Unit) {
-                                if (platform.isLinux()) {
-                                    systemTray?.let { tray ->
-                                        initSystemTray(tray, koinApplication, exitApplication)
-                                    }
-                                }
+                        CrossPasteMainWindow(exitApplication, systemTray, windowIcon)
 
-                                globalListener.start()
-
-                                val windowListener =
-                                    object : WindowAdapter() {
-                                        override fun windowGainedFocus(e: WindowEvent?) {
-                                            appWindowManager.showMainWindow = true
-                                        }
-
-                                        override fun windowLostFocus(e: WindowEvent?) {
-                                            mainCoroutineDispatcher.launch(CoroutineName("Hide CrossPaste")) {
-                                                if (!appWindowManager.showMainDialog) {
-                                                    appWindowManager.unActiveMainWindow()
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                window.addWindowFocusListener(windowListener)
-
-                                onDispose {
-                                    window.removeWindowFocusListener(windowListener)
-                                }
-                            }
-                            CrossPasteWindow { appWindowManager.unActiveMainWindow() }
-                        }
-
-                        Window(
-                            onCloseRequest = ::exitApplication,
-                            visible = appWindowManager.showSearchWindow,
-                            state = appWindowManager.searchWindowState,
-                            title = SEARCH_WINDOW_TITLE,
-                            icon = windowIcon,
-                            alwaysOnTop = true,
-                            undecorated = true,
-                            transparent = true,
-                            resizable = false,
-                        ) {
-                            DisposableEffect(Unit) {
-                                val windowListener =
-                                    object : WindowAdapter() {
-                                        override fun windowGainedFocus(e: WindowEvent?) {
-                                            appWindowManager.showSearchWindow = true
-                                        }
-
-                                        override fun windowLostFocus(e: WindowEvent?) {
-                                            appWindowManager.showSearchWindow = false
-                                        }
-                                    }
-
-                                window.addWindowFocusListener(windowListener)
-
-                                onDispose {
-                                    window.removeWindowFocusListener(windowListener)
-                                }
-                            }
-
-                            CrossPasteSearchWindow()
-                        }
+                        CrossPasteSearchWindow(windowIcon)
                     } else {
-                        val windowState =
-                            rememberWindowState(
-                                placement = WindowPlacement.Floating,
-                                position = WindowPosition.PlatformDefault,
-                                size = DpSize(width = 360.dp, height = 200.dp),
-                            )
-
-                        Window(
-                            onCloseRequest = ::exitApplication,
-                            visible = true,
-                            state = windowState,
-                            title = "Apply Accessibility Permissions",
-                            icon = windowIcon,
-                            alwaysOnTop = true,
-                            undecorated = false,
-                            resizable = false,
-                        ) {
-                            DisposableEffect(Unit) {
-                                window.rootPane.apply {
-                                    rootPane.putClientProperty("apple.awt.fullWindowContent", true)
-                                    rootPane.putClientProperty("apple.awt.transparentTitleBar", true)
-                                    rootPane.putClientProperty("apple.awt.windowTitleVisible", false)
-                                }
-
-                                onDispose {}
-                            }
-
-                            CrossPasteGrantAccessibilityPermissions {
-                                MacosApi.INSTANCE.checkAccessibilityPermissions()
-                            }
-                        }
+                        GrantAccessibilityPermissionsWindow(windowIcon)
                     }
                 }
             }
