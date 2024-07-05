@@ -64,14 +64,12 @@ fun ShortcutKeysContentView() {
 
     Box(
         modifier =
-            Modifier.fillMaxSize()
-                .background(MaterialTheme.colors.surface),
+            Modifier.fillMaxSize(),
     ) {
         Column(
             modifier =
                 Modifier.verticalScroll(scrollState)
-                    .fillMaxSize()
-                    .background(MaterialTheme.colors.surface),
+                    .fillMaxSize(),
         ) {
             Spacer(modifier = Modifier.height(20.dp))
 

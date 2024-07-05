@@ -26,6 +26,7 @@ import com.crosspaste.ui.AboutView
 import com.crosspaste.ui.CrossPasteTheme
 import com.crosspaste.ui.HomeView
 import com.crosspaste.ui.PageViewType
+import com.crosspaste.ui.ThemeBackground
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.ToastManager
 import com.crosspaste.ui.base.ToastView
@@ -93,10 +94,11 @@ fun CrossPasteMainWindowContent(hideWindow: suspend () -> Unit) {
                         },
                 contentAlignment = Alignment.Center,
             ) {
+                ThemeBackground()
+
                 Column(
                     Modifier
                         .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colors.background)
                         .fillMaxWidth()
                         .focusTarget()
                         .focusRequester(appWindowManager.mainFocusRequester),

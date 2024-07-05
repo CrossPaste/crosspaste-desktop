@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
@@ -29,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.ui.selectColor
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
@@ -54,10 +53,10 @@ fun ExpandView(
     var expand by remember { mutableStateOf(defaultExpand) }
 
     val backgroundColor =
-        if (expand || hover) {
-            MaterialTheme.colors.selectColor()
-        } else {
+        if (hover) {
             MaterialTheme.colors.surface
+        } else {
+            Color.Transparent
         }
 
     val languageArrow: Painter =
@@ -76,7 +75,7 @@ fun ExpandView(
             modifier =
                 Modifier.fillMaxWidth()
                     .height(42.dp)
-                    .padding(start = 10.dp)
+                    .padding(horizontal = 10.dp)
                     .combinedClickable(
                         interactionSource = MutableInteractionSource(),
                         indication = null,
@@ -102,7 +101,7 @@ fun ExpandView(
                 modifier =
                     Modifier
                         .height(26.dp)
-                        .wrapContentWidth()
+                        .fillMaxWidth()
                         .clip(RoundedCornerShape(5.dp))
                         .background(backgroundColor),
                 verticalAlignment = Alignment.CenterVertically,

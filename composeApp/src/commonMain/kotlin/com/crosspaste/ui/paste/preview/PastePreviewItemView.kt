@@ -61,13 +61,12 @@ fun PastePreviewItemView(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(105.dp)
-                .background(color = MaterialTheme.colors.surface),
+                .height(105.dp),
     ) {
         Row(
             modifier =
                 Modifier.fillMaxSize()
-                    .padding(horizontal = 5.dp, vertical = 2.5.dp)
+                    .padding(start = 5.dp, end = 5.dp, bottom = 5.dp)
                     .clip(RoundedCornerShape(5.dp)),
             verticalAlignment = Alignment.CenterVertically,
         ) {

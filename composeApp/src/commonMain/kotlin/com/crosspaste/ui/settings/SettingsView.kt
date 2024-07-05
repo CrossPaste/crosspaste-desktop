@@ -131,8 +131,6 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
         }
     }
 
-    WindowDecoration(currentPageViewContext, "Settings")
-
     val scrollState = rememberScrollState()
 
     var isScrolling by remember { mutableStateOf(false) }
@@ -151,16 +149,16 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
         }
     }
 
+    WindowDecoration(currentPageViewContext, "Settings")
+
     Box(
         modifier =
-            Modifier.fillMaxSize()
-                .background(MaterialTheme.colors.surface),
+            Modifier.fillMaxSize(),
     ) {
         Column(
             modifier =
                 Modifier.verticalScroll(scrollState)
-                    .fillMaxSize()
-                    .background(MaterialTheme.colors.surface),
+                    .fillMaxSize(),
         ) {
             Spacer(modifier = Modifier.height(20.dp))
 

@@ -15,11 +15,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -73,63 +73,77 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
         }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier =
-                Modifier.padding(8.dp, 8.dp, 8.dp, 0.dp)
-                    .wrapContentWidth(),
-        ) {
-            tabs.forEach { pair ->
-                TabView(currentPageViewContext, pair.first, copywriter.getText(pair.second))
-            }
-            Spacer(modifier = Modifier.fillMaxWidth())
-        }
-
-        val widthArray =
-            tabs.map {
-                textMeasurer.measure(
-                    copywriter.getText(it.second),
-                    tabTextStyle,
-                ).size.width
-            }
-
-        val selectedIndex by remember(currentPageViewContext.value.pageViewType) {
-            mutableStateOf(
-                tabs.indexOfFirst { it.first.contains(currentPageViewContext.value.pageViewType) },
-            )
-        }
-
-        val selectedIndexTransition = updateTransition(targetState = selectedIndex, label = "selectedIndexTransition")
-        val width by selectedIndexTransition.animateDp(
-            transitionSpec = { tween(durationMillis = 250, easing = LinearEasing) },
-            label = "width",
-        ) { tabIndex ->
-            with(LocalDensity.current) { widthArray[tabIndex].toDp() + 8.dp }
-        }
-
-        val offset by selectedIndexTransition.animateDp(
-            transitionSpec = { tween(durationMillis = 250, easing = LinearEasing) },
-            label = "offset",
-        ) { tabIndex ->
-            var sum = 0.dp
-            for (i in 0 until tabIndex) {
-                sum += with(LocalDensity.current) { widthArray[i].toDp() }
-            }
-            sum
-        }
-        Row(modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
-            Spacer(modifier = Modifier.width(4.dp + (10.dp * ((selectedIndex * 2) + 1)) + offset))
-
-            Box(
+        Box {
+            Column(
                 modifier =
-                    Modifier
-                        .width(width)
-                        .height(5.dp)
-                        .clip(RoundedCornerShape(2.dp))
-                        .background(MaterialTheme.colors.primary),
-            )
+                    Modifier.padding(horizontal = 5.dp)
+                        .fillMaxWidth()
+                        .height(40.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colors.surface.copy(0.64f)),
+            ) {}
+
+            Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
+                Row(
+                    modifier =
+                        Modifier.padding(8.dp, 8.dp, 8.dp, 0.dp)
+                            .wrapContentWidth(),
+                ) {
+                    tabs.forEach { pair ->
+                        TabView(currentPageViewContext, pair.first, copywriter.getText(pair.second))
+                    }
+                    Spacer(modifier = Modifier.fillMaxWidth())
+                }
+
+                val widthArray =
+                    tabs.map {
+                        textMeasurer.measure(
+                            copywriter.getText(it.second),
+                            tabTextStyle,
+                        ).size.width
+                    }
+
+                val selectedIndex by remember(currentPageViewContext.value.pageViewType) {
+                    mutableStateOf(
+                        tabs.indexOfFirst { it.first.contains(currentPageViewContext.value.pageViewType) },
+                    )
+                }
+
+                val selectedIndexTransition =
+                    updateTransition(targetState = selectedIndex, label = "selectedIndexTransition")
+                val width by selectedIndexTransition.animateDp(
+                    transitionSpec = { tween(durationMillis = 250, easing = LinearEasing) },
+                    label = "width",
+                ) { tabIndex ->
+                    with(LocalDensity.current) { widthArray[tabIndex].toDp() + 8.dp }
+                }
+
+                val offset by selectedIndexTransition.animateDp(
+                    transitionSpec = { tween(durationMillis = 250, easing = LinearEasing) },
+                    label = "offset",
+                ) { tabIndex ->
+                    var sum = 0.dp
+                    for (i in 0 until tabIndex) {
+                        sum += with(LocalDensity.current) { widthArray[i].toDp() }
+                    }
+                    sum
+                }
+                Row(modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
+                    Spacer(modifier = Modifier.width(4.dp + (10.dp * ((selectedIndex * 2) + 1)) + offset))
+
+                    Box(
+                        modifier =
+                            Modifier
+                                .width(width)
+                                .height(5.dp)
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(MaterialTheme.colors.primary),
+                    )
+                }
+            }
         }
 
-        Divider(modifier = Modifier.fillMaxWidth())
+        Spacer(modifier = Modifier.height(5.dp))
 
         when (currentPageViewContext.value.pageViewType) {
             PageViewType.PASTE_PREVIEW -> PastePreviewsView()
@@ -186,7 +200,6 @@ fun SingleTabView(
                 Modifier.wrapContentSize()
                     .padding(horizontal = 5.dp)
                     .clip(RoundedCornerShape(5.dp))
-                    .background(if (hover) MaterialTheme.colors.selectColor() else MaterialTheme.colors.background)
                     .padding(horizontal = 5.dp, vertical = 3.dp),
         ) {
             Text(
