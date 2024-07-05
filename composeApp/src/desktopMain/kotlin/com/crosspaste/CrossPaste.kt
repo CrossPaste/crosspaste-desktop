@@ -1,21 +1,12 @@
 package com.crosspaste
 
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowPlacement
-import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
-import androidx.compose.ui.window.rememberWindowState
-import com.crosspaste.app.AbstractAppWindowManager.Companion.MAIN_WINDOW_TITLE
-import com.crosspaste.app.AbstractAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.crosspaste.app.AppEnv
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
@@ -80,7 +71,6 @@ import com.crosspaste.net.clientapi.SendPasteClientApi
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.plugin.SignalClientDecryptPlugin
 import com.crosspaste.net.plugin.SignalClientEncryptPlugin
-import com.crosspaste.os.macos.api.MacosApi
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.CacheManagerImpl
 import com.crosspaste.paste.ChromeService
@@ -134,15 +124,16 @@ import com.crosspaste.task.PullFileTaskExecutor
 import com.crosspaste.task.PullIconTaskExecutor
 import com.crosspaste.task.SyncPasteTaskExecutor
 import com.crosspaste.task.TaskExecutor
+import com.crosspaste.ui.CrossPasteMainWindow
+import com.crosspaste.ui.CrossPasteSearchWindow
 import com.crosspaste.ui.DesktopThemeDetector
-import com.crosspaste.ui.LinuxTrayView.initSystemTray
+import com.crosspaste.ui.GrantAccessibilityPermissionsWindow
 import com.crosspaste.ui.LinuxTrayView.setWindowPosition
 import com.crosspaste.ui.MacTray
 import com.crosspaste.ui.PageViewContext
 import com.crosspaste.ui.PageViewType
 import com.crosspaste.ui.ThemeDetector
 import com.crosspaste.ui.WindowsTray
-import com.crosspaste.ui.base.CrossPasteGrantAccessibilityPermissions
 import com.crosspaste.ui.base.DesktopDialogService
 import com.crosspaste.ui.base.DesktopIconStyle
 import com.crosspaste.ui.base.DesktopNotificationManager
@@ -155,10 +146,8 @@ import com.crosspaste.ui.base.ToastManager
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.resource.DesktopAbsolutePasteResourceLoader
 import com.crosspaste.ui.resource.PasteResourceLoader
-import com.crosspaste.ui.search.CrossPasteSearchWindow
 import com.crosspaste.utils.GlobalCoroutineScope
 import com.crosspaste.utils.GlobalCoroutineScopeImpl
-import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
 import com.crosspaste.utils.IDGenerator
 import com.crosspaste.utils.IDGeneratorFactory
 import com.crosspaste.utils.QRCodeGenerator
@@ -180,8 +169,6 @@ import org.signal.libsignal.protocol.state.PreKeyStore
 import org.signal.libsignal.protocol.state.SessionStore
 import org.signal.libsignal.protocol.state.SignalProtocolStore
 import org.signal.libsignal.protocol.state.SignedPreKeyStore
-import java.awt.event.WindowAdapter
-import java.awt.event.WindowEvent
 import kotlin.io.path.pathString
 import kotlin.system.exitProcess
 
@@ -376,7 +363,6 @@ class CrossPaste {
 
             val appLaunchState = koinApplication.koin.get<AppLaunchState>()
             val appWindowManager = koinApplication.koin.get<AppWindowManager>()
-            val globalListener = koinApplication.koin.get<GlobalListener>()
             val platform = currentPlatform()
 
             val isMacos = platform.isMacos()
@@ -428,114 +414,11 @@ class CrossPaste {
                             setWindowPosition(appWindowManager)
                         }
 
-                        Window(
-                            onCloseRequest = exitApplication,
-                            visible = appWindowManager.showMainWindow,
-                            state = appWindowManager.mainWindowState,
-                            title = MAIN_WINDOW_TITLE,
-                            icon = windowIcon,
-                            alwaysOnTop = true,
-                            undecorated = true,
-                            transparent = true,
-                            resizable = false,
-                        ) {
-                            DisposableEffect(Unit) {
-                                if (platform.isLinux()) {
-                                    systemTray?.let { tray ->
-                                        initSystemTray(tray, koinApplication, exitApplication)
-                                    }
-                                }
+                        CrossPasteMainWindow(exitApplication, systemTray, windowIcon)
 
-                                globalListener.start()
-
-                                val windowListener =
-                                    object : WindowAdapter() {
-                                        override fun windowGainedFocus(e: WindowEvent?) {
-                                            appWindowManager.showMainWindow = true
-                                        }
-
-                                        override fun windowLostFocus(e: WindowEvent?) {
-                                            mainCoroutineDispatcher.launch(CoroutineName("Hide CrossPaste")) {
-                                                if (!appWindowManager.showMainDialog) {
-                                                    appWindowManager.unActiveMainWindow()
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                window.addWindowFocusListener(windowListener)
-
-                                onDispose {
-                                    window.removeWindowFocusListener(windowListener)
-                                }
-                            }
-                            CrossPasteWindow { appWindowManager.unActiveMainWindow() }
-                        }
-
-                        Window(
-                            onCloseRequest = ::exitApplication,
-                            visible = appWindowManager.showSearchWindow,
-                            state = appWindowManager.searchWindowState,
-                            title = SEARCH_WINDOW_TITLE,
-                            icon = windowIcon,
-                            alwaysOnTop = true,
-                            undecorated = true,
-                            transparent = true,
-                            resizable = false,
-                        ) {
-                            DisposableEffect(Unit) {
-                                val windowListener =
-                                    object : WindowAdapter() {
-                                        override fun windowGainedFocus(e: WindowEvent?) {
-                                            appWindowManager.showSearchWindow = true
-                                        }
-
-                                        override fun windowLostFocus(e: WindowEvent?) {
-                                            appWindowManager.showSearchWindow = false
-                                        }
-                                    }
-
-                                window.addWindowFocusListener(windowListener)
-
-                                onDispose {
-                                    window.removeWindowFocusListener(windowListener)
-                                }
-                            }
-
-                            CrossPasteSearchWindow()
-                        }
+                        CrossPasteSearchWindow(windowIcon)
                     } else {
-                        val windowState =
-                            rememberWindowState(
-                                placement = WindowPlacement.Floating,
-                                position = WindowPosition.PlatformDefault,
-                                size = DpSize(width = 360.dp, height = 200.dp),
-                            )
-
-                        Window(
-                            onCloseRequest = ::exitApplication,
-                            visible = true,
-                            state = windowState,
-                            title = "Apply Accessibility Permissions",
-                            icon = windowIcon,
-                            alwaysOnTop = true,
-                            undecorated = false,
-                            resizable = false,
-                        ) {
-                            DisposableEffect(Unit) {
-                                window.rootPane.apply {
-                                    rootPane.putClientProperty("apple.awt.fullWindowContent", true)
-                                    rootPane.putClientProperty("apple.awt.transparentTitleBar", true)
-                                    rootPane.putClientProperty("apple.awt.windowTitleVisible", false)
-                                }
-
-                                onDispose {}
-                            }
-
-                            CrossPasteGrantAccessibilityPermissions {
-                                MacosApi.INSTANCE.checkAccessibilityPermissions()
-                            }
-                        }
+                        GrantAccessibilityPermissionsWindow(windowIcon)
                     }
                 }
             }

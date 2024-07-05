@@ -38,7 +38,7 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch
 
 @Composable
-fun CrossPasteWindow(hideWindow: suspend () -> Unit) {
+fun CrossPasteMainWindowContent(hideWindow: suspend () -> Unit) {
     val current = LocalKoinApplication.current
     val appWindowManager = current.koin.get<AppWindowManager>()
     val toastManager = current.koin.get<ToastManager>()
