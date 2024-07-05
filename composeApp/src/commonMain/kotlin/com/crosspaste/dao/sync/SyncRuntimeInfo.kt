@@ -29,6 +29,10 @@ class SyncRuntimeInfo : RealmObject {
     var allowReceive: Boolean = true
     var createTime: RealmInstant = RealmInstant.now()
     var modifyTime: RealmInstant = RealmInstant.now()
+
+    fun getDeviceDisplayName(): String {
+        return noteName ?: deviceName
+    }
 }
 
 fun hostInfoListEqual(

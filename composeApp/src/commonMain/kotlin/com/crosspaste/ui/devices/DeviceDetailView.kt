@@ -34,12 +34,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.dao.sync.SyncRuntimeInfo
-import com.crosspaste.dao.sync.SyncRuntimeInfoDao
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.PageViewContext
 import com.crosspaste.ui.WindowDecoration
 import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.connectedColor
+import kotlinx.coroutines.runBlocking
 
 @Composable
 fun DeviceDetailView(currentPageViewContext: MutableState<PageViewContext>) {
@@ -50,8 +51,8 @@ fun DeviceDetailView(currentPageViewContext: MutableState<PageViewContext>) {
 @Composable
 fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext>) {
     val current = LocalKoinApplication.current
-    val syncRuntimeInfoDao = current.koin.get<SyncRuntimeInfoDao>()
     val copywriter = current.koin.get<GlobalCopywriter>()
+    val syncManager = current.koin.get<SyncManager>()
 
     var syncRuntimeInfo by remember { mutableStateOf(currentPageViewContext.value.context as SyncRuntimeInfo) }
 
@@ -87,7 +88,7 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = copywriter.getText("Allow_Send_to_this_device"),
+                    text = "${copywriter.getText("Allow_Send_to")} ${syncRuntimeInfo.getDeviceDisplayName()}",
                     color = MaterialTheme.colors.onBackground,
                     style = TextStyle(fontWeight = FontWeight.Light),
                     fontFamily = FontFamily.SansSerif,
@@ -101,9 +102,14 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
                             .height(20.dp),
                     checked = syncRuntimeInfo.allowSend,
                     onCheckedChange = {
-                        syncRuntimeInfoDao.update(syncRuntimeInfo) {
-                            this.allowSend = it
-                        }?.let { syncRuntimeInfo = it }
+                        runBlocking {
+                            syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
+                                ?.update {
+                                    this.allowSend = it
+                                }?.let {
+                                    syncRuntimeInfo = it
+                                }
+                        }
                     },
                     checkedThumbColor = connectedColor(),
                 )
@@ -118,7 +124,7 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = copywriter.getText("Allow_Receive_from_this_device"),
+                    text = "${copywriter.getText("Allow_Receive_from")} ${syncRuntimeInfo.getDeviceDisplayName()}",
                     color = MaterialTheme.colors.onBackground,
                     style = TextStyle(fontWeight = FontWeight.Light),
                     fontFamily = FontFamily.SansSerif,
@@ -132,9 +138,14 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
                             .height(20.dp),
                     checked = syncRuntimeInfo.allowReceive,
                     onCheckedChange = {
-                        syncRuntimeInfoDao.update(syncRuntimeInfo) {
-                            this.allowReceive = it
-                        }?.let { syncRuntimeInfo = it }
+                        runBlocking {
+                            syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
+                                ?.update {
+                                    this.allowReceive = it
+                                }?.let {
+                                    syncRuntimeInfo = it
+                                }
+                        }
                     },
                     checkedThumbColor = connectedColor(),
                 )
