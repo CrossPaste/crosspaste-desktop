@@ -26,8 +26,8 @@ fun Routing.pasteRouting() {
     post("/sync/paste") {
         getAppInstanceId(call)?.let { appInstanceId ->
             syncManager.getSyncHandlers()[appInstanceId]?.let { syncHandler ->
-                if (!syncHandler.syncRuntimeInfo.allowSend) {
-                    logger.debug { "sync handler ($appInstanceId) not allow send" }
+                if (!syncHandler.syncRuntimeInfo.allowReceive) {
+                    logger.debug { "sync handler ($appInstanceId) not allow receive" }
                     failResponse(call, StandardErrorCode.SYNC_NOT_ALLOW_RECEIVE.toErrorCode())
                     return@post
                 }

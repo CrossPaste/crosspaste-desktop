@@ -120,7 +120,7 @@ fun DeviceBarView(
 
                 Text(
                     modifier = Modifier.wrapContentSize(),
-                    text = syncRuntimeInfo.noteName ?: syncRuntimeInfo.deviceName,
+                    text = syncRuntimeInfo.getDeviceDisplayName(),
                     maxLines = 1,
                     style =
                         TextStyle(
