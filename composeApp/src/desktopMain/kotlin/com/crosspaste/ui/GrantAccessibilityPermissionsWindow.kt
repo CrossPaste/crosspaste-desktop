@@ -5,7 +5,11 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.*
+import androidx.compose.ui.window.ApplicationScope
+import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.WindowPosition
+import androidx.compose.ui.window.rememberWindowState
 import com.crosspaste.os.macos.api.MacosApi
 import com.crosspaste.ui.base.CrossPasteGrantAccessibilityPermissions
 
