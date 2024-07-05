@@ -84,7 +84,7 @@ import kotlinx.coroutines.runBlocking
 import java.awt.event.KeyEvent
 
 @Composable
-fun CrossPasteSearchWindow() {
+fun CrossPasteSearchWindowContent() {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
     val appInfo = current.koin.get<AppInfo>()

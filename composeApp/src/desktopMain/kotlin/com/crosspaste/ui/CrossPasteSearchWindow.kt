@@ -8,6 +8,7 @@ import androidx.compose.ui.window.Window
 import com.crosspaste.CrossPaste.Companion.koinApplication
 import com.crosspaste.app.AbstractAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.crosspaste.app.AppWindowManager
+import com.crosspaste.ui.search.CrossPasteSearchWindowContent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 
@@ -45,6 +46,6 @@ fun ApplicationScope.CrossPasteSearchWindow(windowIcon: Painter?) {
             }
         }
 
-        com.crosspaste.ui.search.CrossPasteSearchWindow()
+        CrossPasteSearchWindowContent()
     }
 }

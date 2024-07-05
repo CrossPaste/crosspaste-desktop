@@ -5,7 +5,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.window.Window
 import com.crosspaste.CrossPaste.Companion.koinApplication
-import com.crosspaste.CrossPasteWindow
+import com.crosspaste.CrossPasteMainWindowContent
 import com.crosspaste.app.AbstractAppWindowManager.Companion.MAIN_WINDOW_TITLE
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.listener.GlobalListener
@@ -65,6 +65,6 @@ fun CrossPasteMainWindow(
                 window.removeWindowFocusListener(windowListener)
             }
         }
-        CrossPasteWindow { appWindowManager.unActiveMainWindow() }
+        CrossPasteMainWindowContent { appWindowManager.unActiveMainWindow() }
     }
 }
