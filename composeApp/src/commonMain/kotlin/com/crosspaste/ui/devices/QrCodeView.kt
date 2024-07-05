@@ -88,8 +88,7 @@ fun bindingQRCode() {
 
     Box(
         modifier =
-            Modifier.fillMaxSize()
-                .background(color = MaterialTheme.colors.surface),
+            Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
         Box(
@@ -105,12 +104,17 @@ fun bindingQRCode() {
                 Row(
                     modifier =
                         Modifier.align(Alignment.CenterHorizontally)
-                            .width(275.dp),
+                            .width(275.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colors.surface.copy(0.64f)),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        modifier = Modifier.weight(1f, fill = false).padding(end = 8.dp),
+                        modifier =
+                            Modifier.weight(1f, fill = false)
+                                .padding(vertical = 8.dp),
                         textAlign = TextAlign.Center,
                         text = copywriter.getText("Please_scan_the_binding_device"),
                         maxLines = 3,
@@ -130,6 +134,7 @@ fun bindingQRCode() {
                         modifier = Modifier.size(28.dp),
                         tint = MaterialTheme.colors.primary,
                     )
+                    Spacer(modifier = Modifier.width(8.dp))
                 }
                 Spacer(modifier = Modifier.height(20.dp))
                 qrImage?.let {
