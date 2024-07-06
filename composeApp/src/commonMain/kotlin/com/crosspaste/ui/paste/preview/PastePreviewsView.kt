@@ -38,6 +38,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
@@ -124,8 +125,7 @@ fun PastePreviewsView() {
 
     Box(
         modifier =
-            Modifier.fillMaxWidth()
-                .background(color = MaterialTheme.colors.surface.copy(alpha = 0.12f)),
+            Modifier.fillMaxWidth(),
     ) {
         LazyColumn(
             state = listState,
@@ -186,7 +186,11 @@ fun EmptyScreenView() {
     val copywriter = current.koin.get<GlobalCopywriter>()
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier.fillMaxSize(),
+        modifier =
+            Modifier.fillMaxSize()
+                .padding(start = 5.dp, end = 5.dp, bottom = 5.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(MaterialTheme.colors.surface.copy(0.64f)),
     ) {
         Box(
             modifier = Modifier.wrapContentSize(),
@@ -203,7 +207,7 @@ fun EmptyScreenView() {
                     TextStyle(
                         fontFamily = FontFamily.SansSerif,
                         fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colors.onBackground.copy(alpha = 0.5f),
+                        color = MaterialTheme.colors.onBackground,
                         fontSize = 20.sp,
                         lineHeight = 24.sp,
                     ),

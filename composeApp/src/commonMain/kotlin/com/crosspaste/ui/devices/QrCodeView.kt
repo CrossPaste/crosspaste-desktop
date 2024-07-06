@@ -88,7 +88,10 @@ fun bindingQRCode() {
 
     Box(
         modifier =
-            Modifier.fillMaxSize(),
+            Modifier.fillMaxSize()
+                .padding(start = 5.dp, end = 5.dp, bottom = 5.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(MaterialTheme.colors.surface.copy(0.64f)),
         contentAlignment = Alignment.Center,
     ) {
         Box(
@@ -106,7 +109,7 @@ fun bindingQRCode() {
                         Modifier.align(Alignment.CenterHorizontally)
                             .width(275.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(MaterialTheme.colors.surface.copy(0.64f)),
+                            .background(MaterialTheme.colors.background),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -122,7 +125,7 @@ fun bindingQRCode() {
                             TextStyle(
                                 fontFamily = FontFamily.SansSerif,
                                 fontWeight = FontWeight.Light,
-                                color = MaterialTheme.colors.onBackground.copy(alpha = 0.5f),
+                                color = MaterialTheme.colors.onBackground,
                                 fontSize = 20.sp,
                                 lineHeight = 24.sp,
                             ),
