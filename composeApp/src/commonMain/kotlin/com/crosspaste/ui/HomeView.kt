@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -29,9 +30,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -65,6 +69,7 @@ val customFontFamily =
         Font(resource = "font/BebasNeue.otf", FontWeight.Normal),
     )
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Preview
 @Composable
 fun HomeWindowDecoration() {
@@ -76,6 +81,10 @@ fun HomeWindowDecoration() {
     val scope = rememberCoroutineScope()
 
     var showPopup by remember { mutableStateOf(false) }
+
+    var hoverSearchIcon by remember { mutableStateOf(false) }
+
+    var hoverSettingsIcon by remember { mutableStateOf(false) }
 
     val density = LocalDensity.current
 
@@ -143,46 +152,108 @@ fun HomeWindowDecoration() {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 PasteTooltipAreaView(
+                    modifier = Modifier.size(32.dp),
                     text = copywriter.getText("Open_Search_Window"),
                 ) {
-                    PasteIconButton(
-                        size = 20.dp,
-                        onClick = {
-                            scope.launch {
-                                appWindowManager.unActiveMainWindow()
-                                delay(100)
-                                pasteSearchService.activeWindow()
-                            }
-                        },
-                        modifier = Modifier.background(Color.Transparent, CircleShape),
+                    Box(
+                        modifier =
+                            Modifier.size(32.dp)
+                                .onPointerEvent(
+                                    eventType = PointerEventType.Enter,
+                                    onEvent = {
+                                        hoverSearchIcon = true
+                                    },
+                                )
+                                .onPointerEvent(
+                                    eventType = PointerEventType.Exit,
+                                    onEvent = {
+                                        hoverSearchIcon = false
+                                    },
+                                ),
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Icon(
-                            painter = search(),
-                            contentDescription = "open search window",
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colors.onBackground,
-                        )
+                        Box(
+                            modifier =
+                                Modifier.fillMaxSize()
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(
+                                        if (hoverSearchIcon) {
+                                            MaterialTheme.colors.surface.copy(0.64f)
+                                        } else {
+                                            Color.Transparent
+                                        },
+                                    ),
+                        ) {}
+
+                        PasteIconButton(
+                            size = 20.dp,
+                            onClick = {
+                                scope.launch {
+                                    appWindowManager.unActiveMainWindow()
+                                    delay(100)
+                                    pasteSearchService.activeWindow()
+                                }
+                            },
+                            modifier = Modifier.background(Color.Transparent, CircleShape),
+                        ) {
+                            Icon(
+                                painter = search(),
+                                contentDescription = "open search window",
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colors.onBackground,
+                            )
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.width(15.dp))
-
                 PasteTooltipAreaView(
+                    modifier = Modifier.size(32.dp),
                     text = "CrossPaste ${copywriter.getText("Menu")}",
                 ) {
-                    PasteIconButton(
-                        size = 20.dp,
-                        onClick = {
-                            showPopup = !showPopup
-                        },
-                        modifier = Modifier.background(Color.Transparent, CircleShape),
+                    Box(
+                        modifier =
+                            Modifier.size(32.dp)
+                                .onPointerEvent(
+                                    eventType = PointerEventType.Enter,
+                                    onEvent = {
+                                        hoverSettingsIcon = true
+                                    },
+                                )
+                                .onPointerEvent(
+                                    eventType = PointerEventType.Exit,
+                                    onEvent = {
+                                        hoverSettingsIcon = false
+                                    },
+                                ),
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Icon(
-                            painter = settings(),
-                            contentDescription = "info",
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colors.onBackground,
-                        )
+                        Box(
+                            modifier =
+                                Modifier.fillMaxSize()
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(
+                                        if (hoverSettingsIcon) {
+                                            MaterialTheme.colors.surface.copy(0.64f)
+                                        } else {
+                                            Color.Transparent
+                                        },
+                                    ),
+                        ) {}
+
+                        PasteIconButton(
+                            size = 20.dp,
+                            onClick = {
+                                showPopup = !showPopup
+                            },
+                            modifier = Modifier.background(Color.Transparent, CircleShape),
+                        ) {
+                            Icon(
+                                painter = settings(),
+                                contentDescription = "info",
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colors.onBackground,
+                            )
+                        }
                     }
                 }
 

@@ -35,6 +35,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -46,6 +47,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -83,6 +86,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import java.awt.event.KeyEvent
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun CrossPasteSearchWindowContent() {
     val current = LocalKoinApplication.current
@@ -241,64 +245,130 @@ fun CrossPasteSearchWindowContent() {
 
                             val maxWidth = getMenWidth(menuTexts, textStyle, paddingValues)
 
+                            var hoverSortIcon by remember { mutableStateOf(false) }
+
+                            var hoverFavoritesIcon by remember { mutableStateOf(false) }
+
                             Row(
                                 modifier = Modifier.fillMaxSize(),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Spacer(modifier = Modifier.weight(1f))
                                 Row(
-                                    modifier = Modifier.width(80.dp + maxWidth).height(50.dp).padding(10.dp),
+                                    modifier = Modifier.width(94.dp + maxWidth).height(50.dp).padding(10.dp),
                                     horizontalArrangement = Arrangement.Start,
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     PasteTooltipAreaView(
+                                        modifier = Modifier.size(32.dp),
                                         text = copywriter.getText("Sort_by_creation_time"),
                                     ) {
-                                        PasteIconButton(
-                                            size = 20.dp,
-                                            onClick = {
-                                                pasteSearchService.switchSort()
-                                                focusRequester.requestFocus() // keep textField focus
-                                            },
+                                        Box(
                                             modifier =
-                                                Modifier
-                                                    .background(Color.Transparent, CircleShape),
+                                                Modifier.size(32.dp)
+                                                    .onPointerEvent(
+                                                        eventType = PointerEventType.Enter,
+                                                        onEvent = {
+                                                            hoverSortIcon = true
+                                                        },
+                                                    )
+                                                    .onPointerEvent(
+                                                        eventType = PointerEventType.Exit,
+                                                        onEvent = {
+                                                            hoverSortIcon = false
+                                                        },
+                                                    ),
+                                            contentAlignment = Alignment.Center,
                                         ) {
-                                            Icon(
-                                                modifier = Modifier.size(20.dp),
-                                                painter = if (pasteSearchService.searchSort) descSort() else ascSort(),
-                                                contentDescription = "Sort by creation time",
-                                                tint = MaterialTheme.colors.primary,
-                                            )
+                                            Box(
+                                                modifier =
+                                                    Modifier.fillMaxSize()
+                                                        .clip(RoundedCornerShape(6.dp))
+                                                        .background(
+                                                            if (hoverSortIcon) {
+                                                                MaterialTheme.colors.surface.copy(0.64f)
+                                                            } else {
+                                                                Color.Transparent
+                                                            },
+                                                        ),
+                                            ) {}
+
+                                            PasteIconButton(
+                                                size = 20.dp,
+                                                onClick = {
+                                                    pasteSearchService.switchSort()
+                                                    focusRequester.requestFocus() // keep textField focus
+                                                },
+                                                modifier =
+                                                    Modifier
+                                                        .background(Color.Transparent, CircleShape),
+                                            ) {
+                                                Icon(
+                                                    modifier = Modifier.size(20.dp),
+                                                    painter = if (pasteSearchService.searchSort) descSort() else ascSort(),
+                                                    contentDescription = "Sort by creation time",
+                                                    tint = MaterialTheme.colors.primary,
+                                                )
+                                            }
                                         }
                                     }
 
-                                    Spacer(modifier = Modifier.width(10.dp))
-
                                     PasteTooltipAreaView(
+                                        modifier = Modifier.size(32.dp),
                                         text = copywriter.getText("Whether_to_search_only_favorites"),
                                     ) {
-                                        PasteIconButton(
-                                            size = 18.dp,
-                                            onClick = {
-                                                pasteSearchService.switchFavorite()
-                                                focusRequester.requestFocus() // keep textField focus
-                                            },
+                                        Box(
                                             modifier =
-                                                Modifier
-                                                    .background(Color.Transparent, CircleShape),
+                                                Modifier.size(32.dp)
+                                                    .onPointerEvent(
+                                                        eventType = PointerEventType.Enter,
+                                                        onEvent = {
+                                                            hoverFavoritesIcon = true
+                                                        },
+                                                    )
+                                                    .onPointerEvent(
+                                                        eventType = PointerEventType.Exit,
+                                                        onEvent = {
+                                                            hoverFavoritesIcon = false
+                                                        },
+                                                    ),
+                                            contentAlignment = Alignment.Center,
                                         ) {
-                                            Icon(
-                                                modifier = Modifier.size(18.dp),
-                                                painter = if (pasteSearchService.searchFavorite) favorite() else noFavorite(),
-                                                contentDescription = "Favorite",
-                                                tint =
-                                                    if (pasteSearchService.searchFavorite) {
-                                                        favoriteColor()
-                                                    } else {
-                                                        MaterialTheme.colors.primary
-                                                    },
-                                            )
+                                            Box(
+                                                modifier =
+                                                    Modifier.fillMaxSize()
+                                                        .clip(RoundedCornerShape(6.dp))
+                                                        .background(
+                                                            if (hoverFavoritesIcon) {
+                                                                MaterialTheme.colors.surface.copy(0.64f)
+                                                            } else {
+                                                                Color.Transparent
+                                                            },
+                                                        ),
+                                            ) {}
+
+                                            PasteIconButton(
+                                                size = 18.dp,
+                                                onClick = {
+                                                    pasteSearchService.switchFavorite()
+                                                    focusRequester.requestFocus() // keep textField focus
+                                                },
+                                                modifier =
+                                                    Modifier
+                                                        .background(Color.Transparent, CircleShape),
+                                            ) {
+                                                Icon(
+                                                    modifier = Modifier.size(18.dp),
+                                                    painter = if (pasteSearchService.searchFavorite) favorite() else noFavorite(),
+                                                    contentDescription = "Favorite",
+                                                    tint =
+                                                        if (pasteSearchService.searchFavorite) {
+                                                            favoriteColor()
+                                                        } else {
+                                                            MaterialTheme.colors.primary
+                                                        },
+                                                )
+                                            }
                                         }
                                     }
 
