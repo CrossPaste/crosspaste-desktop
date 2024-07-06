@@ -39,9 +39,7 @@ class DesktopAppInfoFactory(private val configManager: ConfigManager) : AppInfoF
     }
 
     override fun getVersion(): String {
-        return getVersion(AppEnv.CURRENT) {
-            properties
-        }
+        return getVersion(AppEnv.CURRENT, properties)
     }
 
     override fun getRevision(): String {
@@ -57,9 +55,9 @@ class DesktopAppInfoFactory(private val configManager: ConfigManager) : AppInfoF
 
         fun getVersion(
             appEnv: AppEnv = AppEnv.PRODUCTION,
-            load: () -> Properties?,
+            properties: Properties?,
         ): String {
-            return load()?.let { properties ->
+            return properties?.let {
                 val version = properties.getProperty("version", "Unknown")
 
                 if (appEnv.isDevelopment()) {
