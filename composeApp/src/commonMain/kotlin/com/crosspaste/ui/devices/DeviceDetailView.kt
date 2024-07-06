@@ -61,7 +61,6 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
     Column(
         modifier =
             Modifier.fillMaxSize()
-                .background(MaterialTheme.colors.surface)
                 .padding(16.dp),
     ) {
         // Header
@@ -224,8 +223,6 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
             }
         }
     }
-
-    Column(modifier = Modifier.fillMaxSize()) { }
 }
 
 @Composable
