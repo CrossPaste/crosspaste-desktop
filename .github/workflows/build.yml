@@ -111,6 +111,9 @@ jobs:
           echo "BETA=$BETA" >> $GITHUB_ENV
           PACKAGE_VERSION="${PROPERTIES_VERSION}-beta${BETA}"
           echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> $GITHUB_ENV
+          REVISION=$(git rev-list --count HEAD)
+          echo "REVISION=$REVISION" >> $GITHUB_ENV
+          echo -e "\nrevision=$REVISION" >> composeApp/src/desktopMain/resources/crosspaste-version.properties
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3

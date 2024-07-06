@@ -10,6 +10,7 @@ import androidx.compose.ui.window.application
 import com.crosspaste.app.AppEnv
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
+import com.crosspaste.app.AppInfoFactory
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.AppLock
 import com.crosspaste.app.AppRestartService
@@ -192,7 +193,8 @@ class CrossPaste {
                 module {
                     // simple component
                     single<AppEnv> { appEnv }
-                    single<AppInfo> { DesktopAppInfoFactory(get()).createAppInfo() }
+                    single<AppInfoFactory> { DesktopAppInfoFactory(get()) }
+                    single<AppInfo> { get<AppInfoFactory>().createAppInfo() }
                     single<AppLock> { DesktopAppLaunch }
                     single<AppLaunchState> { DesktopAppLaunch.launch() }
                     single<AppStartUpService> { DesktopAppStartUpService(get()) }

@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppInfo
+import com.crosspaste.app.AppInfoFactory
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.chevronRight
@@ -44,6 +45,7 @@ fun AboutView(currentPageViewContext: MutableState<PageViewContext>) {
 @Composable
 fun AboutContentView() {
     val current = LocalKoinApplication.current
+    val appInfoFactory = current.koin.get<AppInfoFactory>()
     val appInfo = current.koin.get<AppInfo>()
     val uiSupport = current.koin.get<UISupport>()
 
@@ -79,8 +81,10 @@ fun AboutContentView() {
                     color = MaterialTheme.colors.onBackground,
                 )
                 Spacer(modifier = Modifier.height(12.dp))
+
+                val revision = if (appInfoFactory.getRevision() == "Unknown") "" else " (${appInfoFactory.getRevision()})"
                 Text(
-                    text = "version: ${appInfo.appVersion}",
+                    text = "version: ${appInfo.appVersion}$revision",
                     style =
                         TextStyle(
                             fontFamily = FontFamily.SansSerif,

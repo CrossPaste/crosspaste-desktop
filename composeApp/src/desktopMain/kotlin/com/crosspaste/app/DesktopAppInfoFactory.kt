@@ -5,7 +5,7 @@ import com.crosspaste.utils.getSystemProperty
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.IOException
 import java.nio.file.Paths
-import java.util.Properties
+import java.util.*
 
 val logger = KotlinLogging.logger {}
 
@@ -13,23 +13,42 @@ class DesktopAppInfoFactory(private val configManager: ConfigManager) : AppInfoF
 
     private val systemProperty = getSystemProperty()
 
+    private val properties: Properties? =
+        run {
+            try {
+                val properties = Properties()
+                properties.load(
+                    Thread.currentThread().contextClassLoader
+                        .getResourceAsStream("crosspaste-version.properties"),
+                )
+                properties
+            } catch (e: IOException) {
+                logger.error(e) { "Failed to read version" }
+                null
+            }
+        }
+
     override fun createAppInfo(): AppInfo {
         val appInstanceId = configManager.config.appInstanceId
-        return AppInfo(appInstanceId = appInstanceId, appVersion = getVersion(), userName = getUserName())
+        return AppInfo(
+            appInstanceId = appInstanceId,
+            appVersion = getVersion(),
+            appRevision = getRevision(),
+            userName = getUserName(),
+        )
     }
 
-    private fun getVersion(): String {
+    override fun getVersion(): String {
         return getVersion(AppEnv.CURRENT) {
-            val properties = Properties()
-            properties.load(
-                Thread.currentThread().contextClassLoader
-                    .getResourceAsStream("crosspaste-version.properties"),
-            )
             properties
         }
     }
 
-    private fun getUserName(): String {
+    override fun getRevision(): String {
+        return properties?.getProperty("revision", "Unknown") ?: "Unknown"
+    }
+
+    override fun getUserName(): String {
         val userHome = systemProperty.get("user.home")
         return Paths.get(userHome).toFile().name
     }
@@ -38,11 +57,9 @@ class DesktopAppInfoFactory(private val configManager: ConfigManager) : AppInfoF
 
         fun getVersion(
             appEnv: AppEnv = AppEnv.PRODUCTION,
-            load: () -> Properties,
+            load: () -> Properties?,
         ): String {
-            return try {
-                val properties = load()
-
+            return load()?.let { properties ->
                 val version = properties.getProperty("version", "Unknown")
 
                 if (appEnv.isDevelopment()) {
@@ -62,10 +79,7 @@ class DesktopAppInfoFactory(private val configManager: ConfigManager) : AppInfoF
                         }
                     "$version$betaSuffix"
                 }
-            } catch (e: IOException) {
-                logger.error(e) { "Failed to read version" }
-                "Unknown"
-            }
+            } ?: "Unknown"
         }
     }
 }
