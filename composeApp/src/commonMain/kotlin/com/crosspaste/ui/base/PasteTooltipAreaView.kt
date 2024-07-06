@@ -22,11 +22,13 @@ import androidx.compose.ui.unit.sp
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PasteTooltipAreaView(
+    modifier: Modifier = Modifier,
     text: String,
     delayMillis: Int = 500,
     content: @Composable () -> Unit,
 ) {
     TooltipArea(
+        modifier = modifier,
         delayMillis = delayMillis,
         tooltip = {
             Box(
