@@ -46,7 +46,7 @@ fun MenuView(
             arrayOf(
                 copywriter.getText("Check_for_updates"),
                 copywriter.getText("Settings"),
-                copywriter.getText("ShortcutKeys"),
+                copywriter.getText("Shortcut_Keys"),
                 copywriter.getText("About"),
                 copywriter.getText("FQA"),
                 copywriter.getText("Quit"),
