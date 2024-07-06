@@ -10,6 +10,7 @@ const val AppName: String = "CrossPaste"
 data class AppInfo(
     val appInstanceId: String,
     val appVersion: String,
+    val appRevision: String,
     val userName: String,
 ) {
 
