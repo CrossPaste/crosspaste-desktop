@@ -3,6 +3,7 @@ package com.crosspaste.ui.paste.preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -31,6 +32,7 @@ import com.crosspaste.LocalKoinApplication
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.LoadImageData
+import com.crosspaste.ui.base.TransparentBackground
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.image
 import com.crosspaste.ui.base.imageSlash
@@ -63,21 +65,27 @@ fun SingleImagePreviewView(imagePath: Path) {
                 loadImageData(imagePath, density, thumbnail = true)
             },
             loadFor = { loadImageView ->
-                if (loadImageView.isSuccess()) {
-                    ShowImageView(
-                        painter = (loadImageView as LoadImageData).toPainterImage.toPainter(),
-                        contentDescription = "${imagePath.fileName}",
+                Box {
+                    TransparentBackground(
+                        modifier = Modifier.size(100.dp).clip(RoundedCornerShape(5.dp)),
                     )
-                } else if (loadImageView.isLoading()) {
-                    ShowImageView(
-                        painter = image(),
-                        contentDescription = "${imagePath.fileName}",
-                    )
-                } else {
-                    ShowImageView(
-                        painter = imageSlash(),
-                        contentDescription = "${imagePath.fileName}",
-                    )
+
+                    if (loadImageView.isSuccess()) {
+                        ShowImageView(
+                            painter = (loadImageView as LoadImageData).toPainterImage.toPainter(),
+                            contentDescription = "${imagePath.fileName}",
+                        )
+                    } else if (loadImageView.isLoading()) {
+                        ShowImageView(
+                            painter = image(),
+                            contentDescription = "${imagePath.fileName}",
+                        )
+                    } else {
+                        ShowImageView(
+                            painter = imageSlash(),
+                            contentDescription = "${imagePath.fileName}",
+                        )
+                    }
                 }
 
                 Column(
