@@ -104,7 +104,7 @@ fun NotFoundNearByDevices() {
                     TextStyle(
                         fontFamily = FontFamily.SansSerif,
                         fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colors.onBackground.copy(alpha = 0.5f),
+                        color = MaterialTheme.colors.onBackground,
                         fontSize = 20.sp,
                         lineHeight = 24.sp,
                     ),
