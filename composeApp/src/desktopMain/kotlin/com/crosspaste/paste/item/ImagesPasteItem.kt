@@ -26,6 +26,7 @@ import kotlinx.serialization.Transient
 import org.mongodb.kbson.BsonObjectId
 import org.mongodb.kbson.ObjectId
 import java.awt.datatransfer.DataFlavor
+import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -133,7 +134,8 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
 
         if (fileList.size == 1) {
             try {
-                map[DataFlavor.imageFlavor] = ImageIO.read(fileList[0])
+                val image: BufferedImage? = ImageIO.read(fileList[0])
+                image?.let { map[DataFlavor.imageFlavor] = it }
             } catch (e: Exception) {
                 logger.error(e) { "read image fail" }
             }
