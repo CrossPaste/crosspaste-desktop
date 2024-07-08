@@ -1,14 +1,18 @@
 package com.crosspaste.config
 
 import com.crosspaste.app.AppEnv
+import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.presist.OneFilePersist
+import com.crosspaste.ui.base.MessageType
+import com.crosspaste.ui.base.Toast
+import com.crosspaste.ui.base.ToastManager
 import com.crosspaste.utils.getDeviceUtils
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 abstract class ConfigManager(
     private val configFilePersist: OneFilePersist,
+    private val toastManager: ToastManager,
+    private val lazyCopywriter: Lazy<GlobalCopywriter>,
 ) {
     private val appEnv = AppEnv.CURRENT
 
@@ -40,13 +44,16 @@ abstract class ConfigManager(
     fun updateConfig(updateAction: (AppConfig) -> AppConfig) {
         val oldConfig = config
         config = updateAction(oldConfig)
-        ioScope().launch(CoroutineName("UpdateConfig")) {
-            try {
-                saveConfig(config)
-            } catch (e: Exception) {
-                // todo Pop-up window prompts user
-                config = oldConfig
-            }
+        try {
+            saveConfig(config)
+        } catch (e: Exception) {
+            toastManager.setToast(
+                Toast(
+                    message = lazyCopywriter.value.getText("Failed_to_save_config"),
+                    messageType = MessageType.Error,
+                ),
+            )
+            config = oldConfig
         }
     }
 

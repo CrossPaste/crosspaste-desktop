@@ -207,6 +207,8 @@ class CrossPaste {
                     single<ConfigManager> {
                         DefaultConfigManager(
                             get<FilePersist>().getPersist("appConfig.json", AppFileType.USER),
+                            get<ToastManager>(),
+                            lazy { get<GlobalCopywriter>() },
                         )
                     }
                     single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
