@@ -2,24 +2,47 @@ package com.crosspaste.config
 
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.presist.OneFilePersist
+import com.crosspaste.ui.base.MessageType
+import com.crosspaste.ui.base.Toast
 import com.crosspaste.ui.base.ToastManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
+import com.crosspaste.utils.getDeviceUtils
 
 class DefaultConfigManager(
     private val configFilePersist: OneFilePersist,
-    toastManager: ToastManager,
-    lazyCopywriter: Lazy<GlobalCopywriter>,
-) : ConfigManager(configFilePersist, toastManager, lazyCopywriter) {
+    private val toastManager: ToastManager,
+    private val lazyCopywriter: Lazy<GlobalCopywriter>,
+) : ConfigManager {
+    override val deviceUtils = getDeviceUtils()
 
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    override var config =
+        try {
+            loadConfig() ?: AppConfig(deviceUtils.createAppInstanceId())
+        } catch (e: Exception) {
+            AppConfig(deviceUtils.createAppInstanceId())
+        }
 
-    override fun ioScope(): CoroutineScope {
-        return scope
+    override fun loadConfig(): AppConfig? {
+        return configFilePersist.read(AppConfig::class)
     }
 
-    override fun saveConfigImpl(config: AppConfig) {
+    @Synchronized
+    override fun updateConfig(updateAction: (AppConfig) -> AppConfig) {
+        val oldConfig = config
+        config = updateAction(oldConfig)
+        try {
+            saveConfig(config)
+        } catch (e: Exception) {
+            toastManager.setToast(
+                Toast(
+                    message = lazyCopywriter.value.getText("Failed_to_save_config"),
+                    messageType = MessageType.Error,
+                ),
+            )
+            config = oldConfig
+        }
+    }
+
+    override fun saveConfig(config: AppConfig) {
         configFilePersist.save(config)
     }
 }
