@@ -1,6 +1,5 @@
 package com.crosspaste.config
 
-import com.crosspaste.app.AppEnv
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.presist.OneFilePersist
 import com.crosspaste.ui.base.MessageType
@@ -14,8 +13,6 @@ abstract class ConfigManager(
     private val toastManager: ToastManager,
     private val lazyCopywriter: Lazy<GlobalCopywriter>,
 ) {
-    private val appEnv = AppEnv.CURRENT
-
     private val deviceUtils = getDeviceUtils()
 
     var config: AppConfig
@@ -23,19 +20,14 @@ abstract class ConfigManager(
     init {
         config =
             try {
-                loadConfig() ?: AppConfig(appEnv, deviceUtils.createAppInstanceId())
+                loadConfig() ?: AppConfig(deviceUtils.createAppInstanceId())
             } catch (e: Exception) {
-                AppConfig(appEnv, deviceUtils.createAppInstanceId())
+                AppConfig(deviceUtils.createAppInstanceId())
             }
     }
 
     private fun loadConfig(): AppConfig? {
-        return configFilePersist.read(AppConfig::class)?.let {
-            if (it.appEnv != this.appEnv) {
-                return AppConfig(it, this.appEnv)
-            }
-            return it
-        }
+        return configFilePersist.read(AppConfig::class)
     }
 
     protected abstract fun ioScope(): CoroutineScope
