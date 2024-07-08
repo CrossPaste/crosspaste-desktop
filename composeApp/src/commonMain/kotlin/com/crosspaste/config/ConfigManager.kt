@@ -23,5 +23,9 @@ interface ConfigManager {
         }
     }
 
-    fun saveConfig(config: AppConfig)
+    fun saveConfig(
+        key: String,
+        value: Any,
+        config: AppConfig,
+    )
 }
