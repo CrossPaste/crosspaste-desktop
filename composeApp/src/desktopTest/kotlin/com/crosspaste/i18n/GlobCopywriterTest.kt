@@ -18,7 +18,11 @@ class GlobCopywriterTest {
 
         lateinit var configManager: DefaultConfigManager
 
-        configManager = DefaultConfigManager(DesktopOneFilePersist(configPath), DesktopToastManager(), lazy { GlobalCopywriterImpl(configManager) })
+        configManager =
+            DefaultConfigManager(
+                DesktopOneFilePersist(configPath),
+                DesktopToastManager(), lazy { GlobalCopywriterImpl(configManager) },
+            )
 
         configManager.updateConfig { config -> config.copy(language = "") }
 
