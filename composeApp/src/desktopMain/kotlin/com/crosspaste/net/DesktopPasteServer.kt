@@ -85,9 +85,7 @@ class DesktopPasteServer(private val configManager: ConfigManager) : PasteServer
         }
         port = runBlocking { server.resolvedConnectors().first().port }
         if (port != configManager.config.port) {
-            configManager.updateConfig {
-                it.copy(port = port)
-            }
+            configManager.updateConfig("port", port)
         }
         logger.info { "Server started at port $port" }
         return this

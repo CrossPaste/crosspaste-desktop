@@ -101,7 +101,7 @@ class DesktopShortKeysAction(
     private fun switchEncrypt() {
         logger.info { "Switch Encrypt" }
         mainCoroutineDispatcher.launch(CoroutineName("SwitchEncrypt")) {
-            configManager.updateConfig { config -> config.copy(isEncryptSync = !configManager.config.isEncryptSync) }
+            configManager.updateConfig("isEncryptSync", !configManager.config.isEncryptSync)
         }
     }
 }

@@ -67,6 +67,6 @@ abstract class AbstractPasteboardService : PasteboardService {
         } else {
             start()
         }
-        configManager.updateConfig { it.copy(enablePasteboardListening = !enablePasteboardListening) }
+        configManager.updateConfig("enablePasteboardListening", !enablePasteboardListening)
     }
 }

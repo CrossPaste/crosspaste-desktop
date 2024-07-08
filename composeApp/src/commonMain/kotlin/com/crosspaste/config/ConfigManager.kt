@@ -9,7 +9,19 @@ interface ConfigManager {
 
     fun loadConfig(): AppConfig?
 
-    fun updateConfig(updateAction: (AppConfig) -> AppConfig)
+    fun updateConfig(
+        key: String,
+        value: Any,
+    )
+
+    fun updateConfig(
+        keys: List<String>,
+        values: List<Any>,
+    ) {
+        keys.forEachIndexed { index, key ->
+            updateConfig(key, values[index])
+        }
+    }
 
     fun saveConfig(config: AppConfig)
 }

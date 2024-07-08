@@ -299,7 +299,7 @@ fun StoreSettingsView() {
                         .height(20.dp),
                 checked = isExpirationCleanup,
                 onCheckedChange = { newIsExpirationCleanup ->
-                    configManager.updateConfig { it.copy(isExpirationCleanup = newIsExpirationCleanup) }
+                    configManager.updateConfig("isExpirationCleanup", newIsExpirationCleanup)
                     isExpirationCleanup = configManager.config.isExpirationCleanup
                 },
             )
@@ -383,7 +383,7 @@ fun StoreSettingsView() {
                         ),
                 ) {
                     CleanTimeMenuView(selectImageCleanTimeIndex) { index ->
-                        configManager.updateConfig { it.copy(imageCleanTimeIndex = index) }
+                        configManager.updateConfig("imageCleanTimeIndex", index)
                         selectImageCleanTimeIndex = configManager.config.imageCleanTimeIndex
                         val currentImageCleanTime = CleanTime.entries[selectImageCleanTimeIndex]
                         imageCleanTimeValue =
@@ -472,7 +472,7 @@ fun StoreSettingsView() {
                         ),
                 ) {
                     CleanTimeMenuView(selectFileCleanTimeIndex) { index ->
-                        configManager.updateConfig { it.copy(fileCleanTimeIndex = index) }
+                        configManager.updateConfig("fileCleanTimeIndex", index)
                         selectFileCleanTimeIndex = configManager.config.fileCleanTimeIndex
                         val currentFileCleanTime = CleanTime.entries[selectFileCleanTimeIndex]
                         fileCleanTimeValue =
@@ -521,7 +521,7 @@ fun StoreSettingsView() {
                         .height(20.dp),
                 checked = isThresholdCleanup,
                 onCheckedChange = { newIsThresholdCleanup ->
-                    configManager.updateConfig { it.copy(isThresholdCleanup = newIsThresholdCleanup) }
+                    configManager.updateConfig("isThresholdCleanup", newIsThresholdCleanup)
                     isThresholdCleanup = configManager.config.isThresholdCleanup
                 },
             )
@@ -560,7 +560,7 @@ fun StoreSettingsView() {
                 Counter(defaultValue = maxStorage, unit = "MB", rule = {
                     it >= 256
                 }) { currentMaxStorage ->
-                    configManager.updateConfig { it.copy(maxStorage = currentMaxStorage) }
+                    configManager.updateConfig("maxStorage", currentMaxStorage)
                 }
             }
         }
@@ -596,7 +596,7 @@ fun StoreSettingsView() {
                 Counter(defaultValue = cleanupPercentage.toLong(), unit = "%", rule = {
                     it in 10..50
                 }) { currentCleanupPercentage ->
-                    configManager.updateConfig { it.copy(cleanupPercentage = currentCleanupPercentage.toInt()) }
+                    configManager.updateConfig("cleanupPercentage", currentCleanupPercentage)
                 }
             }
         }

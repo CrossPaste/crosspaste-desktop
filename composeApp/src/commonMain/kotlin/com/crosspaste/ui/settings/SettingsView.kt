@@ -359,7 +359,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                                 .height(20.dp),
                         checked = isEncrypted,
                         onCheckedChange = { changeIsEncryptSync ->
-                            configManager.updateConfig { config -> config.copy(isEncryptSync = changeIsEncryptSync) }
+                            configManager.updateConfig("isEncryptSync", changeIsEncryptSync)
                             isEncrypted = configManager.config.isEncryptSync
                         },
                     )
@@ -395,7 +395,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                                 .height(20.dp),
                         checked = enableAutoStartUp,
                         onCheckedChange = { changeEnableAutoStartUp ->
-                            configManager.updateConfig { config -> config.copy(enableAutoStartUp = changeEnableAutoStartUp) }
+                            configManager.updateConfig("enableAutoStartUp", changeEnableAutoStartUp)
                             enableAutoStartUp = configManager.config.enableAutoStartUp
                         },
                     )

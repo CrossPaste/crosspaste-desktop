@@ -118,6 +118,6 @@ class MacosPasteboardService(
     @Synchronized
     override fun stop() {
         job?.cancel()
-        configManager.updateConfig { it.copy(lastPasteboardChangeCount = changeCount) }
+        configManager.updateConfig("lastPasteboardChangeCount", changeCount)
     }
 }

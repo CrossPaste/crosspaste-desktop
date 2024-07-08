@@ -26,9 +26,12 @@ class DefaultConfigManager(
     }
 
     @Synchronized
-    override fun updateConfig(updateAction: (AppConfig) -> AppConfig) {
+    override fun updateConfig(
+        key: String,
+        value: Any,
+    ) {
         val oldConfig = config
-        config = updateAction(oldConfig)
+        config = oldConfig.copy(key, value)
         try {
             saveConfig(config)
         } catch (e: Exception) {

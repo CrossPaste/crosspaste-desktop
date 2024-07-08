@@ -282,7 +282,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
                 }
                 blackSyncInfos.add(syncInfo)
                 val newBlackList = jsonUtils.JSON.encodeToString(blackSyncInfos)
-                configManager.updateConfig { it.copy(blacklist = newBlackList) }
+                configManager.updateConfig("blacklist", newBlackList)
                 deviceManager.refresh()
             },
             shape = RoundedCornerShape(4.dp),

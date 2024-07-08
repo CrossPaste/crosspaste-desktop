@@ -46,7 +46,7 @@ class DesktopThemeDetector(private val configManager: ConfigManager) : ThemeDete
     ) {
         _isFollowSystem = isFollowSystem
         _isUserInDark = isUserInDark
-        configManager.updateConfig { it.copy(isFollowSystemTheme = isFollowSystem, isDarkTheme = isUserInDark) }
+        configManager.updateConfig(listOf("isFollowSystemTheme", "isDarkTheme"), listOf(isFollowSystem, isUserInDark))
         for (listener in listeners) {
             listener(isCurrentThemeDark())
         }

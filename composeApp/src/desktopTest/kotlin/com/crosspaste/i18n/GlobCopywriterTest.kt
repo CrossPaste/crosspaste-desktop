@@ -24,7 +24,7 @@ class GlobCopywriterTest {
                 DesktopToastManager(), lazy { GlobalCopywriterImpl(configManager) },
             )
 
-        configManager.updateConfig { config -> config.copy(language = "") }
+        configManager.updateConfig("language", "")
 
         val copywriter = GlobalCopywriterImpl(configManager)
         assertEquals(EN, copywriter.language())
