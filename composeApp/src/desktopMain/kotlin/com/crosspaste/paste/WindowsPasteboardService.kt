@@ -142,7 +142,7 @@ class WindowsPasteboardService(
     override fun stop() {
         Kernel32.INSTANCE.SetEvent(event)
         job?.cancel()
-        configManager.updateConfig { it.copy(lastPasteboardChangeCount = changeCount) }
+        configManager.updateConfig("lastPasteboardChangeCount", changeCount)
     }
 
     private fun onChange() {

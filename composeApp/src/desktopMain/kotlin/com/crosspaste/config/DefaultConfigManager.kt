@@ -26,11 +26,14 @@ class DefaultConfigManager(
     }
 
     @Synchronized
-    override fun updateConfig(updateAction: (AppConfig) -> AppConfig) {
+    override fun updateConfig(
+        key: String,
+        value: Any,
+    ) {
         val oldConfig = config
-        config = updateAction(oldConfig)
+        config = oldConfig.copy(key, value)
         try {
-            saveConfig(config)
+            saveConfig(key, value, config)
         } catch (e: Exception) {
             toastManager.setToast(
                 Toast(
@@ -42,7 +45,11 @@ class DefaultConfigManager(
         }
     }
 
-    override fun saveConfig(config: AppConfig) {
+    override fun saveConfig(
+        key: String,
+        value: Any,
+        config: AppConfig,
+    ) {
         configFilePersist.save(config)
     }
 }

@@ -158,7 +158,7 @@ class LinuxPasteboardService(
 
     override fun stop() {
         job?.cancel()
-        configManager.updateConfig { it.copy(lastPasteboardChangeCount = changeCount) }
+        configManager.updateConfig("lastPasteboardChangeCount", changeCount)
     }
 
     override fun lostOwnership(

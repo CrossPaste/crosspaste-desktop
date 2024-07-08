@@ -11,8 +11,7 @@ import java.io.FileNotFoundException
 import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
-import java.util.Locale
-import java.util.Properties
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 class GlobalCopywriterImpl(private val configManager: ConfigManager) : GlobalCopywriter {
@@ -30,7 +29,7 @@ class GlobalCopywriterImpl(private val configManager: ConfigManager) : GlobalCop
     init {
         val language = configManager.config.language
         if (!languageList.contains(language)) {
-            configManager.updateConfig { it.copy(language = EN) }
+            configManager.updateConfig("language", EN)
         }
     }
 
@@ -47,7 +46,7 @@ class GlobalCopywriterImpl(private val configManager: ConfigManager) : GlobalCop
 
     override fun switchLanguage(language: String) {
         copywriter = languageMap.computeIfAbsent(language) { CopywriterImpl(language) }
-        configManager.updateConfig { it.copy(language = language) }
+        configManager.updateConfig("language", language)
     }
 
     override fun getAllLanguages(): List<Language> {

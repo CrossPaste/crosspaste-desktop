@@ -187,7 +187,7 @@ fun NetSettingsView() {
                         .height(20.dp),
                 checked = isAllowDiscovery,
                 onCheckedChange = { newIsAllowDiscovery ->
-                    configManager.updateConfig { it.copy(isAllowDiscovery = newIsAllowDiscovery) }
+                    configManager.updateConfig("isAllowDiscovery", newIsAllowDiscovery)
                     isAllowDiscovery = configManager.config.isAllowDiscovery
                 },
             )
@@ -237,7 +237,7 @@ fun NetSettingsView() {
                                 ).filter { it.appInfo.appInstanceId != syncInfo.appInfo.appInstanceId }
 
                             val newBlackList = jsonUtils.JSON.encodeToString(blackSyncInfos)
-                            configManager.updateConfig { it.copy(blacklist = newBlackList) }
+                            configManager.updateConfig("blacklist", newBlackList)
                             blacklist.remove(syncInfo)
                             deviceManager.refresh()
                         }
