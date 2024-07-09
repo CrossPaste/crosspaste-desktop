@@ -1,12 +1,10 @@
 package com.crosspaste.dao.signal
 
-import org.signal.libsignal.protocol.ecc.ECPrivateKey
-
 interface SignalDao {
 
-    fun generatePreKeyPair(): PastePreKey
+    fun existPreKey(preKeyId: Int): Boolean
 
-    fun generatesSignedPreKeyPair(privateKey: ECPrivateKey): PasteSignedPreKey
+    fun getSignedPreKey(signedPreKeyId: Int): PasteSignedPreKey?
 
     fun saveIdentities(identityKeys: List<PasteIdentityKey>)
 
