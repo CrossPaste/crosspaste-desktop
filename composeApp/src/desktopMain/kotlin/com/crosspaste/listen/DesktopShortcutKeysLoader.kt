@@ -1,13 +1,13 @@
 package com.crosspaste.listen
 
 import androidx.compose.ui.util.fastAll
+import com.crosspaste.listener.EventConsumer
 import com.crosspaste.listener.KeyboardKey
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.listener.ShortcutKeysCore
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
 import java.util.Properties
 import java.util.TreeMap
-import java.util.function.Consumer
 
 class DesktopShortcutKeysLoader(
     private val shortcutKeysAction: ShortcutKeysAction,
@@ -20,11 +20,11 @@ class DesktopShortcutKeysLoader(
     @Suppress("UNCHECKED_CAST")
     override fun load(properties: Properties): ShortcutKeysCore {
         val keys = loadKeys(properties)
-        val consumer: Consumer<Any> = toConsumer(keys) as Consumer<Any>
+        val consumer: EventConsumer<Any> = toConsumer(keys) as EventConsumer<Any>
         return ShortcutKeysCore(consumer, keys)
     }
 
-    private fun toConsumer(keys: TreeMap<String, List<KeyboardKey>>): Consumer<NativeKeyEvent> {
+    private fun toConsumer(keys: TreeMap<String, List<KeyboardKey>>): EventConsumer<NativeKeyEvent> {
         val keyboardKeySet: Set<KeyboardKey> = keys.values.flatten().toSet()
 
         val matchMap: Map<Int, (NativeKeyEvent) -> Boolean> =
@@ -38,7 +38,7 @@ class DesktopShortcutKeysLoader(
                 }
             }
 
-        return Consumer { event ->
+        return EventConsumer { event ->
             for (entry in keys) {
                 entry.value.toList().fastAll { info ->
                     val eventCheck = matchMap[info.code] ?: { false }
@@ -46,7 +46,7 @@ class DesktopShortcutKeysLoader(
                 }.let { match ->
                     if (match) {
                         shortcutKeysAction.action(entry.key)
-                        return@Consumer
+                        return@EventConsumer
                     }
                 }
             }
