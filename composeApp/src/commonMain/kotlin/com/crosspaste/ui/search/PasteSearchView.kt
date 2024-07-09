@@ -84,6 +84,7 @@ import com.crosspaste.ui.favoriteColor
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.Clock
 import java.awt.event.KeyEvent
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -101,7 +102,7 @@ fun CrossPasteSearchWindowContent() {
     var lastInputTime by remember { mutableStateOf(0L) }
 
     LaunchedEffect(pasteSearchService.inputSearch) {
-        val currentTime = System.currentTimeMillis()
+        val currentTime = Clock.System.now().toEpochMilliseconds()
         lastInputTime = currentTime
         if (pasteSearchService.inputSearch.trim().isNotEmpty()) {
             delay(500)

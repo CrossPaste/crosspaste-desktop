@@ -103,6 +103,7 @@ kotlin {
             implementation(libs.kotlin.logging)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.coroutines.swing)
+            implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.material.desktop)
             implementation(libs.realm.kotlin.base)
