@@ -11,6 +11,8 @@ expect fun getFileUtils(): FileUtils
 
 interface FileUtils {
 
+    val separator: String
+
     val tempDirectory: Path
 
     fun formatBytes(bytesSize: Long): String
