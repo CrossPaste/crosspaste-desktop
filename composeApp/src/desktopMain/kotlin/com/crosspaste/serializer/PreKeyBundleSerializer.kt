@@ -1,6 +1,6 @@
 package com.crosspaste.serializer
 
-import com.crosspaste.utils.getEncryptUtils
+import com.crosspaste.utils.getCodecsUtils
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -18,7 +18,7 @@ import java.io.IOException
 
 object PreKeyBundleSerializer : KSerializer<PreKeyBundle> {
 
-    private val encryptUtils = getEncryptUtils()
+    private val codecsUtils = getCodecsUtils()
 
     override val descriptor: SerialDescriptor =
         buildClassSerialDescriptor("PreKeyBundle") {
@@ -29,11 +29,11 @@ object PreKeyBundleSerializer : KSerializer<PreKeyBundle> {
         value: PreKeyBundle,
     ) {
         val byteArray = encodePreKeyBundle(value)
-        encoder.encodeString(encryptUtils.base64Encode(byteArray))
+        encoder.encodeString(codecsUtils.base64Encode(byteArray))
     }
 
     override fun deserialize(decoder: Decoder): PreKeyBundle {
-        val byteArray = encryptUtils.base64Decode(decoder.decodeString())
+        val byteArray = codecsUtils.base64Decode(decoder.decodeString())
         return decodePreKeyBundle(byteArray)
     }
 
