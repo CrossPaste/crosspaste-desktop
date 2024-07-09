@@ -9,9 +9,7 @@ data class DataContent(
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as DataContent
+        if (other !is DataContent) return false
 
         return data.contentEquals(other.data)
     }
