@@ -1,7 +1,5 @@
 package com.crosspaste.exception
 
-import java.util.Objects
-
 class ErrorCode(
     code: Int,
     name: String,
@@ -22,15 +20,14 @@ class ErrorCode(
         if (this === other) {
             return true
         }
-        if (other == null || javaClass != other.javaClass) {
+        if (other == null || other !is ErrorCode) {
             return false
         }
-        val errorCode = other as ErrorCode
-        return code == errorCode.code && name == errorCode.name && type === errorCode.type
+        return code == other.code && name == other.name && type === other.type
     }
 
     override fun hashCode(): Int {
-        return Objects.hash(code, name, type)
+        return arrayOf(code, name, type).hashCode()
     }
 }
 
