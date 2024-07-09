@@ -21,6 +21,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
+import org.signal.libsignal.protocol.IdentityKey
 import org.signal.libsignal.protocol.SignalProtocolAddress
 import org.signal.libsignal.protocol.message.PreKeySignalMessage
 import org.signal.libsignal.protocol.message.SignalMessage
@@ -178,7 +179,7 @@ fun Routing.syncRouting() {
                 val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
                 signalProtocolStore.saveIdentity(
                     signalProtocolAddress,
-                    requestTrust.identityKey,
+                    IdentityKey(requestTrust.identityKey),
                 )
                 appTokenService.showToken = false
                 logger.debug { "${appInfo.appInstanceId} to trust $appInstanceId" }
