@@ -1,5 +1,6 @@
 package com.crosspaste.serializer
 
+import com.crosspaste.utils.getFileUtils
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.serializers.RealmAnyKSerializer
 import io.realm.kotlin.types.RealmAny
@@ -10,7 +11,6 @@ import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import java.io.File
 
 object StringRealmListSerializer : KSerializer<RealmList<String>> {
     private val delegateSerializer = ListSerializer(String.serializer())
@@ -33,19 +33,21 @@ object StringRealmListSerializer : KSerializer<RealmList<String>> {
 object PathStringRealmListSerializer : KSerializer<RealmList<String>> {
     private val delegateSerializer = ListSerializer(ListSerializer(String.serializer()))
 
+    private val separator = getFileUtils().separator
+
     override val descriptor: SerialDescriptor = delegateSerializer.descriptor
 
     override fun serialize(
         encoder: Encoder,
         value: RealmList<String>,
     ) {
-        val pathsList: List<List<String>> = value.map { it.split(File.separator) }
+        val pathsList: List<List<String>> = value.map { it.split(separator) }
         encoder.encodeSerializableValue(delegateSerializer, pathsList)
     }
 
     override fun deserialize(decoder: Decoder): RealmList<String> {
         val pathsList: List<List<String>> = decoder.decodeSerializableValue(delegateSerializer)
-        return realmListOf(*pathsList.map { it.joinToString(File.separator) }.toTypedArray())
+        return realmListOf(*pathsList.map { it.joinToString(separator) }.toTypedArray())
     }
 }
 

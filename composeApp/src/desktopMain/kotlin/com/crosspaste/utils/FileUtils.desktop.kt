@@ -31,6 +31,8 @@ object DesktopFileUtils : FileUtils {
 
     private val dateUtils = getDateUtils()
 
+    override val separator: String = File.separator
+
     override val tempDirectory: Path = java.nio.file.Files.createTempDirectory("crosspaste")
 
     private val units = arrayOf("B", "KB", "MB", "GB", "TB")
