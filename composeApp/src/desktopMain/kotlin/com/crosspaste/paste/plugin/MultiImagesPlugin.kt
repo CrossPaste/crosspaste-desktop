@@ -5,14 +5,14 @@ import com.crosspaste.paste.PastePlugin
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.utils.DesktopJsonUtils
-import com.crosspaste.utils.getEncryptUtils
+import com.crosspaste.utils.getCodecsUtils
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.toRealmList
 import kotlinx.serialization.encodeToString
 
 object MultiImagesPlugin : PastePlugin {
 
-    private val encryptUtils = getEncryptUtils()
+    private val codecsUtils = getCodecsUtils()
 
     override fun pluginProcess(
         pasteItems: List<PasteItem>,
@@ -33,7 +33,7 @@ object MultiImagesPlugin : PastePlugin {
             val size = fileInfoMap.map { it.value.size }.sum()
             val md5 =
                 pasteItems.map { it as FilesPasteItem }.map { it.md5 }
-                    .toTypedArray().let { encryptUtils.md5ByArray(it) }
+                    .toTypedArray().let { codecsUtils.md5ByArray(it) }
             pasteItems.forEach { it.clear(realm, clearResource = false) }
             return ImagesPasteItem().apply {
                 this.relativePathList = relativePathList

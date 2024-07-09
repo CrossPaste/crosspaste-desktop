@@ -5,7 +5,7 @@ import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteItemService
 import com.crosspaste.paste.item.TextPasteItem
-import com.crosspaste.utils.getEncryptUtils
+import com.crosspaste.utils.getCodecsUtils
 import io.realm.kotlin.MutableRealm
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
@@ -18,7 +18,7 @@ class TextItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
         const val TEXT = "text/plain"
         const val PLAIN_TEXT = "Plain Text"
 
-        private val encryptUtils = getEncryptUtils()
+        private val codecsUtils = getCodecsUtils()
     }
 
     override fun getIdentifiers(): List<String> {
@@ -50,7 +50,7 @@ class TextItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
     ) {
         if (transferData is String) {
             val textBytes = transferData.toByteArray()
-            val md5 = encryptUtils.md5(textBytes)
+            val md5 = codecsUtils.md5(textBytes)
             val update: (PasteItem, MutableRealm) -> Unit = { pasteItem, realm ->
                 realm.query(TextPasteItem::class, "id == $0", pasteItem.id).first().find()?.apply {
                     this.text = transferData

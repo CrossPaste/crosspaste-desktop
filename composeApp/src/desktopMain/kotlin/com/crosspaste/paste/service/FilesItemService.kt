@@ -12,7 +12,7 @@ import com.crosspaste.utils.DesktopFileUtils
 import com.crosspaste.utils.DesktopFileUtils.copyPath
 import com.crosspaste.utils.DesktopFileUtils.createPasteRelativePath
 import com.crosspaste.utils.DesktopJsonUtils
-import com.crosspaste.utils.getEncryptUtils
+import com.crosspaste.utils.getCodecsUtils
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.ext.toRealmList
@@ -28,7 +28,7 @@ class FilesItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
 
         const val FILE_LIST_ID = "application/x-java-file-list"
 
-        private val encryptUtils = getEncryptUtils()
+        private val codecsUtils = getCodecsUtils()
     }
 
     override fun getIdentifiers(): List<String> {
@@ -88,7 +88,7 @@ class FilesItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
 
             val relativePathRealmList = relativePathList.toRealmList()
             val fileInfoTreeJsonString = DesktopJsonUtils.JSON.encodeToString(fileInfoTrees)
-            val md5 = encryptUtils.md5ByArray(files.mapNotNull { fileInfoTrees[it.name]?.md5 }.toTypedArray())
+            val md5 = codecsUtils.md5ByArray(files.mapNotNull { fileInfoTrees[it.name]?.md5 }.toTypedArray())
             val count = fileInfoTrees.map { it.value.getCount() }.sum()
             val size = fileInfoTrees.map { it.value.size }.sum()
 

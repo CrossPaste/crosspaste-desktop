@@ -6,7 +6,7 @@ import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteItemService
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.utils.DesktopFileUtils
-import com.crosspaste.utils.getEncryptUtils
+import com.crosspaste.utils.getCodecsUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
 import java.awt.datatransfer.DataFlavor
@@ -18,7 +18,7 @@ class HtmlItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
 
         const val HTML_ID = "text/html"
 
-        private val encryptUtils = getEncryptUtils()
+        private val codecsUtils = getCodecsUtils()
     }
 
     val logger = KotlinLogging.logger {}
@@ -53,7 +53,7 @@ class HtmlItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
         if (transferData is String) {
             val html = extractHtml(transferData)
             val htmlBytes = html.toByteArray()
-            val md5 = encryptUtils.md5(htmlBytes)
+            val md5 = codecsUtils.md5(htmlBytes)
             val relativePath =
                 DesktopFileUtils.createPasteRelativePath(
                     appInstanceId = appInfo.appInstanceId,

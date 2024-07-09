@@ -5,7 +5,7 @@ import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteItemService
 import com.crosspaste.paste.item.UrlPasteItem
-import com.crosspaste.utils.getEncryptUtils
+import com.crosspaste.utils.getCodecsUtils
 import io.realm.kotlin.MutableRealm
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
@@ -15,7 +15,7 @@ class UrlItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
     companion object UrlItemService {
         const val URL = "application/x-java-url"
 
-        private val encryptUtils = getEncryptUtils()
+        private val codecsUtils = getCodecsUtils()
     }
 
     override fun getIdentifiers(): List<String> {
@@ -47,7 +47,7 @@ class UrlItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
     ) {
         if (transferData is String) {
             val urlBytes = transferData.toByteArray()
-            val md5 = encryptUtils.md5(urlBytes)
+            val md5 = codecsUtils.md5(urlBytes)
             val update: (PasteItem, MutableRealm) -> Unit = { pasteItem, realm ->
                 realm.query(UrlPasteItem::class, "id == $0", pasteItem.id).first().find()?.apply {
                     this.url = transferData

@@ -6,7 +6,7 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.endpoint.EndpointInfoFactory
 import com.crosspaste.utils.QRCodeGenerator
-import com.crosspaste.utils.getEncryptUtils
+import com.crosspaste.utils.getCodecsUtils
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import kotlinx.serialization.encodeToString
@@ -21,7 +21,7 @@ class DesktopQRCodeGenerator(
     private val endpointInfoFactory: EndpointInfoFactory,
 ) : QRCodeGenerator {
 
-    private val encryptUtils = getEncryptUtils()
+    private val codecsUtils = getCodecsUtils()
 
     private fun buildQRCode(token: CharArray): String {
         val endpointInfo = endpointInfoFactory.createEndpointInfo()
@@ -66,7 +66,7 @@ class DesktopQRCodeGenerator(
         val saltDataStream = DataOutputStream(saltByteStream)
         saltDataStream.write(byteArrayRotate)
         saltDataStream.writeInt(token)
-        return encryptUtils.base64Encode(saltByteStream.toByteArray())
+        return codecsUtils.base64Encode(saltByteStream.toByteArray())
     }
 
     private fun ByteArray.rotate(offset: Int): ByteArray {

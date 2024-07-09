@@ -7,7 +7,7 @@ import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.service.TextItemService
 import com.crosspaste.utils.DesktopJsonUtils
-import com.crosspaste.utils.getEncryptUtils
+import com.crosspaste.utils.getCodecsUtils
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.types.RealmAny
 import io.realm.kotlin.types.RealmInstant
@@ -22,12 +22,12 @@ class SerializerTest {
 
     @Test
     fun testPasteData() {
-        val encryptUtils = getEncryptUtils()
+        val codecsUtils = getCodecsUtils()
         val textPasteItem =
             TextPasteItem().apply {
                 this.identifier = TextItemService.TEXT
                 this.text = "testPasteData"
-                this.md5 = encryptUtils.md5ByString(this.text)
+                this.md5 = codecsUtils.md5ByString(this.text)
             }
 
         val pasteData =

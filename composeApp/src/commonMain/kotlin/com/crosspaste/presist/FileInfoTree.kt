@@ -2,7 +2,7 @@ package com.crosspaste.presist
 
 import com.crosspaste.paste.item.PasteFile
 import com.crosspaste.paste.item.PasteFileImpl
-import com.crosspaste.utils.getEncryptUtils
+import com.crosspaste.utils.getCodecsUtils
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -73,7 +73,7 @@ class SingleFileInfoTree(
 
 class FileInfoTreeBuilder {
 
-    private val encryptUtils = getEncryptUtils()
+    private val codecsUtils = getCodecsUtils()
 
     private val tree = mutableMapOf<String, FileInfoTree>()
 
@@ -93,9 +93,9 @@ class FileInfoTreeBuilder {
     fun build(path: Path): FileInfoTree {
         val md5 =
             if (md5List.isEmpty()) {
-                encryptUtils.md5ByString(path.fileName.toString())
+                codecsUtils.md5ByString(path.fileName.toString())
             } else {
-                encryptUtils.md5ByArray(md5List.toTypedArray())
+                codecsUtils.md5ByArray(md5List.toTypedArray())
             }
         return DirFileInfoTree(tree, size, md5)
     }

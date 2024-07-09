@@ -14,7 +14,7 @@ object TxtRecordUtils {
         val jsonString = DesktopJsonUtils.JSON.encodeToString(obj)
 
         // Convert the JSON string to a base64 encoded string
-        val base64Encoded = DesktopEncryptUtils.base64Encode(jsonString.toByteArray(Charsets.UTF_8))
+        val base64Encoded = DesktopCodecsUtils.base64Encode(jsonString.toByteArray(Charsets.UTF_8))
 
         // Prepare a dictionary to store the split data
         val txtRecordDict = mutableMapOf<String, String>()
@@ -38,7 +38,7 @@ object TxtRecordUtils {
             }
 
         // Decode the base64 string into a JSON string
-        val jsonString = String(DesktopEncryptUtils.base64Decode(base64Encoded), Charsets.UTF_8)
+        val jsonString = String(DesktopCodecsUtils.base64Decode(base64Encoded), Charsets.UTF_8)
 
         // Deserialize the object from the JSON string
         return DesktopJsonUtils.JSON.decodeFromString(jsonString)

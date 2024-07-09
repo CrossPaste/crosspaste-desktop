@@ -9,7 +9,7 @@ import com.crosspaste.os.windows.WindowDapiHelper
 import com.crosspaste.path.DesktopPathProvider
 import com.crosspaste.platform.currentPlatform
 import com.crosspaste.presist.DesktopOneFilePersist
-import com.crosspaste.utils.getEncryptUtils
+import com.crosspaste.utils.EncryptUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.signal.libsignal.protocol.IdentityKey
 import org.signal.libsignal.protocol.IdentityKeyPair
@@ -113,8 +113,6 @@ class MacosIdentityKeyStoreFactory(
     private val signalDao: SignalDao,
 ) : IdentityKeyStoreFactory {
 
-    private val encryptUtils = getEncryptUtils()
-
     private val filePersist =
         DesktopOneFilePersist(
             DesktopPathProvider.resolve("signal.data", AppFileType.ENCRYPT),
@@ -131,8 +129,8 @@ class MacosIdentityKeyStoreFactory(
             password?.let {
                 logger.info { "Found password in keychain by $service ${appInfo.userName}" }
                 try {
-                    val secretKey = encryptUtils.stringToSecretKey(it)
-                    val decryptData = encryptUtils.decryptData(secretKey, bytes)
+                    val secretKey = EncryptUtils.stringToSecretKey(it)
+                    val decryptData = EncryptUtils.decryptData(secretKey, bytes)
                     val (identityKeyPair, registrationId) = readIdentityKeyPairWithRegistrationId(decryptData)
                     return@createIdentityKeyStore DesktopIdentityKeyStore(signalDao, identityKeyPair, registrationId)
                 } catch (e: Exception) {
@@ -156,15 +154,15 @@ class MacosIdentityKeyStoreFactory(
         val secretKey =
             password?.let {
                 logger.info { "Found password in keychain by $service ${appInfo.userName}" }
-                encryptUtils.stringToSecretKey(it)
+                EncryptUtils.stringToSecretKey(it)
             } ?: run {
                 logger.info { "Generating new password in keychain by $service ${appInfo.userName}" }
-                val secretKey = encryptUtils.generateAESKey()
-                MacosKeychainHelper.setPassword(service, appInfo.userName, encryptUtils.secretKeyToString(secretKey))
+                val secretKey = EncryptUtils.generateAESKey()
+                MacosKeychainHelper.setPassword(service, appInfo.userName, EncryptUtils.secretKeyToString(secretKey))
                 secretKey
             }
 
-        val encryptData = encryptUtils.encryptData(secretKey, data)
+        val encryptData = EncryptUtils.encryptData(secretKey, data)
         filePersist.saveBytes(encryptData)
         return DesktopIdentityKeyStore(signalDao, identityKeyPair, registrationId)
     }
