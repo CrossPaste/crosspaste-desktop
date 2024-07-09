@@ -88,7 +88,7 @@ class DesktopSyncClientApi(
     ): ClientApiResult {
         return request(logger, request = {
             val identityKey = signalProtocolStore.identityKeyPair.publicKey
-            val requestTrust = RequestTrust(identityKey, token)
+            val requestTrust = RequestTrust(identityKey.serialize(), token)
             pasteClient.post(
                 requestTrust,
                 typeInfo<RequestTrust>(),
