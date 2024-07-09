@@ -2,6 +2,7 @@ package com.crosspaste.utils
 
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.datetime.Clock
 
 class OnceFunction<T>(private val function: () -> T) {
     private var hasRun = false
@@ -55,9 +56,9 @@ object LoggerExtension {
         message: String,
         func: () -> T,
     ): T {
-        val startTime = System.currentTimeMillis()
+        val startTime = Clock.System.now().toEpochMilliseconds()
         val result = func()
-        val endTime = System.currentTimeMillis()
+        val endTime = Clock.System.now().toEpochMilliseconds()
         logger.info { "$message Execution Time: ${endTime - startTime} ms" }
         return result
     }
@@ -67,9 +68,9 @@ object LoggerExtension {
         message: String,
         func: suspend () -> T,
     ): T {
-        val startTime = System.currentTimeMillis()
+        val startTime = Clock.System.now().toEpochMilliseconds()
         val result = func()
-        val endTime = System.currentTimeMillis()
+        val endTime = Clock.System.now().toEpochMilliseconds()
         logger.info { "$message Execution Time: ${endTime - startTime} ms" }
         return result
     }

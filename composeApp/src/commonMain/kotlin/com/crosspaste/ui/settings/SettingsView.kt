@@ -85,6 +85,7 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 
 @Composable
 fun SettingsTextStyle() =
@@ -196,7 +197,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                                     interactionSource = MutableInteractionSource(),
                                     indication = null,
                                     onClick = {
-                                        val currentTimeMillis = System.currentTimeMillis()
+                                        val currentTimeMillis = Clock.System.now().toEpochMilliseconds()
                                         if (currentTimeMillis - languageOnDismissTime > 500) {
                                             showMoreLanguage = !showMoreLanguage
                                             hasBeenClicked = true
@@ -232,7 +233,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                             onDismissRequest = {
                                 if (showMoreLanguage) {
                                     showMoreLanguage = false
-                                    languageOnDismissTime = System.currentTimeMillis()
+                                    languageOnDismissTime = Clock.System.now().toEpochMilliseconds()
                                 }
                             },
                         ) {
