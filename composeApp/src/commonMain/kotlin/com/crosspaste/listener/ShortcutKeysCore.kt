@@ -1,9 +1,7 @@
 package com.crosspaste.listener
 
-import java.util.function.Consumer
-
 data class ShortcutKeysCore(
-    val eventConsumer: Consumer<Any>,
+    val eventConsumer: EventConsumer<Any>,
     val keys: Map<String, List<KeyboardKey>>,
 )
 
@@ -12,4 +10,9 @@ interface KeyboardKey {
     val name: String
     val code: Int
     val rawCode: Int
+}
+
+fun interface EventConsumer<T> {
+
+    fun accept(event: T)
 }
