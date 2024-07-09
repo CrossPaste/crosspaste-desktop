@@ -4,7 +4,7 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.dao.paste.PasteState
 import com.crosspaste.dao.paste.PasteType
-import com.crosspaste.paste.LinuxPasteboardService.Companion.GNOME_COPIED_FILES_FLAVOR
+import com.crosspaste.paste.PasteDataFlavors
 import com.crosspaste.path.DesktopPathProvider
 import com.crosspaste.platform.currentPlatform
 import com.crosspaste.presist.DesktopOneFilePersist
@@ -131,6 +131,8 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
         val filePaths = getFilePaths()
         val fileList: List<File> = filePaths.map { it.toFile() }
         map[DataFlavor.javaFileListFlavor] = fileList
+        map[PasteDataFlavors.URI_LIST] =
+            fileList.joinToString(separator = "\n") { it.absolutePath }
 
         if (fileList.size == 1) {
             try {
@@ -148,7 +150,7 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
                     prefix = "copy\n",
                 ) { it.toURI().toString() }
             val inputStream = ByteArrayInputStream(content.toByteArray(StandardCharsets.UTF_8))
-            map[GNOME_COPIED_FILES_FLAVOR] = inputStream
+            map[PasteDataFlavors.GNOME_COPIED_FILES_FLAVOR] = inputStream
         }
     }
 }
