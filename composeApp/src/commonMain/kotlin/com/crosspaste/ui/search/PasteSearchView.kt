@@ -230,16 +230,16 @@ fun CrossPasteSearchWindowContent() {
 
                             var showTypes by remember { mutableStateOf(false) }
 
-                            var currentType by remember { mutableStateOf("All_Types") }
+                            var currentType by remember { mutableStateOf("all_types") }
 
                             val menuTexts =
                                 arrayOf(
-                                    copywriter.getText("All_Types"),
-                                    copywriter.getText("Text"),
-                                    copywriter.getText("Link"),
-                                    copywriter.getText("Html"),
-                                    copywriter.getText("Image"),
-                                    copywriter.getText("File"),
+                                    copywriter.getText("all_types"),
+                                    copywriter.getText("text"),
+                                    copywriter.getText("link"),
+                                    copywriter.getText("html"),
+                                    copywriter.getText("image"),
+                                    copywriter.getText("file"),
                                 )
 
                             val paddingValues = PaddingValues(10.dp, 5.dp, 10.dp, 5.dp)
@@ -262,7 +262,7 @@ fun CrossPasteSearchWindowContent() {
                                 ) {
                                     PasteTooltipAreaView(
                                         modifier = Modifier.size(32.dp),
-                                        text = copywriter.getText("Sort_by_creation_time"),
+                                        text = copywriter.getText("sort_by_creation_time"),
                                     ) {
                                         Box(
                                             modifier =
@@ -316,7 +316,7 @@ fun CrossPasteSearchWindowContent() {
 
                                     PasteTooltipAreaView(
                                         modifier = Modifier.size(32.dp),
-                                        text = copywriter.getText("Whether_to_search_only_favorites"),
+                                        text = copywriter.getText("whether_to_search_only_favorites"),
                                     ) {
                                         Box(
                                             modifier =
@@ -438,59 +438,59 @@ fun CrossPasteSearchWindowContent() {
                                                             .background(MaterialTheme.colors.surface),
                                                 ) {
                                                     if (pasteSearchService.searchPasteType != null) {
-                                                        MenuItem(copywriter.getText("All_Types"), textStyle, paddingValues) {
+                                                        MenuItem(copywriter.getText("all_types"), textStyle, paddingValues) {
                                                             pasteSearchService.setPasteType(null)
-                                                            currentType = "All_Types"
+                                                            currentType = "all_types"
                                                             showTypes = false
                                                             focusRequester.requestFocus()
                                                         }
                                                         Divider()
                                                     }
 
-                                                    if (currentType != "Text") {
-                                                        MenuItem(copywriter.getText("Text"), textStyle, paddingValues) {
+                                                    if (currentType != "text") {
+                                                        MenuItem(copywriter.getText("text"), textStyle, paddingValues) {
                                                             pasteSearchService.setPasteType(PasteType.TEXT)
-                                                            currentType = "Text"
+                                                            currentType = "text"
                                                             showTypes = false
                                                             focusRequester.requestFocus() // keep textField focus
                                                         }
                                                     }
 
-                                                    if (currentType != "Link") {
-                                                        MenuItem(copywriter.getText("Link"), textStyle, paddingValues) {
+                                                    if (currentType != "link") {
+                                                        MenuItem(copywriter.getText("link"), textStyle, paddingValues) {
                                                             pasteSearchService.setPasteType(PasteType.URL)
-                                                            currentType = "Link"
+                                                            currentType = "link"
                                                             showTypes = false
                                                             focusRequester.requestFocus() // keep textField focus
                                                         }
                                                     }
 
-                                                    if (currentType != "Html") {
-                                                        MenuItem(copywriter.getText("Html"), textStyle, paddingValues) {
+                                                    if (currentType != "html") {
+                                                        MenuItem(copywriter.getText("html"), textStyle, paddingValues) {
                                                             pasteSearchService.setPasteType(PasteType.HTML)
-                                                            currentType = "Html"
+                                                            currentType = "html"
                                                             showTypes = false
                                                             focusRequester.requestFocus() // keep textField focus
                                                         }
                                                     }
 
-                                                    if (currentType != "Image") {
+                                                    if (currentType != "image") {
                                                         MenuItem(
-                                                            copywriter.getText("Image"),
+                                                            copywriter.getText("image"),
                                                             textStyle,
                                                             paddingValues,
                                                         ) {
                                                             pasteSearchService.setPasteType(PasteType.IMAGE)
-                                                            currentType = "Image"
+                                                            currentType = "image"
                                                             showTypes = false
                                                             focusRequester.requestFocus() // keep textField focus
                                                         }
                                                     }
 
-                                                    if (currentType != "File") {
-                                                        MenuItem(copywriter.getText("File"), textStyle, paddingValues) {
+                                                    if (currentType != "file") {
+                                                        MenuItem(copywriter.getText("file"), textStyle, paddingValues) {
                                                             pasteSearchService.setPasteType(PasteType.FILE)
-                                                            currentType = "File"
+                                                            currentType = "file"
                                                             showTypes = false
                                                             focusRequester.requestFocus() // keep textField focus
                                                         }
@@ -550,7 +550,7 @@ fun CrossPasteSearchWindowContent() {
 
                         appWindowManager.getPrevAppName()?.let {
                             Text(
-                                text = "${copywriter.getText("Paste_To")} $it",
+                                text = "${copywriter.getText("paste_to")} $it",
                                 style =
                                     TextStyle(
                                         fontWeight = FontWeight.Normal,

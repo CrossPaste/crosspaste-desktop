@@ -44,7 +44,7 @@ import kotlinx.coroutines.runBlocking
 
 @Composable
 fun DeviceDetailView(currentPageViewContext: MutableState<PageViewContext>) {
-    WindowDecoration(currentPageViewContext, "Device_Detail")
+    WindowDecoration(currentPageViewContext, "device_detail")
     DeviceDetailContentView(currentPageViewContext)
 }
 
@@ -68,7 +68,7 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
             modifier =
                 Modifier.wrapContentSize()
                     .padding(start = 15.dp, bottom = 5.dp),
-            text = copywriter.getText("Sync_Control"),
+            text = copywriter.getText("sync_control"),
             color = MaterialTheme.colors.onBackground,
             style = MaterialTheme.typography.h6,
             fontFamily = FontFamily.SansSerif,
@@ -87,7 +87,7 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "${copywriter.getText("Allow_Send_to")} ${syncRuntimeInfo.getDeviceDisplayName()}",
+                    text = "${copywriter.getText("allow_send_to")} ${syncRuntimeInfo.getDeviceDisplayName()}",
                     color = MaterialTheme.colors.onBackground,
                     style = TextStyle(fontWeight = FontWeight.Light),
                     fontFamily = FontFamily.SansSerif,
@@ -123,7 +123,7 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "${copywriter.getText("Allow_Receive_from")} ${syncRuntimeInfo.getDeviceDisplayName()}",
+                    text = "${copywriter.getText("allow_receive_from")} ${syncRuntimeInfo.getDeviceDisplayName()}",
                     color = MaterialTheme.colors.onBackground,
                     style = TextStyle(fontWeight = FontWeight.Light),
                     fontFamily = FontFamily.SansSerif,
@@ -158,12 +158,12 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
         val properties =
             remember(syncRuntimeInfo) {
                 arrayOf(
-                    Pair("App_Version", syncRuntimeInfo.appVersion),
-                    Pair("User_Name", syncRuntimeInfo.userName),
-                    Pair("Device_ID", syncRuntimeInfo.deviceId),
-                    Pair("Arch", syncRuntimeInfo.platformArch),
-                    Pair("Connect_Host", syncRuntimeInfo.connectHostAddress ?: ""),
-                    Pair("Port", syncRuntimeInfo.port.toString()),
+                    Pair("app_version", syncRuntimeInfo.appVersion),
+                    Pair("user_name", syncRuntimeInfo.userName),
+                    Pair("device_id", syncRuntimeInfo.deviceId),
+                    Pair("arch", syncRuntimeInfo.platformArch),
+                    Pair("connect_host", syncRuntimeInfo.connectHostAddress ?: ""),
+                    Pair("port", syncRuntimeInfo.port.toString()),
                 )
             }
 
@@ -181,7 +181,7 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
             modifier =
                 Modifier.wrapContentSize()
                     .padding(start = 15.dp, bottom = 5.dp),
-            text = copywriter.getText("Base_Info"),
+            text = copywriter.getText("base_info"),
             color = MaterialTheme.colors.onBackground,
             fontFamily = FontFamily.SansSerif,
             style = MaterialTheme.typography.h6,

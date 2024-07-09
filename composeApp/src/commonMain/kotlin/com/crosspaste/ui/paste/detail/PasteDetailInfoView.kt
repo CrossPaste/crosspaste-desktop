@@ -82,7 +82,7 @@ fun PasteDetailInfoView(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = copywriter.getText("Information") + (indexInfo?.let { " - $it" } ?: ""),
+            text = copywriter.getText("information") + (indexInfo?.let { " - $it" } ?: ""),
             style =
                 TextStyle(
                     fontWeight = FontWeight.Bold,

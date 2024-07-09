@@ -220,12 +220,12 @@ fun PasteFilesDetailView(
                     pasteData = pasteData,
                     items =
                         listOf(
-                            PasteDetailInfoItem("File_Name", "${filePath.fileName}"),
-                            PasteDetailInfoItem("Type", copywriter.getText("File")),
-                            PasteDetailInfoItem("Size", fileUtils.formatBytes(pasteItem.size)),
-                            PasteDetailInfoItem("Remote", copywriter.getText(if (pasteData.remote) "Yes" else "No")),
+                            PasteDetailInfoItem("file_name", "${filePath.fileName}"),
+                            PasteDetailInfoItem("type", copywriter.getText("file")),
+                            PasteDetailInfoItem("size", fileUtils.formatBytes(pasteItem.size)),
+                            PasteDetailInfoItem("remote", copywriter.getText(if (pasteData.remote) "yes" else "no")),
                             PasteDetailInfoItem(
-                                "Date",
+                                "date",
                                 copywriter.getDate(
                                     dateUtils.convertRealmInstantToLocalDateTime(pasteData.createTime),
                                     true,

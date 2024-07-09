@@ -153,7 +153,7 @@ fun HomeWindowDecoration() {
             ) {
                 PasteTooltipAreaView(
                     modifier = Modifier.size(32.dp),
-                    text = copywriter.getText("Open_Search_Window"),
+                    text = copywriter.getText("open_search_window"),
                 ) {
                     Box(
                         modifier =
@@ -208,7 +208,7 @@ fun HomeWindowDecoration() {
 
                 PasteTooltipAreaView(
                     modifier = Modifier.size(32.dp),
-                    text = "CrossPaste ${copywriter.getText("Menu")}",
+                    text = "CrossPaste ${copywriter.getText("menu")}",
                 ) {
                     Box(
                         modifier =

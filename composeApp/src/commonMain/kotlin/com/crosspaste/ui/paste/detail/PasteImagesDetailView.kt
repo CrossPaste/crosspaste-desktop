@@ -300,12 +300,12 @@ fun detailInfoItems(
 ): List<PasteDetailInfoItem> {
     val details =
         mutableListOf(
-            PasteDetailInfoItem("File_Name", imagePath.fileName.toString()),
-            PasteDetailInfoItem("Type", copywriter.getText("Image")),
-            PasteDetailInfoItem("Size", fileUtils.formatBytes(pasteData.size)),
-            PasteDetailInfoItem("Remote", copywriter.getText(if (pasteData.remote) "Yes" else "No")),
+            PasteDetailInfoItem("file_Name", imagePath.fileName.toString()),
+            PasteDetailInfoItem("type", copywriter.getText("image")),
+            PasteDetailInfoItem("size", fileUtils.formatBytes(pasteData.size)),
+            PasteDetailInfoItem("remote", copywriter.getText(if (pasteData.remote) "yes" else "no")),
             PasteDetailInfoItem(
-                "Date",
+                "date",
                 copywriter.getDate(
                     dateUtils.convertRealmInstantToLocalDateTime(pasteData.createTime),
                     true,
@@ -314,7 +314,7 @@ fun detailInfoItems(
         )
 
     size?.let {
-        details.add(2, PasteDetailInfoItem("Dimensions", "${it.width.toInt()} x ${it.height.toInt()}"))
+        details.add(2, PasteDetailInfoItem("dimensions", "${it.width.toInt()} x ${it.height.toInt()}"))
     }
 
     return details

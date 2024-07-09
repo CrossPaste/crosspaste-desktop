@@ -119,7 +119,7 @@ fun bindingQRCode() {
                             Modifier.weight(1f, fill = false)
                                 .padding(vertical = 8.dp),
                         textAlign = TextAlign.Center,
-                        text = copywriter.getText("Please_scan_the_binding_device"),
+                        text = copywriter.getText("please_scan_the_binding_device"),
                         maxLines = 3,
                         style =
                             TextStyle(

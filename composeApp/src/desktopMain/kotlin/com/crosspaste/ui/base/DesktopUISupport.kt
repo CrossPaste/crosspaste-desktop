@@ -34,7 +34,7 @@ class DesktopUISupport(
             toastManager.setToast(
                 Toast(
                     messageType = MessageType.Error,
-                    "${copywriter.getText("Cant_open_browser")} $url",
+                    "${copywriter.getText("cant_open_browser")} $url",
                 ),
             )
         }
@@ -50,7 +50,7 @@ class DesktopUISupport(
             toastManager.setToast(
                 Toast(
                     messageType = MessageType.Error,
-                    "${copywriter.getText("Official email")} $email",
+                    "${copywriter.getText("official_email")} $email",
                 ),
             )
         }
@@ -69,7 +69,7 @@ class DesktopUISupport(
             toastManager.setToast(
                 Toast(
                     messageType = MessageType.Error,
-                    copywriter.getText("Failed_to_open_Html_pasteboard"),
+                    copywriter.getText("failed_to_open_Html_pasteboard"),
                 ),
             )
         }
@@ -88,7 +88,7 @@ class DesktopUISupport(
                 toastManager.setToast(
                     Toast(
                         messageType = MessageType.Error,
-                        copywriter.getText("Failed_to_browse_File_pasteboard"),
+                        copywriter.getText("failed_to_browse_File_pasteboard"),
                     ),
                 )
             }
@@ -96,7 +96,7 @@ class DesktopUISupport(
             toastManager.setToast(
                 Toast(
                     messageType = MessageType.Error,
-                    copywriter.getText("File_not_found"),
+                    copywriter.getText("file_not_found"),
                 ),
             )
         }
@@ -122,7 +122,7 @@ class DesktopUISupport(
                 toastManager.setToast(
                     Toast(
                         messageType = MessageType.Error,
-                        copywriter.getText("Failed_to_open_Image_pasteboard"),
+                        copywriter.getText("failed_to_open_Image_pasteboard"),
                     ),
                 )
             }
@@ -130,7 +130,7 @@ class DesktopUISupport(
             toastManager.setToast(
                 Toast(
                     messageType = MessageType.Error,
-                    copywriter.getText("File_not_found"),
+                    copywriter.getText("file_not_found"),
                 ),
             )
         }
@@ -148,7 +148,7 @@ class DesktopUISupport(
             toastManager.setToast(
                 Toast(
                     messageType = MessageType.Error,
-                    copywriter.getText("Failed_to_open_Text_pasteboard"),
+                    copywriter.getText("failed_to_open_Text_pasteboard"),
                 ),
             )
         }

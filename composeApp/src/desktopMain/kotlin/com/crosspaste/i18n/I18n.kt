@@ -55,7 +55,7 @@ class GlobalCopywriterImpl(private val configManager: ConfigManager) : GlobalCop
             .map { it ->
                 val copywriter = languageMap.computeIfAbsent(it) { CopywriterImpl(it) }
                 val abridge = copywriter.getAbridge()
-                val name = copywriter.getText("CurrentLanguage")
+                val name = copywriter.getText("current_language")
                 Language(abridge, name)
             }
     }

@@ -44,12 +44,12 @@ fun MenuView(
     ) {
         val menuTexts =
             arrayOf(
-                copywriter.getText("Check_for_updates"),
-                copywriter.getText("Settings"),
-                copywriter.getText("Shortcut_Keys"),
-                copywriter.getText("About"),
-                copywriter.getText("FQA"),
-                copywriter.getText("Quit"),
+                copywriter.getText("check_for_updates"),
+                copywriter.getText("settings"),
+                copywriter.getText("shortcut_keys"),
+                copywriter.getText("about"),
+                copywriter.getText("fqa"),
+                copywriter.getText("quit"),
             )
 
         val maxWidth = max(150.dp, getMenWidth(menuTexts))
@@ -62,31 +62,31 @@ fun MenuView(
                     .clip(RoundedCornerShape(5.dp))
                     .background(MaterialTheme.colors.surface),
         ) {
-            MenuItem(copywriter.getText("Check_for_updates")) {
+            MenuItem(copywriter.getText("check_for_updates")) {
                 // TODO: check for updates
                 close()
             }
-            MenuItem(copywriter.getText("Settings")) {
+            MenuItem(copywriter.getText("settings")) {
                 openMainWindow()
                 currentPage.value = PageViewContext(PageViewType.SETTINGS, currentPage.value)
                 close()
             }
-            MenuItem(copywriter.getText("Shortcut_Keys")) {
+            MenuItem(copywriter.getText("shortcut_keys")) {
                 openMainWindow()
                 currentPage.value = PageViewContext(PageViewType.SHORTCUT_KEYS, currentPage.value)
                 close()
             }
-            MenuItem(copywriter.getText("About")) {
+            MenuItem(copywriter.getText("about")) {
                 openMainWindow()
                 currentPage.value = PageViewContext(PageViewType.ABOUT, currentPage.value)
                 close()
             }
-            MenuItem(copywriter.getText("FQA")) {
+            MenuItem(copywriter.getText("fqa")) {
                 uiSupport.openUrlInBrowser("https://www.crosspaste.com/FQA")
                 close()
             }
             Divider()
-            MenuItem(copywriter.getText("Quit")) {
+            MenuItem(copywriter.getText("quit")) {
                 close()
                 applicationExit()
             }

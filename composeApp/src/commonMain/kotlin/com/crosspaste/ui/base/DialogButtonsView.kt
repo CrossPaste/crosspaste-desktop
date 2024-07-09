@@ -26,8 +26,8 @@ import com.crosspaste.i18n.GlobalCopywriter
 @Composable
 fun DialogButtonsView(
     height: Dp = 40.dp,
-    cancelTitle: String = "No",
-    confirmTitle: String = "Yes",
+    cancelTitle: String = "no",
+    confirmTitle: String = "yes",
     cancelAction: () -> Unit,
     confirmAction: () -> Unit,
 ) {

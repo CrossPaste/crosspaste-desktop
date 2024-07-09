@@ -98,7 +98,7 @@ fun NotFoundNearByDevices() {
                     Modifier
                         .fillMaxWidth(0.8f),
                 textAlign = TextAlign.Center,
-                text = copywriter.getText("No_other_devices_found_with_CrossPaste_enabled"),
+                text = copywriter.getText("no_other_devices_found_with_crosspaste_enabled"),
                 maxLines = 3,
                 style =
                     TextStyle(
@@ -173,7 +173,7 @@ fun SearchNearByDevices() {
                     Modifier.align(Alignment.CenterHorizontally)
                         .fillMaxWidth(0.8f),
                 textAlign = TextAlign.Center,
-                text = copywriter.getText("Searching_for_nearby_devices"),
+                text = copywriter.getText("searching_for_nearby_devices"),
                 color = MaterialTheme.colors.onBackground,
                 fontSize = 28.sp,
                 maxLines = 3,
@@ -258,7 +258,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
                 ),
         ) {
             Text(
-                text = copywriter.getText("Add"),
+                text = copywriter.getText("add"),
                 color = connectedColor(),
                 style =
                     TextStyle(
@@ -298,7 +298,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
                 ),
         ) {
             Text(
-                text = copywriter.getText("Block"),
+                text = copywriter.getText("block"),
                 color = disconnectedColor(),
                 style =
                     TextStyle(

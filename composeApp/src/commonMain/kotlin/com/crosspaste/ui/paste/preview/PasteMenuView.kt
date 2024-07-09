@@ -141,7 +141,7 @@ fun PasteMenuView(
     ) {
         PasteTooltipAreaView(
             Modifier.fillMaxWidth().height(25.dp),
-            text = copywriter.getText("Menu"),
+            text = copywriter.getText("menu"),
         ) {
             Box(
                 modifier =
@@ -188,7 +188,7 @@ fun PasteMenuView(
         if (showMenu) {
             PasteTooltipAreaView(
                 Modifier.fillMaxWidth().height(25.dp),
-                text = copywriter.getText("Copy"),
+                text = copywriter.getText("copy"),
             ) {
                 Box(
                     modifier =
@@ -233,7 +233,7 @@ fun PasteMenuView(
                                 toastManager.setToast(
                                     Toast(
                                         MessageType.Success,
-                                        copywriter.getText("Copy_Successful"),
+                                        copywriter.getText("copy_successful"),
                                         3000,
                                     ),
                                 )
@@ -247,7 +247,7 @@ fun PasteMenuView(
 
             PasteTooltipAreaView(
                 Modifier.fillMaxWidth().height(25.dp),
-                text = copywriter.getText(if (pasteData.favorite) "Delete_Favorite" else "Favorite"),
+                text = copywriter.getText(if (pasteData.favorite) "delete_favorite" else "favorite"),
             ) {
                 Box(
                     modifier =
@@ -361,8 +361,8 @@ fun PasteMenuView(
             ) {
                 val menuTexts =
                     arrayOf(
-                        copywriter.getText("Open"),
-                        copywriter.getText("Delete"),
+                        copywriter.getText("open"),
+                        copywriter.getText("delete"),
                     )
 
                 val maxWidth = getMenWidth(menuTexts)
@@ -375,13 +375,13 @@ fun PasteMenuView(
                             .clip(RoundedCornerShape(5.dp))
                             .background(MaterialTheme.colors.surface),
                 ) {
-                    MenuItem(copywriter.getText("Open")) {
+                    MenuItem(copywriter.getText("open")) {
                         uiSupport.openPasteData(pasteData)
                         showPopup = false
                         showMenu = false
                         toShow(false)
                     }
-                    MenuItem(copywriter.getText("Delete")) {
+                    MenuItem(copywriter.getText("delete")) {
                         runBlocking {
                             pasteDao.markDeletePasteData(pasteData.id)
                         }

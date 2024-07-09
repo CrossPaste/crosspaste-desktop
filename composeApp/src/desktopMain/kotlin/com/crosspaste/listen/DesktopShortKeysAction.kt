@@ -29,13 +29,13 @@ class DesktopShortKeysAction(
 
     override val action: (String) -> Unit = { actionName ->
         when (actionName) {
-            "Paste_Local_Last" -> pasteLast(true)
-            "Paste_Remote_Last" -> pasteLast(false)
-            "ShowMain" -> showMainWindow()
-            "ShowSearch" -> showSearchWindow()
-            "HideWindow" -> hideWindow()
-            "SwitchMonitorPasteboard" -> switchMonitorPasteboard()
-            "SwitchEncrypt" -> switchEncrypt()
+            "paste_local_last" -> pasteLast(true)
+            "paste_remote_last" -> pasteLast(false)
+            "show_main" -> showMainWindow()
+            "show_search" -> showSearchWindow()
+            "hide_window" -> hideWindow()
+            "switch_monitor_pasteboard" -> switchMonitorPasteboard()
+            "switch_encrypt" -> switchEncrypt()
         }
     }
 

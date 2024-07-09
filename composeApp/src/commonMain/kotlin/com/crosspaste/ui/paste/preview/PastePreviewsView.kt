@@ -201,7 +201,7 @@ fun EmptyScreenView() {
                     Modifier
                         .fillMaxWidth(0.8f),
                 textAlign = TextAlign.Center,
-                text = copywriter.getText("Haven't_listened_to_any_pasteboard_data_yet"),
+                text = copywriter.getText("haven't_listened_to_any_pasteboard_data_yet"),
                 maxLines = 3,
                 style =
                     TextStyle(
@@ -231,7 +231,7 @@ fun ToTop(toTopAction: () -> Unit) {
 
         Spacer(modifier = Modifier.weight(1f))
         PasteTooltipAreaView(
-            text = copywriter.getText("Scroll_to_top"),
+            text = copywriter.getText("scroll_to_top"),
             delayMillis = 1000,
         ) {
             PasteIconButton(

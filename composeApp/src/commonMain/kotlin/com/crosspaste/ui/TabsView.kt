@@ -65,10 +65,10 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
     val tabs =
         remember {
             listOfNotNull(
-                Pair(listOf(PageViewType.PASTE_PREVIEW), "Pasteboard"),
-                Pair(listOf(PageViewType.DEVICES), "Devices"),
-                Pair(listOf(PageViewType.QR_CODE), "Scan"),
-                if (appEnv == AppEnv.DEVELOPMENT) Pair(listOf(PageViewType.DEBUG), "Debug") else null,
+                Pair(listOf(PageViewType.PASTE_PREVIEW), "pasteboard"),
+                Pair(listOf(PageViewType.DEVICES), "devices"),
+                Pair(listOf(PageViewType.QR_CODE), "scan"),
+                if (appEnv == AppEnv.DEVELOPMENT) Pair(listOf(PageViewType.DEBUG), "debug") else null,
             )
         }
 
