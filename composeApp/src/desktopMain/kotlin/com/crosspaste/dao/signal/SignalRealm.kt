@@ -2,57 +2,14 @@ package com.crosspaste.dao.signal
 
 import io.realm.kotlin.Realm
 import io.realm.kotlin.UpdatePolicy
-import org.signal.libsignal.protocol.ecc.Curve
-import org.signal.libsignal.protocol.ecc.ECPrivateKey
-import org.signal.libsignal.protocol.state.PreKeyRecord
-import org.signal.libsignal.protocol.state.SignedPreKeyRecord
-import org.signal.libsignal.protocol.util.Medium
-import java.util.Random
 
 class SignalRealm(private val realm: Realm) : SignalDao {
 
-    @Synchronized
-    override fun generatePreKeyPair(): PastePreKey {
-        val preKeyPair = Curve.generateKeyPair()
-        val random = Random()
-        var preKeyId: Int
-        do {
-            preKeyId = random.nextInt(Medium.MAX_VALUE)
-        } while (existPreKey(preKeyId))
-        val preKeyRecord = PreKeyRecord(preKeyId, preKeyPair)
-        val serialize = preKeyRecord.serialize()
-        storePreKey(preKeyId, serialize)
-        return PastePreKey(preKeyId, serialize)
-    }
-
-    @Synchronized
-    override fun generatesSignedPreKeyPair(privateKey: ECPrivateKey): PasteSignedPreKey {
-        val random = Random()
-        val signedPreKeyId = random.nextInt(Medium.MAX_VALUE)
-
-        getSignedPreKey(signedPreKeyId)?.let { signedPreKey ->
-            return signedPreKey
-        } ?: run {
-            val signedPreKeyPair = Curve.generateKeyPair()
-            val signedPreKeySignature =
-                Curve.calculateSignature(
-                    privateKey,
-                    signedPreKeyPair.publicKey.serialize(),
-                )
-            val signedPreKeyRecord =
-                SignedPreKeyRecord(
-                    signedPreKeyId, System.currentTimeMillis(), signedPreKeyPair, signedPreKeySignature,
-                )
-            storeSignedPreKey(signedPreKeyId, signedPreKeyRecord.serialize())
-            return PasteSignedPreKey(signedPreKeyId, signedPreKeyRecord.serialize())
-        }
-    }
-
-    private fun existPreKey(preKeyId: Int): Boolean {
+    override fun existPreKey(preKeyId: Int): Boolean {
         return realm.query(PastePreKey::class, "id == $0", preKeyId).first().find() != null
     }
 
-    private fun getSignedPreKey(signedPreKeyId: Int): PasteSignedPreKey? {
+    override fun getSignedPreKey(signedPreKeyId: Int): PasteSignedPreKey? {
         return realm.query(PasteSignedPreKey::class, "id == $0", signedPreKeyId).first().find()
     }
 

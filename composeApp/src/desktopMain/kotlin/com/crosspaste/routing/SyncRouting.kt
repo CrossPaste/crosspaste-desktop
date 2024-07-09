@@ -13,6 +13,7 @@ import com.crosspaste.serializer.PreKeyBundleSerializer
 import com.crosspaste.signal.SignalProcessorCache
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.DesktopJsonUtils
+import com.crosspaste.utils.EncryptUtils
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getAppInstanceId
 import com.crosspaste.utils.successResponse
@@ -61,12 +62,12 @@ fun Routing.syncRouting() {
             val identityKeyPair = signalProtocolStore.identityKeyPair
             val registrationId = signalProtocolStore.localRegistrationId
             val deviceId = 1
-            val preKey = signalDao.generatePreKeyPair()
+            val preKey = EncryptUtils.generatePreKeyPair(signalDao)
             val preKeyId = preKey.id
             val preKeyRecord = PreKeyRecord(preKey.serialized)
             val preKeyPairPublicKey = preKeyRecord.keyPair.publicKey
 
-            val signedPreKey = signalDao.generatesSignedPreKeyPair(identityKeyPair.privateKey)
+            val signedPreKey = EncryptUtils.generatesSignedPreKeyPair(signalDao, identityKeyPair.privateKey)
             val signedPreKeyId = signedPreKey.id
             val signedPreKeyRecord = SignedPreKeyRecord(signedPreKey.serialized)
             val signedPreKeySignature = signedPreKeyRecord.signature
