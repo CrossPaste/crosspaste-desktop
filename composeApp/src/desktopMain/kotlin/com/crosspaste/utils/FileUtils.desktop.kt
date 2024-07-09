@@ -6,6 +6,7 @@ import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.FileInfoTreeBuilder
 import com.crosspaste.presist.FilesChunk
 import com.crosspaste.presist.SingleFileInfoTree
+import com.crosspaste.utils.DesktopDateUtils.toKotlinLocalDateTime
 import com.google.common.hash.Hashing
 import com.google.common.io.Files
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -72,7 +73,7 @@ object DesktopFileUtils : FileUtils {
         pasteId: Long,
         fileName: String,
     ): String {
-        val dateYYYYMMDD = dateUtils.getYYYYMMDD(date)
+        val dateYYYYMMDD = dateUtils.getYYYYMMDD(date.toKotlinLocalDateTime())
         return Paths.get(appInstanceId, dateYYYYMMDD, pasteId.toString(), fileName).pathString
     }
 

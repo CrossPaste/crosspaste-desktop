@@ -7,11 +7,12 @@ import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriterImpl.Companion.EN
 import com.crosspaste.utils.getDateUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.datetime.LocalDateTime
 import java.io.FileNotFoundException
 import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
-import java.time.LocalDateTime
-import java.util.*
+import java.util.Locale
+import java.util.Properties
 import java.util.concurrent.ConcurrentHashMap
 
 class GlobalCopywriterImpl(private val configManager: ConfigManager) : GlobalCopywriter {
@@ -159,7 +160,7 @@ class CopywriterImpl(private val language: String) : Copywriter {
                     else -> "MM/dd/yyyy"
                 }
             }
-        return dateUtils.getDateText(date, pattern, locale)
+        return dateUtils.getDateText(date, pattern, locale.toString())
     }
 
     override fun getAbridge(): String {

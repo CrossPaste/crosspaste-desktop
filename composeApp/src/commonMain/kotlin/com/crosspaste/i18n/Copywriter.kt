@@ -1,6 +1,6 @@
 package com.crosspaste.i18n
 
-import java.time.LocalDateTime
+import kotlinx.datetime.LocalDateTime
 
 interface Copywriter {
 
@@ -24,35 +24,3 @@ interface GlobalCopywriter : Copywriter {
 }
 
 data class Language(val abridge: String, val name: String)
-
-class PreviewGlobalCopywriter : GlobalCopywriter {
-
-    override fun switchLanguage(language: String) {
-        println("switchLanguage: $language")
-    }
-
-    override fun getAllLanguages(): List<Language> {
-        return listOf(
-            Language("en", "English"),
-        )
-    }
-
-    override fun language(): String {
-        return "en"
-    }
-
-    override fun getText(id: String): String {
-        return id
-    }
-
-    override fun getDate(
-        date: LocalDateTime,
-        detail: Boolean,
-    ): String {
-        return date.toString()
-    }
-
-    override fun getAbridge(): String {
-        return "en"
-    }
-}
