@@ -1,7 +1,5 @@
 package com.crosspaste.dao.paste
 
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import io.realm.kotlin.types.RealmInstant
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.Index
@@ -30,12 +28,8 @@ class PasteLabel : RealmObject {
 
     constructor()
 
-    constructor(color: Color, text: String) {
-        this.color = color.toArgb()
+    constructor(color: Int, text: String) {
+        this.color = color
         this.text = text
-    }
-
-    fun getColor(): Color {
-        return Color(color)
     }
 }
