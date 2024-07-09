@@ -131,8 +131,9 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
         val filePaths = getFilePaths()
         val fileList: List<File> = filePaths.map { it.toFile() }
         map[DataFlavor.javaFileListFlavor] = fileList
-        map[PasteDataFlavors.URI_LIST] =
-            fileList.joinToString(separator = "\n") { it.absolutePath }
+        map[PasteDataFlavors.URI_LIST_FLAVOR] =
+            ByteArrayInputStream(fileList.joinToString(separator = "\n") { it.absolutePath }.toByteArray())
+        map[DataFlavor.stringFlavor] = fileList.joinToString(separator = "\n") { it.name }
 
         if (fileList.size == 1) {
             try {

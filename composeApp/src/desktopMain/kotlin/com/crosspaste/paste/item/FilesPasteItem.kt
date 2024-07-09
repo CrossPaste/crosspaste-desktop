@@ -26,7 +26,6 @@ import org.mongodb.kbson.ObjectId
 import java.awt.datatransfer.DataFlavor
 import java.io.ByteArrayInputStream
 import java.io.File
-import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -124,8 +123,9 @@ class FilesPasteItem : RealmObject, PasteItem, PasteFiles {
     override fun fillDataFlavor(map: MutableMap<DataFlavor, Any>) {
         val fileList: List<File> = getFilePaths().map { it.toFile() }
         map[DataFlavor.javaFileListFlavor] = fileList
-        map[PasteDataFlavors.URI_LIST] =
-            fileList.joinToString(separator = "\n") { it.absolutePath }
+        map[PasteDataFlavors.URI_LIST_FLAVOR] =
+            ByteArrayInputStream(fileList.joinToString(separator = "\n") { it.absolutePath }.toByteArray())
+        map[DataFlavor.stringFlavor] = fileList.joinToString(separator = "\n") { it.name }
 
         if (currentPlatform().isLinux()) {
             val content =
@@ -133,7 +133,7 @@ class FilesPasteItem : RealmObject, PasteItem, PasteFiles {
                     separator = "\n",
                     prefix = "copy\n",
                 ) { it.toURI().toString() }
-            val inputStream = ByteArrayInputStream(content.toByteArray(StandardCharsets.UTF_8))
+            val inputStream = ByteArrayInputStream(content.toByteArray())
             map[PasteDataFlavors.GNOME_COPIED_FILES_FLAVOR] = inputStream
         }
     }
