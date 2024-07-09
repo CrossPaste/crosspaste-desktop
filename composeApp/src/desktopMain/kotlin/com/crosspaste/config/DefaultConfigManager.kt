@@ -37,7 +37,7 @@ class DefaultConfigManager(
         } catch (e: Exception) {
             toastManager.setToast(
                 Toast(
-                    message = lazyCopywriter.value.getText("Failed_to_save_config"),
+                    message = lazyCopywriter.value.getText("failed_to_save_config"),
                     messageType = MessageType.Error,
                 ),
             )

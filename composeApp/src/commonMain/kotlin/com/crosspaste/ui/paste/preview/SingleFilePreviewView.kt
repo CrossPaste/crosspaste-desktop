@@ -109,7 +109,7 @@ fun SingleFilePreviewView(
             verticalArrangement = Arrangement.Bottom,
         ) {
             Text(
-                text = "${copywriter.getText("File_Name")}: ${filePath.fileName}",
+                text = "${copywriter.getText("file_name")}: ${filePath.fileName}",
                 color = MaterialTheme.colors.onBackground,
                 style =
                     TextStyle(
@@ -126,7 +126,7 @@ fun SingleFilePreviewView(
                     }
 
                 Text(
-                    text = "${copywriter.getText("Size")}: $fileSize",
+                    text = "${copywriter.getText("size")}: $fileSize",
                     color = MaterialTheme.colors.onBackground,
                     style =
                         TextStyle(
@@ -137,7 +137,7 @@ fun SingleFilePreviewView(
                 )
             } else {
                 Text(
-                    text = copywriter.getText("Missing_File"),
+                    text = copywriter.getText("missing_file"),
                     color = MaterialTheme.colors.error,
                     style =
                         TextStyle(

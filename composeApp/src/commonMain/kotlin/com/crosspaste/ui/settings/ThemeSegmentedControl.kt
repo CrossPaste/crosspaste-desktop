@@ -54,7 +54,7 @@ fun ThemeSegmentedControl() {
                 ),
         ) {
             Text(
-                copywriter.getText("Light"),
+                copywriter.getText("light"),
                 fontSize = 14.sp,
                 fontFamily = FontFamily.SansSerif,
                 style = TextStyle(fontWeight = FontWeight.Light),
@@ -85,7 +85,7 @@ fun ThemeSegmentedControl() {
                 ),
         ) {
             Text(
-                copywriter.getText("System"),
+                copywriter.getText("system"),
                 fontSize = 14.sp,
                 fontFamily = FontFamily.SansSerif,
                 style = TextStyle(fontWeight = FontWeight.Light),
@@ -116,7 +116,7 @@ fun ThemeSegmentedControl() {
                 ),
         ) {
             Text(
-                copywriter.getText("Dark"),
+                copywriter.getText("dark"),
                 fontSize = 14.sp,
                 fontFamily = FontFamily.SansSerif,
                 style = TextStyle(fontWeight = FontWeight.Light),

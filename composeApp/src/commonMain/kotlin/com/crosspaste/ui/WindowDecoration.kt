@@ -76,7 +76,7 @@ fun DecorationUI(
                     )
 
                     Text(
-                        text = copywriter.getText("Return"),
+                        text = copywriter.getText("return_"),
                         style =
                             TextStyle(
                                 fontWeight = FontWeight.Light,

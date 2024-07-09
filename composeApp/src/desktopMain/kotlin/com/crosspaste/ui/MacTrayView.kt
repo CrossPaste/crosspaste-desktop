@@ -95,7 +95,7 @@ fun createPopupMenu(
     val popup = PopupMenu()
 
     popup.add(
-        createMenuItem(copywriter.getText("Settings")) {
+        createMenuItem(copywriter.getText("settings")) {
             mainCoroutineDispatcher.launch(CoroutineName("Open settings")) {
                 appWindowManager.activeMainWindow()
                 currentPage.value = PageViewContext(PageViewType.SETTINGS, currentPage.value)
@@ -104,7 +104,7 @@ fun createPopupMenu(
     )
 
     popup.add(
-        createMenuItem(copywriter.getText("Shortcut_Keys")) {
+        createMenuItem(copywriter.getText("shortcut_keys")) {
             mainCoroutineDispatcher.launch(CoroutineName("Open shortcut keys")) {
                 appWindowManager.activeMainWindow()
                 currentPage.value = PageViewContext(PageViewType.SHORTCUT_KEYS, currentPage.value)
@@ -113,7 +113,7 @@ fun createPopupMenu(
     )
 
     popup.add(
-        createMenuItem(copywriter.getText("About")) {
+        createMenuItem(copywriter.getText("about")) {
             mainCoroutineDispatcher.launch(CoroutineName("Open about")) {
                 appWindowManager.activeMainWindow()
                 currentPage.value = PageViewContext(PageViewType.ABOUT, currentPage.value)
@@ -122,7 +122,7 @@ fun createPopupMenu(
     )
 
     popup.add(
-        createMenuItem(copywriter.getText("FQA")) {
+        createMenuItem(copywriter.getText("fqa")) {
             uiSupport.openUrlInBrowser("https://www.crosspaste.com/FQA")
         },
     )
@@ -130,7 +130,7 @@ fun createPopupMenu(
     popup.addSeparator()
 
     popup.add(
-        createMenuItem(copywriter.getText("Quit")) {
+        createMenuItem(copywriter.getText("quit")) {
             applicationExit()
         },
     )

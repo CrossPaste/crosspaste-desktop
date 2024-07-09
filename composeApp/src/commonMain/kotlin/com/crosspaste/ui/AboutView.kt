@@ -38,7 +38,7 @@ import com.crosspaste.ui.base.chevronRight
 
 @Composable
 fun AboutView(currentPageViewContext: MutableState<PageViewContext>) {
-    WindowDecoration(currentPageViewContext, "About")
+    WindowDecoration(currentPageViewContext, "about")
     AboutContentView()
 }
 
@@ -95,25 +95,25 @@ fun AboutContentView() {
                 )
                 Spacer(modifier = Modifier.height(30.dp))
 
-                AboutInfoItem("Official_website") {
+                AboutInfoItem("official_website") {
                     uiSupport.openUrlInBrowser("https://crosspaste.com")
                 }
 
                 Divider(modifier = Modifier.padding(horizontal = 80.dp))
 
-                AboutInfoItem("Change_log") {
+                AboutInfoItem("change_log") {
                     uiSupport.openUrlInBrowser("https://github.com/crosspaste/crosspaste-desktop/blob/main/CHANGELOG.md")
                 }
 
                 Divider(modifier = Modifier.padding(horizontal = 80.dp))
 
-                AboutInfoItem("Feedback") {
+                AboutInfoItem("feedback") {
                     uiSupport.openUrlInBrowser("https://github.com/crosspaste/crosspaste-desktop/issues")
                 }
 
                 Divider(modifier = Modifier.padding(horizontal = 80.dp))
 
-                AboutInfoItem("Contact_us") {
+                AboutInfoItem("contact_us") {
                     uiSupport.openEmailClient("compile.future@gmail.com")
                 }
             }

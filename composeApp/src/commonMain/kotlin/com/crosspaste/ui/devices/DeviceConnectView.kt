@@ -213,8 +213,8 @@ fun DeviceConnectView(
                         ) {
                             val menuTexts =
                                 arrayOf(
-                                    copywriter.getText("Add_Note"),
-                                    copywriter.getText("Remove_Device"),
+                                    copywriter.getText("add_note"),
+                                    copywriter.getText("remove_device"),
                                 )
 
                             val maxWidth = getMenWidth(menuTexts)
@@ -227,11 +227,11 @@ fun DeviceConnectView(
                                         .clip(RoundedCornerShape(5.dp))
                                         .background(MaterialTheme.colors.surface),
                             ) {
-                                MenuItem(copywriter.getText("Add_Note")) {
+                                MenuItem(copywriter.getText("add_note")) {
                                     onEdit(syncRuntimeInfo)
                                     showPopup = false
                                 }
-                                MenuItem(copywriter.getText("Remove_Device")) {
+                                MenuItem(copywriter.getText("remove_device")) {
                                     val id = syncRuntimeInfo.appInstanceId
                                     syncManager.removeSyncHandler(id)
                                     showPopup = false
@@ -264,11 +264,11 @@ fun getAllowSendAndReceiveImage(syncRuntimeInfo: SyncRuntimeInfo): Painter {
 
 fun getConnectStateColorAndText(connectState: Int): Pair<Color, String> {
     return when (connectState) {
-        SyncState.CONNECTED -> Pair(connectedColor(), "CONNECTED")
-        SyncState.CONNECTING -> Pair(connectingColor(), "CONNECTING")
-        SyncState.DISCONNECTED -> Pair(disconnectedColor(), "DISCONNECTED")
-        SyncState.UNMATCHED -> Pair(unmatchedColor(), "UNMATCHED")
-        SyncState.UNVERIFIED -> Pair(unverifiedColor(), "UNVERIFIED")
+        SyncState.CONNECTED -> Pair(connectedColor(), "connected")
+        SyncState.CONNECTING -> Pair(connectingColor(), "connecting")
+        SyncState.DISCONNECTED -> Pair(disconnectedColor(), "disconnected")
+        SyncState.UNMATCHED -> Pair(unmatchedColor(), "unmatched")
+        SyncState.UNVERIFIED -> Pair(unverifiedColor(), "unverified")
         else -> throw IllegalArgumentException("Unknown connectState: $connectState")
     }
 }

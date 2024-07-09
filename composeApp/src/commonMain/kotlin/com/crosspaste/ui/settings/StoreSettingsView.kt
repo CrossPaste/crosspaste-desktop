@@ -119,7 +119,7 @@ fun StoreSettingsView() {
         modifier =
             Modifier.wrapContentSize()
                 .padding(start = 32.dp, top = 5.dp, bottom = 5.dp),
-        text = copywriter.getText("Store_Info"),
+        text = copywriter.getText("store_info"),
         color = MaterialTheme.colors.onBackground,
         style = MaterialTheme.typography.h6,
         fontFamily = FontFamily.SansSerif,
@@ -130,12 +130,12 @@ fun StoreSettingsView() {
 
     val pasteTypes: Array<Quadruple<String, Painter, Long?, String?>> =
         arrayOf(
-            Quadruple("Pasteboard", hashtag(), pasteCount, pasteFormatSize),
-            Quadruple("Text", text(), textCount, textFormatSize),
-            Quadruple("Link", link(), urlCount, urlFormatSize),
-            Quadruple("Html", html(), htmlCount, htmlFormatSize),
-            Quadruple("Image", image(), imageCount, imageFormatSize),
-            Quadruple("File", file(), fileCount, fileFormatSize),
+            Quadruple("pasteboard", hashtag(), pasteCount, pasteFormatSize),
+            Quadruple("text", text(), textCount, textFormatSize),
+            Quadruple("link", link(), urlCount, urlFormatSize),
+            Quadruple("html", html(), htmlCount, htmlFormatSize),
+            Quadruple("image", image(), imageCount, imageFormatSize),
+            Quadruple("file", file(), fileCount, fileFormatSize),
         )
 
     val textStyle =
@@ -181,8 +181,8 @@ fun StoreSettingsView() {
                             fontWeight = FontWeight.Light,
                             fontFamily = FontFamily.SansSerif,
                         ),
-                    checkedText = copywriter.getText("All_Storage"),
-                    uncheckedText = copywriter.getText("Favorite_Storage"),
+                    checkedText = copywriter.getText("all_storage"),
+                    uncheckedText = copywriter.getText("favorite_storage"),
                 )
             }
 
@@ -190,14 +190,14 @@ fun StoreSettingsView() {
                 modifier = Modifier.weight(0.25f),
                 horizontalArrangement = Arrangement.End,
             ) {
-                settingsText(copywriter.getText("Count"))
+                settingsText(copywriter.getText("count"))
             }
 
             Row(
                 modifier = Modifier.weight(0.3f),
                 horizontalArrangement = Arrangement.End,
             ) {
-                settingsText(copywriter.getText("Size"))
+                settingsText(copywriter.getText("size"))
             }
         }
 
@@ -257,7 +257,7 @@ fun StoreSettingsView() {
         modifier =
             Modifier.wrapContentSize()
                 .padding(start = 32.dp, top = 5.dp, bottom = 5.dp),
-        text = copywriter.getText("Auto_Cleanup_Settings"),
+        text = copywriter.getText("auto_cleanup_settings"),
         color = MaterialTheme.colors.onBackground,
         style = MaterialTheme.typography.h6,
         fontFamily = FontFamily.SansSerif,
@@ -287,7 +287,7 @@ fun StoreSettingsView() {
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            settingsText(copywriter.getText("Expiration_Cleanup"))
+            settingsText(copywriter.getText("expiration_cleanup"))
 
             var isExpirationCleanup by remember { mutableStateOf(configManager.config.isExpirationCleanup) }
 
@@ -323,7 +323,7 @@ fun StoreSettingsView() {
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            settingsText(copywriter.getText("Image_Expiry_Period"))
+            settingsText(copywriter.getText("image_expiry_period"))
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -412,7 +412,7 @@ fun StoreSettingsView() {
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            settingsText(copywriter.getText("File_Expiry_Period"))
+            settingsText(copywriter.getText("file_expiry_period"))
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -509,7 +509,7 @@ fun StoreSettingsView() {
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            settingsText(copywriter.getText("Threshold_Cleanup"))
+            settingsText(copywriter.getText("threshold_cleanup"))
 
             var isThresholdCleanup by remember { mutableStateOf(configManager.config.isThresholdCleanup) }
 
@@ -545,7 +545,7 @@ fun StoreSettingsView() {
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            settingsText(copywriter.getText("Maximum_Storage"))
+            settingsText(copywriter.getText("maximum_storage"))
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -581,7 +581,7 @@ fun StoreSettingsView() {
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            settingsText(copywriter.getText("Cleanup_Percentage"))
+            settingsText(copywriter.getText("cleanup_percentage"))
 
             Spacer(modifier = Modifier.weight(1f))
 

@@ -54,14 +54,14 @@ object DesktopDateUtils : DateUtils {
             val seconds = ChronoUnit.SECONDS.between(javaDate, now)
 
             if (hour < 1 && minutes < 1 && seconds < 60) {
-                return "Just_now"
+                return "just_now"
             }
-            return "Today"
+            return "today"
         }
 
         val yesterday = now.minusDays(1)
         if (javaDate.toLocalDate().isEqual(yesterday.toLocalDate())) {
-            return "Yesterday"
+            return "yesterday"
         }
 
         return null

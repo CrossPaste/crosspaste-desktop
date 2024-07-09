@@ -106,12 +106,12 @@ fun PasteSpecificPreviewView(pasteData: PasteData) {
 
 fun getTypeText(pasteType: Int): String {
     return when (pasteType) {
-        PasteType.TEXT -> "Text"
-        PasteType.URL -> "Link"
-        PasteType.HTML -> "Html"
-        PasteType.IMAGE -> "Image"
-        PasteType.FILE -> "File"
-        else -> "Unknown"
+        PasteType.TEXT -> "text"
+        PasteType.URL -> "link"
+        PasteType.HTML -> "html"
+        PasteType.IMAGE -> "image"
+        PasteType.FILE -> "file"
+        else -> "unknown"
     }
 }
 

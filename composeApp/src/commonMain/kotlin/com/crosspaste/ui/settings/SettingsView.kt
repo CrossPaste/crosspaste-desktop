@@ -150,7 +150,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
         }
     }
 
-    WindowDecoration(currentPageViewContext, "Settings")
+    WindowDecoration(currentPageViewContext, "settings")
 
     Box(
         modifier =
@@ -186,7 +186,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    settingsText(copywriter.getText("Language"))
+                    settingsText(copywriter.getText("language"))
 
                     Spacer(modifier = Modifier.weight(1f))
 
@@ -209,7 +209,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                                 },
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        settingsText(copywriter.getText("CurrentLanguage"))
+                        settingsText(copywriter.getText("current_language"))
 
                         Icon(
                             modifier =
@@ -289,7 +289,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    settingsText(copywriter.getText("Theme"))
+                    settingsText(copywriter.getText("theme"))
 
                     Spacer(modifier = Modifier.weight(1f))
 
@@ -314,7 +314,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    settingsText(copywriter.getText("Pasteboard_Listening"))
+                    settingsText(copywriter.getText("pasteboard_listening"))
 
                     Spacer(modifier = Modifier.weight(1f))
 
@@ -349,7 +349,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    settingsText(copywriter.getText("Encrypted_sync"))
+                    settingsText(copywriter.getText("encrypted_sync"))
 
                     Spacer(modifier = Modifier.weight(1f))
 
@@ -384,7 +384,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    settingsText(copywriter.getText("Boot_start_up"))
+                    settingsText(copywriter.getText("boot_start_up"))
 
                     Spacer(modifier = Modifier.weight(1f))
 
@@ -420,7 +420,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    settingsText(copywriter.getText("AutomaticUpdate"))
+                    settingsText(copywriter.getText("automatic_update"))
 
                     Spacer(modifier = Modifier.weight(1f))
 
@@ -437,11 +437,11 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            ExpandView("Network") {
+            ExpandView("network") {
                 NetSettingsView()
             }
             Spacer(modifier = Modifier.height(10.dp))
-            ExpandView("Store") {
+            ExpandView("store") {
                 StoreSettingsView()
             }
 

@@ -54,7 +54,7 @@ import com.crosspaste.ui.base.edit
 
 @Composable
 fun ShortcutKeysView(currentPageViewContext: MutableState<PageViewContext>) {
-    WindowDecoration(currentPageViewContext, "Shortcut_Keys")
+    WindowDecoration(currentPageViewContext, "shortcut_keys")
     ShortcutKeysContentView()
 }
 
@@ -80,7 +80,7 @@ fun ShortcutKeysContentView() {
                         .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colors.background),
             ) {
-                ShortcutKeyRow("Paste")
+                ShortcutKeyRow("paste")
             }
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -92,11 +92,11 @@ fun ShortcutKeysContentView() {
                         .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colors.background),
             ) {
-                ShortcutKeyRow("Paste_Local_Last")
+                ShortcutKeyRow("paste_local_last")
 
                 Divider(modifier = Modifier.padding(start = 15.dp))
 
-                ShortcutKeyRow("Paste_Remote_Last")
+                ShortcutKeyRow("paste_remote_last")
             }
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -108,11 +108,11 @@ fun ShortcutKeysContentView() {
                         .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colors.background),
             ) {
-                ShortcutKeyRow("ShowMain")
+                ShortcutKeyRow("show_main")
 
                 Divider(modifier = Modifier.padding(start = 15.dp))
 
-                ShortcutKeyRow("ShowSearch")
+                ShortcutKeyRow("show_search")
             }
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -124,11 +124,11 @@ fun ShortcutKeysContentView() {
                         .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colors.background),
             ) {
-                ShortcutKeyRow("SwitchMonitorPasteboard")
+                ShortcutKeyRow("switch_monitor_pasteboard")
 
                 Divider(modifier = Modifier.padding(start = 35.dp))
 
-                ShortcutKeyRow("SwitchEncrypt")
+                ShortcutKeyRow("switch_encrypt")
             }
         }
     }
@@ -175,7 +175,7 @@ fun ShortcutKeyRow(name: String) {
                             PasteDialog(
                                 key = name,
                                 width = 300.dp,
-                                title = "Please_directly_enter_the_new_shortcut_key_you_wish_to_set",
+                                title = "please_directly_enter_the_new_shortcut_key_you_wish_to_set",
                             ) {
                                 DisposableEffect(Unit) {
                                     shortcutKeysListener.editShortcutKeysMode = true

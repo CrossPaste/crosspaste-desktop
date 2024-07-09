@@ -117,7 +117,7 @@ fun TokenView() {
                 ) {
                     Text(
                         modifier = Modifier.align(Alignment.Center),
-                        text = copywriter.getText("Token"),
+                        text = copywriter.getText("token"),
                         color = MaterialTheme.colors.onBackground,
                         fontSize = 25.sp,
                         fontWeight = FontWeight.Bold,

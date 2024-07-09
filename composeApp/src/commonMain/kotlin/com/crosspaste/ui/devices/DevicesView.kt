@@ -64,7 +64,7 @@ fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
             dialogService.pushDialog(
                 PasteDialog(
                     key = info.deviceId,
-                    title = "Do_you_trust_this_device?",
+                    title = "do_you_trust_this_device?",
                     width = 320.dp,
                 ) {
                     DeviceVerifyView(info)
@@ -83,13 +83,13 @@ fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             if (syncManager.realTimeSyncRuntimeInfos.isNotEmpty()) {
-                ExpandView("MyDevices", defaultExpand = true) {
+                ExpandView("my_devices", defaultExpand = true) {
                     MyDevicesView(currentPageViewContext)
                 }
                 Spacer(modifier = Modifier.height(10.dp))
             }
 
-            ExpandView("NearbyDevices", defaultExpand = true) {
+            ExpandView("nearby_devices", defaultExpand = true) {
                 NearbyDevicesView()
             }
         }
@@ -105,7 +105,7 @@ fun MyDevicesView(currentPageViewContext: MutableState<PageViewContext>) {
             dialogService.pushDialog(
                 PasteDialog(
                     key = syncRuntimeInfo.deviceId,
-                    title = "Input_Note_Name",
+                    title = "input_note_name",
                     width = 260.dp,
                 ) {
                     val syncRuntimeInfoDao = current.koin.get<SyncRuntimeInfoDao>()

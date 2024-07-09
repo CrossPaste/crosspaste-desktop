@@ -96,7 +96,7 @@ fun SingleImagePreviewView(imagePath: Path) {
                     verticalArrangement = Arrangement.Bottom,
                 ) {
                     Text(
-                        text = "${copywriter.getText("File_Name")}: ${imagePath.fileName}",
+                        text = "${copywriter.getText("file_name")}: ${imagePath.fileName}",
                         color = MaterialTheme.colors.onBackground,
                         style =
                             TextStyle(
@@ -109,7 +109,7 @@ fun SingleImagePreviewView(imagePath: Path) {
                         val painter = loadImageView.toPainterImage.toPainter()
                         Text(
                             text =
-                                "${copywriter.getText("Dimensions")}: " +
+                                "${copywriter.getText("dimensions")}: " +
                                     "${painter.intrinsicSize.width.toInt()} x ${painter.intrinsicSize.height.toInt()}",
                             color = MaterialTheme.colors.onBackground,
                             style =
@@ -127,7 +127,7 @@ fun SingleImagePreviewView(imagePath: Path) {
                             }
 
                         Text(
-                            text = "${copywriter.getText("Size")}: $imageSize",
+                            text = "${copywriter.getText("size")}: $imageSize",
                             color = MaterialTheme.colors.onBackground,
                             style =
                                 TextStyle(
@@ -137,7 +137,7 @@ fun SingleImagePreviewView(imagePath: Path) {
                         )
                     } else {
                         Text(
-                            text = copywriter.getText("Missing_File"),
+                            text = copywriter.getText("missing_file"),
                             color = MaterialTheme.colors.error,
                             style =
                                 TextStyle(

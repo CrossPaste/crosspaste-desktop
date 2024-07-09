@@ -96,7 +96,7 @@ fun CrossPasteGrantAccessibilityPermissions(checkAccessibilityPermissionsFun: ()
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = copywriter.getText("Permission"),
+                    text = copywriter.getText("permission"),
                     style =
                         TextStyle(
                             fontSize = 25.sp,
@@ -115,7 +115,7 @@ fun CrossPasteGrantAccessibilityPermissions(checkAccessibilityPermissionsFun: ()
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = copywriter.getText("Absolutely_no_personal_information_is_collected_or_stored"),
+                    text = copywriter.getText("absolutely_no_personal_information_is_collected_or_stored"),
                     style =
                         TextStyle(
                             fontSize = 15.sp,
@@ -143,7 +143,7 @@ fun CrossPasteGrantAccessibilityPermissions(checkAccessibilityPermissionsFun: ()
                 ) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = copywriter.getText("Accessibility"),
+                        text = copywriter.getText("accessibility"),
                         style =
                             TextStyle(
                                 fontSize = 20.sp,
@@ -155,7 +155,7 @@ fun CrossPasteGrantAccessibilityPermissions(checkAccessibilityPermissionsFun: ()
                     )
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
-                        text = copywriter.getText("CrossPaste_needs_your_permission_to_support_global_shortcuts"),
+                        text = copywriter.getText("crossPaste_needs_your_permission_to_support_global_shortcuts"),
                         style =
                             TextStyle(
                                 fontSize = 15.sp,
@@ -184,7 +184,7 @@ fun CrossPasteGrantAccessibilityPermissions(checkAccessibilityPermissionsFun: ()
                                 ),
                         ) {
                             Text(
-                                text = copywriter.getText("Grant_Permission"),
+                                text = copywriter.getText("grant_permission"),
                                 color = Color.White,
                                 style =
                                     TextStyle(
@@ -217,7 +217,7 @@ fun CrossPasteGrantAccessibilityPermissions(checkAccessibilityPermissionsFun: ()
                                     ),
                             ) {
                                 Text(
-                                    text = copywriter.getText("Restart_Application"),
+                                    text = copywriter.getText("restart_application"),
                                     color = Color.White,
                                     style =
                                         TextStyle(

@@ -70,7 +70,7 @@ fun NetSettingsView() {
         modifier =
             Modifier.wrapContentSize()
                 .padding(start = 32.dp, top = 5.dp, bottom = 5.dp),
-        text = copywriter.getText("Network_Info"),
+        text = copywriter.getText("network_info"),
         color = MaterialTheme.colors.onBackground,
         style = MaterialTheme.typography.h6,
         fontFamily = FontFamily.SansSerif,
@@ -100,7 +100,7 @@ fun NetSettingsView() {
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            settingsText(copywriter.getText("IP_Address"))
+            settingsText(copywriter.getText("ip_address"))
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -129,7 +129,7 @@ fun NetSettingsView() {
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            settingsText(copywriter.getText("Port"))
+            settingsText(copywriter.getText("port"))
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -145,7 +145,7 @@ fun NetSettingsView() {
         modifier =
             Modifier.wrapContentSize()
                 .padding(start = 32.dp, top = 5.dp, bottom = 5.dp),
-        text = copywriter.getText("Service_Discovery"),
+        text = copywriter.getText("service_discovery"),
         color = MaterialTheme.colors.onBackground,
         style = MaterialTheme.typography.h6,
         fontFamily = FontFamily.SansSerif,
@@ -175,7 +175,7 @@ fun NetSettingsView() {
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            settingsText(copywriter.getText("Allow_discovery_by_new_devices"))
+            settingsText(copywriter.getText("allow_discovery_by_new_devices"))
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -198,7 +198,7 @@ fun NetSettingsView() {
         modifier =
             Modifier.wrapContentSize()
                 .padding(start = 32.dp, top = 5.dp, bottom = 5.dp),
-        text = copywriter.getText("Blacklist"),
+        text = copywriter.getText("blacklist"),
         color = MaterialTheme.colors.onBackground,
         style = MaterialTheme.typography.h6,
         fontFamily = FontFamily.SansSerif,
@@ -226,7 +226,7 @@ fun NetSettingsView() {
                 }
 
             if (blacklist.isEmpty()) {
-                settingsText(copywriter.getText("Empty"))
+                settingsText(copywriter.getText("empty"))
             } else {
                 Column(modifier = Modifier.fillMaxSize()) {
                     for ((index, syncInfo) in blacklist.withIndex()) {

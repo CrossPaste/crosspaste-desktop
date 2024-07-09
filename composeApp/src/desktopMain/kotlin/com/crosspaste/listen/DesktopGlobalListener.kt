@@ -48,8 +48,8 @@ class DesktopGlobalListener(
                         Toast(
                             messageType = MessageType.Error,
                             message =
-                                "${copywriter.getText("Failed_to_register_keyboard_listener")}. " +
-                                    "${copywriter.getText("Error_Code")} ${e.code}",
+                                "${copywriter.getText("failed_to_register_keyboard_listener")}. " +
+                                    "${copywriter.getText("error_Code")} ${e.code}",
                         ),
                     )
                 }
