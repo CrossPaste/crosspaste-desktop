@@ -17,6 +17,14 @@ object DesktopDateUtils : DateUtils {
 
     val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
+    fun kotlinx.datetime.LocalDateTime.toJavaLocalDateTime(): LocalDateTime {
+        return LocalDateTime.of(this.year, this.monthNumber, this.dayOfMonth, this.hour, this.minute, this.second, this.nanosecond)
+    }
+
+    fun LocalDateTime.toKotlinLocalDateTime(): kotlinx.datetime.LocalDateTime {
+        return kotlinx.datetime.LocalDateTime(this.year, this.monthValue, this.dayOfMonth, this.hour, this.minute, this.second, this.nano)
+    }
+
     override fun getPrevDay(): RealmInstant {
         val calendar = Calendar.getInstance()
         calendar.add(Calendar.DAY_OF_MONTH, -1)
@@ -35,13 +43,15 @@ object DesktopDateUtils : DateUtils {
         return RealmInstant.from(epochSeconds, 0)
     }
 
-    override fun getDateText(date: LocalDateTime): String? {
+    override fun getDateText(date: kotlinx.datetime.LocalDateTime): String? {
         val now = LocalDateTime.now()
 
-        if (date.toLocalDate().isEqual(now.toLocalDate())) {
-            val hour = ChronoUnit.HOURS.between(date, now)
-            val minutes = ChronoUnit.MINUTES.between(date, now)
-            val seconds = ChronoUnit.SECONDS.between(date, now)
+        val javaDate = date.toJavaLocalDateTime()
+
+        if (javaDate.toLocalDate().isEqual(now.toLocalDate())) {
+            val hour = ChronoUnit.HOURS.between(javaDate, now)
+            val minutes = ChronoUnit.MINUTES.between(javaDate, now)
+            val seconds = ChronoUnit.SECONDS.between(javaDate, now)
 
             if (hour < 1 && minutes < 1 && seconds < 60) {
                 return "Just_now"
@@ -50,7 +60,7 @@ object DesktopDateUtils : DateUtils {
         }
 
         val yesterday = now.minusDays(1)
-        if (date.toLocalDate().isEqual(yesterday.toLocalDate())) {
+        if (javaDate.toLocalDate().isEqual(yesterday.toLocalDate())) {
             return "Yesterday"
         }
 
@@ -66,18 +76,18 @@ object DesktopDateUtils : DateUtils {
     private val memoizeFormat = Memoize.memoize(formatter)
 
     override fun getDateText(
-        date: LocalDateTime,
+        date: kotlinx.datetime.LocalDateTime,
         pattern: String,
-        locale: Locale,
+        locale: String,
     ): String {
-        return memoizeFormat(Pair(pattern, locale))(date)
+        return memoizeFormat(Pair(pattern, stringToLocale(locale)))(date.toJavaLocalDateTime())
     }
 
-    override fun getYYYYMMDD(date: LocalDateTime): String {
-        return dateFormatter.format(date)
+    override fun getYYYYMMDD(date: kotlinx.datetime.LocalDateTime): String {
+        return dateFormatter.format(date.toJavaLocalDateTime())
     }
 
-    override fun convertRealmInstantToLocalDateTime(realmInstant: RealmInstant): LocalDateTime {
+    override fun convertRealmInstantToLocalDateTime(realmInstant: RealmInstant): kotlinx.datetime.LocalDateTime {
         // 1. 从 RealmInstant 获取秒和纳秒
         val epochSeconds = realmInstant.epochSeconds
         val nanosecondsOfSecond = realmInstant.nanosecondsOfSecond
@@ -86,6 +96,16 @@ object DesktopDateUtils : DateUtils {
         val instant = Instant.ofEpochSecond(epochSeconds, nanosecondsOfSecond.toLong())
 
         // 3. 使用系统默认的时区将 Instant 转换为 LocalDateTime
-        return LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
+        return LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toKotlinLocalDateTime()
+    }
+
+    fun stringToLocale(localeString: String): Locale {
+        val parts = localeString.split('_')
+        return when (parts.size) {
+            1 -> Locale(parts[0])
+            2 -> Locale(parts[0], parts[1])
+            3 -> Locale(parts[0], parts[1], parts[2])
+            else -> throw IllegalArgumentException("Invalid locale string: $localeString")
+        }
     }
 }
