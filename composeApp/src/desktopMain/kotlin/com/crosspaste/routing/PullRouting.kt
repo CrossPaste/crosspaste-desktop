@@ -17,7 +17,7 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.utils.io.*
-import kotlin.io.path.exists
+import okio.FileSystem
 
 fun Routing.pullRouting() {
     val logger = KotlinLogging.logger {}
@@ -80,7 +80,7 @@ fun Routing.pullRouting() {
             }
 
         val iconPath = pathProvider.resolve("$source.png", AppFileType.ICON)
-        if (!iconPath.exists()) {
+        if (!FileSystem.SYSTEM.exists(iconPath)) {
             logger.error { "icon not found: $source" }
             failResponse(call, StandardErrorCode.NOT_FOUND_ICON.toErrorCode())
             return@get

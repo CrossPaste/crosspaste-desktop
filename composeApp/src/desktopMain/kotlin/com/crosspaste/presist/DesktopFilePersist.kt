@@ -2,7 +2,7 @@ package com.crosspaste.presist
 
 import com.crosspaste.path.DesktopPathProvider
 import com.crosspaste.path.PathProvider
-import java.nio.file.Path
+import okio.Path
 
 object DesktopFilePersist : FilePersist {
 

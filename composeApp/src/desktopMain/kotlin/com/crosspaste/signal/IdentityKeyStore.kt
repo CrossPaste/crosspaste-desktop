@@ -243,7 +243,7 @@ class LinuxIdentityKeyStoreFactory(
         val data = writeIdentityKeyPairWithRegistrationId(identityKeyPair, registrationId)
         filePersist.saveBytes(data)
         val permissions = PosixFilePermissions.fromString("rw-------")
-        Files.setPosixFilePermissions(filePersist.path, permissions)
+        Files.setPosixFilePermissions(filePersist.path.toNioPath(), permissions)
         return DesktopIdentityKeyStore(signalDao, identityKeyPair, registrationId)
     }
 }

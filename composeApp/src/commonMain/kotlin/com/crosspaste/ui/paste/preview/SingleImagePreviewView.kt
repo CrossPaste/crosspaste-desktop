@@ -38,8 +38,8 @@ import com.crosspaste.ui.base.image
 import com.crosspaste.ui.base.imageSlash
 import com.crosspaste.ui.base.loadImageData
 import com.crosspaste.utils.getFileUtils
-import java.nio.file.Path
-import kotlin.io.path.exists
+import okio.FileSystem
+import okio.Path
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -51,7 +51,7 @@ fun SingleImagePreviewView(imagePath: Path) {
 
     val fileUtils = getFileUtils()
 
-    val existFile by remember { mutableStateOf(imagePath.exists()) }
+    val existFile by remember { mutableStateOf(FileSystem.SYSTEM.exists(imagePath)) }
 
     Row(
         modifier =
@@ -73,17 +73,17 @@ fun SingleImagePreviewView(imagePath: Path) {
                     if (loadImageView.isSuccess()) {
                         ShowImageView(
                             painter = (loadImageView as LoadImageData).toPainterImage.toPainter(),
-                            contentDescription = "${imagePath.fileName}",
+                            contentDescription = imagePath.name,
                         )
                     } else if (loadImageView.isLoading()) {
                         ShowImageView(
                             painter = image(),
-                            contentDescription = "${imagePath.fileName}",
+                            contentDescription = imagePath.name,
                         )
                     } else {
                         ShowImageView(
                             painter = imageSlash(),
-                            contentDescription = "${imagePath.fileName}",
+                            contentDescription = imagePath.name,
                         )
                     }
                 }
@@ -96,7 +96,7 @@ fun SingleImagePreviewView(imagePath: Path) {
                     verticalArrangement = Arrangement.Bottom,
                 ) {
                     Text(
-                        text = "${copywriter.getText("file_name")}: ${imagePath.fileName}",
+                        text = "${copywriter.getText("file_name")}: ${imagePath.name}",
                         color = MaterialTheme.colors.onBackground,
                         style =
                             TextStyle(

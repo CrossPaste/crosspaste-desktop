@@ -4,7 +4,6 @@ import com.crosspaste.path.DesktopPathProvider
 import com.crosspaste.platform.currentPlatform
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlin.io.path.absolutePathString
 
 object DesktopAppRestartService : AppRestartService {
 
@@ -47,7 +46,7 @@ class MacAppRestartService : AppRestartService {
         val command =
             listOf(
                 "bash",
-                scriptPath.absolutePathString(),
+                scriptPath.toString(),
                 pid.toString(),
             )
         try {
@@ -83,7 +82,7 @@ class WindowsAppRestartService : AppRestartService {
             listOf(
                 "cmd",
                 "/c",
-                scriptPath.absolutePathString(),
+                scriptPath.toString(),
                 pid.toString(),
             )
         try {
@@ -115,7 +114,7 @@ class LinuxAppRestartService : AppRestartService {
         val command =
             listOf(
                 "bash",
-                scriptPath.absolutePathString(),
+                scriptPath.toString(),
                 pid.toString(),
             )
         try {

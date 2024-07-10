@@ -8,7 +8,6 @@ import com.crosspaste.utils.getSystemProperty
 import com.sun.jna.Memory
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.io.path.absolutePathString
 
 class MacAppWindowManager(
     lazyShortcutKeys: Lazy<ShortcutKeys>,
@@ -58,7 +57,7 @@ class MacAppWindowManager(
     ) {
         val appImagePath = pathProvider.resolve("$localizedName.png", AppFileType.ICON)
         if (!appImagePath.toFile().exists()) {
-            MacosApi.INSTANCE.saveAppIcon(bundleIdentifier, appImagePath.absolutePathString())
+            MacosApi.INSTANCE.saveAppIcon(bundleIdentifier, appImagePath.toString())
         }
     }
 

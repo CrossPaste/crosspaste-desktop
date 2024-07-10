@@ -170,7 +170,6 @@ import org.signal.libsignal.protocol.state.PreKeyStore
 import org.signal.libsignal.protocol.state.SessionStore
 import org.signal.libsignal.protocol.state.SignalProtocolStore
 import org.signal.libsignal.protocol.state.SignedPreKeyStore
-import kotlin.io.path.pathString
 import kotlin.system.exitProcess
 
 class CrossPaste {
@@ -181,7 +180,7 @@ class CrossPaste {
 
         private val crossPasteLogger =
             initLogger(
-                DesktopPathProvider.resolve("crosspaste.log", AppFileType.LOG).pathString,
+                DesktopPathProvider.resolve("crosspaste.log", AppFileType.LOG).toString(),
             )
 
         private val logger: KLogger = KotlinLogging.logger {}

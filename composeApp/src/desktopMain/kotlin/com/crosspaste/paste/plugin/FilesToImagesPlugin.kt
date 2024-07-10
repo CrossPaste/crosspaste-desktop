@@ -8,7 +8,7 @@ import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.path.DesktopPathProvider
 import com.crosspaste.utils.DesktopFileUtils
 import com.crosspaste.utils.FileExtUtils.canPreviewImage
-import io.ktor.util.*
+import com.crosspaste.utils.extension
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.toRealmList
 

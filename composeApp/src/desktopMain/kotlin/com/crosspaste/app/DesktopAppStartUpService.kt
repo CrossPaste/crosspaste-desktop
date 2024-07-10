@@ -9,7 +9,6 @@ import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import kotlin.io.path.absolutePathString
 
 class DesktopAppStartUpService(configManager: ConfigManager) : AppStartUpService {
 
@@ -84,7 +83,7 @@ class MacAppStartUpService(private val configManager: ConfigManager) : AppStartU
                             <key>ProgramArguments</key>
                             <array>
                                 <string>${
-                            pathProvider.pasteAppPath.resolve("Contents/MacOS/CrossPaste").absolutePathString()
+                            pathProvider.pasteAppPath.resolve("Contents/MacOS/CrossPaste")
                         }</string>
                                 <string>--minimize</string>
                             </array>
@@ -138,7 +137,7 @@ class WindowsAppStartUpService(private val configManager: ConfigManager) : AppSt
             while (reader.readLine().also { line = it } != null) {
                 if (line!!.contains("REG_SZ")) {
                     val registryPath = line!!.substringAfter("REG_SZ").trim()
-                    if (registryPath.equals(appExePath.absolutePathString(), ignoreCase = true)) {
+                    if (registryPath.equals(appExePath.toString(), ignoreCase = true)) {
                         logger.info { "$AppName is set to start on boot with the correct path." }
                         return true
                     } else {
@@ -159,7 +158,7 @@ class WindowsAppStartUpService(private val configManager: ConfigManager) : AppSt
             if (!isAutoStartUp()) {
                 val command = (
                     "reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v " +
-                        "\"$AppName\" /d \"${appExePath.absolutePathString()}\" /f"
+                        "\"$AppName\" /d \"$appExePath\" /f"
                 )
                 val process = Runtime.getRuntime().exec(command)
                 process.waitFor()
@@ -222,7 +221,7 @@ class LinuxAppStartUpService(private val configManager: ConfigManager) : AppStar
                         [Desktop Entry]
                         Type=Application
                         Name=CrossPaste
-                        Exec=${appExePath.absolutePathString()} --minimize
+                        Exec=$appExePath --minimize
                         Categories=Utility
                         Terminal=false
                         X-GNOME-Autostart-enabled=true

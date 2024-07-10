@@ -1,17 +1,11 @@
 package com.crosspaste.ui.base
 
-import androidx.compose.ui.res.loadImageBitmap
-import androidx.compose.ui.res.loadSvgPainter
-import androidx.compose.ui.res.loadXmlImageVector
 import androidx.compose.ui.unit.Density
 import com.crosspaste.utils.FileExtUtils
-import com.crosspaste.utils.getResourceUtils
-import org.xml.sax.InputSource
-import java.nio.file.Path
-import kotlin.io.path.exists
-import kotlin.io.path.extension
-import kotlin.io.path.inputStream
-import kotlin.io.path.pathString
+import com.crosspaste.utils.extension
+import com.crosspaste.utils.getPainterUtils
+import okio.FileSystem
+import okio.Path
 
 fun loadImageData(
     path: Path,
@@ -19,26 +13,23 @@ fun loadImageData(
     thumbnail: Boolean = false,
 ): LoadStateData {
     try {
+        val painterUtils = getPainterUtils()
         val toPainterImage =
-            when (path.pathString.substringAfterLast(".")) {
-                "svg" -> SvgResourceToPainter(path, path.inputStream().buffered().use { loadSvgPainter(it, density) })
-                "xml" ->
-                    XmlResourceToPainter(
-                        path.inputStream().buffered().use { loadXmlImageVector(InputSource(it), density) },
-                    )
-
+            when (path.toString().substringAfterLast(".")) {
+                "svg" -> SvgResourceToPainter(path, painterUtils.getSvgPainter(path, density))
+                "xml" -> XmlResourceToPainter(painterUtils.getXmlImageVector(path, density))
                 else -> {
                     if (thumbnail) {
-                        val thumbnailPath = getThumbnailPath(path)
-                        if (!thumbnailPath.exists()) {
-                            createThumbnail(path)
+                        val thumbnailPath = painterUtils.getThumbnailPath(path)
+                        if (!FileSystem.SYSTEM.exists(thumbnailPath)) {
+                            painterUtils.createThumbnail(path)
                         }
                         ImageBitmapToPainter(
                             path,
-                            thumbnailPath.inputStream().buffered().use { it.use(::loadImageBitmap) },
+                            painterUtils.getImageBitmap(thumbnailPath),
                         )
                     } else {
-                        ImageBitmapToPainter(path, path.inputStream().buffered().use { it.use(::loadImageBitmap) })
+                        ImageBitmapToPainter(path, painterUtils.getImageBitmap(path))
                     }
                 }
             }
@@ -59,10 +50,18 @@ fun loadIconData(
             FileExtUtils.getExtPreviewImage(extension)?.let {
                 return LoadImageData(extension, ImageBitmapToPainter(extension, it))
             } ?: run {
-                return LoadIconData("file", getResourceUtils().loadPainter("icon/paste/file.svg", density))
+                return LoadIconData(
+                    "file",
+                    getPainterUtils()
+                        .loadResourcePainter("icon/paste/file.svg", density),
+                )
             }
         } else {
-            return LoadIconData("dir", getResourceUtils().loadPainter("icon/paste/folder.svg", density))
+            return LoadIconData(
+                "dir",
+                getPainterUtils()
+                    .loadResourcePainter("icon/paste/folder.svg", density),
+            )
         }
     } catch (e: Exception) {
         return ErrorStateData(e)

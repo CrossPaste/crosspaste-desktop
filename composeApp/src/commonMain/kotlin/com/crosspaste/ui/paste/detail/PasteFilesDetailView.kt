@@ -48,7 +48,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlin.io.path.name
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -92,7 +91,7 @@ fun PasteFilesDetailView(
         }
 
         val filePath = pasteFiles.getFilePaths()[index]
-        val fileInfoTree = pasteFiles.getFileInfoTreeMap()[filePath.fileName.name]!!
+        val fileInfoTree = pasteFiles.getFileInfoTreeMap()[filePath.name]!!
         val isFile = fileInfoTree.isFile()
 
         var hover by remember { mutableStateOf(false) }
@@ -133,13 +132,13 @@ fun PasteFilesDetailView(
                                         Image(
                                             modifier = Modifier.size(150.dp),
                                             painter = loadStateData.toPainterImage.toPainter(),
-                                            contentDescription = "${filePath.fileName}",
+                                            contentDescription = filePath.name,
                                         )
                                     } else if (loadStateData is LoadIconData) {
                                         Icon(
                                             modifier = Modifier.size(150.dp),
                                             painter = loadStateData.toPainterImage.toPainter(),
-                                            contentDescription = "${filePath.fileName}",
+                                            contentDescription = filePath.name,
                                             tint = MaterialTheme.colors.onBackground,
                                         )
                                     }
@@ -220,7 +219,7 @@ fun PasteFilesDetailView(
                     pasteData = pasteData,
                     items =
                         listOf(
-                            PasteDetailInfoItem("file_name", "${filePath.fileName}"),
+                            PasteDetailInfoItem("file_name", filePath.name),
                             PasteDetailInfoItem("type", copywriter.getText("file")),
                             PasteDetailInfoItem("size", fileUtils.formatBytes(pasteItem.size)),
                             PasteDetailInfoItem("remote", copywriter.getText(if (pasteData.remote) "yes" else "no")),

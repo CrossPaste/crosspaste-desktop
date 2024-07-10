@@ -21,9 +21,9 @@ import io.ktor.http.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.nio.file.Path
+import okio.FileSystem
+import okio.Path
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.io.path.exists
 
 class PullIconTaskExecutor(
     private val pasteDao: PasteDao,
@@ -52,7 +52,7 @@ class PullIconTaskExecutor(
                         val appInstanceId = pasteData.appInstanceId
 
                         val iconPath = pathProvider.resolve("$source.png", AppFileType.ICON)
-                        if (!iconPath.exists()) {
+                        if (!FileSystem.SYSTEM.exists(iconPath)) {
                             syncManager.getSyncHandlers()[appInstanceId]?.let {
                                 val port = it.syncRuntimeInfo.port
                                 it.getConnectHostAddress()?.let { host ->

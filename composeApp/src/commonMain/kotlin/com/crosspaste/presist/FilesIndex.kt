@@ -1,6 +1,6 @@
 package com.crosspaste.presist
 
-import java.nio.file.Path
+import okio.Path
 
 class FilesIndexBuilder(private val chunkSize: Long) {
 
@@ -80,6 +80,6 @@ data class FileChunk(val offset: Long, val size: Long, val path: Path) {
     }
 
     override fun toString(): String {
-        return "FileChunk(path: ${path.fileName}, offset: $offset, size: $size)"
+        return "FileChunk(path: ${path.name}, offset: $offset, size: $size)"
     }
 }

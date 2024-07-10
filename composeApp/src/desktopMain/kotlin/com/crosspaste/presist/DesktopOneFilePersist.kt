@@ -6,8 +6,8 @@ import io.ktor.utils.io.*
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
+import okio.Path
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import kotlin.reflect.KClass
 
@@ -57,7 +57,7 @@ class DesktopOneFilePersist(override val path: Path) : OneFilePersist {
 
     override suspend fun writeChannel(channel: ByteReadChannel) {
         withContext(ioDispatcher) {
-            val fileChannel = Files.newByteChannel(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE)
+            val fileChannel = Files.newByteChannel(path.toNioPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE)
             val buffer = ByteArray(4096)
             while (!channel.isClosedForRead) {
                 val bytesRead = channel.readAvailable(buffer)

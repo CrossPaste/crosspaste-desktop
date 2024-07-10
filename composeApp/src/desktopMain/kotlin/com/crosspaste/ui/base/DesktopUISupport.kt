@@ -12,11 +12,12 @@ import com.crosspaste.platform.currentPlatform
 import com.crosspaste.ui.paste.preview.getPasteItem
 import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
+import okio.FileSystem
+import okio.Path
+import okio.Path.Companion.toPath
 import java.awt.Desktop
 import java.io.File
 import java.net.URI
-import java.nio.file.Path
-import kotlin.io.path.exists
 
 class DesktopUISupport(
     private val toastManager: ToastManager,
@@ -76,7 +77,7 @@ class DesktopUISupport(
     }
 
     override fun browseFile(filePath: Path) {
-        if (filePath.exists()) {
+        if (FileSystem.SYSTEM.exists(filePath)) {
             if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE_FILE_DIR)) {
                 val desktop = Desktop.getDesktop()
                 desktop.browseFileDirectory(filePath.toFile())
@@ -115,7 +116,7 @@ class DesktopUISupport(
     }
 
     override fun openImage(imagePath: Path) {
-        if (imagePath.exists()) {
+        if (FileSystem.SYSTEM.exists(imagePath)) {
             if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
                 Desktop.getDesktop().open(imagePath.toFile())
             } else {
@@ -163,13 +164,13 @@ class DesktopUISupport(
                 PasteType.FILE -> {
                     val relativePathList = (item as FilesPasteItem).relativePathList
                     if (relativePathList.size > 0) {
-                        browseFile(Path.of(relativePathList[0]))
+                        browseFile(relativePathList[0].toPath())
                     }
                 }
                 PasteType.IMAGE -> {
                     val relativePathList = (item as ImagesPasteItem).relativePathList
                     if (relativePathList.size > 0) {
-                        browseFile(Path.of(relativePathList[0]))
+                        browseFile(relativePathList[0].toPath())
                     }
                 }
             }

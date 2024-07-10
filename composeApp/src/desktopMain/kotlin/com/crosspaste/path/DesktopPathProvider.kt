@@ -6,8 +6,11 @@ import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getResourceUtils
 import com.crosspaste.utils.getSystemProperty
+import com.crosspaste.utils.noOptionParent
+import okio.Path
+import okio.Path.Companion.toOkioPath
+import okio.Path.Companion.toPath
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
 
 object DesktopPathProvider : PathProvider {
@@ -68,31 +71,31 @@ class DevelopmentPathProvider : PathProvider {
 
     override val fileUtils: FileUtils = getFileUtils()
 
-    override val userHome: Path = Paths.get(systemProperty.get("user.home"))
+    override val userHome: Path = Paths.get(systemProperty.get("user.home")).toOkioPath()
 
     private fun getAppPath(): Path {
         development.getProperty("pasteAppPath")?.let {
-            val path = Paths.get(it)
+            val path = it.toPath(normalize = true)
             if (path.isAbsolute) {
                 return path
             } else {
-                return Paths.get(composeAppDir).resolve(it)
+                return composeAppDir.toPath().resolve(it)
             }
         } ?: run {
-            return Paths.get(composeAppDir)
+            return composeAppDir.toPath()
         }
     }
 
     private fun getUserPath(): Path {
         development.getProperty("pasteUserPath")?.let {
-            val path = Paths.get(it)
+            val path = it.toPath(normalize = true)
             if (path.isAbsolute) {
                 return path
             } else {
-                return Paths.get(composeAppDir).resolve(it)
+                return composeAppDir.toPath().resolve(it)
             }
         } ?: run {
-            return Paths.get(composeAppDir).resolve(".user")
+            return composeAppDir.toPath()
         }
     }
 }
@@ -101,9 +104,9 @@ class WindowsPathProvider : PathProvider {
 
     private val systemProperty = getSystemProperty()
 
-    override val userHome: Path = Paths.get(systemProperty.get("user.home"))
+    override val userHome: Path = Paths.get(systemProperty.get("user.home")).toOkioPath()
 
-    override val pasteAppPath: Path = getAppJarPath().parent
+    override val pasteAppPath: Path = getAppJarPath().noOptionParent.normalized()
 
     override val pasteAppJarPath: Path = getAppJarPath()
 
@@ -113,10 +116,10 @@ class WindowsPathProvider : PathProvider {
 
     private fun getAppJarPath(): Path {
         systemProperty.getOption("compose.application.resources.dir")?.let {
-            return Paths.get(it)
+            return it.toPath()
         }
         systemProperty.getOption("skiko.library.path")?.let {
-            return Paths.get(it)
+            return it.toPath()
         }
         throw IllegalStateException("Could not find app path")
     }
@@ -136,9 +139,9 @@ class MacosPathProvider : PathProvider {
      */
     private val systemProperty = getSystemProperty()
 
-    override val userHome: Path = Paths.get(systemProperty.get("user.home"))
+    override val userHome: Path = Paths.get(systemProperty.get("user.home")).toOkioPath()
 
-    override val pasteAppPath: Path = getAppJarPath().parent.parent
+    override val pasteAppPath: Path = getAppJarPath().noOptionParent.noOptionParent.normalized()
 
     override val pasteAppJarPath: Path = getAppJarPath()
 
@@ -153,9 +156,9 @@ class MacosPathProvider : PathProvider {
             userHome.resolve("Library")
                 .resolve("Application Support")
                 .resolve("CrossPaste")
-
-        if (Files.notExists(appSupportPath)) {
-            Files.createDirectories(appSupportPath)
+        val appSupportNioPath = appSupportPath.toNioPath()
+        if (Files.notExists(appSupportNioPath)) {
+            Files.createDirectories(appSupportNioPath)
         }
 
         return appSupportPath
@@ -167,9 +170,10 @@ class MacosPathProvider : PathProvider {
                 .resolve("Library")
                 .resolve("Logs")
                 .resolve("CrossPaste")
+        val appLogsNioPath = appLogsPath.toNioPath()
 
-        if (Files.notExists(appLogsPath)) {
-            Files.createDirectories(appLogsPath)
+        if (Files.notExists(appLogsNioPath)) {
+            Files.createDirectories(appLogsNioPath)
         }
 
         return appLogsPath
@@ -177,10 +181,10 @@ class MacosPathProvider : PathProvider {
 
     private fun getAppJarPath(): Path {
         systemProperty.getOption("compose.application.resources.dir")?.let {
-            return Paths.get(it)
+            return it.toPath()
         }
         systemProperty.getOption("skiko.library.path")?.let {
-            return Paths.get(it)
+            return it.toPath()
         }
         throw IllegalStateException("Could not find app path")
     }
@@ -190,9 +194,9 @@ class LinuxPathProvider : PathProvider {
 
     private val systemProperty = getSystemProperty()
 
-    override val userHome: Path = Paths.get(systemProperty.get("user.home"))
+    override val userHome: Path = Paths.get(systemProperty.get("user.home")).toOkioPath()
 
-    override val pasteAppPath: Path = getAppJarPath().parent.parent
+    override val pasteAppPath: Path = getAppJarPath().noOptionParent.noOptionParent.normalized()
 
     override val pasteAppJarPath: Path = getAppJarPath()
 
@@ -202,10 +206,10 @@ class LinuxPathProvider : PathProvider {
 
     private fun getAppJarPath(): Path {
         systemProperty.getOption("compose.application.resources.dir")?.let {
-            return Paths.get(it)
+            return it.toPath()
         }
         systemProperty.getOption("skiko.library.path")?.let {
-            return Paths.get(it)
+            return it.toPath()
         }
         throw IllegalStateException("Could not find app path")
     }

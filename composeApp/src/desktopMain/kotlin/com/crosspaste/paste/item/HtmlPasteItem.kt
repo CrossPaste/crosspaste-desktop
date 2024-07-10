@@ -16,11 +16,11 @@ import io.realm.kotlin.types.annotations.PrimaryKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import okio.Path
 import org.jsoup.Jsoup
 import org.mongodb.kbson.BsonObjectId
 import org.mongodb.kbson.ObjectId
 import java.awt.datatransfer.DataFlavor
-import java.nio.file.Path
 
 @Serializable
 @SerialName("html")

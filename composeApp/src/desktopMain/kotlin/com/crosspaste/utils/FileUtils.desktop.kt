@@ -11,15 +11,15 @@ import com.google.common.hash.Hashing
 import com.google.common.io.Files
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.utils.io.*
+import okio.FileSystem
+import okio.Path
+import okio.Path.Companion.toOkioPath
 import java.io.File
 import java.io.RandomAccessFile
-import java.nio.file.Path
 import java.nio.file.Paths
 import java.text.DecimalFormat
 import java.time.LocalDateTime
 import java.util.UUID
-import kotlin.io.path.exists
-import kotlin.io.path.isDirectory
 import kotlin.io.path.pathString
 
 actual fun getFileUtils(): FileUtils {
@@ -34,7 +34,9 @@ object DesktopFileUtils : FileUtils {
 
     override val separator: String = File.separator
 
-    override val tempDirectory: Path = java.nio.file.Files.createTempDirectory("crosspaste")
+    override val tempDirectory: Path =
+        java.nio.file.Files.createTempDirectory("crosspaste")
+            .toOkioPath()
 
     private val units = arrayOf("B", "KB", "MB", "GB", "TB")
     private val decimalFormat = DecimalFormat("###0.#")
@@ -87,7 +89,7 @@ object DesktopFileUtils : FileUtils {
     }
 
     override fun getFileInfoTree(path: Path): FileInfoTree {
-        return if (path.isDirectory()) {
+        return if (path.isDirectory) {
             getDirFileInfoTree(path)
         } else {
             getSingleFileInfoTree(path)
@@ -98,7 +100,7 @@ object DesktopFileUtils : FileUtils {
         val builder = FileInfoTreeBuilder()
         path.toFile().listFiles()?.let {
             for (file in it.sortedBy { file -> file.name }) {
-                val fileTree = getFileInfoTree(file.toPath())
+                val fileTree = getFileInfoTree(file.toOkioPath())
                 builder.addFileInfoTree(file.name, fileTree)
             }
         }
@@ -126,7 +128,7 @@ object DesktopFileUtils : FileUtils {
         src: Path,
         dest: Path,
     ): Boolean {
-        return if (src.isDirectory()) {
+        return if (src.isDirectory) {
             copyDir(src, dest)
         } else {
             copyFile(src, dest)
@@ -153,7 +155,7 @@ object DesktopFileUtils : FileUtils {
         val newDirFile = dest.toFile()
         return if (newDirFile.mkdirs()) {
             src.toFile().listFiles()?.forEach {
-                if (!copyPath(it.toPath(), dest.resolve(it.name))) {
+                if (!copyPath(it.toOkioPath(), dest.resolve(it.name))) {
                     return false
                 }
             }
@@ -207,10 +209,10 @@ object DesktopFileUtils : FileUtils {
     ): Path? {
         try {
             val path = tempDirectory.resolve(name)
-            if (path.exists()) {
+            if (FileSystem.SYSTEM.exists(path)) {
                 path.toFile().delete()
             }
-            java.nio.file.Files.createSymbolicLink(tempDirectory.resolve(name), src)
+            java.nio.file.Files.createSymbolicLink(tempDirectory.resolve(name).toNioPath(), src.toNioPath())
             return path
         } catch (e: Exception) {
             return null

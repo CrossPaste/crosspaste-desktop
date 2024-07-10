@@ -9,7 +9,6 @@ import com.google.common.cache.LoadingCache
 import com.sun.jna.platform.win32.WinDef.HWND
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.io.path.absolutePathString
 
 class WinAppWindowManager(
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
@@ -50,7 +49,7 @@ class WinAppWindowManager(
     ) {
         val iconPath = pathProvider.resolve("$fileDescription.png", AppFileType.ICON)
         if (!iconPath.toFile().exists()) {
-            User32.extractAndSaveIcon(exeFilePath, iconPath.absolutePathString())
+            User32.extractAndSaveIcon(exeFilePath, iconPath.toString())
         }
     }
 

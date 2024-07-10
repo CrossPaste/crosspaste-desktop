@@ -1,7 +1,7 @@
 package com.crosspaste.paste.item
 
+import okio.Path
 import org.jsoup.Jsoup
-import java.nio.file.Path
 
 interface PasteHtml : PasteInit {
 

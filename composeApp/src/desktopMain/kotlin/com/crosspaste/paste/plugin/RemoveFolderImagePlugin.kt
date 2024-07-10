@@ -4,8 +4,8 @@ import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.paste.PastePlugin
 import com.crosspaste.paste.item.PasteFiles
+import com.crosspaste.utils.isDirectory
 import io.realm.kotlin.MutableRealm
-import kotlin.io.path.isDirectory
 
 object RemoveFolderImagePlugin : PastePlugin {
     override fun pluginProcess(
@@ -17,7 +17,7 @@ object RemoveFolderImagePlugin : PastePlugin {
             if (files.getFilePaths().size == 1) {
                 pasteItems.firstOrNull { it.getPasteType() == PasteType.FILE }?.let {
                     val pasteFiles = it as PasteFiles
-                    if (it.getFilePaths().size == 1 && pasteFiles.getFilePaths()[0].isDirectory()) {
+                    if (it.getFilePaths().size == 1 && pasteFiles.getFilePaths()[0].isDirectory) {
                         imageItem.clear(realm, clearResource = true)
                         return pasteItems.filter { item -> item != imageItem }
                     }

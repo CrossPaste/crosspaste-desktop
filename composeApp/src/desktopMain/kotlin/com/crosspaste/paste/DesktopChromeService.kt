@@ -16,14 +16,12 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
+import okio.Path
 import org.openqa.selenium.Dimension
 import org.openqa.selenium.OutputType
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeDriverService
 import org.openqa.selenium.chrome.ChromeOptions
-import java.io.File
-import java.nio.file.Path
-import kotlin.io.path.absolutePathString
 import kotlin.math.max
 
 class DesktopChromeService(private val appWindowManager: AppWindowManager) : ChromeService {
@@ -66,20 +64,16 @@ class DesktopChromeService(private val appWindowManager: AppWindowManager) : Chr
 
     private val initChromeDriver: (String, String, String, Path) -> Unit = { chromeSuffix, driverName, headlessName, resourcesPath ->
         val chromeDriverFile =
-            File(
-                resourcesPath
-                    .resolve("$CHROME_DRIVER-$chromeSuffix")
-                    .resolve(driverName)
-                    .absolutePathString(),
-            )
+            resourcesPath
+                .resolve("$CHROME_DRIVER-$chromeSuffix")
+                .resolve(driverName)
+                .toFile()
 
         val chromeHeadlessShellFile =
-            File(
-                resourcesPath
-                    .resolve("$CHROME_HEADLESS_SHELL-$chromeSuffix")
-                    .resolve(headlessName)
-                    .absolutePathString(),
-            )
+            resourcesPath
+                .resolve("$CHROME_HEADLESS_SHELL-$chromeSuffix")
+                .resolve(headlessName)
+                .toFile()
 
         if (!chromeDriverFile.canExecute()) {
             chromeDriverFile.setExecutable(true)
@@ -131,24 +125,60 @@ class DesktopChromeService(private val appWindowManager: AppWindowManager) : Chr
         if (currentPlatform.isMacos()) {
             if (currentPlatform.arch.contains("x86_64")) {
                 val macX64ResourcesPath =
-                    if (AppEnv.CURRENT.isDevelopment()) resourcesPath.resolve("macos-x64") else resourcesPath
-                initChromeDriver.invoke("mac-x64", "chromedriver", "chrome-headless-shell", macX64ResourcesPath)
+                    if (AppEnv.CURRENT.isDevelopment()) {
+                        resourcesPath.resolve("macos-x64")
+                    } else {
+                        resourcesPath
+                    }
+                initChromeDriver.invoke(
+                    "mac-x64",
+                    "chromedriver",
+                    "chrome-headless-shell",
+                    macX64ResourcesPath,
+                )
             } else {
                 val macArm64ResourcesPath =
-                    if (AppEnv.CURRENT.isDevelopment()) resourcesPath.resolve("macos-arm64") else resourcesPath
-                initChromeDriver.invoke("mac-arm64", "chromedriver", "chrome-headless-shell", macArm64ResourcesPath)
+                    if (AppEnv.CURRENT.isDevelopment()) {
+                        resourcesPath.resolve("macos-arm64")
+                    } else {
+                        resourcesPath
+                    }
+                initChromeDriver.invoke(
+                    "mac-arm64",
+                    "chromedriver",
+                    "chrome-headless-shell",
+                    macArm64ResourcesPath,
+                )
             }
         } else if (currentPlatform.isWindows()) {
             if (currentPlatform.is64bit()) {
                 val win64ResourcesPath =
-                    if (AppEnv.CURRENT.isDevelopment()) resourcesPath.resolve("windows-x64") else resourcesPath
-                initChromeDriver.invoke("win64", "chromedriver.exe", "chrome-headless-shell.exe", win64ResourcesPath)
+                    if (AppEnv.CURRENT.isDevelopment()) {
+                        resourcesPath.resolve("windows-x64")
+                    } else {
+                        resourcesPath
+                    }
+                initChromeDriver.invoke(
+                    "win64",
+                    "chromedriver.exe",
+                    "chrome-headless-shell.exe",
+                    win64ResourcesPath,
+                )
             }
         } else if (currentPlatform.isLinux()) {
             if (currentPlatform.is64bit()) {
                 val linux64ResourcesPath =
-                    if (AppEnv.CURRENT.isDevelopment()) resourcesPath.resolve("linux-x64") else resourcesPath
-                initChromeDriver.invoke("linux64", "chromedriver", "chrome-headless-shell", linux64ResourcesPath)
+                    if (AppEnv.CURRENT.isDevelopment()) {
+                        resourcesPath.resolve("linux-x64")
+                    } else {
+                        resourcesPath
+                    }
+                initChromeDriver.invoke(
+                    "linux64",
+                    "chromedriver",
+                    "chrome-headless-shell",
+                    linux64ResourcesPath,
+                )
             }
         }
 

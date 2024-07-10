@@ -19,6 +19,7 @@ kotlinx-serialization = "1.7.1"
 ktor = "2.3.12"
 logback = "1.5.6"
 mockk = "1.13.11"
+okio = "3.9.0"
 realm = "2.0.0"
 selenium = "4.22.0"
 signal = "0.52.0"
@@ -59,6 +60,7 @@ ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor"
 ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 material-desktop = { module = "org.jetbrains.compose.material:material-desktop", version.ref = "compose-plugin" }
+okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 realm-kotlin-base = { module = "io.realm.kotlin:library-base", version.ref = "realm" }
 selenium-chrome-driver = { module = "org.seleniumhq.selenium:selenium-chrome-driver", version.ref = "selenium" }
 selenium-devtools = { module = "org.seleniumhq.selenium:selenium-devtools-v125", version.ref = "selenium" }

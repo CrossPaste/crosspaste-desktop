@@ -21,12 +21,12 @@ import io.realm.kotlin.types.annotations.PrimaryKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import okio.Path
 import org.mongodb.kbson.BsonObjectId
 import org.mongodb.kbson.ObjectId
 import java.awt.datatransfer.DataFlavor
 import java.io.ByteArrayInputStream
 import java.io.File
-import java.nio.file.Path
 import java.nio.file.Paths
 
 @Serializable
@@ -84,7 +84,7 @@ class FilesPasteItem : RealmObject, PasteItem, PasteFiles {
     override fun getPasteFiles(): List<PasteFile> {
         val fileInfoTreeMap = getFileInfoTreeMap()
         return getFilePaths().flatMap { path ->
-            val fileInfoTree = fileInfoTreeMap[path.fileName.toString()]!!
+            val fileInfoTree = fileInfoTreeMap[path.name]!!
             fileInfoTree.getPasteFileList(path)
         }
     }

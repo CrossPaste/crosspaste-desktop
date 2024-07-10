@@ -2,7 +2,7 @@ package com.crosspaste.paste.item
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.presist.FileInfoTree
-import java.nio.file.Path
+import okio.Path
 
 interface PasteFiles {
 

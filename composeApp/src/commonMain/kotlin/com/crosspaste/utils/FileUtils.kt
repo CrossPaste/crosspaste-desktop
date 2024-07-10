@@ -4,7 +4,7 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.FilesChunk
 import io.ktor.utils.io.*
-import java.nio.file.Path
+import okio.Path
 import java.time.LocalDateTime
 
 expect fun getFileUtils(): FileUtils

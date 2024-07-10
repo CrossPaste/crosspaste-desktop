@@ -22,7 +22,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.Realm
 import io.realm.kotlin.RealmConfiguration
 import io.realm.kotlin.types.TypedRealmObject
-import kotlin.io.path.pathString
 import kotlin.reflect.KClass
 
 class RealmManagerImpl private constructor(private val config: RealmConfiguration) : RealmManager {
@@ -64,7 +63,7 @@ class RealmManagerImpl private constructor(private val config: RealmConfiguratio
             val path = pathProvider.resolve(appFileType = AppFileType.DATA)
             val builder =
                 RealmConfiguration.Builder(DTO_TYPES + SIGNAL_TYPES + PASTE_TYPES + TASK_TYPES)
-                    .directory(path.pathString)
+                    .directory(path.toString())
                     .name("crosspaste.realm")
                     .schemaVersion(1)
 

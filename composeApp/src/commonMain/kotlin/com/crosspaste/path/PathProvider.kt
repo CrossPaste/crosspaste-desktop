@@ -8,8 +8,7 @@ import com.crosspaste.presist.DirFileInfoTree
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.FilesIndexBuilder
 import com.crosspaste.utils.FileUtils
-import java.nio.file.Path
-import kotlin.io.path.name
+import okio.Path
 
 interface PathProvider {
     fun resolve(
@@ -48,7 +47,7 @@ interface PathProvider {
         val newPath = basePath.resolve(path)
         if (autoCreate) {
             if (isFile) {
-                autoCreateDir(newPath.parent)
+                newPath.parent?.let { autoCreateDir(it) }
             } else {
                 autoCreateDir(newPath)
             }
@@ -76,8 +75,8 @@ interface PathProvider {
         val fileInfoTreeMap = pasteFiles.getFileInfoTreeMap()
 
         for (filePath in pasteFiles.getFilePaths()) {
-            fileInfoTreeMap[filePath.fileName.name]?.let {
-                resolveFileInfoTree(pasteIdPath, filePath.fileName.name, it, isPull, filesIndexBuilder)
+            fileInfoTreeMap[filePath.name]?.let {
+                resolveFileInfoTree(pasteIdPath, filePath.name, it, isPull, filesIndexBuilder)
             }
         }
     }
@@ -106,7 +105,7 @@ interface PathProvider {
                 autoCreateDir(dirPath)
             }
             val dirFileInfoTree = fileInfoTree as DirFileInfoTree
-            dirFileInfoTree.getTree().forEach { (subName, subFileInfoTree) ->
+            dirFileInfoTree.iterator().forEach { (subName, subFileInfoTree) ->
                 resolveFileInfoTree(dirPath, subName, subFileInfoTree, isPull, filesIndexBuilder)
             }
         }

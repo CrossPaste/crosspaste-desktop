@@ -23,6 +23,7 @@ import io.realm.kotlin.types.annotations.PrimaryKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import okio.Path
 import org.mongodb.kbson.BsonObjectId
 import org.mongodb.kbson.ObjectId
 import java.awt.datatransfer.DataFlavor
@@ -30,7 +31,6 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.nio.charset.StandardCharsets
-import java.nio.file.Path
 import java.nio.file.Paths
 import javax.imageio.ImageIO
 
@@ -91,7 +91,7 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
     override fun getPasteFiles(): List<PasteFile> {
         val fileTreeMap = getFileInfoTreeMap()
         return getFilePaths().flatMap { path ->
-            val fileTree = fileTreeMap[path.fileName.toString()]!!
+            val fileTree = fileTreeMap[path.name]!!
             fileTree.getPasteFileList(path)
         }
     }
