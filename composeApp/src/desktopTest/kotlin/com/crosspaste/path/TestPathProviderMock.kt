@@ -3,8 +3,9 @@ package com.crosspaste.path
 import io.mockk.every
 import io.mockk.mockkObject
 import io.mockk.unmockkObject
+import okio.Path
+import okio.Path.Companion.toOkioPath
 import java.nio.file.Files
-import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -27,10 +28,10 @@ class TestPathProviderMock {
                 mockkObject(DesktopPathProvider)
 
                 // Create temporary directories
-                val tempPasteAppPath = Files.createTempDirectory("tempPasteAppPath")
-                val tempUserHome = Files.createTempDirectory("tempUserHome")
-                val tempPasteAppJarPath = Files.createTempDirectory("tempPasteAppJarPath")
-                val tempUserPath = Files.createTempDirectory("tempUserPath")
+                val tempPasteAppPath = Files.createTempDirectory("tempPasteAppPath").toOkioPath()
+                val tempUserHome = Files.createTempDirectory("tempUserHome").toOkioPath()
+                val tempPasteAppJarPath = Files.createTempDirectory("tempPasteAppJarPath").toOkioPath()
+                val tempUserPath = Files.createTempDirectory("tempUserPath").toOkioPath()
 
                 tempPasteAppPath.toFile().deleteOnExit()
                 tempUserHome.toFile().deleteOnExit()
