@@ -4,11 +4,11 @@ import com.crosspaste.exception.ErrorCodeSupplier
 import com.crosspaste.exception.PasteException
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.exception.standardErrorCodeMap
+import com.crosspaste.utils.getExceptionUtils
 import io.github.oshai.kotlinlogging.KLogger
 import io.ktor.client.call.*
 import io.ktor.client.statement.*
 import kotlinx.serialization.Serializable
-import java.net.ConnectException
 
 interface ClientApiResult
 
@@ -63,7 +63,8 @@ suspend inline fun <T> request(
         return SuccessResult(transformData(response))
     } catch (e: Exception) {
         logger.error(e) { "request error" }
-        return if (e is ConnectException) {
+        val exceptionUtils = getExceptionUtils()
+        return if (exceptionUtils.isConnectionRefused(e)) {
             ConnectionRefused
         } else {
             UnknownError
