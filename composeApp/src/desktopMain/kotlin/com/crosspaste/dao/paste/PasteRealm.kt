@@ -26,8 +26,8 @@ import io.realm.kotlin.query.sum
 import io.realm.kotlin.types.RealmAny
 import io.realm.kotlin.types.RealmInstant
 import io.realm.kotlin.types.RealmObject
+import okio.FileSystem
 import org.mongodb.kbson.ObjectId
-import kotlin.io.path.exists
 
 class PasteRealm(
     private val realm: Realm,
@@ -333,13 +333,14 @@ class PasteRealm(
         val existFile = pasteData.existFileResource()
         val existIconFile: Boolean? =
             pasteData.source?.let {
-                pathProvider.resolve("$it.png", AppFileType.ICON).exists()
+                FileSystem.SYSTEM.exists(pathProvider.resolve("$it.png", AppFileType.ICON))
             }
 
         realm.write(block = {
-            query(PasteData::class, "id == $0 AND pasteState != $1", pasteData.id, PasteState.DELETED).first().find()?.let {
-                return@write null
-            }
+            query(PasteData::class, "id == $0 AND pasteState != $1", pasteData.id, PasteState.DELETED)
+                .first().find()?.let {
+                    return@write null
+                }
             if (!existFile) {
                 pasteData.updatePasteState(PasteState.LOADED)
                 copyToRealm(pasteData)

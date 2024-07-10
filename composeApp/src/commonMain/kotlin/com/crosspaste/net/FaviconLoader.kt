@@ -1,6 +1,6 @@
 package com.crosspaste.net
 
-import java.nio.file.Path
+import okio.Path
 
 interface FaviconLoader {
 

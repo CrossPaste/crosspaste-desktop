@@ -1,6 +1,6 @@
 package com.crosspaste.paste.item
 
-import java.nio.file.Path
+import okio.Path
 
 interface PasteFile {
 

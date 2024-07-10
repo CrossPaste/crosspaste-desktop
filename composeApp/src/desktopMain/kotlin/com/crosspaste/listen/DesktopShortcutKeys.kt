@@ -13,12 +13,12 @@ import com.crosspaste.presist.DesktopOneFilePersist
 import com.crosspaste.utils.getResourceUtils
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
+import okio.FileSystem
 import java.io.FileOutputStream
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets
 import java.util.Properties
-import kotlin.io.path.exists
 
 class DesktopShortcutKeys(
     private val pathProvider: PathProvider,
@@ -50,7 +50,7 @@ class DesktopShortcutKeys(
             val shortcutKeysPropertiesPath =
                 pathProvider
                     .resolve("shortcut-keys.properties", AppFileType.USER)
-            if (!shortcutKeysPropertiesPath.exists()) {
+            if (!FileSystem.SYSTEM.exists(shortcutKeysPropertiesPath)) {
                 val filePersist = DesktopOneFilePersist(shortcutKeysPropertiesPath)
                 val platform = currentPlatform()
                 val bytes =

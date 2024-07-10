@@ -59,7 +59,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.nio.file.Path
+import okio.Path
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -162,20 +162,20 @@ fun PasteImagesDetailView(
                                         Image(
                                             modifier = imageShowMode.modifier,
                                             painter = painter,
-                                            contentDescription = "${imagePath.fileName}",
+                                            contentDescription = imagePath.name,
                                             contentScale = imageShowMode.contentScale,
                                         )
                                     } else if (loadImageView.isLoading()) {
                                         Icon(
                                             painter = image(),
-                                            contentDescription = "${imagePath.fileName}",
+                                            contentDescription = imagePath.name,
                                             modifier = Modifier.fillMaxSize(),
                                             tint = MaterialTheme.colors.onBackground,
                                         )
                                     } else {
                                         Icon(
                                             painter = imageSlash(),
-                                            contentDescription = "${imagePath.fileName}",
+                                            contentDescription = imagePath.name,
                                             modifier = Modifier.fillMaxSize(),
                                             tint = MaterialTheme.colors.onBackground,
                                         )
@@ -300,7 +300,7 @@ fun detailInfoItems(
 ): List<PasteDetailInfoItem> {
     val details =
         mutableListOf(
-            PasteDetailInfoItem("file_Name", imagePath.fileName.toString()),
+            PasteDetailInfoItem("file_Name", imagePath.name),
             PasteDetailInfoItem("type", copywriter.getText("image")),
             PasteDetailInfoItem("size", fileUtils.formatBytes(pasteData.size)),
             PasteDetailInfoItem("remote", copywriter.getText(if (pasteData.remote) "yes" else "no")),

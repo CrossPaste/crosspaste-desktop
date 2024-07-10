@@ -8,7 +8,6 @@ import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.paste.item.PasteUrl
 import com.crosspaste.ui.paste.preview.getPasteItem
-import kotlin.io.path.name
 
 fun getPasteTitle(pasteData: PasteData): String? {
     return if (pasteData.pasteState == PasteState.LOADING) {
@@ -56,13 +55,13 @@ private fun getHtml(pasteData: PasteData): String? {
 private fun getImages(pasteData: PasteData): String? {
     return pasteData.getPasteItem()?.let {
         val pasteFiles = it as PasteFiles
-        pasteFiles.getFilePaths().joinToString(", ") { path -> path.fileName.name }
+        pasteFiles.getFilePaths().joinToString(", ") { path -> path.name }
     }
 }
 
 private fun getFiles(pasteData: PasteData): String? {
     return pasteData.getPasteItem()?.let {
         val pasteFiles = it as PasteFiles
-        pasteFiles.getFilePaths().joinToString(", ") { path -> path.fileName.name }
+        pasteFiles.getFilePaths().joinToString(", ") { path -> path.name }
     }
 }

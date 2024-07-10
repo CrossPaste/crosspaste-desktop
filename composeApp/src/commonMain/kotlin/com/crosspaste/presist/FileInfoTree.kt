@@ -6,8 +6,7 @@ import com.crosspaste.utils.getCodecsUtils
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import java.nio.file.Path
-import java.util.TreeMap
+import okio.Path
 
 interface FileInfoTree {
 
@@ -30,10 +29,12 @@ class DirFileInfoTree(
     override val md5: String,
 ) : FileInfoTree {
     @Transient
-    private val sortTree: TreeMap<String, FileInfoTree> = TreeMap(tree)
+    private val sortTree: List<Pair<String, FileInfoTree>> =
+        tree.entries.map { Pair(it.key, it.value) }
+            .sortedBy { it.first }
 
-    fun getTree(): Map<String, FileInfoTree> {
-        return sortTree
+    fun iterator(): Iterator<Pair<String, FileInfoTree>> {
+        return sortTree.iterator()
     }
 
     override fun isFile(): Boolean {
@@ -93,7 +94,7 @@ class FileInfoTreeBuilder {
     fun build(path: Path): FileInfoTree {
         val md5 =
             if (md5List.isEmpty()) {
-                codecsUtils.md5ByString(path.fileName.toString())
+                codecsUtils.md5ByString(path.name)
             } else {
                 codecsUtils.md5ByArray(md5List.toTypedArray())
             }

@@ -17,10 +17,10 @@ import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.ext.toRealmList
 import kotlinx.serialization.encodeToString
+import okio.Path.Companion.toOkioPath
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import java.io.File
-import kotlin.io.path.absolutePathString
 
 class FilesItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
 
@@ -64,9 +64,12 @@ class FilesItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
             val relativePathList = mutableListOf<String>()
 
             for (file in files) {
-                val path = file.toPath()
+                val path = file.toOkioPath(normalize = true)
 
-                if (path.absolutePathString().startsWith(DesktopPathProvider.pasteUserPath.absolutePathString())) {
+                if (path.toString().startsWith(
+                        DesktopPathProvider.pasteUserPath.toString(),
+                    )
+                ) {
                     continue
                 }
 

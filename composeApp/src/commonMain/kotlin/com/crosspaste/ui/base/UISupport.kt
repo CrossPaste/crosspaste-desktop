@@ -1,7 +1,7 @@
 package com.crosspaste.ui.base
 
 import com.crosspaste.dao.paste.PasteData
-import java.nio.file.Path
+import okio.Path
 
 interface UISupport {
 

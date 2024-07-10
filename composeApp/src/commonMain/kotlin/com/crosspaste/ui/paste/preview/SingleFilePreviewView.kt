@@ -37,7 +37,7 @@ import com.crosspaste.ui.base.fileSlash
 import com.crosspaste.ui.base.loadIconData
 import com.crosspaste.ui.base.loadImageData
 import com.crosspaste.utils.getFileUtils
-import java.nio.file.Path
+import okio.Path
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -109,7 +109,7 @@ fun SingleFilePreviewView(
             verticalArrangement = Arrangement.Bottom,
         ) {
             Text(
-                text = "${copywriter.getText("file_name")}: ${filePath.fileName}",
+                text = "${copywriter.getText("file_name")}: ${filePath.name}",
                 color = MaterialTheme.colors.onBackground,
                 style =
                     TextStyle(

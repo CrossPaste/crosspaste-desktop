@@ -70,13 +70,13 @@ import com.crosspaste.ui.paste.PasteTypeIconBaseView
 import com.crosspaste.ui.paste.preview.getPasteItem
 import com.crosspaste.ui.paste.title.getPasteTitle
 import com.crosspaste.ui.selectColor
-import com.crosspaste.utils.getResourceUtils
+import com.crosspaste.utils.getPainterUtils
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-import kotlin.io.path.exists
+import okio.FileSystem
 
 @Composable
 fun SearchListView(setSelectedIndex: (Int) -> Unit) {
@@ -280,7 +280,7 @@ fun PasteTypeIconView(
                     it as PasteUrl
                     try {
                         faviconLoader.getFaviconPath(it.url)?.let { path ->
-                            return@AsyncView LoadImageData(path, getResourceUtils().loadPainter(path, density))
+                            return@AsyncView LoadImageData(path, getPainterUtils().loadPainter(path, density))
                         }
                     } catch (ignore: Exception) {
                     }
@@ -316,7 +316,7 @@ fun PasteTypeIconView(
     } else {
         pasteData.source?.let {
             val path = pathProvider.resolve("$it.png", AppFileType.ICON)
-            if (path.exists()) {
+            if (FileSystem.SYSTEM.exists(path)) {
                 val isMacStyleIcon by remember(it) { mutableStateOf(iconStyle.isMacStyleIcon(it)) }
                 AppImageIcon(path = path, isMacStyleIcon = isMacStyleIcon, size = size + 2.dp)
             } else {

@@ -46,7 +46,7 @@ class LinuxAppWindowManager(
     ) {
         val iconPath = pathProvider.resolve("$className.png", AppFileType.ICON)
         if (!iconPath.toFile().exists()) {
-            X11Api.saveAppIcon(window, iconPath)
+            X11Api.saveAppIcon(window, iconPath.toNioPath())
         }
     }
 

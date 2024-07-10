@@ -11,8 +11,8 @@ import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteImages
 import com.crosspaste.utils.FileExtUtils.canPreviewImage
-import java.nio.file.Path
-import kotlin.io.path.extension
+import com.crosspaste.utils.extension
+import okio.Path
 
 @Composable
 fun FilesPreviewView(pasteData: PasteData) {

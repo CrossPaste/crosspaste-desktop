@@ -73,7 +73,7 @@ class ImageItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
                     fileName = name,
                 )
             val imagePath = createPastePath(relativePath, isFile = true, AppFileType.IMAGE)
-            if (writeImage(image, ext, imagePath)) {
+            if (writeImage(image, ext, imagePath.toNioPath())) {
                 val fileTree = DesktopFileUtils.getFileInfoTree(imagePath)
 
                 val fileInfoTreeJsonString = DesktopJsonUtils.JSON.encodeToString(mapOf(name to fileTree))

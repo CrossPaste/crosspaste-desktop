@@ -15,12 +15,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import java.nio.file.Path
-import kotlin.io.path.name
+import com.crosspaste.utils.getPainterUtils
+import okio.Path
 
 @Composable
 fun PasteIconButton(
@@ -55,11 +54,7 @@ fun AppImageIcon(
     isMacStyleIcon: Boolean,
     size: Dp = 24.dp,
 ) {
-    val inputStream = path.toFile().inputStream()
-
-    val imageBitmap = inputStream.use { it.buffered().use(::loadImageBitmap) }
-
-    val painter = remember(path.fileName.name) { BitmapPainter(imageBitmap) }
+    val painter = remember(path.name) { BitmapPainter(getPainterUtils().getImageBitmap(path)) }
 
     if (isMacStyleIcon) {
         Image(

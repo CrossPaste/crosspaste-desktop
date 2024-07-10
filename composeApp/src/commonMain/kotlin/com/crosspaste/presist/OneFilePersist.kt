@@ -1,7 +1,7 @@
 package com.crosspaste.presist
 
 import io.ktor.utils.io.*
-import java.nio.file.Path
+import okio.Path
 import kotlin.reflect.KClass
 
 interface OneFilePersist {
