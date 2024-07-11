@@ -3,8 +3,8 @@ package com.crosspaste.ui
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
 import com.crosspaste.app.AppWindowManager
+import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
-import com.crosspaste.utils.getResourceUtils
 import dorkbox.systemTray.MenuItem
 import dorkbox.systemTray.SystemTray
 import kotlinx.coroutines.CoroutineName
@@ -22,20 +22,19 @@ object LinuxTrayView {
     ) {
         val appWindowManager = koinApplication.koin.get<AppWindowManager>()
         val themeDetector = koinApplication.koin.get<ThemeDetector>()
-        val resourceUtils = getResourceUtils()
 
         themeDetector.addListener {
             if (it) {
-                systemTray.setImage(resourceUtils.resourceInputStream("icon/crosspaste.tray.linux.dark.png"))
+                systemTray.setImage(DesktopResourceUtils.resourceInputStream("icon/crosspaste.tray.linux.dark.png"))
             } else {
-                systemTray.setImage(resourceUtils.resourceInputStream("icon/crosspaste.tray.linux.light.png"))
+                systemTray.setImage(DesktopResourceUtils.resourceInputStream("icon/crosspaste.tray.linux.light.png"))
             }
         }
 
         if (themeDetector.isCurrentThemeDark()) {
-            systemTray.setImage(resourceUtils.resourceInputStream("icon/crosspaste.tray.linux.dark.png"))
+            systemTray.setImage(DesktopResourceUtils.resourceInputStream("icon/crosspaste.tray.linux.dark.png"))
         } else {
-            systemTray.setImage(resourceUtils.resourceInputStream("icon/crosspaste.tray.linux.light.png"))
+            systemTray.setImage(DesktopResourceUtils.resourceInputStream("icon/crosspaste.tray.linux.light.png"))
         }
 
         systemTray.setTooltip("CrossPaste")
