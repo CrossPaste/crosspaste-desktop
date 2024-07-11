@@ -21,7 +21,10 @@ interface SyncClientApi {
         toUrl: URLBuilder.(URLBuilder) -> Unit,
     ): ClientApiResult
 
-    suspend fun isTrust(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult
+    suspend fun isTrust(
+        targetAppInstanceId: String,
+        toUrl: URLBuilder.(URLBuilder) -> Unit,
+    ): ClientApiResult
 
     suspend fun trust(
         token: Int,

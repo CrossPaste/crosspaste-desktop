@@ -75,7 +75,10 @@ class DesktopSyncClientApi(
         }, transformData = { true })
     }
 
-    override suspend fun isTrust(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult {
+    override suspend fun isTrust(
+        targetAppInstanceId: String,
+        toUrl: URLBuilder.(URLBuilder) -> Unit,
+    ): ClientApiResult {
         return request(logger, request = {
             pasteClient.get(urlBuilder = {
                 toUrl(it)

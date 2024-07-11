@@ -72,11 +72,15 @@ class DesktopPasteClient(
     }
 
     override suspend fun get(
+        targetAppInstanceId: String?,
         timeout: Long,
         urlBuilder: URLBuilder.(URLBuilder) -> Unit,
     ): HttpResponse {
         return client.get {
             header("appInstanceId", appInfo.appInstanceId)
+            targetAppInstanceId?.let {
+                header("targetAppInstanceId", it)
+            }
             timeout {
                 requestTimeoutMillis = timeout
             }
