@@ -4,12 +4,14 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.FilesChunk
 import io.ktor.utils.io.*
+import kotlinx.datetime.LocalDateTime
 import okio.Path
-import java.time.LocalDateTime
 
 expect fun getFileUtils(): FileUtils
 
 interface FileUtils {
+
+    val dateUtils: DateUtils
 
     val separator: String
 
@@ -23,7 +25,7 @@ interface FileUtils {
 
     fun createPasteRelativePath(
         appInstanceId: String,
-        date: LocalDateTime = LocalDateTime.now(),
+        date: LocalDateTime = dateUtils.now(),
         pasteId: Long,
         fileName: String,
     ): String

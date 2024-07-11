@@ -16,15 +16,21 @@ object DesktopResourceUtils : ResourceUtils {
 
     private val loader = ResourceLoader.Default
 
-    override fun resourceInputStream(fileName: String): InputStream {
+    fun resourceInputStream(fileName: String): InputStream {
         return loader.load(fileName)
     }
 
-    override fun loadProperties(fileName: String): Properties {
+    fun loadProperties(fileName: String): Properties {
         val properties = Properties()
         InputStreamReader(resourceInputStream(fileName), StandardCharsets.UTF_8).use { inputStreamReader ->
             properties.load(inputStreamReader)
         }
         return properties
+    }
+
+    override fun readResourceBytes(fileName: String): ByteArray {
+        loader.load(fileName).use { stream ->
+            return stream.readBytes()
+        }
     }
 }

@@ -5,7 +5,11 @@ import com.crosspaste.listener.EventConsumer
 import com.crosspaste.listener.KeyboardKey
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.listener.ShortcutKeysCore
+import com.crosspaste.utils.DesktopResourceUtils
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
+import okio.Path
+import java.io.InputStreamReader
+import java.nio.charset.StandardCharsets
 import java.util.Properties
 import java.util.TreeMap
 
@@ -18,7 +22,19 @@ class DesktopShortcutKeysLoader(
         keyboardKeys.allKeys
 
     @Suppress("UNCHECKED_CAST")
-    override fun load(properties: Properties): ShortcutKeysCore {
+    override fun load(platformName: String): ShortcutKeysCore {
+        val properties = DesktopResourceUtils.loadProperties("shortcut_keys/$platformName.properties")
+        val keys = loadKeys(properties)
+        val consumer: EventConsumer<Any> = toConsumer(keys) as EventConsumer<Any>
+        return ShortcutKeysCore(consumer, keys)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun load(path: Path): ShortcutKeysCore {
+        val properties = Properties()
+        InputStreamReader(path.toFile().inputStream(), StandardCharsets.UTF_8).use { inputStreamReader ->
+            properties.load(inputStreamReader)
+        }
         val keys = loadKeys(properties)
         val consumer: EventConsumer<Any> = toConsumer(keys) as EventConsumer<Any>
         return ShortcutKeysCore(consumer, keys)

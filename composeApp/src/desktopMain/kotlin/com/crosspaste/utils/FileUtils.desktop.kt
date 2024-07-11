@@ -6,11 +6,11 @@ import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.FileInfoTreeBuilder
 import com.crosspaste.presist.FilesChunk
 import com.crosspaste.presist.SingleFileInfoTree
-import com.crosspaste.utils.DesktopDateUtils.toKotlinLocalDateTime
 import com.google.common.hash.Hashing
 import com.google.common.io.Files
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.utils.io.*
+import kotlinx.datetime.LocalDateTime
 import okio.FileSystem
 import okio.Path
 import okio.Path.Companion.toOkioPath
@@ -18,7 +18,6 @@ import java.io.File
 import java.io.RandomAccessFile
 import java.nio.file.Paths
 import java.text.DecimalFormat
-import java.time.LocalDateTime
 import java.util.UUID
 import kotlin.io.path.pathString
 
@@ -30,7 +29,7 @@ object DesktopFileUtils : FileUtils {
 
     private val logger = KotlinLogging.logger {}
 
-    private val dateUtils = getDateUtils()
+    override val dateUtils = getDateUtils()
 
     override val separator: String = File.separator
 
@@ -75,7 +74,7 @@ object DesktopFileUtils : FileUtils {
         pasteId: Long,
         fileName: String,
     ): String {
-        val dateYYYYMMDD = dateUtils.getYYYYMMDD(date.toKotlinLocalDateTime())
+        val dateYYYYMMDD = dateUtils.getYYYYMMDD(date)
         return Paths.get(appInstanceId, dateYYYYMMDD, pasteId.toString(), fileName).pathString
     }
 

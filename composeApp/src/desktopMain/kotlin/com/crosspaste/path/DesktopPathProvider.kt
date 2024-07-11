@@ -2,9 +2,9 @@ package com.crosspaste.path
 
 import com.crosspaste.app.AppEnv
 import com.crosspaste.platform.currentPlatform
+import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.getFileUtils
-import com.crosspaste.utils.getResourceUtils
 import com.crosspaste.utils.getSystemProperty
 import com.crosspaste.utils.noOptionParent
 import okio.Path
@@ -59,9 +59,7 @@ class DevelopmentPathProvider : PathProvider {
 
     private val composeAppDir = systemProperty.get("user.dir")
 
-    private val resourceUtils = getResourceUtils()
-
-    private val development = resourceUtils.loadProperties("development.properties")
+    private val development = DesktopResourceUtils.loadProperties("development.properties")
 
     override val pasteAppPath: Path = getAppPath()
 
