@@ -127,6 +127,12 @@ fun Routing.syncRouting() {
 
     post("/sync/heartbeat") {
         getAppInstanceId(call)?.let { appInstanceId ->
+            val targetAppInstanceId = call.request.headers["targetAppInstanceId"]
+            if (targetAppInstanceId != appInfo.appInstanceId) {
+                logger.debug { "targetAppInstanceId $targetAppInstanceId not match ${appInfo.appInstanceId}" }
+                failResponse(call, StandardErrorCode.SIGNAL_EXCHANGE_FAIL.toErrorCode())
+                return@let
+            }
             val dataContent = call.receive(DataContent::class)
             val bytes = dataContent.data
             val processor = signalProcessorCache.getSignalMessageProcessor(appInstanceId)

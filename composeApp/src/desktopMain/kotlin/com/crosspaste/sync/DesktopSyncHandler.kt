@@ -246,7 +246,7 @@ class DesktopSyncHandler(
     private suspend fun resolveConnecting() {
         syncRuntimeInfo.connectHostAddress?.let { host ->
             if (isExistSession()) {
-                if (heartbeat(host, syncRuntimeInfo.port)) {
+                if (heartbeat(host, syncRuntimeInfo.port, syncRuntimeInfo.appInstanceId)) {
                     return@resolveConnecting
                 }
                 if (syncRuntimeInfo.connectState == SyncState.UNMATCHED) {
@@ -271,11 +271,13 @@ class DesktopSyncHandler(
     private suspend fun heartbeat(
         host: String,
         port: Int,
+        targetAppInstanceId: String,
     ): Boolean {
         val result =
             syncClientApi.heartbeat(
                 getCurrentSyncInfo(),
                 signalProcessor,
+                targetAppInstanceId,
             ) { urlBuilder ->
                 buildUrl(urlBuilder, host, port)
             }
