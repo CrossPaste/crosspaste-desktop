@@ -13,6 +13,8 @@ jobs:
       cache-hit-aarch64: ${{ steps.cache-check-aarch64.outputs.cache-hit }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: check-dylib-cache-x86
         id: cache-check-x86
