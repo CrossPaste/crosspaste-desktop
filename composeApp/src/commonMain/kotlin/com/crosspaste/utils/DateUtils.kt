@@ -17,7 +17,7 @@ interface DateUtils {
 
     fun getDateText(date: LocalDateTime): String?
 
-    fun getYYYYMMDD(date: LocalDateTime = getCurrentLocalDateTime()): String
+    fun getYYYYMMDD(date: LocalDateTime = now()): String
 
     fun getDateText(
         date: LocalDateTime,
@@ -26,9 +26,9 @@ interface DateUtils {
     ): String
 
     fun convertRealmInstantToLocalDateTime(realmInstant: RealmInstant): LocalDateTime
-}
 
-fun getCurrentLocalDateTime(): LocalDateTime {
-    val currentInstant: Instant = Clock.System.now()
-    return currentInstant.toLocalDateTime(TimeZone.currentSystemDefault())
+    fun now(): LocalDateTime {
+        val currentInstant: Instant = Clock.System.now()
+        return currentInstant.toLocalDateTime(TimeZone.currentSystemDefault())
+    }
 }

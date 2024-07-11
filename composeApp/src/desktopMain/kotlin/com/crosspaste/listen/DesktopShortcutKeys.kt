@@ -14,6 +14,7 @@ import com.crosspaste.utils.getResourceUtils
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import okio.FileSystem
+import okio.Path.Companion.toOkioPath
 import java.io.FileOutputStream
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
@@ -41,8 +42,7 @@ class DesktopShortcutKeys(
 
     private fun defaultKeysCore(): ShortcutKeysCore {
         val platform = currentPlatform()
-        val properties = getResourceUtils().loadProperties("shortcut_keys/${platform.name}.properties")
-        return shortcutKeysLoader.load(properties)
+        return shortcutKeysLoader.load(platform.name)
     }
 
     private fun loadKeysCore(): ShortcutKeysCore? {
@@ -55,17 +55,13 @@ class DesktopShortcutKeys(
                 val platform = currentPlatform()
                 val bytes =
                     getResourceUtils()
-                        .resourceInputStream("shortcut_keys/${platform.name}.properties")
-                        .readBytes()
+                        .readResourceBytes("shortcut_keys/${platform.name}.properties")
                 filePersist.saveBytes(bytes)
             }
 
-            val properties = Properties()
+            val path = shortcutKeysPropertiesPath.toFile().toOkioPath()
 
-            InputStreamReader(shortcutKeysPropertiesPath.toFile().inputStream(), StandardCharsets.UTF_8)
-                .use { inputStreamReader -> properties.load(inputStreamReader) }
-
-            return shortcutKeysLoader.load(properties)
+            return shortcutKeysLoader.load(path)
         } catch (e: Exception) {
             logger.error(e) { "Failed to load shortcut keys" }
             return null
@@ -93,7 +89,7 @@ class DesktopShortcutKeys(
                     properties.store(writer, "Comments")
                 }
             }
-            shortcutKeysCore = shortcutKeysLoader.load(properties)
+            shortcutKeysCore = shortcutKeysLoader.load(shortcutKeysPropertiesPath)
         } catch (e: Exception) {
             logger.error(e) { "Failed to update shortcut keys" }
         }
