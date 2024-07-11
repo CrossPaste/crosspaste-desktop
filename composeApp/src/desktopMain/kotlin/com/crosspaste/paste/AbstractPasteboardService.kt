@@ -2,9 +2,10 @@ package com.crosspaste.paste
 
 import com.crosspaste.dao.paste.PasteData
 import java.awt.datatransfer.Clipboard
+import java.awt.datatransfer.ClipboardOwner
 import java.awt.datatransfer.Transferable
 
-abstract class AbstractPasteboardService : PasteboardService {
+abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
 
     abstract var ownerTransferable: Transferable?
 
