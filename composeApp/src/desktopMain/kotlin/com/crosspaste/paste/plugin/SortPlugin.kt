@@ -2,10 +2,10 @@ package com.crosspaste.paste.plugin
 
 import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.dao.paste.PasteType
-import com.crosspaste.paste.PastePlugin
+import com.crosspaste.paste.PasteProcessPlugin
 import io.realm.kotlin.MutableRealm
 
-object SortPlugin : PastePlugin {
+object SortPlugin : PasteProcessPlugin {
 
     private val itemPriorityMap: Map<Int, Int> =
         mapOf(
@@ -17,7 +17,7 @@ object SortPlugin : PastePlugin {
             PasteType.INVALID to -1,
         )
 
-    override fun pluginProcess(
+    override fun process(
         pasteItems: List<PasteItem>,
         realm: MutableRealm,
     ): List<PasteItem> {

@@ -3,32 +3,49 @@ package com.crosspaste.paste.service
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
 import com.crosspaste.dao.paste.PasteItem
+import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.image.ImageService.writeImage
+import com.crosspaste.paste.DesktopPasteDataFlavor
 import com.crosspaste.paste.PasteCollector
-import com.crosspaste.paste.PasteItemService
+import com.crosspaste.paste.PasteDataFlavor
+import com.crosspaste.paste.PasteDataFlavors
+import com.crosspaste.paste.PasteTransferable
+import com.crosspaste.paste.PasteTypePlugin
 import com.crosspaste.paste.item.ImagesPasteItem
-import com.crosspaste.paste.service.HtmlItemService.HtmlItemService.HTML_ID
+import com.crosspaste.paste.service.HtmlTypePlugin.HtmlTypePlugin.HTML_ID
+import com.crosspaste.paste.toPasteDataFlavor
+import com.crosspaste.platform.currentPlatform
 import com.crosspaste.utils.DesktopFileUtils
 import com.crosspaste.utils.DesktopFileUtils.createPastePath
 import com.crosspaste.utils.DesktopFileUtils.createPasteRelativePath
 import com.crosspaste.utils.DesktopFileUtils.createRandomFileName
 import com.crosspaste.utils.DesktopFileUtils.getExtFromFileName
 import com.crosspaste.utils.DesktopJsonUtils
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
 import kotlinx.serialization.encodeToString
 import org.jsoup.Jsoup
 import java.awt.Image
 import java.awt.datatransfer.DataFlavor
-import java.awt.datatransfer.Transferable
 import java.awt.image.BufferedImage
+import java.io.ByteArrayInputStream
+import java.io.File
 import java.net.MalformedURLException
 import java.net.URL
+import java.nio.charset.StandardCharsets
+import javax.imageio.ImageIO
 
-class ImageItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
+class ImageTypePlugin(private val appInfo: AppInfo) : PasteTypePlugin {
 
     companion object ImageItemService {
         const val IMAGE_ID = "image/x-java-image"
+    }
+
+    private val logger = KotlinLogging.logger {}
+
+    override fun getPasteType(): Int {
+        return PasteType.IMAGE
     }
 
     override fun getIdentifiers(): List<String> {
@@ -39,7 +56,7 @@ class ImageItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
         pasteId: Long,
         itemIndex: Int,
         identifier: String,
-        transferable: Transferable,
+        pasteTransferable: PasteTransferable,
         pasteCollector: PasteCollector,
     ) {
         ImagesPasteItem().apply {
@@ -53,14 +70,14 @@ class ImageItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
         transferData: Any,
         pasteId: Long,
         itemIndex: Int,
-        dataFlavor: DataFlavor,
-        dataFlavorMap: Map<String, List<DataFlavor>>,
-        transferable: Transferable,
+        dataFlavor: PasteDataFlavor,
+        dataFlavorMap: Map<String, List<PasteDataFlavor>>,
+        pasteTransferable: PasteTransferable,
         pasteCollector: PasteCollector,
     ) {
         if (transferData is Image) {
             val image: BufferedImage = toBufferedImage(transferData)
-            var name = tryGetImageName(dataFlavorMap, transferable) ?: createRandomFileName(ext = "png")
+            var name = tryGetImageName(dataFlavorMap, pasteTransferable) ?: createRandomFileName(ext = "png")
             val ext =
                 getExtFromFileName(name) ?: run {
                     name += ".png"
@@ -96,13 +113,14 @@ class ImageItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
     }
 
     private fun tryGetImageName(
-        dataFlavorMap: Map<String, List<DataFlavor>>,
-        transferable: Transferable,
+        dataFlavorMap: Map<String, List<PasteDataFlavor>>,
+        pasteTransferable: PasteTransferable,
     ): String? {
         dataFlavorMap[HTML_ID]?.let {
-            for (dataFlavor in it) {
+            for (pasteDataFlavor in it) {
+                val dataFlavor = (pasteDataFlavor as DesktopPasteDataFlavor).dataFlavor
                 if (dataFlavor.representationClass == String::class.java) {
-                    (transferable.getTransferData(dataFlavor) as? String)?.let { imageHtml ->
+                    (pasteTransferable.getTransferData(pasteDataFlavor) as? String)?.let { imageHtml ->
                         return getImageNameFromHtml(imageHtml)
                     }
                 }
@@ -150,5 +168,44 @@ class ImageItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
 
         // Return the buffered image
         return bimage
+    }
+
+    override fun buildTransferable(
+        pasteItem: PasteItem,
+        map: MutableMap<PasteDataFlavor, Any>,
+    ) {
+        pasteItem as ImagesPasteItem
+        val filePaths = pasteItem.getFilePaths()
+        val fileList: List<File> = filePaths.map { it.toFile() }
+        map[DataFlavor.javaFileListFlavor.toPasteDataFlavor()] = fileList
+        map[PasteDataFlavors.URI_LIST_FLAVOR.toPasteDataFlavor()] =
+            ByteArrayInputStream(
+                fileList.joinToString(separator = "\n") {
+                    it.absolutePath
+                }.toByteArray(),
+            )
+        map[DataFlavor.stringFlavor.toPasteDataFlavor()] =
+            fileList.joinToString(separator = "\n") {
+                it.name
+            }
+
+        if (fileList.size == 1) {
+            try {
+                val image: BufferedImage? = ImageIO.read(fileList[0])
+                image?.let { map[DataFlavor.imageFlavor.toPasteDataFlavor()] = it }
+            } catch (e: Exception) {
+                logger.error(e) { "read image fail" }
+            }
+        }
+
+        if (currentPlatform().isLinux()) {
+            val content =
+                fileList.joinToString(
+                    separator = "\n",
+                    prefix = "copy\n",
+                ) { it.toURI().toString() }
+            val inputStream = ByteArrayInputStream(content.toByteArray(StandardCharsets.UTF_8))
+            map[PasteDataFlavors.GNOME_COPIED_FILES_FLAVOR.toPasteDataFlavor()] = inputStream
+        }
     }
 }

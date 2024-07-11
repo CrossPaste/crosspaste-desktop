@@ -6,58 +6,56 @@ import com.crosspaste.utils.IDGenerator
 import com.crosspaste.utils.LoggerExtension.logExecutionTime
 import com.crosspaste.utils.LoggerExtension.logSuspendExecutionTime
 import io.github.oshai.kotlinlogging.KotlinLogging
-import java.awt.datatransfer.DataFlavor
-import java.awt.datatransfer.Transferable
 
 open class DesktopTransferableConsumer(
     private val appInfo: AppInfo,
     private val pasteDao: PasteDao,
     private val idGenerator: IDGenerator,
-    private val itemServices: List<PasteItemService>,
-    private val pastePlugins: List<PastePlugin>,
+    private val pasteProcessPlugins: List<PasteProcessPlugin>,
+    pasteTypePlugins: List<PasteTypePlugin>,
 ) : TransferableConsumer {
 
     private val logger = KotlinLogging.logger {}
 
-    private val pasteItemServiceMap: Map<String, PasteItemService> =
-        itemServices.flatMap { service ->
-            service.getIdentifiers().map { it to service }
+    private val pasteTypePluginMap: Map<String, PasteTypePlugin> =
+        pasteTypePlugins.flatMap { pasteTypePlugin ->
+            pasteTypePlugin.getIdentifiers().map { it to pasteTypePlugin }
         }.toMap()
 
-    private fun createDataFlavorMap(transferable: Transferable): LinkedHashMap<String, MutableList<DataFlavor>> {
-        val dataFlavorMap = LinkedHashMap<String, MutableList<DataFlavor>>()
-
-        for (flavor in transferable.transferDataFlavors) {
+    private fun createDataFlavorMap(pasteTransferable: PasteTransferable): LinkedHashMap<String, MutableList<PasteDataFlavor>> {
+        val dataFlavorMap = LinkedHashMap<String, MutableList<PasteDataFlavor>>()
+        pasteTransferable as DesktopReadTransferable
+        for (flavor in pasteTransferable.transferable.transferDataFlavors) {
             val humanPresentableName = flavor.humanPresentableName
             if (!dataFlavorMap.containsKey(humanPresentableName)) {
                 dataFlavorMap[humanPresentableName] = mutableListOf()
             }
-            dataFlavorMap[humanPresentableName]?.add(flavor)
+            dataFlavorMap[humanPresentableName]?.add(flavor.toPasteDataFlavor())
         }
         return dataFlavorMap
     }
 
     override suspend fun consume(
-        transferable: Transferable,
+        pasteTransferable: PasteTransferable,
         source: String?,
         remote: Boolean,
     ) {
         logSuspendExecutionTime(logger, "consume") {
             val pasteId = idGenerator.nextID()
 
-            val dataFlavorMap: Map<String, List<DataFlavor>> = createDataFlavorMap(transferable)
+            val dataFlavorMap: Map<String, List<PasteDataFlavor>> = createDataFlavorMap(pasteTransferable)
 
             dataFlavorMap[LocalOnlyFlavor.humanPresentableName]?.let {
                 logger.info { "Ignoring local only flavor" }
                 return@logSuspendExecutionTime
             }
 
-            val pasteCollector = PasteCollector(dataFlavorMap.size, appInfo, pasteDao, pastePlugins)
+            val pasteCollector = PasteCollector(dataFlavorMap.size, appInfo, pasteDao, pasteProcessPlugins)
 
             try {
-                preCollect(pasteId, dataFlavorMap, transferable, pasteCollector)
+                preCollect(pasteId, dataFlavorMap, pasteTransferable, pasteCollector)
                 pasteCollector.createPrePasteData(pasteId, source, remote = remote)?.let {
-                    updatePasteData(pasteId, dataFlavorMap, transferable, pasteCollector)
+                    updatePasteData(pasteId, dataFlavorMap, pasteTransferable, pasteCollector)
                     pasteCollector.completeCollect(it)
                 }
             } catch (e: Exception) {
@@ -68,8 +66,8 @@ open class DesktopTransferableConsumer(
 
     private fun preCollect(
         pasteId: Long,
-        dataFlavorMap: Map<String, List<DataFlavor>>,
-        transferable: Transferable,
+        dataFlavorMap: Map<String, List<PasteDataFlavor>>,
+        pasteTransferable: PasteTransferable,
         pasteCollector: PasteCollector,
     ) {
         logExecutionTime(logger, "preCollect") {
@@ -79,13 +77,13 @@ open class DesktopTransferableConsumer(
                 val flavors = entry.value
                 logger.info { "itemIndex: $itemIndex Transferable flavor: $identifier" }
                 for (flavor in flavors) {
-                    if (pasteItemServiceMap[identifier]?.let { pasteItemService ->
-                            if (pasteCollector.needPreCollectionItem(itemIndex, pasteItemService::class)) {
-                                pasteItemService.createPrePasteItem(
+                    if (pasteTypePluginMap[identifier]?.let { pasteTypePlugin ->
+                            if (pasteCollector.needPreCollectionItem(itemIndex, pasteTypePlugin::class)) {
+                                pasteTypePlugin.createPrePasteItem(
                                     pasteId,
                                     itemIndex,
                                     identifier,
-                                    transferable,
+                                    pasteTransferable,
                                     pasteCollector,
                                 )
                                 false
@@ -104,8 +102,8 @@ open class DesktopTransferableConsumer(
 
     private fun updatePasteData(
         pasteId: Long,
-        dataFlavorMap: Map<String, List<DataFlavor>>,
-        transferable: Transferable,
+        dataFlavorMap: Map<String, List<PasteDataFlavor>>,
+        pasteTransferable: PasteTransferable,
         pasteCollector: PasteCollector,
     ) {
         logExecutionTime(logger, "updatePasteData") {
@@ -114,14 +112,14 @@ open class DesktopTransferableConsumer(
                 val identifier = entry.key
                 val flavors = entry.value
                 for (flavor in flavors) {
-                    if (pasteItemServiceMap[identifier]?.let { pasteItemService ->
+                    if (pasteTypePluginMap[identifier]?.let { pasteItemService ->
                             if (pasteCollector.needUpdateCollectItem(itemIndex, pasteItemService::class)) {
                                 pasteItemService.loadRepresentation(
                                     pasteId,
                                     itemIndex,
                                     flavor,
                                     dataFlavorMap,
-                                    transferable,
+                                    pasteTransferable,
                                     pasteCollector,
                                 )
                                 false

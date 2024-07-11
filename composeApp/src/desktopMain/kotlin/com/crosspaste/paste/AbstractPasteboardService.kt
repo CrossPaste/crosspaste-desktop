@@ -34,6 +34,7 @@ abstract class AbstractPasteboardService : PasteboardService {
     ) {
         try {
             pasteProducer.produce(pasteData, localOnly, filterFile)?.let {
+                it as DesktopWriteTransferable
                 ownerTransferable = it
                 owner = true
                 systemClipboard.setContents(ownerTransferable, this)

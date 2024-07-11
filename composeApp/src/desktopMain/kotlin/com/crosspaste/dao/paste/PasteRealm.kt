@@ -2,7 +2,7 @@ package com.crosspaste.dao.paste
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.dao.task.TaskType
-import com.crosspaste.paste.PastePlugin
+import com.crosspaste.paste.PasteProcessPlugin
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
@@ -251,7 +251,7 @@ class PasteRealm(
 
     override suspend fun releaseLocalPasteData(
         id: ObjectId,
-        pastePlugins: List<PastePlugin>,
+        pasteProcessPlugins: List<PasteProcessPlugin>,
     ) {
         realm.write {
             query(PasteData::class, "id == $0 AND pasteState == $1", id, PasteState.LOADING).first().find()?.let { pasteData ->
@@ -275,8 +275,8 @@ class PasteRealm(
                         }
                     assert(pasteAppearItems.isNotEmpty())
                     pasteCollection.pasteItems.clear()
-                    for (pastePlugin in pastePlugins) {
-                        pasteAppearItems = pastePlugin.pluginProcess(pasteAppearItems, this)
+                    for (pastePlugin in pasteProcessPlugins) {
+                        pasteAppearItems = pastePlugin.process(pasteAppearItems, this)
                     }
 
                     val size = pasteAppearItems.sumOf { it.size }

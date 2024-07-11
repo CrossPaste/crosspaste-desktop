@@ -5,7 +5,7 @@ import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.dao.paste.PasteState
 import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.paste.item.TextPasteItem
-import com.crosspaste.paste.service.TextItemService
+import com.crosspaste.paste.service.TextTypePlugin
 import com.crosspaste.utils.DesktopJsonUtils
 import com.crosspaste.utils.getCodecsUtils
 import io.realm.kotlin.ext.realmListOf
@@ -25,7 +25,7 @@ class SerializerTest {
         val codecsUtils = getCodecsUtils()
         val textPasteItem =
             TextPasteItem().apply {
-                this.identifier = TextItemService.TEXT
+                this.identifier = TextTypePlugin.TEXT
                 this.text = "testPasteData"
                 this.md5 = codecsUtils.md5ByString(this.text)
             }

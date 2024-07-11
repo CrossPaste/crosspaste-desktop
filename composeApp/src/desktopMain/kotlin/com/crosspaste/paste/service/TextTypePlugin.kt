@@ -1,16 +1,19 @@
 package com.crosspaste.paste.service
 
-import com.crosspaste.app.AppInfo
 import com.crosspaste.dao.paste.PasteItem
+import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.paste.PasteCollector
-import com.crosspaste.paste.PasteItemService
+import com.crosspaste.paste.PasteDataFlavor
+import com.crosspaste.paste.PasteTransferable
+import com.crosspaste.paste.PasteTypePlugin
 import com.crosspaste.paste.item.TextPasteItem
+import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.utils.getCodecsUtils
 import io.realm.kotlin.MutableRealm
+import java.awt.SystemColor.text
 import java.awt.datatransfer.DataFlavor
-import java.awt.datatransfer.Transferable
 
-class TextItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
+class TextTypePlugin : PasteTypePlugin {
 
     companion object TextItemService {
 
@@ -21,6 +24,10 @@ class TextItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
         private val codecsUtils = getCodecsUtils()
     }
 
+    override fun getPasteType(): Int {
+        return PasteType.TEXT
+    }
+
     override fun getIdentifiers(): List<String> {
         return listOf(UNICODE_STRING, TEXT, PLAIN_TEXT)
     }
@@ -29,7 +36,7 @@ class TextItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
         pasteId: Long,
         itemIndex: Int,
         identifier: String,
-        transferable: Transferable,
+        pasteTransferable: PasteTransferable,
         pasteCollector: PasteCollector,
     ) {
         TextPasteItem().apply {
@@ -43,9 +50,9 @@ class TextItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
         transferData: Any,
         pasteId: Long,
         itemIndex: Int,
-        dataFlavor: DataFlavor,
-        dataFlavorMap: Map<String, List<DataFlavor>>,
-        transferable: Transferable,
+        dataFlavor: PasteDataFlavor,
+        dataFlavorMap: Map<String, List<PasteDataFlavor>>,
+        pasteTransferable: PasteTransferable,
         pasteCollector: PasteCollector,
     ) {
         if (transferData is String) {
@@ -60,5 +67,13 @@ class TextItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
             }
             pasteCollector.updateCollectItem(itemIndex, this::class, update)
         }
+    }
+
+    override fun buildTransferable(
+        pasteItem: PasteItem,
+        map: MutableMap<PasteDataFlavor, Any>,
+    ) {
+        pasteItem as TextPasteItem
+        map[DataFlavor.stringFlavor.toPasteDataFlavor()] = text
     }
 }

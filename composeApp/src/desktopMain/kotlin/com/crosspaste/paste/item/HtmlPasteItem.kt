@@ -4,9 +4,7 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.dao.paste.PasteState
 import com.crosspaste.dao.paste.PasteType
-import com.crosspaste.os.windows.html.HTMLCodec
 import com.crosspaste.path.DesktopPathProvider
-import com.crosspaste.platform.currentPlatform
 import com.crosspaste.presist.DesktopOneFilePersist
 import com.crosspaste.utils.DesktopFileUtils
 import io.realm.kotlin.MutableRealm
@@ -20,7 +18,6 @@ import okio.Path
 import org.jsoup.Jsoup
 import org.mongodb.kbson.BsonObjectId
 import org.mongodb.kbson.ObjectId
-import java.awt.datatransfer.DataFlavor
 
 @Serializable
 @SerialName("html")
@@ -99,15 +96,5 @@ class HtmlPasteItem : RealmObject, PasteItem, PasteHtml {
             DesktopOneFilePersist(getHtmlImagePath()).delete()
         }
         realm.delete(this)
-    }
-
-    override fun fillDataFlavor(map: MutableMap<DataFlavor, Any>) {
-        var currentHtml = this.html
-        if (currentPlatform().isWindows()) {
-            currentHtml = String(HTMLCodec.convertToHTMLFormat(currentHtml))
-        }
-        map[DataFlavor.selectionHtmlFlavor] = currentHtml
-        map[DataFlavor.fragmentHtmlFlavor] = currentHtml
-        map[DataFlavor.allHtmlFlavor] = currentHtml
     }
 }
