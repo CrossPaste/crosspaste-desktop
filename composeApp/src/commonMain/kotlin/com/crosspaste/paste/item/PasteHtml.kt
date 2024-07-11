@@ -1,14 +1,14 @@
 package com.crosspaste.paste.item
 
+import com.crosspaste.utils.getHtmlUtils
 import okio.Path
-import org.jsoup.Jsoup
 
 interface PasteHtml : PasteInit {
 
     var html: String
 
     fun getText(): String {
-        return Jsoup.parse(html).text()
+        return getHtmlUtils().getHtmlText(html)
     }
 
     fun getHtmlImagePath(): Path
