@@ -2,7 +2,6 @@ package com.crosspaste.dao.paste
 
 import io.realm.kotlin.MutableRealm
 import org.mongodb.kbson.ObjectId
-import java.awt.datatransfer.DataFlavor
 
 interface PasteItem {
 
@@ -33,6 +32,4 @@ interface PasteItem {
         realm: MutableRealm,
         clearResource: Boolean = true,
     )
-
-    fun fillDataFlavor(map: MutableMap<DataFlavor, Any>)
 }

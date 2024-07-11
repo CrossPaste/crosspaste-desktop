@@ -165,8 +165,9 @@ class WindowsPasteboardService(
                 serviceConsumerScope.launch(CoroutineName("WindowsPasteboardConsumer")) {
                     if (it != ownerTransferable) {
                         ownerTransferable = it
+                        val pasteTransferable = DesktopReadTransferable(it)
                         // in windows, we don't know if the pasteboard is local or remote
-                        pasteConsumer.consume(it, source, remote = false)
+                        pasteConsumer.consume(pasteTransferable, source, remote = false)
                     }
                 }
             }

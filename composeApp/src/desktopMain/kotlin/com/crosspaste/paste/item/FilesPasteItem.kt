@@ -4,9 +4,7 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.dao.paste.PasteState
 import com.crosspaste.dao.paste.PasteType
-import com.crosspaste.paste.PasteDataFlavors
 import com.crosspaste.path.DesktopPathProvider
-import com.crosspaste.platform.currentPlatform
 import com.crosspaste.presist.DesktopOneFilePersist
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.serializer.PathStringRealmListSerializer
@@ -24,9 +22,6 @@ import kotlinx.serialization.Transient
 import okio.Path
 import org.mongodb.kbson.BsonObjectId
 import org.mongodb.kbson.ObjectId
-import java.awt.datatransfer.DataFlavor
-import java.io.ByteArrayInputStream
-import java.io.File
 import java.nio.file.Paths
 
 @Serializable
@@ -118,23 +113,5 @@ class FilesPasteItem : RealmObject, PasteItem, PasteFiles {
             }
         }
         realm.delete(this)
-    }
-
-    override fun fillDataFlavor(map: MutableMap<DataFlavor, Any>) {
-        val fileList: List<File> = getFilePaths().map { it.toFile() }
-        map[DataFlavor.javaFileListFlavor] = fileList
-        map[PasteDataFlavors.URI_LIST_FLAVOR] =
-            ByteArrayInputStream(fileList.joinToString(separator = "\n") { it.absolutePath }.toByteArray())
-        map[DataFlavor.stringFlavor] = fileList.joinToString(separator = "\n") { it.name }
-
-        if (currentPlatform().isLinux()) {
-            val content =
-                fileList.joinToString(
-                    separator = "\n",
-                    prefix = "copy\n",
-                ) { it.toURI().toString() }
-            val inputStream = ByteArrayInputStream(content.toByteArray())
-            map[PasteDataFlavors.GNOME_COPIED_FILES_FLAVOR] = inputStream
-        }
     }
 }

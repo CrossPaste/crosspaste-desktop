@@ -2,10 +2,10 @@ package com.crosspaste.paste.plugin
 
 import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.dao.paste.PasteType
-import com.crosspaste.paste.PastePlugin
+import com.crosspaste.paste.PasteProcessPlugin
 import io.realm.kotlin.MutableRealm
 
-object DistinctPlugin : PastePlugin {
+object DistinctPlugin : PasteProcessPlugin {
 
     private val childPlugins =
         mapOf(
@@ -16,19 +16,19 @@ object DistinctPlugin : PastePlugin {
             Pair(PasteType.HTML, FirstPlugin),
         )
 
-    override fun pluginProcess(
+    override fun process(
         pasteItems: List<PasteItem>,
         realm: MutableRealm,
     ): List<PasteItem> {
         return pasteItems.groupBy { it.getPasteType() }.map { (pasteType, items) ->
             val plugin = childPlugins[pasteType]
-            plugin?.pluginProcess(items, realm) ?: items
+            plugin?.process(items, realm) ?: items
         }.flatten()
     }
 }
 
-object FirstPlugin : PastePlugin {
-    override fun pluginProcess(
+object FirstPlugin : PasteProcessPlugin {
+    override fun process(
         pasteItems: List<PasteItem>,
         realm: MutableRealm,
     ): List<PasteItem> {

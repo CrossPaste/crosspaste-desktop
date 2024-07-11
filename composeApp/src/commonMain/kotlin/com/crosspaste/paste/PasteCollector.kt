@@ -21,14 +21,14 @@ class PasteCollector(
     itemCount: Int,
     private val appInfo: AppInfo,
     private val pasteDao: PasteDao,
-    private val pastePlugins: List<PastePlugin>,
+    private val pasteProcessPlugins: List<PasteProcessPlugin>,
 ) {
 
     private val logger = KotlinLogging.logger {}
 
-    private val preCollectors: Array<MutableMap<KClass<out PasteItemService>, PasteItem>> = Array(itemCount) { mutableMapOf() }
+    private val preCollectors: Array<MutableMap<KClass<out PasteTypePlugin>, PasteItem>> = Array(itemCount) { mutableMapOf() }
 
-    private val updateCollectors: Array<MutableSet<KClass<out PasteItemService>>> = Array(itemCount) { mutableSetOf() }
+    private val updateCollectors: Array<MutableSet<KClass<out PasteTypePlugin>>> = Array(itemCount) { mutableSetOf() }
 
     private val updateErrors: Array<Exception?> = Array(itemCount) { null }
 
@@ -36,21 +36,21 @@ class PasteCollector(
 
     fun needPreCollectionItem(
         itemIndex: Int,
-        kclass: KClass<out PasteItemService>,
+        kclass: KClass<out PasteTypePlugin>,
     ): Boolean {
         return !preCollectors[itemIndex].contains(kclass)
     }
 
     fun needUpdateCollectItem(
         itemIndex: Int,
-        kclass: KClass<out PasteItemService>,
+        kclass: KClass<out PasteTypePlugin>,
     ): Boolean {
         return !updateCollectors[itemIndex].contains(kclass)
     }
 
     fun preCollectItem(
         itemIndex: Int,
-        kclass: KClass<out PasteItemService>,
+        kclass: KClass<out PasteTypePlugin>,
         pasteItem: PasteItem,
     ) {
         preCollectors[itemIndex][kclass] = pasteItem
@@ -58,7 +58,7 @@ class PasteCollector(
 
     fun updateCollectItem(
         itemIndex: Int,
-        kclass: KClass<out PasteItemService>,
+        kclass: KClass<out PasteTypePlugin>,
         update: (PasteItem, MutableRealm) -> Unit,
     ) {
         preCollectors[itemIndex][kclass]?.let {
@@ -123,7 +123,7 @@ class PasteCollector(
                 }
             } else {
                 try {
-                    pasteDao.releaseLocalPasteData(id, pastePlugins)
+                    pasteDao.releaseLocalPasteData(id, pasteProcessPlugins)
                 } catch (e: Exception) {
                     logger.error(e) { "Failed to release paste $id" }
                     // The following errors will be sent next

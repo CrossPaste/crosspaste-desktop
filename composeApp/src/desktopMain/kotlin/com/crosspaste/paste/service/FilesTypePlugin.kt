@@ -3,10 +3,16 @@ package com.crosspaste.paste.service
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
 import com.crosspaste.dao.paste.PasteItem
+import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.paste.PasteCollector
-import com.crosspaste.paste.PasteItemService
+import com.crosspaste.paste.PasteDataFlavor
+import com.crosspaste.paste.PasteDataFlavors
+import com.crosspaste.paste.PasteTransferable
+import com.crosspaste.paste.PasteTypePlugin
 import com.crosspaste.paste.item.FilesPasteItem
+import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.path.DesktopPathProvider
+import com.crosspaste.platform.currentPlatform
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.utils.DesktopFileUtils
 import com.crosspaste.utils.DesktopFileUtils.copyPath
@@ -19,16 +25,20 @@ import io.realm.kotlin.ext.toRealmList
 import kotlinx.serialization.encodeToString
 import okio.Path.Companion.toOkioPath
 import java.awt.datatransfer.DataFlavor
-import java.awt.datatransfer.Transferable
+import java.io.ByteArrayInputStream
 import java.io.File
 
-class FilesItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
+class FilesTypePlugin(private val appInfo: AppInfo) : PasteTypePlugin {
 
-    companion object FilesItemService {
+    companion object FilesTypePlugin {
 
         const val FILE_LIST_ID = "application/x-java-file-list"
 
         private val codecsUtils = getCodecsUtils()
+    }
+
+    override fun getPasteType(): Int {
+        return PasteType.FILE
     }
 
     override fun getIdentifiers(): List<String> {
@@ -39,7 +49,7 @@ class FilesItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
         pasteId: Long,
         itemIndex: Int,
         identifier: String,
-        transferable: Transferable,
+        pasteTransferable: PasteTransferable,
         pasteCollector: PasteCollector,
     ) {
         FilesPasteItem().apply {
@@ -53,9 +63,9 @@ class FilesItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
         transferData: Any,
         pasteId: Long,
         itemIndex: Int,
-        dataFlavor: DataFlavor,
-        dataFlavorMap: Map<String, List<DataFlavor>>,
-        transferable: Transferable,
+        dataFlavor: PasteDataFlavor,
+        dataFlavorMap: Map<String, List<PasteDataFlavor>>,
+        pasteTransferable: PasteTransferable,
         pasteCollector: PasteCollector,
     ) {
         if (transferData is List<*>) {
@@ -108,6 +118,28 @@ class FilesItemService(appInfo: AppInfo) : PasteItemService(appInfo) {
             if (files.isNotEmpty()) {
                 pasteCollector.updateCollectItem(itemIndex, this::class, update)
             }
+        }
+    }
+
+    override fun buildTransferable(
+        pasteItem: PasteItem,
+        map: MutableMap<PasteDataFlavor, Any>,
+    ) {
+        pasteItem as FilesPasteItem
+        val fileList: List<File> = pasteItem.getFilePaths().map { it.toFile() }
+        map[DataFlavor.javaFileListFlavor.toPasteDataFlavor()] = fileList
+        map[PasteDataFlavors.URI_LIST_FLAVOR.toPasteDataFlavor()] =
+            ByteArrayInputStream(fileList.joinToString(separator = "\n") { it.absolutePath }.toByteArray())
+        map[DataFlavor.stringFlavor.toPasteDataFlavor()] = fileList.joinToString(separator = "\n") { it.name }
+
+        if (currentPlatform().isLinux()) {
+            val content =
+                fileList.joinToString(
+                    separator = "\n",
+                    prefix = "copy\n",
+                ) { it.toURI().toString() }
+            val inputStream = ByteArrayInputStream(content.toByteArray())
+            map[PasteDataFlavors.GNOME_COPIED_FILES_FLAVOR.toPasteDataFlavor()] = inputStream
         }
     }
 }

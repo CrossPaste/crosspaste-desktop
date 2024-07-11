@@ -9,7 +9,6 @@ import io.realm.kotlin.types.RealmList
 import io.realm.kotlin.types.RealmObject
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import java.io.IOException
 
 @Serializable
 @SerialName("collection")
@@ -18,7 +17,6 @@ class PasteCollection : RealmObject {
     @Serializable(with = RealmAnyRealmListSerializer::class)
     var pasteItems: RealmList<RealmAny?> = realmListOf()
 
-    @Throws(IOException::class)
     fun clear(
         realm: MutableRealm,
         clearResource: Boolean = true,

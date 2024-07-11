@@ -1,6 +1,6 @@
 package com.crosspaste.dao.paste
 
-import com.crosspaste.paste.PastePlugin
+import com.crosspaste.paste.PasteProcessPlugin
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.query.RealmQuery
 import io.realm.kotlin.query.RealmResults
@@ -39,7 +39,7 @@ interface PasteDao {
 
     suspend fun releaseLocalPasteData(
         id: ObjectId,
-        pastePlugins: List<PastePlugin>,
+        pasteProcessPlugins: List<PasteProcessPlugin>,
     )
 
     suspend fun releaseRemotePasteData(

@@ -4,16 +4,12 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.dao.paste.PasteState
 import com.crosspaste.dao.paste.PasteType
-import com.crosspaste.paste.PasteDataFlavors
 import com.crosspaste.path.DesktopPathProvider
-import com.crosspaste.platform.currentPlatform
 import com.crosspaste.presist.DesktopOneFilePersist
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.serializer.PathStringRealmListSerializer
 import com.crosspaste.serializer.StringRealmListSerializer
 import com.crosspaste.utils.DesktopJsonUtils
-import io.github.oshai.kotlinlogging.KLogger
-import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.types.RealmList
@@ -26,21 +22,13 @@ import kotlinx.serialization.Transient
 import okio.Path
 import org.mongodb.kbson.BsonObjectId
 import org.mongodb.kbson.ObjectId
-import java.awt.datatransfer.DataFlavor
-import java.awt.image.BufferedImage
-import java.io.ByteArrayInputStream
-import java.io.File
-import java.nio.charset.StandardCharsets
 import java.nio.file.Paths
-import javax.imageio.ImageIO
 
 @Serializable
 @SerialName("images")
 class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
 
-    companion object {
-        private val logger: KLogger = KotlinLogging.logger {}
-    }
+    companion object {}
 
     @PrimaryKey
     @Transient
@@ -125,33 +113,5 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
             }
         }
         realm.delete(this)
-    }
-
-    override fun fillDataFlavor(map: MutableMap<DataFlavor, Any>) {
-        val filePaths = getFilePaths()
-        val fileList: List<File> = filePaths.map { it.toFile() }
-        map[DataFlavor.javaFileListFlavor] = fileList
-        map[PasteDataFlavors.URI_LIST_FLAVOR] =
-            ByteArrayInputStream(fileList.joinToString(separator = "\n") { it.absolutePath }.toByteArray())
-        map[DataFlavor.stringFlavor] = fileList.joinToString(separator = "\n") { it.name }
-
-        if (fileList.size == 1) {
-            try {
-                val image: BufferedImage? = ImageIO.read(fileList[0])
-                image?.let { map[DataFlavor.imageFlavor] = it }
-            } catch (e: Exception) {
-                logger.error(e) { "read image fail" }
-            }
-        }
-
-        if (currentPlatform().isLinux()) {
-            val content =
-                fileList.joinToString(
-                    separator = "\n",
-                    prefix = "copy\n",
-                ) { it.toURI().toString() }
-            val inputStream = ByteArrayInputStream(content.toByteArray(StandardCharsets.UTF_8))
-            map[PasteDataFlavors.GNOME_COPIED_FILES_FLAVOR] = inputStream
-        }
     }
 }

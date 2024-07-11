@@ -128,7 +128,8 @@ class LinuxPasteboardService(
                                         contents?.let {
                                             ownerTransferable = it
                                             launch(CoroutineName("LinuxPasteboardServiceConsumer")) {
-                                                pasteConsumer.consume(it, source, remote = false)
+                                                val pasteTransferable = DesktopReadTransferable(it)
+                                                pasteConsumer.consume(pasteTransferable, source, remote = false)
                                             }
                                         }
                                     }

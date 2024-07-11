@@ -1,16 +1,16 @@
 package com.crosspaste.paste.plugin
 
 import com.crosspaste.dao.paste.PasteItem
-import com.crosspaste.paste.PastePlugin
+import com.crosspaste.paste.PasteProcessPlugin
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import io.realm.kotlin.MutableRealm
 import java.net.MalformedURLException
 import java.net.URL
 
-object GenerateUrlPlugin : PastePlugin {
+object GenerateUrlPlugin : PasteProcessPlugin {
 
-    override fun pluginProcess(
+    override fun process(
         pasteItems: List<PasteItem>,
         realm: MutableRealm,
     ): List<PasteItem> {

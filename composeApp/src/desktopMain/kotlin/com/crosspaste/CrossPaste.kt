@@ -93,11 +93,11 @@ import com.crosspaste.paste.plugin.FilesToImagesPlugin
 import com.crosspaste.paste.plugin.GenerateUrlPlugin
 import com.crosspaste.paste.plugin.RemoveFolderImagePlugin
 import com.crosspaste.paste.plugin.SortPlugin
-import com.crosspaste.paste.service.FilesItemService
-import com.crosspaste.paste.service.HtmlItemService
-import com.crosspaste.paste.service.ImageItemService
-import com.crosspaste.paste.service.TextItemService
-import com.crosspaste.paste.service.UrlItemService
+import com.crosspaste.paste.service.FilesTypePlugin
+import com.crosspaste.paste.service.HtmlTypePlugin
+import com.crosspaste.paste.service.ImageTypePlugin
+import com.crosspaste.paste.service.TextTypePlugin
+import com.crosspaste.paste.service.UrlTypePlugin
 import com.crosspaste.path.DesktopPathProvider
 import com.crosspaste.path.PathProvider
 import com.crosspaste.platform.currentPlatform
@@ -248,6 +248,11 @@ class CrossPaste {
                     single<SignalClientDecryptPlugin> { SignalClientDecryptPlugin(get()) }
 
                     // paste component
+                    single<FilesTypePlugin> { FilesTypePlugin(get()) }
+                    single<HtmlTypePlugin> { HtmlTypePlugin(get()) }
+                    single<ImageTypePlugin> { ImageTypePlugin(get()) }
+                    single<TextTypePlugin> { TextTypePlugin() }
+                    single<UrlTypePlugin> { UrlTypePlugin() }
                     single<PasteboardService> { getDesktopPasteboardService(get(), get(), get(), get(), get()) }
                     single<TransferableConsumer> {
                         DesktopTransferableConsumer(
@@ -255,22 +260,32 @@ class CrossPaste {
                             get(),
                             get(),
                             listOf(
-                                FilesItemService(appInfo = get()),
-                                HtmlItemService(appInfo = get()),
-                                ImageItemService(appInfo = get()),
-                                TextItemService(appInfo = get()),
-                                UrlItemService(appInfo = get()),
-                            ),
-                            listOf(
                                 DistinctPlugin,
                                 GenerateUrlPlugin,
                                 FilesToImagesPlugin,
                                 RemoveFolderImagePlugin,
                                 SortPlugin,
                             ),
+                            listOf(
+                                get<FilesTypePlugin>(),
+                                get<HtmlTypePlugin>(),
+                                get<ImageTypePlugin>(),
+                                get<TextTypePlugin>(),
+                                get<UrlTypePlugin>(),
+                            ),
                         )
                     }
-                    single<TransferableProducer> { DesktopTransferableProducer() }
+                    single<TransferableProducer> {
+                        DesktopTransferableProducer(
+                            listOf(
+                                get<FilesTypePlugin>(),
+                                get<HtmlTypePlugin>(),
+                                get<ImageTypePlugin>(),
+                                get<TextTypePlugin>(),
+                                get<UrlTypePlugin>(),
+                            ),
+                        )
+                    }
                     single<ChromeService> { DesktopChromeService(get()) }
                     single<PastePreviewService> { DesktopPastePreviewService(get()) }
                     single<PasteSyncProcessManager<ObjectId>> { DesktopPasteSyncProcessManager() }

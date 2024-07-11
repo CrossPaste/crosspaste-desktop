@@ -3,15 +3,20 @@ package com.crosspaste.paste
 import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.paste.item.PasteFiles
 import java.awt.datatransfer.DataFlavor
-import java.awt.datatransfer.Transferable
 
-class DesktopTransferableProducer : TransferableProducer {
+class DesktopTransferableProducer(
+    pasteTypePlugins: List<PasteTypePlugin>,
+) : TransferableProducer {
+
+    private val pasteTypePluginMap: Map<Int, PasteTypePlugin> =
+        pasteTypePlugins.associateBy { it.getPasteType() }
+
     override fun produce(
         pasteData: PasteData,
         localOnly: Boolean,
         filterFile: Boolean,
-    ): Transferable? {
-        val map = LinkedHashMap<DataFlavor, Any>()
+    ): DesktopWriteTransferable? {
+        val builder = DesktopWriteTransferableBuilder()
 
         val pasteAppearItems = pasteData.getPasteAppearItems()
 
@@ -21,18 +26,19 @@ class DesktopTransferableProducer : TransferableProducer {
                     continue
                 }
             } else {
-                pasteAppearItem.fillDataFlavor(map)
+                pasteTypePluginMap[pasteAppearItem.getPasteType()]?.let {
+                    builder.add(it, pasteAppearItem)
+                }
             }
         }
 
-        return if (map.isEmpty()) {
+        return if (builder.isEmpty()) {
             null
         } else {
             if (localOnly) {
-                map[LocalOnlyFlavor] = true
+                builder.add(LocalOnlyFlavor.toPasteDataFlavor(), true)
             }
-
-            PasteTransferable(map)
+            builder.build()
         }
     }
 }

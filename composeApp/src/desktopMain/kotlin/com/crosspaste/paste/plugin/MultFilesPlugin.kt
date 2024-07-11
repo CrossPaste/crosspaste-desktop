@@ -1,7 +1,7 @@
 package com.crosspaste.paste.plugin
 
 import com.crosspaste.dao.paste.PasteItem
-import com.crosspaste.paste.PastePlugin
+import com.crosspaste.paste.PasteProcessPlugin
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.utils.DesktopJsonUtils
 import com.crosspaste.utils.getCodecsUtils
@@ -9,11 +9,11 @@ import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.toRealmList
 import kotlinx.serialization.encodeToString
 
-object MultFilesPlugin : PastePlugin {
+object MultFilesPlugin : PasteProcessPlugin {
 
     private val codecsUtils = getCodecsUtils()
 
-    override fun pluginProcess(
+    override fun process(
         pasteItems: List<PasteItem>,
         realm: MutableRealm,
     ): List<PasteItem> {

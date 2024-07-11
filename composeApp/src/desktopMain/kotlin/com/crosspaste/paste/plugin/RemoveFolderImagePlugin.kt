@@ -2,13 +2,13 @@ package com.crosspaste.paste.plugin
 
 import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.dao.paste.PasteType
-import com.crosspaste.paste.PastePlugin
+import com.crosspaste.paste.PasteProcessPlugin
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.utils.isDirectory
 import io.realm.kotlin.MutableRealm
 
-object RemoveFolderImagePlugin : PastePlugin {
-    override fun pluginProcess(
+object RemoveFolderImagePlugin : PasteProcessPlugin {
+    override fun process(
         pasteItems: List<PasteItem>,
         realm: MutableRealm,
     ): List<PasteItem> {

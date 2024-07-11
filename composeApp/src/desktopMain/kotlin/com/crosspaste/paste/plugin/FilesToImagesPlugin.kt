@@ -2,7 +2,7 @@ package com.crosspaste.paste.plugin
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.dao.paste.PasteItem
-import com.crosspaste.paste.PastePlugin
+import com.crosspaste.paste.PasteProcessPlugin
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.path.DesktopPathProvider
@@ -12,12 +12,12 @@ import com.crosspaste.utils.extension
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.toRealmList
 
-object FilesToImagesPlugin : PastePlugin {
+object FilesToImagesPlugin : PasteProcessPlugin {
 
     private val fileBasePath = DesktopPathProvider.resolve(appFileType = AppFileType.FILE)
     private val imageBasePath = DesktopPathProvider.resolve(appFileType = AppFileType.IMAGE)
 
-    override fun pluginProcess(
+    override fun process(
         pasteItems: List<PasteItem>,
         realm: MutableRealm,
     ): List<PasteItem> {
