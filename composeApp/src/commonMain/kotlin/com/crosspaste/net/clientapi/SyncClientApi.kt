@@ -17,6 +17,7 @@ interface SyncClientApi {
     suspend fun heartbeat(
         syncInfo: SyncInfo,
         signalMessageProcessor: SignalMessageProcessor,
+        targetAppInstanceId: String,
         toUrl: URLBuilder.(URLBuilder) -> Unit,
     ): ClientApiResult
 

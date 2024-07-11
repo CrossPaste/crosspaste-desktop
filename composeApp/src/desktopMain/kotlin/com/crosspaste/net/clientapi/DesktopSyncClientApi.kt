@@ -56,6 +56,7 @@ class DesktopSyncClientApi(
     override suspend fun heartbeat(
         syncInfo: SyncInfo,
         signalMessageProcessor: SignalMessageProcessor,
+        targetAppInstanceId: String,
         toUrl: URLBuilder.(URLBuilder) -> Unit,
     ): ClientApiResult {
         return request(logger, request = {
@@ -65,6 +66,7 @@ class DesktopSyncClientApi(
             pasteClient.post(
                 dataContent,
                 typeInfo<DataContent>(),
+                targetAppInstanceId,
                 urlBuilder = {
                     toUrl(it)
                     buildUrl(it, "sync", "heartbeat")
