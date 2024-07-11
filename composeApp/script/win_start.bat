@@ -1,6 +1,6 @@
 @echo off
 :: Determine the application path relative to this script
-set "APP_PATH=%~dp0crosspaste.exe"
+set "APP_PATH=%~dp0CrossPaste.exe"
 
 :: Check if a PID is provided
 if "%~1" == "" (
