@@ -52,7 +52,6 @@ import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
 import kotlinx.coroutines.launch
-import java.awt.event.KeyEvent
 
 @Composable
 fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
@@ -168,11 +167,11 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
                                         .focusRequester(focusRequesters[index])
                                         .onKeyEvent {
                                             when (it.key) {
-                                                Key(KeyEvent.VK_ENTER) -> {
+                                                Key.Enter -> {
                                                     confirmAction()
                                                     true
                                                 }
-                                                Key(KeyEvent.VK_ESCAPE) -> {
+                                                Key.Escape -> {
                                                     cancelAction()
                                                     true
                                                 }

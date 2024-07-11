@@ -47,7 +47,6 @@ import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.ExpandView
 import com.crosspaste.ui.base.PasteDialog
-import java.awt.event.KeyEvent
 
 @Composable
 fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
@@ -145,11 +144,11 @@ fun MyDevicesView(currentPageViewContext: MutableState<PageViewContext>) {
                                         .focusRequester(focusRequester)
                                         .onKeyEvent {
                                             when (it.key) {
-                                                Key(KeyEvent.VK_ENTER) -> {
+                                                Key.Enter -> {
                                                     confirmAction()
                                                     true
                                                 }
-                                                Key(KeyEvent.VK_ESCAPE) -> {
+                                                Key.Escape -> {
                                                     cancelAction()
                                                     true
                                                 }
