@@ -1,11 +1,10 @@
 package com.crosspaste.utils
 
-object HtmlUtils {
+expect fun getHtmlUtils(): HtmlUtils
 
-    private val codecsUtils = getCodecsUtils()
+interface HtmlUtils {
 
-    fun dataUrl(html: String): String {
-        val encodedContent = codecsUtils.base64Encode(html.toByteArray())
-        return "data:text/html;charset=UTF-8;base64,$encodedContent"
-    }
+    fun dataUrl(html: String): String
+
+    fun getHtmlText(html: String): String
 }

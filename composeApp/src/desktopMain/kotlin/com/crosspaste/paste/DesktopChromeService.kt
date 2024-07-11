@@ -7,7 +7,7 @@ import com.crosspaste.os.windows.WinProcessUtils.killProcessSet
 import com.crosspaste.os.windows.WindowDpiHelper
 import com.crosspaste.path.DesktopPathProvider
 import com.crosspaste.platform.currentPlatform
-import com.crosspaste.utils.HtmlUtils.dataUrl
+import com.crosspaste.utils.DesktopHtmlUtils.dataUrl
 import com.crosspaste.utils.Retry
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
