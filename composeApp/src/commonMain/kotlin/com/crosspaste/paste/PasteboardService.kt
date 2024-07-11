@@ -6,9 +6,8 @@ import com.crosspaste.dao.paste.PasteDao
 import com.crosspaste.dao.paste.PasteData
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.channels.Channel
-import java.awt.datatransfer.ClipboardOwner
 
-interface PasteboardService : PasteboardMonitor, ClipboardOwner {
+interface PasteboardService : PasteboardMonitor {
 
     val logger: KLogger
 
