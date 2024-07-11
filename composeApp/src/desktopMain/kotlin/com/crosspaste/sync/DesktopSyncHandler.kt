@@ -6,6 +6,7 @@ import com.crosspaste.dao.sync.SyncRuntimeInfo
 import com.crosspaste.dao.sync.SyncRuntimeInfoDao
 import com.crosspaste.dao.sync.SyncState
 import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SuccessResult
@@ -251,13 +252,13 @@ class DesktopSyncHandler(
                 }
                 if (syncRuntimeInfo.connectState == SyncState.UNMATCHED) {
                     logger.info { "heartbeat fail and connectState is unmatched, create new session $host ${syncRuntimeInfo.port}" }
-                    createSession(host, syncRuntimeInfo.port)
+                    createSession(host, syncRuntimeInfo.port, syncRuntimeInfo.appInstanceId)
                 } else {
                     logger.info { "heartbeat fail $host ${syncRuntimeInfo.port}" }
                 }
             } else {
                 logger.info { "not exist session to create session $host ${syncRuntimeInfo.port}" }
-                createSession(host, syncRuntimeInfo.port)
+                createSession(host, syncRuntimeInfo.port, syncRuntimeInfo.appInstanceId)
             }
         } ?: run {
             logger.info { "${syncRuntimeInfo.platformName} to disconnected" }
@@ -292,10 +293,21 @@ class DesktopSyncHandler(
             }
 
             is FailureResult -> {
-                logger.info { "exchangeSyncInfo return fail state to unmatched $host $port" }
-                update {
-                    this.connectState = SyncState.UNMATCHED
-                    this.modifyTime = RealmInstant.now()
+                if (result.exception.getErrorCode().code ==
+                    StandardErrorCode.SYNC_NOT_MATCH_APP_INSTANCE_ID.getCode()
+                ) {
+                    logger.info { "heartbeat return fail state to disconnect $host $port" }
+                    update {
+                        this.connectHostAddress = null
+                        this.connectState = SyncState.DISCONNECTED
+                        this.modifyTime = RealmInstant.now()
+                    }
+                } else {
+                    logger.info { "exchangeSyncInfo return fail state to unmatched $host $port" }
+                    update {
+                        this.connectState = SyncState.UNMATCHED
+                        this.modifyTime = RealmInstant.now()
+                    }
                 }
                 return false
             }
@@ -314,9 +326,10 @@ class DesktopSyncHandler(
     private suspend fun createSession(
         host: String,
         port: Int,
+        targetAppInstanceId: String,
     ) {
         val result =
-            syncClientApi.isTrust { urlBuilder ->
+            syncClientApi.isTrust(targetAppInstanceId) { urlBuilder ->
                 buildUrl(urlBuilder, host, port)
             }
 
@@ -377,11 +390,22 @@ class DesktopSyncHandler(
                 }
             }
             is FailureResult -> {
-                logger.info { "connect state to unverified $host $port" }
-                update {
-                    this.connectState = SyncState.UNVERIFIED
-                    this.modifyTime = RealmInstant.now()
-                    logger.info { "createSession ${syncRuntimeInfo.platformName} UNVERIFIED" }
+                if (result.exception.getErrorCode().code ==
+                    StandardErrorCode.SYNC_NOT_MATCH_APP_INSTANCE_ID.getCode()
+                ) {
+                    logger.info { "heartbeat return fail state to disconnect $host $port" }
+                    update {
+                        this.connectHostAddress = null
+                        this.connectState = SyncState.DISCONNECTED
+                        this.modifyTime = RealmInstant.now()
+                    }
+                } else {
+                    logger.info { "connect state to unverified $host $port" }
+                    update {
+                        this.connectState = SyncState.UNVERIFIED
+                        this.modifyTime = RealmInstant.now()
+                        logger.info { "createSession ${syncRuntimeInfo.platformName} UNVERIFIED" }
+                    }
                 }
             }
             else -> {

@@ -129,8 +129,8 @@ fun Routing.syncRouting() {
         getAppInstanceId(call)?.let { appInstanceId ->
             val targetAppInstanceId = call.request.headers["targetAppInstanceId"]
             if (targetAppInstanceId != appInfo.appInstanceId) {
-                logger.debug { "targetAppInstanceId $targetAppInstanceId not match ${appInfo.appInstanceId}" }
-                failResponse(call, StandardErrorCode.SIGNAL_EXCHANGE_FAIL.toErrorCode())
+                logger.debug { "heartbeat targetAppInstanceId $targetAppInstanceId not match ${appInfo.appInstanceId}" }
+                failResponse(call, StandardErrorCode.SYNC_NOT_MATCH_APP_INSTANCE_ID.toErrorCode())
                 return@let
             }
             val dataContent = call.receive(DataContent::class)
@@ -164,6 +164,12 @@ fun Routing.syncRouting() {
 
     get("/sync/isTrust") {
         getAppInstanceId(call)?.let { appInstanceId ->
+            val targetAppInstanceId = call.request.headers["targetAppInstanceId"]
+            if (targetAppInstanceId != appInfo.appInstanceId) {
+                logger.debug { "isTrust targetAppInstanceId $targetAppInstanceId not match ${appInfo.appInstanceId}" }
+                failResponse(call, StandardErrorCode.SYNC_NOT_MATCH_APP_INSTANCE_ID.toErrorCode())
+                return@let
+            }
             val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
             signalProtocolStore.getIdentity(signalProtocolAddress)?.let {
                 logger.debug { "${appInfo.appInstanceId} isTrust $appInstanceId" }

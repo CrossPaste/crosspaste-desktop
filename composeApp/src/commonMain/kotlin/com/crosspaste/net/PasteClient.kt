@@ -16,6 +16,7 @@ interface PasteClient {
     ): HttpResponse
 
     suspend fun get(
+        targetAppInstanceId: String? = null,
         timeout: Long = 1000L,
         urlBuilder: URLBuilder.(URLBuilder) -> Unit,
     ): HttpResponse
