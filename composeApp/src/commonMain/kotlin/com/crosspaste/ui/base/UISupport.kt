@@ -18,4 +18,6 @@ interface UISupport {
     fun openText(text: String)
 
     fun openPasteData(pasteData: PasteData)
+
+    fun jumpPrivacyAccessibility()
 }

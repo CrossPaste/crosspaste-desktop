@@ -85,7 +85,6 @@ import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
-import java.awt.event.KeyEvent
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -130,17 +129,17 @@ fun CrossPasteSearchWindowContent() {
                     .padding(10.dp)
                     .onKeyEvent {
                         when (it.key) {
-                            Key(KeyEvent.VK_ENTER) -> {
+                            Key.Enter -> {
                                 runBlocking {
                                     pasteSearchService.toPaste()
                                 }
                                 true
                             }
-                            Key(KeyEvent.VK_UP) -> {
+                            Key.DirectionUp -> {
                                 pasteSearchService.upSelectedIndex()
                                 true
                             }
-                            Key(KeyEvent.VK_DOWN) -> {
+                            Key.DirectionDown -> {
                                 pasteSearchService.downSelectedIndex()
                                 true
                             }

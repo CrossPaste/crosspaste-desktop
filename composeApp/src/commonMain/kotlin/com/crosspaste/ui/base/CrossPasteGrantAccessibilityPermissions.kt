@@ -45,8 +45,6 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.CrossPasteTheme
 import com.crosspaste.ui.grantPermissionColor
 import kotlinx.coroutines.delay
-import java.awt.Desktop
-import java.net.URI
 
 @Composable
 fun CrossPasteGrantAccessibilityPermissions(checkAccessibilityPermissionsFun: () -> Boolean) {
@@ -54,6 +52,7 @@ fun CrossPasteGrantAccessibilityPermissions(checkAccessibilityPermissionsFun: ()
     val exitApplication = LocalExitApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val appRestartService = current.koin.get<AppRestartService>()
+    val uiSupport = current.koin.get<UISupport>()
 
     var toRestart by remember { mutableStateOf(false) }
 
@@ -169,7 +168,7 @@ fun CrossPasteGrantAccessibilityPermissions(checkAccessibilityPermissionsFun: ()
                         Button(
                             modifier = Modifier.height(28.dp),
                             onClick = {
-                                jumpPrivacyAccessibility()
+                                uiSupport.jumpPrivacyAccessibility()
                             },
                             shape = RoundedCornerShape(4.dp),
                             border = BorderStroke(1.dp, grantPermissionColor()),
@@ -233,12 +232,5 @@ fun CrossPasteGrantAccessibilityPermissions(checkAccessibilityPermissionsFun: ()
                 }
             }
         }
-    }
-}
-
-private fun jumpPrivacyAccessibility() {
-    if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-        Desktop.getDesktop()
-            .browse(URI("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"))
     }
 }
