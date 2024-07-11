@@ -10,6 +10,7 @@ import com.crosspaste.dto.sync.RequestTrust
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.serializer.PreKeyBundleSerializer
+import com.crosspaste.signal.SignalMessageProcessorImpl
 import com.crosspaste.signal.SignalProcessorCache
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.DesktopJsonUtils
@@ -24,7 +25,6 @@ import io.ktor.server.routing.*
 import org.signal.libsignal.protocol.IdentityKey
 import org.signal.libsignal.protocol.SignalProtocolAddress
 import org.signal.libsignal.protocol.message.PreKeySignalMessage
-import org.signal.libsignal.protocol.message.SignalMessage
 import org.signal.libsignal.protocol.state.PreKeyBundle
 import org.signal.libsignal.protocol.state.PreKeyRecord
 import org.signal.libsignal.protocol.state.SignalProtocolStore
@@ -97,6 +97,7 @@ fun Routing.syncRouting() {
             val bytes = dataContent.data
             signalProcessorCache.removeSignalMessageProcessor(appInstanceId)
             val processor = signalProcessorCache.getSignalMessageProcessor(appInstanceId)
+            processor as SignalMessageProcessorImpl
             val preKeySignalMessage = PreKeySignalMessage(bytes)
 
             val signedPreKeyId = preKeySignalMessage.signedPreKeyId
@@ -106,7 +107,7 @@ fun Routing.syncRouting() {
                     processor.signalProtocolAddress,
                     preKeySignalMessage.identityKey,
                 )
-                val decrypt = processor.decrypt(preKeySignalMessage)
+                val decrypt = processor.decryptPreKeySignalMessage(preKeySignalMessage)
 
                 try {
                     val syncInfo = DesktopJsonUtils.JSON.decodeFromString<SyncInfo>(String(decrypt, Charsets.UTF_8))
@@ -136,8 +137,7 @@ fun Routing.syncRouting() {
             val dataContent = call.receive(DataContent::class)
             val bytes = dataContent.data
             val processor = signalProcessorCache.getSignalMessageProcessor(appInstanceId)
-            val signalMessage = SignalMessage(bytes)
-            val decrypt = processor.decrypt(signalMessage)
+            val decrypt = processor.decryptSignalMessage(bytes)
 
             try {
                 val syncInfo = DesktopJsonUtils.JSON.decodeFromString<SyncInfo>(String(decrypt, Charsets.UTF_8))

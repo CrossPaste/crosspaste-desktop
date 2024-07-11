@@ -11,7 +11,6 @@ import io.ktor.http.*
 import io.ktor.util.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
-import org.signal.libsignal.protocol.message.SignalMessage
 import java.io.ByteArrayOutputStream
 
 class SignalClientDecryptPlugin(private val signalProcessorCache: SignalProcessorCache) :
@@ -44,8 +43,7 @@ class SignalClientDecryptPlugin(private val signalProcessorCache: SignalProcesso
 
                         if (contentType == ContentType.Application.Json) {
                             val bytes = byteReadChannel.readRemaining().readBytes()
-                            val signalMessage = SignalMessage(bytes)
-                            val decrypt = processor.decrypt(signalMessage)
+                            val decrypt = processor.decryptSignalMessage(bytes)
 
                             // Create a new ByteReadChannel to contain the decrypted content
                             val newChannel = ByteReadChannel(decrypt)
@@ -70,8 +68,7 @@ class SignalClientDecryptPlugin(private val signalProcessorCache: SignalProcesso
                                     if (currentRead == -1) break
                                     bytesRead += currentRead
                                 }
-                                val signalMessage = SignalMessage(byteArray)
-                                result.write(processor.decrypt(signalMessage))
+                                result.write(processor.decryptSignalMessage(byteArray))
                             }
                             val newChannel = ByteReadChannel(result.toByteArray())
                             val responseData =

@@ -7,7 +7,6 @@ import io.ktor.server.application.*
 import io.ktor.server.application.hooks.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
-import org.signal.libsignal.protocol.message.SignalMessage
 import java.nio.ByteBuffer
 
 val SIGNAL_SERVER_DECRYPT_PLUGIN: ApplicationPlugin<SignalConfig> =
@@ -29,8 +28,7 @@ val SIGNAL_SERVER_DECRYPT_PLUGIN: ApplicationPlugin<SignalConfig> =
                         return@on application.writer {
                             val processor = signalProcessorCache.getSignalMessageProcessor(appInstanceId)
                             val encryptedContent = body.readRemaining().readBytes()
-                            val signalMessage = SignalMessage(encryptedContent)
-                            val decrypt = processor.decrypt(signalMessage)
+                            val decrypt = processor.decryptSignalMessage(encryptedContent)
                             channel.writeFully(ByteBuffer.wrap(decrypt))
                         }.channel
                     }

@@ -32,7 +32,7 @@ val SIGNAL_SERVER_ENCRYPT_PLUGIN: ApplicationPlugin<SignalConfig> =
                     logger.debug { "signal server encrypt $appInstanceId" }
                     val processor = signalProcessorCache.getSignalMessageProcessor(appInstanceId)
                     transformBodyTo(body) { bytes ->
-                        processor.encrypt(bytes).serialize()
+                        processor.encrypt(bytes)
                     }
                 }
             }
