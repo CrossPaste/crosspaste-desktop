@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the application path relative to this script
-app_path="$(dirname "$0")/clipevery"
+app_path="$(dirname "$0")/crosspaste"
 
 # Check if a PID is provided and if it is a number
 if [ $# -eq 1 ]; then
