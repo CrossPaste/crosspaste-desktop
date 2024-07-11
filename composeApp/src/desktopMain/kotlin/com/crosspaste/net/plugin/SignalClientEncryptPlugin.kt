@@ -35,9 +35,8 @@ class SignalClientEncryptPlugin(private val signalProcessorCache: SignalProcesso
                             is OutgoingContent.ByteArrayContent -> {
                                 val processor = signalProcessorCache.getSignalMessageProcessor(targetAppInstanceId)
                                 val originalContent = context.body as OutgoingContent.ByteArrayContent
-                                val ciphertextMessage = processor.encrypt(originalContent.bytes())
-                                val encryptedData = ciphertextMessage.serialize()
-                                proceedWith(ByteArrayContent(encryptedData, contentType = ContentType.Application.Json))
+                                val ciphertextMessageBytes = processor.encrypt(originalContent.bytes())
+                                proceedWith(ByteArrayContent(ciphertextMessageBytes, contentType = ContentType.Application.Json))
                             }
                         }
                     }

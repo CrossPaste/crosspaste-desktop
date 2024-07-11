@@ -40,8 +40,8 @@ class DesktopSyncClientApi(
     ): ClientApiResult {
         return request(logger, request = {
             val data = DesktopJsonUtils.JSON.encodeToString(syncInfo).toByteArray()
-            val ciphertextMessage = signalMessageProcessor.encrypt(data)
-            val dataContent = DataContent(data = ciphertextMessage.serialize())
+            val ciphertextMessageBytes = signalMessageProcessor.encrypt(data)
+            val dataContent = DataContent(data = ciphertextMessageBytes)
             pasteClient.post(
                 dataContent,
                 typeInfo<DataContent>(),
@@ -61,8 +61,8 @@ class DesktopSyncClientApi(
     ): ClientApiResult {
         return request(logger, request = {
             val data = DesktopJsonUtils.JSON.encodeToString(syncInfo).toByteArray()
-            val ciphertextMessage = signalMessageProcessor.encrypt(data)
-            val dataContent = DataContent(data = ciphertextMessage.serialize())
+            val ciphertextMessageBytes = signalMessageProcessor.encrypt(data)
+            val dataContent = DataContent(data = ciphertextMessageBytes)
             pasteClient.post(
                 dataContent,
                 typeInfo<DataContent>(),

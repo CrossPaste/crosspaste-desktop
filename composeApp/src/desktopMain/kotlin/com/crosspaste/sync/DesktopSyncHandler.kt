@@ -11,6 +11,7 @@ import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
+import com.crosspaste.signal.SignalMessageProcessorImpl
 import com.crosspaste.signal.SignalProcessorCache
 import com.crosspaste.utils.DesktopNetUtils.hostPreFixMatch
 import com.crosspaste.utils.TelnetUtils
@@ -45,6 +46,8 @@ class DesktopSyncHandler(
     private val logger = KotlinLogging.logger {}
 
     override val signalProcessor = signalProcessorCache.getSignalMessageProcessor(syncRuntimeInfo.appInstanceId)
+
+    private val signalProtocolAddress = (signalProcessor as SignalMessageProcessorImpl).signalProtocolAddress
 
     override var recommendedRefreshTime: Long = 0L
 
@@ -345,7 +348,7 @@ class DesktopSyncHandler(
                         val preKeyBundle = preKeyBundleResult.getResult<PreKeyBundle>()
                         val sessionBuilder = createSessionBuilder()
                         try {
-                            signalProtocolStore.saveIdentity(signalProcessor.signalProtocolAddress, preKeyBundle.identityKey)
+                            signalProtocolStore.saveIdentity(signalProtocolAddress, preKeyBundle.identityKey)
                             sessionBuilder.process(preKeyBundle)
                         } catch (e: Exception) {
                             logger.warn(e) { "createSession exchangeSyncInfo fail" }
@@ -463,11 +466,11 @@ class DesktopSyncHandler(
     }
 
     private fun isExistSession(): Boolean {
-        return signalProtocolStore.loadSession(signalProcessor.signalProtocolAddress) != null
+        return signalProtocolStore.loadSession(signalProtocolAddress) != null
     }
 
     private fun createSessionBuilder(): SessionBuilder {
-        return SessionBuilder(signalProtocolStore, signalProcessor.signalProtocolAddress)
+        return SessionBuilder(signalProtocolStore, signalProtocolAddress)
     }
 
     override suspend fun clearContext() {
