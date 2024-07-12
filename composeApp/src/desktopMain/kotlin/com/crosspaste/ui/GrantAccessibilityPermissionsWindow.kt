@@ -2,33 +2,35 @@ package com.crosspaste.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ApplicationScope
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowPlacement
-import androidx.compose.ui.window.WindowPosition
-import androidx.compose.ui.window.rememberWindowState
+import androidx.compose.ui.window.DialogWindow
+import androidx.compose.ui.window.rememberDialogState
 import com.crosspaste.os.macos.api.MacosApi
 import com.crosspaste.ui.base.CrossPasteGrantAccessibilityPermissions
 
 @Composable
 fun ApplicationScope.GrantAccessibilityPermissionsWindow(windowIcon: Painter?) {
     val windowState =
-        rememberWindowState(
-            placement = WindowPlacement.Floating,
-            position = WindowPosition.PlatformDefault,
+        rememberDialogState(
             size = DpSize(width = 360.dp, height = 200.dp),
         )
 
-    Window(
+    var alwaysOnTop by remember { mutableStateOf(true) }
+
+    DialogWindow(
         onCloseRequest = ::exitApplication,
         visible = true,
         state = windowState,
         title = "Apply Accessibility Permissions",
         icon = windowIcon,
-        alwaysOnTop = true,
+        alwaysOnTop = alwaysOnTop,
         undecorated = false,
         resizable = false,
     ) {
@@ -42,8 +44,13 @@ fun ApplicationScope.GrantAccessibilityPermissionsWindow(windowIcon: Painter?) {
             onDispose {}
         }
 
-        CrossPasteGrantAccessibilityPermissions {
-            MacosApi.INSTANCE.checkAccessibilityPermissions()
-        }
+        CrossPasteGrantAccessibilityPermissions(
+            checkAccessibilityPermissionsFun = {
+                MacosApi.INSTANCE.checkAccessibilityPermissions()
+            },
+            setOnTop = {
+                alwaysOnTop = it
+            },
+        )
     }
 }

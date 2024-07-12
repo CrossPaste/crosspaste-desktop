@@ -236,7 +236,6 @@ compose.desktop {
             jvmArgs("-DloggerLevel=$loggerLevel")
             jvmArgs("-DappEnv=$appEnv")
             jvmArgs("-DglobalListener=$globalListener")
-            jvmArgs("-Dcompose.interop.blending=true")
             jvmArgs("-Dio.netty.maxDirectMemory=268435456")
             jvmArgs("-DloggerDebugPackages=com.crosspaste.routing,com.crosspaste.net.clientapi,com.crosspaste.net.plugin")
 
@@ -264,6 +263,8 @@ compose.desktop {
                         extraKeysRawXml = """
                         <key>LSUIElement</key>
                         <string>true</string>
+                        <key>NSAccessibilityUsageDescription</key>
+                        <string>This application needs accessibility permissions to enhance your interaction with the system.</string>
                         <key>LSMinimumSystemVersion</key>
                         <string>10.15.0</string>
                     """
