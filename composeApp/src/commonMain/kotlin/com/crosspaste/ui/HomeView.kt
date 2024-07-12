@@ -1,6 +1,7 @@
 package com.crosspaste.ui
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -17,7 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
@@ -51,7 +52,6 @@ import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteSearchService
-import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.search
 import com.crosspaste.ui.base.settings
@@ -69,7 +69,7 @@ val customFontFamily =
         Font(resource = "font/BebasNeue.otf", FontWeight.Normal),
     )
 
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Preview
 @Composable
 fun HomeWindowDecoration() {
@@ -182,27 +182,21 @@ fun HomeWindowDecoration() {
                                         } else {
                                             Color.Transparent
                                         },
-                                    ),
+                                    ).onClick {
+                                        scope.launch {
+                                            appWindowManager.unActiveMainWindow()
+                                            delay(100)
+                                            pasteSearchService.activeWindow()
+                                        }
+                                    },
                         ) {}
 
-                        PasteIconButton(
-                            size = 20.dp,
-                            onClick = {
-                                scope.launch {
-                                    appWindowManager.unActiveMainWindow()
-                                    delay(100)
-                                    pasteSearchService.activeWindow()
-                                }
-                            },
-                            modifier = Modifier.background(Color.Transparent, CircleShape),
-                        ) {
-                            Icon(
-                                painter = search(),
-                                contentDescription = "open search window",
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colors.onBackground,
-                            )
-                        }
+                        Icon(
+                            painter = search(),
+                            contentDescription = "open search window",
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colors.onBackground,
+                        )
                     }
                 }
 
@@ -237,23 +231,17 @@ fun HomeWindowDecoration() {
                                         } else {
                                             Color.Transparent
                                         },
-                                    ),
+                                    ).onClick {
+                                        showPopup = !showPopup
+                                    },
                         ) {}
 
-                        PasteIconButton(
-                            size = 20.dp,
-                            onClick = {
-                                showPopup = !showPopup
-                            },
-                            modifier = Modifier.background(Color.Transparent, CircleShape),
-                        ) {
-                            Icon(
-                                painter = settings(),
-                                contentDescription = "info",
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colors.onBackground,
-                            )
-                        }
+                        Icon(
+                            painter = settings(),
+                            contentDescription = "info",
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colors.onBackground,
+                        )
                     }
                 }
 
