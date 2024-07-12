@@ -47,7 +47,10 @@ import com.crosspaste.ui.grantPermissionColor
 import kotlinx.coroutines.delay
 
 @Composable
-fun CrossPasteGrantAccessibilityPermissions(checkAccessibilityPermissionsFun: () -> Boolean) {
+fun CrossPasteGrantAccessibilityPermissions(
+    checkAccessibilityPermissionsFun: () -> Boolean,
+    setOnTop: (Boolean) -> Unit,
+) {
     val current = LocalKoinApplication.current
     val exitApplication = LocalExitApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
@@ -60,8 +63,8 @@ fun CrossPasteGrantAccessibilityPermissions(checkAccessibilityPermissionsFun: ()
 
     LaunchedEffect(Unit) {
         while (true) {
-            val checkAccessibilityPermissions = checkAccessibilityPermissionsFun()
-            if (checkAccessibilityPermissions) {
+            if (checkAccessibilityPermissionsFun()) {
+                setOnTop(true)
                 toRestart = true
                 break
             } else {
@@ -168,6 +171,7 @@ fun CrossPasteGrantAccessibilityPermissions(checkAccessibilityPermissionsFun: ()
                         Button(
                             modifier = Modifier.height(28.dp),
                             onClick = {
+                                setOnTop(false)
                                 uiSupport.jumpPrivacyAccessibility()
                             },
                             shape = RoundedCornerShape(4.dp),

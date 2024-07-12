@@ -2,6 +2,10 @@ package com.crosspaste.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -18,13 +22,15 @@ fun ApplicationScope.GrantAccessibilityPermissionsWindow(windowIcon: Painter?) {
             size = DpSize(width = 360.dp, height = 200.dp),
         )
 
+    var alwaysOnTop by remember { mutableStateOf(true) }
+
     DialogWindow(
         onCloseRequest = ::exitApplication,
         visible = true,
         state = windowState,
         title = "Apply Accessibility Permissions",
         icon = windowIcon,
-        alwaysOnTop = true,
+        alwaysOnTop = alwaysOnTop,
         undecorated = false,
         resizable = false,
     ) {
@@ -38,8 +44,13 @@ fun ApplicationScope.GrantAccessibilityPermissionsWindow(windowIcon: Painter?) {
             onDispose {}
         }
 
-        CrossPasteGrantAccessibilityPermissions {
-            MacosApi.INSTANCE.checkAccessibilityPermissions()
-        }
+        CrossPasteGrantAccessibilityPermissions(
+            checkAccessibilityPermissionsFun = {
+                MacosApi.INSTANCE.checkAccessibilityPermissions()
+            },
+            setOnTop = {
+                alwaysOnTop = it
+            },
+        )
     }
 }

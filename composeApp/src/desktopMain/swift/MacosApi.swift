@@ -287,7 +287,7 @@ public func simulatePasteCommand(keyCodesPointer: UnsafePointer<Int32>, count: I
 @_cdecl("checkAccessibilityPermissions")
 public func checkAccessibilityPermissions() -> Bool {
     let checkOptionPrompt = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
-    let options = [checkOptionPrompt: true] as CFDictionary
+    let options = [checkOptionPrompt: false] as CFDictionary
     let accessEnabled = AXIsProcessTrustedWithOptions(options)
 
     return accessEnabled
