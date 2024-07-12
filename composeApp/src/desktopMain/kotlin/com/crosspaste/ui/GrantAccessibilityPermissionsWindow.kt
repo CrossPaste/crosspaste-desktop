@@ -6,23 +6,19 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ApplicationScope
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowPlacement
-import androidx.compose.ui.window.WindowPosition
-import androidx.compose.ui.window.rememberWindowState
+import androidx.compose.ui.window.DialogWindow
+import androidx.compose.ui.window.rememberDialogState
 import com.crosspaste.os.macos.api.MacosApi
 import com.crosspaste.ui.base.CrossPasteGrantAccessibilityPermissions
 
 @Composable
 fun ApplicationScope.GrantAccessibilityPermissionsWindow(windowIcon: Painter?) {
     val windowState =
-        rememberWindowState(
-            placement = WindowPlacement.Floating,
-            position = WindowPosition.PlatformDefault,
+        rememberDialogState(
             size = DpSize(width = 360.dp, height = 200.dp),
         )
 
-    Window(
+    DialogWindow(
         onCloseRequest = ::exitApplication,
         visible = true,
         state = windowState,

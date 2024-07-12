@@ -154,7 +154,7 @@ fun CrossPasteGrantAccessibilityPermissions(checkAccessibilityPermissionsFun: ()
                     )
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
-                        text = copywriter.getText("crossPaste_needs_your_permission_to_support_global_shortcuts"),
+                        text = copywriter.getText("crosspaste_needs_your_permission_to_support_global_shortcuts"),
                         style =
                             TextStyle(
                                 fontSize = 15.sp,
