@@ -16,12 +16,14 @@ import com.crosspaste.app.AppLock
 import com.crosspaste.app.AppRestartService
 import com.crosspaste.app.AppStartUpService
 import com.crosspaste.app.AppTokenService
+import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopAppInfoFactory
 import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppRestartService
 import com.crosspaste.app.DesktopAppStartUpService
 import com.crosspaste.app.DesktopAppTokenService
+import com.crosspaste.app.DesktopAppUpdateService
 import com.crosspaste.app.getDesktopAppWindowManager
 import com.crosspaste.clean.CleanPasteScheduler
 import com.crosspaste.clean.DesktopCleanPasteScheduler
@@ -198,6 +200,7 @@ class CrossPaste {
                     single<AppLaunchState> { DesktopAppLaunch.launch() }
                     single<AppStartUpService> { DesktopAppStartUpService(get()) }
                     single<AppRestartService> { DesktopAppRestartService }
+                    single<AppUpdateService> { DesktopAppUpdateService(get(), get(), get()) }
                     single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<PasteServer>() }) }
                     single<GlobalCoroutineScope> { GlobalCoroutineScopeImpl }
                     single<SyncInfoFactory> { DesktopSyncInfoFactory(get(), get()) }

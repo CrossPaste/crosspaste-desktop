@@ -10,6 +10,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -19,13 +22,14 @@ import androidx.compose.ui.unit.max
 import com.crosspaste.LocalExitApplication
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.LocalPageViewContent
+import com.crosspaste.app.AppUpdateService
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.getMenWidth
 
 @Composable
-fun MenuView(
+fun HomeMenuView(
     openMainWindow: () -> Unit = {},
     close: () -> Unit,
 ) {
@@ -34,6 +38,9 @@ fun MenuView(
     val applicationExit = LocalExitApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val uiSupport = current.koin.get<UISupport>()
+    val appUpdateService = current.koin.get<AppUpdateService>()
+
+    val existNewVersion by remember { mutableStateOf(appUpdateService.existNewVersion()) }
 
     Box(
         modifier =
@@ -52,7 +59,17 @@ fun MenuView(
                 copywriter.getText("quit"),
             )
 
-        val maxWidth = max(150.dp, getMenWidth(menuTexts))
+        val maxWidth =
+            max(
+                150.dp,
+                getMenWidth(menuTexts, extendFunction = {
+                    if (existNewVersion && it == 0) {
+                        24.dp
+                    } else {
+                        0.dp
+                    }
+                }),
+            )
 
         Column(
             modifier =
@@ -62,8 +79,8 @@ fun MenuView(
                     .clip(RoundedCornerShape(5.dp))
                     .background(MaterialTheme.colors.surface),
         ) {
-            MenuItem(copywriter.getText("check_for_updates")) {
-                // TODO: check for updates
+            MenuItem(copywriter.getText("check_for_updates"), reminder = existNewVersion) {
+                appUpdateService.jumpDownload()
                 close()
             }
             MenuItem(copywriter.getText("settings")) {

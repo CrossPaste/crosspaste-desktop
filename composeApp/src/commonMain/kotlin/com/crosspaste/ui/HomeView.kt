@@ -267,7 +267,7 @@ fun HomeWindowDecoration() {
                                 dismissOnClickOutside = true,
                             ),
                     ) {
-                        MenuView {
+                        HomeMenuView {
                             showPopup = false
                         }
                     }
