@@ -80,10 +80,13 @@ class DesktopSyncClientApi(
         toUrl: URLBuilder.(URLBuilder) -> Unit,
     ): ClientApiResult {
         return request(logger, request = {
-            pasteClient.get(urlBuilder = {
-                toUrl(it)
-                buildUrl(it, "sync", "isTrust")
-            })
+            pasteClient.get(
+                targetAppInstanceId,
+                urlBuilder = {
+                    toUrl(it)
+                    buildUrl(it, "sync", "isTrust")
+                },
+            )
         }, transformData = { true })
     }
 
