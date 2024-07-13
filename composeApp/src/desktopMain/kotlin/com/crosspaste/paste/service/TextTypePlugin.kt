@@ -10,7 +10,6 @@ import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.utils.getCodecsUtils
 import io.realm.kotlin.MutableRealm
-import java.awt.SystemColor.text
 import java.awt.datatransfer.DataFlavor
 
 class TextTypePlugin : PasteTypePlugin {
@@ -74,6 +73,6 @@ class TextTypePlugin : PasteTypePlugin {
         map: MutableMap<PasteDataFlavor, Any>,
     ) {
         pasteItem as TextPasteItem
-        map[DataFlavor.stringFlavor.toPasteDataFlavor()] = text
+        map[DataFlavor.stringFlavor.toPasteDataFlavor()] = pasteItem.text
     }
 }
