@@ -173,7 +173,7 @@ fun WindowTrayMenu(hideMenu: () -> Unit) {
                         },
                 contentAlignment = Alignment.Center,
             ) {
-                MenuView(
+                HomeMenuView(
                     openMainWindow = {
                         mainCoroutineDispatcher.launch(CoroutineName("Open Menu")) {
                             appWindowManager.activeMainWindow()

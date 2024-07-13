@@ -103,3 +103,8 @@ fun noFavorite(): Painter {
 fun favorite(): Painter {
     return painterResource("icon/base/favorite.svg")
 }
+
+@Composable
+fun circle(): Painter {
+    return painterResource("icon/base/circle.svg")
+}

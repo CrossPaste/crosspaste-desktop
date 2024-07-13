@@ -108,6 +108,7 @@ kotlin {
             implementation(libs.material.desktop)
             implementation(libs.okio)
             implementation(libs.realm.kotlin.base)
+            implementation(libs.semver)
         }
 
         val commonTest by getting {

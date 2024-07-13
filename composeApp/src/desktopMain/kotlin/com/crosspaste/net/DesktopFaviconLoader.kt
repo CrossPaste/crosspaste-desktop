@@ -41,32 +41,33 @@ object DesktopFaviconLoader : FaviconLoader {
 
         val proxy = desktopProxy.getProxy(uri)
 
-        (proxy.address() as InetSocketAddress?).let { address ->
-            try {
-                val client =
-                    HttpClient.newBuilder()
-                        .proxy(ProxySelector.of(address))
-                        .build()
+        try {
+            val builder = HttpClient.newBuilder()
 
-                val request =
-                    HttpRequest.newBuilder()
-                        .uri(uri)
-                        .timeout(Duration.ofSeconds(5))
-                        .build()
-
-                val response = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
-
-                if (response.statusCode() == 200) {
-                    FileOutputStream(path.toFile()).use { output ->
-                        response.body().use { input ->
-                            input.copyTo(output)
-                        }
-                    }
-                    return@saveIco path
-                }
-            } catch (e: Exception) {
-                logger.warn(e) { "Failed to save favicon for $url" }
+            (proxy.address() as InetSocketAddress?)?.let { address ->
+                builder.proxy(ProxySelector.of(address))
             }
+
+            val client = builder.build()
+
+            val request =
+                HttpRequest.newBuilder()
+                    .uri(uri)
+                    .timeout(Duration.ofSeconds(5))
+                    .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
+
+            if (response.statusCode() == 200) {
+                FileOutputStream(path.toFile()).use { output ->
+                    response.body().use { input ->
+                        input.copyTo(output)
+                    }
+                }
+                return path
+            }
+        } catch (e: Exception) {
+            logger.warn(e) { "Failed to save favicon for $url" }
         }
         return null
     }
