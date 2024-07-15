@@ -76,17 +76,17 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
         Box {
             Column(
                 modifier =
-                    Modifier.padding(horizontal = 5.dp)
+                    Modifier.padding(horizontal = 8.dp)
                         .fillMaxWidth()
                         .height(40.dp)
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colors.surface.copy(0.64f)),
             ) {}
 
             Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
                 Row(
                     modifier =
-                        Modifier.padding(8.dp, 8.dp, 8.dp, 0.dp)
+                        Modifier.padding(12.dp, 8.dp, 12.dp, 0.dp)
                             .wrapContentWidth(),
                 ) {
                     tabs.forEach { pair ->
@@ -128,8 +128,8 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
                     }
                     sum
                 }
-                Row(modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
-                    Spacer(modifier = Modifier.width(4.dp + (10.dp * ((selectedIndex * 2) + 1)) + offset))
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Spacer(modifier = Modifier.width(8.dp + (10.dp * ((selectedIndex * 2) + 1)) + offset))
 
                     Box(
                         modifier =
@@ -142,8 +142,6 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(5.dp))
 
         when (currentPageViewContext.value.pageViewType) {
             PageViewType.PASTE_PREVIEW -> PastePreviewsView()

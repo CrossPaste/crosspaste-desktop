@@ -89,8 +89,8 @@ fun bindingQRCode() {
     Box(
         modifier =
             Modifier.fillMaxSize()
-                .padding(start = 5.dp, end = 5.dp, bottom = 5.dp)
-                .clip(RoundedCornerShape(10.dp))
+                .padding(8.dp)
+                .clip(RoundedCornerShape(5.dp))
                 .background(MaterialTheme.colors.surface.copy(0.64f)),
         contentAlignment = Alignment.Center,
     ) {

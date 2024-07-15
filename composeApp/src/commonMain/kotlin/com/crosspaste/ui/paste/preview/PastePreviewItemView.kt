@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
@@ -61,12 +60,11 @@ fun PastePreviewItemView(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(105.dp),
+                .height(100.dp),
     ) {
         Row(
             modifier =
                 Modifier.fillMaxSize()
-                    .padding(start = 5.dp, end = 5.dp, bottom = 5.dp)
                     .clip(RoundedCornerShape(5.dp)),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -122,7 +120,7 @@ fun PasteSpecificPreviewContentView(
     pasteRightInfo: @Composable ((Boolean) -> Unit) -> Unit,
 ) {
     var showMenu by remember { mutableStateOf(false) }
-    val width = animateDpAsState(targetValue = if (showMenu) 395.dp else 430.dp)
+    val width = animateDpAsState(targetValue = if (showMenu) (440 - 16 - 35).dp else (440 - 16).dp)
 
     Box(
         modifier =
