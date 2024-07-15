@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -125,30 +126,44 @@ fun PastePreviewsView() {
 
     Box(
         modifier =
-            Modifier.fillMaxWidth(),
+            Modifier.fillMaxWidth()
+                .padding(start = 8.dp)
+                .padding(vertical = 8.dp),
     ) {
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.wrapContentHeight(),
+        Box(
+            modifier =
+                Modifier.fillMaxSize()
+                    .padding(end = 8.dp)
+                    .clip(RoundedCornerShape(5.dp)),
         ) {
-            itemsIndexed(
-                rememberPasteDataList,
-                key = { _, item -> item.id },
-            ) { _, pasteData ->
-                PastePreviewItemView(pasteData) {
-                    PasteSpecificPreviewView(this)
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.wrapContentHeight(),
+            ) {
+                itemsIndexed(
+                    rememberPasteDataList,
+                    key = { _, item -> item.id },
+                ) { index, pasteData ->
+                    PastePreviewItemView(pasteData) {
+                        PasteSpecificPreviewView(this)
+                    }
+                    if (index < rememberPasteDataList.size - 1) {
+                        Spacer(modifier = Modifier.height(5.dp))
+                    }
                 }
             }
-        }
 
-        if (rememberPasteDataList.isEmpty()) {
-            EmptyScreenView()
+            if (rememberPasteDataList.isEmpty()) {
+                EmptyScreenView()
+            }
         }
 
         VerticalScrollbar(
             modifier =
-                Modifier.background(color = Color.Transparent)
-                    .fillMaxHeight().align(Alignment.CenterEnd)
+                Modifier
+                    .background(color = Color.Transparent)
+                    .fillMaxHeight()
+                    .align(Alignment.CenterEnd)
                     .draggable(
                         orientation = Orientation.Vertical,
                         state =
@@ -162,7 +177,7 @@ fun PastePreviewsView() {
             style =
                 ScrollbarStyle(
                     minimalHeight = 16.dp,
-                    thickness = 8.dp,
+                    thickness = 6.dp,
                     shape = RoundedCornerShape(4.dp),
                     hoverDurationMillis = 300,
                     unhoverColor = if (isScrolling) MaterialTheme.colors.onBackground.copy(alpha = 0.48f) else Color.Transparent,
@@ -188,8 +203,6 @@ fun EmptyScreenView() {
         contentAlignment = Alignment.Center,
         modifier =
             Modifier.fillMaxSize()
-                .padding(start = 5.dp, end = 5.dp, bottom = 5.dp)
-                .clip(RoundedCornerShape(10.dp))
                 .background(MaterialTheme.colors.surface.copy(0.64f)),
     ) {
         Box(
