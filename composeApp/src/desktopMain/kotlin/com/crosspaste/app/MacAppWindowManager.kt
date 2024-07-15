@@ -82,6 +82,7 @@ class MacAppWindowManager(
             prevMacAppInfo?.bundleIdentifier ?: "",
         )
         showMainWindow = false
+        delay(500)
         mainFocusRequester.freeFocus()
     }
 
