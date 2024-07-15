@@ -25,14 +25,24 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-            ./composeApp/resources
-            ./composeApp/jbr
           key: >
             ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*',
-            '**/gradle-wrapper.properties', '**/libs.versions.toml',
-            '**/webDriver.properties', '**/jbr.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+            '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      - name: Cache Chrome Driver And Headless Shell
+        uses: actions/cache@v4
+        with:
+          path: ./composeApp/resources
+          key: chrome-driver-headless-shell-${{ hashFiles('**/webDriver.properties') }}
+          restore-keys: chrome-driver-headless-shell-
+
+      - name: Cache Jetbrains Runtime JDK
+        uses: actions/cache@v4
+        with:
+          path: ./composeApp/jbr
+          key: jbr-${{ hashFiles('**/jbr.yaml') }}
+          restore-keys: jbr-
 
       - name: Build with Gradle
         run: ./gradlew build
