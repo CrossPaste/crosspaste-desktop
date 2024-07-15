@@ -133,14 +133,24 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-            ./composeApp/resources
-            ./composeApp/jbr
           key: >
             ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*',
-            '**/gradle-wrapper.properties', '**/libs.versions.toml',
-            '**/webDriver.properties', '**/jbr.yaml') }}
+            '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
           restore-keys: ${{ runner.os }}-gradle-
-          enableCrossOsArchive: true
+
+      - name: Cache Chrome Driver And Headless Shell
+        uses: actions/cache@v4
+        with:
+          path: ./composeApp/resources
+          key: chrome-driver-headless-shell-${{ hashFiles('**/webDriver.properties') }}
+          restore-keys: chrome-driver-headless-shell-
+
+      - name: Cache Jetbrains Runtime JDK
+        uses: actions/cache@v4
+        with:
+          path: ./composeApp/jbr
+          key: jbr-${{ hashFiles('**/jbr.yaml') }}
+          restore-keys: jbr-
 
       - name: check-darwin-x86-64-dylib-cache
         uses: actions/cache/restore@v4
