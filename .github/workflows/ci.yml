@@ -9,7 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    env:
+      BUILD_FULL_PLATFORM: YES
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 17
