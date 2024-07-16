@@ -80,6 +80,7 @@ jobs:
       KEY_ID: ${{ secrets.KEY_ID }}
       MAC_SIGNING_KEY_FILE_PATH: ${{ github.workspace }}/developerID_application.p12
       PRE_RELEASE: false
+      RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       # https://github.com/actions/runner-images/issues/2840
