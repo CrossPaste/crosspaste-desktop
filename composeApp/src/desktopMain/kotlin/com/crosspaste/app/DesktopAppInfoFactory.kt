@@ -5,7 +5,7 @@ import com.crosspaste.utils.getSystemProperty
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.IOException
 import java.nio.file.Paths
-import java.util.*
+import java.util.Properties
 
 val logger = KotlinLogging.logger {}
 
@@ -65,17 +65,12 @@ class DesktopAppInfoFactory(private val configManager: ConfigManager) : AppInfoF
                 } else if (appEnv.isTest()) {
                     "$version-test"
                 } else {
-                    val beta: String? = properties.getProperty("beta")
-
-                    val betaSuffix =
-                        if (beta == "0") {
-                            "-beta"
-                        } else if (beta != null) {
-                            "-beta$beta"
-                        } else {
-                            ""
-                        }
-                    "$version$betaSuffix"
+                    val prerelease: String? = properties.getProperty("prerelease")
+                    val prereleaseSuffix =
+                        prerelease?.let {
+                            "-$prerelease"
+                        } ?: ""
+                    "$version$prereleaseSuffix"
                 }
             } ?: "Unknown"
         }
