@@ -143,7 +143,7 @@ dependencies {
 
 compose.desktop {
 
-    val buildFullPlatform: Boolean = System.getenv("BUILD_FULL_PLATFORM") == "YES"
+    val buildFullPlatform: Boolean = System.getenv("BUILD_FULL_PLATFORM")?.lowercase() == "true"
 
     application {
 

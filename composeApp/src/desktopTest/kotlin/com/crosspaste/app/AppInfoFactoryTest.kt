@@ -1,6 +1,6 @@
 package com.crosspaste.app
 
-import java.util.*
+import java.util.Properties
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -26,12 +26,12 @@ class AppInfoFactoryTest {
                     run {
                         val properties = Properties()
                         properties.setProperty("version", "1.0.0")
-                        properties.setProperty("beta", "0")
+                        properties.setProperty("prerelease", "beta.0")
                         properties
                     },
             )
 
-        assertEquals("1.0.0-beta", versionWithBeta)
+        assertEquals("1.0.0-beta.0", versionWithBeta)
 
         val versionWithBeta2 =
             DesktopAppInfoFactory.getVersion(
@@ -39,12 +39,12 @@ class AppInfoFactoryTest {
                     run {
                         val properties = Properties()
                         properties.setProperty("version", "1.0.0")
-                        properties.setProperty("beta", "2")
+                        properties.setProperty("prerelease", "beta.2")
                         properties
                     },
             )
 
-        assertEquals("1.0.0-beta2", versionWithBeta2)
+        assertEquals("1.0.0-beta.2", versionWithBeta2)
 
         val versionWithBetaNull =
             DesktopAppInfoFactory.getVersion(
