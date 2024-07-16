@@ -5,6 +5,7 @@
 .idea
 .kotlin
 local.properties
+local.conveyor.conf
 package*.json
 !src/**/build/
 build
