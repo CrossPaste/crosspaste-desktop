@@ -1,5 +1,6 @@
 package com.crosspaste.app
 
+import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.DesktopProxy
 import com.crosspaste.ui.base.MessageType
 import com.crosspaste.ui.base.Toast
@@ -17,6 +18,7 @@ import java.time.Duration
 
 class DesktopAppUpdateService(
     appInfo: AppInfo,
+    private val copywriter: GlobalCopywriter,
     private val uiSupport: UISupport,
     private val toastManager: ToastManager,
 ) : AppUpdateService {
@@ -48,7 +50,7 @@ class DesktopAppUpdateService(
             toastManager.setToast(
                 Toast(
                     messageType = MessageType.Info,
-                    message = "No new version available",
+                    message = copywriter.getText("no_new_version_available"),
                 ),
             )
         }
