@@ -30,4 +30,19 @@ class GlobCopywriterTest {
         val copywriter = GlobalCopywriterImpl(configManager)
         assertEquals(EN, copywriter.language())
     }
+
+    @Test
+    fun testI18nKeys() {
+        val languageList = GlobalCopywriterImpl.languageList
+        val copywriterMap: Map<String, Copywriter> =
+            languageList.associateWith { language ->
+                CopywriterImpl(language)
+            }
+
+        // Verify that all keys are the same
+        val keys = copywriterMap.values.first().getKeys()
+        copywriterMap.values.forEach { copywriter ->
+            assertEquals(keys, copywriter.getKeys())
+        }
+    }
 }

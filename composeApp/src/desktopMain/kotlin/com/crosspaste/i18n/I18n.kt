@@ -64,6 +64,10 @@ class GlobalCopywriterImpl(private val configManager: ConfigManager) : GlobalCop
         return copywriter.getText(id)
     }
 
+    override fun getKeys(): Set<String> {
+        return copywriter.getKeys()
+    }
+
     override fun getDate(
         date: LocalDateTime,
         detail: Boolean,
@@ -127,6 +131,10 @@ class CopywriterImpl(private val language: String) : Copywriter {
         } else {
             value
         }
+    }
+
+    override fun getKeys(): Set<String> {
+        return properties.keys.map { it.toString() }.toSet()
     }
 
     override fun getDate(
