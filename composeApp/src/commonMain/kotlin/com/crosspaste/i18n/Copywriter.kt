@@ -8,6 +8,8 @@ interface Copywriter {
 
     fun getText(id: String): String
 
+    fun getKeys(): Set<String>
+
     fun getDate(
         date: LocalDateTime,
         detail: Boolean = false,
