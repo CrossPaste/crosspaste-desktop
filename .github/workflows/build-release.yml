@@ -3,7 +3,7 @@ name: "Build Package"
 on:
   push:
     tags:
-      - 'v-*'
+      - 'v*'
 
 jobs:
   check-dylib-cache:
