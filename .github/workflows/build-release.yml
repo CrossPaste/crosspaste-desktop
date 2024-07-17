@@ -179,7 +179,7 @@ jobs:
           key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
           region: oss-cn-shenzhen
           bucket: crosspaste-desktop-semi
-          assets: output/**:/${{ env.PACKAGE_VERSION }}/
+          assets: output/**:/${{ env.VERSION }}/
 
       # conveyor default cache directory is .conveyor/cache
       # Avoid caching it, causing Github space payment
