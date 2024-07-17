@@ -41,6 +41,8 @@ import com.crosspaste.endpoint.DesktopEndpointInfoFactory
 import com.crosspaste.endpoint.EndpointInfoFactory
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.i18n.GlobalCopywriterImpl
+import com.crosspaste.icon.DesktopFaviconLoader
+import com.crosspaste.icon.FaviconLoader
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listen.DesktopGlobalListener
 import com.crosspaste.listen.DesktopMouseListener
@@ -55,12 +57,10 @@ import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.log.CrossPasteLogger
 import com.crosspaste.log.initLogger
-import com.crosspaste.net.DesktopFaviconLoader
 import com.crosspaste.net.DesktopPasteBonjourService
 import com.crosspaste.net.DesktopPasteClient
 import com.crosspaste.net.DesktopPasteServer
 import com.crosspaste.net.DesktopSyncInfoFactory
-import com.crosspaste.net.FaviconLoader
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.net.PasteClient
 import com.crosspaste.net.PasteServer
