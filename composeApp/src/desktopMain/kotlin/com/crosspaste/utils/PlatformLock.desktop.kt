@@ -3,17 +3,17 @@ package com.crosspaste.utils
 import java.util.concurrent.locks.ReentrantLock
 
 actual fun createPlatformLock(): PlatformLock {
-    return PlatformLock()
+    return DesktopPlatformLock()
 }
 
-class PlatformLock {
+class DesktopPlatformLock : PlatformLock {
     private val lock = ReentrantLock()
 
-    fun lock() {
+    override fun lock() {
         lock.lock()
     }
 
-    fun unlock() {
+    override fun unlock() {
         lock.unlock()
     }
 }

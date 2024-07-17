@@ -3,10 +3,10 @@ package com.crosspaste.utils
 import io.ktor.util.collections.*
 
 actual fun <K, V> createConcurrentPlatformMap(): ConcurrentPlatformMap<K, V> {
-    return ConcurrentPlatformMapImpl()
+    return DesktopConcurrentPlatformMap()
 }
 
-class ConcurrentPlatformMapImpl<K, V> : ConcurrentPlatformMap<K, V> {
+class DesktopConcurrentPlatformMap<K, V> : ConcurrentPlatformMap<K, V> {
     private val map = ConcurrentMap<K, V>()
 
     override fun get(key: K): V? {
