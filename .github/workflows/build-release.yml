@@ -79,6 +79,10 @@ jobs:
       MAC_SIGNING_KEY_FILE_PATH: ${{ github.workspace }}/developerID_application.p12
       PRE_RELEASE: false
       RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      WINDOWS_IDENTITY_NAME: ${{ secrets.WINDOWS_IDENTITY_NAME }}
+      WINDOWS_PUBLISHER: ${{ secrets.WINDOWS_PUBLISHER }}
+      WINDOWS_PUBLISHER_DISPLAY_NAME: ${{ secrets.WINDOWS_PUBLISHER_DISPLAY_NAME }}
+      WINDOWS_STORE_ID: ${{ secrets.WINDOWS_STORE_ID }}
     steps:
       - uses: actions/checkout@v4
         with:
