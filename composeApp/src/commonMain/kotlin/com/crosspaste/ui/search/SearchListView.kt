@@ -56,7 +56,7 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.dao.paste.PasteType
-import com.crosspaste.net.FaviconLoader
+import com.crosspaste.icon.FaviconLoader
 import com.crosspaste.paste.PasteSearchService
 import com.crosspaste.paste.item.PasteUrl
 import com.crosspaste.path.PathProvider
@@ -279,7 +279,7 @@ fun PasteTypeIconView(
                 pasteData.getPasteItem()?.let {
                     it as PasteUrl
                     try {
-                        faviconLoader.getFaviconPath(it.url)?.let { path ->
+                        faviconLoader.load(it.url)?.let { path ->
                             return@AsyncView LoadImageData(path, getPainterUtils().loadPainter(path, density))
                         }
                     } catch (ignore: Exception) {

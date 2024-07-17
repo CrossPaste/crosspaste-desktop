@@ -1,10 +1,13 @@
-package com.crosspaste.net
+package com.crosspaste.icon
 
 import com.crosspaste.app.AppFileType
+import com.crosspaste.net.DesktopProxy
 import com.crosspaste.path.DesktopPathProvider
 import com.crosspaste.path.PathProvider
+import com.crosspaste.utils.ConcurrentPlatformMap
+import com.crosspaste.utils.PlatformLock
+import com.crosspaste.utils.createConcurrentPlatformMap
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.http.*
 import okio.Path
 import java.io.FileOutputStream
 import java.net.InetSocketAddress
@@ -15,13 +18,13 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
 
-object DesktopFaviconLoader : FaviconLoader {
+object DesktopFaviconLoader : ConcurrentLoader, FaviconLoader {
 
     private val logger = KotlinLogging.logger {}
 
     private val pathProvider: PathProvider = DesktopPathProvider
 
-    private val desktopProxy = DesktopProxy
+    override val lockMap: ConcurrentPlatformMap<Path, PlatformLock> = createConcurrentPlatformMap()
 
     private fun getGoogleIconUrl(host: String): String {
         return "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://$host&size=32"
@@ -39,7 +42,7 @@ object DesktopFaviconLoader : FaviconLoader {
 
         val uri = httpsUrl.toURI()
 
-        val proxy = desktopProxy.getProxy(uri)
+        val proxy = DesktopProxy.getProxy(uri)
 
         try {
             val builder = HttpClient.newBuilder()
@@ -72,27 +75,25 @@ object DesktopFaviconLoader : FaviconLoader {
         return null
     }
 
-    override fun getFaviconPath(url: String): Path? {
-        try {
-            Url(url).host.let {
-                val path = pathProvider.resolve("$it.ico", AppFileType.FAVICON)
-                val file = path.toFile()
-                if (file.exists()) {
-                    return@getFaviconPath path
-                }
+    override fun resolve(key: String): Path {
+        return pathProvider.resolve("$key.ico", AppFileType.FAVICON)
+    }
 
-                saveIco(getDefaultIcoUrl(it), path)?.let {
-                    return@getFaviconPath path
-                } ?: run {
-                    saveIco(getGoogleIconUrl(it), path)?.let {
-                        return@getFaviconPath path
-                    }
-                }
-                return null
-            }
-        } catch (e: Exception) {
-            logger.warn(e) { "Failed to get favicon for $url" }
-            return null
+    override fun loggerWarning(
+        key: String,
+        e: Exception,
+    ) {
+        logger.warn(e) { "Failed to get favicon for $key" }
+    }
+
+    override fun save(
+        key: String,
+        path: Path,
+    ) {
+        saveIco(getDefaultIcoUrl(key), path)?.let {
+            return
+        } ?: run {
+            saveIco(getGoogleIconUrl(key), path)
         }
     }
 }
