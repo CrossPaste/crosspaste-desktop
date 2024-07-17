@@ -35,7 +35,11 @@ interface ConcurrentLoader : IconLoader<String> {
                     return path
                 }
                 save(key, path)
-                return path
+                return if (file.exists()) {
+                    path
+                } else {
+                    null
+                }
             } finally {
                 lock.unlock()
             }
