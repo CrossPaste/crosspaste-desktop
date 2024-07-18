@@ -3,40 +3,43 @@ package com.crosspaste.icon
 import com.crosspaste.utils.ConcurrentPlatformMap
 import com.crosspaste.utils.PlatformLock
 import com.crosspaste.utils.createPlatformLock
-import okio.Path
 
-interface ConcurrentLoader : IconLoader<String> {
+interface ConcurrentLoader<T, R> : IconLoader<T, R> {
 
-    val lockMap: ConcurrentPlatformMap<Path, PlatformLock>
+    val lockMap: ConcurrentPlatformMap<R, PlatformLock>
 
-    fun resolve(key: String): Path
+    fun resolve(key: String): R
 
     fun loggerWarning(
-        key: String,
+        value: T,
         e: Exception,
     )
 
+    fun exist(result: R): Boolean
+
     fun save(
         key: String,
-        path: Path,
+        result: R,
     )
 
-    override fun load(key: String): Path? {
+    fun convertToKey(value: T): String
+
+    override fun load(value: T): R? {
         try {
-            val path = resolve(key)
-            val file = path.toFile()
-            if (file.exists()) {
-                return path
+            val key = convertToKey(value)
+            val result = resolve(key)
+            if (exist(result)) {
+                return result
             }
-            val lock = lockMap.computeIfAbsent(path) { createPlatformLock() }
+            val lock = lockMap.computeIfAbsent(result) { createPlatformLock() }
             lock.lock()
             try {
-                if (file.exists()) {
-                    return path
+                if (exist(result)) {
+                    return result
                 }
-                save(key, path)
-                return if (file.exists()) {
-                    path
+                save(key, result)
+                return if (exist(result)) {
+                    result
                 } else {
                     null
                 }
@@ -44,7 +47,7 @@ interface ConcurrentLoader : IconLoader<String> {
                 lock.unlock()
             }
         } catch (e: Exception) {
-            loggerWarning(key, e)
+            loggerWarning(value, e)
             return null
         }
     }
