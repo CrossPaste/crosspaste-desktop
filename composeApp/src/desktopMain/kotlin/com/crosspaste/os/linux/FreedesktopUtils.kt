@@ -29,10 +29,14 @@ object FreedesktopUtils {
     fun getCurrentTheme(): String {
         val commands =
             listOf(
-                "gsettings get org.gnome.desktop.interface icon-theme", // GNOME
-                "kreadconfig5 --group Icons --key Theme", // KDE
-                "xfconf-query -c xsettings -p /Net/IconThemeName", // Xfce
-                "gsettings get org.mate.interface icon-theme", // MATE
+                // GNOME
+                "gsettings get org.gnome.desktop.interface icon-theme",
+                // KDE
+                "kreadconfig5 --group Icons --key Theme",
+                // Xfce
+                "xfconf-query -c xsettings -p /Net/IconThemeName",
+                // MATE
+                "gsettings get org.mate.interface icon-theme",
             )
 
         for (command in commands) {
