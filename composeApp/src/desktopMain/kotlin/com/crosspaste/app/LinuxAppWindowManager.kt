@@ -1,6 +1,7 @@
 package com.crosspaste.app
 
 import com.crosspaste.listen.ActiveGraphicsDevice
+import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.os.linux.api.X11Api
 import com.sun.jna.platform.unix.X11.Window
@@ -83,7 +84,7 @@ class LinuxAppWindowManager(
         logger.info { "unActive search window" }
         val toPaste = preparePaste()
         val keyCodes =
-            lazyShortcutKeys.value.shortcutKeysCore.keys["Paste"]?.let {
+            lazyShortcutKeys.value.shortcutKeysCore.keys[PASTE]?.let {
                 it.map { key -> key.rawCode }
             } ?: listOf()
         X11Api.bringToBack(prevLinuxAppInfo, toPaste, keyCodes)
@@ -93,7 +94,7 @@ class LinuxAppWindowManager(
 
     override suspend fun toPaste() {
         val keyCodes =
-            lazyShortcutKeys.value.shortcutKeysCore.keys["Paste"]?.let {
+            lazyShortcutKeys.value.shortcutKeysCore.keys[PASTE]?.let {
                 it.map { key -> key.rawCode }
             } ?: listOf()
         X11Api.toPaste(keyCodes)

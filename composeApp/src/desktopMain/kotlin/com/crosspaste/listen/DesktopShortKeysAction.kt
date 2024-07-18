@@ -5,6 +5,13 @@ import com.crosspaste.app.AppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dao.paste.PasteDao
 import com.crosspaste.dao.paste.PasteData
+import com.crosspaste.listen.DesktopShortcutKeys.Companion.HIDE_WINDOW
+import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_LOCAL_LAST
+import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_REMOTE_LAST
+import com.crosspaste.listen.DesktopShortcutKeys.Companion.SHOW_MAIN
+import com.crosspaste.listen.DesktopShortcutKeys.Companion.SHOW_SEARCH
+import com.crosspaste.listen.DesktopShortcutKeys.Companion.SWITCH_ENCRYPT
+import com.crosspaste.listen.DesktopShortcutKeys.Companion.SWITCH_MONITOR_PASTEBOARD
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.paste.PasteSearchService
 import com.crosspaste.paste.PasteboardService
@@ -29,13 +36,13 @@ class DesktopShortKeysAction(
 
     override val action: (String) -> Unit = { actionName ->
         when (actionName) {
-            "paste_local_last" -> pasteLast(true)
-            "paste_remote_last" -> pasteLast(false)
-            "show_main" -> showMainWindow()
-            "show_search" -> showSearchWindow()
-            "hide_window" -> hideWindow()
-            "switch_monitor_pasteboard" -> switchMonitorPasteboard()
-            "switch_encrypt" -> switchEncrypt()
+            PASTE_LOCAL_LAST -> pasteLast(true)
+            PASTE_REMOTE_LAST -> pasteLast(false)
+            SHOW_MAIN -> showMainWindow()
+            SHOW_SEARCH -> showSearchWindow()
+            HIDE_WINDOW -> hideWindow()
+            SWITCH_MONITOR_PASTEBOARD -> switchMonitorPasteboard()
+            SWITCH_ENCRYPT -> switchEncrypt()
         }
     }
 
