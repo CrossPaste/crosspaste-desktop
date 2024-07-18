@@ -10,15 +10,12 @@ import com.sun.jna.platform.win32.BaseTSD.ULONG_PTR
 import com.sun.jna.platform.win32.GDI32
 import com.sun.jna.platform.win32.Kernel32
 import com.sun.jna.platform.win32.Psapi
-import com.sun.jna.platform.win32.Shell32
 import com.sun.jna.platform.win32.Version
 import com.sun.jna.platform.win32.WinDef.DWORD
 import com.sun.jna.platform.win32.WinDef.HBITMAP
-import com.sun.jna.platform.win32.WinDef.HDC
 import com.sun.jna.platform.win32.WinDef.HICON
 import com.sun.jna.platform.win32.WinDef.HWND
 import com.sun.jna.platform.win32.WinDef.LPARAM
-import com.sun.jna.platform.win32.WinDef.RECT
 import com.sun.jna.platform.win32.WinDef.WORD
 import com.sun.jna.platform.win32.WinDef.WPARAM
 import com.sun.jna.platform.win32.WinGDI
@@ -29,15 +26,12 @@ import com.sun.jna.platform.win32.WinNT
 import com.sun.jna.platform.win32.WinNT.HANDLE
 import com.sun.jna.platform.win32.WinUser
 import com.sun.jna.platform.win32.WinUser.INPUT
-import com.sun.jna.platform.win32.WinUser.MONITORENUMPROC
-import com.sun.jna.platform.win32.WinUser.MSG
 import com.sun.jna.platform.win32.WinUser.SM_CXSCREEN
 import com.sun.jna.platform.win32.WinUser.SM_CYSCREEN
 import com.sun.jna.platform.win32.WinUser.SW_HIDE
 import com.sun.jna.platform.win32.WinUser.SW_RESTORE
 import com.sun.jna.ptr.IntByReference
 import com.sun.jna.ptr.PointerByReference
-import com.sun.jna.win32.StdCallLibrary
 import com.sun.jna.win32.StdCallLibrary.StdCallCallback
 import com.sun.jna.win32.W32APIOptions.DEFAULT_OPTIONS
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -47,7 +41,7 @@ import java.util.Locale
 import java.util.Optional
 import javax.imageio.ImageIO
 
-interface User32 : StdCallLibrary {
+interface User32 : com.sun.jna.platform.win32.User32 {
     interface WNDPROC : StdCallCallback {
         fun callback(
             hWnd: HWND?,
@@ -84,26 +78,12 @@ interface User32 : StdCallLibrary {
         param: Any?,
     ): HWND?
 
-    fun DestroyWindow(hwnd: HWND?): Int
-
     fun SetClipboardViewer(hWndNewViewer: HWND?): HWND?
 
     fun ChangeClipboardChain(
         hWndRemove: HWND?,
         hWndNewNext: HWND?,
     ): Boolean
-
-    fun PeekMessage(
-        lpMsg: MSG?,
-        hWnd: HWND?,
-        wMsgFilterMin: Int,
-        wMsgFilterMax: Int,
-        wRemoveMsg: Int,
-    ): Boolean
-
-    fun TranslateMessage(lpMsg: MSG?): Boolean
-
-    fun DispatchMessage(lpMsg: MSG?): Int
 
     fun MsgWaitForMultipleObjects(
         nCount: Int,
@@ -113,61 +93,7 @@ interface User32 : StdCallLibrary {
         dwWakeMask: Int,
     ): Int
 
-    fun SendMessage(
-        hWnd: HWND?,
-        message: Int,
-        wParam: WPARAM?,
-        lParam: LPARAM?,
-    )
-
-    fun DefWindowProc(
-        hWnd: HWND?,
-        msg: Int,
-        wParam: WPARAM?,
-        lParam: LPARAM?,
-    ): Int
-
-    fun EnumDisplayMonitors(
-        hdc: HDC?,
-        lprcClip: RECT?,
-        lpfnEnum: MONITORENUMPROC?,
-        dwData: LPARAM?,
-    ): Boolean
-
     fun GetClipboardSequenceNumber(): Int
-
-    fun FindWindow(
-        lpClassName: String?,
-        lpWindowName: String?,
-    ): HWND?
-
-    fun ShowWindow(
-        hWnd: HWND,
-        nCmdShow: Int,
-    ): Boolean
-
-    fun GetForegroundWindow(): HWND?
-
-    fun SetForegroundWindow(hWnd: HWND): Boolean
-
-    fun GetWindowThreadProcessId(
-        hWnd: HWND,
-        lpdwProcessId: IntByReference,
-    ): Int
-
-    fun SendInput(
-        nInputs: DWORD?,
-        pInputs: Array<INPUT>?,
-        cbSize: Int,
-    ): Int
-
-    fun AttachThreadInput(
-        idAttach: DWORD,
-        idAttachTo: DWORD,
-        fAttach: Boolean,
-    ): Boolean
-
-    fun GetSystemMetrics(nIndex: Int): Int
 
     fun mouse_event(
         dwFlags: DWORD,
@@ -176,13 +102,6 @@ interface User32 : StdCallLibrary {
         dwData: DWORD,
         dwExtraInfo: ULONG_PTR,
     )
-
-    fun GetIconInfo(
-        hIcon: HICON,
-        piconinfo: ICONINFO,
-    ): Boolean
-
-    fun GetDC(hWnd: HWND?): HDC?
 
     companion object {
         val INSTANCE =
@@ -249,7 +168,13 @@ interface User32 : StdCallLibrary {
                 try {
                     val bufferSize = 1024
                     val memory = Memory((bufferSize * 2).toLong())
-                    if (Psapi.INSTANCE.GetModuleFileNameEx(processHandle, null, memory, bufferSize) > 0) {
+                    if (Psapi.INSTANCE.GetModuleFileNameEx(
+                            processHandle,
+                            null,
+                            memory,
+                            bufferSize,
+                        ) > 0
+                    ) {
                         return memory.getWideString(0)
                     }
                 } finally {
@@ -261,13 +186,20 @@ interface User32 : StdCallLibrary {
 
         fun getFileDescription(filePath: String): String? {
             val intByReference = IntByReference()
-            val versionLength: Int = Version.INSTANCE.GetFileVersionInfoSize(filePath, intByReference)
+            val versionLength: Int =
+                Version.INSTANCE.GetFileVersionInfoSize(filePath, intByReference)
             if (versionLength > 0) {
                 val memory = Memory(versionLength.toLong())
                 val lplpTranslate = PointerByReference()
                 if (Version.INSTANCE.GetFileVersionInfo(filePath, 0, versionLength, memory)) {
                     val puLen = IntByReference()
-                    if (Version.INSTANCE.VerQueryValue(memory, "\\VarFileInfo\\Translation", lplpTranslate, puLen)) {
+                    if (Version.INSTANCE.VerQueryValue(
+                            memory,
+                            "\\VarFileInfo\\Translation",
+                            lplpTranslate,
+                            puLen,
+                        )
+                    ) {
                         val array: IntArray = lplpTranslate.value.getIntArray(0L, puLen.value / 4)
                         val langAndCodepage = findLangAndCodepage(array) ?: return null
                         val l: Int = langAndCodepage and 0xFFFF
@@ -276,7 +208,12 @@ interface User32 : StdCallLibrary {
                         val lang = String.format(Locale.ROOT, "%04x", l).takeLast(4)
                         val codepage = String.format(Locale.ROOT, "%04x", m).takeLast(4)
                         val lpSubBlock =
-                            String.format(Locale.ROOT, "\\StringFileInfo\\$lang$codepage\\FileDescription", l, m)
+                            String.format(
+                                Locale.ROOT,
+                                "\\StringFileInfo\\$lang$codepage\\FileDescription",
+                                l,
+                                m,
+                            )
 
                         val lplpBuffer = PointerByReference()
                         if (Version.INSTANCE.VerQueryValue(
@@ -367,7 +304,12 @@ interface User32 : StdCallLibrary {
 
                         require(
                             gdi32.GetDIBits(
-                                deviceContext, bitmapHandle, 0, bitmapInfo.bmiHeader.biHeight, pixels, bitmapInfo,
+                                deviceContext,
+                                bitmapHandle,
+                                0,
+                                bitmapInfo.bmiHeader.biHeight,
+                                pixels,
+                                bitmapInfo,
                                 WinGDI.DIB_RGB_COLORS,
                             ) != 0,
                         ) { "GetDIBits should not return 0" }
@@ -381,7 +323,8 @@ interface User32 : StdCallLibrary {
                 }
             } finally {
                 gdi32.DeleteObject(hicon)
-                Optional.ofNullable(bitmapHandle).ifPresent { hObject: HANDLE? -> gdi32.DeleteObject(hObject) }
+                Optional.ofNullable(bitmapHandle)
+                    .ifPresent { hObject: HANDLE? -> gdi32.DeleteObject(hObject) }
             }
 
             return null
@@ -400,7 +343,8 @@ interface User32 : StdCallLibrary {
                     previousHwnd.pointer != searchWindow?.pointer
                 ) {
                     val processIdRef = IntByReference()
-                    val processThreadId = INSTANCE.GetWindowThreadProcessId(previousHwnd, processIdRef)
+                    val processThreadId =
+                        INSTANCE.GetWindowThreadProcessId(previousHwnd, processIdRef)
 
                     val processHandle =
                         Kernel32.INSTANCE.OpenProcess(
@@ -412,7 +356,13 @@ interface User32 : StdCallLibrary {
                     try {
                         val bufferSize = 1024
                         val memory = Memory((bufferSize * 2).toLong())
-                        if (Psapi.INSTANCE.GetModuleFileNameEx(processHandle, null, memory, bufferSize) > 0) {
+                        if (Psapi.INSTANCE.GetModuleFileNameEx(
+                                processHandle,
+                                null,
+                                memory,
+                                bufferSize,
+                            ) > 0
+                        ) {
                             filePath = memory.getWideString(0)
                         }
                     } finally {
@@ -422,7 +372,11 @@ interface User32 : StdCallLibrary {
                     if (windowTitle == SEARCH_WINDOW_TITLE) {
                         searchWindow?.let { searchHWND ->
                             val curThreadId = Kernel32.INSTANCE.GetCurrentThreadId()
-                            INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), true)
+                            INSTANCE.AttachThreadInput(
+                                DWORD(curThreadId.toLong()),
+                                DWORD(processThreadId.toLong()),
+                                true,
+                            )
 
                             INSTANCE.ShowWindow(searchHWND, SW_RESTORE)
 
@@ -438,7 +392,11 @@ interface User32 : StdCallLibrary {
                             )
 
                             val result = INSTANCE.SetForegroundWindow(searchHWND)
-                            INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), false)
+                            INSTANCE.AttachThreadInput(
+                                DWORD(curThreadId.toLong()),
+                                DWORD(processThreadId.toLong()),
+                                false,
+                            )
                             if (!result) {
                                 logger.info { "Failed to set foreground window. Please switch manually" }
                             } else {
@@ -471,6 +429,7 @@ interface User32 : StdCallLibrary {
                         INSTANCE.ShowWindow(hwnd, SW_HIDE)
                     }
                 }
+
                 SEARCH_WINDOW_TITLE -> {
                     searchWindow?.let { hwnd ->
                         INSTANCE.ShowWindow(hwnd, SW_HIDE)
@@ -524,8 +483,16 @@ interface User32 : StdCallLibrary {
         fun findPasteWindow(windowTitle: String): HWND? {
             return INSTANCE.FindWindow(null, windowTitle)?.also { hwnd ->
                 // Set the window icon not to be displayed on the taskbar
-                val style = com.sun.jna.platform.win32.User32.INSTANCE.GetWindowLong(hwnd, WinUser.GWL_EXSTYLE)
-                com.sun.jna.platform.win32.User32.INSTANCE.SetWindowLong(hwnd, WinUser.GWL_EXSTYLE, style or 0x00000080)
+                val style =
+                    com.sun.jna.platform.win32.User32.INSTANCE.GetWindowLong(
+                        hwnd,
+                        WinUser.GWL_EXSTYLE,
+                    )
+                com.sun.jna.platform.win32.User32.INSTANCE.SetWindowLong(
+                    hwnd,
+                    WinUser.GWL_EXSTYLE,
+                    style or 0x00000080,
+                )
             }
         }
     }

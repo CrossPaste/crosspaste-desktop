@@ -293,3 +293,20 @@ public func checkAccessibilityPermissions() -> Bool {
     return accessEnabled
 }
 
+@_cdecl("saveIconByExt")
+public func saveIconByExt(ext: UnsafePointer<CChar>, path: UnsafePointer<CChar>) {
+    let extString = String(cString: ext)
+    let filePath = String(cString: path)
+
+    let icon = NSWorkspace.shared.icon(forFileType: extString)
+    if let tiffData = icon.tiffRepresentation {
+        let bitmapImage = NSBitmapImageRep(data: tiffData)
+        if let data = bitmapImage?.representation(using: .png, properties: [:]) {
+            do {
+                try data.write(to: URL(fileURLWithPath: filePath))
+            } catch {
+                print("Failed to write icon data to file: \(error)")
+            }
+        }
+    }
+}

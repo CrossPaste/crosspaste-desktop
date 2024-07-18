@@ -1,8 +1,6 @@
 package com.crosspaste.ui.base
 
 import androidx.compose.ui.unit.Density
-import com.crosspaste.utils.FileExtUtils
-import com.crosspaste.utils.extension
 import com.crosspaste.utils.getPainterUtils
 import okio.FileSystem
 import okio.Path
@@ -40,28 +38,32 @@ fun loadImageData(
 }
 
 fun loadIconData(
-    filePath: Path,
-    isFile: Boolean,
+    isFile: Boolean?,
     density: Density,
 ): LoadStateData {
     try {
-        if (isFile) {
-            val extension = filePath.extension
-            FileExtUtils.getExtPreviewImage(extension)?.let {
-                return LoadImageData(extension, ImageBitmapToPainter(extension, it))
-            } ?: run {
+        when (isFile) {
+            true -> {
                 return LoadIconData(
                     "file",
                     getPainterUtils()
                         .loadResourcePainter("icon/paste/file.svg", density),
                 )
             }
-        } else {
-            return LoadIconData(
-                "dir",
-                getPainterUtils()
-                    .loadResourcePainter("icon/paste/folder.svg", density),
-            )
+            false -> {
+                return LoadIconData(
+                    "dir",
+                    getPainterUtils()
+                        .loadResourcePainter("icon/paste/folder.svg", density),
+                )
+            }
+            else -> {
+                return LoadIconData(
+                    "file-slash",
+                    getPainterUtils()
+                        .loadResourcePainter("icon/paste/file-slash.svg", density),
+                )
+            }
         }
     } catch (e: Exception) {
         return ErrorStateData(e)

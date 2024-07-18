@@ -28,10 +28,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.icon.FileExtIconLoader
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.LoadIconData
 import com.crosspaste.ui.base.LoadImageData
-import com.crosspaste.ui.base.TransparentBackground
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.fileSlash
 import com.crosspaste.ui.base.loadIconData
@@ -41,18 +41,17 @@ import okio.Path
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SingleFilePreviewView(
-    filePath: Path,
-    imagePath: Path?,
-) {
+fun SingleFilePreviewView(filePath: Path) {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val uiSupport = current.koin.get<UISupport>()
+    val fileExtIconLoader = current.koin.get<FileExtIconLoader>()
 
     val fileUtils = getFileUtils()
 
     val existFile by remember { mutableStateOf(filePath.toFile().exists()) }
+    val isFile by remember { mutableStateOf(if (existFile) filePath.toFile().isFile else null) }
 
     Row(
         modifier =
@@ -61,14 +60,13 @@ fun SingleFilePreviewView(
             },
     ) {
         Box(modifier = Modifier.size(100.dp)) {
-            TransparentBackground(modifier = Modifier.size(100.dp).clip(RoundedCornerShape(5.dp)))
             AsyncView(
                 key = filePath,
                 load = {
-                    if (imagePath != null) {
-                        loadImageData(imagePath, density)
-                    } else {
-                        loadIconData(filePath, existFile, density)
+                    fileExtIconLoader.load(filePath)?.let {
+                        loadImageData(it, density)
+                    } ?: run {
+                        loadIconData(isFile, density)
                     }
                 },
                 loadFor = { loadStateData ->
@@ -105,7 +103,8 @@ fun SingleFilePreviewView(
             modifier =
                 Modifier.fillMaxHeight()
                     .wrapContentWidth()
-                    .padding(horizontal = 8.dp),
+                    .padding(horizontal = 8.dp)
+                    .padding(bottom = 8.dp),
             verticalArrangement = Arrangement.Bottom,
         ) {
             Text(

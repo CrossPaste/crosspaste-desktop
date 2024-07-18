@@ -19,6 +19,7 @@ interface ConcurrentLoader<T, R> : IconLoader<T, R> {
 
     fun save(
         key: String,
+        value: T,
         result: R,
     )
 
@@ -37,7 +38,7 @@ interface ConcurrentLoader<T, R> : IconLoader<T, R> {
                 if (exist(result)) {
                     return result
                 }
-                save(key, result)
+                save(key, value, result)
                 return if (exist(result)) {
                     result
                 } else {

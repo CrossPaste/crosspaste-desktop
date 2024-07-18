@@ -9,22 +9,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.paste.item.PasteFiles
-import com.crosspaste.paste.item.PasteImages
 import com.crosspaste.utils.FileExtUtils.canPreviewImage
 import com.crosspaste.utils.extension
-import okio.Path
 
 @Composable
 fun FilesPreviewView(pasteData: PasteData) {
     pasteData.getPasteItem()?.let {
         val pasteFilePaths = (it as PasteFiles).getFilePaths()
-
-        val pasteImages: List<Path>? =
-            (
-                pasteData.getPasteAppearItems()
-                    .firstOrNull { images -> images is PasteImages } as? PasteImages
-            )
-                ?.getFilePaths()
 
         PasteSpecificPreviewContentView(
             pasteMainContent = {
@@ -34,7 +25,7 @@ fun FilesPreviewView(pasteData: PasteData) {
                         if (canPreviewImage(filepath.extension)) {
                             SingleImagePreviewView(filepath)
                         } else {
-                            SingleFilePreviewView(filepath, getImagePath(index, pasteFilePaths, pasteImages))
+                            SingleFilePreviewView(filepath)
                         }
                         if (index != pasteFilePaths.size - 1) {
                             Spacer(modifier = Modifier.size(10.dp))
@@ -46,19 +37,5 @@ fun FilesPreviewView(pasteData: PasteData) {
                 PasteMenuView(pasteData = pasteData, toShow = toShow)
             },
         )
-    }
-}
-
-fun getImagePath(
-    index: Int,
-    pasteFilePaths: List<Path>,
-    pasteImages: List<Path>?,
-): Path? {
-    return pasteImages?.let {
-        if (pasteFilePaths.size == pasteImages.size) {
-            return pasteImages[index]
-        } else {
-            null
-        }
     }
 }
