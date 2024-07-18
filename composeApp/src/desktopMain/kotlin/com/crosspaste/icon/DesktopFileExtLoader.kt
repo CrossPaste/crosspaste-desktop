@@ -2,6 +2,7 @@ package com.crosspaste.icon
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.image.ImageService
+import com.crosspaste.os.linux.FreedesktopUtils.saveExtIcon
 import com.crosspaste.os.macos.api.MacosApi
 import com.crosspaste.os.windows.JIconExtract
 import com.crosspaste.path.DesktopPathProvider
@@ -86,5 +87,5 @@ private fun linuxSaveExtIcon(
     filePath: Path,
     savePath: Path,
 ) {
-    // todo
+    saveExtIcon(key, savePath)
 }
