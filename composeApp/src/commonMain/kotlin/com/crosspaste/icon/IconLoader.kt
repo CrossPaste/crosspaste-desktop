@@ -2,9 +2,9 @@ package com.crosspaste.icon
 
 import okio.Path
 
-interface IconLoader<T> {
+interface IconLoader<T, R> {
 
-    fun load(key: T): Path?
+    fun load(value: T): R?
 }
 
 interface FaviconLoader : IconLoader<String>

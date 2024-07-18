@@ -8,6 +8,7 @@ import com.crosspaste.utils.ConcurrentPlatformMap
 import com.crosspaste.utils.PlatformLock
 import com.crosspaste.utils.createConcurrentPlatformMap
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.http.*
 import okio.Path
 import java.io.FileOutputStream
 import java.net.InetSocketAddress
@@ -18,7 +19,9 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
 
-object DesktopFaviconLoader : ConcurrentLoader, FaviconLoader {
+interface FileExtIconLoader : IconLoader<String, Path>
+
+object DesktopFaviconLoader : ConcurrentLoader<String, Path>, FaviconLoader {
 
     private val logger = KotlinLogging.logger {}
 
@@ -79,21 +82,29 @@ object DesktopFaviconLoader : ConcurrentLoader, FaviconLoader {
         return pathProvider.resolve("$key.ico", AppFileType.FAVICON)
     }
 
+    override fun exist(result: Path): Boolean {
+        return result.toFile().exists()
+    }
+
     override fun loggerWarning(
-        key: String,
+        value: String,
         e: Exception,
     ) {
-        logger.warn(e) { "Failed to get favicon for $key" }
+        logger.warn(e) { "Failed to get favicon for $value" }
     }
 
     override fun save(
         key: String,
-        path: Path,
+        result: Path,
     ) {
-        saveIco(getDefaultIcoUrl(key), path)?.let {
+        saveIco(getDefaultIcoUrl(key), result)?.let {
             return
         } ?: run {
-            saveIco(getGoogleIconUrl(key), path)
+            saveIco(getGoogleIconUrl(key), result)
         }
+    }
+
+    override fun convertToKey(value: String): String {
+        return Url(value).host
     }
 }
