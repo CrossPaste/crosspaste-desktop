@@ -27,7 +27,7 @@ object DesktopFileExtLoader : ConcurrentLoader<Path, Path>, FileExtIconLoader {
 
     private val toSave: (String, Path, Path) -> Unit =
         if (platform.isMacos()) {
-            { key, _, result -> macSaveExtIcon(key, result)}
+            { key, _, result -> macSaveExtIcon(key, result) }
         } else if (platform.isWindows()) {
             { _, value, result -> windowsSaveExtIcon(value, result) }
         } else if (platform.isLinux()) {

@@ -63,15 +63,9 @@ object FreedesktopUtils {
                 )
 
             for (dir in themeDirs) {
-                val scalablePath = "$dir/scalable/mimetypes/$iconName.svg"
-                var file = File(scalablePath)
-                if (file.exists()) {
-                    return file
-                }
-
                 for (size in sizes) {
-                    val path = "$dir/${size}x$size/mimetypes/$iconName.png"
-                    file = File(path)
+                    val path = "$dir/${size}x$size/mimetypes/$iconName"
+                    val file = File(path)
                     if (file.exists()) {
                         return file
                     }
