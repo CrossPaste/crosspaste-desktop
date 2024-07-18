@@ -32,7 +32,6 @@ import com.crosspaste.icon.FileExtIconLoader
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.LoadIconData
 import com.crosspaste.ui.base.LoadImageData
-import com.crosspaste.ui.base.TransparentBackground
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.fileSlash
 import com.crosspaste.ui.base.loadIconData
@@ -61,14 +60,13 @@ fun SingleFilePreviewView(filePath: Path) {
             },
     ) {
         Box(modifier = Modifier.size(100.dp)) {
-            TransparentBackground(modifier = Modifier.size(100.dp).clip(RoundedCornerShape(5.dp)))
             AsyncView(
                 key = filePath,
                 load = {
                     fileExtIconLoader.load(filePath)?.let {
                         loadImageData(it, density)
                     } ?: run {
-                        loadIconData(filePath, isFile, density)
+                        loadIconData(isFile, density)
                     }
                 },
                 loadFor = { loadStateData ->

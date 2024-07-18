@@ -132,7 +132,7 @@ fun PasteFilesDetailView(
                                 fileExtIconLoader.load(filePath)?.let {
                                     loadImageData(it, density)
                                 } ?: run {
-                                    loadIconData(filePath, isFile, density)
+                                    loadIconData(isFile, density)
                                 }
                             },
                             loadFor = { loadStateData ->

@@ -1,8 +1,6 @@
 package com.crosspaste.ui.base
 
 import androidx.compose.ui.unit.Density
-import com.crosspaste.utils.FileExtUtils
-import com.crosspaste.utils.extension
 import com.crosspaste.utils.getPainterUtils
 import okio.FileSystem
 import okio.Path
@@ -40,23 +38,17 @@ fun loadImageData(
 }
 
 fun loadIconData(
-    filePath: Path,
     isFile: Boolean?,
     density: Density,
 ): LoadStateData {
     try {
         when (isFile) {
             true -> {
-                val extension = filePath.extension
-                FileExtUtils.getExtPreviewImage(extension)?.let {
-                    return LoadImageData(extension, ImageBitmapToPainter(extension, it))
-                } ?: run {
-                    return LoadIconData(
-                        "file",
-                        getPainterUtils()
-                            .loadResourcePainter("icon/paste/file.svg", density),
-                    )
-                }
+                return LoadIconData(
+                    "file",
+                    getPainterUtils()
+                        .loadResourcePainter("icon/paste/file.svg", density),
+                )
             }
             false -> {
                 return LoadIconData(
