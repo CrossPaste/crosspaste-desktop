@@ -26,6 +26,17 @@ class DesktopShortcutKeys(
     private val shortcutKeysLoader: ShortcutKeysLoader,
 ) : ShortcutKeys {
 
+    companion object {
+        const val PASTE = "paste"
+        const val PASTE_LOCAL_LAST = "paste_local_last"
+        const val PASTE_REMOTE_LAST = "paste_remote_last"
+        const val SHOW_MAIN = "show_main"
+        const val SHOW_SEARCH = "show_search"
+        const val HIDE_WINDOW = "hide_window"
+        const val SWITCH_MONITOR_PASTEBOARD = "switch_monitor_pasteboard"
+        const val SWITCH_ENCRYPT = "switch_encrypt"
+    }
+
     private val logger: KLogger = KotlinLogging.logger {}
 
     override var shortcutKeysCore by mutableStateOf(defaultKeysCore())
