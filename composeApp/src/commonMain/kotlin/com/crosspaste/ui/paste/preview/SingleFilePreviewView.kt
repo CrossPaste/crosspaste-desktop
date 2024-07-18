@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.icon.FileExtIconLoader
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.LoadIconData
 import com.crosspaste.ui.base.LoadImageData
@@ -41,14 +42,12 @@ import okio.Path
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SingleFilePreviewView(
-    filePath: Path,
-    imagePath: Path?,
-) {
+fun SingleFilePreviewView(filePath: Path) {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val uiSupport = current.koin.get<UISupport>()
+    val fileExtIconLoader = current.koin.get<FileExtIconLoader>()
 
     val fileUtils = getFileUtils()
 
@@ -65,9 +64,9 @@ fun SingleFilePreviewView(
             AsyncView(
                 key = filePath,
                 load = {
-                    if (imagePath != null) {
-                        loadImageData(imagePath, density)
-                    } else {
+                    fileExtIconLoader.load(filePath)?.let {
+                        loadImageData(it, density)
+                    } ?: run {
                         loadIconData(filePath, existFile, density)
                     }
                 },
