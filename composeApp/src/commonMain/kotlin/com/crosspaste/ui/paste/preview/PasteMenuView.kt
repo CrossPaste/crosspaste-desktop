@@ -135,7 +135,7 @@ fun PasteMenuView(
                     hideIfNotHovered(parentBounds.topLeft + it.position)
                 }
                 .clip(RoundedCornerShape(5.dp))
-                .background(if (showMenu) MaterialTheme.colors.surface.copy(0.36f) else Color.Transparent),
+                .background(if (showMenu) MaterialTheme.colors.surface.copy(0.72f) else Color.Transparent),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -166,7 +166,7 @@ fun PasteMenuView(
                             .clip(RoundedCornerShape(6.dp))
                             .background(
                                 if (hoverMenu) {
-                                    MaterialTheme.colors.surface
+                                    MaterialTheme.colors.background
                                 } else {
                                     Color.Transparent
                                 },
@@ -213,7 +213,7 @@ fun PasteMenuView(
                                 .clip(RoundedCornerShape(6.dp))
                                 .background(
                                     if (hoverCopy) {
-                                        MaterialTheme.colors.surface
+                                        MaterialTheme.colors.background
                                     } else {
                                         Color.Transparent
                                     },
@@ -272,7 +272,7 @@ fun PasteMenuView(
                                 .clip(RoundedCornerShape(6.dp))
                                 .background(
                                     if (hoverFavorite) {
-                                        MaterialTheme.colors.surface
+                                        MaterialTheme.colors.background
                                     } else {
                                         Color.Transparent
                                     },
@@ -318,7 +318,7 @@ fun PasteMenuView(
                                 .clip(RoundedCornerShape(6.dp))
                                 .background(
                                     if (hoverSource) {
-                                        MaterialTheme.colors.surface
+                                        MaterialTheme.colors.background
                                     } else {
                                         Color.Transparent
                                     },
