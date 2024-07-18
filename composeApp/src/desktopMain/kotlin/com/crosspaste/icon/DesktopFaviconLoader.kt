@@ -19,8 +19,6 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
 
-interface FileExtIconLoader : IconLoader<String, Path>
-
 object DesktopFaviconLoader : ConcurrentLoader<String, Path>, FaviconLoader {
 
     private val logger = KotlinLogging.logger {}
