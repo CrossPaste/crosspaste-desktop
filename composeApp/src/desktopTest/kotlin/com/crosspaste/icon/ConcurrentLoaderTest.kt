@@ -58,6 +58,7 @@ class TestConcurrentLoader : ConcurrentLoader<String, String> {
 
     override fun save(
         key: String,
+        value: String,
         result: String,
     ) {
         saveKeys.add(key)
