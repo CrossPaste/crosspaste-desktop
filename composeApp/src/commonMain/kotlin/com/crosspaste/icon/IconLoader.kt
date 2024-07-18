@@ -7,4 +7,4 @@ interface IconLoader<T, R> {
     fun load(value: T): R?
 }
 
-interface FaviconLoader : IconLoader<String>
+interface FaviconLoader : IconLoader<String, Path>
