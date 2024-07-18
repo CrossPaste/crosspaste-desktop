@@ -27,11 +27,11 @@ object DesktopFileExtLoader : ConcurrentLoader<Path, Path>, FileExtIconLoader {
 
     private val toSave: (String, Path, Path) -> Unit =
         if (platform.isMacos()) {
-            ::macSaveExtIcon
+            { key, _, result -> macSaveExtIcon(key, result)}
         } else if (platform.isWindows()) {
-            ::windowsSaveExtIcon
+            { _, value, result -> windowsSaveExtIcon(value, result) }
         } else if (platform.isLinux()) {
-            ::linuxSaveExtIcon
+            { key, _, result -> linuxSaveExtIcon(key, result) }
         } else {
             throw IllegalStateException("Unsupported platform: $platform")
         }
@@ -66,14 +66,12 @@ object DesktopFileExtLoader : ConcurrentLoader<Path, Path>, FileExtIconLoader {
 
 private fun macSaveExtIcon(
     key: String,
-    filePath: Path,
     savePath: Path,
 ) {
     MacosApi.INSTANCE.saveIconByExt(key, savePath.toString())
 }
 
 private fun windowsSaveExtIcon(
-    key: String,
     filePath: Path,
     savePath: Path,
 ) {
@@ -84,7 +82,6 @@ private fun windowsSaveExtIcon(
 
 private fun linuxSaveExtIcon(
     key: String,
-    filePath: Path,
     savePath: Path,
 ) {
     saveExtIcon(key, savePath)
