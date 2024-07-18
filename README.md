@@ -1,6 +1,6 @@
 <div align="center">
    <img src="crosspaste_logo.webp" width=200 height=200>
-   <h1>CrossPaste: Universal pasteboard Across Devices</h1>
+   <h1>CrossPaste: Universal Pasteboard Across Devices</h1>
    <h4>Copy anything and paste it on any device, seamlessly.</h4>
 </div>
 
