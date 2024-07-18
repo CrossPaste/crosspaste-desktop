@@ -3,18 +3,14 @@ package com.crosspaste.os.windows.api
 import com.crosspaste.app.AbstractAppWindowManager.Companion.MAIN_WINDOW_TITLE
 import com.crosspaste.app.AbstractAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.crosspaste.app.WinAppInfo
-import com.crosspaste.os.windows.api.Shell32.SHFILEINFO
-import com.crosspaste.os.windows.api.Shell32.SHSTOCKICONINFO
 import com.sun.jna.Memory
 import com.sun.jna.Native
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.BaseTSD.ULONG_PTR
 import com.sun.jna.platform.win32.GDI32
 import com.sun.jna.platform.win32.Kernel32
-import com.sun.jna.platform.win32.Ole32
 import com.sun.jna.platform.win32.Psapi
 import com.sun.jna.platform.win32.Version
-import com.sun.jna.platform.win32.Win32Exception
 import com.sun.jna.platform.win32.WinDef.DWORD
 import com.sun.jna.platform.win32.WinDef.HBITMAP
 import com.sun.jna.platform.win32.WinDef.HICON
@@ -22,7 +18,6 @@ import com.sun.jna.platform.win32.WinDef.HWND
 import com.sun.jna.platform.win32.WinDef.LPARAM
 import com.sun.jna.platform.win32.WinDef.WORD
 import com.sun.jna.platform.win32.WinDef.WPARAM
-import com.sun.jna.platform.win32.WinError
 import com.sun.jna.platform.win32.WinGDI
 import com.sun.jna.platform.win32.WinGDI.BITMAP
 import com.sun.jna.platform.win32.WinGDI.BITMAPINFO
@@ -43,7 +38,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import java.awt.image.BufferedImage
 import java.io.File
 import java.util.Locale
-import java.util.Objects
 import java.util.Optional
 import javax.imageio.ImageIO
 
@@ -174,7 +168,13 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                 try {
                     val bufferSize = 1024
                     val memory = Memory((bufferSize * 2).toLong())
-                    if (Psapi.INSTANCE.GetModuleFileNameEx(processHandle, null, memory, bufferSize) > 0) {
+                    if (Psapi.INSTANCE.GetModuleFileNameEx(
+                            processHandle,
+                            null,
+                            memory,
+                            bufferSize,
+                        ) > 0
+                    ) {
                         return memory.getWideString(0)
                     }
                 } finally {
@@ -186,13 +186,20 @@ interface User32 : com.sun.jna.platform.win32.User32 {
 
         fun getFileDescription(filePath: String): String? {
             val intByReference = IntByReference()
-            val versionLength: Int = Version.INSTANCE.GetFileVersionInfoSize(filePath, intByReference)
+            val versionLength: Int =
+                Version.INSTANCE.GetFileVersionInfoSize(filePath, intByReference)
             if (versionLength > 0) {
                 val memory = Memory(versionLength.toLong())
                 val lplpTranslate = PointerByReference()
                 if (Version.INSTANCE.GetFileVersionInfo(filePath, 0, versionLength, memory)) {
                     val puLen = IntByReference()
-                    if (Version.INSTANCE.VerQueryValue(memory, "\\VarFileInfo\\Translation", lplpTranslate, puLen)) {
+                    if (Version.INSTANCE.VerQueryValue(
+                            memory,
+                            "\\VarFileInfo\\Translation",
+                            lplpTranslate,
+                            puLen,
+                        )
+                    ) {
                         val array: IntArray = lplpTranslate.value.getIntArray(0L, puLen.value / 4)
                         val langAndCodepage = findLangAndCodepage(array) ?: return null
                         val l: Int = langAndCodepage and 0xFFFF
@@ -201,7 +208,12 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                         val lang = String.format(Locale.ROOT, "%04x", l).takeLast(4)
                         val codepage = String.format(Locale.ROOT, "%04x", m).takeLast(4)
                         val lpSubBlock =
-                            String.format(Locale.ROOT, "\\StringFileInfo\\$lang$codepage\\FileDescription", l, m)
+                            String.format(
+                                Locale.ROOT,
+                                "\\StringFileInfo\\$lang$codepage\\FileDescription",
+                                l,
+                                m,
+                            )
 
                         val lplpBuffer = PointerByReference()
                         if (Version.INSTANCE.VerQueryValue(
@@ -292,7 +304,12 @@ interface User32 : com.sun.jna.platform.win32.User32 {
 
                         require(
                             gdi32.GetDIBits(
-                                deviceContext, bitmapHandle, 0, bitmapInfo.bmiHeader.biHeight, pixels, bitmapInfo,
+                                deviceContext,
+                                bitmapHandle,
+                                0,
+                                bitmapInfo.bmiHeader.biHeight,
+                                pixels,
+                                bitmapInfo,
                                 WinGDI.DIB_RGB_COLORS,
                             ) != 0,
                         ) { "GetDIBits should not return 0" }
@@ -306,7 +323,8 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                 }
             } finally {
                 gdi32.DeleteObject(hicon)
-                Optional.ofNullable(bitmapHandle).ifPresent { hObject: HANDLE? -> gdi32.DeleteObject(hObject) }
+                Optional.ofNullable(bitmapHandle)
+                    .ifPresent { hObject: HANDLE? -> gdi32.DeleteObject(hObject) }
             }
 
             return null
@@ -325,7 +343,8 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                     previousHwnd.pointer != searchWindow?.pointer
                 ) {
                     val processIdRef = IntByReference()
-                    val processThreadId = INSTANCE.GetWindowThreadProcessId(previousHwnd, processIdRef)
+                    val processThreadId =
+                        INSTANCE.GetWindowThreadProcessId(previousHwnd, processIdRef)
 
                     val processHandle =
                         Kernel32.INSTANCE.OpenProcess(
@@ -337,7 +356,13 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                     try {
                         val bufferSize = 1024
                         val memory = Memory((bufferSize * 2).toLong())
-                        if (Psapi.INSTANCE.GetModuleFileNameEx(processHandle, null, memory, bufferSize) > 0) {
+                        if (Psapi.INSTANCE.GetModuleFileNameEx(
+                                processHandle,
+                                null,
+                                memory,
+                                bufferSize,
+                            ) > 0
+                        ) {
                             filePath = memory.getWideString(0)
                         }
                     } finally {
@@ -347,7 +372,11 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                     if (windowTitle == SEARCH_WINDOW_TITLE) {
                         searchWindow?.let { searchHWND ->
                             val curThreadId = Kernel32.INSTANCE.GetCurrentThreadId()
-                            INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), true)
+                            INSTANCE.AttachThreadInput(
+                                DWORD(curThreadId.toLong()),
+                                DWORD(processThreadId.toLong()),
+                                true,
+                            )
 
                             INSTANCE.ShowWindow(searchHWND, SW_RESTORE)
 
@@ -363,7 +392,11 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                             )
 
                             val result = INSTANCE.SetForegroundWindow(searchHWND)
-                            INSTANCE.AttachThreadInput(DWORD(curThreadId.toLong()), DWORD(processThreadId.toLong()), false)
+                            INSTANCE.AttachThreadInput(
+                                DWORD(curThreadId.toLong()),
+                                DWORD(processThreadId.toLong()),
+                                false,
+                            )
                             if (!result) {
                                 logger.info { "Failed to set foreground window. Please switch manually" }
                             } else {
@@ -396,6 +429,7 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                         INSTANCE.ShowWindow(hwnd, SW_HIDE)
                     }
                 }
+
                 SEARCH_WINDOW_TITLE -> {
                     searchWindow?.let { hwnd ->
                         INSTANCE.ShowWindow(hwnd, SW_HIDE)
@@ -449,145 +483,16 @@ interface User32 : com.sun.jna.platform.win32.User32 {
         fun findPasteWindow(windowTitle: String): HWND? {
             return INSTANCE.FindWindow(null, windowTitle)?.also { hwnd ->
                 // Set the window icon not to be displayed on the taskbar
-                val style = com.sun.jna.platform.win32.User32.INSTANCE.GetWindowLong(hwnd, WinUser.GWL_EXSTYLE)
-                com.sun.jna.platform.win32.User32.INSTANCE.SetWindowLong(hwnd, WinUser.GWL_EXSTYLE, style or 0x00000080)
-            }
-        }
-
-        fun getAndSaveFileExtensionIcon(
-            extension: String,
-            outputPath: String,
-        ) {
-            var sfi: SHFILEINFO? = null
-            try {
-                // See https://stackoverflow.com/a/39378191
-                sfi =
-                    ShellGetFileInfo(
-                        // Filename is anything like "a.txt", "foo.xml", "x.zip"
-                        // The file doesn't have to exist, but it can't be an invalid  filename (e.g. "???.txt")
-                        "test.$extension",
-                        WinNT.FILE_ATTRIBUTE_NORMAL, // SHGFI_IconLocation means get me the path and icon index
-                        // SHGFI_UseFileAttributes means the file doesn't have to exist
-                        Shell32.SHGFI_ICON or Shell32.SHGFI_LARGEICON or Shell32.SHGFI_USEFILEATTRIBUTES,
+                val style =
+                    com.sun.jna.platform.win32.User32.INSTANCE.GetWindowLong(
+                        hwnd,
+                        WinUser.GWL_EXSTYLE,
                     )
-            } catch (ex: Win32Exception) {
-                logger.error(ex) { "Failed to get exe default icon name and index" }
-            }
-
-            sfi?.let {
-                sfi.hIcon?.let { hIcon ->
-                    val image = hiconToImage(hIcon)
-                    ImageIO.write(image, "png", File(outputPath))
-                    return@getAndSaveFileExtensionIcon
-                }
-
-//                val iconLocation = Native.toString(sfi.szDisplayName)
-//                if (iconLocation.isNotEmpty()) {
-//                    val image = ShellDefExtractIconsFor(iconLocation, sfi.iIcon)
-//                    ImageIO.write(image, "png", File(outputPath))
-//                    return@getAndSaveFileExtensionIcon
-//                }
-            }
-
-            var ssii: SHSTOCKICONINFO? = null
-            try {
-                ssii =
-                    ShellGetStockIconInfo(
-                        Shell32.SHSTOCKICONID.SIID_APPLICATION,
-                        Shell32.SHGSI_ICONLOCATION,
-                    )
-            } catch (ex: UnsatisfiedLinkError) {
-                logger.warn(ex) {
-                    "ShellGetStockIconInfo is only supported starting from Windows Vista"
-                }
-            } catch (ex: Win32Exception) {
-                logger.error(ex) { "Failed to get stock exe icon name and index" }
-            }
-
-            ssii?.let {
-                val iconLocation = Native.toString(ssii.szDisplayName)
-                if (iconLocation.isNotEmpty()) {
-                    val image = ShellDefExtractIconsFor(iconLocation, ssii.iIcon)
-                    ImageIO.write(image, "png", File(outputPath))
-                    return@getAndSaveFileExtensionIcon
-                }
-            }
-        }
-
-        private fun ShellGetFileInfo(
-            pszPath: String,
-            dwFileAttributes: Int,
-            uFlags: Int,
-        ): SHFILEINFO {
-            val res = Ole32.INSTANCE.CoInitializeEx(null, Ole32.COINIT_MULTITHREADED)
-            if (!Objects.equals(res, WinError.S_OK)) throw Win32Exception(res)
-
-            try {
-                val sfi = SHFILEINFO()
-                val res0 =
-                    Shell32.INSTANCE.SHGetFileInfo(
-                        pszPath,
-                        dwFileAttributes,
-                        sfi,
-                        sfi.size(),
-                        uFlags,
-                    )
-                if (res0 == 0) throw Win32Exception(Kernel32.INSTANCE.GetLastError())
-                return sfi
-            } finally {
-                Ole32.INSTANCE.CoUninitialize()
-            }
-        }
-
-        private val WIN32_ICO_SIZES: IntArray = intArrayOf(1024, 512, 256, 180, 128)
-
-        private fun ShellDefExtractIconsFor(
-            pszIconFile: String,
-            iIndex: Int,
-        ): BufferedImage? {
-            for (size in WIN32_ICO_SIZES) {
-                val icon = ShellDefExtractIcon(pszIconFile, iIndex, 0, size)
-                if (icon != null) return icon
-            }
-            return null
-        }
-
-        private fun ShellDefExtractIcon(
-            pszIconFile: String,
-            iIndex: Int,
-            uFlags: Int,
-            size: Int,
-        ): BufferedImage? {
-            val hIcon = arrayOfNulls<HICON>(1)
-            val res0 =
-                Shell32.INSTANCE.SHDefExtractIcon(pszIconFile, iIndex, uFlags, hIcon, null, size)
-
-            if (res0 != WinError.S_OK.toInt()) {
-                return null
-            }
-
-            try {
-                return hIcon[0]?.let { hiconToImage(it) }
-            } finally {
-                INSTANCE.DestroyIcon(hIcon[0])
-            }
-        }
-
-        private fun ShellGetStockIconInfo(
-            siid: Int,
-            uFlags: Int,
-        ): SHSTOCKICONINFO {
-            var res = Ole32.INSTANCE.CoInitializeEx(null, Ole32.COINIT_MULTITHREADED)
-            if (res != WinError.S_OK) throw Win32Exception(res)
-
-            try {
-                val ssii = SHSTOCKICONINFO()
-                ssii.cbSize = DWORD(ssii.size().toLong())
-                res = Shell32.INSTANCE.SHGetStockIconInfo(siid, uFlags, ssii)
-                if (res != WinError.S_OK) throw Win32Exception(res)
-                return ssii
-            } finally {
-                Ole32.INSTANCE.CoUninitialize()
+                com.sun.jna.platform.win32.User32.INSTANCE.SetWindowLong(
+                    hwnd,
+                    WinUser.GWL_EXSTYLE,
+                    style or 0x00000080,
+                )
             }
         }
     }

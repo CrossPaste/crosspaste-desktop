@@ -1,18 +1,20 @@
 package com.crosspaste.icon
 
 import com.crosspaste.app.AppFileType
+import com.crosspaste.image.ImageService
 import com.crosspaste.os.macos.api.MacosApi
-import com.crosspaste.os.windows.api.User32
+import com.crosspaste.os.windows.JIconExtract
 import com.crosspaste.path.DesktopPathProvider
 import com.crosspaste.path.PathProvider
 import com.crosspaste.platform.currentPlatform
 import com.crosspaste.utils.ConcurrentPlatformMap
 import com.crosspaste.utils.PlatformLock
 import com.crosspaste.utils.createConcurrentPlatformMap
+import com.crosspaste.utils.extension
 import io.github.oshai.kotlinlogging.KotlinLogging
 import okio.Path
 
-object DesktopFileExtLoader : ConcurrentLoader<String, Path>, FileExtIconLoader {
+object DesktopFileExtLoader : ConcurrentLoader<Path, Path>, FileExtIconLoader {
 
     private val logger = KotlinLogging.logger {}
 
@@ -22,7 +24,7 @@ object DesktopFileExtLoader : ConcurrentLoader<String, Path>, FileExtIconLoader 
 
     private val platform = currentPlatform()
 
-    private val toSave: (String, Path) -> Unit =
+    private val toSave: (String, Path, Path) -> Unit =
         if (platform.isMacos()) {
             ::macSaveExtIcon
         } else if (platform.isWindows()) {
@@ -42,7 +44,7 @@ object DesktopFileExtLoader : ConcurrentLoader<String, Path>, FileExtIconLoader 
     }
 
     override fun loggerWarning(
-        value: String,
+        value: Path,
         e: Exception,
     ) {
         logger.warn { "Failed to load icon for file extension: $value" }
@@ -50,33 +52,39 @@ object DesktopFileExtLoader : ConcurrentLoader<String, Path>, FileExtIconLoader 
 
     override fun save(
         key: String,
+        value: Path,
         result: Path,
     ) {
-        toSave(key, result)
+        toSave(key, value, result)
     }
 
-    override fun convertToKey(value: String): String {
-        return value
+    override fun convertToKey(value: Path): String {
+        return value.extension
     }
 }
 
 private fun macSaveExtIcon(
     key: String,
-    path: Path,
+    filePath: Path,
+    savePath: Path,
 ) {
-    MacosApi.INSTANCE.saveIconByExt(key, path.toString())
+    MacosApi.INSTANCE.saveIconByExt(key, savePath.toString())
 }
 
 private fun windowsSaveExtIcon(
     key: String,
-    path: Path,
+    filePath: Path,
+    savePath: Path,
 ) {
-    User32.getAndSaveFileExtensionIcon(key, path.toString())
+    JIconExtract.getIconForFile(512, 512, filePath.toFile())?.let { icon ->
+        ImageService.writeImage(icon, "png", savePath.toNioPath())
+    }
 }
 
 private fun linuxSaveExtIcon(
     key: String,
-    path: Path,
+    filePath: Path,
+    savePath: Path,
 ) {
     // todo
 }

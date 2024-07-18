@@ -9,4 +9,4 @@ interface IconLoader<T, R> {
 
 interface FaviconLoader : IconLoader<String, Path>
 
-interface FileExtIconLoader : IconLoader<String, Path>
+interface FileExtIconLoader : IconLoader<Path, Path>

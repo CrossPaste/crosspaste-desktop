@@ -93,6 +93,7 @@ object DesktopFaviconLoader : ConcurrentLoader<String, Path>, FaviconLoader {
 
     override fun save(
         key: String,
+        value: String,
         result: Path,
     ) {
         saveIco(getDefaultIcoUrl(key), result)?.let {
