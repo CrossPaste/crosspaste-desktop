@@ -260,6 +260,8 @@ internal interface Shell32 : com.sun.jna.platform.win32.Shell32 {
 
         const val SHGFI_SMALLICON: Int = 0x000000001
 
+        const val SHGFI_LARGEICON: Int = 0x000000000
+
         /**
          * Indicates that the function should not attempt to access the file specified by pszPath.
          * Rather, it should act as if the file specified by pszPath exists with the file attributes passed in

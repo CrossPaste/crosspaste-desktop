@@ -468,7 +468,7 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                         "test.$extension",
                         WinNT.FILE_ATTRIBUTE_NORMAL, // SHGFI_IconLocation means get me the path and icon index
                         // SHGFI_UseFileAttributes means the file doesn't have to exist
-                        Shell32.SHGFI_ICON or Shell32.SHGFI_SMALLICON or Shell32.SHGFI_USEFILEATTRIBUTES,
+                        Shell32.SHGFI_ICON or Shell32.SHGFI_LARGEICON or Shell32.SHGFI_USEFILEATTRIBUTES,
                     )
             } catch (ex: Win32Exception) {
                 logger.error(ex) { "Failed to get exe default icon name and index" }
