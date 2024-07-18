@@ -57,7 +57,9 @@ import com.crosspaste.app.AppWindowManager
 import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.icon.FaviconLoader
+import com.crosspaste.icon.FileExtIconLoader
 import com.crosspaste.paste.PasteSearchService
+import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteUrl
 import com.crosspaste.path.PathProvider
 import com.crosspaste.ui.base.AppImageIcon
@@ -66,11 +68,11 @@ import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.base.LoadIconData
 import com.crosspaste.ui.base.LoadImageData
 import com.crosspaste.ui.base.ToPainterImage
+import com.crosspaste.ui.base.loadImageData
 import com.crosspaste.ui.paste.PasteTypeIconBaseView
 import com.crosspaste.ui.paste.preview.getPasteItem
 import com.crosspaste.ui.paste.title.getPasteTitle
 import com.crosspaste.ui.selectColor
-import com.crosspaste.utils.getPainterUtils
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -260,6 +262,7 @@ fun PasteTypeIconView(
     val iconStyle = current.koin.get<IconStyle>()
     val pathProvider = current.koin.get<PathProvider>()
     val faviconLoader = current.koin.get<FaviconLoader>()
+    val fileExtLoader = current.koin.get<FileExtIconLoader>()
     val loadIconData =
         LoadIconData(
             pasteData.pasteType,
@@ -280,7 +283,45 @@ fun PasteTypeIconView(
                     it as PasteUrl
                     try {
                         faviconLoader.load(it.url)?.let { path ->
-                            return@AsyncView LoadImageData(path, getPainterUtils().loadPainter(path, density))
+                            return@AsyncView loadImageData(path, density)
+                        }
+                    } catch (ignore: Exception) {
+                    }
+                }
+                loadIconData
+            },
+        ) { loadView ->
+            when (loadView) {
+                is LoadIconData -> {
+                    Icon(
+                        painter = loadView.toPainterImage.toPainter(),
+                        contentDescription = "Paste Icon",
+                        modifier = Modifier.padding(padding).size(size),
+                        tint = MaterialTheme.colors.onBackground,
+                    )
+                }
+                is LoadImageData -> {
+                    Image(
+                        painter = loadView.toPainterImage.toPainter(),
+                        contentDescription = "Paste Icon",
+                        modifier = Modifier.padding(padding).size(size),
+                    )
+                }
+            }
+        }
+    } else if (pasteData.pasteType == PasteType.FILE) {
+        AsyncView(
+            key = pasteData.id,
+            defaultValue = loadIconData,
+            load = {
+                pasteData.getPasteItem()?.let {
+                    it as PasteFiles
+                    try {
+                        val files = it.getPasteFiles()
+                        if (files.isNotEmpty()) {
+                            fileExtLoader.load(files[0].getFilePath())?.let { path ->
+                                return@AsyncView loadImageData(path, density)
+                            }
                         }
                     } catch (ignore: Exception) {
                     }

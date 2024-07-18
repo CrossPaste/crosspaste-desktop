@@ -52,6 +52,7 @@ fun SingleFilePreviewView(filePath: Path) {
     val fileUtils = getFileUtils()
 
     val existFile by remember { mutableStateOf(filePath.toFile().exists()) }
+    val isFile by remember { mutableStateOf(if (existFile) filePath.toFile().isFile else null) }
 
     Row(
         modifier =
@@ -67,7 +68,7 @@ fun SingleFilePreviewView(filePath: Path) {
                     fileExtIconLoader.load(filePath)?.let {
                         loadImageData(it, density)
                     } ?: run {
-                        loadIconData(filePath, existFile, density)
+                        loadIconData(filePath, isFile, density)
                     }
                 },
                 loadFor = { loadStateData ->
@@ -104,7 +105,8 @@ fun SingleFilePreviewView(filePath: Path) {
             modifier =
                 Modifier.fillMaxHeight()
                     .wrapContentWidth()
-                    .padding(horizontal = 8.dp),
+                    .padding(horizontal = 8.dp)
+                    .padding(bottom = 8.dp),
             verticalArrangement = Arrangement.Bottom,
         ) {
             Text(

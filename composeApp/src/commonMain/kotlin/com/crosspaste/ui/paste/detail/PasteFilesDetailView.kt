@@ -33,6 +33,7 @@ import com.crosspaste.LocalKoinApplication
 import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.icon.FileExtIconLoader
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.LoadIconData
@@ -42,6 +43,7 @@ import com.crosspaste.ui.base.chevronLeft
 import com.crosspaste.ui.base.chevronRight
 import com.crosspaste.ui.base.fileSlash
 import com.crosspaste.ui.base.loadIconData
+import com.crosspaste.ui.base.loadImageData
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
 import kotlinx.coroutines.delay
@@ -60,6 +62,7 @@ fun PasteFilesDetailView(
         val current = LocalKoinApplication.current
         val density = LocalDensity.current
         val copywriter = current.koin.get<GlobalCopywriter>()
+        val fileExtIconLoader = current.koin.get<FileExtIconLoader>()
 
         val pasteItem = pasteFiles as PasteItem
 
@@ -92,7 +95,9 @@ fun PasteFilesDetailView(
 
         val filePath = pasteFiles.getFilePaths()[index]
         val fileInfoTree = pasteFiles.getFileInfoTreeMap()[filePath.name]!!
-        val isFile = fileInfoTree.isFile()
+        val file = filePath.toFile()
+        val existFile = file.exists()
+        val isFile = if (existFile) fileInfoTree.isFile() else null
 
         var hover by remember { mutableStateOf(false) }
 
@@ -124,7 +129,11 @@ fun PasteFilesDetailView(
                         AsyncView(
                             key = filePath,
                             load = {
-                                loadIconData(filePath, isFile, density)
+                                fileExtIconLoader.load(filePath)?.let {
+                                    loadImageData(it, density)
+                                } ?: run {
+                                    loadIconData(filePath, isFile, density)
+                                }
                             },
                             loadFor = { loadStateData ->
                                 if (loadStateData.isSuccess()) {

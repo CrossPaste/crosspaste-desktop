@@ -92,7 +92,8 @@ fun SingleImagePreviewView(imagePath: Path) {
                     modifier =
                         Modifier.fillMaxHeight()
                             .wrapContentWidth()
-                            .padding(horizontal = 8.dp),
+                            .padding(horizontal = 8.dp)
+                            .padding(bottom = 8.dp),
                     verticalArrangement = Arrangement.Bottom,
                 ) {
                     Text(

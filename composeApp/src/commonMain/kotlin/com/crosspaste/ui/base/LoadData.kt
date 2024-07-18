@@ -41,27 +41,37 @@ fun loadImageData(
 
 fun loadIconData(
     filePath: Path,
-    isFile: Boolean,
+    isFile: Boolean?,
     density: Density,
 ): LoadStateData {
     try {
-        if (isFile) {
-            val extension = filePath.extension
-            FileExtUtils.getExtPreviewImage(extension)?.let {
-                return LoadImageData(extension, ImageBitmapToPainter(extension, it))
-            } ?: run {
+        when (isFile) {
+            true -> {
+                val extension = filePath.extension
+                FileExtUtils.getExtPreviewImage(extension)?.let {
+                    return LoadImageData(extension, ImageBitmapToPainter(extension, it))
+                } ?: run {
+                    return LoadIconData(
+                        "file",
+                        getPainterUtils()
+                            .loadResourcePainter("icon/paste/file.svg", density),
+                    )
+                }
+            }
+            false -> {
                 return LoadIconData(
-                    "file",
+                    "dir",
                     getPainterUtils()
-                        .loadResourcePainter("icon/paste/file.svg", density),
+                        .loadResourcePainter("icon/paste/folder.svg", density),
                 )
             }
-        } else {
-            return LoadIconData(
-                "dir",
-                getPainterUtils()
-                    .loadResourcePainter("icon/paste/folder.svg", density),
-            )
+            else -> {
+                return LoadIconData(
+                    "file-slash",
+                    getPainterUtils()
+                        .loadResourcePainter("icon/paste/file-slash.svg", density),
+                )
+            }
         }
     } catch (e: Exception) {
         return ErrorStateData(e)
