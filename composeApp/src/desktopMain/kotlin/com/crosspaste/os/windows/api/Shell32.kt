@@ -256,6 +256,10 @@ internal interface Shell32 : com.sun.jna.platform.win32.Shell32 {
         val INSTANCE: Shell32 =
             Native.load("shell32", Shell32::class.java, W32APIOptions.DEFAULT_OPTIONS)
 
+        const val SHGFI_ICON: Int = 0x000000100
+
+        const val SHGFI_SMALLICON: Int = 0x000000001
+
         /**
          * Indicates that the function should not attempt to access the file specified by pszPath.
          * Rather, it should act as if the file specified by pszPath exists with the file attributes passed in

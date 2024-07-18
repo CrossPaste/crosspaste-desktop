@@ -468,19 +468,25 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                         "test.$extension",
                         WinNT.FILE_ATTRIBUTE_NORMAL, // SHGFI_IconLocation means get me the path and icon index
                         // SHGFI_UseFileAttributes means the file doesn't have to exist
-                        Shell32.SHGFI_ICONLOCATION or Shell32.SHGFI_USEFILEATTRIBUTES,
+                        Shell32.SHGFI_ICON or Shell32.SHGFI_SMALLICON or Shell32.SHGFI_USEFILEATTRIBUTES,
                     )
             } catch (ex: Win32Exception) {
                 logger.error(ex) { "Failed to get exe default icon name and index" }
             }
 
             sfi?.let {
-                val iconLocation = Native.toString(sfi.szDisplayName)
-                if (iconLocation.isNotEmpty()) {
-                    val image = ShellDefExtractIconsFor(iconLocation, sfi.iIcon)
+                sfi.hIcon?.let { hIcon ->
+                    val image = hiconToImage(hIcon)
                     ImageIO.write(image, "png", File(outputPath))
                     return@getAndSaveFileExtensionIcon
                 }
+
+//                val iconLocation = Native.toString(sfi.szDisplayName)
+//                if (iconLocation.isNotEmpty()) {
+//                    val image = ShellDefExtractIconsFor(iconLocation, sfi.iIcon)
+//                    ImageIO.write(image, "png", File(outputPath))
+//                    return@getAndSaveFileExtensionIcon
+//                }
             }
 
             var ssii: SHSTOCKICONINFO? = null
