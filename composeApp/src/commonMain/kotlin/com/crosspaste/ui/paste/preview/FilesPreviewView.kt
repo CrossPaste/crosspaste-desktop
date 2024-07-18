@@ -62,7 +62,7 @@ fun getImagePath(
     pasteImages: List<Path>?,
     fileExtIconLoader: FileExtIconLoader,
 ): Path? {
-    return pasteFilePaths[index].extension.let {
+    return pasteFilePaths[index].let {
         fileExtIconLoader.load(it)
     }
 }
