@@ -3,24 +3,25 @@ package com.crosspaste.os.windows.api
 import com.crosspaste.app.AbstractAppWindowManager.Companion.MAIN_WINDOW_TITLE
 import com.crosspaste.app.AbstractAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.crosspaste.app.WinAppInfo
+import com.crosspaste.os.windows.api.Shell32.SHFILEINFO
 import com.sun.jna.Memory
 import com.sun.jna.Native
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.BaseTSD.ULONG_PTR
 import com.sun.jna.platform.win32.GDI32
 import com.sun.jna.platform.win32.Kernel32
+import com.sun.jna.platform.win32.Ole32
 import com.sun.jna.platform.win32.Psapi
-import com.sun.jna.platform.win32.Shell32
 import com.sun.jna.platform.win32.Version
+import com.sun.jna.platform.win32.Win32Exception
 import com.sun.jna.platform.win32.WinDef.DWORD
 import com.sun.jna.platform.win32.WinDef.HBITMAP
-import com.sun.jna.platform.win32.WinDef.HDC
 import com.sun.jna.platform.win32.WinDef.HICON
 import com.sun.jna.platform.win32.WinDef.HWND
 import com.sun.jna.platform.win32.WinDef.LPARAM
-import com.sun.jna.platform.win32.WinDef.RECT
 import com.sun.jna.platform.win32.WinDef.WORD
 import com.sun.jna.platform.win32.WinDef.WPARAM
+import com.sun.jna.platform.win32.WinError
 import com.sun.jna.platform.win32.WinGDI
 import com.sun.jna.platform.win32.WinGDI.BITMAP
 import com.sun.jna.platform.win32.WinGDI.BITMAPINFO
@@ -29,25 +30,23 @@ import com.sun.jna.platform.win32.WinNT
 import com.sun.jna.platform.win32.WinNT.HANDLE
 import com.sun.jna.platform.win32.WinUser
 import com.sun.jna.platform.win32.WinUser.INPUT
-import com.sun.jna.platform.win32.WinUser.MONITORENUMPROC
-import com.sun.jna.platform.win32.WinUser.MSG
 import com.sun.jna.platform.win32.WinUser.SM_CXSCREEN
 import com.sun.jna.platform.win32.WinUser.SM_CYSCREEN
 import com.sun.jna.platform.win32.WinUser.SW_HIDE
 import com.sun.jna.platform.win32.WinUser.SW_RESTORE
 import com.sun.jna.ptr.IntByReference
 import com.sun.jna.ptr.PointerByReference
-import com.sun.jna.win32.StdCallLibrary
 import com.sun.jna.win32.StdCallLibrary.StdCallCallback
 import com.sun.jna.win32.W32APIOptions.DEFAULT_OPTIONS
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.awt.image.BufferedImage
 import java.io.File
 import java.util.Locale
+import java.util.Objects
 import java.util.Optional
 import javax.imageio.ImageIO
 
-interface User32 : StdCallLibrary {
+interface User32 : com.sun.jna.platform.win32.User32 {
     interface WNDPROC : StdCallCallback {
         fun callback(
             hWnd: HWND?,
@@ -84,26 +83,12 @@ interface User32 : StdCallLibrary {
         param: Any?,
     ): HWND?
 
-    fun DestroyWindow(hwnd: HWND?): Int
-
     fun SetClipboardViewer(hWndNewViewer: HWND?): HWND?
 
     fun ChangeClipboardChain(
         hWndRemove: HWND?,
         hWndNewNext: HWND?,
     ): Boolean
-
-    fun PeekMessage(
-        lpMsg: MSG?,
-        hWnd: HWND?,
-        wMsgFilterMin: Int,
-        wMsgFilterMax: Int,
-        wRemoveMsg: Int,
-    ): Boolean
-
-    fun TranslateMessage(lpMsg: MSG?): Boolean
-
-    fun DispatchMessage(lpMsg: MSG?): Int
 
     fun MsgWaitForMultipleObjects(
         nCount: Int,
@@ -113,61 +98,7 @@ interface User32 : StdCallLibrary {
         dwWakeMask: Int,
     ): Int
 
-    fun SendMessage(
-        hWnd: HWND?,
-        message: Int,
-        wParam: WPARAM?,
-        lParam: LPARAM?,
-    )
-
-    fun DefWindowProc(
-        hWnd: HWND?,
-        msg: Int,
-        wParam: WPARAM?,
-        lParam: LPARAM?,
-    ): Int
-
-    fun EnumDisplayMonitors(
-        hdc: HDC?,
-        lprcClip: RECT?,
-        lpfnEnum: MONITORENUMPROC?,
-        dwData: LPARAM?,
-    ): Boolean
-
     fun GetClipboardSequenceNumber(): Int
-
-    fun FindWindow(
-        lpClassName: String?,
-        lpWindowName: String?,
-    ): HWND?
-
-    fun ShowWindow(
-        hWnd: HWND,
-        nCmdShow: Int,
-    ): Boolean
-
-    fun GetForegroundWindow(): HWND?
-
-    fun SetForegroundWindow(hWnd: HWND): Boolean
-
-    fun GetWindowThreadProcessId(
-        hWnd: HWND,
-        lpdwProcessId: IntByReference,
-    ): Int
-
-    fun SendInput(
-        nInputs: DWORD?,
-        pInputs: Array<INPUT>?,
-        cbSize: Int,
-    ): Int
-
-    fun AttachThreadInput(
-        idAttach: DWORD,
-        idAttachTo: DWORD,
-        fAttach: Boolean,
-    ): Boolean
-
-    fun GetSystemMetrics(nIndex: Int): Int
 
     fun mouse_event(
         dwFlags: DWORD,
@@ -176,13 +107,6 @@ interface User32 : StdCallLibrary {
         dwData: DWORD,
         dwExtraInfo: ULONG_PTR,
     )
-
-    fun GetIconInfo(
-        hIcon: HICON,
-        piconinfo: ICONINFO,
-    ): Boolean
-
-    fun GetDC(hWnd: HWND?): HDC?
 
     companion object {
         val INSTANCE =
@@ -526,6 +450,93 @@ interface User32 : StdCallLibrary {
                 // Set the window icon not to be displayed on the taskbar
                 val style = com.sun.jna.platform.win32.User32.INSTANCE.GetWindowLong(hwnd, WinUser.GWL_EXSTYLE)
                 com.sun.jna.platform.win32.User32.INSTANCE.SetWindowLong(hwnd, WinUser.GWL_EXSTYLE, style or 0x00000080)
+            }
+        }
+
+        fun getAndSaveFileExtensionIcon(
+            extension: String,
+            outputPath: String,
+        ) {
+            var sfi: SHFILEINFO? = null
+            try {
+                // See https://stackoverflow.com/a/39378191
+                sfi =
+                    ShellGetFileInfo( // Filename is anything like "a.txt", "foo.xml", "x.zip"
+                        // The file doesn't have to exist, but it can't be an invalid  filename (e.g. "???.txt")
+                        "test.$extension",
+                        WinNT.FILE_ATTRIBUTE_NORMAL, // SHGFI_IconLocation means get me the path and icon index
+                        // SHGFI_UseFileAttributes means the file doesn't have to exist
+                        Shell32.SHGFI_ICONLOCATION or Shell32.SHGFI_USEFILEATTRIBUTES,
+                    )
+            } catch (ex: Win32Exception) {
+                logger.error(ex) { "Failed to get exe default icon name and index" }
+            }
+
+            sfi?.let {
+                val iconLocation = Native.toString(sfi.szDisplayName)
+                if (iconLocation.isNotEmpty()) {
+                    val image = ShellDefExtractIconsFor(iconLocation, sfi.iIcon)
+                    ImageIO.write(image, "png", File(outputPath))
+                }
+            }
+        }
+
+        private fun ShellGetFileInfo(
+            pszPath: String,
+            dwFileAttributes: Int,
+            uFlags: Int,
+        ): SHFILEINFO {
+            val res = Ole32.INSTANCE.CoInitializeEx(null, Ole32.COINIT_MULTITHREADED)
+            if (!Objects.equals(res, WinError.S_OK)) throw Win32Exception(res)
+
+            try {
+                val sfi = SHFILEINFO()
+                val res0 =
+                    Shell32.INSTANCE.SHGetFileInfo(
+                        pszPath,
+                        dwFileAttributes,
+                        sfi,
+                        sfi.size(),
+                        uFlags,
+                    )
+                if (res0 == 0) throw Win32Exception(Kernel32.INSTANCE.GetLastError())
+                return sfi
+            } finally {
+                Ole32.INSTANCE.CoUninitialize()
+            }
+        }
+
+        private val WIN32_ICO_SIZES: IntArray = intArrayOf(1024, 512, 256, 180, 128)
+
+        private fun ShellDefExtractIconsFor(
+            pszIconFile: String,
+            iIndex: Int,
+        ): BufferedImage? {
+            for (size in WIN32_ICO_SIZES) {
+                val icon = ShellDefExtractIcon(pszIconFile, iIndex, 0, size)
+                if (icon != null) return icon
+            }
+            return null
+        }
+
+        private fun ShellDefExtractIcon(
+            pszIconFile: String,
+            iIndex: Int,
+            uFlags: Int,
+            size: Int,
+        ): BufferedImage? {
+            val hIcon = arrayOfNulls<HICON>(1)
+            val res0 =
+                Shell32.INSTANCE.SHDefExtractIcon(pszIconFile, iIndex, uFlags, hIcon, null, size)
+
+            if (res0 != WinError.S_OK.toInt()) {
+                return null
+            }
+
+            try {
+                return hIcon[0]?.let { hiconToImage(it) }
+            } finally {
+                INSTANCE.DestroyIcon(hIcon[0])
             }
         }
     }

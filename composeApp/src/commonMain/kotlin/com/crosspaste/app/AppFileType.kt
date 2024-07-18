@@ -9,6 +9,7 @@ enum class AppFileType {
     HTML,
     ICON, // use for app icon
     FAVICON, // use for url favicon
+    FILE_EXT_ICON, // use for file icon
     IMAGE,
     VIDEO,
     FILE,

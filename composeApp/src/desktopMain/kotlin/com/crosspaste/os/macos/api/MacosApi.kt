@@ -64,6 +64,11 @@ interface MacosApi : Library {
 
     fun checkAccessibilityPermissions(): Boolean
 
+    fun saveIconByExt(
+        ext: String,
+        path: String,
+    )
+
     companion object {
         val INSTANCE: MacosApi = Native.load("MacosApi", MacosApi::class.java)
     }

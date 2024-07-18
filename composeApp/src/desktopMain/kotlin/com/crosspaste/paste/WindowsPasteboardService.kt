@@ -215,6 +215,6 @@ class WindowsPasteboardService(
 
             User32.WM_DESTROY -> User32.INSTANCE.ChangeClipboardChain(viewer, nextViewer)
         }
-        return User32.INSTANCE.DefWindowProc(hWnd, uMsg, uParam, lParam)
+        return User32.INSTANCE.DefWindowProc(hWnd, uMsg, uParam, lParam).toInt()
     }
 }

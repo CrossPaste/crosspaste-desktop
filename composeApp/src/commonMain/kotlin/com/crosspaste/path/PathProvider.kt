@@ -25,6 +25,7 @@ interface PathProvider {
                 AppFileType.HTML -> pasteUserPath.resolve("html")
                 AppFileType.ICON -> pasteUserPath.resolve("icons")
                 AppFileType.FAVICON -> pasteUserPath.resolve("favicon")
+                AppFileType.FILE_EXT_ICON -> pasteUserPath.resolve("file_ext_icons")
                 AppFileType.IMAGE -> pasteUserPath.resolve("images")
                 AppFileType.VIDEO -> pasteUserPath.resolve("videos")
                 AppFileType.FILE -> pasteUserPath.resolve("files")
