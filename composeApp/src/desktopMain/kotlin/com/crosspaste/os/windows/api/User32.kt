@@ -4,6 +4,7 @@ import com.crosspaste.app.AbstractAppWindowManager.Companion.MAIN_WINDOW_TITLE
 import com.crosspaste.app.AbstractAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.crosspaste.app.WinAppInfo
 import com.crosspaste.os.windows.api.Shell32.SHFILEINFO
+import com.crosspaste.os.windows.api.Shell32.SHSTOCKICONINFO
 import com.sun.jna.Memory
 import com.sun.jna.Native
 import com.sun.jna.Pointer
@@ -461,7 +462,8 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             try {
                 // See https://stackoverflow.com/a/39378191
                 sfi =
-                    ShellGetFileInfo( // Filename is anything like "a.txt", "foo.xml", "x.zip"
+                    ShellGetFileInfo(
+                        // Filename is anything like "a.txt", "foo.xml", "x.zip"
                         // The file doesn't have to exist, but it can't be an invalid  filename (e.g. "???.txt")
                         "test.$extension",
                         WinNT.FILE_ATTRIBUTE_NORMAL, // SHGFI_IconLocation means get me the path and icon index
@@ -477,6 +479,31 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                 if (iconLocation.isNotEmpty()) {
                     val image = ShellDefExtractIconsFor(iconLocation, sfi.iIcon)
                     ImageIO.write(image, "png", File(outputPath))
+                    return@getAndSaveFileExtensionIcon
+                }
+            }
+
+            var ssii: SHSTOCKICONINFO? = null
+            try {
+                ssii =
+                    ShellGetStockIconInfo(
+                        Shell32.SHSTOCKICONID.SIID_APPLICATION,
+                        Shell32.SHGSI_ICONLOCATION,
+                    )
+            } catch (ex: UnsatisfiedLinkError) {
+                logger.warn(ex) {
+                    "ShellGetStockIconInfo is only supported starting from Windows Vista"
+                }
+            } catch (ex: Win32Exception) {
+                logger.error(ex) { "Failed to get stock exe icon name and index" }
+            }
+
+            ssii?.let {
+                val iconLocation = Native.toString(ssii.szDisplayName)
+                if (iconLocation.isNotEmpty()) {
+                    val image = ShellDefExtractIconsFor(iconLocation, ssii.iIcon)
+                    ImageIO.write(image, "png", File(outputPath))
+                    return@getAndSaveFileExtensionIcon
                 }
             }
         }
@@ -537,6 +564,24 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                 return hIcon[0]?.let { hiconToImage(it) }
             } finally {
                 INSTANCE.DestroyIcon(hIcon[0])
+            }
+        }
+
+        private fun ShellGetStockIconInfo(
+            siid: Int,
+            uFlags: Int,
+        ): SHSTOCKICONINFO {
+            var res = Ole32.INSTANCE.CoInitializeEx(null, Ole32.COINIT_MULTITHREADED)
+            if (res != WinError.S_OK) throw Win32Exception(res)
+
+            try {
+                val ssii = SHSTOCKICONINFO()
+                ssii.cbSize = DWORD(ssii.size().toLong())
+                res = Shell32.INSTANCE.SHGetStockIconInfo(siid, uFlags, ssii)
+                if (res != WinError.S_OK) throw Win32Exception(res)
+                return ssii
+            } finally {
+                Ole32.INSTANCE.CoUninitialize()
             }
         }
     }
