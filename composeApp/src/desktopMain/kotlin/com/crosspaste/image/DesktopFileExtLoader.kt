@@ -1,7 +1,6 @@
-package com.crosspaste.icon
+package com.crosspaste.image
 
 import com.crosspaste.app.AppFileType
-import com.crosspaste.image.ImageService
 import com.crosspaste.os.linux.FreedesktopUtils.saveExtIcon
 import com.crosspaste.os.macos.api.MacosApi
 import com.crosspaste.os.windows.JIconExtract
@@ -15,13 +14,13 @@ import com.crosspaste.utils.extension
 import io.github.oshai.kotlinlogging.KotlinLogging
 import okio.Path
 
-object DesktopFileExtLoader : ConcurrentLoader<Path, Path>, FileExtIconLoader {
+object DesktopFileExtLoader : ConcurrentLoader<Path, Path>, FileExtImageLoader {
 
     private val logger = KotlinLogging.logger {}
 
     private val pathProvider: PathProvider = DesktopPathProvider
 
-    override val lockMap: ConcurrentPlatformMap<Path, PlatformLock> = createConcurrentPlatformMap()
+    override val lockMap: ConcurrentPlatformMap<String, PlatformLock> = createConcurrentPlatformMap()
 
     private val platform = currentPlatform()
 
@@ -36,7 +35,10 @@ object DesktopFileExtLoader : ConcurrentLoader<Path, Path>, FileExtIconLoader {
             throw IllegalStateException("Unsupported platform: $platform")
         }
 
-    override fun resolve(key: String): Path {
+    override fun resolve(
+        key: String,
+        value: Path,
+    ): Path {
         return pathProvider.resolve("$key.png", AppFileType.FILE_EXT_ICON)
     }
 

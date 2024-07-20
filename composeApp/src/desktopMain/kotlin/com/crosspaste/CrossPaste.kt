@@ -41,10 +41,12 @@ import com.crosspaste.endpoint.DesktopEndpointInfoFactory
 import com.crosspaste.endpoint.EndpointInfoFactory
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.i18n.GlobalCopywriterImpl
-import com.crosspaste.icon.DesktopFaviconLoader
-import com.crosspaste.icon.DesktopFileExtLoader
-import com.crosspaste.icon.FaviconLoader
-import com.crosspaste.icon.FileExtIconLoader
+import com.crosspaste.image.DesktopFaviconLoader
+import com.crosspaste.image.DesktopFileExtLoader
+import com.crosspaste.image.DesktopThumbnailLoader
+import com.crosspaste.image.FaviconLoader
+import com.crosspaste.image.FileExtImageLoader
+import com.crosspaste.image.ThumbnailLoader
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listen.DesktopGlobalListener
 import com.crosspaste.listen.DesktopMouseListener
@@ -241,7 +243,8 @@ class CrossPaste {
                     single<SyncManager> { get<DesktopSyncManager>() }
                     single<DeviceManager> { DesktopDeviceManager(get(), get(), get()) }
                     single<FaviconLoader> { DesktopFaviconLoader }
-                    single<FileExtIconLoader> { DesktopFileExtLoader }
+                    single<FileExtImageLoader> { DesktopFileExtLoader }
+                    single<ThumbnailLoader> { DesktopThumbnailLoader }
 
                     // signal component
                     single<IdentityKeyStore> { getPasteIdentityKeyStoreFactory(get(), get()).createIdentityKeyStore() }

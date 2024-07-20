@@ -56,8 +56,8 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.dao.paste.PasteType
-import com.crosspaste.icon.FaviconLoader
-import com.crosspaste.icon.FileExtIconLoader
+import com.crosspaste.image.FaviconLoader
+import com.crosspaste.image.FileExtImageLoader
 import com.crosspaste.paste.PasteSearchService
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteUrl
@@ -262,7 +262,7 @@ fun PasteTypeIconView(
     val iconStyle = current.koin.get<IconStyle>()
     val pathProvider = current.koin.get<PathProvider>()
     val faviconLoader = current.koin.get<FaviconLoader>()
-    val fileExtLoader = current.koin.get<FileExtIconLoader>()
+    val fileExtLoader = current.koin.get<FileExtImageLoader>()
     val loadIconData =
         LoadIconData(
             pasteData.pasteType,

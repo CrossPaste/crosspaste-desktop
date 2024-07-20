@@ -3,6 +3,19 @@ package com.crosspaste.utils
 import okio.FileSystem
 import okio.Path
 
+val Path.fileNameRemoveExtension: String
+    get() {
+        val fileName = name
+
+        val index = fileName.lastIndexOf('.')
+
+        return if (index != -1) {
+            fileName.substring(0, index)
+        } else {
+            fileName
+        }
+    }
+
 val Path.extension: String
     get() {
         val fileName = name

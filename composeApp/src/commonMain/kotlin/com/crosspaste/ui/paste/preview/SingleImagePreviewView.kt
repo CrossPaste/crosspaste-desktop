@@ -48,6 +48,7 @@ fun SingleImagePreviewView(imagePath: Path) {
     val density = LocalDensity.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val uiSupport = current.koin.get<UISupport>()
+    val thumbnailLoader = current.koin.get<ThumbnailLoader>()
 
     val fileUtils = getFileUtils()
 
@@ -62,7 +63,7 @@ fun SingleImagePreviewView(imagePath: Path) {
         AsyncView(
             key = imagePath,
             load = {
-                loadImageData(imagePath, density, thumbnail = true)
+                loadImageData(imagePath, density, thumbnailLoader)
             },
             loadFor = { loadImageView ->
                 Box {

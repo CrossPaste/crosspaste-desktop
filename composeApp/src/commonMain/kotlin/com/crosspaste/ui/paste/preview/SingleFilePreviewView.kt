@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.icon.FileExtIconLoader
+import com.crosspaste.image.FileExtImageLoader
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.LoadIconData
 import com.crosspaste.ui.base.LoadImageData
@@ -46,7 +46,7 @@ fun SingleFilePreviewView(filePath: Path) {
     val density = LocalDensity.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val uiSupport = current.koin.get<UISupport>()
-    val fileExtIconLoader = current.koin.get<FileExtIconLoader>()
+    val fileExtIconLoader = current.koin.get<FileExtImageLoader>()
 
     val fileUtils = getFileUtils()
 

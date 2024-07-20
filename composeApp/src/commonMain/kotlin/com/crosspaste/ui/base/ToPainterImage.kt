@@ -15,27 +15,35 @@ interface ToPainterImage {
 
 class ImageBitmapToPainter(
     private val key: Any,
-    private val imageBitmap: ImageBitmap,
+    private val thumbnail: Boolean = false,
+    private val createImageBitmap: () -> ImageBitmap,
 ) : ToPainterImage {
+
     @Composable
     override fun toPainter(): Painter {
-        return remember(key) { BitmapPainter(imageBitmap) }
+        return remember(key) { BitmapPainter(createImageBitmap()) }
+    }
+
+    fun isThumbnail(): Boolean {
+        return thumbnail
     }
 }
 
 class SvgResourceToPainter(
     private val key: Any,
-    private val painter: Painter,
+    private val createPainter: () -> Painter,
 ) : ToPainterImage {
     @Composable
     override fun toPainter(): Painter {
-        return remember(key) { painter }
+        return remember(key) { createPainter() }
     }
 }
 
-class XmlResourceToPainter(private val imageVector: ImageVector) : ToPainterImage {
+class XmlResourceToPainter(
+    private val createImageVector: () -> ImageVector,
+) : ToPainterImage {
     @Composable
     override fun toPainter(): Painter {
-        return rememberVectorPainter(imageVector)
+        return rememberVectorPainter(createImageVector())
     }
 }

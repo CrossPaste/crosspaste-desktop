@@ -14,13 +14,8 @@ import com.crosspaste.ui.base.SvgResourceToPainter
 import com.crosspaste.ui.base.ToPainterImage
 import com.crosspaste.ui.base.XmlResourceToPainter
 import okio.Path
-import okio.Path.Companion.toOkioPath
-import org.jetbrains.skia.Image
-import org.jetbrains.skia.Surface
 import org.xml.sax.InputSource
 import kotlin.io.path.inputStream
-import kotlin.io.path.readBytes
-import kotlin.io.path.writeBytes
 
 actual fun getPainterUtils(): PainterUtils {
     return DesktopPainterUtils
@@ -35,12 +30,13 @@ object DesktopPainterUtils : PainterUtils {
         path: Path,
         density: Density,
     ): ToPainterImage {
-        val fileName = path.name
-        return when (fileName.substringAfterLast(".")) {
-            "svg" -> SvgResourceToPainter(fileName, getSvgPainter(path, density))
-            "xml" -> XmlResourceToPainter(getXmlImageVector(path, density))
+        return when (path.name.substringAfterLast(".")) {
+            "svg" -> SvgResourceToPainter(path) { getSvgPainter(path, density) }
+            "xml" -> XmlResourceToPainter { getXmlImageVector(path, density) }
             else -> {
-                ImageBitmapToPainter(fileName, getImageBitmap(path))
+                ImageBitmapToPainter(path, false) {
+                    getImageBitmap(path)
+                }
             }
         }
     }
@@ -53,25 +49,23 @@ object DesktopPainterUtils : PainterUtils {
         val inputStream = loader.load(fileName)
         return when (fileName.substringAfterLast(".")) {
             "svg" ->
-                SvgResourceToPainter(
-                    fileName,
+                SvgResourceToPainter(fileName) {
                     inputStream.buffered().use {
                         loadSvgPainter(it, density)
-                    },
-                )
+                    }
+                }
             "xml" ->
-                XmlResourceToPainter(
+                XmlResourceToPainter {
                     inputStream.buffered().use {
                         loadXmlImageVector(InputSource(it), density)
-                    },
-                )
+                    }
+                }
             else -> {
-                ImageBitmapToPainter(
-                    fileName,
+                ImageBitmapToPainter(fileName, false) {
                     inputStream.use {
                         it.buffered().use(::loadImageBitmap)
-                    },
-                )
+                    }
+                }
             }
         }
     }
@@ -98,62 +92,5 @@ object DesktopPainterUtils : PainterUtils {
         return path.toNioPath().inputStream().buffered().use {
             it.use(::loadImageBitmap)
         }
-    }
-
-    override fun createThumbnail(path: Path) {
-        val originalImage = Image.makeFromEncoded(path.toNioPath().readBytes())
-
-        val originalWidth = originalImage.width
-        val originalHeight = originalImage.height
-
-        val thumbnailWidth: Int
-        val thumbnailHeight: Int
-
-        if (originalWidth <= originalHeight) {
-            // 竖直方向的图片
-            thumbnailWidth = 200
-            thumbnailHeight = 200 * originalHeight / originalWidth
-        } else {
-            // 水平方向的图片
-            thumbnailWidth = 200 * originalWidth / originalHeight
-            thumbnailHeight = 200
-        }
-
-        // 创建一个新的Surface用于绘制缩略图
-        val surface = Surface.makeRasterN32Premul(thumbnailWidth, thumbnailHeight)
-        val canvas = surface.canvas
-
-        // 使用原始图片的宽高比来计算缩放比例
-        val scale =
-            minOf(
-                thumbnailWidth.toFloat() / originalImage.width,
-                thumbnailHeight.toFloat() / originalImage.height,
-            )
-
-        // 计算绘制的起点，以便图像居中
-        val dx = (thumbnailWidth - originalImage.width * scale) / 2
-        val dy = (thumbnailHeight - originalImage.height * scale) / 2
-
-        // 绘制缩略图
-        canvas.drawImageRect(
-            originalImage,
-            org.jetbrains.skia.Rect.makeWH(originalImage.width.toFloat(), originalImage.height.toFloat()),
-            org.jetbrains.skia.Rect.makeXYWH(dx, dy, originalImage.width * scale, originalImage.height * scale),
-            null,
-        )
-
-        val thumbnailPath = getThumbnailPath(path)
-
-        // 保存缩略图到文件
-        surface.makeImageSnapshot().encodeToData()?.bytes?.let {
-            thumbnailPath.toNioPath().writeBytes(it)
-        }
-    }
-
-    override fun getThumbnailPath(path: Path): Path {
-        return path
-            .toNioPath()
-            .resolveSibling("thumbnail_${path.name}")
-            .toOkioPath()
     }
 }
