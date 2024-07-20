@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.image.ThumbnailLoader
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.LoadImageData
 import com.crosspaste.ui.base.TransparentBackground
