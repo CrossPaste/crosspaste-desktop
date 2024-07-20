@@ -1,14 +1,17 @@
-package com.crosspaste.icon
+package com.crosspaste.image
 
 import com.crosspaste.utils.ConcurrentPlatformMap
 import com.crosspaste.utils.PlatformLock
 import com.crosspaste.utils.createPlatformLock
 
-interface ConcurrentLoader<T, R> : IconLoader<T, R> {
+interface ConcurrentLoader<T, R> : ImageLoader<T, R> {
 
-    val lockMap: ConcurrentPlatformMap<R, PlatformLock>
+    val lockMap: ConcurrentPlatformMap<String, PlatformLock>
 
-    fun resolve(key: String): R
+    fun resolve(
+        key: String,
+        value: T,
+    ): R
 
     fun loggerWarning(
         value: T,
@@ -28,11 +31,11 @@ interface ConcurrentLoader<T, R> : IconLoader<T, R> {
     override fun load(value: T): R? {
         try {
             val key = convertToKey(value)
-            val result = resolve(key)
+            val result = resolve(key, value)
             if (exist(result)) {
                 return result
             }
-            val lock = lockMap.computeIfAbsent(result) { createPlatformLock() }
+            val lock = lockMap.computeIfAbsent(key) { createPlatformLock() }
             lock.lock()
             try {
                 if (exist(result)) {

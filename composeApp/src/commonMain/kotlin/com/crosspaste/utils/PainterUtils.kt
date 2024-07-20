@@ -32,8 +32,4 @@ interface PainterUtils {
     ): ImageVector
 
     fun getImageBitmap(path: Path): ImageBitmap
-
-    fun createThumbnail(path: Path)
-
-    fun getThumbnailPath(path: Path): Path
 }

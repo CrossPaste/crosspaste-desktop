@@ -1,4 +1,4 @@
-package com.crosspaste.icon
+package com.crosspaste.image
 
 import com.crosspaste.utils.ConcurrentPlatformMap
 import com.crosspaste.utils.PlatformLock
@@ -48,7 +48,10 @@ class TestConcurrentLoader : ConcurrentLoader<String, String> {
 
     val saveKeys: MutableList<String> = mutableListOf()
 
-    override fun resolve(key: String): String {
+    override fun resolve(
+        key: String,
+        value: String,
+    ): String {
         return key
     }
 

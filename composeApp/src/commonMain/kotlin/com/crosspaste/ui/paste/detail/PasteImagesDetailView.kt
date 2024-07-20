@@ -137,7 +137,7 @@ fun PasteImagesDetailView(
                         AsyncView(
                             key = imagePath,
                             load = {
-                                loadImageData(imagePath, density, thumbnail = false)
+                                loadImageData(imagePath, density)
                             },
                             loadFor = { loadImageView ->
                                 BoxWithConstraints(modifier = Modifier.fillMaxSize()) {

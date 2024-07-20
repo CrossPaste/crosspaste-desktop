@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.image.ThumbnailLoader
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.LoadImageData
 import com.crosspaste.ui.base.TransparentBackground
@@ -48,6 +49,7 @@ fun SingleImagePreviewView(imagePath: Path) {
     val density = LocalDensity.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val uiSupport = current.koin.get<UISupport>()
+    val thumbnailLoader = current.koin.get<ThumbnailLoader>()
 
     val fileUtils = getFileUtils()
 
@@ -62,7 +64,7 @@ fun SingleImagePreviewView(imagePath: Path) {
         AsyncView(
             key = imagePath,
             load = {
-                loadImageData(imagePath, density, thumbnail = true)
+                loadImageData(imagePath, density, thumbnailLoader)
             },
             loadFor = { loadImageView ->
                 Box {

@@ -33,7 +33,7 @@ import com.crosspaste.LocalKoinApplication
 import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.icon.FileExtIconLoader
+import com.crosspaste.image.FileExtImageLoader
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.LoadIconData
@@ -62,7 +62,7 @@ fun PasteFilesDetailView(
         val current = LocalKoinApplication.current
         val density = LocalDensity.current
         val copywriter = current.koin.get<GlobalCopywriter>()
-        val fileExtIconLoader = current.koin.get<FileExtIconLoader>()
+        val fileExtIconLoader = current.koin.get<FileExtImageLoader>()
 
         val pasteItem = pasteFiles as PasteItem
 

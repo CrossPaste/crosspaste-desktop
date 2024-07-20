@@ -1,4 +1,4 @@
-package com.crosspaste.icon
+package com.crosspaste.image
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.net.DesktopProxy
@@ -25,7 +25,7 @@ object DesktopFaviconLoader : ConcurrentLoader<String, Path>, FaviconLoader {
 
     private val pathProvider: PathProvider = DesktopPathProvider
 
-    override val lockMap: ConcurrentPlatformMap<Path, PlatformLock> = createConcurrentPlatformMap()
+    override val lockMap: ConcurrentPlatformMap<String, PlatformLock> = createConcurrentPlatformMap()
 
     private fun getGoogleIconUrl(host: String): String {
         return "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://$host&size=32"
@@ -76,7 +76,10 @@ object DesktopFaviconLoader : ConcurrentLoader<String, Path>, FaviconLoader {
         return null
     }
 
-    override fun resolve(key: String): Path {
+    override fun resolve(
+        key: String,
+        value: String,
+    ): Path {
         return pathProvider.resolve("$key.ico", AppFileType.FAVICON)
     }
 

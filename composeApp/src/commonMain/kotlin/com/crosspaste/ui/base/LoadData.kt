@@ -1,33 +1,28 @@
 package com.crosspaste.ui.base
 
 import androidx.compose.ui.unit.Density
+import com.crosspaste.image.ThumbnailLoader
 import com.crosspaste.utils.getPainterUtils
-import okio.FileSystem
 import okio.Path
 
 fun loadImageData(
     path: Path,
     density: Density,
-    thumbnail: Boolean = false,
+    thumbnailLoader: ThumbnailLoader? = null,
 ): LoadStateData {
     try {
         val painterUtils = getPainterUtils()
         val toPainterImage =
-            when (path.toString().substringAfterLast(".")) {
-                "svg" -> SvgResourceToPainter(path, painterUtils.getSvgPainter(path, density))
-                "xml" -> XmlResourceToPainter(painterUtils.getXmlImageVector(path, density))
+            when (path.name.substringAfterLast(".")) {
+                "svg" -> SvgResourceToPainter(path) { painterUtils.getSvgPainter(path, density) }
+                "xml" -> XmlResourceToPainter { painterUtils.getXmlImageVector(path, density) }
                 else -> {
-                    if (thumbnail) {
-                        val thumbnailPath = painterUtils.getThumbnailPath(path)
-                        if (!FileSystem.SYSTEM.exists(thumbnailPath)) {
-                            painterUtils.createThumbnail(path)
+                    thumbnailLoader?.load(path)?.let { thumbnailPath ->
+                        ImageBitmapToPainter(path, true) {
+                            painterUtils.getImageBitmap(thumbnailPath)
                         }
-                        ImageBitmapToPainter(
-                            path,
-                            painterUtils.getImageBitmap(thumbnailPath),
-                        )
-                    } else {
-                        ImageBitmapToPainter(path, painterUtils.getImageBitmap(path))
+                    } ?: ImageBitmapToPainter(path, false) {
+                        painterUtils.getImageBitmap(path)
                     }
                 }
             }
