@@ -1,19 +1,22 @@
-package com.crosspaste.ui.base
+package com.crosspaste.image
 
-class LoadImageData(
-    val key: Any,
-    val toPainterImage: ToPainterImage,
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.painter.Painter
+
+abstract class ImageData<T>(
+    protected val key: Any,
+    protected val imageData: T,
 ) : LoadStateData {
 
-    override fun getLoadState(): LoadState {
-        return LoadState.Success
+    abstract val isIcon: Boolean
+
+    protected abstract fun loadPainter(imageData: T): Painter
+
+    @Composable
+    open fun readPainter(): Painter {
+        return remember(key) { loadPainter(imageData) }
     }
-}
-
-class LoadIconData(
-    val key: Any,
-    val toPainterImage: ToPainterImage,
-) : LoadStateData {
 
     override fun getLoadState(): LoadState {
         return LoadState.Success

@@ -2,6 +2,9 @@ package com.crosspaste.ui.base
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import com.crosspaste.image.ErrorStateData
+import com.crosspaste.image.LoadStateData
+import com.crosspaste.image.LoadingStateData
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.withContext
 

@@ -26,18 +26,19 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.image.ImageData
 import com.crosspaste.image.ThumbnailLoader
+import com.crosspaste.image.getImageDataLoader
 import com.crosspaste.ui.base.AsyncView
-import com.crosspaste.ui.base.LoadImageData
 import com.crosspaste.ui.base.TransparentBackground
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.image
 import com.crosspaste.ui.base.imageSlash
-import com.crosspaste.ui.base.loadImageData
 import com.crosspaste.utils.getFileUtils
 import okio.FileSystem
 import okio.Path
@@ -52,6 +53,7 @@ fun SingleImagePreviewView(imagePath: Path) {
     val thumbnailLoader = current.koin.get<ThumbnailLoader>()
 
     val fileUtils = getFileUtils()
+    val imageDataLoader = getImageDataLoader()
 
     val existFile by remember { mutableStateOf(FileSystem.SYSTEM.exists(imagePath)) }
 
@@ -64,20 +66,20 @@ fun SingleImagePreviewView(imagePath: Path) {
         AsyncView(
             key = imagePath,
             load = {
-                loadImageData(imagePath, density, thumbnailLoader)
+                imageDataLoader.loadImageData(imagePath, density, thumbnailLoader)
             },
-            loadFor = { loadImageView ->
+            loadFor = { loadData ->
                 Box {
                     TransparentBackground(
                         modifier = Modifier.size(100.dp).clip(RoundedCornerShape(5.dp)),
                     )
 
-                    if (loadImageView.isSuccess()) {
+                    if (loadData.isSuccess() && loadData is ImageData<*>) {
                         ShowImageView(
-                            painter = (loadImageView as LoadImageData).toPainterImage.toPainter(),
+                            painter = loadData.readPainter(),
                             contentDescription = imagePath.name,
                         )
-                    } else if (loadImageView.isLoading()) {
+                    } else if (loadData.isLoading()) {
                         ShowImageView(
                             painter = image(),
                             contentDescription = imagePath.name,
@@ -108,12 +110,13 @@ fun SingleImagePreviewView(imagePath: Path) {
                             ),
                     )
 
-                    if (loadImageView is LoadImageData) {
-                        val painter = loadImageView.toPainterImage.toPainter()
+                    if (loadData.isSuccess() && loadData is ImageData<*>) {
+                        val floatSize = loadData.readPainter().intrinsicSize
+                        val size = IntSize(floatSize.width.toInt(), floatSize.height.toInt())
                         Text(
                             text =
                                 "${copywriter.getText("dimensions")}: " +
-                                    "${painter.intrinsicSize.width.toInt()} x ${painter.intrinsicSize.height.toInt()}",
+                                    "${size.width} x ${size.height}",
                             color = MaterialTheme.colors.onBackground,
                             style =
                                 TextStyle(

@@ -222,6 +222,8 @@ class CrossPaste {
                     single<CacheManager> { CacheManagerImpl(get()) }
                     single<CrossPasteLogger> { crossPasteLogger }
                     single<KLogger> { CrossPaste.logger }
+                    single<FileExtImageLoader> { DesktopFileExtLoader }
+                    single<ThumbnailLoader> { DesktopThumbnailLoader }
 
                     // realm component
                     single<RealmManager> { RealmManagerImpl.createRealmManager(get()) }
@@ -243,8 +245,6 @@ class CrossPaste {
                     single<SyncManager> { get<DesktopSyncManager>() }
                     single<DeviceManager> { DesktopDeviceManager(get(), get(), get()) }
                     single<FaviconLoader> { DesktopFaviconLoader }
-                    single<FileExtImageLoader> { DesktopFileExtLoader }
-                    single<ThumbnailLoader> { DesktopThumbnailLoader }
 
                     // signal component
                     single<IdentityKeyStore> { getPasteIdentityKeyStoreFactory(get(), get()).createIdentityKeyStore() }

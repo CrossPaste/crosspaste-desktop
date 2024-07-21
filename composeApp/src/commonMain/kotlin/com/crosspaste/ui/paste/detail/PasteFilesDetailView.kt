@@ -34,16 +34,14 @@ import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.FileExtImageLoader
+import com.crosspaste.image.ImageData
+import com.crosspaste.image.getImageDataLoader
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.ui.base.AsyncView
-import com.crosspaste.ui.base.LoadIconData
-import com.crosspaste.ui.base.LoadImageData
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.chevronLeft
 import com.crosspaste.ui.base.chevronRight
 import com.crosspaste.ui.base.fileSlash
-import com.crosspaste.ui.base.loadIconData
-import com.crosspaste.ui.base.loadImageData
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
 import kotlinx.coroutines.delay
@@ -68,6 +66,7 @@ fun PasteFilesDetailView(
 
         val dateUtils = getDateUtils()
         val fileUtils = getFileUtils()
+        val imageDataLoader = getImageDataLoader()
 
         var index by remember(pasteData.id) { mutableStateOf(0) }
 
@@ -130,28 +129,26 @@ fun PasteFilesDetailView(
                             key = filePath,
                             load = {
                                 fileExtIconLoader.load(filePath)?.let {
-                                    loadImageData(it, density)
-                                } ?: run {
-                                    loadIconData(isFile, density)
-                                }
+                                    imageDataLoader.loadImageData(it, density)
+                                } ?: imageDataLoader.loadIconData(isFile, density)
                             },
-                            loadFor = { loadStateData ->
-                                if (loadStateData.isSuccess()) {
-                                    if (loadStateData is LoadImageData) {
+                            loadFor = { loadData ->
+                                if (loadData.isSuccess() && loadData is ImageData<*>) {
+                                    if (!loadData.isIcon) {
                                         Image(
                                             modifier = Modifier.size(150.dp),
-                                            painter = loadStateData.toPainterImage.toPainter(),
+                                            painter = loadData.readPainter(),
                                             contentDescription = filePath.name,
                                         )
-                                    } else if (loadStateData is LoadIconData) {
+                                    } else {
                                         Icon(
                                             modifier = Modifier.size(150.dp),
-                                            painter = loadStateData.toPainterImage.toPainter(),
+                                            painter = loadData.readPainter(),
                                             contentDescription = filePath.name,
                                             tint = MaterialTheme.colors.onBackground,
                                         )
                                     }
-                                } else if (loadStateData.isError()) {
+                                } else if (loadData.isError()) {
                                     Icon(
                                         modifier = Modifier.size(150.dp),
                                         painter = fileSlash(),
