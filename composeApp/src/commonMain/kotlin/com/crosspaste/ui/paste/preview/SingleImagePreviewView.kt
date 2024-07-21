@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -37,7 +38,6 @@ import com.crosspaste.image.getImageDataLoader
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.TransparentBackground
 import com.crosspaste.ui.base.UISupport
-import com.crosspaste.ui.base.image
 import com.crosspaste.ui.base.imageSlash
 import com.crosspaste.utils.getFileUtils
 import okio.FileSystem
@@ -80,9 +80,8 @@ fun SingleImagePreviewView(imagePath: Path) {
                             contentDescription = imagePath.name,
                         )
                     } else if (loadData.isLoading()) {
-                        ShowImageView(
-                            painter = image(),
-                            contentDescription = imagePath.name,
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(100.dp),
                         )
                     } else {
                         ShowImageView(
