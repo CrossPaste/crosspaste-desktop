@@ -29,13 +29,11 @@ import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.FileExtImageLoader
+import com.crosspaste.image.ImageData
+import com.crosspaste.image.getImageDataLoader
 import com.crosspaste.ui.base.AsyncView
-import com.crosspaste.ui.base.LoadIconData
-import com.crosspaste.ui.base.LoadImageData
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.fileSlash
-import com.crosspaste.ui.base.loadIconData
-import com.crosspaste.ui.base.loadImageData
 import com.crosspaste.utils.getFileUtils
 import okio.Path
 
@@ -49,6 +47,7 @@ fun SingleFilePreviewView(filePath: Path) {
     val fileExtIconLoader = current.koin.get<FileExtImageLoader>()
 
     val fileUtils = getFileUtils()
+    val imageDataLoader = getImageDataLoader()
 
     val existFile by remember { mutableStateOf(filePath.toFile().exists()) }
     val isFile by remember { mutableStateOf(if (existFile) filePath.toFile().isFile else null) }
@@ -64,30 +63,28 @@ fun SingleFilePreviewView(filePath: Path) {
                 key = filePath,
                 load = {
                     fileExtIconLoader.load(filePath)?.let {
-                        loadImageData(it, density)
-                    } ?: run {
-                        loadIconData(isFile, density)
-                    }
+                        imageDataLoader.loadImageData(it, density)
+                    } ?: imageDataLoader.loadIconData(isFile, density)
                 },
-                loadFor = { loadStateData ->
-                    if (loadStateData.isSuccess()) {
-                        if (loadStateData is LoadImageData) {
+                loadFor = { loadData ->
+                    if (loadData.isSuccess() && loadData is ImageData<*>) {
+                        if (!loadData.isIcon) {
                             Image(
                                 modifier =
                                     Modifier.size(100.dp)
                                         .clip(RoundedCornerShape(5.dp)),
-                                painter = loadStateData.toPainterImage.toPainter(),
+                                painter = loadData.readPainter(),
                                 contentDescription = "fileType",
                             )
-                        } else if (loadStateData is LoadIconData) {
+                        } else {
                             Icon(
                                 modifier = Modifier.size(100.dp),
-                                painter = loadStateData.toPainterImage.toPainter(),
+                                painter = loadData.readPainter(),
                                 contentDescription = "fileType",
                                 tint = MaterialTheme.colors.onBackground,
                             )
                         }
-                    } else if (loadStateData.isError()) {
+                    } else if (loadData.isError()) {
                         Icon(
                             modifier = Modifier.size(100.dp),
                             painter = fileSlash(),

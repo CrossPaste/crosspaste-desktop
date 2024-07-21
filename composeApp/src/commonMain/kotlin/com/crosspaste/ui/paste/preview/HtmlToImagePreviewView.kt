@@ -26,11 +26,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.dao.paste.PasteData
+import com.crosspaste.image.ImageData
+import com.crosspaste.image.getImageDataLoader
 import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.ui.base.AsyncView
-import com.crosspaste.ui.base.LoadImageData
 import com.crosspaste.ui.base.UISupport
-import com.crosspaste.ui.base.loadImageData
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -41,6 +41,7 @@ fun HtmlToImagePreviewView(pasteData: PasteData) {
         val density = LocalDensity.current
 
         val uiSupport = current.koin.get<UISupport>()
+        val imageDataLoader = getImageDataLoader()
 
         val pasteHtml = it as PasteHtml
 
@@ -55,11 +56,11 @@ fun HtmlToImagePreviewView(pasteData: PasteData) {
                             while (!filePath.toFile().exists()) {
                                 delay(200)
                             }
-                            loadImageData(filePath, density)
+                            imageDataLoader.loadImageData(filePath, density)
                         },
-                        loadFor = { loadImageView ->
-                            when (loadImageView) {
-                                is LoadImageData -> {
+                        loadFor = { loadData ->
+                            when (loadData) {
+                                is ImageData<*> -> {
                                     BoxWithConstraints(
                                         modifier =
                                             Modifier
@@ -70,7 +71,7 @@ fun HtmlToImagePreviewView(pasteData: PasteData) {
                                                 },
                                     ) {
                                         Image(
-                                            painter = loadImageView.toPainterImage.toPainter(),
+                                            painter = loadData.readPainter(),
                                             contentDescription = "Html 2 Image",
                                             alignment = Alignment.TopStart,
                                             contentScale = ContentScale.None,

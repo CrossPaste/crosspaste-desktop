@@ -3,8 +3,8 @@ package com.crosspaste.ui.base
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toPixelMap
 import com.crosspaste.app.AppFileType
+import com.crosspaste.image.DesktopImageDataLoader
 import com.crosspaste.path.DesktopPathProvider
-import com.crosspaste.utils.getPainterUtils
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
@@ -20,7 +20,7 @@ object DesktopIconStyle : IconStyle {
                     override fun load(key: String): Boolean {
                         val iconPath = DesktopPathProvider.resolve("$key.png", AppFileType.ICON)
                         if (FileSystem.SYSTEM.exists(iconPath)) {
-                            val imageBitmap = getPainterUtils().getImageBitmap(iconPath)
+                            val imageBitmap = DesktopImageDataLoader.readImageBitmap(iconPath)
                             return checkMacStyleIcon(imageBitmap)
                         } else {
                             return false

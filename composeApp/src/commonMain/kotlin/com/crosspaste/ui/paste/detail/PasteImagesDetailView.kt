@@ -40,9 +40,10 @@ import androidx.compose.ui.unit.dp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.image.ImageData
+import com.crosspaste.image.getImageDataLoader
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.ui.base.AsyncView
-import com.crosspaste.ui.base.LoadImageData
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.chevronLeft
 import com.crosspaste.ui.base.chevronRight
@@ -50,7 +51,6 @@ import com.crosspaste.ui.base.image
 import com.crosspaste.ui.base.imageCompress
 import com.crosspaste.ui.base.imageExpand
 import com.crosspaste.ui.base.imageSlash
-import com.crosspaste.ui.base.loadImageData
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.getDateUtils
@@ -74,6 +74,7 @@ fun PasteImagesDetailView(
 
         val dateUtils = getDateUtils()
         val fileUtils = getFileUtils()
+        val imageDataLoader = getImageDataLoader()
 
         var index by remember(pasteData.id) { mutableStateOf(0) }
 
@@ -137,12 +138,12 @@ fun PasteImagesDetailView(
                         AsyncView(
                             key = imagePath,
                             load = {
-                                loadImageData(imagePath, density)
+                                imageDataLoader.loadImageData(imagePath, density)
                             },
-                            loadFor = { loadImageView ->
+                            loadFor = { loadData ->
                                 BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-                                    if (loadImageView.isSuccess()) {
-                                        val painter = (loadImageView as LoadImageData).toPainterImage.toPainter()
+                                    if (loadData.isSuccess() && loadData is ImageData<*>) {
+                                        val painter = loadData.readPainter()
                                         val intrinsicSize = painter.intrinsicSize
 
                                         imageSize = intrinsicSize
@@ -165,7 +166,7 @@ fun PasteImagesDetailView(
                                             contentDescription = imagePath.name,
                                             contentScale = imageShowMode.contentScale,
                                         )
-                                    } else if (loadImageView.isLoading()) {
+                                    } else if (loadData.isLoading()) {
                                         Icon(
                                             painter = image(),
                                             contentDescription = imagePath.name,

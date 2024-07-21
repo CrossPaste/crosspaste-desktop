@@ -41,7 +41,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -58,6 +57,8 @@ import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.image.FaviconLoader
 import com.crosspaste.image.FileExtImageLoader
+import com.crosspaste.image.ImageData
+import com.crosspaste.image.getImageDataLoader
 import com.crosspaste.paste.PasteSearchService
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteUrl
@@ -65,11 +66,6 @@ import com.crosspaste.path.PathProvider
 import com.crosspaste.ui.base.AppImageIcon
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.IconStyle
-import com.crosspaste.ui.base.LoadIconData
-import com.crosspaste.ui.base.LoadImageData
-import com.crosspaste.ui.base.ToPainterImage
-import com.crosspaste.ui.base.loadImageData
-import com.crosspaste.ui.paste.PasteTypeIconBaseView
 import com.crosspaste.ui.paste.preview.getPasteItem
 import com.crosspaste.ui.paste.title.getPasteTitle
 import com.crosspaste.ui.selectColor
@@ -263,16 +259,10 @@ fun PasteTypeIconView(
     val pathProvider = current.koin.get<PathProvider>()
     val faviconLoader = current.koin.get<FaviconLoader>()
     val fileExtLoader = current.koin.get<FileExtImageLoader>()
-    val loadIconData =
-        LoadIconData(
-            pasteData.pasteType,
-            object : ToPainterImage {
-                @Composable
-                override fun toPainter(): Painter {
-                    return PasteTypeIconBaseView(pasteData.pasteType)
-                }
-            },
-        )
+
+    val imageDataLoader = getImageDataLoader()
+
+    val loadIconData = imageDataLoader.loadPasteType(pasteData.pasteType)
 
     if (pasteData.pasteType == PasteType.URL) {
         AsyncView(
@@ -283,26 +273,25 @@ fun PasteTypeIconView(
                     it as PasteUrl
                     try {
                         faviconLoader.load(it.url)?.let { path ->
-                            return@AsyncView loadImageData(path, density)
+                            return@AsyncView imageDataLoader.loadImageData(path, density)
                         }
                     } catch (ignore: Exception) {
                     }
                 }
                 loadIconData
             },
-        ) { loadView ->
-            when (loadView) {
-                is LoadIconData -> {
+        ) { loadData ->
+            if (loadData.isSuccess() && loadData is ImageData<*>) {
+                if (loadData.isIcon) {
                     Icon(
-                        painter = loadView.toPainterImage.toPainter(),
+                        painter = loadData.readPainter(),
                         contentDescription = "Paste Icon",
                         modifier = Modifier.padding(padding).size(size),
                         tint = MaterialTheme.colors.onBackground,
                     )
-                }
-                is LoadImageData -> {
+                } else {
                     Image(
-                        painter = loadView.toPainterImage.toPainter(),
+                        painter = loadData.readPainter(),
                         contentDescription = "Paste Icon",
                         modifier = Modifier.padding(padding).size(size),
                     )
@@ -320,7 +309,7 @@ fun PasteTypeIconView(
                         val files = it.getPasteFiles()
                         if (files.isNotEmpty()) {
                             fileExtLoader.load(files[0].getFilePath())?.let { path ->
-                                return@AsyncView loadImageData(path, density)
+                                return@AsyncView imageDataLoader.loadImageData(path, density)
                             }
                         }
                     } catch (ignore: Exception) {
@@ -328,19 +317,18 @@ fun PasteTypeIconView(
                 }
                 loadIconData
             },
-        ) { loadView ->
-            when (loadView) {
-                is LoadIconData -> {
+        ) { loadData ->
+            if (loadData.isSuccess() && loadData is ImageData<*>) {
+                if (loadData.isIcon) {
                     Icon(
-                        painter = loadView.toPainterImage.toPainter(),
+                        painter = loadData.readPainter(),
                         contentDescription = "Paste Icon",
                         modifier = Modifier.padding(padding).size(size),
                         tint = MaterialTheme.colors.onBackground,
                     )
-                }
-                is LoadImageData -> {
+                } else {
                     Image(
-                        painter = loadView.toPainterImage.toPainter(),
+                        painter = loadData.readPainter(),
                         contentDescription = "Paste Icon",
                         modifier = Modifier.padding(padding).size(size),
                     )
@@ -349,7 +337,7 @@ fun PasteTypeIconView(
         }
     } else if (pasteData.pasteType != PasteType.HTML) {
         Icon(
-            painter = loadIconData.toPainterImage.toPainter(),
+            painter = loadIconData.readPainter(),
             contentDescription = "Paste Icon",
             modifier = Modifier.padding(padding).size(size),
             tint = MaterialTheme.colors.onBackground,
@@ -362,7 +350,7 @@ fun PasteTypeIconView(
                 AppImageIcon(path = path, isMacStyleIcon = isMacStyleIcon, size = size + 2.dp)
             } else {
                 Icon(
-                    painter = loadIconData.toPainterImage.toPainter(),
+                    painter = loadIconData.readPainter(),
                     contentDescription = "Paste Icon",
                     modifier = Modifier.padding(padding).size(size),
                     tint = MaterialTheme.colors.onBackground,
@@ -370,7 +358,7 @@ fun PasteTypeIconView(
             }
         } ?: run {
             Icon(
-                painter = loadIconData.toPainterImage.toPainter(),
+                painter = loadIconData.readPainter(),
                 contentDescription = "Paste Icon",
                 modifier = Modifier.padding(padding).size(size),
                 tint = MaterialTheme.colors.onBackground,

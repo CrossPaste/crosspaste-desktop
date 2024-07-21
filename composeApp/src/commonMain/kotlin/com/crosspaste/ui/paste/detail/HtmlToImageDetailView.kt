@@ -26,12 +26,12 @@ import com.crosspaste.LocalKoinApplication
 import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.image.ImageData
+import com.crosspaste.image.LoadingStateData
+import com.crosspaste.image.getImageDataLoader
 import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.ui.base.AsyncView
-import com.crosspaste.ui.base.LoadImageData
-import com.crosspaste.ui.base.LoadingStateData
 import com.crosspaste.ui.base.UISupport
-import com.crosspaste.ui.base.loadImageData
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
 import kotlinx.coroutines.delay
@@ -49,6 +49,7 @@ fun HtmlToImageDetailView(
 
     val dateUtils = getDateUtils()
     val fileUtils = getFileUtils()
+    val imageDataLoader = getImageDataLoader()
 
     val filePath by remember(pasteData.id) { mutableStateOf(pasteHtml.getHtmlImagePath()) }
 
@@ -58,17 +59,22 @@ fun HtmlToImageDetailView(
         detailView = {
             AsyncView(
                 key = pasteData.id,
-                defaultValue = if (existFile) loadImageData(filePath, density) else LoadingStateData,
+                defaultValue =
+                    if (existFile) {
+                        imageDataLoader.loadImageData(filePath, density)
+                    } else {
+                        LoadingStateData
+                    },
                 load = {
                     while (!filePath.toFile().exists()) {
                         delay(200)
                     }
                     existFile = true
-                    loadImageData(filePath, density)
+                    imageDataLoader.loadImageData(filePath, density)
                 },
-                loadFor = { loadImageView ->
-                    when (loadImageView) {
-                        is LoadImageData -> {
+                loadFor = { loadData ->
+                    when (loadData) {
+                        is ImageData<*> -> {
                             val horizontalScrollState = rememberScrollState()
                             val verticalScrollState = rememberScrollState()
 
@@ -83,7 +89,7 @@ fun HtmlToImageDetailView(
                                         },
                             ) {
                                 Image(
-                                    painter = loadImageView.toPainterImage.toPainter(),
+                                    painter = loadData.readPainter(),
                                     contentDescription = "Html 2 Image",
                                     modifier = Modifier.wrapContentSize(),
                                 )
