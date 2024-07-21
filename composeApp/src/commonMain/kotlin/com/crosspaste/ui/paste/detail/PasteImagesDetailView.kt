@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -47,7 +48,6 @@ import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.chevronLeft
 import com.crosspaste.ui.base.chevronRight
-import com.crosspaste.ui.base.image
 import com.crosspaste.ui.base.imageCompress
 import com.crosspaste.ui.base.imageExpand
 import com.crosspaste.ui.base.imageSlash
@@ -167,12 +167,16 @@ fun PasteImagesDetailView(
                                             contentScale = imageShowMode.contentScale,
                                         )
                                     } else if (loadData.isLoading()) {
-                                        Icon(
-                                            painter = image(),
-                                            contentDescription = imagePath.name,
+                                        Row(
                                             modifier = Modifier.fillMaxSize(),
-                                            tint = MaterialTheme.colors.onBackground,
-                                        )
+                                            horizontalArrangement = Arrangement.Center,
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(180.dp),
+                                                strokeWidth = 8.dp,
+                                            )
+                                        }
                                     } else {
                                         Icon(
                                             painter = imageSlash(),
@@ -301,7 +305,7 @@ fun detailInfoItems(
 ): List<PasteDetailInfoItem> {
     val details =
         mutableListOf(
-            PasteDetailInfoItem("file_Name", imagePath.name),
+            PasteDetailInfoItem("file_name", imagePath.name),
             PasteDetailInfoItem("type", copywriter.getText("image")),
             PasteDetailInfoItem("size", fileUtils.formatBytes(pasteData.size)),
             PasteDetailInfoItem("remote", copywriter.getText(if (pasteData.remote) "yes" else "no")),
