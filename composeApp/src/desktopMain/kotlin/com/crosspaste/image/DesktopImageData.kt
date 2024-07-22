@@ -15,7 +15,7 @@ class ImageBitmapData(
 ) :
     ImageData<ImageBitmap>(key, bitmap, imageInfo) {
 
-    override val isIcon: Boolean = true
+    override val isIcon: Boolean = false
 
     override fun loadPainter(imageData: ImageBitmap): Painter {
         return BitmapPainter(imageData)
@@ -29,7 +29,7 @@ class SvgData(
 ) :
     ImageData<Painter>(key, painter, imageInfo) {
 
-    override val isIcon: Boolean = false
+    override val isIcon: Boolean = true
 
     override val isThumbnail: Boolean = false
 
@@ -45,7 +45,7 @@ class ImageVectorData(
 ) :
     ImageData<ImageVector>(key, imageVector, imageInfo) {
 
-    override val isIcon: Boolean = false
+    override val isIcon: Boolean = true
 
     override val isThumbnail: Boolean = false
 
