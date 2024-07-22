@@ -10,6 +10,10 @@ import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.res.loadSvgPainter
 import androidx.compose.ui.res.loadXmlImageVector
 import androidx.compose.ui.unit.Density
+import com.crosspaste.info.PasteInfos.DIMENSIONS
+import com.crosspaste.info.PasteInfos.FILE_NAME
+import com.crosspaste.info.PasteInfos.SIZE
+import com.crosspaste.info.createPasteInfoWithoutConverter
 import com.crosspaste.ui.paste.PasteTypeIconBaseView
 import okio.Path
 import org.xml.sax.InputSource
@@ -27,15 +31,27 @@ object DesktopImageDataLoader : ImageDataLoader {
         thumbnailLoader: ThumbnailLoader?,
     ): LoadStateData {
         return try {
+            val builder = ImageInfoBuilder()
+            builder.add(createPasteInfoWithoutConverter(FILE_NAME, path.name))
+            builder.add(createPasteInfoWithoutConverter(SIZE, "${path.toFile().length()}"))
             when (path.name.substringAfterLast(".")) {
-                "svg" -> SvgData(path, readSvgPainter(path, density))
-                "xml" -> ImageVectorData(path, readImageVector(path, density))
+                "svg" -> SvgData(path, readSvgPainter(path, density), builder.build())
+                "xml" -> ImageVectorData(path, readImageVector(path, density), builder.build())
                 else -> {
                     thumbnailLoader?.let {
                         it.load(path)?.let { thumbnailPath ->
-                            ImageBitmapData(path, readImageBitmap(thumbnailPath))
+                            it.readOriginMeta(path, builder)
+                            ImageBitmapData(path, readImageBitmap(thumbnailPath), builder.build(), true)
                         }
-                    } ?: ImageBitmapData(path, readImageBitmap(path))
+                    } ?: run {
+                        val imageBitmap = readImageBitmap(path)
+                        builder.add(
+                            createPasteInfoWithoutConverter(
+                                DIMENSIONS, "${imageBitmap.width} x ${imageBitmap.height}",
+                            ),
+                        )
+                        ImageBitmapData(path, readImageBitmap(path), builder.build())
+                    }
                 }
             }
         } catch (e: Exception) {

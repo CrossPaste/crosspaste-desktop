@@ -36,6 +36,11 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.FileExtImageLoader
 import com.crosspaste.image.ImageData
 import com.crosspaste.image.getImageDataLoader
+import com.crosspaste.info.PasteInfos.DATE
+import com.crosspaste.info.PasteInfos.FILE_NAME
+import com.crosspaste.info.PasteInfos.REMOTE
+import com.crosspaste.info.PasteInfos.SIZE
+import com.crosspaste.info.PasteInfos.TYPE
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.PasteIconButton
@@ -225,12 +230,12 @@ fun PasteFilesDetailView(
                     pasteData = pasteData,
                     items =
                         listOf(
-                            PasteDetailInfoItem("file_name", filePath.name),
-                            PasteDetailInfoItem("type", copywriter.getText("file")),
-                            PasteDetailInfoItem("size", fileUtils.formatBytes(pasteItem.size)),
-                            PasteDetailInfoItem("remote", copywriter.getText(if (pasteData.remote) "yes" else "no")),
+                            PasteDetailInfoItem(FILE_NAME, filePath.name),
+                            PasteDetailInfoItem(TYPE, copywriter.getText("file")),
+                            PasteDetailInfoItem(SIZE, fileUtils.formatBytes(pasteItem.size)),
+                            PasteDetailInfoItem(REMOTE, copywriter.getText(if (pasteData.remote) "yes" else "no")),
                             PasteDetailInfoItem(
-                                "date",
+                                DATE,
                                 copywriter.getDate(
                                     dateUtils.convertRealmInstantToLocalDateTime(pasteData.createTime),
                                     true,

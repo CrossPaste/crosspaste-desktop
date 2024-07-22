@@ -1,5 +1,8 @@
 package com.crosspaste.image
 
+import com.crosspaste.info.PasteInfos.DIMENSIONS
+import com.crosspaste.info.PasteInfos.SIZE
+import com.crosspaste.info.createPasteInfoWithoutConverter
 import com.crosspaste.utils.ConcurrentPlatformMap
 import com.crosspaste.utils.PlatformLock
 import com.crosspaste.utils.createConcurrentPlatformMap
@@ -9,6 +12,9 @@ import okio.Path
 import okio.Path.Companion.toOkioPath
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.Surface
+import java.util.Properties
+import kotlin.io.path.inputStream
+import kotlin.io.path.outputStream
 import kotlin.io.path.readBytes
 import kotlin.io.path.writeBytes
 
@@ -32,6 +38,28 @@ object DesktopThumbnailLoader : ConcurrentLoader<Path, Path>, ThumbnailLoader {
             .toOkioPath()
     }
 
+    override fun getOriginMetaPath(path: Path): Path {
+        return path
+            .toNioPath()
+            .resolveSibling("meta_${path.fileNameRemoveExtension}.properties")
+            .toOkioPath()
+    }
+
+    override fun readOriginMeta(
+        path: Path,
+        imageInfoBuilder: ImageInfoBuilder,
+    ) {
+        try {
+            val properties = Properties()
+            properties.load(getOriginMetaPath(path).toNioPath().inputStream().buffered())
+            properties.getProperty(DIMENSIONS)?.let {
+                imageInfoBuilder.add(createPasteInfoWithoutConverter(DIMENSIONS, it))
+            }
+        } catch (e: Exception) {
+            logger.warn { "Failed to read meta data for file: $path" }
+        }
+    }
+
     override fun convertToKey(value: Path): String {
         return value.toString()
     }
@@ -43,6 +71,7 @@ object DesktopThumbnailLoader : ConcurrentLoader<Path, Path>, ThumbnailLoader {
     ) {
         // Decode the image from the file path
         val bytes = value.toNioPath().readBytes()
+        val fileSize = bytes.size
         val originalImage = Image.makeFromEncoded(bytes)
 
         // Retrieve the original dimensions of the image
@@ -89,6 +118,10 @@ object DesktopThumbnailLoader : ConcurrentLoader<Path, Path>, ThumbnailLoader {
         // Save the thumbnail image to a file
         surface.makeImageSnapshot().encodeToData()?.bytes?.let {
             result.toNioPath().writeBytes(it)
+            val properties = Properties()
+            properties.setProperty(SIZE, "$fileSize")
+            properties.setProperty(DIMENSIONS, "$originalWidth x $originalHeight")
+            properties.store(getOriginMetaPath(value).toNioPath().outputStream().buffered(), null)
         }
     }
 

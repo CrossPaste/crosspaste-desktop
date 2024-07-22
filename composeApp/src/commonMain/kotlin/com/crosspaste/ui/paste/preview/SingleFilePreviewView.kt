@@ -31,6 +31,9 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.FileExtImageLoader
 import com.crosspaste.image.ImageData
 import com.crosspaste.image.getImageDataLoader
+import com.crosspaste.info.PasteInfos.FILE_NAME
+import com.crosspaste.info.PasteInfos.MISSING_FILE
+import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.fileSlash
@@ -105,7 +108,7 @@ fun SingleFilePreviewView(filePath: Path) {
             verticalArrangement = Arrangement.Bottom,
         ) {
             Text(
-                text = "${copywriter.getText("file_name")}: ${filePath.name}",
+                text = "${copywriter.getText(FILE_NAME)}: ${filePath.name}",
                 color = MaterialTheme.colors.onBackground,
                 style =
                     TextStyle(
@@ -122,7 +125,7 @@ fun SingleFilePreviewView(filePath: Path) {
                     }
 
                 Text(
-                    text = "${copywriter.getText("size")}: $fileSize",
+                    text = "${copywriter.getText(SIZE)}: $fileSize",
                     color = MaterialTheme.colors.onBackground,
                     style =
                         TextStyle(
@@ -133,7 +136,7 @@ fun SingleFilePreviewView(filePath: Path) {
                 )
             } else {
                 Text(
-                    text = copywriter.getText("missing_file"),
+                    text = copywriter.getText(MISSING_FILE),
                     color = MaterialTheme.colors.error,
                     style =
                         TextStyle(
