@@ -27,7 +27,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
@@ -35,6 +34,10 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.ImageData
 import com.crosspaste.image.ThumbnailLoader
 import com.crosspaste.image.getImageDataLoader
+import com.crosspaste.info.PasteInfos.DIMENSIONS
+import com.crosspaste.info.PasteInfos.FILE_NAME
+import com.crosspaste.info.PasteInfos.MISSING_FILE
+import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.TransparentBackground
 import com.crosspaste.ui.base.UISupport
@@ -100,7 +103,7 @@ fun SingleImagePreviewView(imagePath: Path) {
                     verticalArrangement = Arrangement.Bottom,
                 ) {
                     Text(
-                        text = "${copywriter.getText("file_name")}: ${imagePath.name}",
+                        text = "${copywriter.getText(FILE_NAME)}: ${imagePath.name}",
                         color = MaterialTheme.colors.onBackground,
                         style =
                             TextStyle(
@@ -110,19 +113,18 @@ fun SingleImagePreviewView(imagePath: Path) {
                     )
 
                     if (loadData.isSuccess() && loadData is ImageData<*>) {
-                        val floatSize = loadData.readPainter().intrinsicSize
-                        val size = IntSize(floatSize.width.toInt(), floatSize.height.toInt())
-                        Text(
-                            text =
-                                "${copywriter.getText("dimensions")}: " +
-                                    "${size.width} x ${size.height}",
-                            color = MaterialTheme.colors.onBackground,
-                            style =
-                                TextStyle(
-                                    fontWeight = FontWeight.Light,
-                                    fontSize = 10.sp,
-                                ),
-                        )
+                        val imageInfo = loadData.readImageInfo()
+                        imageInfo.map[DIMENSIONS]?.let {
+                            Text(
+                                text = "${copywriter.getText(DIMENSIONS)}: ${it.getTextByCopyWriter(copywriter)}",
+                                color = MaterialTheme.colors.onBackground,
+                                style =
+                                    TextStyle(
+                                        fontWeight = FontWeight.Light,
+                                        fontSize = 10.sp,
+                                    ),
+                            )
+                        }
                     }
 
                     if (existFile) {
@@ -132,7 +134,7 @@ fun SingleImagePreviewView(imagePath: Path) {
                             }
 
                         Text(
-                            text = "${copywriter.getText("size")}: $imageSize",
+                            text = "${copywriter.getText(SIZE)}: $imageSize",
                             color = MaterialTheme.colors.onBackground,
                             style =
                                 TextStyle(
@@ -142,7 +144,7 @@ fun SingleImagePreviewView(imagePath: Path) {
                         )
                     } else {
                         Text(
-                            text = copywriter.getText("missing_file"),
+                            text = copywriter.getText(MISSING_FILE),
                             color = MaterialTheme.colors.error,
                             style =
                                 TextStyle(

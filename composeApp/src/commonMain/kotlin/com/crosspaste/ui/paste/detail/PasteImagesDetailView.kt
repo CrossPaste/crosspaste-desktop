@@ -31,7 +31,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
@@ -43,6 +42,12 @@ import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.ImageData
 import com.crosspaste.image.getImageDataLoader
+import com.crosspaste.info.PasteInfos.DATE
+import com.crosspaste.info.PasteInfos.DIMENSIONS
+import com.crosspaste.info.PasteInfos.FILE_NAME
+import com.crosspaste.info.PasteInfos.REMOTE
+import com.crosspaste.info.PasteInfos.SIZE
+import com.crosspaste.info.PasteInfos.TYPE
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.PasteIconButton
@@ -108,45 +113,41 @@ fun PasteImagesDetailView(
 
         var forceMode by remember(pasteData.id) { mutableStateOf(false) }
 
-        var imageSize by remember { mutableStateOf<Size?>(null) }
-
-        PasteDetailView(
-            detailView = {
-                Row(
-                    modifier =
-                        Modifier.fillMaxSize()
-                            .onPointerEvent(
-                                eventType = PointerEventType.Enter,
-                                onEvent = {
-                                    hover = true
-                                    autoRoll = false
-                                },
-                            )
-                            .onPointerEvent(
-                                eventType = PointerEventType.Exit,
-                                onEvent = {
-                                    hover = false
-                                },
-                            ),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        AsyncView(
-                            key = imagePath,
-                            load = {
-                                imageDataLoader.loadImageData(imagePath, density)
-                            },
-                            loadFor = { loadData ->
+        AsyncView(
+            key = imagePath,
+            load = {
+                imageDataLoader.loadImageData(imagePath, density)
+            },
+            loadFor = { loadData ->
+                PasteDetailView(
+                    detailView = {
+                        Row(
+                            modifier =
+                                Modifier.fillMaxSize()
+                                    .onPointerEvent(
+                                        eventType = PointerEventType.Enter,
+                                        onEvent = {
+                                            hover = true
+                                            autoRoll = false
+                                        },
+                                    )
+                                    .onPointerEvent(
+                                        eventType = PointerEventType.Exit,
+                                        onEvent = {
+                                            hover = false
+                                        },
+                                    ),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center,
+                            ) {
                                 BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                                     if (loadData.isSuccess() && loadData is ImageData<*>) {
                                         val painter = loadData.readPainter()
                                         val intrinsicSize = painter.intrinsicSize
-
-                                        imageSize = intrinsicSize
 
                                         if (!forceMode) {
                                             showMode = intrinsicSize.width * 180 < intrinsicSize.height * 100
@@ -186,131 +187,132 @@ fun PasteImagesDetailView(
                                         )
                                     }
                                 }
-                            },
-                        )
 
-                        if (pasteFiles.count > 1 && hover) {
-                            Row(modifier = Modifier.fillMaxWidth().height(30.dp)) {
-                                PasteIconButton(
-                                    size = 18.dp,
-                                    onClick = {
-                                        coroutineScope.launch {
-                                            mutex.withLock {
-                                                val currentIndex = index - 1
-                                                index =
-                                                    if (currentIndex < 0) {
-                                                        pasteFiles.count.toInt() - 1
-                                                    } else {
-                                                        currentIndex
+                                if (pasteFiles.count > 1 && hover) {
+                                    Row(modifier = Modifier.fillMaxWidth().height(30.dp)) {
+                                        PasteIconButton(
+                                            size = 18.dp,
+                                            onClick = {
+                                                coroutineScope.launch {
+                                                    mutex.withLock {
+                                                        val currentIndex = index - 1
+                                                        index =
+                                                            if (currentIndex < 0) {
+                                                                pasteFiles.count.toInt() - 1
+                                                            } else {
+                                                                currentIndex
+                                                            }
                                                     }
-                                            }
-                                        }
-                                    },
-                                    modifier =
-                                        Modifier
-                                            .background(Color.Transparent, CircleShape),
-                                ) {
-                                    Icon(
-                                        modifier = Modifier.size(18.dp),
-                                        painter = chevronLeft(),
-                                        contentDescription = "chevronLeft",
-                                        tint = MaterialTheme.colors.onBackground,
-                                    )
-                                }
-                                Spacer(modifier = Modifier.weight(1f))
-                                PasteIconButton(
-                                    size = 18.dp,
-                                    onClick = {
-                                        coroutineScope.launch {
-                                            mutex.withLock {
-                                                val currentIndex = index + 1
-                                                index =
-                                                    if (currentIndex >= pasteFiles.count) {
-                                                        0
-                                                    } else {
-                                                        currentIndex
-                                                    }
-                                            }
-                                        }
-                                    },
-                                    modifier =
-                                        Modifier
-                                            .background(Color.Transparent, CircleShape),
-                                ) {
-                                    Icon(
-                                        modifier = Modifier.size(18.dp),
-                                        painter = chevronRight(),
-                                        contentDescription = "chevronRight",
-                                        tint = MaterialTheme.colors.onBackground,
-                                    )
-                                }
-                            }
-                        }
-
-                        if (hover) {
-                            Row(modifier = Modifier.fillMaxSize()) {
-                                Spacer(modifier = Modifier.weight(1f))
-                                Column(modifier = Modifier.width(30.dp).fillMaxHeight()) {
-                                    Spacer(modifier = Modifier.weight(1f))
-                                    Box(
-                                        modifier =
-                                            Modifier.size(30.dp).background(
-                                                color = MaterialTheme.colors.background.copy(alpha = 0.5f),
-                                            ),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        Icon(
+                                                }
+                                            },
                                             modifier =
-                                                Modifier.size(20.dp).clickable {
-                                                    forceMode = true
-                                                    showMode = !showMode
-                                                },
-                                            painter = if (showMode) imageCompress() else imageExpand(),
-                                            contentDescription = "expand or compress image",
-                                            tint = MaterialTheme.colors.onBackground,
-                                        )
+                                                Modifier
+                                                    .background(Color.Transparent, CircleShape),
+                                        ) {
+                                            Icon(
+                                                modifier = Modifier.size(18.dp),
+                                                painter = chevronLeft(),
+                                                contentDescription = "chevronLeft",
+                                                tint = MaterialTheme.colors.onBackground,
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.weight(1f))
+                                        PasteIconButton(
+                                            size = 18.dp,
+                                            onClick = {
+                                                coroutineScope.launch {
+                                                    mutex.withLock {
+                                                        val currentIndex = index + 1
+                                                        index =
+                                                            if (currentIndex >= pasteFiles.count) {
+                                                                0
+                                                            } else {
+                                                                currentIndex
+                                                            }
+                                                    }
+                                                }
+                                            },
+                                            modifier =
+                                                Modifier
+                                                    .background(Color.Transparent, CircleShape),
+                                        ) {
+                                            Icon(
+                                                modifier = Modifier.size(18.dp),
+                                                painter = chevronRight(),
+                                                contentDescription = "chevronRight",
+                                                tint = MaterialTheme.colors.onBackground,
+                                            )
+                                        }
+                                    }
+                                }
+
+                                if (hover) {
+                                    Row(modifier = Modifier.fillMaxSize()) {
+                                        Spacer(modifier = Modifier.weight(1f))
+                                        Column(modifier = Modifier.width(30.dp).fillMaxHeight()) {
+                                            Spacer(modifier = Modifier.weight(1f))
+                                            Box(
+                                                modifier =
+                                                    Modifier.size(30.dp).background(
+                                                        color = MaterialTheme.colors.background.copy(alpha = 0.5f),
+                                                    ),
+                                                contentAlignment = Alignment.Center,
+                                            ) {
+                                                Icon(
+                                                    modifier =
+                                                        Modifier.size(20.dp).clickable {
+                                                            forceMode = true
+                                                            showMode = !showMode
+                                                        },
+                                                    painter = if (showMode) imageCompress() else imageExpand(),
+                                                    contentDescription = "expand or compress image",
+                                                    tint = MaterialTheme.colors.onBackground,
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                }
-            },
-            detailInfoView = {
-                PasteDetailInfoView(
-                    indexInfo = if (pasteFiles.count <= 1) null else "(${index + 1}/${pasteFiles.count})",
-                    pasteData = pasteData,
-                    items =
-                        detailInfoItems(
-                            imagePath,
-                            copywriter,
-                            fileUtils,
-                            dateUtils,
-                            pasteData,
-                            imageSize,
-                        ),
+                    },
+                    detailInfoView = {
+                        PasteDetailInfoView(
+                            indexInfo = if (pasteFiles.count <= 1) null else "(${index + 1}/${pasteFiles.count})",
+                            pasteData = pasteData,
+                            items =
+                                detailInfoItems(
+                                    loadData as? ImageData<*>,
+                                    imagePath,
+                                    copywriter,
+                                    fileUtils,
+                                    dateUtils,
+                                    pasteData,
+                                ),
+                        )
+                    },
                 )
             },
         )
     }
 }
 
+@Composable
 fun detailInfoItems(
+    imageData: ImageData<*>?,
     imagePath: Path,
     copywriter: GlobalCopywriter,
     fileUtils: FileUtils,
     dateUtils: DateUtils,
     pasteData: PasteData,
-    size: Size?,
 ): List<PasteDetailInfoItem> {
     val details =
         mutableListOf(
-            PasteDetailInfoItem("file_name", imagePath.name),
-            PasteDetailInfoItem("type", copywriter.getText("image")),
-            PasteDetailInfoItem("size", fileUtils.formatBytes(pasteData.size)),
-            PasteDetailInfoItem("remote", copywriter.getText(if (pasteData.remote) "yes" else "no")),
+            PasteDetailInfoItem(FILE_NAME, imagePath.name),
+            PasteDetailInfoItem(TYPE, copywriter.getText("image")),
+            PasteDetailInfoItem(SIZE, fileUtils.formatBytes(pasteData.size)),
+            PasteDetailInfoItem(REMOTE, copywriter.getText(if (pasteData.remote) "yes" else "no")),
             PasteDetailInfoItem(
-                "date",
+                DATE,
                 copywriter.getDate(
                     dateUtils.convertRealmInstantToLocalDateTime(pasteData.createTime),
                     true,
@@ -318,8 +320,11 @@ fun detailInfoItems(
             ),
         )
 
-    size?.let {
-        details.add(2, PasteDetailInfoItem("dimensions", "${it.width.toInt()} x ${it.height.toInt()}"))
+    imageData?.let {
+        val imageInfo = it.readImageInfo()
+        imageInfo.map[DIMENSIONS]?.let { pasteInfo ->
+            details.add(2, PasteDetailInfoItem(DIMENSIONS, pasteInfo.getTextByCopyWriter(copywriter)))
+        }
     }
 
     return details

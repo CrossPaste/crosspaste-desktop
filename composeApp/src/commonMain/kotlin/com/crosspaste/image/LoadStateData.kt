@@ -7,15 +7,23 @@ import androidx.compose.ui.graphics.painter.Painter
 abstract class ImageData<T>(
     protected val key: Any,
     protected val imageData: T,
+    private val imageInfo: ImageInfo,
 ) : LoadStateData {
 
     abstract val isIcon: Boolean
+
+    abstract val isThumbnail: Boolean
 
     protected abstract fun loadPainter(imageData: T): Painter
 
     @Composable
     open fun readPainter(): Painter {
         return remember(key) { loadPainter(imageData) }
+    }
+
+    @Composable
+    open fun readImageInfo(): ImageInfo {
+        return remember(key) { imageInfo }
     }
 
     override fun getLoadState(): LoadState {

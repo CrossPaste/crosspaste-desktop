@@ -29,6 +29,10 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.ImageData
 import com.crosspaste.image.LoadingStateData
 import com.crosspaste.image.getImageDataLoader
+import com.crosspaste.info.PasteInfos.DATE
+import com.crosspaste.info.PasteInfos.REMOTE
+import com.crosspaste.info.PasteInfos.SIZE
+import com.crosspaste.info.PasteInfos.TYPE
 import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.UISupport
@@ -120,11 +124,11 @@ fun HtmlToImageDetailView(
                 pasteData = pasteData,
                 items =
                     listOf(
-                        PasteDetailInfoItem("type", copywriter.getText("html")),
-                        PasteDetailInfoItem("size", fileUtils.formatBytes(pasteItem.size)),
-                        PasteDetailInfoItem("remote", copywriter.getText(if (pasteData.remote) "yes" else "no")),
+                        PasteDetailInfoItem(TYPE, copywriter.getText("html")),
+                        PasteDetailInfoItem(SIZE, fileUtils.formatBytes(pasteItem.size)),
+                        PasteDetailInfoItem(REMOTE, copywriter.getText(if (pasteData.remote) "yes" else "no")),
                         PasteDetailInfoItem(
-                            "date",
+                            DATE,
                             copywriter.getDate(
                                 dateUtils.convertRealmInstantToLocalDateTime(pasteData.createTime),
                                 true,

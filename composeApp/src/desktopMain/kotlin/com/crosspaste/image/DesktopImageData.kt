@@ -7,8 +7,13 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 
-class ImageBitmapData(key: Any, bitmap: ImageBitmap) :
-    DesktopImageData<ImageBitmap>(key, bitmap) {
+class ImageBitmapData(
+    key: Any,
+    bitmap: ImageBitmap,
+    imageInfo: ImageInfo = EMPTY_IMAGE_INFO,
+    override val isThumbnail: Boolean = false,
+) :
+    ImageData<ImageBitmap>(key, bitmap, imageInfo) {
 
     override val isIcon: Boolean = true
 
@@ -17,20 +22,32 @@ class ImageBitmapData(key: Any, bitmap: ImageBitmap) :
     }
 }
 
-class SvgData(key: Any, painter: Painter) :
-    DesktopImageData<Painter>(key, painter) {
+class SvgData(
+    key: Any,
+    painter: Painter,
+    imageInfo: ImageInfo = EMPTY_IMAGE_INFO,
+) :
+    ImageData<Painter>(key, painter, imageInfo) {
 
     override val isIcon: Boolean = false
+
+    override val isThumbnail: Boolean = false
 
     override fun loadPainter(imageData: Painter): Painter {
         return imageData
     }
 }
 
-class ImageVectorData(key: Any, imageVector: ImageVector) :
-    DesktopImageData<ImageVector>(key, imageVector) {
+class ImageVectorData(
+    key: Any,
+    imageVector: ImageVector,
+    imageInfo: ImageInfo = EMPTY_IMAGE_INFO,
+) :
+    ImageData<ImageVector>(key, imageVector, imageInfo) {
 
     override val isIcon: Boolean = false
+
+    override val isThumbnail: Boolean = false
 
     override fun loadPainter(imageData: ImageVector): Painter {
         throw UnsupportedOperationException("Not supported")
@@ -41,8 +58,3 @@ class ImageVectorData(key: Any, imageVector: ImageVector) :
         return rememberVectorPainter(imageData)
     }
 }
-
-abstract class DesktopImageData<T>(
-    key: Any,
-    imageData: T,
-) : ImageData<T>(key, imageData)
