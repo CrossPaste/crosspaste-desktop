@@ -11,6 +11,7 @@ import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteDataFlavors
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.item.ImagesPasteItem
+import com.crosspaste.paste.plugin.type.FilesTypePlugin.FilesTypePlugin.FILE_LIST_ID
 import com.crosspaste.paste.plugin.type.HtmlTypePlugin.HtmlTypePlugin.HTML_ID
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.platform.currentPlatform
@@ -74,6 +75,12 @@ class ImageTypePlugin(private val appInfo: AppInfo) : PasteTypePlugin {
         pasteTransferable: PasteTransferable,
         pasteCollector: PasteCollector,
     ) {
+        // FILE_LIST_IDIf FILE_LIST_ID exists
+        // then the image is the icon corresponding to the file type
+        // we do not need to save
+        if (dataFlavorMap.keys.contains(FILE_LIST_ID)) {
+            return
+        }
         if (transferData is Image) {
             val image: BufferedImage = toBufferedImage(transferData)
             var name = tryGetImageName(dataFlavorMap, pasteTransferable) ?: createRandomFileName(ext = "png")
