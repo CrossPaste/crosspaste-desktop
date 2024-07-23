@@ -17,6 +17,7 @@ import com.crosspaste.paste.PasteSearchService
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
+import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.query.RealmQuery
 import kotlinx.coroutines.CoroutineName
@@ -92,8 +93,10 @@ class DesktopShortKeysAction(
                 )
 
             if (result.size > 0) {
-                pasteboardService.tryWritePasteboard(result[0], localOnly = true)
-                appWindowManager.toPaste()
+                mainCoroutineDispatcher.launch(ioDispatcher) {
+                    pasteboardService.tryWritePasteboard(result[0], localOnly = true)
+                    appWindowManager.toPaste()
+                }
             }
         }
     }
