@@ -1,4 +1,4 @@
-package com.crosspaste.paste
+package com.crosspaste.paste.plugin.process
 
 import com.crosspaste.dao.paste.PasteItem
 import io.realm.kotlin.MutableRealm

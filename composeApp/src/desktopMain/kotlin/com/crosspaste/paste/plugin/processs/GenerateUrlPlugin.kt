@@ -1,9 +1,9 @@
-package com.crosspaste.paste.plugin
+package com.crosspaste.paste.plugin.processs
 
 import com.crosspaste.dao.paste.PasteItem
-import com.crosspaste.paste.PasteProcessPlugin
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
+import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import io.realm.kotlin.MutableRealm
 import java.net.MalformedURLException
 import java.net.URL

@@ -1,4 +1,4 @@
-package com.crosspaste.paste.service
+package com.crosspaste.paste.plugin.type
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
@@ -10,9 +10,8 @@ import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteDataFlavors
 import com.crosspaste.paste.PasteTransferable
-import com.crosspaste.paste.PasteTypePlugin
 import com.crosspaste.paste.item.ImagesPasteItem
-import com.crosspaste.paste.service.HtmlTypePlugin.HtmlTypePlugin.HTML_ID
+import com.crosspaste.paste.plugin.type.HtmlTypePlugin.HtmlTypePlugin.HTML_ID
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.platform.currentPlatform
 import com.crosspaste.utils.DesktopFileUtils

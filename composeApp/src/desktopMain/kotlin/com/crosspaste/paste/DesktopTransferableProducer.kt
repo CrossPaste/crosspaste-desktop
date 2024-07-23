@@ -2,6 +2,7 @@ package com.crosspaste.paste
 
 import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.paste.item.PasteFiles
+import com.crosspaste.paste.plugin.type.PasteTypePlugin
 import java.awt.datatransfer.DataFlavor
 
 class DesktopTransferableProducer(

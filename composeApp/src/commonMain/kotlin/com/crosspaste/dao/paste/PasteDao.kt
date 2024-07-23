@@ -1,6 +1,6 @@
 package com.crosspaste.dao.paste
 
-import com.crosspaste.paste.PasteProcessPlugin
+import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.query.RealmQuery
 import io.realm.kotlin.query.RealmResults

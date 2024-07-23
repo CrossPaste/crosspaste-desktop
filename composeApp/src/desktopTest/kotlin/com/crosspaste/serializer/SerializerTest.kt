@@ -5,7 +5,7 @@ import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.dao.paste.PasteState
 import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.paste.item.TextPasteItem
-import com.crosspaste.paste.service.TextTypePlugin
+import com.crosspaste.paste.plugin.type.TextTypePlugin
 import com.crosspaste.utils.DesktopJsonUtils
 import com.crosspaste.utils.getCodecsUtils
 import io.realm.kotlin.ext.realmListOf

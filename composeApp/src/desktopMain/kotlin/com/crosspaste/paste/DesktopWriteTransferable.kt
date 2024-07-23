@@ -1,6 +1,7 @@
 package com.crosspaste.paste
 
 import com.crosspaste.dao.paste.PasteItem
+import com.crosspaste.paste.plugin.type.PasteTypePlugin
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import java.awt.datatransfer.UnsupportedFlavorException

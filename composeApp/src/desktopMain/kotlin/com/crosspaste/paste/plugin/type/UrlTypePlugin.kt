@@ -1,34 +1,31 @@
-package com.crosspaste.paste.service
+package com.crosspaste.paste.plugin.type
 
 import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
+import com.crosspaste.paste.PasteDataFlavors.URL_FLAVOR
 import com.crosspaste.paste.PasteTransferable
-import com.crosspaste.paste.PasteTypePlugin
-import com.crosspaste.paste.item.TextPasteItem
+import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.utils.getCodecsUtils
 import io.realm.kotlin.MutableRealm
-import java.awt.datatransfer.DataFlavor
+import java.net.URL
 
-class TextTypePlugin : PasteTypePlugin {
+class UrlTypePlugin : PasteTypePlugin {
 
-    companion object TextItemService {
-
-        const val UNICODE_STRING = "Unicode String"
-        const val TEXT = "text/plain"
-        const val PLAIN_TEXT = "Plain Text"
+    companion object UrlTypePlugin {
+        const val URL = "application/x-java-url"
 
         private val codecsUtils = getCodecsUtils()
     }
 
     override fun getPasteType(): Int {
-        return PasteType.TEXT
+        return PasteType.URL
     }
 
     override fun getIdentifiers(): List<String> {
-        return listOf(UNICODE_STRING, TEXT, PLAIN_TEXT)
+        return listOf(URL)
     }
 
     override fun createPrePasteItem(
@@ -38,7 +35,7 @@ class TextTypePlugin : PasteTypePlugin {
         pasteTransferable: PasteTransferable,
         pasteCollector: PasteCollector,
     ) {
-        TextPasteItem().apply {
+        UrlPasteItem().apply {
             this.identifier = identifier
         }.let {
             pasteCollector.preCollectItem(itemIndex, this::class, it)
@@ -55,12 +52,12 @@ class TextTypePlugin : PasteTypePlugin {
         pasteCollector: PasteCollector,
     ) {
         if (transferData is String) {
-            val textBytes = transferData.toByteArray()
-            val md5 = codecsUtils.md5(textBytes)
+            val urlBytes = transferData.toByteArray()
+            val md5 = codecsUtils.md5(urlBytes)
             val update: (PasteItem, MutableRealm) -> Unit = { pasteItem, realm ->
-                realm.query(TextPasteItem::class, "id == $0", pasteItem.id).first().find()?.apply {
-                    this.text = transferData
-                    this.size = textBytes.size.toLong()
+                realm.query(UrlPasteItem::class, "id == $0", pasteItem.id).first().find()?.apply {
+                    this.url = transferData
+                    this.size = urlBytes.size.toLong()
                     this.md5 = md5
                 }
             }
@@ -72,7 +69,7 @@ class TextTypePlugin : PasteTypePlugin {
         pasteItem: PasteItem,
         map: MutableMap<PasteDataFlavor, Any>,
     ) {
-        pasteItem as TextPasteItem
-        map[DataFlavor.stringFlavor.toPasteDataFlavor()] = pasteItem.text
+        pasteItem as UrlPasteItem
+        map[URL_FLAVOR.toPasteDataFlavor()] = URL(pasteItem.url)
     }
 }
