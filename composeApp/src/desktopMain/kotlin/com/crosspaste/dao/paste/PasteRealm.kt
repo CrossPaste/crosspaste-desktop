@@ -2,12 +2,12 @@ package com.crosspaste.dao.paste
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.dao.task.TaskType
-import com.crosspaste.paste.PasteProcessPlugin
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
+import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.path.PathProvider
 import com.crosspaste.task.TaskExecutor
 import com.crosspaste.task.extra.SyncExtraInfo

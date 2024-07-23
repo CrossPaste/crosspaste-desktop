@@ -7,6 +7,8 @@ import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.dao.paste.PasteState
 import com.crosspaste.dao.paste.PasteType
+import com.crosspaste.paste.plugin.process.PasteProcessPlugin
+import com.crosspaste.paste.plugin.type.PasteTypePlugin
 import com.crosspaste.utils.LoggerExtension.logSuspendExecutionTime
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm

@@ -2,6 +2,8 @@ package com.crosspaste.paste
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.dao.paste.PasteDao
+import com.crosspaste.paste.plugin.process.PasteProcessPlugin
+import com.crosspaste.paste.plugin.type.PasteTypePlugin
 import com.crosspaste.utils.IDGenerator
 import com.crosspaste.utils.LoggerExtension.logExecutionTime
 import com.crosspaste.utils.LoggerExtension.logSuspendExecutionTime

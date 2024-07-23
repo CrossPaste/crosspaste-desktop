@@ -1,4 +1,4 @@
-package com.crosspaste.paste.service
+package com.crosspaste.paste.plugin.type
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.dao.paste.PasteItem
@@ -7,7 +7,6 @@ import com.crosspaste.os.windows.html.HTMLCodec
 import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteTransferable
-import com.crosspaste.paste.PasteTypePlugin
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.platform.currentPlatform
