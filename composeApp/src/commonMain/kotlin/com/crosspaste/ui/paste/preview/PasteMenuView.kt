@@ -60,9 +60,12 @@ import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.noFavorite
 import com.crosspaste.ui.favoriteColor
 import com.crosspaste.ui.search.PasteTypeIconView
+import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.mainDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -223,20 +226,22 @@ fun PasteMenuView(
                     Icon(
                         modifier =
                             Modifier.size(16.dp).onClick {
-                                runBlocking {
+                                scope.launch(ioDispatcher) {
                                     pasteboardService.tryWritePasteboard(
                                         pasteData,
                                         localOnly = true,
                                         filterFile = false,
                                     )
+                                    withContext(mainDispatcher) {
+                                        toastManager.setToast(
+                                            Toast(
+                                                MessageType.Success,
+                                                copywriter.getText("copy_successful"),
+                                                3000,
+                                            ),
+                                        )
+                                    }
                                 }
-                                toastManager.setToast(
-                                    Toast(
-                                        MessageType.Success,
-                                        copywriter.getText("copy_successful"),
-                                        3000,
-                                    ),
-                                )
                             },
                         painter = clipboard(),
                         contentDescription = "Copy",
