@@ -67,6 +67,8 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.compose.shimmer)
             implementation(libs.guava)
+            implementation(libs.imageio.core)
+            implementation(libs.imageio.jpeg)
             implementation(libs.jmdns)
             implementation(libs.jna)
             implementation(libs.jna.platform)
