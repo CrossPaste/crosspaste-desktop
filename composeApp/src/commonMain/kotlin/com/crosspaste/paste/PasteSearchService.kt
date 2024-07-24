@@ -1,6 +1,5 @@
 package com.crosspaste.paste
 
-import androidx.compose.runtime.State
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.dao.paste.PasteData
 
@@ -22,7 +21,7 @@ interface PasteSearchService {
 
     val searchResult: MutableList<PasteData>
 
-    val currentPasteData: State<PasteData?>
+    val currentPasteData: PasteData?
 
     val appWindowManager: AppWindowManager
 
