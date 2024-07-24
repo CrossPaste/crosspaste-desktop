@@ -197,8 +197,11 @@ class ImageTypePlugin(private val appInfo: AppInfo) : PasteTypePlugin {
 
         if (fileList.size == 1) {
             try {
+                val start = System.currentTimeMillis()
                 val image: BufferedImage? = ImageIO.read(fileList[0])
                 image?.let { map[DataFlavor.imageFlavor.toPasteDataFlavor()] = it }
+                val end = System.currentTimeMillis()
+                logger.debug { "read image ${fileList[0].absolutePath} use time: ${end - start} ms" }
             } catch (e: Exception) {
                 logger.error(e) { "read image fail" }
             }
