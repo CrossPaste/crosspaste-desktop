@@ -33,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -81,9 +82,10 @@ import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.noFavorite
 import com.crosspaste.ui.darken
 import com.crosspaste.ui.favoriteColor
+import com.crosspaste.utils.mainDispatcher
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -98,6 +100,7 @@ fun CrossPasteSearchWindowContent() {
     val logger = current.koin.get<KLogger>()
     val focusRequester = appWindowManager.searchFocusRequester
 
+    val scope = rememberCoroutineScope()
     var lastInputTime by remember { mutableStateOf(0L) }
 
     LaunchedEffect(pasteSearchService.inputSearch) {
@@ -130,8 +133,10 @@ fun CrossPasteSearchWindowContent() {
                     .onKeyEvent {
                         when (it.key) {
                             Key.Enter -> {
-                                runBlocking {
+                                scope.launch(mainDispatcher) {
+                                    appWindowManager.setSearchCursorWait()
                                     pasteSearchService.toPaste()
+                                    appWindowManager.resetSearchCursor()
                                 }
                                 true
                             }
@@ -562,8 +567,10 @@ fun CrossPasteSearchWindowContent() {
                             Row(
                                 modifier =
                                     Modifier.clickable {
-                                        runBlocking {
+                                        scope.launch(mainDispatcher) {
+                                            appWindowManager.setSearchCursorWait()
                                             pasteSearchService.toPaste()
+                                            appWindowManager.resetSearchCursor()
                                         }
                                     },
                             ) {

@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.LocalKoinApplication
+import com.crosspaste.app.AppWindowManager
 import com.crosspaste.dao.paste.PasteDao
 import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
@@ -76,6 +77,7 @@ fun PasteMenuView(
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
     val pasteDao = current.koin.get<PasteDao>()
+    val appWindowManager = current.koin.get<AppWindowManager>()
     val pasteboardService = current.koin.get<PasteboardService>()
     val copywriter = current.koin.get<GlobalCopywriter>()
     val toastManager = current.koin.get<ToastManager>()
@@ -226,6 +228,7 @@ fun PasteMenuView(
                     Icon(
                         modifier =
                             Modifier.size(16.dp).onClick {
+                                appWindowManager.setMainCursorWait()
                                 scope.launch(ioDispatcher) {
                                     pasteboardService.tryWritePasteboard(
                                         pasteData,
@@ -233,6 +236,7 @@ fun PasteMenuView(
                                         filterFile = false,
                                     )
                                     withContext(mainDispatcher) {
+                                        appWindowManager.resetMainCursor()
                                         toastManager.setToast(
                                             Toast(
                                                 MessageType.Success,

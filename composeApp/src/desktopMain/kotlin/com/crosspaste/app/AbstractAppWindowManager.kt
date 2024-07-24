@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -18,6 +19,7 @@ import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import java.awt.Cursor
 import java.awt.Rectangle
 
 abstract class AbstractAppWindowManager : AppWindowManager {
@@ -47,6 +49,8 @@ abstract class AbstractAppWindowManager : AppWindowManager {
         ),
     )
 
+    override var mainComposeWindow: ComposeWindow? by mutableStateOf(null)
+
     override var mainFocusRequester = FocusRequester()
 
     override var showMainDialog by mutableStateOf(false)
@@ -61,6 +65,8 @@ abstract class AbstractAppWindowManager : AppWindowManager {
         ),
     )
 
+    override var searchComposeWindow: ComposeWindow? by mutableStateOf(null)
+
     override var searchFocusRequester = FocusRequester()
 
     override val searchWindowDetailViewDpSize = DpSize(width = 500.dp, height = 240.dp)
@@ -73,4 +79,20 @@ abstract class AbstractAppWindowManager : AppWindowManager {
                 y = (bounds.y.dp + ((bounds.height.dp - windowSize.height) / 2)),
             )
         }
+
+    override fun resetMainCursor() {
+        mainComposeWindow?.cursor = Cursor.getDefaultCursor()
+    }
+
+    override fun setMainCursorWait() {
+        mainComposeWindow?.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
+    }
+
+    override fun resetSearchCursor() {
+        searchComposeWindow?.cursor = Cursor.getDefaultCursor()
+    }
+
+    override fun setSearchCursorWait() {
+        searchComposeWindow?.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
+    }
 }
