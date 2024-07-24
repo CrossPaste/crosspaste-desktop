@@ -28,6 +28,8 @@ fun ApplicationScope.CrossPasteSearchWindow(windowIcon: Painter?) {
         resizable = false,
     ) {
         DisposableEffect(Unit) {
+            appWindowManager.searchComposeWindow = window
+
             val windowListener =
                 object : WindowAdapter() {
                     override fun windowGainedFocus(e: WindowEvent?) {
@@ -42,6 +44,7 @@ fun ApplicationScope.CrossPasteSearchWindow(windowIcon: Painter?) {
             window.addWindowFocusListener(windowListener)
 
             onDispose {
+                appWindowManager.searchComposeWindow = null
                 window.removeWindowFocusListener(windowListener)
             }
         }

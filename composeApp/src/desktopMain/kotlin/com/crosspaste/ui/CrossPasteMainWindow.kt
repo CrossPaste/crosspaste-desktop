@@ -38,6 +38,8 @@ fun CrossPasteMainWindow(
         resizable = false,
     ) {
         DisposableEffect(Unit) {
+            appWindowManager.mainComposeWindow = window
+
             systemTray?.let { tray ->
                 initSystemTray(tray, koinApplication, exitApplication)
             }
@@ -62,6 +64,7 @@ fun CrossPasteMainWindow(
             window.addWindowFocusListener(windowListener)
 
             onDispose {
+                appWindowManager.mainComposeWindow = null
                 window.removeWindowFocusListener(windowListener)
             }
         }
