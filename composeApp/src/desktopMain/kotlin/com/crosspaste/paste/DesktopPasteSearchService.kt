@@ -1,6 +1,5 @@
 package com.crosspaste.paste
 
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -18,7 +17,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.mongodb.kbson.ObjectId
 
 class DesktopPasteSearchService(
     override val appWindowManager: AppWindowManager,
@@ -56,9 +54,7 @@ class DesktopPasteSearchService(
 
     override val searchResult: MutableList<PasteData> = mutableStateListOf()
 
-    override val currentPasteData: State<PasteData?> get() = _currentPasteData
-
-    private var _currentPasteData = mutableStateOf<PasteData?>(null)
+    override var currentPasteData by mutableStateOf<PasteData?>(null)
 
     override fun updateInputSearch(inputSearch: String) {
         this.inputSearch = inputSearch
@@ -135,11 +131,12 @@ class DesktopPasteSearchService(
     }
 
     private fun setCurrentPasteData() {
-        if (selectedIndex >= 0 && selectedIndex < searchResult.size) {
-            _currentPasteData.value = searchResult[selectedIndex]
-        } else {
-            _currentPasteData.value = null
-        }
+        currentPasteData =
+            if (selectedIndex >= 0 && selectedIndex < searchResult.size) {
+                searchResult[selectedIndex]
+            } else {
+                null
+            }
     }
 
     override fun clickSetSelectedIndex(selectedIndex: Int) {
@@ -169,11 +166,10 @@ class DesktopPasteSearchService(
     }
 
     private fun updateSearchResult(searchResult: List<PasteData>) {
-        val prevSelectedId: ObjectId? = _currentPasteData.value?.id
         this.searchResult.clear()
         this.searchResult.addAll(searchResult)
         if (appWindowManager.showSearchWindow) {
-            prevSelectedId?.let { id ->
+            currentPasteData?.id?.let { id ->
                 val newSelectedIndex = searchResult.indexOfFirst { it.id == id }
                 if (newSelectedIndex >= 0) {
                     this.selectedIndex = newSelectedIndex
@@ -219,8 +215,10 @@ class DesktopPasteSearchService(
 
     override suspend fun toPaste() {
         appWindowManager.unActiveSearchWindow {
-            _currentPasteData.value?.let { pasteData ->
-                pasteboardService.tryWritePasteboard(pasteData, localOnly = true)
+            currentPasteData?.let { pasteData ->
+                withContext(ioDispatcher) {
+                    pasteboardService.tryWritePasteboard(pasteData, localOnly = true)
+                }
                 true
             } ?: false
         }

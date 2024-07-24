@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.crosspaste.LocalKoinApplication
@@ -29,7 +30,7 @@ fun DetialPasteDataView() {
     val currentPasteData: PasteData? by remember(
         pasteSearchService.searchTime,
         pasteSearchService.selectedIndex,
-    ) { pasteSearchService.currentPasteData }
+    ) { mutableStateOf(pasteSearchService.currentPasteData) }
 
     currentPasteData?.let { pasteData ->
         pasteData.getPasteItem()?.let {
