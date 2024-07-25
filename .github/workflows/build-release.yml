@@ -178,7 +178,7 @@ jobs:
           key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
           key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
           region: oss-cn-shenzhen
-          bucket: crosspaste-desktop-semi
+          bucket: crosspaste-desktop
           assets: output/**:/${{ env.VERSION }}/
 
       # conveyor default cache directory is .conveyor/cache
