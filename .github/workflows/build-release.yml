@@ -79,10 +79,13 @@ jobs:
       MAC_SIGNING_KEY_FILE_PATH: ${{ github.workspace }}/developerID_application.p12
       PRE_RELEASE: false
       RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      WINDOWS_CLIENT_ID: ${{ secrets.WINDOWS_CLIENT_ID }}
+      WINDOWS_CLIENT_SECRET: ${{ secrets.WINDOWS_CLIENT_SECRET }}
       WINDOWS_IDENTITY_NAME: ${{ secrets.WINDOWS_IDENTITY_NAME }}
       WINDOWS_PUBLISHER: ${{ secrets.WINDOWS_PUBLISHER }}
       WINDOWS_PUBLISHER_DISPLAY_NAME: ${{ secrets.WINDOWS_PUBLISHER_DISPLAY_NAME }}
       WINDOWS_STORE_ID: ${{ secrets.WINDOWS_STORE_ID }}
+      WINDOWS_TENANT_ID: ${{ secrets.WINDOWS_TENANT_ID }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -162,6 +165,14 @@ jobs:
         run: |
           echo "${{ secrets.DEVELOPER_ID_APPLICATION }}" | base64 --decode > developerID_application.p12
           echo "${{ secrets.AUTH_KEY }}" | base64 --decode > AuthKey.p8
+
+      - name: Publish Microsoft Store
+        uses: hydraulic-software/conveyor/actions/build@v14.3
+        with:
+          command: make ms-store-release --output-dir=./output-ms-store
+          extra_flags: -f build.conveyor.conf
+          signing_key: ${{ secrets.SIGNING_KEY }}
+          agree_to_license: 1
 
       - name: Conveyor build
         uses: hydraulic-software/conveyor/actions/build@v14.3
