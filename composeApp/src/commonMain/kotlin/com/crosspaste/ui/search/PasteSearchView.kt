@@ -192,7 +192,7 @@ fun CrossPasteSearchWindowContent() {
                                 placeholder = {
                                     Text(
                                         modifier = Modifier.wrapContentSize(),
-                                        text = "please input search",
+                                        text = copywriter.getText("type_to_search_history"),
                                         style =
                                             TextStyle(
                                                 fontWeight = FontWeight.Light,
