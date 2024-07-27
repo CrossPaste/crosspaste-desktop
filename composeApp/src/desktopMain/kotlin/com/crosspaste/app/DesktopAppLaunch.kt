@@ -1,6 +1,7 @@
 package com.crosspaste.app
 
 import com.crosspaste.os.macos.api.MacosApi
+import com.crosspaste.os.windows.api.User32.Companion.isInstalledFromMicrosoftStore
 import com.crosspaste.path.DesktopPathProvider
 import com.crosspaste.platform.currentPlatform
 import io.github.oshai.kotlinlogging.KLogger
@@ -56,9 +57,17 @@ object DesktopAppLaunch : AppLaunch, AppLock {
         val platform = currentPlatform()
         if (platform.isMacos()) {
             val accessibilityPermissions = MacosApi.INSTANCE.checkAccessibilityPermissions()
-            return AppLaunchState(pair.first, pair.second, accessibilityPermissions)
+            return AppLaunchState(pair.first, pair.second, accessibilityPermissions, null)
+        } else if (platform.isWindows()) {
+            val installFrom =
+                if (isInstalledFromMicrosoftStore()) {
+                    MICROSOFT_STORE
+                } else {
+                    null
+                }
+            return AppLaunchState(pair.first, pair.second, true, installFrom)
         } else {
-            return AppLaunchState(pair.first, pair.second, true)
+            return AppLaunchState(pair.first, pair.second, true, null)
         }
     }
 }
