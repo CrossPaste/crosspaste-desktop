@@ -37,6 +37,8 @@ import com.sun.jna.win32.W32APIOptions.DEFAULT_OPTIONS
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.awt.image.BufferedImage
 import java.io.File
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.Locale
 import java.util.Optional
 import javax.imageio.ImageIO
@@ -494,6 +496,12 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                     style or 0x00000080,
                 )
             }
+        }
+
+        fun isInstalledFromMicrosoftStore(): Boolean {
+            val appPath: Path = Paths.get(System.getProperty("user.dir")).toAbsolutePath()
+            val windowsAppsPath: Path = Paths.get("C:\\Program Files\\WindowsApps").toAbsolutePath()
+            return appPath.startsWith(windowsAppsPath)
         }
     }
 }
