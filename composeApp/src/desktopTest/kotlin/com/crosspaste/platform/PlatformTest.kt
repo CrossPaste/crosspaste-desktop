@@ -82,7 +82,7 @@ class PlatformTest {
             assertEquals("Linux", platform.name)
             assertEquals("x86_64", platform.arch)
             assertEquals(64, platform.bitMode)
-            assertEquals("6.5.0-35-generic", platform.version)
+            assertEquals(LinuxPlatform.getOsVersion(), platform.version)
         } finally {
             unmockkAll()
         }
