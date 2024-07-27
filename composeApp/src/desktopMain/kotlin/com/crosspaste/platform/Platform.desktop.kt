@@ -23,7 +23,7 @@ private fun getCurrentPlatform(): Platform {
 
     val version =
         when (name) {
-            WINDOWS -> getWindowsVersion(name, javaOsVersion)
+            WINDOWS -> getWindowsVersion(osName, javaOsVersion)
             MACOS -> javaOsVersion
             LINUX -> LinuxPlatform.getOsVersion()
             else -> javaOsVersion
