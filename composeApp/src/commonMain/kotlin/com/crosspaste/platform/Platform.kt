@@ -4,6 +4,20 @@ import kotlinx.serialization.Serializable
 
 expect fun currentPlatform(): Platform
 
+const val WINDOWS = "Windows"
+
+const val MACOS = "Macos"
+
+const val LINUX = "Linux"
+
+const val IPHONE = "iPhone"
+
+const val IPAD = "iPad"
+
+const val ANDROID = "Android"
+
+const val UNKNOWN_OS = "Unknown"
+
 @Serializable
 data class Platform(
     val name: String,
@@ -13,27 +27,27 @@ data class Platform(
 ) {
 
     fun isWindows(): Boolean {
-        return name == "Windows"
+        return name == WINDOWS
     }
 
     fun isMacos(): Boolean {
-        return name == "Macos"
+        return name == MACOS
     }
 
     fun isLinux(): Boolean {
-        return name == "Linux"
+        return name == LINUX
     }
 
     fun isIphone(): Boolean {
-        return name == "iPhone"
+        return name == IPHONE
     }
 
     fun isIpad(): Boolean {
-        return name == "iPad"
+        return name == IPAD
     }
 
     fun isAndroid(): Boolean {
-        return name == "Android"
+        return name == ANDROID
     }
 
     fun is64bit(): Boolean {

@@ -10,7 +10,24 @@ actual fun currentPlatform(): Platform {
 private fun getCurrentPlatform(): Platform {
     val systemProperty = getSystemProperty()
     val osName = systemProperty.get("os.name").lowercase()
-    val version = systemProperty.get("os.version")
+
+    val name =
+        when {
+            "win" in osName -> WINDOWS
+            "mac" in osName -> MACOS
+            "nix" in osName || "nux" in osName || "aix" in osName -> LINUX
+            else -> UNKNOWN_OS
+        }
+
+    val javaOsVersion = systemProperty.get("os.version")
+
+    val version =
+        when (name) {
+            WINDOWS -> getWindowsVersion(name, javaOsVersion)
+            MACOS -> javaOsVersion
+            LINUX -> LinuxPlatform.getOsVersion()
+            else -> javaOsVersion
+        }
     val architecture = systemProperty.get("os.arch")
     val bitMode =
         if (architecture.contains("64")) {
@@ -18,24 +35,14 @@ private fun getCurrentPlatform(): Platform {
         } else {
             32
         }
-    return when {
-        "win" in osName -> Platform(name = "Windows", arch = architecture, bitMode = bitMode, version = getWindowsVersion(osName, version))
-        "mac" in osName -> Platform(name = "Macos", arch = architecture, bitMode = bitMode, version = version)
-        "nix" in osName || "nux" in osName || "aix" in osName ->
-            Platform(
-                name = "Linux",
-                arch = architecture,
-                bitMode = bitMode,
-                version = version,
-            )
-        else -> Platform(name = "Unknown", arch = architecture, bitMode = bitMode, version = version)
-    }
+
+    return Platform(name = name, arch = architecture, bitMode = bitMode, version = version)
 }
 
 private fun getWindowsVersion(
     osName: String,
-    osVersion: String,
+    javaOsVersion: String,
 ): String {
     val parts = osName.split(" ", limit = 2)
-    return if (parts.size > 1) parts[1] else osVersion
+    return if (parts.size > 1) parts[1] else javaOsVersion
 }
