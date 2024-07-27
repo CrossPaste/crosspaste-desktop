@@ -79,7 +79,6 @@ import com.crosspaste.ui.base.clipboard
 import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.language
 import com.crosspaste.ui.base.palette
-import com.crosspaste.ui.base.rocket
 import com.crosspaste.ui.base.shield
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
@@ -399,38 +398,6 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                             configManager.updateConfig("enableAutoStartUp", changeEnableAutoStartUp)
                             enableAutoStartUp = configManager.config.enableAutoStartUp
                         },
-                    )
-                }
-
-                Divider(modifier = Modifier.padding(start = 35.dp))
-
-                Row(
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .height(40.dp)
-                            .padding(horizontal = 12.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        modifier = Modifier.size(15.dp),
-                        painter = rocket(),
-                        contentDescription = "Automatic Update",
-                        tint = Color(0xFFFB6D48),
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    settingsText(copywriter.getText("automatic_update"))
-
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    var isChecked by remember { mutableStateOf(false) }
-                    CustomSwitch(
-                        modifier =
-                            Modifier.width(32.dp)
-                                .height(20.dp),
-                        checked = isChecked,
-                        onCheckedChange = { isChecked = it },
                     )
                 }
             }
