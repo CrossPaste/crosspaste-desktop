@@ -22,12 +22,10 @@ class DesktopNotificationManager(
     ) {
         if (appWindowManager.showMainWindow) {
             notifyToast(message, messageType, duration)
+        } else if (platform.isLinux()) {
+            notifyTray(AppName, message, messageType)
         } else {
-            if (platform.isLinux()) {
-                notifyTray(AppName, message, messageType)
-            } else {
-                sendNotification(AppName, message)
-            }
+            sendNotification(AppName, message)
         }
     }
 
@@ -39,12 +37,10 @@ class DesktopNotificationManager(
     ) {
         if (appWindowManager.showMainWindow) {
             notifyToast(message, messageType, duration)
+        } else if (platform.isLinux()) {
+            sendNotification(AppName, message)
         } else {
-            if (platform.isLinux()) {
-                notifyTray(title, message, messageType)
-            } else {
-                sendNotification(AppName, message)
-            }
+            notifyTray(title, message, messageType)
         }
     }
 
