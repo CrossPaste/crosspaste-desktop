@@ -2,8 +2,8 @@ package com.crosspaste.ui
 
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
-import com.crosspaste.app.AppName
 import com.crosspaste.app.AppWindowManager
+import com.crosspaste.os.linux.api.NotificationSender
 import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
 import dorkbox.systemTray.MenuItem
@@ -13,7 +13,6 @@ import kotlinx.coroutines.launch
 import org.koin.core.KoinApplication
 import java.awt.GraphicsEnvironment
 import java.awt.Toolkit
-import java.io.IOException
 
 object LinuxTrayView {
 
@@ -75,30 +74,6 @@ object LinuxTrayView {
         title: String,
         message: String,
     ) {
-        val cmd =
-            arrayOf(
-                "dbus-send",
-                "--session",
-                "--dest=org.freedesktop.Notifications",
-                "--type=method_call",
-                "--print-reply",
-                "/org/freedesktop/Notifications",
-                "org.freedesktop.Notifications.Notify",
-                "string:$AppName",
-                "uint32:0",
-                "string:",
-                "string:$title",
-                "string:$message",
-                "array:string:",
-                "dict:string:string:",
-                "int32:5000",
-            )
-
-        try {
-            val processBuilder = ProcessBuilder(*cmd)
-            processBuilder.start()
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
+        NotificationSender().sendNotification(title, message)
     }
 }
