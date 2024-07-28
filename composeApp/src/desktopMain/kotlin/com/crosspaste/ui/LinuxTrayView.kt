@@ -21,21 +21,8 @@ object LinuxTrayView {
         exitApplication: () -> Unit,
     ) {
         val appWindowManager = koinApplication.koin.get<AppWindowManager>()
-        val themeDetector = koinApplication.koin.get<ThemeDetector>()
 
-        themeDetector.addListener {
-            if (it) {
-                systemTray.setImage(DesktopResourceUtils.resourceInputStream("icon/crosspaste.tray.linux.dark.png"))
-            } else {
-                systemTray.setImage(DesktopResourceUtils.resourceInputStream("icon/crosspaste.tray.linux.light.png"))
-            }
-        }
-
-        if (themeDetector.isCurrentThemeDark()) {
-            systemTray.setImage(DesktopResourceUtils.resourceInputStream("icon/crosspaste.tray.linux.dark.png"))
-        } else {
-            systemTray.setImage(DesktopResourceUtils.resourceInputStream("icon/crosspaste.tray.linux.light.png"))
-        }
+        systemTray.setImage(DesktopResourceUtils.resourceInputStream("icon/crosspaste.png"))
 
         systemTray.setTooltip("CrossPaste")
         systemTray.menu?.add(

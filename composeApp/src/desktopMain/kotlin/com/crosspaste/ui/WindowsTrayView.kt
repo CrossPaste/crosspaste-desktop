@@ -50,14 +50,8 @@ fun WindowsTray() {
 
     val appWindowManager = current.koin.get<AppWindowManager>()
     val notificationManager = current.koin.get<NotificationManager>() as DesktopNotificationManager
-    val themeDetector = current.koin.get<ThemeDetector>()
 
-    val trayIcon =
-        if (themeDetector.isCurrentThemeDark()) {
-            painterResource("icon/crosspaste.tray.win.dark.png")
-        } else {
-            painterResource("icon/crosspaste.tray.win.light.png")
-        }
+    val trayIcon = painterResource("icon/crosspaste.png")
 
     var showMenu by remember { mutableStateOf(false) }
 
