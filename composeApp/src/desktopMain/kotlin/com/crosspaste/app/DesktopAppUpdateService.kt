@@ -3,8 +3,7 @@ package com.crosspaste.app
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.DesktopProxy
 import com.crosspaste.ui.base.MessageType
-import com.crosspaste.ui.base.Toast
-import com.crosspaste.ui.base.ToastManager
+import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.UISupport
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.z4kn4fein.semver.Version
@@ -20,7 +19,7 @@ class DesktopAppUpdateService(
     appInfo: AppInfo,
     private val copywriter: GlobalCopywriter,
     private val uiSupport: UISupport,
-    private val toastManager: ToastManager,
+    private val notificationManager: NotificationManager,
 ) : AppUpdateService {
 
     private val logger = KotlinLogging.logger {}
@@ -47,11 +46,9 @@ class DesktopAppUpdateService(
         if (existNewVersion()) {
             uiSupport.openUrlInBrowser(downloadUrl)
         } else {
-            toastManager.setToast(
-                Toast(
-                    messageType = MessageType.Info,
-                    message = copywriter.getText("no_new_version_available"),
-                ),
+            notificationManager.addNotification(
+                message = copywriter.getText("no_new_version_available"),
+                messageType = MessageType.Info,
             )
         }
     }

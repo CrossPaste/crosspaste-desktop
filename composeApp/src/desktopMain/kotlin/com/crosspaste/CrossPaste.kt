@@ -213,7 +213,7 @@ class CrossPaste {
                     single<ConfigManager> {
                         DefaultConfigManager(
                             get<FilePersist>().getPersist("appConfig.json", AppFileType.USER),
-                            get<ToastManager>(),
+                            get<NotificationManager>(),
                             lazy { get<GlobalCopywriter>() },
                         )
                     }
@@ -328,7 +328,7 @@ class CrossPaste {
                     single<ThemeDetector> { DesktopThemeDetector(get()) }
                     single<PasteResourceLoader> { DesktopAbsolutePasteResourceLoader }
                     single<ToastManager> { DesktopToastManager() }
-                    single<NotificationManager> { DesktopNotificationManager }
+                    single<NotificationManager> { DesktopNotificationManager(get(), get()) }
                     single<IconStyle> { DesktopIconStyle }
                     single<UISupport> { DesktopUISupport(get(), get()) }
                     single<ShortcutKeys> { DesktopShortcutKeys(get(), get()) }

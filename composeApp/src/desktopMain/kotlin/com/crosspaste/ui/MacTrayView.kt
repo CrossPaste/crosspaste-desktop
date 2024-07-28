@@ -19,6 +19,7 @@ import com.crosspaste.LocalPageViewContent
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.DesktopNotificationManager
+import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
 import com.crosspaste.utils.contains
@@ -45,6 +46,7 @@ fun MacTray() {
     val density = LocalDensity.current
 
     val appWindowManager = current.koin.get<AppWindowManager>()
+    val notificationManager = current.koin.get<NotificationManager>() as DesktopNotificationManager
     val copywriter = current.koin.get<GlobalCopywriter>()
 
     val trayIcon = painterResource("icon/crosspaste.tray.mac.png")
@@ -60,7 +62,7 @@ fun MacTray() {
 
     CrossPasteTray(
         icon = trayIcon,
-        state = remember { DesktopNotificationManager.trayState },
+        state = remember { notificationManager.trayState },
         tooltip = "CrossPaste",
         mouseListener =
             MacTrayMouseClicked(appWindowManager) { event, rectangle, _ ->
