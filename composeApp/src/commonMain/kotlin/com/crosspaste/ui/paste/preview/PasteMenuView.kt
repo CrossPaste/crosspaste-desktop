@@ -245,7 +245,7 @@ fun PasteMenuView(
                             },
                         painter = clipboard(),
                         contentDescription = "Copy",
-                        tint = MaterialTheme.colors.onBackground,
+                        tint = MaterialTheme.colors.primary,
                     )
                 }
             }

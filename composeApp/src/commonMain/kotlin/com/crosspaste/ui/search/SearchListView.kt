@@ -287,7 +287,7 @@ fun PasteTypeIconView(
                         painter = loadData.readPainter(),
                         contentDescription = "Paste Icon",
                         modifier = Modifier.padding(padding).size(size),
-                        tint = MaterialTheme.colors.onBackground,
+                        tint = MaterialTheme.colors.primary,
                     )
                 } else {
                     Image(
@@ -324,7 +324,7 @@ fun PasteTypeIconView(
                         painter = loadData.readPainter(),
                         contentDescription = "Paste Icon",
                         modifier = Modifier.padding(padding).size(size),
-                        tint = MaterialTheme.colors.onBackground,
+                        tint = MaterialTheme.colors.primary,
                     )
                 } else {
                     Image(
@@ -340,7 +340,7 @@ fun PasteTypeIconView(
             painter = loadIconData.readPainter(),
             contentDescription = "Paste Icon",
             modifier = Modifier.padding(padding).size(size),
-            tint = MaterialTheme.colors.onBackground,
+            tint = MaterialTheme.colors.primary,
         )
     } else {
         pasteData.source?.let {
@@ -353,7 +353,7 @@ fun PasteTypeIconView(
                     painter = loadIconData.readPainter(),
                     contentDescription = "Paste Icon",
                     modifier = Modifier.padding(padding).size(size),
-                    tint = MaterialTheme.colors.onBackground,
+                    tint = MaterialTheme.colors.primary,
                 )
             }
         } ?: run {
@@ -361,7 +361,7 @@ fun PasteTypeIconView(
                 painter = loadIconData.readPainter(),
                 contentDescription = "Paste Icon",
                 modifier = Modifier.padding(padding).size(size),
-                tint = MaterialTheme.colors.onBackground,
+                tint = MaterialTheme.colors.primary,
             )
         }
     }
