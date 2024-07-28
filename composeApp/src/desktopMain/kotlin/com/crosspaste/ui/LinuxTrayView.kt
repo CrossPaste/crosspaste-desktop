@@ -2,6 +2,7 @@ package com.crosspaste.ui
 
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
+import com.crosspaste.app.AppName
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
