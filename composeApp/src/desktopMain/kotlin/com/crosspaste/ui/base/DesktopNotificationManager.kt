@@ -4,7 +4,7 @@ import androidx.compose.ui.window.Notification
 
 object DesktopNotificationManager : NotificationManager {
 
-    override val trayState = CrossPasteTrayState()
+    val trayState = CrossPasteTrayState()
 
     override fun addNotification(
         title: String,
@@ -23,9 +23,5 @@ object DesktopNotificationManager : NotificationManager {
                 },
             ),
         )
-    }
-
-    override fun addNotification(notification: Notification) {
-        trayState.sendNotification(notification)
     }
 }
