@@ -3,11 +3,15 @@ package com.crosspaste.ui.base
 import androidx.compose.ui.window.Notification
 import com.crosspaste.app.AppName
 import com.crosspaste.app.AppWindowManager
+import com.crosspaste.os.linux.api.NotificationSender.sendNotification
+import com.crosspaste.platform.currentPlatform
 
 class DesktopNotificationManager(
     private val appWindowManager: AppWindowManager,
     private val toastManager: ToastManager,
 ) : NotificationManager {
+
+    val platform = currentPlatform()
 
     val trayState = CrossPasteTrayState()
 
@@ -18,6 +22,8 @@ class DesktopNotificationManager(
     ) {
         if (appWindowManager.showMainWindow) {
             notifyToast(message, messageType, duration)
+        } else if (platform.isLinux()) {
+            sendNotification(AppName, message)
         } else {
             notifyTray(AppName, message, messageType)
         }
@@ -31,6 +37,8 @@ class DesktopNotificationManager(
     ) {
         if (appWindowManager.showMainWindow) {
             notifyToast(message, messageType, duration)
+        } else if (platform.isLinux()) {
+            sendNotification(AppName, message)
         } else {
             notifyTray(title, message, messageType)
         }
