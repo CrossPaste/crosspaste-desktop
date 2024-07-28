@@ -26,7 +26,7 @@ interface NotifyLibrary : Library {
     }
 }
 
-class NotificationSender {
+object NotificationSender {
     init {
         NotifyLibrary.INSTANCE.notify_init(AppName)
     }

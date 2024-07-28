@@ -3,8 +3,8 @@ package com.crosspaste.ui.base
 import androidx.compose.ui.window.Notification
 import com.crosspaste.app.AppName
 import com.crosspaste.app.AppWindowManager
+import com.crosspaste.os.linux.api.NotificationSender.sendNotification
 import com.crosspaste.platform.currentPlatform
-import com.crosspaste.ui.LinuxTrayView.sendNotification
 
 class DesktopNotificationManager(
     private val appWindowManager: AppWindowManager,

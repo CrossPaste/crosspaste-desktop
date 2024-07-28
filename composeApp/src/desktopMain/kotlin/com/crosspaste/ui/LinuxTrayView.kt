@@ -3,7 +3,6 @@ package com.crosspaste.ui
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
 import com.crosspaste.app.AppWindowManager
-import com.crosspaste.os.linux.api.NotificationSender
 import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
 import dorkbox.systemTray.MenuItem
@@ -68,12 +67,5 @@ object LinuxTrayView {
                 x = usableWidth.dp - windowWidth,
                 y = bounds.y.dp + insets.top.dp + 30.dp,
             )
-    }
-
-    fun sendNotification(
-        title: String,
-        message: String,
-    ) {
-        NotificationSender().sendNotification(title, message)
     }
 }
