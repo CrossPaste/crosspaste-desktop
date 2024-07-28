@@ -43,7 +43,7 @@ import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppTokenService
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.ui.customFontFamily
+import com.crosspaste.ui.base.Fonts.ROBOTO_FONT_FAMILY
 
 @Composable
 fun TokenView() {
@@ -121,7 +121,7 @@ fun TokenView() {
                         color = MaterialTheme.colors.onBackground,
                         fontSize = 25.sp,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = customFontFamily,
+                        fontFamily = ROBOTO_FONT_FAMILY,
                     )
                     IconButton(
                         onClick = { appTokenService.showToken = false },

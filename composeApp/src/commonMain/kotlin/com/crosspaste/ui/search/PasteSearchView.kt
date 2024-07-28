@@ -65,6 +65,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppInfo
+import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.i18n.GlobalCopywriter
@@ -79,6 +80,7 @@ import com.crosspaste.ui.base.descSort
 import com.crosspaste.ui.base.enter
 import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.getMenWidth
+import com.crosspaste.ui.base.menuItemReminderTextStyle
 import com.crosspaste.ui.base.noFavorite
 import com.crosspaste.ui.darken
 import com.crosspaste.ui.favoriteColor
@@ -97,6 +99,7 @@ fun CrossPasteSearchWindowContent() {
     val copywriter = current.koin.get<GlobalCopywriter>()
     val appWindowManager = current.koin.get<AppWindowManager>()
     val pasteSearchService = current.koin.get<PasteSearchService>()
+    val appUpdateService = current.koin.get<AppUpdateService>()
     val logger = current.koin.get<KLogger>()
     val focusRequester = appWindowManager.searchFocusRequester
 
@@ -549,6 +552,28 @@ fun CrossPasteSearchWindowContent() {
                                     fontSize = 14.sp,
                                 ),
                         )
+
+                        if (appUpdateService.existNewVersion()) {
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Row(
+                                modifier =
+                                    Modifier.width(32.dp)
+                                        .height(16.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(Color.Red)
+                                        .clickable {
+                                            appUpdateService.jumpDownload()
+                                        },
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = "new!",
+                                    color = Color.White,
+                                    style = menuItemReminderTextStyle,
+                                )
+                            }
+                        }
 
                         Spacer(modifier = Modifier.weight(1f))
 

@@ -25,7 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,6 +32,7 @@ import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppInfoFactory
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.base.Fonts.ROBOTO_FONT_FAMILY
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.chevronRight
 
@@ -74,7 +74,7 @@ fun AboutContentView() {
                     text = "CrossPaste",
                     style =
                         TextStyle(
-                            fontFamily = FontFamily.SansSerif,
+                            fontFamily = ROBOTO_FONT_FAMILY,
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
                         ),
@@ -87,7 +87,7 @@ fun AboutContentView() {
                     text = "version: ${appInfo.appVersion}$revision",
                     style =
                         TextStyle(
-                            fontFamily = FontFamily.SansSerif,
+                            fontFamily = ROBOTO_FONT_FAMILY,
                             fontWeight = FontWeight.Normal,
                             fontSize = 15.sp,
                         ),
