@@ -3,7 +3,7 @@ package com.crosspaste.i18n
 import com.crosspaste.config.DefaultConfigManager
 import com.crosspaste.i18n.GlobalCopywriterImpl.Companion.EN
 import com.crosspaste.presist.DesktopOneFilePersist
-import com.crosspaste.ui.base.DesktopToastManager
+import com.crosspaste.ui.base.TestNotificationManager
 import okio.Path.Companion.toOkioPath
 import java.nio.file.Files
 import kotlin.test.Test
@@ -22,7 +22,7 @@ class GlobCopywriterTest {
         configManager =
             DefaultConfigManager(
                 DesktopOneFilePersist(configPath),
-                DesktopToastManager(), lazy { GlobalCopywriterImpl(configManager) },
+                TestNotificationManager(), lazy { GlobalCopywriterImpl(configManager) },
             )
 
         configManager.updateConfig("language", "")
