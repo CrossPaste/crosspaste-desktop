@@ -30,7 +30,7 @@ import androidx.compose.ui.window.rememberWindowState
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.WinAppWindowManager
-import com.crosspaste.ui.base.NotificationManager
+import com.crosspaste.ui.base.DesktopNotificationManager
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch
@@ -49,7 +49,7 @@ fun WindowsTray() {
 
     val appWindowManager = current.koin.get<AppWindowManager>()
     val themeDetector = current.koin.get<ThemeDetector>()
-    val notificationManager = current.koin.get<NotificationManager>()
+    val notificationManager = current.koin.get<DesktopNotificationManager>()
 
     val trayIcon =
         if (themeDetector.isCurrentThemeDark()) {
