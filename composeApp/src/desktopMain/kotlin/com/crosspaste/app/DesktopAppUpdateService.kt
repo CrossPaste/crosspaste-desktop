@@ -5,8 +5,10 @@ import com.crosspaste.net.DesktopProxy
 import com.crosspaste.ui.base.MessageType
 import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.UISupport
+import com.crosspaste.utils.DesktopResourceUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.z4kn4fein.semver.Version
+import java.io.ByteArrayInputStream
 import java.net.InetSocketAddress
 import java.net.ProxySelector
 import java.net.URL
@@ -14,6 +16,7 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
+import java.util.Properties
 
 class DesktopAppUpdateService(
     appInfo: AppInfo,
@@ -30,9 +33,11 @@ class DesktopAppUpdateService(
 
     private val desktopProxy = DesktopProxy
 
-    private val downloadUrl = "https://crosspaste.com/download"
+    private val appUpdateProperties = DesktopResourceUtils.loadProperties("app-update.properties")
 
-    private val checkLastVersionUrl = "https://crosspaste.com/downloadDesktop/lastVersion"
+    private val downloadUrl: String? = appUpdateProperties.getProperty("download-page-url")
+
+    private val checkMetadataUrl: String? = appUpdateProperties.getProperty("check-metadata-url")
 
     override fun checkForUpdate() {
         lastVersion = readLastVersion()
@@ -44,7 +49,9 @@ class DesktopAppUpdateService(
 
     override fun jumpDownload() {
         if (existNewVersion()) {
-            uiSupport.openUrlInBrowser(downloadUrl)
+            downloadUrl?.let {
+                uiSupport.openUrlInBrowser(it)
+            }
         } else {
             notificationManager.addNotification(
                 message = copywriter.getText("no_new_version_available"),
@@ -54,7 +61,8 @@ class DesktopAppUpdateService(
     }
 
     private fun readLastVersion(): Version? {
-        val httpsUrl = URL(checkLastVersionUrl)
+        checkMetadataUrl ?: return null
+        val httpsUrl = URL(checkMetadataUrl)
 
         val uri = httpsUrl.toURI()
 
@@ -78,8 +86,13 @@ class DesktopAppUpdateService(
             val response = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
 
             if (response.statusCode() == 200) {
-                val versionString = String(response.body().readBytes(), Charsets.UTF_8)
-                return Version.parse(versionString)
+                val bytes = response.body().readBytes()
+                val inputStream = ByteArrayInputStream(bytes)
+                val properties = Properties()
+                properties.load(inputStream)
+                properties.getProperty("app.version")?.let { versionString ->
+                    return@readLastVersion Version.parse(versionString)
+                }
             }
         } catch (e: Exception) {
             logger.warn(e) { "Failed to get last version" }
