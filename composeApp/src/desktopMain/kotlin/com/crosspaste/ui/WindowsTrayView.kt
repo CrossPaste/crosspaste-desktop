@@ -49,7 +49,6 @@ fun WindowsTray() {
 
     val appWindowManager = current.koin.get<AppWindowManager>()
     val themeDetector = current.koin.get<ThemeDetector>()
-    val notificationManager = current.koin.get<DesktopNotificationManager>()
 
     val trayIcon =
         if (themeDetector.isCurrentThemeDark()) {
@@ -68,7 +67,7 @@ fun WindowsTray() {
 
     CrossPasteTray(
         icon = trayIcon,
-        state = remember { notificationManager.trayState },
+        state = remember { DesktopNotificationManager.trayState },
         tooltip = "CrossPaste",
         mouseListener =
             WindowsTrayMouseClicked(appWindowManager) { event, gd, insets ->

@@ -148,6 +148,7 @@ import com.crosspaste.ui.base.DesktopToastManager
 import com.crosspaste.ui.base.DesktopUISupport
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.IconStyle
+import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.ToastManager
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.resource.DesktopAbsolutePasteResourceLoader
@@ -327,7 +328,7 @@ class CrossPaste {
                     single<ThemeDetector> { DesktopThemeDetector(get()) }
                     single<PasteResourceLoader> { DesktopAbsolutePasteResourceLoader }
                     single<ToastManager> { DesktopToastManager() }
-                    single<DesktopNotificationManager> { DesktopNotificationManager }
+                    single<NotificationManager> { DesktopNotificationManager }
                     single<IconStyle> { DesktopIconStyle }
                     single<UISupport> { DesktopUISupport(get(), get()) }
                     single<ShortcutKeys> { DesktopShortcutKeys(get(), get()) }

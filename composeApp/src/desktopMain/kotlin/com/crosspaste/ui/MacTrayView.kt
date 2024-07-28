@@ -45,7 +45,6 @@ fun MacTray() {
     val density = LocalDensity.current
 
     val appWindowManager = current.koin.get<AppWindowManager>()
-    val notificationManager = current.koin.get<DesktopNotificationManager>()
     val copywriter = current.koin.get<GlobalCopywriter>()
 
     val trayIcon = painterResource("icon/crosspaste.tray.mac.png")
@@ -61,7 +60,7 @@ fun MacTray() {
 
     CrossPasteTray(
         icon = trayIcon,
-        state = remember { notificationManager.trayState },
+        state = remember { DesktopNotificationManager.trayState },
         tooltip = "CrossPaste",
         mouseListener =
             MacTrayMouseClicked(appWindowManager) { event, rectangle, _ ->
