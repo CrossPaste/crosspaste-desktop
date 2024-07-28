@@ -23,9 +23,9 @@ class DesktopNotificationManager(
         if (appWindowManager.showMainWindow) {
             notifyToast(message, messageType, duration)
         } else if (platform.isLinux()) {
-            notifyTray(AppName, message, messageType)
-        } else {
             sendNotification(AppName, message)
+        } else {
+            notifyTray(AppName, message, messageType)
         }
     }
 
