@@ -424,10 +424,8 @@ class CrossPaste {
                     val windowIcon: Painter? =
                         if (platform.isMacos()) {
                             painterResource("icon/crosspaste.mac.png")
-                        } else if (platform.isWindows()) {
-                            painterResource("icon/crosspaste.win.png")
-                        } else if (platform.isLinux()) {
-                            painterResource("icon/crosspaste.linux.png")
+                        } else if (platform.isWindows() || platform.isLinux()) {
+                            painterResource("icon/crosspaste.png")
                         } else {
                             null
                         }
