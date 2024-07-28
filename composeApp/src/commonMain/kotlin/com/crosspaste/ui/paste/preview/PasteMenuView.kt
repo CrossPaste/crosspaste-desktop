@@ -51,9 +51,8 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.MessageType
+import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.PasteTooltipAreaView
-import com.crosspaste.ui.base.Toast
-import com.crosspaste.ui.base.ToastManager
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.clipboard
 import com.crosspaste.ui.base.favorite
@@ -80,7 +79,7 @@ fun PasteMenuView(
     val appWindowManager = current.koin.get<AppWindowManager>()
     val pasteboardService = current.koin.get<PasteboardService>()
     val copywriter = current.koin.get<GlobalCopywriter>()
-    val toastManager = current.koin.get<ToastManager>()
+    val notificationManager = current.koin.get<NotificationManager>()
     val uiSupport = current.koin.get<UISupport>()
 
     var parentBounds by remember { mutableStateOf(Rect.Zero) }
@@ -237,12 +236,9 @@ fun PasteMenuView(
                                     )
                                     withContext(mainDispatcher) {
                                         appWindowManager.resetMainCursor()
-                                        toastManager.setToast(
-                                            Toast(
-                                                MessageType.Success,
-                                                copywriter.getText("copy_successful"),
-                                                3000,
-                                            ),
+                                        notificationManager.addNotification(
+                                            copywriter.getText("copy_successful"),
+                                            MessageType.Success,
                                         )
                                     }
                                 }

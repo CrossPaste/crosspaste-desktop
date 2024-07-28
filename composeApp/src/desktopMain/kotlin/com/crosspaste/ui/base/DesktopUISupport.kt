@@ -20,7 +20,7 @@ import java.io.File
 import java.net.URI
 
 class DesktopUISupport(
-    private val toastManager: ToastManager,
+    private val notificationManager: NotificationManager,
     private val copywriter: GlobalCopywriter,
 ) : UISupport {
 
@@ -32,11 +32,9 @@ class DesktopUISupport(
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
             Desktop.getDesktop().browse(URI(url))
         } else {
-            toastManager.setToast(
-                Toast(
-                    messageType = MessageType.Error,
-                    "${copywriter.getText("cant_open_browser")} $url",
-                ),
+            notificationManager.addNotification(
+                message = "${copywriter.getText("cant_open_browser")}  $url",
+                messageType = MessageType.Error,
             )
         }
     }
@@ -48,11 +46,9 @@ class DesktopUISupport(
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.MAIL)) {
             Desktop.getDesktop().mail(mailURI)
         } else {
-            toastManager.setToast(
-                Toast(
-                    messageType = MessageType.Error,
-                    "${copywriter.getText("official_email")} $email",
-                ),
+            notificationManager.addNotification(
+                message = "${copywriter.getText("cant_open_email_client")} $email",
+                messageType = MessageType.Error,
             )
         }
     }
@@ -67,11 +63,9 @@ class DesktopUISupport(
                 desktop.browse(path.toFile().toURI())
             }
         } else {
-            toastManager.setToast(
-                Toast(
-                    messageType = MessageType.Error,
-                    copywriter.getText("failed_to_open_Html_pasteboard"),
-                ),
+            notificationManager.addNotification(
+                message = copywriter.getText("failed_to_open_Html_pasteboard"),
+                messageType = MessageType.Error,
             )
         }
     }
@@ -85,20 +79,15 @@ class DesktopUISupport(
                 if (currentPlatform().isWindows() && openFileInExplorer(filePath.toFile())) {
                     return
                 }
-
-                toastManager.setToast(
-                    Toast(
-                        messageType = MessageType.Error,
-                        copywriter.getText("failed_to_browse_File_pasteboard"),
-                    ),
+                notificationManager.addNotification(
+                    message = copywriter.getText("failed_to_browse_File_pasteboard"),
+                    messageType = MessageType.Error,
                 )
             }
         } else {
-            toastManager.setToast(
-                Toast(
-                    messageType = MessageType.Error,
-                    copywriter.getText("file_not_found"),
-                ),
+            notificationManager.addNotification(
+                message = copywriter.getText("file_not_found"),
+                messageType = MessageType.Error,
             )
         }
     }
@@ -120,19 +109,15 @@ class DesktopUISupport(
             if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
                 Desktop.getDesktop().open(imagePath.toFile())
             } else {
-                toastManager.setToast(
-                    Toast(
-                        messageType = MessageType.Error,
-                        copywriter.getText("failed_to_open_Image_pasteboard"),
-                    ),
+                notificationManager.addNotification(
+                    message = copywriter.getText("failed_to_open_Image_pasteboard"),
+                    messageType = MessageType.Error,
                 )
             }
         } else {
-            toastManager.setToast(
-                Toast(
-                    messageType = MessageType.Error,
-                    copywriter.getText("file_not_found"),
-                ),
+            notificationManager.addNotification(
+                message = copywriter.getText("file_not_found"),
+                messageType = MessageType.Error,
             )
         }
     }
@@ -146,11 +131,9 @@ class DesktopUISupport(
                 Desktop.getDesktop().open(path.toFile())
             }
         } else {
-            toastManager.setToast(
-                Toast(
-                    messageType = MessageType.Error,
-                    copywriter.getText("failed_to_open_Text_pasteboard"),
-                ),
+            notificationManager.addNotification(
+                message = copywriter.getText("failed_to_open_Text_pasteboard"),
+                messageType = MessageType.Error,
             )
         }
     }

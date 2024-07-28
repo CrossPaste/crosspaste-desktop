@@ -3,13 +3,12 @@ package com.crosspaste.config
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.presist.OneFilePersist
 import com.crosspaste.ui.base.MessageType
-import com.crosspaste.ui.base.Toast
-import com.crosspaste.ui.base.ToastManager
+import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.utils.getDeviceUtils
 
 class DefaultConfigManager(
     private val configFilePersist: OneFilePersist,
-    private val toastManager: ToastManager,
+    private val notificationManager: NotificationManager,
     private val lazyCopywriter: Lazy<GlobalCopywriter>,
 ) : ConfigManager {
     override val deviceUtils = getDeviceUtils()
@@ -35,11 +34,9 @@ class DefaultConfigManager(
         try {
             saveConfig(key, value, config)
         } catch (e: Exception) {
-            toastManager.setToast(
-                Toast(
-                    message = lazyCopywriter.value.getText("failed_to_save_config"),
-                    messageType = MessageType.Error,
-                ),
+            notificationManager.addNotification(
+                message = lazyCopywriter.value.getText("failed_to_save_config"),
+                messageType = MessageType.Error,
             )
             config = oldConfig
         }

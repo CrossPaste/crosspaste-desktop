@@ -4,8 +4,7 @@ import com.crosspaste.app.AppLaunchState
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.listener.GlobalListener
 import com.crosspaste.ui.base.MessageType
-import com.crosspaste.ui.base.Toast
-import com.crosspaste.ui.base.ToastManager
+import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.utils.getSystemProperty
 import com.github.kwhat.jnativehook.GlobalScreen
 import com.github.kwhat.jnativehook.NativeHookException
@@ -20,7 +19,7 @@ class DesktopGlobalListener(
     private val appLaunchState: AppLaunchState,
     private val shortcutKeysListener: NativeKeyListener,
     private val mouseListener: NativeMouseListener,
-    private val toastManager: ToastManager,
+    private val notificationManager: NotificationManager,
     private val copywriter: GlobalCopywriter,
 ) : GlobalListener {
 
@@ -44,13 +43,11 @@ class DesktopGlobalListener(
                 if (e.code == DARWIN_AXAPI_DISABLED) {
                     grantAccessibilityPermissions()
                 } else {
-                    toastManager.setToast(
-                        Toast(
-                            messageType = MessageType.Error,
-                            message =
-                                "${copywriter.getText("failed_to_register_keyboard_listener")}. " +
-                                    "${copywriter.getText("error_Code")} ${e.code}",
-                        ),
+                    notificationManager.addNotification(
+                        message =
+                            "${copywriter.getText("failed_to_register_keyboard_listener")}. " +
+                                "${copywriter.getText("error_Code")} ${e.code}",
+                        messageType = MessageType.Error,
                     )
                 }
                 logger.error(e) { "There was a problem registering the native hook" }
