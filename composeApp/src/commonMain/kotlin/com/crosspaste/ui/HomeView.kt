@@ -4,6 +4,7 @@ import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -42,17 +44,19 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.platform.Font
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.LocalKoinApplication
+import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteSearchService
+import com.crosspaste.ui.base.Fonts.ROBOTO_FONT_FAMILY
 import com.crosspaste.ui.base.PasteTooltipAreaView
+import com.crosspaste.ui.base.menuItemReminderTextStyle
 import com.crosspaste.ui.base.search
 import com.crosspaste.ui.base.settings
 import kotlinx.coroutines.delay
@@ -64,11 +68,6 @@ fun HomeView(currentPageViewContext: MutableState<PageViewContext>) {
     TabsView(currentPageViewContext)
 }
 
-val customFontFamily =
-    FontFamily(
-        Font(resource = "font/BebasNeue.otf", FontWeight.Normal),
-    )
-
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Preview
 @Composable
@@ -76,6 +75,7 @@ fun HomeWindowDecoration() {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val appWindowManager = current.koin.get<AppWindowManager>()
+    val appUpdateService = current.koin.get<AppUpdateService>()
     val pasteSearchService = current.koin.get<PasteSearchService>()
 
     val scope = rememberCoroutineScope()
@@ -117,10 +117,9 @@ fun HomeWindowDecoration() {
                 Column(
                     Modifier.wrapContentWidth()
                         .height(36.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                    horizontalAlignment = Alignment.Start,
                 ) {
                     Text(
-                        modifier = Modifier.align(Alignment.Start),
                         text = "Compile Future",
                         color = MaterialTheme.colors.onBackground,
                         fontSize = 10.sp,
@@ -130,17 +129,40 @@ fun HomeWindowDecoration() {
                                 fontWeight = FontWeight.Light,
                             ),
                     )
-                    Text(
-                        modifier = Modifier.align(Alignment.Start),
-                        text = "CrossPaste",
-                        color = MaterialTheme.colors.onBackground,
-                        fontSize = 25.sp,
-                        style =
-                            TextStyle(
-                                fontFamily = customFontFamily,
-                                fontWeight = FontWeight.Bold,
-                            ),
-                    )
+                    Box {
+                        Text(
+                            text = "CrossPaste",
+                            color = MaterialTheme.colors.onBackground,
+                            fontSize = 23.sp,
+                            style =
+                                TextStyle(
+                                    fontFamily = ROBOTO_FONT_FAMILY,
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                        )
+                        if (appUpdateService.existNewVersion()) {
+                            Row(
+                                modifier =
+                                    Modifier
+                                        .offset(x = 95.dp, y = (-5).dp)
+                                        .width(32.dp)
+                                        .height(16.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(Color.Red)
+                                        .clickable {
+                                            appUpdateService.jumpDownload()
+                                        },
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = "new!",
+                                    color = Color.White,
+                                    style = menuItemReminderTextStyle,
+                                )
+                            }
+                        }
+                    }
                 }
             }
 

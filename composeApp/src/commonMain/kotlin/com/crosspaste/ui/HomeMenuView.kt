@@ -64,7 +64,7 @@ fun HomeMenuView(
                 150.dp,
                 getMenWidth(menuTexts, extendFunction = {
                     if (existNewVersion && it == 0) {
-                        24.dp
+                        42.dp
                     } else {
                         0.dp
                     }
@@ -79,10 +79,6 @@ fun HomeMenuView(
                     .clip(RoundedCornerShape(5.dp))
                     .background(MaterialTheme.colors.surface),
         ) {
-            MenuItem(copywriter.getText("check_for_updates"), reminder = existNewVersion) {
-                appUpdateService.jumpDownload()
-                close()
-            }
             MenuItem(copywriter.getText("settings")) {
                 openMainWindow()
                 currentPage.value = PageViewContext(PageViewType.SETTINGS, currentPage.value)
@@ -91,6 +87,10 @@ fun HomeMenuView(
             MenuItem(copywriter.getText("shortcut_keys")) {
                 openMainWindow()
                 currentPage.value = PageViewContext(PageViewType.SHORTCUT_KEYS, currentPage.value)
+                close()
+            }
+            MenuItem(copywriter.getText("check_for_updates"), reminder = existNewVersion) {
+                appUpdateService.jumpDownload()
                 close()
             }
             MenuItem(copywriter.getText("about")) {
