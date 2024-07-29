@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppInfoFactory
+import com.crosspaste.app.AppUrls
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.Fonts.ROBOTO_FONT_FAMILY
 import com.crosspaste.ui.base.UISupport
@@ -47,6 +48,7 @@ fun AboutContentView() {
     val current = LocalKoinApplication.current
     val appInfoFactory = current.koin.get<AppInfoFactory>()
     val appInfo = current.koin.get<AppInfo>()
+    val appUrls = current.koin.get<AppUrls>()
     val uiSupport = current.koin.get<UISupport>()
 
     Box(
@@ -96,19 +98,19 @@ fun AboutContentView() {
                 Spacer(modifier = Modifier.height(30.dp))
 
                 AboutInfoItem("official_website") {
-                    uiSupport.openUrlInBrowser("https://crosspaste.com")
+                    uiSupport.openCrossPasteWebInBrowser()
                 }
 
                 Divider(modifier = Modifier.padding(horizontal = 80.dp))
 
                 AboutInfoItem("change_log") {
-                    uiSupport.openUrlInBrowser("https://github.com/crosspaste/crosspaste-desktop/blob/main/CHANGELOG.md")
+                    uiSupport.openUrlInBrowser(appUrls.changeLogUrl)
                 }
 
                 Divider(modifier = Modifier.padding(horizontal = 80.dp))
 
                 AboutInfoItem("feedback") {
-                    uiSupport.openUrlInBrowser("https://github.com/crosspaste/crosspaste-desktop/issues")
+                    uiSupport.openUrlInBrowser(appUrls.issueTrackerUrl)
                 }
 
                 Divider(modifier = Modifier.padding(horizontal = 80.dp))

@@ -22,7 +22,13 @@ class GlobalCopywriterImpl(private val configManager: ConfigManager) : GlobalCop
 
         const val EN = "en"
 
-        val languageList = listOf(EN, "es", "jp", "zh")
+        const val ES = "es"
+
+        const val JP = "jp"
+
+        const val ZH = "zh"
+
+        val languageList = listOf(EN, ES, JP, ZH)
 
         val languageMap = ConcurrentHashMap<String, Copywriter>()
     }

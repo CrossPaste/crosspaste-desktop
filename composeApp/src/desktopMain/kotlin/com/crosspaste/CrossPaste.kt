@@ -17,6 +17,7 @@ import com.crosspaste.app.AppRestartService
 import com.crosspaste.app.AppStartUpService
 import com.crosspaste.app.AppTokenService
 import com.crosspaste.app.AppUpdateService
+import com.crosspaste.app.AppUrls
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopAppInfoFactory
 import com.crosspaste.app.DesktopAppLaunch
@@ -24,6 +25,7 @@ import com.crosspaste.app.DesktopAppRestartService
 import com.crosspaste.app.DesktopAppStartUpService
 import com.crosspaste.app.DesktopAppTokenService
 import com.crosspaste.app.DesktopAppUpdateService
+import com.crosspaste.app.DesktopAppUrls
 import com.crosspaste.app.getDesktopAppWindowManager
 import com.crosspaste.clean.CleanPasteScheduler
 import com.crosspaste.clean.DesktopCleanPasteScheduler
@@ -201,10 +203,11 @@ class CrossPaste {
                     single<AppInfoFactory> { DesktopAppInfoFactory(get()) }
                     single<AppInfo> { get<AppInfoFactory>().createAppInfo() }
                     single<AppLock> { DesktopAppLaunch }
+                    single<AppUrls> { DesktopAppUrls }
                     single<AppLaunchState> { DesktopAppLaunch.launch() }
                     single<AppStartUpService> { DesktopAppStartUpService(get()) }
                     single<AppRestartService> { DesktopAppRestartService }
-                    single<AppUpdateService> { DesktopAppUpdateService(get(), get(), get(), get()) }
+                    single<AppUpdateService> { DesktopAppUpdateService(get(), get(), get(), get(), get()) }
                     single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<PasteServer>() }) }
                     single<GlobalCoroutineScope> { GlobalCoroutineScopeImpl }
                     single<SyncInfoFactory> { DesktopSyncInfoFactory(get(), get()) }
@@ -330,7 +333,7 @@ class CrossPaste {
                     single<ToastManager> { DesktopToastManager() }
                     single<NotificationManager> { DesktopNotificationManager(get(), get()) }
                     single<IconStyle> { DesktopIconStyle }
-                    single<UISupport> { DesktopUISupport(get(), get()) }
+                    single<UISupport> { DesktopUISupport(get(), get(), get()) }
                     single<ShortcutKeys> { DesktopShortcutKeys(get(), get()) }
                     single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get()) }
                     single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get(), get()) }

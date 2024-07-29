@@ -7,6 +7,8 @@ interface UISupport {
 
     fun openUrlInBrowser(url: String)
 
+    fun openCrossPasteWebInBrowser(path: String = "")
+
     fun openEmailClient(email: String)
 
     fun openHtml(html: String)
