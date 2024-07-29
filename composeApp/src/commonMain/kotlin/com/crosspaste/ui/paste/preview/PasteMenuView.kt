@@ -55,11 +55,13 @@ import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.MessageType
 import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.PasteTooltipAreaView
+import com.crosspaste.ui.base.TOOLTIP_TEXT_STYLE
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.clipboard
 import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.noFavorite
+import com.crosspaste.ui.devices.measureTextWidth
 import com.crosspaste.ui.favoriteColor
 import com.crosspaste.ui.search.PasteTypeIconView
 import com.crosspaste.utils.ioDispatcher
@@ -145,13 +147,19 @@ fun PasteMenuView(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
+        val menuText = copywriter.getText("menu")
+
         PasteTooltipAreaView(
             Modifier.fillMaxWidth().height(25.dp),
-            text = copywriter.getText("menu"),
-            tooltipPlacement =
+            text = menuText,
+            computeTooltipPlacement = {
+                val textWidth = measureTextWidth(menuText, TOOLTIP_TEXT_STYLE)
                 TooltipPlacement.ComponentRect(
-                    offset = DpOffset((-40).dp, (-20).dp),
-                ),
+                    anchor = Alignment.BottomStart,
+                    alignment = Alignment.BottomEnd,
+                    offset = DpOffset(-textWidth - 16.dp, (-20).dp),
+                )
+            },
         ) {
             Box(
                 modifier =
@@ -195,14 +203,20 @@ fun PasteMenuView(
             }
         }
 
+        val copyText = copywriter.getText("copy")
+
         if (showMenu) {
             PasteTooltipAreaView(
                 Modifier.fillMaxWidth().height(25.dp),
-                text = copywriter.getText("copy"),
-                tooltipPlacement =
+                text = copyText,
+                computeTooltipPlacement = {
+                    val textWidth = measureTextWidth(copyText, TOOLTIP_TEXT_STYLE)
                     TooltipPlacement.ComponentRect(
-                        offset = DpOffset((-40).dp, (-20).dp),
-                    ),
+                        anchor = Alignment.BottomStart,
+                        alignment = Alignment.BottomEnd,
+                        offset = DpOffset(-textWidth - 16.dp, (-20).dp),
+                    )
+                },
             ) {
                 Box(
                     modifier =
@@ -260,13 +274,19 @@ fun PasteMenuView(
                 }
             }
 
+            val favoriteText = copywriter.getText(if (pasteData.favorite) "delete_favorite" else "favorite")
+
             PasteTooltipAreaView(
                 Modifier.fillMaxWidth().height(25.dp),
-                text = copywriter.getText(if (pasteData.favorite) "delete_favorite" else "favorite"),
-                tooltipPlacement =
+                text = favoriteText,
+                computeTooltipPlacement = {
+                    val textWidth = measureTextWidth(favoriteText, TOOLTIP_TEXT_STYLE)
                     TooltipPlacement.ComponentRect(
-                        offset = DpOffset((-40).dp, (-20).dp),
-                    ),
+                        anchor = Alignment.BottomStart,
+                        alignment = Alignment.BottomEnd,
+                        offset = DpOffset(-textWidth - 16.dp, (-20).dp),
+                    )
+                },
             ) {
                 Box(
                     modifier =
@@ -310,13 +330,18 @@ fun PasteMenuView(
                 }
             }
 
+            val sourceAndTypeText = getSourceAndTypeText(copywriter, pasteData)
             PasteTooltipAreaView(
                 Modifier.fillMaxWidth().height(25.dp),
-                text = copywriter.getText(getTypeText(pasteData.pasteType)),
-                tooltipPlacement =
+                text = sourceAndTypeText,
+                computeTooltipPlacement = {
+                    val textWidth = measureTextWidth(sourceAndTypeText, TOOLTIP_TEXT_STYLE)
                     TooltipPlacement.ComponentRect(
-                        offset = DpOffset((-40).dp, (-30).dp),
-                    ),
+                        anchor = Alignment.BottomStart,
+                        alignment = Alignment.BottomEnd,
+                        offset = DpOffset(-textWidth - 16.dp, (-30).dp),
+                    )
+                },
             ) {
                 Box(
                     modifier =
