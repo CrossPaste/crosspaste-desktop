@@ -21,22 +21,29 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+val TOOLTIP_TEXT_STYLE =
+    TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontSize = 12.sp,
+    )
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PasteTooltipAreaView(
     modifier: Modifier = Modifier,
     text: String,
     delayMillis: Int = 500,
-    tooltipPlacement: TooltipPlacement =
+    computeTooltipPlacement: @Composable () -> TooltipPlacement = {
         TooltipPlacement.CursorPoint(
             offset = DpOffset(0.dp, 16.dp),
-        ),
+        )
+    },
     content: @Composable () -> Unit,
 ) {
     TooltipArea(
         modifier = modifier,
         delayMillis = delayMillis,
-        tooltipPlacement = tooltipPlacement,
+        tooltipPlacement = computeTooltipPlacement(),
         tooltip = {
             Box(
                 modifier =
@@ -54,11 +61,7 @@ fun PasteTooltipAreaView(
                     Text(
                         text = text,
                         modifier = Modifier.padding(4.dp),
-                        style =
-                            TextStyle(
-                                fontFamily = FontFamily.SansSerif,
-                                fontSize = 12.sp,
-                            ),
+                        style = TOOLTIP_TEXT_STYLE,
                     )
                 }
             }

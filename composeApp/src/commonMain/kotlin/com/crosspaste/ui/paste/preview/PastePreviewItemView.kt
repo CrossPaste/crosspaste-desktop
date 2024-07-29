@@ -102,15 +102,21 @@ fun PasteSpecificPreviewView(pasteData: PasteData) {
     }
 }
 
-fun getTypeText(pasteType: Int): String {
-    return when (pasteType) {
-        PasteType.TEXT -> "text"
-        PasteType.URL -> "link"
-        PasteType.HTML -> "html"
-        PasteType.IMAGE -> "image"
-        PasteType.FILE -> "file"
-        else -> "unknown"
-    }
+fun getSourceAndTypeText(
+    copywriter: Copywriter,
+    pasteData: PasteData,
+): String {
+    val source = pasteData.source?.let { "$it:" } ?: ""
+    val typeText =
+        when (pasteData.pasteType) {
+            PasteType.TEXT -> "text"
+            PasteType.URL -> "link"
+            PasteType.HTML -> "html"
+            PasteType.IMAGE -> "image"
+            PasteType.FILE -> "file"
+            else -> "unknown"
+        }
+    return "$source${copywriter.getText(typeText)}"
 }
 
 @Composable
