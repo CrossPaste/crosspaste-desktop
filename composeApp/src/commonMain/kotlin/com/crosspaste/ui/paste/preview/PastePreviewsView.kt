@@ -1,5 +1,6 @@
 package com.crosspaste.ui.paste.preview
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollbarStyle
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
@@ -229,7 +230,7 @@ fun EmptyScreenView() {
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun ToTop(toTopAction: () -> Unit) {
     val current = LocalKoinApplication.current

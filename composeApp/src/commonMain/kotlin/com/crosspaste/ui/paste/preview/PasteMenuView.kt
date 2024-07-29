@@ -1,6 +1,7 @@
 package com.crosspaste.ui.paste.preview
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.TooltipPlacement
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,6 +40,7 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
@@ -146,6 +148,10 @@ fun PasteMenuView(
         PasteTooltipAreaView(
             Modifier.fillMaxWidth().height(25.dp),
             text = copywriter.getText("menu"),
+            tooltipPlacement =
+                TooltipPlacement.ComponentRect(
+                    offset = DpOffset((-40).dp, (-20).dp),
+                ),
         ) {
             Box(
                 modifier =
@@ -193,6 +199,10 @@ fun PasteMenuView(
             PasteTooltipAreaView(
                 Modifier.fillMaxWidth().height(25.dp),
                 text = copywriter.getText("copy"),
+                tooltipPlacement =
+                    TooltipPlacement.ComponentRect(
+                        offset = DpOffset((-40).dp, (-20).dp),
+                    ),
             ) {
                 Box(
                     modifier =
@@ -253,6 +263,10 @@ fun PasteMenuView(
             PasteTooltipAreaView(
                 Modifier.fillMaxWidth().height(25.dp),
                 text = copywriter.getText(if (pasteData.favorite) "delete_favorite" else "favorite"),
+                tooltipPlacement =
+                    TooltipPlacement.ComponentRect(
+                        offset = DpOffset((-40).dp, (-20).dp),
+                    ),
             ) {
                 Box(
                     modifier =
@@ -299,6 +313,10 @@ fun PasteMenuView(
             PasteTooltipAreaView(
                 Modifier.fillMaxWidth().height(25.dp),
                 text = copywriter.getText(getTypeText(pasteData.pasteType)),
+                tooltipPlacement =
+                    TooltipPlacement.ComponentRect(
+                        offset = DpOffset((-40).dp, (-30).dp),
+                    ),
             ) {
                 Box(
                     modifier =
@@ -340,7 +358,7 @@ fun PasteMenuView(
             alignment = Alignment.TopEnd,
             offset =
                 IntOffset(
-                    with(density) { ((-30).dp).roundToPx() },
+                    with(density) { ((-40).dp).roundToPx() },
                     with(density) { (5.dp).roundToPx() },
                 ),
             onDismissRequest = {
