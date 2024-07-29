@@ -5,7 +5,6 @@ import com.crosspaste.net.DesktopProxy
 import com.crosspaste.ui.base.MessageType
 import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.UISupport
-import com.crosspaste.utils.DesktopResourceUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.z4kn4fein.semver.Version
 import java.io.ByteArrayInputStream
@@ -20,6 +19,7 @@ import java.util.Properties
 
 class DesktopAppUpdateService(
     appInfo: AppInfo,
+    private val appUrls: AppUrls,
     private val copywriter: GlobalCopywriter,
     private val uiSupport: UISupport,
     private val notificationManager: NotificationManager,
@@ -33,12 +33,6 @@ class DesktopAppUpdateService(
 
     private val desktopProxy = DesktopProxy
 
-    private val appUpdateProperties = DesktopResourceUtils.loadProperties("app-update.properties")
-
-    private val downloadUrl: String? = appUpdateProperties.getProperty("download-page-url")
-
-    private val checkMetadataUrl: String? = appUpdateProperties.getProperty("check-metadata-url")
-
     override fun checkForUpdate() {
         lastVersion = readLastVersion()
     }
@@ -49,9 +43,7 @@ class DesktopAppUpdateService(
 
     override fun jumpDownload() {
         if (existNewVersion()) {
-            downloadUrl?.let {
-                uiSupport.openUrlInBrowser(it)
-            }
+            uiSupport.openCrossPasteWebInBrowser(path = "download")
         } else {
             notificationManager.addNotification(
                 message = copywriter.getText("no_new_version_available"),
@@ -61,8 +53,7 @@ class DesktopAppUpdateService(
     }
 
     private fun readLastVersion(): Version? {
-        checkMetadataUrl ?: return null
-        val httpsUrl = URL(checkMetadataUrl)
+        val httpsUrl = URL(appUrls.checkMetadataUrl)
 
         val uri = httpsUrl.toURI()
 

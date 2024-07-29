@@ -1,8 +1,10 @@
 package com.crosspaste.ui.base
 
+import com.crosspaste.app.AppUrls
 import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.i18n.GlobalCopywriterImpl.Companion.ZH
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
@@ -20,6 +22,7 @@ import java.io.File
 import java.net.URI
 
 class DesktopUISupport(
+    private val appUrls: AppUrls,
     private val notificationManager: NotificationManager,
     private val copywriter: GlobalCopywriter,
 ) : UISupport {
@@ -37,6 +40,15 @@ class DesktopUISupport(
                 messageType = MessageType.Error,
             )
         }
+    }
+
+    override fun openCrossPasteWebInBrowser(path: String) {
+        val webPath =
+            when (val language = copywriter.language()) {
+                ZH -> path
+                else -> "$language/$path"
+            }
+        openUrlInBrowser("${appUrls.homeUrl}/$webPath")
     }
 
     override fun openEmailClient(email: String) {

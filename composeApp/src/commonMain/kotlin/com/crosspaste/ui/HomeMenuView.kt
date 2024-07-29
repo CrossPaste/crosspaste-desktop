@@ -99,7 +99,7 @@ fun HomeMenuView(
                 close()
             }
             MenuItem(copywriter.getText("fqa")) {
-                uiSupport.openUrlInBrowser("https://www.crosspaste.com/FQA")
+                uiSupport.openCrossPasteWebInBrowser(path = "FQA")
                 close()
             }
             Divider()
