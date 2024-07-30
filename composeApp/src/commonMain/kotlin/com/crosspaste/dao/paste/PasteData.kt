@@ -20,7 +20,19 @@ import org.mongodb.kbson.ObjectId
 @Serializable(with = PasteDataSerializer::class)
 class PasteData : RealmObject {
 
-    companion object {}
+    companion object {
+
+        fun createSearchContent(
+            source: String?,
+            pasteItemSearchContent: String?,
+        ): String? {
+            return source?.let {
+                pasteItemSearchContent?.let {
+                    "${source.lowercase()} $pasteItemSearchContent"
+                } ?: source.lowercase()
+            } ?: pasteItemSearchContent
+        }
+    }
 
     @PrimaryKey
     var id: ObjectId = ObjectId()
