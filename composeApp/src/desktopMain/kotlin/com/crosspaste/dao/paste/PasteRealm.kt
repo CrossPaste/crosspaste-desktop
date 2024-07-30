@@ -294,7 +294,11 @@ class PasteRealm(
                     pasteData.pasteAppearItem = pasteAppearItem
                     pasteCollection.pasteItems.addAll(remainingItems.map { RealmAny.create(it as RealmObject) })
                     pasteData.pasteType = firstItem.getPasteType()
-                    pasteData.pasteSearchContent = getSearchContent(firstItem, remainingItems)
+                    pasteData.pasteSearchContent =
+                        PasteData.createSearchContent(
+                            pasteData.source,
+                            getSearchContent(firstItem, remainingItems),
+                        )
                     pasteData.md5 = firstItem.md5
                     pasteData.size = size
                     pasteData.pasteState = PasteState.LOADED

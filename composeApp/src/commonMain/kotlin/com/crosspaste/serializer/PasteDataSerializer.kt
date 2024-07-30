@@ -77,7 +77,11 @@ object PasteDataSerializer : KSerializer<PasteData> {
                 this.pasteCollection = pasteCollection
                 this.pasteType = pasteType
                 this.source = source
-                this.pasteSearchContent = PasteCollection.getPasteItem(pasteAppearContent)?.getSearchContent()
+                this.pasteSearchContent =
+                    PasteData.createSearchContent(
+                        source,
+                        PasteCollection.getPasteItem(pasteAppearContent)?.getSearchContent(),
+                    )
                 this.md5 = md5
                 this.size = size
                 this.createTime = RealmInstant.now()
