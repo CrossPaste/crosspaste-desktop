@@ -4,13 +4,14 @@
 .gradle
 .idea
 .kotlin
+development.properties
 local.properties
 local.conveyor.conf
 package*.json
 !src/**/build/
 build
 buildSrc/build/
-composeApp/.user/
+composeApp/.user*/
 composeApp/DawnCache/
 composeApp/GPUCache/
 composeApp/build/

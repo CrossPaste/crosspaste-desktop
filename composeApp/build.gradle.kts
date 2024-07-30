@@ -143,6 +143,17 @@ dependencies {
     linuxAmd64(compose.desktop.linux_x64)
 }
 
+tasks.register<Copy>("copyDevProperties") {
+    from("src/desktopMain/resources/development.properties.template")
+    into("src/desktopMain/resources")
+    rename { "development.properties" }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.named("desktopProcessResources") {
+    dependsOn("copyDevProperties")
+}
+
 compose.desktop {
 
     val buildFullPlatform: Boolean = System.getenv("BUILD_FULL_PLATFORM")?.lowercase() == "true"
@@ -241,6 +252,12 @@ compose.desktop {
             jvmArgs("-DglobalListener=$globalListener")
             jvmArgs("-Dio.netty.maxDirectMemory=268435456")
             jvmArgs("-DloggerDebugPackages=com.crosspaste.routing,com.crosspaste.net.clientapi,com.crosspaste.net.plugin")
+
+            if (appEnv != "DEVELOPMENT") {
+                tasks.withType<Jar> {
+                    exclude("development.properties**")
+                }
+            }
 
             // Add download info of jbr on all platforms
             val jbrYamlFile = project.projectDir.toPath().resolve("jbr.yaml").toFile()
