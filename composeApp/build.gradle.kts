@@ -147,7 +147,9 @@ tasks.register<Copy>("copyDevProperties") {
     from("src/desktopMain/resources/development.properties.template")
     into("src/desktopMain/resources")
     rename { "development.properties" }
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    onlyIf {
+        !file("src/desktopMain/resources/development.properties").exists()
+    }
 }
 
 tasks.named("desktopProcessResources") {
