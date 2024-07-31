@@ -596,7 +596,7 @@ fun StoreSettingsView() {
                 Counter(defaultValue = cleanupPercentage.toLong(), unit = "%", rule = {
                     it in 10..50
                 }) { currentCleanupPercentage ->
-                    configManager.updateConfig("cleanupPercentage", currentCleanupPercentage)
+                    configManager.updateConfig("cleanupPercentage", currentCleanupPercentage.toInt())
                 }
             }
         }
