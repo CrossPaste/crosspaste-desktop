@@ -1,5 +1,11 @@
 package com.crosspaste.ui
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -36,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
@@ -50,12 +57,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.LocalKoinApplication
+import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteSearchService
 import com.crosspaste.ui.base.Fonts.ROBOTO_FONT_FAMILY
 import com.crosspaste.ui.base.PasteTooltipAreaView
+import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.menuItemReminderTextStyle
 import com.crosspaste.ui.base.search
 import com.crosspaste.ui.base.settings
@@ -74,9 +83,11 @@ fun HomeView(currentPageViewContext: MutableState<PageViewContext>) {
 fun HomeWindowDecoration() {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
+    val appLaunchState = current.koin.get<AppLaunchState>()
     val appWindowManager = current.koin.get<AppWindowManager>()
     val appUpdateService = current.koin.get<AppUpdateService>()
     val pasteSearchService = current.koin.get<PasteSearchService>()
+    val uiSupport = current.koin.get<UISupport>()
 
     val scope = rememberCoroutineScope()
 
@@ -85,6 +96,8 @@ fun HomeWindowDecoration() {
     var hoverSearchIcon by remember { mutableStateOf(false) }
 
     var hoverSettingsIcon by remember { mutableStateOf(false) }
+
+    var showTutorial by remember { mutableStateOf(true) }
 
     val density = LocalDensity.current
 
@@ -173,6 +186,44 @@ fun HomeWindowDecoration() {
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                if (appLaunchState.firstLaunch && showTutorial) {
+                    val infiniteTransition = rememberInfiniteTransition()
+                    val scale by infiniteTransition.animateFloat(
+                        initialValue = 1f,
+                        targetValue = 0.95f,
+                        animationSpec =
+                            infiniteRepeatable(
+                                animation = tween(1000, easing = FastOutSlowInEasing),
+                                repeatMode = RepeatMode.Reverse,
+                            ),
+                    )
+
+                    Row(
+                        modifier =
+                            Modifier
+                                .wrapContentWidth()
+                                .height(20.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(MaterialTheme.colors.primary)
+                                .clickable {
+                                    uiSupport.openCrossPasteWebInBrowser("tutorial/pasteboard")
+                                    showTutorial = false
+                                },
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            modifier =
+                                Modifier.padding(horizontal = 6.dp)
+                                    .scale(scale),
+                            text = copywriter.getText("newbie_tutorial"),
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            style = menuItemReminderTextStyle,
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(5.dp))
                 PasteTooltipAreaView(
                     modifier = Modifier.size(32.dp),
                     text = copywriter.getText("open_search_window"),
