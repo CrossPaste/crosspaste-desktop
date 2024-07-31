@@ -22,6 +22,7 @@ data class AppConfig(
     val blacklist: String = "[]",
     val lastPasteboardChangeCount: Int = -1,
     val enablePasteboardListening: Boolean = true,
+    val showTutorial: Boolean = true,
 ) {
     fun copy(
         key: String,
@@ -45,6 +46,7 @@ data class AppConfig(
             blacklist = if (key == "blacklist") value as String else blacklist,
             lastPasteboardChangeCount = if (key == "lastPasteboardChangeCount") value as Int else lastPasteboardChangeCount,
             enablePasteboardListening = if (key == "enablePasteboardListening") value as Boolean else enablePasteboardListening,
+            showTutorial = if (key == "showTutorial") value as Boolean else showTutorial,
         )
     }
 }

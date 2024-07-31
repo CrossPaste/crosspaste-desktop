@@ -60,6 +60,7 @@ import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.AppWindowManager
+import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteSearchService
 import com.crosspaste.ui.base.Fonts.ROBOTO_FONT_FAMILY
@@ -87,6 +88,7 @@ fun HomeWindowDecoration() {
     val appWindowManager = current.koin.get<AppWindowManager>()
     val appUpdateService = current.koin.get<AppUpdateService>()
     val pasteSearchService = current.koin.get<PasteSearchService>()
+    val configManager = current.koin.get<ConfigManager>()
     val uiSupport = current.koin.get<UISupport>()
 
     val scope = rememberCoroutineScope()
@@ -97,7 +99,7 @@ fun HomeWindowDecoration() {
 
     var hoverSettingsIcon by remember { mutableStateOf(false) }
 
-    var showTutorial by remember { mutableStateOf(true) }
+    var showTutorial by remember { mutableStateOf(configManager.config.showTutorial) }
 
     val density = LocalDensity.current
 
@@ -207,7 +209,8 @@ fun HomeWindowDecoration() {
                                 .background(MaterialTheme.colors.primary)
                                 .clickable {
                                     uiSupport.openCrossPasteWebInBrowser("tutorial/pasteboard")
-                                    showTutorial = false
+                                    configManager.updateConfig("showTutorial", false)
+                                    showTutorial = configManager.config.showTutorial
                                 },
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically,
