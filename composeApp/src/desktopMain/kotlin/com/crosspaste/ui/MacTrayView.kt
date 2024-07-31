@@ -1,7 +1,7 @@
 package com.crosspaste.ui
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,7 +26,7 @@ import com.crosspaste.utils.contains
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch
 import org.koin.core.KoinApplication
-import java.awt.Frame
+import java.awt.Color
 import java.awt.GraphicsEnvironment
 import java.awt.Insets
 import java.awt.MenuItem
@@ -52,12 +52,15 @@ fun MacTray() {
     val trayIcon = painterResource("icon/crosspaste.tray.mac.png")
 
     var menu by remember { mutableStateOf(createPopupMenu(current, pageViewContext, applicationExit)) }
-    val frame by remember { mutableStateOf(createFrame()) }
+    val frame by remember { mutableStateOf(TransparentFrame()) }
 
-    LaunchedEffect(copywriter.language()) {
+    DisposableEffect(copywriter.language()) {
         frame.removeAll()
         menu = createPopupMenu(current, pageViewContext, applicationExit)
         frame.add(menu)
+        onDispose {
+            frame.dispose()
+        }
     }
 
     CrossPasteTray(
@@ -149,14 +152,6 @@ fun createMenuItem(
     return menuItem
 }
 
-fun createFrame(): Frame {
-    val frame = JFrame()
-    frame.isUndecorated = true
-    frame.isVisible = true
-    frame.setResizable(false)
-    return frame
-}
-
 class MacTrayMouseClicked(
     private val appWindowManager: AppWindowManager,
     private val mouseClickedAction: (MouseEvent, Rectangle, Insets) -> Unit,
@@ -194,5 +189,14 @@ class MacTrayMouseClicked(
         } else {
             (iNum + 1) * 32.dp - (width / 2)
         }
+    }
+}
+
+class TransparentFrame : JFrame() {
+    init {
+        isUndecorated = true
+        background = Color(0, 0, 0, 0)
+        isVisible = true
+        setResizable(false)
     }
 }
