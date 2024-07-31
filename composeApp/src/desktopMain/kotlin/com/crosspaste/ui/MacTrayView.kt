@@ -81,6 +81,7 @@ fun MacTray() {
                         }
                     }
                     val stepWidth = with(density) { 48.dp.roundToPx() }
+                    frame.isVisible = true
                     menu.show(frame, event.x - stepWidth, rectangle.y + 5)
                 }
             },
