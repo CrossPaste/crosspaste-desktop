@@ -103,6 +103,12 @@ fun AboutContentView() {
 
                 Divider(modifier = Modifier.padding(horizontal = 80.dp))
 
+                AboutInfoItem("newbie_tutorial") {
+                    uiSupport.openCrossPasteWebInBrowser("tutorial/pasteboard")
+                }
+
+                Divider(modifier = Modifier.padding(horizontal = 80.dp))
+
                 AboutInfoItem("change_log") {
                     uiSupport.openUrlInBrowser(appUrls.changeLogUrl)
                 }
