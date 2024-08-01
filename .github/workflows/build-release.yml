@@ -166,14 +166,6 @@ jobs:
           echo "${{ secrets.DEVELOPER_ID_APPLICATION }}" | base64 --decode > developerID_application.p12
           echo "${{ secrets.AUTH_KEY }}" | base64 --decode > AuthKey.p8
 
-      - name: Publish Microsoft Store
-        uses: hydraulic-software/conveyor/actions/build@v14.3
-        with:
-          command: make ms-store-release --output-dir=./output-ms-store
-          extra_flags: -f build.conveyor.conf
-          signing_key: ${{ secrets.SIGNING_KEY }}
-          agree_to_license: 1
-
       - name: Conveyor build
         uses: hydraulic-software/conveyor/actions/build@v14.3
         with:
