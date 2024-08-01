@@ -209,4 +209,6 @@ jobs:
       # delete output directory to free up space, Github Action only has 14G space,
       # to avoid the failure of insufficient space in the subsequent post recycling steps
       - name: Delete output directory
-        run: rm -rf output
+        run: |
+          rm -rf output
+          rm -rf output-ms-store
