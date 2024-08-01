@@ -2,7 +2,7 @@ name: "Build Microsoft Store Release"
 
 on:
   push:
-    tags:
+    branches:
       - 'ms*'
 
 jobs:
