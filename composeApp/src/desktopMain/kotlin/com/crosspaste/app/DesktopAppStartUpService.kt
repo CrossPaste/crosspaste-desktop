@@ -10,7 +10,10 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
-class DesktopAppStartUpService(configManager: ConfigManager) : AppStartUpService {
+class DesktopAppStartUpService(
+    appLaunchState: AppLaunchState,
+    configManager: ConfigManager,
+) : AppStartUpService {
 
     private val currentPlatform = currentPlatform()
 
@@ -18,7 +21,7 @@ class DesktopAppStartUpService(configManager: ConfigManager) : AppStartUpService
         if (currentPlatform.isMacos()) {
             MacAppStartUpService(configManager)
         } else if (currentPlatform.isWindows()) {
-            WindowsAppStartUpService(configManager)
+            WindowsAppStartUpService(appLaunchState, configManager)
         } else if (currentPlatform.isLinux()) {
             LinuxAppStartUpService(configManager)
         } else {
@@ -111,14 +114,33 @@ class MacAppStartUpService(private val configManager: ConfigManager) : AppStartU
     }
 }
 
-class WindowsAppStartUpService(private val configManager: ConfigManager) : AppStartUpService {
+class WindowsAppStartUpService(
+    appLaunchState: AppLaunchState,
+    private val configManager: ConfigManager,
+) : AppStartUpService {
+
+    companion object {
+        const val PFN = "ShenzhenCompileFutureTech.CrossPaste_gphsk9mrjnczc"
+    }
 
     private val logger: KLogger = KotlinLogging.logger {}
+
+    private val isMicrosoftStore = appLaunchState.installFrom == MICROSOFT_STORE
 
     private val appExePath =
         DesktopPathProvider.pasteAppPath
             .resolve("bin")
-            .resolve("crosspaste.exe")
+            .resolve("CrossPaste.exe")
+
+    private val microsoftStartup = "explorer.exe shell:appsFolder\\$PFN!App"
+
+    private fun getRegValue(): String {
+        return if (isMicrosoftStore) {
+            microsoftStartup
+        } else {
+            appExePath.toString()
+        }
+    }
 
     override fun followConfig() {
         if (configManager.config.enableAutoStartUp) {
@@ -136,8 +158,8 @@ class WindowsAppStartUpService(private val configManager: ConfigManager) : AppSt
             var line: String?
             while (reader.readLine().also { line = it } != null) {
                 if (line!!.contains("REG_SZ")) {
-                    val registryPath = line!!.substringAfter("REG_SZ").trim()
-                    if (registryPath.equals(appExePath.toString(), ignoreCase = true)) {
+                    val registryValue = line!!.substringAfter("REG_SZ").trim()
+                    if (registryValue.equals(getRegValue(), ignoreCase = true)) {
                         logger.info { "$AppName is set to start on boot with the correct path." }
                         return true
                     } else {
@@ -158,7 +180,7 @@ class WindowsAppStartUpService(private val configManager: ConfigManager) : AppSt
             if (!isAutoStartUp()) {
                 val command = (
                     "reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v " +
-                        "\"$AppName\" /d \"$appExePath\" /f"
+                        "\"$AppName\" /d \"${getRegValue()}\" /f"
                 )
                 val process = Runtime.getRuntime().exec(command)
                 process.waitFor()
