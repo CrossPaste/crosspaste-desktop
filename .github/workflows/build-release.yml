@@ -174,6 +174,12 @@ jobs:
           signing_key: ${{ secrets.SIGNING_KEY }}
           agree_to_license: 1
 
+      - name: CheckSum
+        run: |
+          rm -f icon.svg download.html
+          shasum -a 256 * > checksum.txt
+        working-directory: ./output
+
       - name: Upload release app
         id: upload_release_app
         uses: JohnGuan/oss-upload-action@main
