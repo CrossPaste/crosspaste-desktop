@@ -205,7 +205,7 @@ class CrossPaste {
                     single<AppLock> { DesktopAppLaunch }
                     single<AppUrls> { DesktopAppUrls }
                     single<AppLaunchState> { DesktopAppLaunch.launch() }
-                    single<AppStartUpService> { DesktopAppStartUpService(get()) }
+                    single<AppStartUpService> { DesktopAppStartUpService(get(), get()) }
                     single<AppRestartService> { DesktopAppRestartService }
                     single<AppUpdateService> { DesktopAppUpdateService(get(), get(), get(), get(), get()) }
                     single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<PasteServer>() }) }
