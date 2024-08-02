@@ -132,7 +132,7 @@ class WindowsAppStartUpService(
             .resolve("bin")
             .resolve("CrossPaste.exe")
 
-    private val microsoftStartup = "explorer.exe shell:appsFolder\\$PFN!App"
+    private val microsoftStartup = "explorer.exe shell:appsFolder\\$PFN!$AppName"
 
     private fun getRegValue(): String {
         return if (isMicrosoftStore) {
