@@ -4,7 +4,12 @@
    <h4>在任何设备上粘贴，一切自然而然。</h4>
 </div>
 
-简体中文 / [English](./README.md)
+**简体中文** / [**English**](./README.md)
+
+[![Main CI Test](https://github.com/CrossPaste/crosspaste-desktop/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/CrossPaste/crosspaste-desktop/actions/workflows/ci.yml)
+[![Build Release](https://github.com/CrossPaste/crosspaste-desktop/actions/workflows/build-release.yml/badge.svg)](https://github.com/CrossPaste/crosspaste-desktop/actions/workflows/build-release.yml)
+![Dependabot](https://img.shields.io/badge/Dependabot-enabled-brightgreen.svg)
+[![AGPL-3.0](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://github.com/CrossPaste/crosspaste-desktop/blob/main/LICENSE)
 
 ## ✨ 特性
 

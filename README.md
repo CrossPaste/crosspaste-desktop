@@ -4,7 +4,12 @@
    <h4>Copy anything and paste it on any device, seamlessly.</h4>
 </div>
 
-English / [简体中文](./README.zh-CN.md)
+**English** / [**简体中文**](./README.zh-CN.md)
+
+[![Main CI Test](https://github.com/CrossPaste/crosspaste-desktop/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/CrossPaste/crosspaste-desktop/actions/workflows/ci.yml)
+[![Build Release](https://github.com/CrossPaste/crosspaste-desktop/actions/workflows/build-release.yml/badge.svg)](https://github.com/CrossPaste/crosspaste-desktop/actions/workflows/build-release.yml)
+![Dependabot](https://img.shields.io/badge/Dependabot-enabled-brightgreen.svg)
+[![AGPL-3.0](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://github.com/CrossPaste/crosspaste-desktop/blob/main/LICENSE)
 
 ## ✨ Features
 
