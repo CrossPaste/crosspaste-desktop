@@ -13,12 +13,12 @@
 
 ## ✨ Features
 
-- **🖥️ Multi-OS Support**: Seamless operation across Mac, Windows, and Linux — for a truly universal pasteboard.
-- **🔄 Real-Time Sync**: Automatically syncs your pasteboard in real time across devices, even between different OS like Mac and Windows.
-- **🔒 End-to-End Encryption**: Utilizes Signal’s end-to-end encryption protocol to keep your data secure and private.
-- **📋 Rich pasteboard Types**: Supports a wide variety of pasteboard content including text, URLs, rich text, HTML, images, and files.
-- **🧹 Automatic Cleanup**: Features various automatic cleanup options to efficiently manage pasteboard space without manual effort.
-- **🔌 Software Compatibility**: Supports pasteboard formats of mainstream software, such as Microsoft Office, Apple iWork, and LibreOffice.
+- **🔄 Real-time Sharing**: Instantly share pasteboard content across devices, seamlessly.
+- **🖥️ Unified Cross-platform**: Consistent interface on Mac, Windows, and Linux. No need to change habits.
+- **📋 Rich Type Support**: Easily handle various pasteboard types: Text、URL、HTML RTF、Images and Files.
+- **🔒 End-to-End Encryption**: Using Signal protocol to fully protect your data security and privacy.
+- **🔌 Wide Compatibility**: Support paste formats from major software like Office, iWork, and LibreOffice.
+- **🧹 Smart Space Management**: Auto-cleanup options manage pasteboard storage without manual effort.
 
 ## 🏗 Getting Started with Development
 
