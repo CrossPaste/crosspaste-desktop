@@ -189,21 +189,25 @@ compose.desktop {
                             else -> "darwin-x86-64"
                         }
 
-                    val libMacosApiFile =
+                    val inputFile =
+                        layout.projectDirectory.file("src/desktopMain/swift/MacosApi.swift").asFile
+
+                    val outputFile =
                         layout.buildDirectory.file("classes/kotlin/desktop/main/$archDir/libMacosApi.dylib")
                             .get().asFile
 
                     commandLine(
                         "swiftc",
                         "-emit-library",
-                        "src/desktopMain/swift/MacosApi.swift",
+                        inputFile.absolutePath,
                         "-target",
                         targetArch,
                         "-o",
-                        libMacosApiFile.absolutePath,
+                        outputFile.absolutePath,
                     )
 
-                    outputs.file(libMacosApiFile)
+                    inputs.file(inputFile)
+                    outputs.file(outputFile)
                 }
 
                 tasks.named("desktopJar") {
