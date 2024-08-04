@@ -1,6 +1,7 @@
 package com.crosspaste.app
 
 data class AppLaunchState(
+    val pid: Long,
     val acquireLock: Boolean,
     val firstLaunch: Boolean,
     var accessibilityPermissions: Boolean,
