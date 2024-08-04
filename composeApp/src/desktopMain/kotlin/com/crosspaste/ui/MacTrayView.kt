@@ -7,32 +7,27 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.times
 import androidx.compose.ui.window.WindowPosition
 import com.crosspaste.LocalExitApplication
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.LocalPageViewContent
+import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.os.macos.api.MacosApi
+import com.crosspaste.os.macos.api.WindowInfo
 import com.crosspaste.ui.base.DesktopNotificationManager
 import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
-import com.crosspaste.utils.contains
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch
 import org.koin.core.KoinApplication
 import java.awt.Color
-import java.awt.GraphicsEnvironment
-import java.awt.Insets
 import java.awt.MenuItem
 import java.awt.PopupMenu
-import java.awt.Rectangle
-import java.awt.Toolkit
 import java.awt.event.InputEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -43,11 +38,11 @@ fun MacTray() {
     val current = LocalKoinApplication.current
     val pageViewContext = LocalPageViewContent.current
     val applicationExit = LocalExitApplication.current
-    val density = LocalDensity.current
 
     val appWindowManager = current.koin.get<AppWindowManager>()
     val notificationManager = current.koin.get<NotificationManager>() as DesktopNotificationManager
     val copywriter = current.koin.get<GlobalCopywriter>()
+    val appLaunchState = current.koin.get<AppLaunchState>()
 
     val trayIcon = painterResource("icon/crosspaste.tray.mac.png")
 
@@ -68,7 +63,7 @@ fun MacTray() {
         state = remember { notificationManager.trayState },
         tooltip = "CrossPaste",
         mouseListener =
-            MacTrayMouseClicked(appWindowManager) { event, rectangle, _ ->
+            MacTrayMouseClicked(appWindowManager, appLaunchState) { event, windowInfo ->
                 val isCtrlDown = (event.modifiersEx and InputEvent.CTRL_DOWN_MASK) != 0
                 if (event.button == MouseEvent.BUTTON1 && !isCtrlDown) {
                     mainCoroutineDispatcher.launch(CoroutineName("Switch CrossPaste")) {
@@ -80,9 +75,9 @@ fun MacTray() {
                             appWindowManager.unActiveMainWindow()
                         }
                     }
-                    val stepWidth = with(density) { 48.dp.roundToPx() }
+                    frame.setLocation(windowInfo.x.toInt(), (windowInfo.y + windowInfo.height + 6).toInt())
                     frame.isVisible = true
-                    menu.show(frame, event.x - stepWidth, rectangle.y + 5)
+                    menu.show(frame, 0, 0)
                 }
             },
     )
@@ -155,40 +150,20 @@ fun createMenuItem(
 
 class MacTrayMouseClicked(
     private val appWindowManager: AppWindowManager,
-    private val mouseClickedAction: (MouseEvent, Rectangle, Insets) -> Unit,
+    private val appLaunchState: AppLaunchState,
+    private val mouseClickedAction: (MouseEvent, WindowInfo) -> Unit,
 ) : MouseAdapter() {
 
     override fun mouseClicked(e: MouseEvent) {
-        val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
-        val bounds = ge.defaultScreenDevice.defaultConfiguration.bounds
-        val scDevices = ge.screenDevices
+        val windowInfos = MacosApi.getTrayWindowInfos(appLaunchState.pid)
 
-        val clickedDevice =
-            scDevices.firstOrNull { device ->
-                device.contains(e.point, bounds.x, bounds.y)
-            }
-
-        val gd = clickedDevice ?: ge.defaultScreenDevice
-        val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
-        mouseClickedAction(e, gd.defaultConfiguration.bounds, insets)
-
-        appWindowManager.mainWindowState.position =
-            WindowPosition.Absolute(
-                x = calculatePosition(e.x.dp, appWindowManager.mainWindowState.size.width),
-                y = (clickedDevice?.defaultConfiguration?.bounds?.y?.dp ?: 0.dp) + 30.dp,
-            )
-    }
-
-    private fun calculatePosition(
-        x: Dp,
-        width: Dp,
-    ): Dp {
-        val fNum = x / 32.dp
-        val iNum = fNum.toInt()
-        return if (fNum - iNum < 0.5f) {
-            iNum * 32.dp - (width / 2)
-        } else {
-            (iNum + 1) * 32.dp - (width / 2)
+        windowInfos.first { it.contains(e.xOnScreen, e.yOnScreen) }.let {
+            mouseClickedAction(e, it)
+            appWindowManager.mainWindowState.position =
+                WindowPosition.Absolute(
+                    x = it.x.dp + (it.width.dp / 2) - (appWindowManager.mainWindowState.size.width / 2),
+                    y = it.y.dp + 30.dp,
+                )
         }
     }
 }

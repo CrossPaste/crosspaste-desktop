@@ -55,9 +55,10 @@ object DesktopAppLaunch : AppLaunch, AppLock {
     override fun launch(): AppLaunchState {
         val pair = acquireLock()
         val platform = currentPlatform()
+        val pid = ProcessHandle.current().pid()
         if (platform.isMacos()) {
             val accessibilityPermissions = MacosApi.INSTANCE.checkAccessibilityPermissions()
-            return AppLaunchState(pair.first, pair.second, accessibilityPermissions, null)
+            return AppLaunchState(pid, pair.first, pair.second, accessibilityPermissions, null)
         } else if (platform.isWindows()) {
             val installFrom =
                 if (isInstalledFromMicrosoftStore()) {
@@ -65,9 +66,9 @@ object DesktopAppLaunch : AppLaunch, AppLock {
                 } else {
                     null
                 }
-            return AppLaunchState(pair.first, pair.second, true, installFrom)
+            return AppLaunchState(pid, pair.first, pair.second, true, installFrom)
         } else {
-            return AppLaunchState(pair.first, pair.second, true, null)
+            return AppLaunchState(pid, pair.first, pair.second, true, null)
         }
     }
 }

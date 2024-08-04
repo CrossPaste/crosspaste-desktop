@@ -151,6 +151,69 @@ public func getCurrentActiveApp() -> UnsafePointer<CChar>? {
     return nil
 }
 
+public struct WindowInfo {
+   var x: Float
+   var y: Float
+   var width: Float
+   var height: Float
+   var displayID: UInt32
+}
+
+public struct WindowInfoArray {
+    var count: Int32
+    var windowInfos: UnsafeMutableRawPointer
+}
+
+@_cdecl("getTrayWindowInfos")
+public func getTrayWindowInfos(pid: Int) -> UnsafeMutableRawPointer? {
+    var trayWindows: [WindowInfo] = []
+    let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
+    if let windowInfo = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] {
+       for info in windowInfo {
+           if let bounds = info[kCGWindowBounds as String] as? [String: Any],
+              let layer = info[kCGWindowLayer as String] as? Int,
+              layer == 25,  // Menu bar/status item layer
+              let ownerPID = info[kCGWindowOwnerPID as String] as? Int,
+              ownerPID == pid,
+              let x = bounds["X"] as? CGFloat,
+              let y = bounds["Y"] as? CGFloat,
+              let width = bounds["Width"] as? CGFloat,
+              let height = bounds["Height"] as? CGFloat,
+              width < 50 && height < 50 {
+                  var displayID = CGMainDisplayID()  // Default to main display
+                  for screen in NSScreen.screens {
+                      if let screenNumber = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber,
+                         screen.frame.contains(CGPoint(x: x, y: y)) {
+                          displayID = screenNumber.uint32Value
+                          break
+                      }
+                  }
+                  let windowInfo = WindowInfo(
+                      x: Float(x),
+                      y: Float(y),
+                      width: Float(width),
+                      height: Float(height),
+                      displayID: displayID
+                  )
+                  trayWindows.append(windowInfo)
+           }
+       }
+    }
+    let arrayPtr = UnsafeMutablePointer<WindowInfoArray>.allocate(capacity: 1)
+    // Allocate memory for the array of WindowInfo structs
+    let count = trayWindows.count
+    let bufferPtr = UnsafeMutableBufferPointer<WindowInfo>.allocate(capacity: count)
+
+    // Copy the WindowInfo structs into the allocated memory
+    for (index, window) in trayWindows.enumerated() {
+        bufferPtr[index] = window
+    }
+
+    arrayPtr.pointee = WindowInfoArray(count: Int32(count), windowInfos: UnsafeMutableRawPointer(bufferPtr.baseAddress!))
+
+    return UnsafeMutableRawPointer(arrayPtr)
+}
+
 @_cdecl("saveAppIcon")
 public func saveAppIcon(bundleIdentifier: UnsafePointer<CChar>, path: UnsafePointer<CChar>) {
     let bundleIdentifierString = String(cString: bundleIdentifier)
