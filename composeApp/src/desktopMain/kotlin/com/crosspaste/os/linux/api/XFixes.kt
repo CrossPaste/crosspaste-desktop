@@ -64,4 +64,8 @@ class XFixesSelectionNotifyEvent(p: Pointer) : Structure(p) {
     @JvmField var timestamp: NativeLong? = null
 
     @JvmField var selectionTimestamp: NativeLong? = null
+
+    init {
+        read()
+    }
 }

@@ -10,7 +10,6 @@ import com.crosspaste.utils.DesktopControlUtils.ensureMinExecutionTime
 import com.crosspaste.utils.DesktopControlUtils.exponentialBackoffUntilValid
 import com.crosspaste.utils.cpuDispatcher
 import com.sun.jna.NativeLong
-import com.sun.jna.Structure
 import com.sun.jna.platform.unix.X11
 import com.sun.jna.platform.unix.X11.XA_PRIMARY
 import com.sun.jna.ptr.IntByReference
@@ -99,15 +98,10 @@ class LinuxPasteboardService(
                             x11.XNextEvent(display, event)
 
                             if (event.type == (eventBaseReturn + XFixes.XFixesSelectionNotify)) {
-                                val selectionNotify: XFixesSelectionNotifyEvent =
-                                    Structure.newInstance(
-                                        XFixesSelectionNotifyEvent::class.java,
-                                        event.getPointer(),
-                                    )
-                                selectionNotify.read()
+                                val selectionNotify = XFixesSelectionNotifyEvent(event.pointer)
 
                                 // Ignore selected events and keep copy events
-                                if (selectionNotify.selection?.toLong() == 0x145L) {
+                                if (selectionNotify.selection?.toLong() == clipboardAtom.toLong()) {
                                     logger.info { "notify change event" }
                                     changeCount++
 
@@ -134,6 +128,7 @@ class LinuxPasteboardService(
                                         }
                                     }
                                 }
+                                selectionNotify.clear()
                             }
                         } catch (e: Exception) {
                             logger.error(e) { "Failed to consume transferable" }
