@@ -17,7 +17,7 @@ interface MacosApi : Library {
     fun getPassword(
         service: String,
         account: String,
-    ): String?
+    ): Pointer?
 
     fun setPassword(
         service: String,
@@ -36,11 +36,11 @@ interface MacosApi : Library {
         account: String,
     ): Boolean
 
-    fun getComputerName(): String?
+    fun getComputerName(): Pointer?
 
-    fun getHardwareUUID(): String?
+    fun getHardwareUUID(): Pointer?
 
-    fun getCurrentActiveApp(): String?
+    fun getCurrentActiveApp(): Pointer?
 
     fun getTrayWindowInfos(pid: Long): Pointer?
 
@@ -58,7 +58,7 @@ interface MacosApi : Library {
         count: Int,
     )
 
-    fun bringToFront(windowTitle: String): String
+    fun bringToFront(windowTitle: String): Pointer
 
     fun simulatePasteCommand(
         array: Pointer,
@@ -75,26 +75,19 @@ interface MacosApi : Library {
     companion object {
         val INSTANCE: MacosApi = Native.load("MacosApi", MacosApi::class.java)
 
-        fun getTrayWindowInfos(pid: Long): List<WindowInfo> {
-            return INSTANCE.getTrayWindowInfos(pid)?.let {
-                val windowInfoArray = WindowInfoArray(it)
-                windowInfoArray.read()
-
-                val count = windowInfoArray.count
-                val windowInfos = windowInfoArray.windowInfos!!
-
-                (0 until count).map { i ->
-                    val windowInfo = WindowInfo(windowInfos.share((i * WindowInfo().size()).toLong()))
-                    windowInfo.read()
-                    windowInfo
-                }
-            } ?: emptyList()
+        fun getString(ptr: Pointer?): String? {
+            val pointer = ptr ?: return null
+            try {
+                return pointer.getString(0)
+            } finally {
+                Native.free(Pointer.nativeValue(pointer))
+            }
         }
     }
 }
 
 @Structure.FieldOrder("x", "y", "width", "height", "displayID")
-class WindowInfo : Structure {
+class WindowInfo : Structure, AutoCloseable {
     @JvmField var x: Float = 0f
 
     @JvmField var y: Float = 0f
@@ -120,6 +113,10 @@ class WindowInfo : Structure {
 
     override fun toString(): String {
         return "WindowInfo(x=$x, y=$y, width=$width, height=$height, displayID=$displayID)"
+    }
+
+    override fun close() {
+        clear()
     }
 }
 

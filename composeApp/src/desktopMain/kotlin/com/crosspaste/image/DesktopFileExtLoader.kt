@@ -2,7 +2,7 @@ package com.crosspaste.image
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.os.linux.FreedesktopUtils.saveExtIcon
-import com.crosspaste.os.macos.api.MacosApi
+import com.crosspaste.os.macos.MacAppUtils
 import com.crosspaste.os.windows.JIconExtract
 import com.crosspaste.path.DesktopPathProvider
 import com.crosspaste.path.PathProvider
@@ -70,7 +70,7 @@ private fun macSaveExtIcon(
     key: String,
     savePath: Path,
 ) {
-    MacosApi.INSTANCE.saveIconByExt(key, savePath.toString())
+    MacAppUtils.saveIconByExt(key, savePath.toString())
 }
 
 private fun windowsSaveExtIcon(

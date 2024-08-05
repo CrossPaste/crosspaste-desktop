@@ -1,11 +1,10 @@
 package com.crosspaste.app
 
 import com.crosspaste.listen.ActiveGraphicsDevice
-import com.crosspaste.listener.KeyboardKey
 import com.crosspaste.listener.ShortcutKeys
-import com.crosspaste.os.macos.api.MacosApi
+import com.crosspaste.os.macos.MacAppUtils
+import com.crosspaste.os.macos.MacPasteUtils
 import com.crosspaste.utils.getSystemProperty
-import com.sun.jna.Memory
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -26,7 +25,7 @@ class MacAppWindowManager(
 
     override fun getCurrentActiveAppName(): String? {
         return try {
-            return MacosApi.INSTANCE.getCurrentActiveApp()?.let {
+            return MacAppUtils.getCurrentActiveApp()?.let {
                 createMacAppInfo(info = it)?.let { macAppInfo ->
                     ioScope.launch {
                         saveImagePathByApp(macAppInfo.bundleIdentifier, macAppInfo.localizedName)
@@ -57,14 +56,14 @@ class MacAppWindowManager(
     ) {
         val appImagePath = pathProvider.resolve("$localizedName.png", AppFileType.ICON)
         if (!appImagePath.toFile().exists()) {
-            MacosApi.INSTANCE.saveAppIcon(bundleIdentifier, appImagePath.toString())
+            MacAppUtils.saveAppIcon(bundleIdentifier, appImagePath.toString())
         }
     }
 
     override suspend fun activeMainWindow() {
         logger.info { "active main window" }
         showMainWindow = true
-        MacosApi.INSTANCE.bringToFront(MAIN_WINDOW_TITLE).let {
+        MacAppUtils.bringToFront(MAIN_WINDOW_TITLE).let {
             createMacAppInfo(it)?.let { macAppInfo ->
                 if (macAppInfo.bundleIdentifier != crosspasteBundleID) {
                     prevMacAppInfo = macAppInfo
@@ -78,7 +77,7 @@ class MacAppWindowManager(
 
     override suspend fun unActiveMainWindow() {
         logger.info { "unActive main window" }
-        MacosApi.INSTANCE.mainToBack(
+        MacAppUtils.mainToBack(
             prevMacAppInfo?.bundleIdentifier ?: "",
         )
         showMainWindow = false
@@ -94,7 +93,7 @@ class MacAppWindowManager(
             searchWindowState.position = calPosition(graphicsDevice.defaultConfiguration.bounds)
         }
 
-        MacosApi.INSTANCE.bringToFront(SEARCH_WINDOW_TITLE).let {
+        MacAppUtils.bringToFront(SEARCH_WINDOW_TITLE).let {
             createMacAppInfo(it)?.let { macAppInfo ->
                 if (macAppInfo.bundleIdentifier != crosspasteBundleID) {
                     prevMacAppInfo = macAppInfo
@@ -111,7 +110,7 @@ class MacAppWindowManager(
         logger.info { "unActive search window" }
         val toPaste = preparePaste()
         val pair = macPasteUtils.getPasteMemory()
-        MacosApi.INSTANCE.searchToBack(
+        MacAppUtils.searchToBack(
             prevMacAppInfo?.bundleIdentifier ?: "",
             toPaste = toPaste,
             pair.first,
@@ -122,8 +121,7 @@ class MacAppWindowManager(
     }
 
     override suspend fun toPaste() {
-        val pair = macPasteUtils.getPasteMemory()
-        MacosApi.INSTANCE.simulatePasteCommand(pair.first, pair.second)
+        macPasteUtils.simulatePasteCommand()
     }
 }
 
@@ -131,34 +129,5 @@ private data class MacAppInfo(val bundleIdentifier: String, val localizedName: S
 
     override fun toString(): String {
         return "MacAppInfo(bundleIdentifier='$bundleIdentifier', localizedName='$localizedName')"
-    }
-}
-
-private class MacPasteUtils(private val shortcutKeys: ShortcutKeys) {
-
-    private var memory: Memory? = null
-
-    private var keys: List<KeyboardKey>? = null
-
-    @Synchronized
-    fun getPasteMemory(): Pair<Memory, Int> {
-        val currentKeys = shortcutKeys.shortcutKeysCore.keys["paste"] ?: emptyList()
-        if (memory == null || this.keys != currentKeys) {
-            this.keys = currentKeys
-            memory = createMemory(currentKeys)
-        }
-        return Pair(memory!!, currentKeys.size)
-    }
-
-    private fun createMemory(keys: List<KeyboardKey>): Memory {
-        val memorySize = keys.size * Int.SIZE_BYTES
-        val newMemory = Memory(memorySize.toLong())
-
-        keys.map { it.rawCode }.toIntArray().let { keyCodes ->
-            keyCodes.forEachIndexed { index, value ->
-                newMemory.setInt((index * Int.SIZE_BYTES).toLong(), value)
-            }
-        }
-        return newMemory
     }
 }

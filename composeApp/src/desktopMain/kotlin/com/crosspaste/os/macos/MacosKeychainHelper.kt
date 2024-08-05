@@ -1,6 +1,7 @@
 package com.crosspaste.os.macos
 
 import com.crosspaste.os.macos.api.MacosApi
+import com.crosspaste.os.macos.api.MacosApi.Companion.getString
 
 object MacosKeychainHelper {
 
@@ -8,7 +9,7 @@ object MacosKeychainHelper {
         service: String,
         account: String,
     ): String? {
-        return MacosApi.INSTANCE.getPassword(service, account)
+        return getString(MacosApi.INSTANCE.getPassword(service, account))
     }
 
     fun setPassword(
