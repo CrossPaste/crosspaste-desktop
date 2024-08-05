@@ -16,7 +16,8 @@ import com.crosspaste.LocalPageViewContent
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.os.macos.api.MacosApi
+import com.crosspaste.os.macos.MacAppUtils
+import com.crosspaste.os.macos.MacAppUtils.useAll
 import com.crosspaste.os.macos.api.WindowInfo
 import com.crosspaste.ui.base.DesktopNotificationManager
 import com.crosspaste.ui.base.NotificationManager
@@ -155,15 +156,16 @@ class MacTrayMouseClicked(
 ) : MouseAdapter() {
 
     override fun mouseClicked(e: MouseEvent) {
-        val windowInfos = MacosApi.getTrayWindowInfos(appLaunchState.pid)
-
-        windowInfos.first { it.contains(e.xOnScreen, e.yOnScreen) }.let {
-            mouseClickedAction(e, it)
-            appWindowManager.mainWindowState.position =
-                WindowPosition.Absolute(
-                    x = it.x.dp + (it.width.dp / 2) - (appWindowManager.mainWindowState.size.width / 2),
-                    y = it.y.dp + 30.dp,
-                )
+        val windowInfos = MacAppUtils.getTrayWindowInfos(appLaunchState.pid)
+        windowInfos.useAll {
+            windowInfos.first { it.contains(e.xOnScreen, e.yOnScreen) }.let {
+                mouseClickedAction(e, it)
+                appWindowManager.mainWindowState.position =
+                    WindowPosition.Absolute(
+                        x = it.x.dp + (it.width.dp / 2) - (appWindowManager.mainWindowState.size.width / 2),
+                        y = it.y.dp + 30.dp,
+                    )
+            }
         }
     }
 }

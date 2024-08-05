@@ -1,6 +1,6 @@
 package com.crosspaste.app
 
-import com.crosspaste.os.macos.api.MacosApi
+import com.crosspaste.os.macos.MacAppUtils
 import com.crosspaste.os.windows.api.User32.Companion.isInstalledFromMicrosoftStore
 import com.crosspaste.path.DesktopPathProvider
 import com.crosspaste.platform.currentPlatform
@@ -57,7 +57,7 @@ object DesktopAppLaunch : AppLaunch, AppLock {
         val platform = currentPlatform()
         val pid = ProcessHandle.current().pid()
         if (platform.isMacos()) {
-            val accessibilityPermissions = MacosApi.INSTANCE.checkAccessibilityPermissions()
+            val accessibilityPermissions = MacAppUtils.checkAccessibilityPermissions()
             return AppLaunchState(pid, pair.first, pair.second, accessibilityPermissions, null)
         } else if (platform.isWindows()) {
             val installFrom =

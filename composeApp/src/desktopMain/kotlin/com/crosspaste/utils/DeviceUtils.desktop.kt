@@ -1,6 +1,6 @@
 package com.crosspaste.utils
 
-import com.crosspaste.os.macos.api.MacosApi
+import com.crosspaste.os.macos.MacDeviceUtils
 import com.crosspaste.platform.currentPlatform
 import java.io.BufferedReader
 import java.io.File
@@ -50,7 +50,7 @@ object WindowsDeviceUtils : DeviceUtils {
 object MacosDeviceUtils : DeviceUtils {
 
     override fun createAppInstanceId(): String {
-        return MacosApi.INSTANCE.getHardwareUUID() ?: UUID.randomUUID().toString()
+        return MacDeviceUtils.getHardwareUUID() ?: UUID.randomUUID().toString()
     }
 }
 

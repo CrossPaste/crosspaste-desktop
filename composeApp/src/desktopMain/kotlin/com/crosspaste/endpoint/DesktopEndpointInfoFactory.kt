@@ -2,7 +2,7 @@ package com.crosspaste.endpoint
 
 import com.crosspaste.dao.sync.HostInfo
 import com.crosspaste.net.PasteServer
-import com.crosspaste.os.macos.api.MacosApi
+import com.crosspaste.os.macos.MacDeviceUtils
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.currentPlatform
 import com.crosspaste.utils.DesktopNetUtils
@@ -33,8 +33,8 @@ private fun getMacEndpointInfo(
     platform: Platform,
     hostInfoFilter: (HostInfo) -> Boolean,
 ): EndpointInfo {
-    val deviceName = MacosApi.INSTANCE.getComputerName() ?: "Unknown"
-    val deviceId = MacosApi.INSTANCE.getHardwareUUID() ?: "Unknown"
+    val deviceName = MacDeviceUtils.getComputerName() ?: "Unknown"
+    val deviceId = MacDeviceUtils.getHardwareUUID() ?: "Unknown"
     return EndpointInfo(
         deviceId = deviceId,
         deviceName = deviceName,
