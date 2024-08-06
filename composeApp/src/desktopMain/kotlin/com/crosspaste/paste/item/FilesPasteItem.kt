@@ -9,9 +9,11 @@ import com.crosspaste.presist.DesktopOneFilePersist
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.serializer.PathStringRealmListSerializer
 import com.crosspaste.serializer.StringRealmListSerializer
+import com.crosspaste.utils.DesktopFileUtils.createPasteRelativePath
 import com.crosspaste.utils.DesktopJsonUtils
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
+import io.realm.kotlin.ext.toRealmList
 import io.realm.kotlin.types.RealmList
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.Index
@@ -84,6 +86,26 @@ class FilesPasteItem : RealmObject, PasteItem, PasteFiles {
         return getFilePaths().flatMap { path ->
             val fileInfoTree = fileInfoTreeMap[path.name]!!
             fileInfoTree.getPasteFileList(path)
+        }
+    }
+
+    // use to adapt relative paths when relative is no storage in crossPaste
+    override fun adaptRelativePaths(
+        appInstanceId: String,
+        pasteId: Long,
+    ) {
+        val noStorageInCrossPaste = relativePathList.any { it.toPath().segments.size == 1 }
+        if (noStorageInCrossPaste) {
+            relativePathList =
+                relativePathList.map { relativePath ->
+                    val path = relativePath.toPath()
+                    val fileName = path.name
+                    createPasteRelativePath(
+                        appInstanceId = appInstanceId,
+                        pasteId = pasteId,
+                        fileName = fileName,
+                    )
+                }.toRealmList()
         }
     }
 

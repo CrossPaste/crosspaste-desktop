@@ -19,4 +19,9 @@ interface PasteFiles {
     fun getFileInfoTreeMap(): Map<String, FileInfoTree>
 
     fun getPasteFiles(): List<PasteFile>
+
+    fun adaptRelativePaths(
+        appInstanceId: String,
+        pasteId: Long,
+    )
 }
