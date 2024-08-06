@@ -19,6 +19,7 @@ import com.crosspaste.utils.DesktopFileUtils.copyPath
 import com.crosspaste.utils.DesktopFileUtils.createPasteRelativePath
 import com.crosspaste.utils.DesktopJsonUtils
 import com.crosspaste.utils.getCodecsUtils
+import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.noOptionParent
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
@@ -40,6 +41,8 @@ class FilesTypePlugin(
 
         private val codecsUtils = getCodecsUtils()
     }
+
+    private val fileUtils = getFileUtils()
 
     override fun getPasteType(): Int {
         return PasteType.FILE
@@ -86,7 +89,7 @@ class FilesTypePlugin(
 
             val sumFileSize = files.sumOf { it.length() }
 
-            val copySizeExceeding = configManager.config.backupFileMaxSize * 1024 * 1024 < sumFileSize
+            val copySizeExceeding = fileUtils.bytesSize(configManager.config.maxBackupFileSize) < sumFileSize
 
             val copyFromCrossPaste =
                 files.any {

@@ -37,7 +37,7 @@ object DesktopFileUtils : FileUtils {
         java.nio.file.Files.createTempDirectory("crosspaste")
             .toOkioPath()
 
-    private val units = arrayOf("B", "KB", "MB", "GB", "TB")
+    private val units = arrayOf(B, KB, MB, GB, TB)
     private val decimalFormat = DecimalFormat("###0.#")
 
     init {
@@ -53,6 +53,19 @@ object DesktopFileUtils : FileUtils {
             unitIndex++
         }
         return "${decimalFormat.format(value)} ${units[unitIndex]}"
+    }
+
+    override fun bytesSize(
+        size: Long,
+        unit: String,
+    ): Long {
+        return when (unit) {
+            KB -> size * 1024
+            MB -> size * 1024 * 1024
+            GB -> size * 1024 * 1024 * 1024
+            TB -> size * 1024 * 1024 * 1024 * 1024
+            else -> size
+        }
     }
 
     override fun createRandomFileName(ext: String): String {

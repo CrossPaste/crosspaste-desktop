@@ -9,6 +9,12 @@ import okio.Path
 
 expect fun getFileUtils(): FileUtils
 
+const val B = "B"
+const val KB = "KB"
+const val MB = "MB"
+const val GB = "GB"
+const val TB = "TB"
+
 interface FileUtils {
 
     val dateUtils: DateUtils
@@ -18,6 +24,11 @@ interface FileUtils {
     val tempDirectory: Path
 
     fun formatBytes(bytesSize: Long): String
+
+    fun bytesSize(
+        size: Long,
+        unit: String = MB,
+    ): Long
 
     fun createRandomFileName(ext: String): String
 
