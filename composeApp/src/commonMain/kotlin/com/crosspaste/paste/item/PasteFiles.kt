@@ -8,6 +8,8 @@ interface PasteFiles {
 
     var count: Long
 
+    var basePath: String?
+
     fun getAppFileType(): AppFileType
 
     fun getRelativePaths(): List<String>

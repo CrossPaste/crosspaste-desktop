@@ -9,6 +9,7 @@ import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.FilesIndexBuilder
 import com.crosspaste.utils.FileUtils
 import okio.Path
+import okio.Path.Companion.toPath
 
 interface PathProvider {
     fun resolve(
@@ -64,20 +65,23 @@ interface PathProvider {
         isPull: Boolean,
         filesIndexBuilder: FilesIndexBuilder? = null,
     ) {
-        val basePath = resolve(appFileType = pasteFiles.getAppFileType())
-        val pasteIdPath =
-            basePath.resolve(appInstanceId)
-                .resolve(dateString)
-                .resolve(pasteId.toString())
+        val basePath =
+            pasteFiles.basePath?.toPath() ?: run {
+                resolve(appFileType = pasteFiles.getAppFileType())
+                    .resolve(appInstanceId)
+                    .resolve(dateString)
+                    .resolve(pasteId.toString())
+            }
+
         if (isPull) {
-            autoCreateDir(pasteIdPath)
+            autoCreateDir(basePath)
         }
 
         val fileInfoTreeMap = pasteFiles.getFileInfoTreeMap()
 
         for (filePath in pasteFiles.getFilePaths()) {
             fileInfoTreeMap[filePath.name]?.let {
-                resolveFileInfoTree(pasteIdPath, filePath.name, it, isPull, filesIndexBuilder)
+                resolveFileInfoTree(basePath, filePath.name, it, isPull, filesIndexBuilder)
             }
         }
     }

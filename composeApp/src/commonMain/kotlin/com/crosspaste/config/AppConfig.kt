@@ -16,13 +16,14 @@ data class AppConfig(
     val imageCleanTimeIndex: Int = 6,
     val fileCleanTimeIndex: Int = 6,
     val isThresholdCleanup: Boolean = true,
-    val maxStorage: Long = 2048,
+    val maxStorage: Long = 2048, // MB
     val cleanupPercentage: Int = 20,
     val isAllowDiscovery: Boolean = true,
     val blacklist: String = "[]",
     val lastPasteboardChangeCount: Int = -1,
     val enablePasteboardListening: Boolean = true,
     val showTutorial: Boolean = true,
+    val backupFileMaxSize: Long = 32, // MB
 ) {
     fun copy(
         key: String,
@@ -47,6 +48,7 @@ data class AppConfig(
             lastPasteboardChangeCount = if (key == "lastPasteboardChangeCount") value as Int else lastPasteboardChangeCount,
             enablePasteboardListening = if (key == "enablePasteboardListening") value as Boolean else enablePasteboardListening,
             showTutorial = if (key == "showTutorial") value as Boolean else showTutorial,
+            backupFileMaxSize = if (key == "backupFileMaxSize") value as Long else backupFileMaxSize,
         )
     }
 }

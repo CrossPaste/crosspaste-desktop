@@ -47,6 +47,8 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
 
     override var count: Long = 0L
 
+    override var basePath: String? = null
+
     override var size: Long = 0L
 
     override var md5: String = ""
@@ -108,8 +110,11 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
         clearResource: Boolean,
     ) {
         if (clearResource) {
-            for (path in getFilePaths()) {
-                DesktopOneFilePersist(path).delete()
+            // Non-reference types need to clean up copied files
+            if (basePath == null) {
+                for (path in getFilePaths()) {
+                    DesktopOneFilePersist(path).delete()
+                }
             }
         }
         realm.delete(this)
