@@ -232,7 +232,7 @@ class CrossPaste {
                     single<RealmManager> { RealmManagerImpl.createRealmManager(get()) }
                     single<SignalDao> { SignalRealm(get<RealmManager>().realm) }
                     single<SyncRuntimeInfoDao> { SyncRuntimeInfoRealm(get<RealmManager>().realm) }
-                    single<PasteDao> { PasteRealm(get<RealmManager>().realm, get(), lazy { get() }) }
+                    single<PasteDao> { PasteRealm(get<RealmManager>().realm, get(), get(), lazy { get() }) }
                     single<PasteTaskDao> { PasteTaskRealm(get<RealmManager>().realm) }
 
                     // net component
