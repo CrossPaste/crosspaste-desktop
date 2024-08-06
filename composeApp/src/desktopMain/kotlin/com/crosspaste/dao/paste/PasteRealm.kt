@@ -1,6 +1,7 @@
 package com.crosspaste.dao.paste
 
 import com.crosspaste.app.AppFileType
+import com.crosspaste.config.ConfigManager
 import com.crosspaste.dao.task.TaskType
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
@@ -15,6 +16,7 @@ import com.crosspaste.utils.LoggerExtension.logExecutionTime
 import com.crosspaste.utils.LoggerExtension.logSuspendExecutionTime
 import com.crosspaste.utils.TaskUtils.createTask
 import com.crosspaste.utils.getDateUtils
+import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.Realm
@@ -32,12 +34,15 @@ import org.mongodb.kbson.ObjectId
 class PasteRealm(
     private val realm: Realm,
     private val pathProvider: PathProvider,
+    private val configManager: ConfigManager,
     private val lazyTaskExecutor: Lazy<TaskExecutor>,
 ) : PasteDao {
 
     val logger = KotlinLogging.logger {}
 
     private val dateUtils = getDateUtils()
+
+    private val fileUtils = getFileUtils()
 
     private val taskExecutor by lazy { lazyTaskExecutor.value }
 
@@ -307,7 +312,11 @@ class PasteRealm(
                     if (pasteData.pasteType == PasteType.HTML) {
                         tasks.add(copyToRealm(createTask(pasteData.id, TaskType.HTML_TO_IMAGE_TASK)).taskId)
                     }
-                    tasks.add(copyToRealm(createTask(pasteData.id, TaskType.SYNC_PASTE_TASK, SyncExtraInfo())).taskId)
+                    if (!configManager.config.enabledSyncFileSizeLimit ||
+                        fileUtils.bytesSize(configManager.config.maxSyncFileSize) > size
+                    ) {
+                        tasks.add(copyToRealm(createTask(pasteData.id, TaskType.SYNC_PASTE_TASK, SyncExtraInfo())).taskId)
+                    }
                     tasks.addAll(markDeleteSameMd5(pasteData.id, pasteData.md5))
                     return@write tasks
                 }

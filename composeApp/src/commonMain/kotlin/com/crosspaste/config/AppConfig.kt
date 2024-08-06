@@ -25,7 +25,9 @@ data class AppConfig(
     val enablePasteboardListening: Boolean = true,
     val showTutorial: Boolean = true,
     // MB
-    val backupFileMaxSize: Long = 32,
+    val maxBackupFileSize: Long = 32,
+    val enabledSyncFileSizeLimit: Boolean = true,
+    val maxSyncFileSize: Long = 512,
 ) {
     fun copy(
         key: String,
@@ -50,7 +52,9 @@ data class AppConfig(
             lastPasteboardChangeCount = if (key == "lastPasteboardChangeCount") value as Int else lastPasteboardChangeCount,
             enablePasteboardListening = if (key == "enablePasteboardListening") value as Boolean else enablePasteboardListening,
             showTutorial = if (key == "showTutorial") value as Boolean else showTutorial,
-            backupFileMaxSize = if (key == "backupFileMaxSize") value as Long else backupFileMaxSize,
+            maxBackupFileSize = if (key == "maxBackupFileSize") value as Long else maxBackupFileSize,
+            enabledSyncFileSizeLimit = if (key == "enabledSyncFileSizeLimit") value as Boolean else enabledSyncFileSizeLimit,
+            maxSyncFileSize = if (key == "maxSyncFileSize") value as Long else maxSyncFileSize,
         )
     }
 }
