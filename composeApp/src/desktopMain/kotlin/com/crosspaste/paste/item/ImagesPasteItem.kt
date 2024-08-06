@@ -38,7 +38,7 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
     var identifiers: RealmList<String> = realmListOf()
 
     @Serializable(with = PathStringRealmListSerializer::class)
-    var relativePathList: RealmList<String> = realmListOf()
+    override var relativePathList: RealmList<String> = realmListOf()
 
     var fileInfoTree: String = ""
 
@@ -61,10 +61,6 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
 
     override fun getAppFileType(): AppFileType {
         return AppFileType.IMAGE
-    }
-
-    override fun getRelativePaths(): List<String> {
-        return relativePathList
     }
 
     override fun getFilePaths(): List<Path> {
