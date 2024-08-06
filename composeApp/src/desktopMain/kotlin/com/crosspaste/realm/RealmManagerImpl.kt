@@ -65,7 +65,7 @@ class RealmManagerImpl private constructor(private val config: RealmConfiguratio
                 RealmConfiguration.Builder(DTO_TYPES + SIGNAL_TYPES + PASTE_TYPES + TASK_TYPES)
                     .directory(path.toString())
                     .name("crosspaste.realm")
-                    .schemaVersion(1)
+                    .schemaVersion(2)
 
             if (!AppEnv.CURRENT.isProduction()) {
                 builder.deleteRealmIfMigrationNeeded()

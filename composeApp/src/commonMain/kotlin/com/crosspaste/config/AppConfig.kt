@@ -16,14 +16,16 @@ data class AppConfig(
     val imageCleanTimeIndex: Int = 6,
     val fileCleanTimeIndex: Int = 6,
     val isThresholdCleanup: Boolean = true,
-    val maxStorage: Long = 2048, // MB
+    // MB
+    val maxStorage: Long = 2048,
     val cleanupPercentage: Int = 20,
     val isAllowDiscovery: Boolean = true,
     val blacklist: String = "[]",
     val lastPasteboardChangeCount: Int = -1,
     val enablePasteboardListening: Boolean = true,
     val showTutorial: Boolean = true,
-    val backupFileMaxSize: Long = 32, // MB
+    // MB
+    val backupFileMaxSize: Long = 32,
 ) {
     fun copy(
         key: String,
