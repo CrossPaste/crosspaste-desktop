@@ -20,9 +20,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import okio.Path
+import okio.Path.Companion.toPath
 import org.mongodb.kbson.BsonObjectId
 import org.mongodb.kbson.ObjectId
-import java.nio.file.Paths
 
 @Serializable
 @SerialName("files")
@@ -38,7 +38,7 @@ class FilesPasteItem : RealmObject, PasteItem, PasteFiles {
     var identifiers: RealmList<String> = realmListOf()
 
     @Serializable(with = PathStringRealmListSerializer::class)
-    var relativePathList: RealmList<String> = realmListOf()
+    override var relativePathList: RealmList<String> = realmListOf()
 
     var fileInfoTree: String = ""
 
@@ -46,6 +46,9 @@ class FilesPasteItem : RealmObject, PasteItem, PasteFiles {
     override var favorite: Boolean = false
 
     override var count: Long = 0L
+
+    @Transient
+    override var basePath: String? = null
 
     override var size: Long = 0L
 
@@ -61,12 +64,8 @@ class FilesPasteItem : RealmObject, PasteItem, PasteFiles {
         return AppFileType.FILE
     }
 
-    override fun getRelativePaths(): List<String> {
-        return relativePathList
-    }
-
     override fun getFilePaths(): List<Path> {
-        val basePath = DesktopPathProvider.resolve(appFileType = getAppFileType())
+        val basePath = basePath?.toPath() ?: DesktopPathProvider.resolve(appFileType = getAppFileType())
         return relativePathList.map { relativePath ->
             DesktopPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
         }
@@ -94,7 +93,7 @@ class FilesPasteItem : RealmObject, PasteItem, PasteFiles {
 
     override fun getSearchContent(): String {
         return relativePathList.joinToString(separator = " ") { path ->
-            Paths.get(path).fileName.toString().lowercase()
+            path.toPath().name.lowercase()
         }
     }
 
@@ -108,8 +107,11 @@ class FilesPasteItem : RealmObject, PasteItem, PasteFiles {
         clearResource: Boolean,
     ) {
         if (clearResource) {
-            for (path in getFilePaths()) {
-                DesktopOneFilePersist(path).delete()
+            // Non-reference types need to clean up copied files
+            if (basePath == null) {
+                for (path in getFilePaths()) {
+                    DesktopOneFilePersist(path).delete()
+                }
             }
         }
         realm.delete(this)

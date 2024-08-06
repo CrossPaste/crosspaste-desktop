@@ -114,6 +114,17 @@ class PasteData : RealmObject {
         return getPasteAppearItems().any { it is PasteFiles }
     }
 
+    fun adaptRelativePaths(
+        appInstanceId: String,
+        pasteId: Long,
+    ) {
+        for (pasteAppearItem in this.getPasteAppearItems()) {
+            if (pasteAppearItem is PasteFiles) {
+                pasteAppearItem.adaptRelativePaths(appInstanceId, pasteId)
+            }
+        }
+    }
+
     fun updatePasteState(pasteState: Int) {
         this.pasteState = pasteState
         for (pasteAppearItem in this.getPasteAppearItems()) {

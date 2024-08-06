@@ -38,7 +38,7 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
     var identifiers: RealmList<String> = realmListOf()
 
     @Serializable(with = PathStringRealmListSerializer::class)
-    var relativePathList: RealmList<String> = realmListOf()
+    override var relativePathList: RealmList<String> = realmListOf()
 
     var fileInfoTree: String = ""
 
@@ -46,6 +46,8 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
     override var favorite: Boolean = false
 
     override var count: Long = 0L
+
+    override var basePath: String? = null
 
     override var size: Long = 0L
 
@@ -59,10 +61,6 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
 
     override fun getAppFileType(): AppFileType {
         return AppFileType.IMAGE
-    }
-
-    override fun getRelativePaths(): List<String> {
-        return relativePathList
     }
 
     override fun getFilePaths(): List<Path> {
@@ -108,8 +106,11 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
         clearResource: Boolean,
     ) {
         if (clearResource) {
-            for (path in getFilePaths()) {
-                DesktopOneFilePersist(path).delete()
+            // Non-reference types need to clean up copied files
+            if (basePath == null) {
+                for (path in getFilePaths()) {
+                    DesktopOneFilePersist(path).delete()
+                }
             }
         }
         realm.delete(this)

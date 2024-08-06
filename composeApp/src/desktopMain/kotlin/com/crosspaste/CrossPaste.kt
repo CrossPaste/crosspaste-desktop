@@ -260,7 +260,7 @@ class CrossPaste {
                     single<SignalClientDecryptPlugin> { SignalClientDecryptPlugin(get()) }
 
                     // paste component
-                    single<FilesTypePlugin> { FilesTypePlugin(get()) }
+                    single<FilesTypePlugin> { FilesTypePlugin(get(), get()) }
                     single<HtmlTypePlugin> { HtmlTypePlugin(get()) }
                     single<ImageTypePlugin> { ImageTypePlugin(get()) }
                     single<TextTypePlugin> { TextTypePlugin() }

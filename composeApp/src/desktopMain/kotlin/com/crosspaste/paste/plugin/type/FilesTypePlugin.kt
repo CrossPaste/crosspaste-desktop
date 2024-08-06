@@ -2,6 +2,7 @@ package com.crosspaste.paste.plugin.type
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
+import com.crosspaste.config.ConfigManager
 import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.paste.PasteCollector
@@ -18,6 +19,7 @@ import com.crosspaste.utils.DesktopFileUtils.copyPath
 import com.crosspaste.utils.DesktopFileUtils.createPasteRelativePath
 import com.crosspaste.utils.DesktopJsonUtils
 import com.crosspaste.utils.getCodecsUtils
+import com.crosspaste.utils.noOptionParent
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.ext.toRealmList
@@ -27,7 +29,10 @@ import java.awt.datatransfer.DataFlavor
 import java.io.ByteArrayInputStream
 import java.io.File
 
-class FilesTypePlugin(private val appInfo: AppInfo) : PasteTypePlugin {
+class FilesTypePlugin(
+    private val appInfo: AppInfo,
+    private val configManager: ConfigManager,
+) : PasteTypePlugin {
 
     companion object FilesTypePlugin {
 
@@ -69,32 +74,58 @@ class FilesTypePlugin(private val appInfo: AppInfo) : PasteTypePlugin {
     ) {
         if (transferData is List<*>) {
             val files = transferData.filterIsInstance<File>()
+
+            if (files.isEmpty()) {
+                return
+            }
+
+            val parentPath = files[0].toOkioPath().noOptionParent
+
             val fileInfoTrees = mutableMapOf<String, FileInfoTree>()
             val relativePathList = mutableListOf<String>()
 
-            for (file in files) {
-                val path = file.toOkioPath(normalize = true)
+            val sumFileSize = files.sumOf { it.length() }
 
-                if (path.toString().startsWith(
-                        DesktopPathProvider.pasteUserPath.toString(),
-                    )
-                ) {
-                    continue
+            val copySizeExceeding = configManager.config.backupFileMaxSize * 1024 * 1024 < sumFileSize
+
+            val copyFromCrossPaste =
+                files.any {
+                    it.startsWith(DesktopPathProvider.pasteUserPath.toFile())
                 }
 
+            // If the file size exceeds the limit
+            // or the file is copied from the cross-paste directory
+            // the file will not be copied
+            // Instead, record the file path
+            val useRefCopyFiles = copySizeExceeding || copyFromCrossPaste
+
+            for (file in files) {
+                val path = file.toOkioPath(normalize = true)
                 val fileName = file.name
-                val relativePath =
-                    createPasteRelativePath(
-                        appInstanceId = appInfo.appInstanceId,
-                        pasteId = pasteId,
-                        fileName = fileName,
-                    )
-                relativePathList.add(relativePath)
-                val filePath = DesktopFileUtils.createPastePath(relativePath, isFile = true, AppFileType.FILE)
-                if (copyPath(path, filePath)) {
-                    fileInfoTrees[file.name] = DesktopFileUtils.getFileInfoTree(filePath)
+
+                if (useRefCopyFiles) {
+                    val relativePath = path.name
+                    relativePathList.add(relativePath)
+                    fileInfoTrees[file.name] = DesktopFileUtils.getFileInfoTree(path)
                 } else {
-                    throw IllegalStateException("Failed to copy file")
+                    val relativePath =
+                        createPasteRelativePath(
+                            appInstanceId = appInfo.appInstanceId,
+                            pasteId = pasteId,
+                            fileName = fileName,
+                        )
+                    relativePathList.add(relativePath)
+                    val filePath =
+                        DesktopFileUtils.createPastePath(
+                            relativePath,
+                            isFile = true,
+                            AppFileType.FILE,
+                        )
+                    if (copyPath(path, filePath)) {
+                        fileInfoTrees[file.name] = DesktopFileUtils.getFileInfoTree(filePath)
+                    } else {
+                        throw IllegalStateException("Failed to copy file")
+                    }
                 }
             }
 
@@ -109,14 +140,12 @@ class FilesTypePlugin(private val appInfo: AppInfo) : PasteTypePlugin {
                     this.relativePathList = relativePathRealmList
                     this.fileInfoTree = fileInfoTreeJsonString
                     this.count = count
+                    this.basePath = if (useRefCopyFiles) parentPath.toString() else null
                     this.size = size
                     this.md5 = md5
                 }
             }
-
-            if (files.isNotEmpty()) {
-                pasteCollector.updateCollectItem(itemIndex, this::class, update)
-            }
+            pasteCollector.updateCollectItem(itemIndex, this::class, update)
         }
     }
 

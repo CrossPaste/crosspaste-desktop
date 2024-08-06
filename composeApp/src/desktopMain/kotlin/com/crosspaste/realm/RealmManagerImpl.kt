@@ -1,6 +1,5 @@
 package com.crosspaste.realm
 
-import com.crosspaste.app.AppEnv
 import com.crosspaste.app.AppFileType
 import com.crosspaste.dao.paste.PasteCollection
 import com.crosspaste.dao.paste.PasteData
@@ -65,11 +64,7 @@ class RealmManagerImpl private constructor(private val config: RealmConfiguratio
                 RealmConfiguration.Builder(DTO_TYPES + SIGNAL_TYPES + PASTE_TYPES + TASK_TYPES)
                     .directory(path.toString())
                     .name("crosspaste.realm")
-                    .schemaVersion(1)
-
-            if (!AppEnv.CURRENT.isProduction()) {
-                builder.deleteRealmIfMigrationNeeded()
-            }
+                    .schemaVersion(2)
 
             return RealmManagerImpl(builder.build())
         }
