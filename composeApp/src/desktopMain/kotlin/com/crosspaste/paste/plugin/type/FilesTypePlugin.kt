@@ -11,7 +11,7 @@ import com.crosspaste.paste.PasteDataFlavors
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.toPasteDataFlavor
-import com.crosspaste.path.DesktopPathProvider
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.currentPlatform
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.utils.DesktopFileUtils
@@ -33,6 +33,7 @@ import java.io.File
 class FilesTypePlugin(
     private val appInfo: AppInfo,
     private val configManager: ConfigManager,
+    private val userDataPathProvider: UserDataPathProvider,
 ) : PasteTypePlugin {
 
     companion object FilesTypePlugin {
@@ -93,7 +94,7 @@ class FilesTypePlugin(
 
             val copyFromCrossPaste =
                 files.any {
-                    it.startsWith(DesktopPathProvider.pasteUserPath.toFile())
+                    it.startsWith(userDataPathProvider.getUserDataPath().toFile())
                 }
 
             // If the file size exceeds the limit
@@ -123,6 +124,7 @@ class FilesTypePlugin(
                             relativePath,
                             isFile = true,
                             AppFileType.FILE,
+                            userDataPathProvider,
                         )
                     if (copyPath(path, filePath)) {
                         fileInfoTrees[file.name] = DesktopFileUtils.getFileInfoTree(filePath)
@@ -157,7 +159,7 @@ class FilesTypePlugin(
         map: MutableMap<PasteDataFlavor, Any>,
     ) {
         pasteItem as FilesPasteItem
-        val fileList: List<File> = pasteItem.getFilePaths().map { it.toFile() }
+        val fileList: List<File> = pasteItem.getFilePaths(userDataPathProvider).map { it.toFile() }
         map[DataFlavor.javaFileListFlavor.toPasteDataFlavor()] = fileList
         map[PasteDataFlavors.URI_LIST_FLAVOR.toPasteDataFlavor()] =
             ByteArrayInputStream(fileList.joinToString(separator = "\n") { it.absolutePath }.toByteArray())

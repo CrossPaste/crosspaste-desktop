@@ -16,7 +16,7 @@ import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
-import com.crosspaste.path.PathProvider
+import com.crosspaste.path.UserDataPathProvider
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.Realm
 import io.realm.kotlin.RealmConfiguration
@@ -58,8 +58,8 @@ class RealmManagerImpl private constructor(private val config: RealmConfiguratio
                 PasteTask::class,
             )
 
-        fun createRealmManager(pathProvider: PathProvider): RealmManager {
-            val path = pathProvider.resolve(appFileType = AppFileType.DATA)
+        fun createRealmManager(userDataPathProvider: UserDataPathProvider): RealmManager {
+            val path = userDataPathProvider.resolve(appFileType = AppFileType.DATA)
             val builder =
                 RealmConfiguration.Builder(DTO_TYPES + SIGNAL_TYPES + PASTE_TYPES + TASK_TYPES)
                     .directory(path.toString())

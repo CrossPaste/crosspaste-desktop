@@ -42,6 +42,7 @@ import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
 import com.crosspaste.paste.item.PasteFiles
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.chevronLeft
@@ -60,10 +61,12 @@ fun PasteFilesDetailView(
     pasteData: PasteData,
     pasteFiles: PasteFiles,
 ) {
-    val showFileCount = pasteFiles.getFilePaths().size
+    val current = LocalKoinApplication.current
+    val density = LocalDensity.current
+    val userDataPathProvider = current.koin.get<UserDataPathProvider>()
+
+    val showFileCount = pasteFiles.getFilePaths(userDataPathProvider).size
     if (showFileCount > 0) {
-        val current = LocalKoinApplication.current
-        val density = LocalDensity.current
         val copywriter = current.koin.get<GlobalCopywriter>()
         val fileExtIconLoader = current.koin.get<FileExtImageLoader>()
 
@@ -97,7 +100,7 @@ fun PasteFilesDetailView(
             }
         }
 
-        val filePath = pasteFiles.getFilePaths()[index]
+        val filePath = pasteFiles.getFilePaths(userDataPathProvider)[index]
         val fileInfoTree = pasteFiles.getFileInfoTreeMap()[filePath.name]!!
         val file = filePath.toFile()
         val existFile = file.exists()

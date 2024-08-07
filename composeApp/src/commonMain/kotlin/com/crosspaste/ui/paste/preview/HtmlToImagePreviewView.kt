@@ -29,6 +29,7 @@ import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.image.ImageData
 import com.crosspaste.image.getImageDataLoader
 import com.crosspaste.paste.item.PasteHtml
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.UISupport
 import kotlinx.coroutines.delay
@@ -41,11 +42,16 @@ fun HtmlToImagePreviewView(pasteData: PasteData) {
         val density = LocalDensity.current
 
         val uiSupport = current.koin.get<UISupport>()
+        val userDataPathProvider = current.koin.get<UserDataPathProvider>()
         val imageDataLoader = getImageDataLoader()
 
         val pasteHtml = it as PasteHtml
 
-        val filePath by remember(pasteData.id) { mutableStateOf(pasteHtml.getHtmlImagePath()) }
+        val filePath by remember(pasteData.id) {
+            mutableStateOf(
+                pasteHtml.getHtmlImagePath(userDataPathProvider),
+            )
+        }
 
         PasteSpecificPreviewContentView(
             pasteMainContent = {

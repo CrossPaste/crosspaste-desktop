@@ -1,6 +1,6 @@
 package com.crosspaste.app
 
-import com.crosspaste.path.DesktopPathProvider
+import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.platform.currentPlatform
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -39,8 +39,8 @@ class MacAppRestartService : AppRestartService {
 
     override fun restart(exitApplication: () -> Unit) {
         val pid = ProcessHandle.current().pid()
-        val appPath = DesktopPathProvider.pasteAppPath
-        val restartLogPath = DesktopPathProvider.resolve("restart.log", AppFileType.LOG)
+        val appPath = DesktopAppPathProvider.pasteAppPath
+        val restartLogPath = DesktopAppPathProvider.resolve("restart.log", AppFileType.LOG)
         val scriptPath = appPath.resolve("Contents").resolve("bin").resolve(SCRIPT)
         logger.info { "Restarting app script: $scriptPath\nwith args: $pid" }
         val command =
@@ -73,8 +73,8 @@ class WindowsAppRestartService : AppRestartService {
 
     override fun restart(exitApplication: () -> Unit) {
         val pid = ProcessHandle.current().pid()
-        val appPath = DesktopPathProvider.pasteAppJarPath
-        val restartLogPath = DesktopPathProvider.resolve("restart.log", AppFileType.LOG)
+        val appPath = DesktopAppPathProvider.pasteAppJarPath
+        val restartLogPath = DesktopAppPathProvider.resolve("restart.log", AppFileType.LOG)
         val scriptPath = appPath.resolve("bin").resolve(SCRIPT)
 
         logger.info { "Restarting app script: $scriptPath\nwith args: $pid" }
@@ -107,8 +107,8 @@ class LinuxAppRestartService : AppRestartService {
 
     override fun restart(exitApplication: () -> Unit) {
         val pid = ProcessHandle.current().pid()
-        val appPath = DesktopPathProvider.pasteAppPath
-        val restartLogPath = DesktopPathProvider.resolve("restart.log", AppFileType.LOG)
+        val appPath = DesktopAppPathProvider.pasteAppPath
+        val restartLogPath = DesktopAppPathProvider.resolve("restart.log", AppFileType.LOG)
         val scriptPath = appPath.resolve("bin").resolve(SCRIPT)
         logger.info { "Restarting app script: $scriptPath\nwith args: $pid" }
         val command =

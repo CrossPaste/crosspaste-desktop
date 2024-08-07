@@ -4,7 +4,7 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.dao.paste.PasteState
 import com.crosspaste.dao.paste.PasteType
-import com.crosspaste.path.DesktopPathProvider
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.DesktopOneFilePersist
 import com.crosspaste.utils.DesktopFileUtils
 import io.realm.kotlin.MutableRealm
@@ -49,9 +49,9 @@ class HtmlPasteItem : RealmObject, PasteItem, PasteHtml {
 
     override var extraInfo: String? = null
 
-    override fun getHtmlImagePath(): Path {
-        val basePath = DesktopPathProvider.resolve(appFileType = AppFileType.HTML)
-        return DesktopPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
+    override fun getHtmlImagePath(userDataPathProvider: UserDataPathProvider): Path {
+        val basePath = userDataPathProvider.resolve(appFileType = AppFileType.HTML)
+        return userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
     }
 
     override fun init(
@@ -90,10 +90,11 @@ class HtmlPasteItem : RealmObject, PasteItem, PasteHtml {
 
     override fun clear(
         realm: MutableRealm,
+        userDataPathProvider: UserDataPathProvider,
         clearResource: Boolean,
     ) {
         if (clearResource) {
-            DesktopOneFilePersist(getHtmlImagePath()).delete()
+            DesktopOneFilePersist(getHtmlImagePath(userDataPathProvider)).delete()
         }
         realm.delete(this)
     }

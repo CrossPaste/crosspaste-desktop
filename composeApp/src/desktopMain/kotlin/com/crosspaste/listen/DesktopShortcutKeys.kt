@@ -7,7 +7,7 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.listener.KeyboardKey
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysCore
-import com.crosspaste.path.PathProvider
+import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.platform.currentPlatform
 import com.crosspaste.presist.DesktopOneFilePersist
 import com.crosspaste.utils.getResourceUtils
@@ -22,7 +22,6 @@ import java.nio.charset.StandardCharsets
 import java.util.Properties
 
 class DesktopShortcutKeys(
-    private val pathProvider: PathProvider,
     private val shortcutKeysLoader: ShortcutKeysLoader,
 ) : ShortcutKeys {
 
@@ -59,7 +58,7 @@ class DesktopShortcutKeys(
     private fun loadKeysCore(): ShortcutKeysCore? {
         try {
             val shortcutKeysPropertiesPath =
-                pathProvider
+                DesktopAppPathProvider
                     .resolve("shortcut-keys.properties", AppFileType.USER)
             if (!FileSystem.SYSTEM.exists(shortcutKeysPropertiesPath)) {
                 val filePersist = DesktopOneFilePersist(shortcutKeysPropertiesPath)
@@ -85,7 +84,7 @@ class DesktopShortcutKeys(
     ) {
         try {
             val shortcutKeysPropertiesPath =
-                pathProvider
+                DesktopAppPathProvider
                     .resolve("shortcut-keys.properties", AppFileType.USER)
 
             val properties = Properties()

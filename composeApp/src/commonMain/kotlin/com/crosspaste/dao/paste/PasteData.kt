@@ -2,6 +2,7 @@ package com.crosspaste.dao.paste
 
 import com.crosspaste.dao.paste.PasteCollection.Companion.getPasteItem
 import com.crosspaste.paste.item.PasteFiles
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.serializer.PasteDataSerializer
 import com.crosspaste.serializer.PasteLabelRealmSetSerializer
 import io.realm.kotlin.MutableRealm
@@ -78,10 +79,11 @@ class PasteData : RealmObject {
     // must be called in writeBlocking
     fun clear(
         realm: MutableRealm,
+        userDataPathProvider: UserDataPathProvider,
         clearResource: Boolean = true,
     ) {
-        getPasteItem(pasteAppearItem)?.clear(realm, clearResource)
-        pasteCollection?.clear(realm, clearResource)
+        getPasteItem(pasteAppearItem)?.clear(realm, userDataPathProvider, clearResource)
+        pasteCollection?.clear(realm, userDataPathProvider, clearResource)
         realm.delete(this)
     }
 

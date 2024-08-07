@@ -50,7 +50,7 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.dao.paste.PasteDao
 import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.path.PathProvider
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.AppImageIcon
 import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.base.favorite
@@ -74,7 +74,7 @@ fun PasteDetailInfoView(
     val iconStyle = current.koin.get<IconStyle>()
     val copywriter = current.koin.get<GlobalCopywriter>()
     val pasteDao = current.koin.get<PasteDao>()
-    val pathProvider = current.koin.get<PathProvider>()
+    val userDataPathProvider = current.koin.get<UserDataPathProvider>()
 
     Row(
         modifier = Modifier.fillMaxWidth().height(30.dp),
@@ -104,7 +104,11 @@ fun PasteDetailInfoView(
         Spacer(modifier = Modifier.weight(1f))
         pasteData.source?.let { source ->
 
-            val iconPath by remember(source) { mutableStateOf(pathProvider.resolve("$source.png", AppFileType.ICON)) }
+            val iconPath by remember(source) {
+                mutableStateOf(
+                    userDataPathProvider.resolve("$source.png", AppFileType.ICON),
+                )
+            }
 
             val iconExist by remember(source) {
                 mutableStateOf(iconPath.toFile().exists())

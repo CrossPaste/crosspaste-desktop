@@ -1,9 +1,11 @@
 package com.crosspaste.ui.settings
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,14 +13,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Divider
 import androidx.compose.material.Icon
+import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
+import androidx.compose.material.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -28,11 +36,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,10 +54,13 @@ import com.crosspaste.clean.CleanTime
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dao.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.Counter
 import com.crosspaste.ui.base.CustomRectangleSwitch
 import com.crosspaste.ui.base.CustomSwitch
+import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.anglesUpDown
+import com.crosspaste.ui.base.archive
 import com.crosspaste.ui.base.clock
 import com.crosspaste.ui.base.database
 import com.crosspaste.ui.base.file
@@ -57,7 +71,9 @@ import com.crosspaste.ui.base.link
 import com.crosspaste.ui.base.percent
 import com.crosspaste.ui.base.text
 import com.crosspaste.ui.base.trash
+import com.crosspaste.ui.connectedColor
 import com.crosspaste.ui.devices.measureTextWidth
+import com.crosspaste.ui.disconnectedColor
 import com.crosspaste.utils.Quadruple
 import com.crosspaste.utils.getFileUtils
 
@@ -68,6 +84,7 @@ fun StoreSettingsView() {
     val configManager = current.koin.get<ConfigManager>()
     val pasteDao = current.koin.get<PasteDao>()
     val copywriter = current.koin.get<GlobalCopywriter>()
+    val userDataPathProvider = current.koin.get<UserDataPathProvider>()
     val fileUtils = getFileUtils()
 
     var pasteCount: Long? by remember { mutableStateOf(null) }
@@ -249,6 +266,159 @@ fun StoreSettingsView() {
 
             if (index != pasteTypes.size - 1) {
                 Divider(modifier = Modifier.padding(start = 35.dp))
+            }
+        }
+    }
+
+    Text(
+        modifier =
+            Modifier.wrapContentSize()
+                .padding(start = 32.dp, top = 5.dp, bottom = 5.dp),
+        text = copywriter.getText("storage_path"),
+        color = MaterialTheme.colors.onBackground,
+        style = MaterialTheme.typography.h6,
+        fontFamily = FontFamily.SansSerif,
+        fontSize = 12.sp,
+    )
+
+    Column(
+        modifier =
+            Modifier.wrapContentSize()
+                .padding(horizontal = 16.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colors.background),
+    ) {
+        var useDefaultStoragePath by remember { mutableStateOf(configManager.config.useDefaultStoragePath) }
+
+        Row(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(40.dp)
+                    .padding(horizontal = 12.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                modifier = Modifier.size(15.dp),
+                painter = archive(),
+                contentDescription = "user default storage path",
+                tint = Color(0xFF41B06E),
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            settingsText(copywriter.getText("use_default_storage_path"))
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            CustomSwitch(
+                modifier =
+                    Modifier.width(32.dp)
+                        .height(20.dp),
+                checked = useDefaultStoragePath,
+                onCheckedChange = {
+                    useDefaultStoragePath = !useDefaultStoragePath
+                },
+            )
+        }
+
+        Row(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(40.dp)
+                    .padding(horizontal = 12.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            CustomTextField(
+                modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+                value = userDataPathProvider.getUserDataPath().toString(),
+                onValueChange = {},
+                enabled = !useDefaultStoragePath,
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                textStyle =
+                    LocalTextStyle.current.copy(
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colors.primary,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                        lineHeight = 10.sp,
+                    ),
+                colors =
+                    TextFieldDefaults.textFieldColors(
+                        focusedIndicatorColor = MaterialTheme.colors.primary,
+                        unfocusedIndicatorColor = Color.Transparent,
+                    ),
+                contentPadding = PaddingValues(0.dp),
+            )
+        }
+
+        if (!useDefaultStoragePath) {
+            Row(
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .height(40.dp)
+                        .padding(horizontal = 12.dp, vertical = 5.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Spacer(modifier = Modifier.weight(1f))
+                Button(
+                    modifier = Modifier.height(28.dp),
+                    onClick = {
+                    },
+                    shape = RoundedCornerShape(4.dp),
+                    border = BorderStroke(1.dp, disconnectedColor()),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.background),
+                    elevation =
+                        ButtonDefaults.elevation(
+                            defaultElevation = 0.dp,
+                            pressedElevation = 0.dp,
+                            hoveredElevation = 0.dp,
+                            focusedElevation = 0.dp,
+                        ),
+                ) {
+                    Text(
+                        text = copywriter.getText("cancel"),
+                        color = disconnectedColor(),
+                        style =
+                            TextStyle(
+                                fontFamily = FontFamily.SansSerif,
+                                fontWeight = FontWeight.Light,
+                                fontSize = 14.sp,
+                            ),
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Button(
+                    modifier = Modifier.height(28.dp),
+                    onClick = {
+                    },
+                    shape = RoundedCornerShape(4.dp),
+                    border = BorderStroke(1.dp, connectedColor()),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.background),
+                    elevation =
+                        ButtonDefaults.elevation(
+                            defaultElevation = 0.dp,
+                            pressedElevation = 0.dp,
+                            hoveredElevation = 0.dp,
+                            focusedElevation = 0.dp,
+                        ),
+                ) {
+                    Text(
+                        text = copywriter.getText("confirm"),
+                        color = connectedColor(),
+                        style =
+                            TextStyle(
+                                fontFamily = FontFamily.SansSerif,
+                                fontWeight = FontWeight.Light,
+                                fontSize = 14.sp,
+                            ),
+                    )
+                }
             }
         }
     }

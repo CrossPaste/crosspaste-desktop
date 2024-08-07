@@ -106,8 +106,10 @@ import com.crosspaste.paste.plugin.type.HtmlTypePlugin
 import com.crosspaste.paste.plugin.type.ImageTypePlugin
 import com.crosspaste.paste.plugin.type.TextTypePlugin
 import com.crosspaste.paste.plugin.type.UrlTypePlugin
-import com.crosspaste.path.DesktopPathProvider
-import com.crosspaste.path.PathProvider
+import com.crosspaste.path.AppPathProvider
+import com.crosspaste.path.DesktopAppPathProvider
+import com.crosspaste.path.DesktopUserDataPathProvider
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.currentPlatform
 import com.crosspaste.presist.DesktopFilePersist
 import com.crosspaste.presist.FilePersist
@@ -186,9 +188,18 @@ class CrossPaste {
 
         private val appEnv = AppEnv.CURRENT
 
+        private val appPathProvider = DesktopAppPathProvider
+
+        private val configManager =
+            DefaultConfigManager(
+                DesktopFilePersist.createOneFilePersist(
+                    appPathProvider.resolve("appConfig.json", AppFileType.USER),
+                ),
+            )
+
         private val crossPasteLogger =
             initLogger(
-                DesktopPathProvider.resolve("crosspaste.log", AppFileType.LOG).toString(),
+                appPathProvider.resolve("crosspaste.log", AppFileType.LOG).toString(),
             )
 
         private val logger: KLogger = KotlinLogging.logger {}
@@ -211,21 +222,16 @@ class CrossPaste {
                     single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<PasteServer>() }) }
                     single<GlobalCoroutineScope> { GlobalCoroutineScopeImpl }
                     single<SyncInfoFactory> { DesktopSyncInfoFactory(get(), get()) }
-                    single<PathProvider> { DesktopPathProvider }
+                    single<AppPathProvider> { appPathProvider }
+                    single<UserDataPathProvider> { DesktopUserDataPathProvider(get()) }
                     single<FilePersist> { DesktopFilePersist }
-                    single<ConfigManager> {
-                        DefaultConfigManager(
-                            get<FilePersist>().getPersist("appConfig.json", AppFileType.USER),
-                            get<NotificationManager>(),
-                            lazy { get<GlobalCopywriter>() },
-                        )
-                    }
+                    single<ConfigManager> { configManager }
                     single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
                     single<IDGenerator> { IDGeneratorFactory(get()).createIDGenerator() }
-                    single<CacheManager> { CacheManagerImpl(get()) }
+                    single<CacheManager> { CacheManagerImpl(get(), get()) }
                     single<CrossPasteLogger> { crossPasteLogger }
                     single<KLogger> { CrossPaste.logger }
-                    single<FileExtImageLoader> { DesktopFileExtLoader }
+                    single<FileExtImageLoader> { DesktopFileExtLoader(get()) }
                     single<ThumbnailLoader> { DesktopThumbnailLoader }
 
                     // realm component
@@ -247,7 +253,7 @@ class CrossPaste {
                     single<SyncRefresher> { get<DesktopSyncManager>() }
                     single<SyncManager> { get<DesktopSyncManager>() }
                     single<DeviceManager> { DesktopDeviceManager(get(), get(), get()) }
-                    single<FaviconLoader> { DesktopFaviconLoader }
+                    single<FaviconLoader> { DesktopFaviconLoader(get()) }
 
                     // signal component
                     single<IdentityKeyStore> { getPasteIdentityKeyStoreFactory(get(), get()).createIdentityKeyStore() }
@@ -260,9 +266,9 @@ class CrossPaste {
                     single<SignalClientDecryptPlugin> { SignalClientDecryptPlugin(get()) }
 
                     // paste component
-                    single<FilesTypePlugin> { FilesTypePlugin(get(), get()) }
+                    single<FilesTypePlugin> { FilesTypePlugin(get(), get(), get()) }
                     single<HtmlTypePlugin> { HtmlTypePlugin(get()) }
-                    single<ImageTypePlugin> { ImageTypePlugin(get()) }
+                    single<ImageTypePlugin> { ImageTypePlugin(get(), get()) }
                     single<TextTypePlugin> { TextTypePlugin() }
                     single<UrlTypePlugin> { UrlTypePlugin() }
                     single<PasteboardService> { getDesktopPasteboardService(get(), get(), get(), get(), get()) }
@@ -272,10 +278,10 @@ class CrossPaste {
                             get(),
                             get(),
                             listOf(
-                                DistinctPlugin,
+                                DistinctPlugin(get()),
                                 GenerateUrlPlugin,
-                                FilesToImagesPlugin,
-                                RemoveFolderImagePlugin,
+                                FilesToImagesPlugin(get()),
+                                RemoveFolderImagePlugin(get()),
                                 SortPlugin,
                             ),
                             listOf(
@@ -308,9 +314,9 @@ class CrossPaste {
                             listOf(
                                 SyncPasteTaskExecutor(get(), get(), get()),
                                 DeletePasteTaskExecutor(get()),
-                                PullFileTaskExecutor(get(), get(), get(), get(), get()),
+                                PullFileTaskExecutor(get(), get(), get(), get(), get(), get()),
                                 CleanPasteTaskExecutor(get(), get()),
-                                Html2ImageTaskExecutor(get(), get(), get()),
+                                Html2ImageTaskExecutor(get(), get(), get(), get()),
                                 PullIconTaskExecutor(get(), get(), get(), get()),
                             ),
                             get(),
@@ -318,7 +324,7 @@ class CrossPaste {
                     }
 
                     // ui component
-                    single<AppWindowManager> { getDesktopAppWindowManager(lazy { get() }, get()) }
+                    single<AppWindowManager> { getDesktopAppWindowManager(lazy { get() }, get(), get()) }
                     single<AppTokenService> { DesktopAppTokenService() }
                     single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
                     single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get()) }
@@ -332,9 +338,9 @@ class CrossPaste {
                     single<PasteResourceLoader> { DesktopAbsolutePasteResourceLoader }
                     single<ToastManager> { DesktopToastManager() }
                     single<NotificationManager> { DesktopNotificationManager(get(), get()) }
-                    single<IconStyle> { DesktopIconStyle }
+                    single<IconStyle> { DesktopIconStyle(get()) }
                     single<UISupport> { DesktopUISupport(get(), get(), get()) }
-                    single<ShortcutKeys> { DesktopShortcutKeys(get(), get()) }
+                    single<ShortcutKeys> { DesktopShortcutKeys(get()) }
                     single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get()) }
                     single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get(), get()) }
                     single<DialogService> { DesktopDialogService() }

@@ -49,6 +49,7 @@ import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
 import com.crosspaste.paste.item.PasteFiles
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.chevronLeft
@@ -76,6 +77,7 @@ fun PasteImagesDetailView(
         val current = LocalKoinApplication.current
         val density = LocalDensity.current
         val copywriter = current.koin.get<GlobalCopywriter>()
+        val userDataPathProvider = current.koin.get<UserDataPathProvider>()
 
         val dateUtils = getDateUtils()
         val fileUtils = getFileUtils()
@@ -105,7 +107,7 @@ fun PasteImagesDetailView(
             }
         }
 
-        val imagePath = pasteFiles.getFilePaths()[index]
+        val imagePath = pasteFiles.getFilePaths(userDataPathProvider)[index]
 
         var hover by remember { mutableStateOf(false) }
 

@@ -4,6 +4,7 @@ import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.os.macos.MacAppUtils
 import com.crosspaste.os.macos.MacPasteUtils
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getSystemProperty
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -11,6 +12,7 @@ import kotlinx.coroutines.launch
 class MacAppWindowManager(
     lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val activeGraphicsDevice: ActiveGraphicsDevice,
+    override val userDataPathProvider: UserDataPathProvider,
 ) : AbstractAppWindowManager() {
 
     private val crosspasteBundleID = getSystemProperty().get("mac.bundleID")
@@ -54,7 +56,7 @@ class MacAppWindowManager(
         bundleIdentifier: String,
         localizedName: String,
     ) {
-        val appImagePath = pathProvider.resolve("$localizedName.png", AppFileType.ICON)
+        val appImagePath = userDataPathProvider.resolve("$localizedName.png", AppFileType.ICON)
         if (!appImagePath.toFile().exists()) {
             MacAppUtils.saveAppIcon(bundleIdentifier, appImagePath.toString())
         }

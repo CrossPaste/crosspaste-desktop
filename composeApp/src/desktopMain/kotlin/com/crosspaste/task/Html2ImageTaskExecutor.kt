@@ -7,6 +7,7 @@ import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.paste.ChromeService
 import com.crosspaste.paste.item.PasteHtml
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.task.extra.BaseExtraInfo
 import com.crosspaste.ui.paste.preview.getPasteItem
@@ -20,6 +21,7 @@ class Html2ImageTaskExecutor(
     private val chromeService: ChromeService,
     private val pasteDao: PasteDao,
     private val filePersist: FilePersist,
+    private val userDataPathProvider: UserDataPathProvider,
 ) : SingleTypeTaskExecutor {
 
     private val logger = KotlinLogging.logger {}
@@ -34,7 +36,7 @@ class Html2ImageTaskExecutor(
                 pasteDao.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
                     pasteData.getPasteItem()?.let { pasteItem ->
                         if (pasteItem is PasteHtml) {
-                            val html2ImagePath = pasteItem.getHtmlImagePath()
+                            val html2ImagePath = pasteItem.getHtmlImagePath(userDataPathProvider)
                             if (!html2ImagePath.toFile().exists()) {
                                 chromeService.html2Image(pasteItem.html)?.let { bytes ->
                                     filePersist.createOneFilePersist(html2ImagePath).saveBytes(bytes)

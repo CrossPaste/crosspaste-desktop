@@ -1,7 +1,7 @@
 package com.crosspaste.app
 
 import com.crosspaste.config.ConfigManager
-import com.crosspaste.path.DesktopPathProvider
+import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.platform.currentPlatform
 import com.crosspaste.presist.DesktopFilePersist
 import com.crosspaste.utils.getSystemProperty
@@ -53,7 +53,7 @@ class MacAppStartUpService(private val configManager: ConfigManager) : AppStartU
 
     private val plist = "$crosspasteBundleID.plist"
 
-    private val pathProvider = DesktopPathProvider
+    private val pathProvider = DesktopAppPathProvider
 
     private val filePersist = DesktopFilePersist
 
@@ -128,7 +128,7 @@ class WindowsAppStartUpService(
     private val isMicrosoftStore = appLaunchState.installFrom == MICROSOFT_STORE
 
     private val appExePath =
-        DesktopPathProvider.pasteAppPath
+        DesktopAppPathProvider.pasteAppPath
             .resolve("bin")
             .resolve("CrossPaste.exe")
 
@@ -211,12 +211,12 @@ class LinuxAppStartUpService(private val configManager: ConfigManager) : AppStar
 
     private val desktopFile = "crosspaste.desktop"
 
-    private val pathProvider = DesktopPathProvider
+    private val pathProvider = DesktopAppPathProvider
 
     private val filePersist = DesktopFilePersist
 
     private val appExePath =
-        DesktopPathProvider.pasteAppPath
+        pathProvider.pasteAppPath
             .resolve("bin")
             .resolve("crosspaste")
 

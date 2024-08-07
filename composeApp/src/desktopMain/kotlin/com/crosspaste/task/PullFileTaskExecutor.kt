@@ -14,7 +14,7 @@ import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.PasteFiles
-import com.crosspaste.path.DesktopPathProvider
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilesIndex
 import com.crosspaste.presist.FilesIndexBuilder
 import com.crosspaste.sync.SyncManager
@@ -34,6 +34,7 @@ import org.mongodb.kbson.ObjectId
 class PullFileTaskExecutor(
     private val pasteDao: PasteDao,
     private val pullClientApi: PullClientApi,
+    private val userDataPathProvider: UserDataPathProvider,
     private val syncManager: SyncManager,
     private val pasteSyncProcessManager: PasteSyncProcessManager<ObjectId>,
     private val pasteboardService: PasteboardService,
@@ -66,7 +67,7 @@ class PullFileTaskExecutor(
             val filesIndexBuilder = FilesIndexBuilder(CHUNK_SIZE)
             for (pasteAppearItem in fileItems) {
                 val pasteFiles = pasteAppearItem as PasteFiles
-                DesktopPathProvider.resolve(appInstanceId, dateString, pasteId, pasteFiles, true, filesIndexBuilder)
+                userDataPathProvider.resolve(appInstanceId, dateString, pasteId, pasteFiles, true, filesIndexBuilder)
             }
             val filesIndex = filesIndexBuilder.build()
 

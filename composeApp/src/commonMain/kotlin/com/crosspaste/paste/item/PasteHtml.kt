@@ -1,5 +1,6 @@
 package com.crosspaste.paste.item
 
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getHtmlUtils
 import okio.Path
 
@@ -11,5 +12,5 @@ interface PasteHtml : PasteInit {
         return getHtmlUtils().getHtmlText(html)
     }
 
-    fun getHtmlImagePath(): Path
+    fun getHtmlImagePath(userDataPathProvider: UserDataPathProvider): Path
 }

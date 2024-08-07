@@ -62,7 +62,7 @@ import com.crosspaste.image.getImageDataLoader
 import com.crosspaste.paste.PasteSearchService
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteUrl
-import com.crosspaste.path.PathProvider
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.AppImageIcon
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.IconStyle
@@ -202,7 +202,14 @@ fun PasteTitleView(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    val title by remember(pasteData.pasteState) { mutableStateOf(getPasteTitle(pasteData)) }
+    val current = LocalKoinApplication.current
+    val userDataPathProvider = current.koin.get<UserDataPathProvider>()
+
+    val title by remember(pasteData.pasteState) {
+        mutableStateOf(
+            getPasteTitle(pasteData, userDataPathProvider),
+        )
+    }
 
     title?.let {
         Box(
@@ -256,9 +263,9 @@ fun PasteTypeIconView(
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
     val iconStyle = current.koin.get<IconStyle>()
-    val pathProvider = current.koin.get<PathProvider>()
     val faviconLoader = current.koin.get<FaviconLoader>()
     val fileExtLoader = current.koin.get<FileExtImageLoader>()
+    val userDataPathProvider = current.koin.get<UserDataPathProvider>()
 
     val imageDataLoader = getImageDataLoader()
 
@@ -306,7 +313,7 @@ fun PasteTypeIconView(
                 pasteData.getPasteItem()?.let {
                     it as PasteFiles
                     try {
-                        val files = it.getPasteFiles()
+                        val files = it.getPasteFiles(userDataPathProvider)
                         if (files.isNotEmpty()) {
                             fileExtLoader.load(files[0].getFilePath())?.let { path ->
                                 return@AsyncView imageDataLoader.loadImageData(path, density)
@@ -344,7 +351,7 @@ fun PasteTypeIconView(
         )
     } else {
         pasteData.source?.let {
-            val path = pathProvider.resolve("$it.png", AppFileType.ICON)
+            val path = userDataPathProvider.resolve("$it.png", AppFileType.ICON)
             if (FileSystem.SYSTEM.exists(path)) {
                 val isMacStyleIcon by remember(it) { mutableStateOf(iconStyle.isMacStyleIcon(it)) }
                 AppImageIcon(path = path, isMacStyleIcon = isMacStyleIcon, size = size + 2.dp)

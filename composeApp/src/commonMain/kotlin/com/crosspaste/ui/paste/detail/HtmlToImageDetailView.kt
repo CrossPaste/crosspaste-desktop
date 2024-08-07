@@ -34,6 +34,7 @@ import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
 import com.crosspaste.paste.item.PasteHtml
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.utils.getDateUtils
@@ -49,13 +50,18 @@ fun HtmlToImageDetailView(
     val density = LocalDensity.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val uiSupport = current.koin.get<UISupport>()
+    val userDataPathProvider = current.koin.get<UserDataPathProvider>()
     val pasteItem = pasteHtml as PasteItem
 
     val dateUtils = getDateUtils()
     val fileUtils = getFileUtils()
     val imageDataLoader = getImageDataLoader()
 
-    val filePath by remember(pasteData.id) { mutableStateOf(pasteHtml.getHtmlImagePath()) }
+    val filePath by remember(pasteData.id) {
+        mutableStateOf(
+            pasteHtml.getHtmlImagePath(userDataPathProvider),
+        )
+    }
 
     var existFile by remember(pasteData.id) { mutableStateOf(filePath.toFile().exists()) }
 

@@ -4,6 +4,7 @@ import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.os.linux.api.X11Api
+import com.crosspaste.path.UserDataPathProvider
 import com.sun.jna.platform.unix.X11.Window
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -11,6 +12,7 @@ import kotlinx.coroutines.launch
 class LinuxAppWindowManager(
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val activeGraphicsDevice: ActiveGraphicsDevice,
+    override val userDataPathProvider: UserDataPathProvider,
 ) : AbstractAppWindowManager() {
 
     private var prevLinuxAppInfo: LinuxAppInfo? = null
@@ -45,7 +47,7 @@ class LinuxAppWindowManager(
         window: Window,
         className: String,
     ) {
-        val iconPath = pathProvider.resolve("$className.png", AppFileType.ICON)
+        val iconPath = userDataPathProvider.resolve("$className.png", AppFileType.ICON)
         if (!iconPath.toFile().exists()) {
             X11Api.saveAppIcon(window, iconPath.toNioPath())
         }

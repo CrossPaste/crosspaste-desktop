@@ -2,8 +2,7 @@ package com.crosspaste.image
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.net.DesktopProxy
-import com.crosspaste.path.DesktopPathProvider
-import com.crosspaste.path.PathProvider
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.ConcurrentPlatformMap
 import com.crosspaste.utils.PlatformLock
 import com.crosspaste.utils.createConcurrentPlatformMap
@@ -19,11 +18,11 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
 
-object DesktopFaviconLoader : ConcurrentLoader<String, Path>, FaviconLoader {
+class DesktopFaviconLoader(
+    private val userDataPathProvider: UserDataPathProvider,
+) : ConcurrentLoader<String, Path>, FaviconLoader {
 
     private val logger = KotlinLogging.logger {}
-
-    private val pathProvider: PathProvider = DesktopPathProvider
 
     override val lockMap: ConcurrentPlatformMap<String, PlatformLock> = createConcurrentPlatformMap()
 
@@ -80,7 +79,7 @@ object DesktopFaviconLoader : ConcurrentLoader<String, Path>, FaviconLoader {
         key: String,
         value: String,
     ): Path {
-        return pathProvider.resolve("$key.ico", AppFileType.FAVICON)
+        return userDataPathProvider.resolve("$key.ico", AppFileType.FAVICON)
     }
 
     override fun exist(result: Path): Boolean {

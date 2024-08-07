@@ -8,7 +8,7 @@ import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.PullClientApi
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.createFailureResult
-import com.crosspaste.path.PathProvider
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.extra.BaseExtraInfo
 import com.crosspaste.utils.FileUtils
@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 class PullIconTaskExecutor(
     private val pasteDao: PasteDao,
-    private val pathProvider: PathProvider,
+    private val userDataPathProvider: UserDataPathProvider,
     private val pullClientApi: PullClientApi,
     private val syncManager: SyncManager,
 ) : SingleTypeTaskExecutor {
@@ -51,7 +51,7 @@ class PullIconTaskExecutor(
                     try {
                         val appInstanceId = pasteData.appInstanceId
 
-                        val iconPath = pathProvider.resolve("$source.png", AppFileType.ICON)
+                        val iconPath = userDataPathProvider.resolve("$source.png", AppFileType.ICON)
                         if (!FileSystem.SYSTEM.exists(iconPath)) {
                             syncManager.getSyncHandlers()[appInstanceId]?.let {
                                 val port = it.syncRuntimeInfo.port

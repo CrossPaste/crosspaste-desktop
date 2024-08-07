@@ -3,7 +3,7 @@ package com.crosspaste.paste
 import com.crosspaste.dao.paste.PasteDao
 import com.crosspaste.dto.pull.PullFilesKey
 import com.crosspaste.paste.item.PasteFiles
-import com.crosspaste.path.DesktopPathProvider
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilesIndex
 import com.crosspaste.presist.FilesIndexBuilder
 import com.crosspaste.task.PullFileTaskExecutor
@@ -15,7 +15,10 @@ import com.google.common.cache.LoadingCache
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.util.concurrent.TimeUnit
 
-class CacheManagerImpl(private val pasteDao: PasteDao) : CacheManager {
+class CacheManagerImpl(
+    private val pasteDao: PasteDao,
+    private val userDataPathProvider: UserDataPathProvider,
+) : CacheManager {
 
     private val logger = KotlinLogging.logger {}
 
@@ -39,7 +42,7 @@ class CacheManagerImpl(private val pasteDao: PasteDao) : CacheManager {
                             val fileItems = pasteData.getPasteAppearItems().filter { it is PasteFiles }
                             for (pasteAppearItem in fileItems) {
                                 val pasteFiles = pasteAppearItem as PasteFiles
-                                DesktopPathProvider.resolve(appInstanceId, dateString, pasteId, pasteFiles, false, filesIndexBuilder)
+                                userDataPathProvider.resolve(appInstanceId, dateString, pasteId, pasteFiles, false, filesIndexBuilder)
                             }
                             return filesIndexBuilder.build()
                         }

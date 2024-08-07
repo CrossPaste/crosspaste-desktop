@@ -1,6 +1,7 @@
 package com.crosspaste.paste.item
 
 import com.crosspaste.app.AppFileType
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.utils.getFileUtils
 import io.realm.kotlin.ext.toRealmList
@@ -18,11 +19,11 @@ interface PasteFiles {
 
     fun getAppFileType(): AppFileType
 
-    fun getFilePaths(): List<Path>
+    fun getFilePaths(userDataPathProvider: UserDataPathProvider): List<Path>
 
     fun getFileInfoTreeMap(): Map<String, FileInfoTree>
 
-    fun getPasteFiles(): List<PasteFile>
+    fun getPasteFiles(userDataPathProvider: UserDataPathProvider): List<PasteFile>
 
     // use to adapt relative paths when relative is no storage in crossPaste
     fun adaptRelativePaths(

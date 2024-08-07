@@ -1,6 +1,7 @@
 package com.crosspaste.utils
 
 import com.crosspaste.app.AppFileType
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.FilesChunk
 import io.ktor.utils.io.*
@@ -45,6 +46,7 @@ interface FileUtils {
         fileRelativePath: String,
         isFile: Boolean,
         appFileType: AppFileType,
+        userDataPathProvider: UserDataPathProvider,
     ): Path
 
     fun getFileInfoTree(path: Path): FileInfoTree

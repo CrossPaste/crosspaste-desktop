@@ -8,8 +8,6 @@ import com.crosspaste.utils.getDeviceUtils
 
 class DefaultConfigManager(
     private val configFilePersist: OneFilePersist,
-    private val notificationManager: NotificationManager,
-    private val lazyCopywriter: Lazy<GlobalCopywriter>,
 ) : ConfigManager {
     override val deviceUtils = getDeviceUtils()
 
@@ -19,6 +17,10 @@ class DefaultConfigManager(
         } catch (e: Exception) {
             AppConfig(deviceUtils.createAppInstanceId())
         }
+
+    override var notificationManager: NotificationManager? = null
+
+    override var copywriter: GlobalCopywriter? = null
 
     override fun loadConfig(): AppConfig? {
         return configFilePersist.read(AppConfig::class)
@@ -34,10 +36,14 @@ class DefaultConfigManager(
         try {
             saveConfig(key, value, config)
         } catch (e: Exception) {
-            notificationManager.addNotification(
-                message = lazyCopywriter.value.getText("failed_to_save_config"),
-                messageType = MessageType.Error,
-            )
+            notificationManager?.let { manager ->
+                copywriter?.let {
+                    manager.addNotification(
+                        message = it.getText("failed_to_save_config"),
+                        messageType = MessageType.Error,
+                    )
+                }
+            }
             config = oldConfig
         }
     }

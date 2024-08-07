@@ -7,15 +7,19 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.crosspaste.LocalKoinApplication
 import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.paste.item.PasteFiles
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.FileExtUtils.canPreviewImage
 import com.crosspaste.utils.extension
 
 @Composable
 fun FilesPreviewView(pasteData: PasteData) {
     pasteData.getPasteItem()?.let {
-        val pasteFilePaths = (it as PasteFiles).getFilePaths()
+        val current = LocalKoinApplication.current
+        val userDataPathProvider = current.koin.get<UserDataPathProvider>()
+        val pasteFilePaths = (it as PasteFiles).getFilePaths(userDataPathProvider)
 
         PasteSpecificPreviewContentView(
             pasteMainContent = {

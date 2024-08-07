@@ -6,7 +6,7 @@ import com.crosspaste.dto.pull.PullFileRequest
 import com.crosspaste.dto.pull.PullFilesKey
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.paste.CacheManager
-import com.crosspaste.path.PathProvider
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getAppInstanceId
@@ -28,7 +28,7 @@ fun Routing.pullRouting() {
 
     val cacheManager = koinApplication.koin.get<CacheManager>()
 
-    val pathProvider = koinApplication.koin.get<PathProvider>()
+    val userDataPathProvider = koinApplication.koin.get<UserDataPathProvider>()
 
     val fileUtils = getFileUtils()
 
@@ -79,7 +79,7 @@ fun Routing.pullRouting() {
                 return@get
             }
 
-        val iconPath = pathProvider.resolve("$source.png", AppFileType.ICON)
+        val iconPath = userDataPathProvider.resolve("$source.png", AppFileType.ICON)
         if (!FileSystem.SYSTEM.exists(iconPath)) {
             logger.error { "icon not found: $source" }
             failResponse(call, StandardErrorCode.NOT_FOUND_ICON.toErrorCode())
