@@ -342,7 +342,7 @@ class CrossPaste {
                     single<UISupport> { DesktopUISupport(get(), get(), get()) }
                     single<ShortcutKeys> { DesktopShortcutKeys(get()) }
                     single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get()) }
-                    single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get(), get()) }
+                    single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get()) }
                     single<DialogService> { DesktopDialogService() }
                 }
             return GlobalContext.startKoin {
@@ -376,7 +376,6 @@ class CrossPaste {
         }
 
         private fun exitCrossPasteApplication(exitApplication: () -> Unit) {
-            koinApplication.koin.get<AppLock>().releaseLock()
             koinApplication.koin.get<ChromeService>().quit()
             koinApplication.koin.get<PasteboardService>().stop()
             koinApplication.koin.get<PasteBonjourService>().unregisterService()
@@ -384,6 +383,8 @@ class CrossPaste {
             koinApplication.koin.get<SyncManager>().notifyExit()
             koinApplication.koin.get<CleanPasteScheduler>().stop()
             koinApplication.koin.get<GlobalListener>().stop()
+            koinApplication.koin.get<RealmManager>().close()
+            koinApplication.koin.get<AppLock>().releaseLock()
             exitApplication()
         }
 

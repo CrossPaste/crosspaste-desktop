@@ -54,7 +54,10 @@ fun CrossPasteMainWindow(
 
                     override fun windowLostFocus(e: WindowEvent?) {
                         mainCoroutineDispatcher.launch(CoroutineName("Hide CrossPaste")) {
-                            if (appWindowManager.showMainWindow && !appWindowManager.showMainDialog) {
+                            if (appWindowManager.showMainWindow &&
+                                !appWindowManager.showMainDialog &&
+                                !appWindowManager.showFileDialog
+                            ) {
                                 appWindowManager.unActiveMainWindow()
                             }
                         }

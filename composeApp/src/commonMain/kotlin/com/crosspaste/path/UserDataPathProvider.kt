@@ -16,4 +16,6 @@ interface UserDataPathProvider : PathProvider {
         isPull: Boolean,
         filesIndexBuilder: FilesIndexBuilder? = null,
     )
+
+    fun migration(migrationPath: Path)
 }

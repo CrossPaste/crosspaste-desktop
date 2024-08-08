@@ -29,21 +29,44 @@ class DesktopUserDataPathProvider(private val configManager: ConfigManager) : Us
 
     override val fileUtils: FileUtils = getFileUtils()
 
+    private val types: List<AppFileType> =
+        listOf(
+            AppFileType.FILE,
+            AppFileType.IMAGE,
+            AppFileType.DATA,
+            AppFileType.HTML,
+            AppFileType.ICON,
+            AppFileType.FAVICON,
+            AppFileType.FILE_EXT_ICON,
+            AppFileType.VIDEO,
+        )
+
     override fun resolve(
         fileName: String?,
         appFileType: AppFileType,
     ): Path {
+        return resolve(fileName, appFileType) {
+            getUserDataPath()
+        }
+    }
+
+    private fun resolve(
+        fileName: String?,
+        appFileType: AppFileType,
+        getBasePath: () -> Path,
+    ): Path {
+        val basePath = getBasePath()
         val path =
             when (appFileType) {
-                AppFileType.FILE -> getUserDataPath().resolve("files")
-                AppFileType.IMAGE -> getUserDataPath().resolve("images")
-                AppFileType.DATA -> getUserDataPath().resolve("data")
-                AppFileType.HTML -> getUserDataPath().resolve("html")
-                AppFileType.ICON -> getUserDataPath().resolve("icons")
-                AppFileType.FAVICON -> getUserDataPath().resolve("favicon")
-                AppFileType.FILE_EXT_ICON -> getUserDataPath().resolve("file_ext_icons")
-                AppFileType.VIDEO -> getUserDataPath().resolve("videos")
-                else -> getUserDataPath()
+                AppFileType.FILE -> basePath.resolve("files")
+                AppFileType.IMAGE -> basePath.resolve("images")
+                AppFileType.DATA -> basePath.resolve("data")
+                AppFileType.HTML -> basePath.resolve("html")
+                AppFileType.ICON -> basePath.resolve("icons")
+                AppFileType.FAVICON -> basePath.resolve("favicon")
+                AppFileType.FILE_EXT_ICON -> basePath.resolve("file_ext_icons")
+                AppFileType.VIDEO -> basePath.resolve("videos")
+                else -> basePath
             }
 
         autoCreateDir(path)
@@ -51,6 +74,36 @@ class DesktopUserDataPathProvider(private val configManager: ConfigManager) : Us
         return fileName?.let {
             path.resolve(fileName)
         } ?: path
+    }
+
+    override fun migration(migrationPath: Path) {
+        var exception: Exception? = null
+        try {
+            for (type in types) {
+                val originTypePath = resolve(appFileType = type)
+                val migrationTypePath =
+                    resolve(fileName = null, appFileType = type) {
+                        migrationPath
+                    }
+                originTypePath.toFile()
+                    .copyRecursively(migrationTypePath.toFile(), true)
+            }
+        } catch (e: Exception) {
+            exception = e
+        }
+        exception?.let {
+            try {
+                migrationPath.toFile().listFiles()?.forEach {
+                    it.deleteRecursively()
+                }
+            } catch (ignore: Exception) {
+            }
+        } ?: run {
+            configManager.updateConfig(
+                listOf("storagePath", "useDefaultStoragePath"),
+                listOf(migrationPath.toString(), false),
+            )
+        }
     }
 
     override fun resolve(

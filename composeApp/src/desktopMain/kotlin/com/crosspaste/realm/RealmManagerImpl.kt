@@ -83,4 +83,8 @@ class RealmManagerImpl private constructor(private val config: RealmConfiguratio
             logger.info { "RealmManager createRealm - ${config.path}" }
         }
     }
+
+    override fun close() {
+        realm.close()
+    }
 }

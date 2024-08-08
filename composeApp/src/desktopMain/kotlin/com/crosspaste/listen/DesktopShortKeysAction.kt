@@ -15,7 +15,6 @@ import com.crosspaste.listen.DesktopShortcutKeys.Companion.SWITCH_MONITOR_PASTEB
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.paste.PasteSearchService
 import com.crosspaste.paste.PasteboardService
-import com.crosspaste.ui.base.DialogService
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -28,7 +27,6 @@ class DesktopShortKeysAction(
     private val pasteDao: PasteDao,
     private val configManager: ConfigManager,
     private val appWindowManager: AppWindowManager,
-    private val dialogService: DialogService,
     private val pasteSearchService: PasteSearchService,
     private val pasteboardService: PasteboardService,
 ) : ShortcutKeysAction {
@@ -64,7 +62,10 @@ class DesktopShortKeysAction(
     private fun hideWindow() {
         logger.info { "Hide window" }
         mainCoroutineDispatcher.launch(CoroutineName("HideWindow")) {
-            if (appWindowManager.showMainWindow && dialogService.dialogs.isEmpty()) {
+            if (appWindowManager.showMainWindow &&
+                !appWindowManager.showMainDialog &&
+                !appWindowManager.showFileDialog
+            ) {
                 appWindowManager.unActiveMainWindow()
             }
 

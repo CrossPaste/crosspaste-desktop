@@ -4,6 +4,7 @@ import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.window.WindowState
+import okio.Path
 
 interface AppWindowManager {
 
@@ -16,6 +17,8 @@ interface AppWindowManager {
     var mainFocusRequester: FocusRequester
 
     var showMainDialog: Boolean
+
+    var showFileDialog: Boolean
 
     var showSearchWindow: Boolean
 
@@ -56,4 +59,11 @@ interface AppWindowManager {
     fun getPrevAppName(): String?
 
     suspend fun toPaste()
+
+    fun openFileChooser(
+        fileChooserTitle: String,
+        currentStoragePath: String,
+        action: (Path) -> Unit,
+        errorAction: (String) -> Unit,
+    )
 }
