@@ -411,6 +411,10 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
             ExpandView("store") {
                 StoreSettingsView()
             }
+            Spacer(modifier = Modifier.height(10.dp))
+            ExpandView("pasteboard") {
+                PasteboardSettingsView()
+            }
 
             Spacer(modifier = Modifier.height(20.dp))
         }
