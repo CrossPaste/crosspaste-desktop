@@ -9,7 +9,7 @@ import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
-import com.crosspaste.path.PathProvider
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.task.TaskExecutor
 import com.crosspaste.task.extra.SyncExtraInfo
 import com.crosspaste.utils.LoggerExtension.logExecutionTime
@@ -33,7 +33,7 @@ import org.mongodb.kbson.ObjectId
 
 class PasteRealm(
     private val realm: Realm,
-    private val pathProvider: PathProvider,
+    private val userDataPathProvider: UserDataPathProvider,
     private val configManager: ConfigManager,
     private val lazyTaskExecutor: Lazy<TaskExecutor>,
 ) : PasteDao {
@@ -221,7 +221,7 @@ class PasteRealm(
     private suspend fun doDeletePasteData(queryToDelete: MutableRealm.() -> List<PasteData>) {
         realm.write {
             for (pasteData in queryToDelete.invoke(this)) {
-                pasteData.clear(this)
+                pasteData.clear(this, userDataPathProvider)
             }
         }
     }
@@ -268,7 +268,7 @@ class PasteRealm(
                         PasteCollection.getPasteItem(anyValue)?.let {
                             if (it.md5 == "") {
                                 iterator.remove()
-                                it.clear(this)
+                                it.clear(this, userDataPathProvider)
                             }
                         } ?: iterator.remove()
                     }
@@ -346,7 +346,7 @@ class PasteRealm(
         val existFile = pasteData.existFileResource()
         val existIconFile: Boolean? =
             pasteData.source?.let {
-                FileSystem.SYSTEM.exists(pathProvider.resolve("$it.png", AppFileType.ICON))
+                FileSystem.SYSTEM.exists(userDataPathProvider.resolve("$it.png", AppFileType.ICON))
             }
 
         realm.write(block = {

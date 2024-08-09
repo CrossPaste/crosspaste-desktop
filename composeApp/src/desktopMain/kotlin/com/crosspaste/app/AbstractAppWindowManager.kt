@@ -11,16 +11,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
-import com.crosspaste.path.DesktopPathProvider
-import com.crosspaste.path.PathProvider
 import com.crosspaste.utils.Memoize
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import okio.Path
+import okio.Path.Companion.toOkioPath
 import java.awt.Cursor
 import java.awt.Rectangle
+import java.io.File
+import javax.swing.JFileChooser
 
 abstract class AbstractAppWindowManager : AppWindowManager {
 
@@ -37,8 +39,6 @@ abstract class AbstractAppWindowManager : AppWindowManager {
 
     protected val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
-    protected val pathProvider: PathProvider = DesktopPathProvider
-
     override var showMainWindow by mutableStateOf(false)
 
     override var mainWindowState: WindowState by mutableStateOf(
@@ -54,6 +54,8 @@ abstract class AbstractAppWindowManager : AppWindowManager {
     override var mainFocusRequester = FocusRequester()
 
     override var showMainDialog by mutableStateOf(false)
+
+    override var showFileDialog by mutableStateOf(false)
 
     override var showSearchWindow by mutableStateOf(false)
 
@@ -94,5 +96,41 @@ abstract class AbstractAppWindowManager : AppWindowManager {
 
     override fun setSearchCursorWait() {
         searchComposeWindow?.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
+    }
+
+    override fun openFileChooser(
+        fileChooserTitle: String,
+        currentStoragePath: String,
+        action: (Path) -> Unit,
+        errorAction: (String) -> Unit,
+    ) {
+        mainComposeWindow?.let {
+            showFileDialog = true
+            JFileChooser().apply {
+                fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+                dialogTitle = fileChooserTitle
+                currentStoragePath.let {
+                    currentDirectory = File(it)
+                }
+                showOpenDialog(it)
+                selectedFile?.let { file ->
+                    val path = file.toOkioPath(normalize = true)
+                    println("path: $path")
+                    if (path.toString().startsWith(currentStoragePath)) {
+                        errorAction("cant_select_child_directory")
+                    } else if (!file.exists()) {
+                        errorAction("directory_not_exist")
+                    } else if (file.listFiles { it ->
+                            !it.name.startsWith(".")
+                        }?.isNotEmpty() == true
+                    ) {
+                        errorAction("directory_not_empty")
+                    } else {
+                        action(path)
+                    }
+                }
+            }
+            showFileDialog = false
+        }
     }
 }

@@ -4,8 +4,7 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.os.linux.FreedesktopUtils.saveExtIcon
 import com.crosspaste.os.macos.MacAppUtils
 import com.crosspaste.os.windows.JIconExtract
-import com.crosspaste.path.DesktopPathProvider
-import com.crosspaste.path.PathProvider
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.currentPlatform
 import com.crosspaste.utils.ConcurrentPlatformMap
 import com.crosspaste.utils.PlatformLock
@@ -14,11 +13,11 @@ import com.crosspaste.utils.extension
 import io.github.oshai.kotlinlogging.KotlinLogging
 import okio.Path
 
-object DesktopFileExtLoader : ConcurrentLoader<Path, Path>, FileExtImageLoader {
+class DesktopFileExtLoader(
+    private val userDataPathProvider: UserDataPathProvider,
+) : ConcurrentLoader<Path, Path>, FileExtImageLoader {
 
     private val logger = KotlinLogging.logger {}
-
-    private val pathProvider: PathProvider = DesktopPathProvider
 
     override val lockMap: ConcurrentPlatformMap<String, PlatformLock> = createConcurrentPlatformMap()
 
@@ -39,7 +38,7 @@ object DesktopFileExtLoader : ConcurrentLoader<Path, Path>, FileExtImageLoader {
         key: String,
         value: Path,
     ): Path {
-        return pathProvider.resolve("$key.png", AppFileType.FILE_EXT_ICON)
+        return userDataPathProvider.resolve("$key.png", AppFileType.FILE_EXT_ICON)
     }
 
     override fun exist(result: Path): Boolean {

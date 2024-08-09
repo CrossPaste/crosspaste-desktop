@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalExitApplication
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppRestartService
+import com.crosspaste.app.ExitMode
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.CrossPasteTheme
 import com.crosspaste.ui.grantPermissionColor
@@ -205,7 +206,7 @@ fun CrossPasteGrantAccessibilityPermissions(
                                 modifier = Modifier.height(28.dp),
                                 onClick = {
                                     restarting = true
-                                    appRestartService.restart { exitApplication() }
+                                    appRestartService.restart { exitApplication(ExitMode.RESTART) }
                                 },
                                 shape = RoundedCornerShape(4.dp),
                                 border = BorderStroke(1.dp, MaterialTheme.colors.primary),

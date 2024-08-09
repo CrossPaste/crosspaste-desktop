@@ -6,7 +6,7 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.dao.signal.SignalDao
 import com.crosspaste.os.macos.MacosKeychainHelper
 import com.crosspaste.os.windows.WindowDapiHelper
-import com.crosspaste.path.DesktopPathProvider
+import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.platform.currentPlatform
 import com.crosspaste.presist.DesktopOneFilePersist
 import com.crosspaste.utils.EncryptUtils
@@ -115,7 +115,7 @@ class MacosIdentityKeyStoreFactory(
 
     private val filePersist =
         DesktopOneFilePersist(
-            DesktopPathProvider.resolve("signal.data", AppFileType.ENCRYPT),
+            DesktopAppPathProvider.resolve("signal.data", AppFileType.ENCRYPT),
         )
 
     override fun createIdentityKeyStore(): IdentityKeyStore {
@@ -174,7 +174,7 @@ class WindowsIdentityKeyStoreFactory(
 
     private val filePersist =
         DesktopOneFilePersist(
-            DesktopPathProvider.resolve("signal.data", AppFileType.ENCRYPT),
+            DesktopAppPathProvider.resolve("signal.data", AppFileType.ENCRYPT),
         )
 
     override fun createIdentityKeyStore(): IdentityKeyStore {
@@ -215,7 +215,7 @@ class LinuxIdentityKeyStoreFactory(
 
     private val filePersist =
         DesktopOneFilePersist(
-            DesktopPathProvider.resolve("signal.data", AppFileType.ENCRYPT),
+            DesktopAppPathProvider.resolve("signal.data", AppFileType.ENCRYPT),
         )
 
     override fun createIdentityKeyStore(): IdentityKeyStore {

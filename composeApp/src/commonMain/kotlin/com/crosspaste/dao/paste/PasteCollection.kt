@@ -1,5 +1,6 @@
 package com.crosspaste.dao.paste
 
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.serializer.RealmAnyRealmListSerializer
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.asRealmObject
@@ -19,13 +20,14 @@ class PasteCollection : RealmObject {
 
     fun clear(
         realm: MutableRealm,
+        userDataPathProvider: UserDataPathProvider,
         clearResource: Boolean = true,
     ) {
         val iterator = pasteItems.iterator()
         while (iterator.hasNext()) {
             val pasteItem = iterator.next()
             iterator.remove()
-            getPasteItem(pasteItem)?.clear(realm, clearResource)
+            getPasteItem(pasteItem)?.clear(realm, userDataPathProvider, clearResource)
         }
         realm.delete(this)
     }

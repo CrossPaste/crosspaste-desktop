@@ -1,5 +1,6 @@
 package com.crosspaste.dao.paste
 
+import com.crosspaste.path.UserDataPathProvider
 import io.realm.kotlin.MutableRealm
 import org.mongodb.kbson.ObjectId
 
@@ -30,6 +31,7 @@ interface PasteItem {
 
     fun clear(
         realm: MutableRealm,
+        userDataPathProvider: UserDataPathProvider,
         clearResource: Boolean = true,
     )
 }

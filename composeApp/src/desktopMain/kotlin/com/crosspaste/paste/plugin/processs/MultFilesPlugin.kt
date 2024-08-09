@@ -3,13 +3,14 @@ package com.crosspaste.paste.plugin.processs
 import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.DesktopJsonUtils
 import com.crosspaste.utils.getCodecsUtils
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.toRealmList
 import kotlinx.serialization.encodeToString
 
-object MultFilesPlugin : PasteProcessPlugin {
+class MultFilesPlugin(private val userDataPathProvider: UserDataPathProvider) : PasteProcessPlugin {
 
     private val codecsUtils = getCodecsUtils()
 
@@ -31,7 +32,7 @@ object MultFilesPlugin : PasteProcessPlugin {
             val md5 =
                 pasteItems.map { it as FilesPasteItem }.map { it.md5 }
                     .toTypedArray().let { codecsUtils.md5ByArray(it) }
-            pasteItems.forEach { it.clear(realm, clearResource = false) }
+            pasteItems.forEach { it.clear(realm, userDataPathProvider, clearResource = false) }
             return FilesPasteItem().apply {
                 this.relativePathList = relativePathList
                 this.fileInfoTree = fileInfoMapJsonString

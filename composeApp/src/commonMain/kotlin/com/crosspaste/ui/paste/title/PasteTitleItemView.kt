@@ -7,9 +7,13 @@ import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.paste.item.PasteUrl
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.paste.preview.getPasteItem
 
-fun getPasteTitle(pasteData: PasteData): String? {
+fun getPasteTitle(
+    pasteData: PasteData,
+    userDataPathProvider: UserDataPathProvider,
+): String? {
     return if (pasteData.pasteState == PasteState.LOADING) {
         "Loading..."
     } else {
@@ -17,8 +21,8 @@ fun getPasteTitle(pasteData: PasteData): String? {
             PasteType.TEXT -> getText(pasteData)
             PasteType.URL -> getUrl(pasteData)
             PasteType.HTML -> getHtml(pasteData)
-            PasteType.IMAGE -> getImages(pasteData)
-            PasteType.FILE -> getFiles(pasteData)
+            PasteType.IMAGE -> getImages(pasteData, userDataPathProvider)
+            PasteType.FILE -> getFiles(pasteData, userDataPathProvider)
             else -> {
                 "Unknown"
             }
@@ -52,16 +56,22 @@ private fun getHtml(pasteData: PasteData): String? {
     }
 }
 
-private fun getImages(pasteData: PasteData): String? {
+private fun getImages(
+    pasteData: PasteData,
+    userDataPathProvider: UserDataPathProvider,
+): String? {
     return pasteData.getPasteItem()?.let {
         val pasteFiles = it as PasteFiles
-        pasteFiles.getFilePaths().joinToString(", ") { path -> path.name }
+        pasteFiles.getFilePaths(userDataPathProvider).joinToString(", ") { path -> path.name }
     }
 }
 
-private fun getFiles(pasteData: PasteData): String? {
+private fun getFiles(
+    pasteData: PasteData,
+    userDataPathProvider: UserDataPathProvider,
+): String? {
     return pasteData.getPasteItem()?.let {
         val pasteFiles = it as PasteFiles
-        pasteFiles.getFilePaths().joinToString(", ") { path -> path.name }
+        pasteFiles.getFilePaths(userDataPathProvider).joinToString(", ") { path -> path.name }
     }
 }

@@ -14,10 +14,10 @@ class TestPathProviderMock {
     @Test
     fun testMockTestPathProvider() {
         testUseMockTestPathProvider { tempPasteAppPath, tempUserHome, tempPasteAppJarPath, tempUserPath ->
-            assertEquals(tempPasteAppPath, DesktopPathProvider.pasteAppPath)
-            assertEquals(tempUserHome, DesktopPathProvider.userHome)
-            assertEquals(tempPasteAppJarPath, DesktopPathProvider.pasteAppJarPath)
-            assertEquals(tempUserPath, DesktopPathProvider.pasteUserPath)
+            assertEquals(tempPasteAppPath, DesktopAppPathProvider.pasteAppPath)
+            assertEquals(tempUserHome, DesktopAppPathProvider.userHome)
+            assertEquals(tempPasteAppJarPath, DesktopAppPathProvider.pasteAppJarPath)
+            assertEquals(tempUserPath, DesktopAppPathProvider.pasteUserPath)
         }
     }
 
@@ -25,7 +25,7 @@ class TestPathProviderMock {
         @Synchronized
         fun testUseMockTestPathProvider(testAction: (Path, Path, Path, Path) -> Unit) {
             try {
-                mockkObject(DesktopPathProvider)
+                mockkObject(DesktopAppPathProvider)
 
                 // Create temporary directories
                 val tempPasteAppPath = Files.createTempDirectory("tempPasteAppPath").toOkioPath()
@@ -38,14 +38,14 @@ class TestPathProviderMock {
                 tempPasteAppJarPath.toFile().deleteOnExit()
                 tempUserPath.toFile().deleteOnExit()
 
-                every { DesktopPathProvider.pasteAppPath } returns tempPasteAppPath
-                every { DesktopPathProvider.userHome } returns tempUserHome
-                every { DesktopPathProvider.pasteAppJarPath } returns tempPasteAppJarPath
-                every { DesktopPathProvider.pasteUserPath } returns tempUserPath
+                every { DesktopAppPathProvider.pasteAppPath } returns tempPasteAppPath
+                every { DesktopAppPathProvider.userHome } returns tempUserHome
+                every { DesktopAppPathProvider.pasteAppJarPath } returns tempPasteAppJarPath
+                every { DesktopAppPathProvider.pasteUserPath } returns tempUserPath
 
                 testAction(tempPasteAppPath, tempUserHome, tempPasteAppJarPath, tempUserPath)
             } finally {
-                unmockkObject(DesktopPathProvider)
+                unmockkObject(DesktopAppPathProvider)
             }
         }
     }

@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.application
 import com.crosspaste.app.AppEnv
+import com.crosspaste.app.AppExitService
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppInfoFactory
@@ -19,6 +20,7 @@ import com.crosspaste.app.AppTokenService
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.AppUrls
 import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.DesktopAppExitService
 import com.crosspaste.app.DesktopAppInfoFactory
 import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppRestartService
@@ -26,6 +28,7 @@ import com.crosspaste.app.DesktopAppStartUpService
 import com.crosspaste.app.DesktopAppTokenService
 import com.crosspaste.app.DesktopAppUpdateService
 import com.crosspaste.app.DesktopAppUrls
+import com.crosspaste.app.ExitMode
 import com.crosspaste.app.getDesktopAppWindowManager
 import com.crosspaste.clean.CleanPasteScheduler
 import com.crosspaste.clean.DesktopCleanPasteScheduler
@@ -106,8 +109,10 @@ import com.crosspaste.paste.plugin.type.HtmlTypePlugin
 import com.crosspaste.paste.plugin.type.ImageTypePlugin
 import com.crosspaste.paste.plugin.type.TextTypePlugin
 import com.crosspaste.paste.plugin.type.UrlTypePlugin
-import com.crosspaste.path.DesktopPathProvider
-import com.crosspaste.path.PathProvider
+import com.crosspaste.path.AppPathProvider
+import com.crosspaste.path.DesktopAppPathProvider
+import com.crosspaste.path.DesktopUserDataPathProvider
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.currentPlatform
 import com.crosspaste.presist.DesktopFilePersist
 import com.crosspaste.presist.FilePersist
@@ -186,9 +191,18 @@ class CrossPaste {
 
         private val appEnv = AppEnv.CURRENT
 
+        private val appPathProvider = DesktopAppPathProvider
+
+        private val configManager =
+            DefaultConfigManager(
+                DesktopFilePersist.createOneFilePersist(
+                    appPathProvider.resolve("appConfig.json", AppFileType.USER),
+                ),
+            )
+
         private val crossPasteLogger =
             initLogger(
-                DesktopPathProvider.resolve("crosspaste.log", AppFileType.LOG).toString(),
+                appPathProvider.resolve("crosspaste.log", AppFileType.LOG).toString(),
             )
 
         private val logger: KLogger = KotlinLogging.logger {}
@@ -207,25 +221,21 @@ class CrossPaste {
                     single<AppLaunchState> { DesktopAppLaunch.launch() }
                     single<AppStartUpService> { DesktopAppStartUpService(get(), get()) }
                     single<AppRestartService> { DesktopAppRestartService }
+                    single<AppExitService> { DesktopAppExitService }
                     single<AppUpdateService> { DesktopAppUpdateService(get(), get(), get(), get(), get()) }
                     single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<PasteServer>() }) }
                     single<GlobalCoroutineScope> { GlobalCoroutineScopeImpl }
                     single<SyncInfoFactory> { DesktopSyncInfoFactory(get(), get()) }
-                    single<PathProvider> { DesktopPathProvider }
+                    single<AppPathProvider> { appPathProvider }
+                    single<UserDataPathProvider> { DesktopUserDataPathProvider(get()) }
                     single<FilePersist> { DesktopFilePersist }
-                    single<ConfigManager> {
-                        DefaultConfigManager(
-                            get<FilePersist>().getPersist("appConfig.json", AppFileType.USER),
-                            get<NotificationManager>(),
-                            lazy { get<GlobalCopywriter>() },
-                        )
-                    }
+                    single<ConfigManager> { configManager }
                     single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
                     single<IDGenerator> { IDGeneratorFactory(get()).createIDGenerator() }
-                    single<CacheManager> { CacheManagerImpl(get()) }
+                    single<CacheManager> { CacheManagerImpl(get(), get()) }
                     single<CrossPasteLogger> { crossPasteLogger }
                     single<KLogger> { CrossPaste.logger }
-                    single<FileExtImageLoader> { DesktopFileExtLoader }
+                    single<FileExtImageLoader> { DesktopFileExtLoader(get()) }
                     single<ThumbnailLoader> { DesktopThumbnailLoader }
 
                     // realm component
@@ -243,11 +253,22 @@ class CrossPaste {
                     single<SyncClientApi> { DesktopSyncClientApi(get(), get()) }
                     single<SendPasteClientApi> { DesktopSendPasteClientApi(get(), get()) }
                     single<PullClientApi> { DesktopPullClientApi(get(), get()) }
-                    single { DesktopSyncManager(get(), get(), get(), get(), get(), get(), get(), lazy { get() }) }
+                    single<DesktopSyncManager> {
+                        DesktopSyncManager(
+                            get(),
+                            get(),
+                            get(),
+                            get(),
+                            get(),
+                            get(),
+                            get(),
+                            lazy { get() },
+                        )
+                    }
                     single<SyncRefresher> { get<DesktopSyncManager>() }
                     single<SyncManager> { get<DesktopSyncManager>() }
                     single<DeviceManager> { DesktopDeviceManager(get(), get(), get()) }
-                    single<FaviconLoader> { DesktopFaviconLoader }
+                    single<FaviconLoader> { DesktopFaviconLoader(get()) }
 
                     // signal component
                     single<IdentityKeyStore> { getPasteIdentityKeyStoreFactory(get(), get()).createIdentityKeyStore() }
@@ -260,9 +281,9 @@ class CrossPaste {
                     single<SignalClientDecryptPlugin> { SignalClientDecryptPlugin(get()) }
 
                     // paste component
-                    single<FilesTypePlugin> { FilesTypePlugin(get(), get()) }
+                    single<FilesTypePlugin> { FilesTypePlugin(get(), get(), get()) }
                     single<HtmlTypePlugin> { HtmlTypePlugin(get()) }
-                    single<ImageTypePlugin> { ImageTypePlugin(get()) }
+                    single<ImageTypePlugin> { ImageTypePlugin(get(), get()) }
                     single<TextTypePlugin> { TextTypePlugin() }
                     single<UrlTypePlugin> { UrlTypePlugin() }
                     single<PasteboardService> { getDesktopPasteboardService(get(), get(), get(), get(), get()) }
@@ -272,10 +293,10 @@ class CrossPaste {
                             get(),
                             get(),
                             listOf(
-                                DistinctPlugin,
+                                DistinctPlugin(get()),
                                 GenerateUrlPlugin,
-                                FilesToImagesPlugin,
-                                RemoveFolderImagePlugin,
+                                FilesToImagesPlugin(get()),
+                                RemoveFolderImagePlugin(get()),
                                 SortPlugin,
                             ),
                             listOf(
@@ -308,9 +329,9 @@ class CrossPaste {
                             listOf(
                                 SyncPasteTaskExecutor(get(), get(), get()),
                                 DeletePasteTaskExecutor(get()),
-                                PullFileTaskExecutor(get(), get(), get(), get(), get()),
+                                PullFileTaskExecutor(get(), get(), get(), get(), get(), get()),
                                 CleanPasteTaskExecutor(get(), get()),
-                                Html2ImageTaskExecutor(get(), get(), get()),
+                                Html2ImageTaskExecutor(get(), get(), get(), get()),
                                 PullIconTaskExecutor(get(), get(), get(), get()),
                             ),
                             get(),
@@ -318,7 +339,7 @@ class CrossPaste {
                     }
 
                     // ui component
-                    single<AppWindowManager> { getDesktopAppWindowManager(lazy { get() }, get()) }
+                    single<AppWindowManager> { getDesktopAppWindowManager(lazy { get() }, get(), get()) }
                     single<AppTokenService> { DesktopAppTokenService() }
                     single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
                     single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get()) }
@@ -332,11 +353,11 @@ class CrossPaste {
                     single<PasteResourceLoader> { DesktopAbsolutePasteResourceLoader }
                     single<ToastManager> { DesktopToastManager() }
                     single<NotificationManager> { DesktopNotificationManager(get(), get()) }
-                    single<IconStyle> { DesktopIconStyle }
+                    single<IconStyle> { DesktopIconStyle(get()) }
                     single<UISupport> { DesktopUISupport(get(), get(), get()) }
-                    single<ShortcutKeys> { DesktopShortcutKeys(get(), get()) }
+                    single<ShortcutKeys> { DesktopShortcutKeys(get()) }
                     single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get()) }
-                    single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get(), get()) }
+                    single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get()) }
                     single<DialogService> { DesktopDialogService() }
                 }
             return GlobalContext.startKoin {
@@ -369,15 +390,39 @@ class CrossPaste {
             }
         }
 
-        private fun exitCrossPasteApplication(exitApplication: () -> Unit) {
-            koinApplication.koin.get<AppLock>().releaseLock()
+        private fun exitCrossPasteApplication(
+            exitMode: ExitMode,
+            exitApplication: () -> Unit,
+        ) {
+            val appExitService = koinApplication.koin.get<AppExitService>()
+            appExitService.beforeExitList.forEach {
+                it.invoke()
+            }
+            logger.debug { "beforeExitList execution completed" }
             koinApplication.koin.get<ChromeService>().quit()
+            logger.info { "ChromeService quit completed" }
             koinApplication.koin.get<PasteboardService>().stop()
+            logger.info { "PasteboardService stop completed" }
             koinApplication.koin.get<PasteBonjourService>().unregisterService()
+            logger.info { "PasteBonjourService unregister completed" }
             koinApplication.koin.get<PasteServer>().stop()
+            logger.info { "PasteServer stop completed" }
             koinApplication.koin.get<SyncManager>().notifyExit()
+            logger.info { "SyncManager notify exit completed" }
             koinApplication.koin.get<CleanPasteScheduler>().stop()
+            logger.info { "CleanPasteScheduler stop completed" }
             koinApplication.koin.get<GlobalListener>().stop()
+            logger.info { "GlobalListener stop completed" }
+            appExitService.beforeReleaseLockList.forEach {
+                it.invoke()
+            }
+            logger.info { "beforeReleaseLockList execution completed" }
+            koinApplication.koin.get<AppLock>().releaseLock()
+            logger.info { "AppLock release completed" }
+            if (exitMode == ExitMode.MIGRATION) {
+                val appWindowManager = koinApplication.koin.get<AppWindowManager>()
+                appWindowManager.showMainWindow = false
+            }
             exitApplication()
         }
 
@@ -409,11 +454,13 @@ class CrossPaste {
             application {
                 val ioScope = rememberCoroutineScope { ioDispatcher }
 
-                val exitApplication: () -> Unit = {
-                    appWindowManager.showMainWindow = false
+                val exitApplication: (ExitMode) -> Unit = { mode ->
+                    if (mode == ExitMode.EXIT || mode == ExitMode.RESTART) {
+                        appWindowManager.showMainWindow = false
+                    }
                     appWindowManager.showSearchWindow = false
                     ioScope.launch(CoroutineName("ExitApplication")) {
-                        exitCrossPasteApplication { exitApplication() }
+                        exitCrossPasteApplication(mode) { exitApplication() }
                     }
                 }
 

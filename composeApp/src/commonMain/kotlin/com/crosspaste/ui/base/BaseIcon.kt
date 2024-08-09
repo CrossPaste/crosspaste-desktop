@@ -108,3 +108,8 @@ fun favorite(): Painter {
 fun circle(): Painter {
     return painterResource("icon/base/circle.svg")
 }
+
+@Composable
+fun archive(): Painter {
+    return painterResource("icon/base/archive.svg")
+}

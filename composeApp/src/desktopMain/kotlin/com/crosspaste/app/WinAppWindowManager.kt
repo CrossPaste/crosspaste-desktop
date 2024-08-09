@@ -4,6 +4,7 @@ import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.os.windows.api.User32
+import com.crosspaste.path.UserDataPathProvider
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
@@ -14,6 +15,7 @@ import kotlinx.coroutines.launch
 class WinAppWindowManager(
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val activeGraphicsDevice: ActiveGraphicsDevice,
+    private val userDataPathProvider: UserDataPathProvider,
 ) : AbstractAppWindowManager() {
 
     private var prevWinAppInfo: WinAppInfo? = null
@@ -48,7 +50,7 @@ class WinAppWindowManager(
         exeFilePath: String,
         fileDescription: String,
     ) {
-        val iconPath = pathProvider.resolve("$fileDescription.png", AppFileType.ICON)
+        val iconPath = userDataPathProvider.resolve("$fileDescription.png", AppFileType.ICON)
         if (!iconPath.toFile().exists()) {
             User32.extractAndSaveIcon(exeFilePath, iconPath.toString())
         }

@@ -8,6 +8,7 @@ import com.crosspaste.CrossPaste.Companion.koinApplication
 import com.crosspaste.CrossPasteMainWindowContent
 import com.crosspaste.app.AbstractAppWindowManager.Companion.MAIN_WINDOW_TITLE
 import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.ExitMode
 import com.crosspaste.listener.GlobalListener
 import com.crosspaste.ui.LinuxTrayView.initSystemTray
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
@@ -19,7 +20,7 @@ import java.awt.event.WindowEvent
 
 @Composable
 fun CrossPasteMainWindow(
-    exitApplication: () -> Unit,
+    exitApplication: (ExitMode) -> Unit,
     systemTray: SystemTray?,
     windowIcon: Painter?,
 ) {
@@ -27,7 +28,7 @@ fun CrossPasteMainWindow(
     val globalListener = koinApplication.koin.get<GlobalListener>()
 
     Window(
-        onCloseRequest = exitApplication,
+        onCloseRequest = { exitApplication(ExitMode.EXIT) },
         visible = appWindowManager.showMainWindow,
         state = appWindowManager.mainWindowState,
         title = MAIN_WINDOW_TITLE,
@@ -54,7 +55,10 @@ fun CrossPasteMainWindow(
 
                     override fun windowLostFocus(e: WindowEvent?) {
                         mainCoroutineDispatcher.launch(CoroutineName("Hide CrossPaste")) {
-                            if (appWindowManager.showMainWindow && !appWindowManager.showMainDialog) {
+                            if (appWindowManager.showMainWindow &&
+                                !appWindowManager.showMainDialog &&
+                                !appWindowManager.showFileDialog
+                            ) {
                                 appWindowManager.unActiveMainWindow()
                             }
                         }

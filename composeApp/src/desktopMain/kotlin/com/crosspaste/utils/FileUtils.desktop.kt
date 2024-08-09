@@ -1,7 +1,7 @@
 package com.crosspaste.utils
 
 import com.crosspaste.app.AppFileType
-import com.crosspaste.path.DesktopPathProvider
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.FileInfoTreeBuilder
 import com.crosspaste.presist.FilesChunk
@@ -95,9 +95,10 @@ object DesktopFileUtils : FileUtils {
         fileRelativePath: String,
         isFile: Boolean,
         appFileType: AppFileType,
+        userDataPathProvider: UserDataPathProvider,
     ): Path {
-        val basePath = DesktopPathProvider.resolve(appFileType = appFileType)
-        return DesktopPathProvider.resolve(basePath, fileRelativePath, isFile = isFile)
+        val basePath = userDataPathProvider.resolve(appFileType = appFileType)
+        return userDataPathProvider.resolve(basePath, fileRelativePath, isFile = isFile)
     }
 
     override fun getFileInfoTree(path: Path): FileInfoTree {

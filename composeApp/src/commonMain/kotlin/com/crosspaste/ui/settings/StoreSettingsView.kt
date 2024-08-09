@@ -68,6 +68,7 @@ fun StoreSettingsView() {
     val configManager = current.koin.get<ConfigManager>()
     val pasteDao = current.koin.get<PasteDao>()
     val copywriter = current.koin.get<GlobalCopywriter>()
+
     val fileUtils = getFileUtils()
 
     var pasteCount: Long? by remember { mutableStateOf(null) }
@@ -252,6 +253,8 @@ fun StoreSettingsView() {
             }
         }
     }
+
+    SetStoragePathView()
 
     Text(
         modifier =

@@ -23,6 +23,7 @@ import com.crosspaste.LocalExitApplication
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.LocalPageViewContent
 import com.crosspaste.app.AppUpdateService
+import com.crosspaste.app.ExitMode
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.UISupport
@@ -105,7 +106,7 @@ fun HomeMenuView(
             Divider()
             MenuItem(copywriter.getText("quit")) {
                 close()
-                applicationExit()
+                applicationExit(ExitMode.EXIT)
             }
         }
     }

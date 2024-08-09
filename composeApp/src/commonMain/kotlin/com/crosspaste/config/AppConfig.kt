@@ -28,6 +28,8 @@ data class AppConfig(
     val maxBackupFileSize: Long = 32,
     val enabledSyncFileSizeLimit: Boolean = true,
     val maxSyncFileSize: Long = 512,
+    val useDefaultStoragePath: Boolean = true,
+    val storagePath: String = "",
 ) {
     fun copy(
         key: String,
@@ -55,6 +57,8 @@ data class AppConfig(
             maxBackupFileSize = if (key == "maxBackupFileSize") value as Long else maxBackupFileSize,
             enabledSyncFileSizeLimit = if (key == "enabledSyncFileSizeLimit") value as Boolean else enabledSyncFileSizeLimit,
             maxSyncFileSize = if (key == "maxSyncFileSize") value as Long else maxSyncFileSize,
+            useDefaultStoragePath = if (key == "useDefaultStoragePath") value as Boolean else useDefaultStoragePath,
+            storagePath = if (key == "storagePath") value as String else storagePath,
         )
     }
 }

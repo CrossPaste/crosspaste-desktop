@@ -14,6 +14,7 @@ import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.plugin.type.FilesTypePlugin.FilesTypePlugin.FILE_LIST_ID
 import com.crosspaste.paste.plugin.type.HtmlTypePlugin.HtmlTypePlugin.HTML_ID
 import com.crosspaste.paste.toPasteDataFlavor
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.currentPlatform
 import com.crosspaste.utils.DesktopFileUtils
 import com.crosspaste.utils.DesktopFileUtils.createPastePath
@@ -36,7 +37,10 @@ import java.net.URL
 import java.nio.charset.StandardCharsets
 import javax.imageio.ImageIO
 
-class ImageTypePlugin(private val appInfo: AppInfo) : PasteTypePlugin {
+class ImageTypePlugin(
+    private val appInfo: AppInfo,
+    private val userDataPathProvider: UserDataPathProvider,
+) : PasteTypePlugin {
 
     companion object ImageItemService {
         const val IMAGE_ID = "image/x-java-image"
@@ -95,7 +99,13 @@ class ImageTypePlugin(private val appInfo: AppInfo) : PasteTypePlugin {
                     pasteId = pasteId,
                     fileName = name,
                 )
-            val imagePath = createPastePath(relativePath, isFile = true, AppFileType.IMAGE)
+            val imagePath =
+                createPastePath(
+                    relativePath,
+                    isFile = true,
+                    AppFileType.IMAGE,
+                    userDataPathProvider,
+                )
             if (writeImage(image, ext, imagePath.toNioPath())) {
                 val fileTree = DesktopFileUtils.getFileInfoTree(imagePath)
 
@@ -181,7 +191,7 @@ class ImageTypePlugin(private val appInfo: AppInfo) : PasteTypePlugin {
         map: MutableMap<PasteDataFlavor, Any>,
     ) {
         pasteItem as ImagesPasteItem
-        val filePaths = pasteItem.getFilePaths()
+        val filePaths = pasteItem.getFilePaths(userDataPathProvider)
         val fileList: List<File> = filePaths.map { it.toFile() }
         map[DataFlavor.javaFileListFlavor.toPasteDataFlavor()] = fileList
         map[PasteDataFlavors.URI_LIST_FLAVOR.toPasteDataFlavor()] =

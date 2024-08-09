@@ -15,6 +15,7 @@ import com.crosspaste.LocalKoinApplication
 import com.crosspaste.LocalPageViewContent
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.ExitMode
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.os.macos.MacAppUtils
 import com.crosspaste.os.macos.MacAppUtils.useAll
@@ -87,7 +88,7 @@ fun MacTray() {
 fun createPopupMenu(
     koinApplication: KoinApplication,
     currentPage: MutableState<PageViewContext>,
-    applicationExit: () -> Unit,
+    applicationExit: (ExitMode) -> Unit,
 ): PopupMenu {
     val copywriter = koinApplication.koin.get<GlobalCopywriter>()
     val appWindowManager = koinApplication.koin.get<AppWindowManager>()
@@ -132,7 +133,7 @@ fun createPopupMenu(
 
     popup.add(
         createMenuItem(copywriter.getText("quit")) {
-            applicationExit()
+            applicationExit(ExitMode.EXIT)
         },
     )
     return popup

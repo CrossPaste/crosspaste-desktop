@@ -4,7 +4,7 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.dao.paste.PasteState
 import com.crosspaste.dao.paste.PasteType
-import com.crosspaste.path.DesktopPathProvider
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.DesktopOneFilePersist
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.serializer.PathStringRealmListSerializer
@@ -63,10 +63,10 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
         return AppFileType.IMAGE
     }
 
-    override fun getFilePaths(): List<Path> {
-        val basePath = DesktopPathProvider.resolve(appFileType = getAppFileType())
+    override fun getFilePaths(userDataPathProvider: UserDataPathProvider): List<Path> {
+        val basePath = userDataPathProvider.resolve(appFileType = getAppFileType())
         return relativePathList.map { relativePath ->
-            DesktopPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
+            userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
         }
     }
 
@@ -74,9 +74,9 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
         return DesktopJsonUtils.JSON.decodeFromString(fileInfoTree)
     }
 
-    override fun getPasteFiles(): List<PasteFile> {
+    override fun getPasteFiles(userDataPathProvider: UserDataPathProvider): List<PasteFile> {
         val fileTreeMap = getFileInfoTreeMap()
-        return getFilePaths().flatMap { path ->
+        return getFilePaths(userDataPathProvider).flatMap { path ->
             val fileTree = fileTreeMap[path.name]!!
             fileTree.getPasteFileList(path)
         }
@@ -103,12 +103,13 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
 
     override fun clear(
         realm: MutableRealm,
+        userDataPathProvider: UserDataPathProvider,
         clearResource: Boolean,
     ) {
         if (clearResource) {
             // Non-reference types need to clean up copied files
             if (basePath == null) {
-                for (path in getFilePaths()) {
+                for (path in getFilePaths(userDataPathProvider)) {
                     DesktopOneFilePersist(path).delete()
                 }
             }

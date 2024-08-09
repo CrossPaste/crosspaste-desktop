@@ -2,7 +2,7 @@ package com.crosspaste.app
 
 import com.crosspaste.os.macos.MacAppUtils
 import com.crosspaste.os.windows.api.User32.Companion.isInstalledFromMicrosoftStore
-import com.crosspaste.path.DesktopPathProvider
+import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.platform.currentPlatform
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -15,7 +15,7 @@ object DesktopAppLaunch : AppLaunch, AppLock {
 
     private val logger: KLogger = KotlinLogging.logger {}
 
-    private val pathProvider = DesktopPathProvider
+    private val pathProvider = DesktopAppPathProvider
 
     private var channel: FileChannel? = null
     private var lock: FileLock? = null

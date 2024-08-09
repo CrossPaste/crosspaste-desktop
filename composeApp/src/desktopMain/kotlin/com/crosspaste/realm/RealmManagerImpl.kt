@@ -16,11 +16,12 @@ import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
-import com.crosspaste.path.PathProvider
+import com.crosspaste.path.UserDataPathProvider
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.Realm
 import io.realm.kotlin.RealmConfiguration
 import io.realm.kotlin.types.TypedRealmObject
+import okio.Path
 import kotlin.reflect.KClass
 
 class RealmManagerImpl private constructor(private val config: RealmConfiguration) : RealmManager {
@@ -58,15 +59,21 @@ class RealmManagerImpl private constructor(private val config: RealmConfiguratio
                 PasteTask::class,
             )
 
-        fun createRealmManager(pathProvider: PathProvider): RealmManager {
-            val path = pathProvider.resolve(appFileType = AppFileType.DATA)
-            val builder =
-                RealmConfiguration.Builder(DTO_TYPES + SIGNAL_TYPES + PASTE_TYPES + TASK_TYPES)
-                    .directory(path.toString())
-                    .name("crosspaste.realm")
-                    .schemaVersion(2)
+        private const val NAME = "crosspaste.realm"
 
-            return RealmManagerImpl(builder.build())
+        private const val SCHEMA_VALUE: Long = 2
+
+        fun createRealmManager(userDataPathProvider: UserDataPathProvider): RealmManager {
+            val path = userDataPathProvider.resolve(appFileType = AppFileType.DATA)
+            return RealmManagerImpl(createRealmConfig(path))
+        }
+
+        fun createRealmConfig(path: Path): RealmConfiguration {
+            return RealmConfiguration.Builder(DTO_TYPES + SIGNAL_TYPES + PASTE_TYPES + TASK_TYPES)
+                .directory(path.toString())
+                .name(NAME)
+                .schemaVersion(SCHEMA_VALUE)
+                .build()
         }
     }
 
@@ -82,5 +89,9 @@ class RealmManagerImpl private constructor(private val config: RealmConfiguratio
         } finally {
             logger.info { "RealmManager createRealm - ${config.path}" }
         }
+    }
+
+    override fun writeCopyTo(path: Path) {
+        realm.writeCopyTo(createRealmConfig(path))
     }
 }
