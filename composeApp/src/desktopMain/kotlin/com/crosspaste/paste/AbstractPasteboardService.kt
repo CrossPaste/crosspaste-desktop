@@ -1,6 +1,7 @@
 package com.crosspaste.paste
 
 import com.crosspaste.dao.paste.PasteData
+import com.crosspaste.dao.paste.PasteItem
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.ClipboardOwner
 import java.awt.datatransfer.Transferable
@@ -25,6 +26,23 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
         } catch (e: Exception) {
             logger.error(e) { "getContentsBySafe error" }
             null
+        }
+    }
+
+    override suspend fun tryWritePasteboard(
+        pasteItem: PasteItem,
+        localOnly: Boolean,
+        filterFile: Boolean,
+    ) {
+        try {
+            pasteProducer.produce(pasteItem, localOnly, filterFile)?.let {
+                it as DesktopWriteTransferable
+                ownerTransferable = it
+                owner = true
+                systemClipboard.setContents(ownerTransferable, this)
+            }
+        } catch (e: Exception) {
+            logger.error(e) { "tryWritePasteboard error" }
         }
     }
 

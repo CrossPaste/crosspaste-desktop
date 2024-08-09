@@ -92,6 +92,10 @@ fun ShortcutKeysContentView() {
                         .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colors.background),
             ) {
+                ShortcutKeyRow("paste_plain_text")
+
+                Divider(modifier = Modifier.padding(start = 15.dp))
+
                 ShortcutKeyRow("paste_local_last")
 
                 Divider(modifier = Modifier.padding(start = 15.dp))
