@@ -76,10 +76,15 @@ class DesktopUserDataPathProvider(private val configManager: ConfigManager) : Us
         } ?: path
     }
 
-    override fun migration(migrationPath: Path) {
-        var exception: Exception? = null
+    override fun migration(
+        migrationPath: Path,
+        realmMigrationAction: (Path) -> Unit,
+    ) {
         try {
             for (type in types) {
+                if (type == AppFileType.DATA) {
+                    continue
+                }
                 val originTypePath = resolve(appFileType = type)
                 val migrationTypePath =
                     resolve(fileName = null, appFileType = type) {
@@ -88,21 +93,30 @@ class DesktopUserDataPathProvider(private val configManager: ConfigManager) : Us
                 originTypePath.toFile()
                     .copyRecursively(migrationTypePath.toFile(), true)
             }
+            realmMigrationAction(
+                resolve(fileName = null, appFileType = AppFileType.DATA) {
+                    migrationPath
+                },
+            )
+            try {
+                for (type in types) {
+                    val originTypePath = resolve(appFileType = type)
+                    originTypePath.toFile().deleteRecursively()
+                }
+            } catch (ignore: Exception) {
+            }
+            configManager.updateConfig(
+                listOf("storagePath", "useDefaultStoragePath"),
+                listOf(migrationPath.toString(), false),
+            )
         } catch (e: Exception) {
-            exception = e
-        }
-        exception?.let {
             try {
                 migrationPath.toFile().listFiles()?.forEach {
                     it.deleteRecursively()
                 }
             } catch (ignore: Exception) {
             }
-        } ?: run {
-            configManager.updateConfig(
-                listOf("storagePath", "useDefaultStoragePath"),
-                listOf(migrationPath.toString(), false),
-            )
+            throw e
         }
     }
 

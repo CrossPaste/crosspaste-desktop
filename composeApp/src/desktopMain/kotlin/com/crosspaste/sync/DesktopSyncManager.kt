@@ -198,6 +198,7 @@ class DesktopSyncManager(
     }
 
     override fun notifyExit() {
+        realTimeJob.cancel()
         internalSyncHandlers.values.forEach { syncHandler ->
             // Ensure that the notification is completed before exiting
             runBlocking { syncHandler.notifyExit() }

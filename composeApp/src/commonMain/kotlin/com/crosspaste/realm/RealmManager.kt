@@ -1,10 +1,11 @@
 package com.crosspaste.realm
 
 import io.realm.kotlin.Realm
+import okio.Path
 
 interface RealmManager {
 
     val realm: Realm
 
-    fun close()
+    fun writeCopyTo(path: Path)
 }

@@ -3,6 +3,7 @@ package com.crosspaste.ui
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
 import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.ExitMode
 import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
 import dorkbox.systemTray.MenuItem
@@ -18,7 +19,7 @@ object LinuxTrayView {
     fun initSystemTray(
         systemTray: SystemTray,
         koinApplication: KoinApplication,
-        exitApplication: () -> Unit,
+        exitApplication: (ExitMode) -> Unit,
     ) {
         val appWindowManager = koinApplication.koin.get<AppWindowManager>()
 
@@ -35,7 +36,7 @@ object LinuxTrayView {
 
         systemTray.menu?.add(
             MenuItem("Quit CrossPaste") {
-                exitApplication()
+                exitApplication(ExitMode.EXIT)
             },
         )
     }

@@ -17,5 +17,8 @@ interface UserDataPathProvider : PathProvider {
         filesIndexBuilder: FilesIndexBuilder? = null,
     )
 
-    fun migration(migrationPath: Path)
+    fun migration(
+        migrationPath: Path,
+        realmMigrationAction: (Path) -> Unit,
+    )
 }

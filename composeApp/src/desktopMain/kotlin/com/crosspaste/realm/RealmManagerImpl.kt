@@ -21,6 +21,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.Realm
 import io.realm.kotlin.RealmConfiguration
 import io.realm.kotlin.types.TypedRealmObject
+import okio.Path
 import kotlin.reflect.KClass
 
 class RealmManagerImpl private constructor(private val config: RealmConfiguration) : RealmManager {
@@ -58,15 +59,21 @@ class RealmManagerImpl private constructor(private val config: RealmConfiguratio
                 PasteTask::class,
             )
 
+        private const val NAME = "crosspaste.realm"
+
+        private const val SCHEMA_VALUE: Long = 2
+
         fun createRealmManager(userDataPathProvider: UserDataPathProvider): RealmManager {
             val path = userDataPathProvider.resolve(appFileType = AppFileType.DATA)
-            val builder =
-                RealmConfiguration.Builder(DTO_TYPES + SIGNAL_TYPES + PASTE_TYPES + TASK_TYPES)
-                    .directory(path.toString())
-                    .name("crosspaste.realm")
-                    .schemaVersion(2)
+            return RealmManagerImpl(createRealmConfig(path))
+        }
 
-            return RealmManagerImpl(builder.build())
+        fun createRealmConfig(path: Path): RealmConfiguration {
+            return RealmConfiguration.Builder(DTO_TYPES + SIGNAL_TYPES + PASTE_TYPES + TASK_TYPES)
+                .directory(path.toString())
+                .name(NAME)
+                .schemaVersion(SCHEMA_VALUE)
+                .build()
         }
     }
 
@@ -84,7 +91,7 @@ class RealmManagerImpl private constructor(private val config: RealmConfiguratio
         }
     }
 
-    override fun close() {
-        realm.close()
+    override fun writeCopyTo(path: Path) {
+        realm.writeCopyTo(createRealmConfig(path))
     }
 }

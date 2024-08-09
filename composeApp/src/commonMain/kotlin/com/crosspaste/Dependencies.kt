@@ -2,6 +2,7 @@ package com.crosspaste
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.staticCompositionLocalOf
+import com.crosspaste.app.ExitMode
 import com.crosspaste.ui.PageViewContext
 import org.koin.core.KoinApplication
 
@@ -11,7 +12,7 @@ internal val LocalKoinApplication =
     }
 
 internal val LocalExitApplication =
-    staticCompositionLocalOf<() -> Unit> {
+    staticCompositionLocalOf<(ExitMode) -> Unit> {
         noLocalProvidedFor("ExitApplication")
     }
 

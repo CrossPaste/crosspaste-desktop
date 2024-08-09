@@ -456,6 +456,7 @@ class DesktopSyncHandler(
                 }
             }
         }
+        job.cancel()
     }
 
     override suspend fun markExit() {
