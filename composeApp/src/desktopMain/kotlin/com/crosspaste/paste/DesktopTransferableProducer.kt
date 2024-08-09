@@ -1,6 +1,7 @@
 package com.crosspaste.paste
 
 import com.crosspaste.dao.paste.PasteData
+import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.plugin.type.PasteTypePlugin
 import java.awt.datatransfer.DataFlavor
@@ -11,6 +12,33 @@ class DesktopTransferableProducer(
 
     private val pasteTypePluginMap: Map<Int, PasteTypePlugin> =
         pasteTypePlugins.associateBy { it.getPasteType() }
+
+    override fun produce(
+        pasteItem: PasteItem,
+        localOnly: Boolean,
+        filterFile: Boolean,
+    ): DesktopWriteTransferable? {
+        val builder = DesktopWriteTransferableBuilder()
+
+        if (filterFile) {
+            if (pasteItem is PasteFiles) {
+                return null
+            }
+        } else {
+            pasteTypePluginMap[pasteItem.getPasteType()]?.let {
+                builder.add(it, pasteItem)
+            }
+        }
+
+        return if (builder.isEmpty()) {
+            null
+        } else {
+            if (localOnly) {
+                builder.add(LocalOnlyFlavor.toPasteDataFlavor(), true)
+            }
+            builder.build()
+        }
+    }
 
     override fun produce(
         pasteData: PasteData,
