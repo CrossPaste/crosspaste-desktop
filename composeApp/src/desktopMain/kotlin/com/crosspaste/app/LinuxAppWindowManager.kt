@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 class LinuxAppWindowManager(
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val activeGraphicsDevice: ActiveGraphicsDevice,
-    override val userDataPathProvider: UserDataPathProvider,
+    private val userDataPathProvider: UserDataPathProvider,
 ) : AbstractAppWindowManager() {
 
     private var prevLinuxAppInfo: LinuxAppInfo? = null

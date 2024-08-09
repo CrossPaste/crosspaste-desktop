@@ -11,7 +11,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
-import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.Memoize
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KLogger
@@ -39,8 +38,6 @@ abstract class AbstractAppWindowManager : AppWindowManager {
     protected val logger: KLogger = KotlinLogging.logger {}
 
     protected val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
-
-    abstract val userDataPathProvider: UserDataPathProvider
 
     override var showMainWindow by mutableStateOf(false)
 

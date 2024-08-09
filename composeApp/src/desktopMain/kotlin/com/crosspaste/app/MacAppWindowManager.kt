@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 class MacAppWindowManager(
     lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val activeGraphicsDevice: ActiveGraphicsDevice,
-    override val userDataPathProvider: UserDataPathProvider,
+    private val userDataPathProvider: UserDataPathProvider,
 ) : AbstractAppWindowManager() {
 
     private val crosspasteBundleID = getSystemProperty().get("mac.bundleID")

@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 class WinAppWindowManager(
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val activeGraphicsDevice: ActiveGraphicsDevice,
-    override val userDataPathProvider: UserDataPathProvider,
+    private val userDataPathProvider: UserDataPathProvider,
 ) : AbstractAppWindowManager() {
 
     private var prevWinAppInfo: WinAppInfo? = null
