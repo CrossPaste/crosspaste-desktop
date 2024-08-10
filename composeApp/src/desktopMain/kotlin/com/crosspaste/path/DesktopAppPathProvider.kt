@@ -16,8 +16,6 @@ object DesktopAppPathProvider : AppPathProvider, PathProvider {
 
     private val appPathProvider = getAppPathProvider()
 
-    private val platform = currentPlatform()
-
     override val userHome: Path = appPathProvider.userHome
 
     override val pasteAppPath: Path = appPathProvider.pasteAppPath
@@ -53,6 +51,7 @@ object DesktopAppPathProvider : AppPathProvider, PathProvider {
             // In the test environment, DesktopAppPathProvider will be mocked
             this
         } else {
+            val platform = currentPlatform()
             if (platform.isWindows()) {
                 WindowsAppPathProvider()
             } else if (platform.isMacos()) {
