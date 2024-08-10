@@ -333,21 +333,17 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             return null
         }
 
-        @Synchronized
-        fun bringToFront(
-            windowTitle: String,
+        fun getCurrentWindowAppInfoAndPid(
             mainWindow: HWND?,
             searchWindow: HWND?,
-        ): WinAppInfo? {
+        ): Pair<WinAppInfo, Int>? {
             INSTANCE.GetForegroundWindow()?.let { previousHwnd ->
-                var filePath: String? = null
 
                 if (previousHwnd.pointer != mainWindow?.pointer &&
                     previousHwnd.pointer != searchWindow?.pointer
                 ) {
                     val processIdRef = IntByReference()
-                    val processThreadId =
-                        INSTANCE.GetWindowThreadProcessId(previousHwnd, processIdRef)
+                    val pid = INSTANCE.GetWindowThreadProcessId(previousHwnd, processIdRef)
 
                     val processHandle =
                         Kernel32.INSTANCE.OpenProcess(
@@ -366,56 +362,60 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                                 bufferSize,
                             ) > 0
                         ) {
-                            filePath = memory.getWideString(0)
+                            val filePath = memory.getWideString(0)
+                            return Pair(WinAppInfo(previousHwnd, filePath), pid)
                         }
                     } finally {
                         Kernel32.INSTANCE.CloseHandle(processHandle)
                     }
-
-                    if (windowTitle == SEARCH_WINDOW_TITLE) {
-                        searchWindow?.let { searchHWND ->
-                            val curThreadId = Kernel32.INSTANCE.GetCurrentThreadId()
-                            INSTANCE.AttachThreadInput(
-                                DWORD(curThreadId.toLong()),
-                                DWORD(processThreadId.toLong()),
-                                true,
-                            )
-
-                            INSTANCE.ShowWindow(searchHWND, SW_RESTORE)
-
-                            val screenWidth = INSTANCE.GetSystemMetrics(SM_CXSCREEN)
-                            val screenHeight = INSTANCE.GetSystemMetrics(SM_CYSCREEN)
-
-                            INSTANCE.mouse_event(
-                                DWORD(0x0001),
-                                DWORD((screenWidth / 2).toLong()),
-                                DWORD((screenHeight / 2).toLong()),
-                                DWORD(0),
-                                ULONG_PTR(0),
-                            )
-
-                            val result = INSTANCE.SetForegroundWindow(searchHWND)
-                            INSTANCE.AttachThreadInput(
-                                DWORD(curThreadId.toLong()),
-                                DWORD(processThreadId.toLong()),
-                                false,
-                            )
-                            if (!result) {
-                                logger.info { "Failed to set foreground window. Please switch manually" }
-                            } else {
-                                logger.info { "Foreground window set successfully" }
-                            }
-                        } ?: run {
-                            logger.info { "search Window not found" }
-                        }
-                    }
-                }
-
-                return filePath?.let {
-                    WinAppInfo(previousHwnd, filePath)
                 }
             }
             return null
+        }
+
+        @Synchronized
+        fun bringToFront(
+            windowTitle: String,
+            prevPid: Int,
+            searchWindow: HWND?,
+        ) {
+            if (windowTitle == SEARCH_WINDOW_TITLE) {
+                searchWindow?.let { searchHWND ->
+                    val curThreadId = Kernel32.INSTANCE.GetCurrentThreadId()
+                    INSTANCE.AttachThreadInput(
+                        DWORD(curThreadId.toLong()),
+                        DWORD(prevPid.toLong()),
+                        true,
+                    )
+
+                    INSTANCE.ShowWindow(searchHWND, SW_RESTORE)
+
+                    val screenWidth = INSTANCE.GetSystemMetrics(SM_CXSCREEN)
+                    val screenHeight = INSTANCE.GetSystemMetrics(SM_CYSCREEN)
+
+                    INSTANCE.mouse_event(
+                        DWORD(0x0001),
+                        DWORD((screenWidth / 2).toLong()),
+                        DWORD((screenHeight / 2).toLong()),
+                        DWORD(0),
+                        ULONG_PTR(0),
+                    )
+
+                    val result = INSTANCE.SetForegroundWindow(searchHWND)
+                    INSTANCE.AttachThreadInput(
+                        DWORD(curThreadId.toLong()),
+                        DWORD(prevPid.toLong()),
+                        false,
+                    )
+                    if (!result) {
+                        logger.info { "Failed to set foreground window. Please switch manually" }
+                    } else {
+                        logger.info { "Foreground window set successfully" }
+                    }
+                } ?: run {
+                    logger.info { "search Window not found" }
+                }
+            }
         }
 
         fun bringToBack(
