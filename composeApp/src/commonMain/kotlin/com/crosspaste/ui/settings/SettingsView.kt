@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -30,7 +29,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Divider
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -54,7 +52,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
@@ -169,26 +166,11 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                         .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colors.background),
             ) {
-                Row(
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .height(40.dp)
-                            .padding(horizontal = 12.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                SettingItemView(
+                    painter = language(),
+                    text = "language",
+                    tint = MaterialTheme.colors.primary,
                 ) {
-                    Icon(
-                        modifier = Modifier.size(15.dp),
-                        painter = language(),
-                        contentDescription = "language",
-                        tint = MaterialTheme.colors.primary,
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    settingsText(copywriter.getText("language"))
-
-                    Spacer(modifier = Modifier.weight(1f))
-
                     Row(
                         modifier =
                             Modifier.padding(6.dp).wrapContentSize()
@@ -272,51 +254,21 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
 
                 Divider(modifier = Modifier.padding(start = 35.dp))
 
-                Row(
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .height(40.dp)
-                            .padding(horizontal = 12.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                SettingItemView(
+                    painter = palette(),
+                    text = "theme",
+                    tint = Color(0xFFFFC94A),
                 ) {
-                    Icon(
-                        modifier = Modifier.size(15.dp),
-                        painter = palette(),
-                        contentDescription = "theme",
-                        tint = Color(0xFFFFC94A),
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    settingsText(copywriter.getText("theme"))
-
-                    Spacer(modifier = Modifier.weight(1f))
-
                     ThemeSegmentedControl()
                 }
 
                 Divider(modifier = Modifier.padding(start = 35.dp))
 
-                Row(
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .height(40.dp)
-                            .padding(horizontal = 12.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                SettingItemView(
+                    painter = clipboard(),
+                    text = "pasteboard_listening",
+                    tint = Color(0xFF41B06E),
                 ) {
-                    Icon(
-                        modifier = Modifier.size(15.dp),
-                        painter = clipboard(),
-                        contentDescription = "Enable Pasteboard Listening",
-                        tint = Color(0xFF41B06E),
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    settingsText(copywriter.getText("pasteboard_listening"))
-
-                    Spacer(modifier = Modifier.weight(1f))
-
                     var enablePasteboardListening by remember { mutableStateOf(configManager.config.enablePasteboardListening) }
                     CustomSwitch(
                         modifier =
@@ -332,26 +284,11 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
 
                 Divider(modifier = Modifier.padding(start = 35.dp))
 
-                Row(
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .height(40.dp)
-                            .padding(horizontal = 12.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                SettingItemView(
+                    painter = shield(),
+                    text = "encrypted_sync",
+                    tint = Color(0xFF41C9E2),
                 ) {
-                    Icon(
-                        modifier = Modifier.size(15.dp),
-                        painter = shield(),
-                        contentDescription = "Encrypted sync",
-                        tint = Color(0xFF41C9E2),
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    settingsText(copywriter.getText("encrypted_sync"))
-
-                    Spacer(modifier = Modifier.weight(1f))
-
                     var isEncrypted by remember { mutableStateOf(configManager.config.isEncryptSync) }
                     CustomSwitch(
                         modifier =
@@ -367,26 +304,11 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
 
                 Divider(modifier = Modifier.padding(start = 35.dp))
 
-                Row(
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .height(40.dp)
-                            .padding(horizontal = 12.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                SettingItemView(
+                    painter = bolt(),
+                    text = "boot_start_up",
+                    tint = Color(0xFF90D26D),
                 ) {
-                    Icon(
-                        modifier = Modifier.size(15.dp),
-                        painter = bolt(),
-                        contentDescription = "Boot start up",
-                        tint = Color(0xFF90D26D),
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    settingsText(copywriter.getText("boot_start_up"))
-
-                    Spacer(modifier = Modifier.weight(1f))
-
                     var enableAutoStartUp by remember { mutableStateOf(configManager.config.enableAutoStartUp) }
 
                     CustomSwitch(
@@ -444,24 +366,4 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                 ),
         )
     }
-}
-
-@Composable
-fun settingsText(
-    text: String,
-    modifier: Modifier = Modifier,
-) {
-    Text(
-        modifier = modifier,
-        text = text,
-        color = MaterialTheme.colors.onBackground,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        style =
-            TextStyle(
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Light,
-                fontFamily = FontFamily.SansSerif,
-            ),
-    )
 }

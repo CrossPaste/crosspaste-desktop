@@ -84,26 +84,11 @@ fun NetSettingsView() {
                 .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colors.background),
     ) {
-        Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .height(40.dp)
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        SettingItemView(
+            painter = network(),
+            text = "ip_address",
+            tint = MaterialTheme.colors.onBackground,
         ) {
-            Icon(
-                modifier = Modifier.size(15.dp),
-                painter = network(),
-                contentDescription = "IP",
-                tint = MaterialTheme.colors.onBackground,
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            settingsText(copywriter.getText("ip_address"))
-
-            Spacer(modifier = Modifier.weight(1f))
-
             if (ip != null) {
                 settingsText(ip!!)
             } else {
@@ -113,26 +98,11 @@ fun NetSettingsView() {
 
         Divider(modifier = Modifier.padding(start = 35.dp))
 
-        Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .height(40.dp)
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        SettingItemView(
+            painter = link(),
+            text = "port",
+            tint = MaterialTheme.colors.onBackground,
         ) {
-            Icon(
-                modifier = Modifier.size(15.dp),
-                painter = link(),
-                contentDescription = "Port",
-                tint = MaterialTheme.colors.onBackground,
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            settingsText(copywriter.getText("port"))
-
-            Spacer(modifier = Modifier.weight(1f))
-
             if (port != null) {
                 settingsText(port!!)
             } else {
@@ -159,26 +129,11 @@ fun NetSettingsView() {
                 .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colors.background),
     ) {
-        Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .height(40.dp)
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        SettingItemView(
+            painter = wifi(),
+            text = "allow_discovery_by_new_devices",
+            tint = MaterialTheme.colors.onBackground,
         ) {
-            Icon(
-                modifier = Modifier.size(15.dp),
-                painter = wifi(),
-                contentDescription = "Allow discovery by new devices",
-                tint = MaterialTheme.colors.onBackground,
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            settingsText(copywriter.getText("allow_discovery_by_new_devices"))
-
-            Spacer(modifier = Modifier.weight(1f))
-
             var isAllowDiscovery by remember { mutableStateOf(configManager.config.isAllowDiscovery) }
 
             CustomSwitch(

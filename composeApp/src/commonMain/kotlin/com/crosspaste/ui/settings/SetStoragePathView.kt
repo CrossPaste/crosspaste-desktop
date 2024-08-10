@@ -5,16 +5,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Icon
 import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.MaterialTheme
@@ -94,26 +91,11 @@ fun SetStoragePathView() {
         }
 
         if (configManager.config.useDefaultStoragePath) {
-            Row(
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .height(40.dp)
-                        .padding(horizontal = 12.dp, vertical = 5.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            SettingItemView(
+                painter = archive(),
+                text = "use_default_storage_path",
+                tint = Color(0xFF41B06E),
             ) {
-                Icon(
-                    modifier = Modifier.size(15.dp),
-                    painter = archive(),
-                    contentDescription = "user default storage path",
-                    tint = Color(0xFF41B06E),
-                )
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                settingsText(copywriter.getText("use_default_storage_path"))
-
-                Spacer(modifier = Modifier.weight(1f))
-
                 CustomSwitch(
                     modifier =
                         Modifier.width(32.dp)
