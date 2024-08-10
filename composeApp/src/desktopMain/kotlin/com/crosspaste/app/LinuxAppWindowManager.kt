@@ -1,5 +1,8 @@
 package com.crosspaste.app
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
@@ -15,7 +18,7 @@ class LinuxAppWindowManager(
     private val userDataPathProvider: UserDataPathProvider,
 ) : AbstractAppWindowManager() {
 
-    private var prevLinuxAppInfo: LinuxAppInfo? = null
+    private var prevLinuxAppInfo: LinuxAppInfo? by mutableStateOf(null)
 
     private val classNameSet: MutableSet<String> = mutableSetOf()
 

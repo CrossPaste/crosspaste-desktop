@@ -1,5 +1,8 @@
 package com.crosspaste.app
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.os.macos.MacAppUtils
@@ -17,7 +20,7 @@ class MacAppWindowManager(
 
     private val crosspasteBundleID = getSystemProperty().get("mac.bundleID")
 
-    private var prevMacAppInfo: MacAppInfo? = null
+    private var prevMacAppInfo: MacAppInfo? by mutableStateOf(null)
 
     private val macPasteUtils: MacPasteUtils by lazy { MacPasteUtils(lazyShortcutKeys.value) }
 

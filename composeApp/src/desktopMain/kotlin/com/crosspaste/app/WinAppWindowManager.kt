@@ -1,5 +1,8 @@
 package com.crosspaste.app
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
@@ -18,7 +21,7 @@ class WinAppWindowManager(
     private val userDataPathProvider: UserDataPathProvider,
 ) : AbstractAppWindowManager() {
 
-    private var prevWinAppInfo: WinAppInfo? = null
+    private var prevWinAppInfo: WinAppInfo? by mutableStateOf(null)
 
     private val mainHWND: HWND? by lazy {
         User32.findPasteWindow(MAIN_WINDOW_TITLE)

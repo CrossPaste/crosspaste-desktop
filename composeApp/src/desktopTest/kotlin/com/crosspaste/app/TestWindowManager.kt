@@ -1,14 +1,18 @@
 package com.crosspaste.app
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+
 class TestWindowManager(
     private val mockOS: MockOS,
 ) : AbstractAppWindowManager() {
 
-    var prevApp: String? = null
+    var prevApp: String? by mutableStateOf(null)
 
     var pasterId: Int = 0
 
-    var currentTitle: String? = null
+    var currentTitle: String? by mutableStateOf(null)
 
     override fun getPrevAppName(): String? {
         return prevApp
