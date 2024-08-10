@@ -15,25 +15,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.paste.item.PasteText
-import com.crosspaste.ui.base.UISupport
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun TextPreviewView(pasteData: PasteData) {
+fun TextPreviewView(
+    pasteData: PasteData,
+    onDoubleClick: () -> Unit,
+) {
     pasteData.getPasteItem()?.let {
-        val current = LocalKoinApplication.current
-        val uiSupport = current.koin.get<UISupport>()
-
         PasteSpecificPreviewContentView(
             pasteMainContent = {
                 Row(
                     modifier =
-                        Modifier.fillMaxSize().onClick {
-                            uiSupport.openText((it as PasteText).text)
-                        }.padding(10.dp),
+                        Modifier.fillMaxSize().onClick(
+                            onDoubleClick = onDoubleClick,
+                            onClick = {},
+                        ).padding(10.dp),
                 ) {
                     Text(
                         modifier = Modifier.fillMaxSize(),

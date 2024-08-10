@@ -1,5 +1,6 @@
 package com.crosspaste.ui.paste.detail
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
@@ -55,11 +57,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun PasteFilesDetailView(
     pasteData: PasteData,
     pasteFiles: PasteFiles,
+    onDoubleClick: () -> Unit,
 ) {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
@@ -125,6 +128,10 @@ fun PasteFilesDetailView(
                                 onEvent = {
                                     hover = false
                                 },
+                            )
+                            .onClick(
+                                onDoubleClick = onDoubleClick,
+                                onClick = {},
                             ),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,

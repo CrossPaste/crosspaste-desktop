@@ -1,8 +1,10 @@
 package com.crosspaste.ui.paste.detail
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.onClick
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.MaterialTheme
@@ -27,10 +29,12 @@ import com.crosspaste.paste.item.PasteText
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PasteTextDetailView(
     pasteData: PasteData,
     pasteText: PasteText,
+    onDoubleClick: () -> Unit,
 ) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
@@ -41,7 +45,15 @@ fun PasteTextDetailView(
 
     PasteDetailView(
         detailView = {
-            Row(modifier = Modifier.fillMaxSize().padding(10.dp)) {
+            Row(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .onClick(
+                            onDoubleClick = onDoubleClick,
+                            onClick = {},
+                        )
+                        .padding(10.dp),
+            ) {
                 Text(
                     text = text,
                     modifier =

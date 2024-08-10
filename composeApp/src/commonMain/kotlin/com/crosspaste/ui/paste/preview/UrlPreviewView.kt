@@ -18,17 +18,15 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.paste.item.PasteUrl
-import com.crosspaste.ui.base.UISupport
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun UrlPreviewView(pasteData: PasteData) {
-    val current = LocalKoinApplication.current
-    val uiSupport = current.koin.get<UISupport>()
-
+fun UrlPreviewView(
+    pasteData: PasteData,
+    onDoubleClick: () -> Unit,
+) {
     pasteData.getPasteItem()?.let {
         val pasteUrl = it as PasteUrl
         PasteSpecificPreviewContentView(
@@ -36,9 +34,10 @@ fun UrlPreviewView(pasteData: PasteData) {
                 Row(
                     modifier =
                         Modifier.fillMaxSize()
-                            .onClick {
-                                uiSupport.openUrlInBrowser(pasteUrl.url)
-                            }.padding(10.dp),
+                            .onClick(
+                                onDoubleClick = onDoubleClick,
+                                onClick = {},
+                            ).padding(10.dp),
                 ) {
                     Text(
                         modifier =
