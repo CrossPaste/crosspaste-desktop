@@ -25,8 +25,6 @@ class DesktopUserDataPathProvider(private val configManager: ConfigManager) : Us
 
     private val platformUserDataPathProvider: PlatformUserDataPathProvider = getPlatformPathProvider()
 
-    private val platform = currentPlatform()
-
     override val fileUtils: FileUtils = getFileUtils()
 
     private val types: List<AppFileType> =
@@ -194,6 +192,7 @@ class DesktopUserDataPathProvider(private val configManager: ConfigManager) : Us
             // In the test environment, DesktopPathProvider will be mocked
             TestPlatformUserDataPathProvider()
         } else {
+            val platform = currentPlatform()
             if (platform.isWindows()) {
                 WindowsPlatformUserDataPathProvider()
             } else if (platform.isMacos()) {
