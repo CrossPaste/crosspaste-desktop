@@ -274,27 +274,12 @@ fun StoreSettingsView() {
                 .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colors.background),
     ) {
-        Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .height(40.dp)
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        SettingItemView(
+            painter = trash(),
+            text = "expiration_cleanup",
+            tint = MaterialTheme.colors.onBackground,
         ) {
-            Icon(
-                modifier = Modifier.size(15.dp),
-                painter = trash(),
-                contentDescription = "trash",
-                tint = MaterialTheme.colors.onBackground,
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            settingsText(copywriter.getText("expiration_cleanup"))
-
             var isExpirationCleanup by remember { mutableStateOf(configManager.config.isExpirationCleanup) }
-
-            Spacer(modifier = Modifier.weight(1f))
 
             CustomSwitch(
                 modifier =
@@ -310,26 +295,11 @@ fun StoreSettingsView() {
 
         Divider(modifier = Modifier.padding(start = 35.dp))
 
-        Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .height(40.dp)
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        SettingItemView(
+            painter = clock(),
+            text = "image_expiry_period",
+            tint = MaterialTheme.colors.onBackground,
         ) {
-            Icon(
-                modifier = Modifier.size(15.dp),
-                painter = clock(),
-                contentDescription = "Image Expiry Period",
-                tint = MaterialTheme.colors.onBackground,
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            settingsText(copywriter.getText("image_expiry_period"))
-
-            Spacer(modifier = Modifier.weight(1f))
-
             var selectImageCleanTimeIndex by remember { mutableStateOf(configManager.config.imageCleanTimeIndex) }
 
             val imageCleanTime = CleanTime.entries[selectImageCleanTimeIndex]
@@ -399,26 +369,11 @@ fun StoreSettingsView() {
 
         Divider(modifier = Modifier.padding(start = 35.dp))
 
-        Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .height(40.dp)
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        SettingItemView(
+            painter = file(),
+            text = "file_expiry_period",
+            tint = MaterialTheme.colors.onBackground,
         ) {
-            Icon(
-                modifier = Modifier.size(15.dp),
-                painter = clock(),
-                contentDescription = "File Expiry Period",
-                tint = MaterialTheme.colors.onBackground,
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            settingsText(copywriter.getText("file_expiry_period"))
-
-            Spacer(modifier = Modifier.weight(1f))
-
             var selectFileCleanTimeIndex by remember { mutableStateOf(configManager.config.fileCleanTimeIndex) }
 
             val fileCleanTime = CleanTime.entries[selectFileCleanTimeIndex]
@@ -496,27 +451,12 @@ fun StoreSettingsView() {
                 .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colors.background),
     ) {
-        Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .height(40.dp)
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        SettingItemView(
+            painter = trash(),
+            text = "threshold_cleanup",
+            tint = MaterialTheme.colors.onBackground,
         ) {
-            Icon(
-                modifier = Modifier.size(15.dp),
-                painter = trash(),
-                contentDescription = "trash",
-                tint = MaterialTheme.colors.onBackground,
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            settingsText(copywriter.getText("threshold_cleanup"))
-
             var isThresholdCleanup by remember { mutableStateOf(configManager.config.isThresholdCleanup) }
-
-            Spacer(modifier = Modifier.weight(1f))
 
             CustomSwitch(
                 modifier =
@@ -532,26 +472,11 @@ fun StoreSettingsView() {
 
         Divider(modifier = Modifier.padding(start = 35.dp))
 
-        Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .height(40.dp)
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        SettingItemView(
+            painter = database(),
+            text = "maximum_storage",
+            tint = MaterialTheme.colors.onBackground,
         ) {
-            Icon(
-                modifier = Modifier.size(15.dp),
-                painter = database(),
-                contentDescription = "Maximum Storage",
-                tint = MaterialTheme.colors.onBackground,
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            settingsText(copywriter.getText("maximum_storage"))
-
-            Spacer(modifier = Modifier.weight(1f))
-
             val maxStorage by remember { mutableStateOf(configManager.config.maxStorage) }
 
             Row(
@@ -568,26 +493,13 @@ fun StoreSettingsView() {
             }
         }
 
-        Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .height(40.dp)
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        Divider(modifier = Modifier.padding(start = 35.dp))
+
+        SettingItemView(
+            painter = percent(),
+            text = "cleanup_percentage",
+            tint = MaterialTheme.colors.onBackground,
         ) {
-            Icon(
-                modifier = Modifier.size(15.dp),
-                painter = percent(),
-                contentDescription = "Cleanup Percentage",
-                tint = MaterialTheme.colors.onBackground,
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            settingsText(copywriter.getText("cleanup_percentage"))
-
-            Spacer(modifier = Modifier.weight(1f))
-
             val cleanupPercentage by remember { mutableStateOf(configManager.config.cleanupPercentage) }
 
             Row(
