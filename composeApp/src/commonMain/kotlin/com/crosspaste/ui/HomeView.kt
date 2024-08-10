@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -26,9 +25,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -44,8 +41,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -64,7 +59,7 @@ import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteSearchService
 import com.crosspaste.ui.base.Fonts.ROBOTO_FONT_FAMILY
-import com.crosspaste.ui.base.PasteTooltipAreaView
+import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.menuItemReminderTextStyle
 import com.crosspaste.ui.base.search
@@ -94,10 +89,6 @@ fun HomeWindowDecoration() {
     val scope = rememberCoroutineScope()
 
     var showPopup by remember { mutableStateOf(false) }
-
-    var hoverSearchIcon by remember { mutableStateOf(false) }
-
-    var hoverSettingsIcon by remember { mutableStateOf(false) }
 
     var showTutorial by remember { mutableStateOf(configManager.config.showTutorial) }
 
@@ -227,98 +218,25 @@ fun HomeWindowDecoration() {
                     }
                 }
                 Spacer(modifier = Modifier.width(5.dp))
-                PasteTooltipAreaView(
-                    modifier = Modifier.size(32.dp),
-                    text = copywriter.getText("open_search_window"),
-                ) {
-                    Box(
-                        modifier =
-                            Modifier.size(32.dp)
-                                .onPointerEvent(
-                                    eventType = PointerEventType.Enter,
-                                    onEvent = {
-                                        hoverSearchIcon = true
-                                    },
-                                )
-                                .onPointerEvent(
-                                    eventType = PointerEventType.Exit,
-                                    onEvent = {
-                                        hoverSearchIcon = false
-                                    },
-                                ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Box(
-                            modifier =
-                                Modifier.fillMaxSize()
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(
-                                        if (hoverSearchIcon) {
-                                            MaterialTheme.colors.surface.copy(0.64f)
-                                        } else {
-                                            Color.Transparent
-                                        },
-                                    ).onClick {
-                                        scope.launch {
-                                            appWindowManager.unActiveMainWindow()
-                                            delay(100)
-                                            pasteSearchService.activeWindow()
-                                        }
-                                    },
-                        ) {}
 
-                        Icon(
-                            painter = search(),
-                            contentDescription = "open search window",
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colors.onBackground,
-                        )
+                PasteTooltipIconView(
+                    painter = search(),
+                    text = copywriter.getText("open_search_window"),
+                    contentDescription = "open search window",
+                ) {
+                    scope.launch {
+                        appWindowManager.unActiveMainWindow()
+                        delay(100)
+                        pasteSearchService.activeWindow()
                     }
                 }
 
-                PasteTooltipAreaView(
-                    modifier = Modifier.size(32.dp),
+                PasteTooltipIconView(
+                    painter = settings(),
                     text = "CrossPaste ${copywriter.getText("menu")}",
+                    contentDescription = "settings",
                 ) {
-                    Box(
-                        modifier =
-                            Modifier.size(32.dp)
-                                .onPointerEvent(
-                                    eventType = PointerEventType.Enter,
-                                    onEvent = {
-                                        hoverSettingsIcon = true
-                                    },
-                                )
-                                .onPointerEvent(
-                                    eventType = PointerEventType.Exit,
-                                    onEvent = {
-                                        hoverSettingsIcon = false
-                                    },
-                                ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Box(
-                            modifier =
-                                Modifier.fillMaxSize()
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(
-                                        if (hoverSettingsIcon) {
-                                            MaterialTheme.colors.surface.copy(0.64f)
-                                        } else {
-                                            Color.Transparent
-                                        },
-                                    ).onClick {
-                                        showPopup = !showPopup
-                                    },
-                        ) {}
-
-                        Icon(
-                            painter = settings(),
-                            contentDescription = "info",
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colors.onBackground,
-                        )
-                    }
+                    showPopup = !showPopup
                 }
 
                 Spacer(modifier = Modifier.width(15.dp))
