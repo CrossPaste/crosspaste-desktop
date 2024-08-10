@@ -31,17 +31,17 @@ import com.crosspaste.image.getImageDataLoader
 import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.AsyncView
-import com.crosspaste.ui.base.UISupport
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun HtmlToImagePreviewView(pasteData: PasteData) {
+fun HtmlToImagePreviewView(
+    pasteData: PasteData,
+    onDoubleClick: () -> Unit,
+) {
     pasteData.getPasteItem()?.let {
         val current = LocalKoinApplication.current
         val density = LocalDensity.current
-
-        val uiSupport = current.koin.get<UISupport>()
         val userDataPathProvider = current.koin.get<UserDataPathProvider>()
         val imageDataLoader = getImageDataLoader()
 
@@ -72,9 +72,10 @@ fun HtmlToImagePreviewView(pasteData: PasteData) {
                                             Modifier
                                                 .fillMaxSize()
                                                 .clip(RoundedCornerShape(5.dp))
-                                                .onClick {
-                                                    uiSupport.openHtml(it.html)
-                                                },
+                                                .onClick(
+                                                    onDoubleClick = onDoubleClick,
+                                                    onClick = {},
+                                                ),
                                     ) {
                                         Image(
                                             painter = loadData.readPainter(),

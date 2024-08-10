@@ -1,11 +1,12 @@
 package com.crosspaste.ui.paste.detail
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.onClick
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.MaterialTheme
@@ -41,10 +42,12 @@ import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
 import kotlinx.coroutines.delay
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HtmlToImageDetailView(
     pasteData: PasteData,
     pasteHtml: PasteHtml,
+    onDoubleClick: () -> Unit,
 ) {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
@@ -94,9 +97,12 @@ fun HtmlToImageDetailView(
                                         .fillMaxSize()
                                         .horizontalScroll(horizontalScrollState)
                                         .verticalScroll(verticalScrollState)
-                                        .clickable {
-                                            uiSupport.openHtml(pasteHtml.html)
-                                        },
+                                        .onClick(
+                                            onDoubleClick = onDoubleClick,
+                                            onClick = {
+                                                uiSupport.openHtml(pasteHtml.html)
+                                            },
+                                        ),
                             ) {
                                 Image(
                                     painter = loadData.readPainter(),

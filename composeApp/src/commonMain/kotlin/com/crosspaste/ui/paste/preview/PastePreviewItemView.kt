@@ -20,20 +20,31 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.crosspaste.LocalKoinApplication
+import com.crosspaste.app.AppWindowManager
 import com.crosspaste.dao.paste.PasteCollection
 import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.dao.paste.PasteState
 import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.i18n.Copywriter
+import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.paste.PasteboardService
+import com.crosspaste.ui.base.MessageType
+import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.utils.getDateUtils
+import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.mainDispatcher
 import io.realm.kotlin.types.RealmInstant
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
 
@@ -92,12 +103,35 @@ fun PasteSpecificPreviewView(pasteData: PasteData) {
     if (pasteData.pasteState == PasteState.LOADING) {
         PrePreviewView(pasteData)
     } else {
+        val current = LocalKoinApplication.current
+        val appWindowManager = current.koin.get<AppWindowManager>()
+        val copywriter = current.koin.get<GlobalCopywriter>()
+        val pasteboardService = current.koin.get<PasteboardService>()
+        val notificationManager = current.koin.get<NotificationManager>()
+        val scope = rememberCoroutineScope()
+        val onDoubleClick: () -> Unit = {
+            appWindowManager.setMainCursorWait()
+            scope.launch(ioDispatcher) {
+                pasteboardService.tryWritePasteboard(
+                    pasteData,
+                    localOnly = true,
+                    filterFile = false,
+                )
+                withContext(mainDispatcher) {
+                    appWindowManager.resetMainCursor()
+                    notificationManager.addNotification(
+                        copywriter.getText("copy_successful"),
+                        MessageType.Success,
+                    )
+                }
+            }
+        }
         when (pasteData.pasteType) {
-            PasteType.TEXT -> TextPreviewView(pasteData)
-            PasteType.URL -> UrlPreviewView(pasteData)
-            PasteType.HTML -> HtmlToImagePreviewView(pasteData)
-            PasteType.IMAGE -> ImagesPreviewView(pasteData)
-            PasteType.FILE -> FilesPreviewView(pasteData)
+            PasteType.TEXT -> TextPreviewView(pasteData, onDoubleClick)
+            PasteType.URL -> UrlPreviewView(pasteData, onDoubleClick)
+            PasteType.HTML -> HtmlToImagePreviewView(pasteData, onDoubleClick)
+            PasteType.IMAGE -> ImagesPreviewView(pasteData, onDoubleClick)
+            PasteType.FILE -> FilesPreviewView(pasteData, onDoubleClick)
         }
     }
 }
