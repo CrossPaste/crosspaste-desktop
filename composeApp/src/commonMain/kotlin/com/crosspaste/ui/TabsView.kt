@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -27,7 +28,9 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,16 +45,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppEnv
+import com.crosspaste.app.AppWindowManager
+import com.crosspaste.dao.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.base.MessageType
+import com.crosspaste.ui.base.NotificationManager
+import com.crosspaste.ui.base.PasteTooltipIconView
+import com.crosspaste.ui.base.trash
 import com.crosspaste.ui.devices.DevicesView
 import com.crosspaste.ui.devices.bindingQRCode
 import com.crosspaste.ui.paste.preview.PastePreviewsView
+import com.crosspaste.utils.mainDispatcher
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 val tabTextStyle =
     TextStyle(
         fontSize = 14.sp,
         fontWeight = FontWeight.Normal,
         fontFamily = FontFamily.SansSerif,
+        lineHeight = 0.sp,
     )
 
 @Composable
@@ -86,13 +99,37 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
             Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
                 Row(
                     modifier =
-                        Modifier.padding(12.dp, 8.dp, 12.dp, 0.dp)
-                            .wrapContentWidth(),
+                        Modifier.padding(12.dp, 0.dp, 15.dp, 0.dp)
+                            .wrapContentWidth().height(40.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     tabs.forEach { pair ->
                         TabView(currentPageViewContext, pair.first, copywriter.getText(pair.second))
                     }
-                    Spacer(modifier = Modifier.fillMaxWidth())
+                    Spacer(modifier = Modifier.weight(1f))
+                    if (currentPageViewContext.value.pageViewType == PageViewType.PASTE_PREVIEW) {
+                        val appWindowManager = current.koin.get<AppWindowManager>()
+                        val notificationManager = current.koin.get<NotificationManager>()
+                        val pasteDao = current.koin.get<PasteDao>()
+                        val scope = rememberCoroutineScope()
+                        PasteTooltipIconView(
+                            painter = trash(),
+                            text = copywriter.getText("clean_all_pasteboard"),
+                            contentDescription = "clean all paste",
+                        ) {
+                            appWindowManager.setMainCursorWait()
+                            scope.launch {
+                                pasteDao.markAllDeleteExceptFavorite()
+                                withContext(mainDispatcher) {
+                                    appWindowManager.resetMainCursor()
+                                    notificationManager.addNotification(
+                                        copywriter.getText("clean_successful"),
+                                        MessageType.Success,
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
 
                 val widthArray =
@@ -134,6 +171,7 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
                     Box(
                         modifier =
                             Modifier
+                                .offset(y = (-2.5).dp)
                                 .width(width)
                                 .height(5.dp)
                                 .clip(RoundedCornerShape(2.dp))
@@ -192,13 +230,15 @@ fun SingleTabView(
                     },
                 )
                 .onClick(onClick = { clickable() }),
+        contentAlignment = Alignment.Center,
     ) {
         Row(
             modifier =
                 Modifier.wrapContentSize()
                     .padding(horizontal = 5.dp)
                     .clip(RoundedCornerShape(5.dp))
-                    .padding(horizontal = 5.dp, vertical = 3.dp),
+                    .padding(horizontal = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = title,

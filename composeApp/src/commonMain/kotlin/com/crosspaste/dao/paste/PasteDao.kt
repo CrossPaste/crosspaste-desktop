@@ -13,6 +13,8 @@ interface PasteDao {
 
     suspend fun createPasteData(pasteData: PasteData): ObjectId
 
+    suspend fun markAllDeleteExceptFavorite()
+
     suspend fun markDeletePasteData(id: ObjectId)
 
     suspend fun deletePasteData(id: ObjectId)

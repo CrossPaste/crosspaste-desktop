@@ -73,6 +73,21 @@ class PasteRealm(
         }
     }
 
+    override suspend fun markAllDeleteExceptFavorite() {
+        while (true) {
+            val idList =
+                realm.write {
+                    val markDeletePasteData = query(PasteData::class, "favorite == $0", false).limit(50).find()
+                    doMarkDeletePasteData(markDeletePasteData)
+                }
+            if (idList.isEmpty()) {
+                break
+            } else {
+                taskExecutor.submitTasks(idList)
+            }
+        }
+    }
+
     override suspend fun markDeletePasteData(id: ObjectId) {
         taskExecutor.submitTasks(
             realm.write {
