@@ -73,8 +73,14 @@ class WinAppWindowManager(
 
     override suspend fun activeMainWindow() {
         logger.info { "active main window" }
+
+        val pair = User32.getCurrentWindowAppInfoAndPid(mainHWND, searchHWND)
+
+        pair?.let {
+            prevWinAppInfo = it.first
+        }
+
         showMainWindow = true
-        prevWinAppInfo = User32.bringToFront(MAIN_WINDOW_TITLE, mainHWND, searchHWND)
         delay(500)
         mainFocusRequester.requestFocus()
     }
@@ -92,16 +98,25 @@ class WinAppWindowManager(
 
     override suspend fun activeSearchWindow() {
         logger.info { "active search window" }
-        showSearchWindow = true
+
+        val pair = User32.getCurrentWindowAppInfoAndPid(mainHWND, searchHWND)
+
+        pair?.let {
+            prevWinAppInfo = it.first
+        }
 
         activeGraphicsDevice.getGraphicsDevice()?.let { graphicsDevice ->
             searchWindowState.position = calPosition(graphicsDevice.defaultConfiguration.bounds)
         }
 
+        showSearchWindow = true
+
         // Wait for the window to be ready, otherwise bringToFront may cause the window to fail to get focus
         delay(500)
 
-        prevWinAppInfo = User32.bringToFront(SEARCH_WINDOW_TITLE, mainHWND, searchHWND)
+        pair?.let {
+            User32.bringToFront(SEARCH_WINDOW_TITLE, pair.second, searchHWND)
+        }
         searchFocusRequester.requestFocus()
     }
 
