@@ -1,6 +1,5 @@
 package com.crosspaste.routing
 
-import com.crosspaste.CrossPaste
 import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.paste.PasteboardService
@@ -14,14 +13,11 @@ import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.launch
 
-fun Routing.pasteRouting() {
+fun Routing.pasteRouting(
+    syncManager: SyncManager,
+    pasteboardService: PasteboardService,
+) {
     val logger = KotlinLogging.logger {}
-
-    val koinApplication = CrossPaste.koinApplication
-
-    val syncManager = koinApplication.koin.get<SyncManager>()
-
-    val pasteboardService = koinApplication.koin.get<PasteboardService>()
 
     post("/sync/paste") {
         getAppInstanceId(call)?.let { appInstanceId ->

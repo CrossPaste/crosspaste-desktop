@@ -83,6 +83,8 @@ import com.crosspaste.net.clientapi.SendPasteClientApi
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.plugin.SignalClientDecryptPlugin
 import com.crosspaste.net.plugin.SignalClientEncryptPlugin
+import com.crosspaste.net.plugin.SignalServerDecryptionPluginFactory
+import com.crosspaste.net.plugin.SignalServerEncryptPluginFactory
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.CacheManagerImpl
 import com.crosspaste.paste.ChromeService
@@ -247,7 +249,12 @@ class CrossPaste {
 
                     // net component
                     single<PasteClient> { DesktopPasteClient(get<AppInfo>(), get(), get()) }
-                    single<PasteServer> { DesktopPasteServer(get<ConfigManager>()) }
+                    single<PasteServer> {
+                        DesktopPasteServer(
+                            get(), get(), get(), get(), get(), get(),
+                            get(), get(), get(), get(), get(), get(), get(),
+                        )
+                    }
                     single<PasteBonjourService> { DesktopPasteBonjourService(get(), get(), get()) }
                     single<TelnetUtils> { TelnetUtils(get<PasteClient>()) }
                     single<SyncClientApi> { DesktopSyncClientApi(get(), get()) }
@@ -279,6 +286,8 @@ class CrossPaste {
                     single<SignalProcessorCache> { SignalProcessorCacheImpl(get()) }
                     single<SignalClientEncryptPlugin> { SignalClientEncryptPlugin(get()) }
                     single<SignalClientDecryptPlugin> { SignalClientDecryptPlugin(get()) }
+                    single<SignalServerEncryptPluginFactory> { SignalServerEncryptPluginFactory(get()) }
+                    single<SignalServerDecryptionPluginFactory> { SignalServerDecryptionPluginFactory(get()) }
 
                     // paste component
                     single<FilesTypePlugin> { FilesTypePlugin(get(), get(), get()) }
