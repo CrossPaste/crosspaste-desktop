@@ -1,6 +1,5 @@
 package com.crosspaste.routing
 
-import com.crosspaste.CrossPaste
 import com.crosspaste.app.AppFileType
 import com.crosspaste.dto.pull.PullFileRequest
 import com.crosspaste.dto.pull.PullFilesKey
@@ -19,16 +18,12 @@ import io.ktor.server.routing.*
 import io.ktor.utils.io.*
 import okio.FileSystem
 
-fun Routing.pullRouting() {
+fun Routing.pullRouting(
+    cacheManager: CacheManager,
+    syncManager: SyncManager,
+    userDataPathProvider: UserDataPathProvider,
+) {
     val logger = KotlinLogging.logger {}
-
-    val koinApplication = CrossPaste.koinApplication
-
-    val syncManager = koinApplication.koin.get<SyncManager>()
-
-    val cacheManager = koinApplication.koin.get<CacheManager>()
-
-    val userDataPathProvider = koinApplication.koin.get<UserDataPathProvider>()
 
     val fileUtils = getFileUtils()
 

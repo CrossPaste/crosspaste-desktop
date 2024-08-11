@@ -1,6 +1,5 @@
 package com.crosspaste.routing
 
-import com.crosspaste.CrossPaste
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenService
 import com.crosspaste.app.AppWindowManager
@@ -30,20 +29,16 @@ import org.signal.libsignal.protocol.state.PreKeyRecord
 import org.signal.libsignal.protocol.state.SignalProtocolStore
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord
 
-fun Routing.syncRouting() {
+fun Routing.syncRouting(
+    appInfo: AppInfo,
+    appWindowManager: AppWindowManager,
+    appTokenService: AppTokenService,
+    signalDao: SignalDao,
+    signalProtocolStore: SignalProtocolStore,
+    signalProcessorCache: SignalProcessorCache,
+    syncManager: SyncManager,
+) {
     val logger = KotlinLogging.logger {}
-
-    val koinApplication = CrossPaste.koinApplication
-
-    val appInfo = koinApplication.koin.get<AppInfo>()
-
-    val signalDao = koinApplication.koin.get<SignalDao>()
-
-    val signalProtocolStore = koinApplication.koin.get<SignalProtocolStore>()
-
-    val signalProcessorCache = koinApplication.koin.get<SignalProcessorCache>()
-
-    val syncManager = koinApplication.koin.get<SyncManager>()
 
     get("/sync/telnet") {
         successResponse(call)
@@ -153,9 +148,6 @@ fun Routing.syncRouting() {
     }
 
     get("/sync/showToken") {
-        val appWindowManager = koinApplication.koin.get<AppWindowManager>()
-        val appTokenService = koinApplication.koin.get<AppTokenService>()
-
         appTokenService.showToken = true
         appWindowManager.showMainWindow = true
         logger.debug { "show token" }
@@ -184,9 +176,6 @@ fun Routing.syncRouting() {
     post("/sync/trust") {
         getAppInstanceId(call)?.let { appInstanceId ->
             val requestTrust = call.receive(RequestTrust::class)
-
-            val appTokenService = koinApplication.koin.get<AppTokenService>()
-
             if (requestTrust.token == String(appTokenService.token).toInt()) {
                 val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
                 signalProtocolStore.saveIdentity(

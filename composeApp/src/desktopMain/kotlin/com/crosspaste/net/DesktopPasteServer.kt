@@ -1,13 +1,22 @@
 package com.crosspaste.net
 
+import com.crosspaste.app.AppInfo
+import com.crosspaste.app.AppTokenService
+import com.crosspaste.app.AppWindowManager
 import com.crosspaste.config.ConfigManager
+import com.crosspaste.dao.signal.SignalDao
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.exception.signalExceptionHandler
-import com.crosspaste.net.plugin.SIGNAL_SERVER_DECRYPT_PLUGIN
-import com.crosspaste.net.plugin.SIGNAL_SERVER_ENCRYPT_PLUGIN
+import com.crosspaste.net.plugin.SignalServerDecryptionPluginFactory
+import com.crosspaste.net.plugin.SignalServerEncryptPluginFactory
+import com.crosspaste.paste.CacheManager
+import com.crosspaste.paste.PasteboardService
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.routing.pasteRouting
 import com.crosspaste.routing.pullRouting
 import com.crosspaste.routing.syncRouting
+import com.crosspaste.signal.SignalProcessorCache
+import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.DesktopJsonUtils
 import com.crosspaste.utils.failResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -22,9 +31,24 @@ import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.netty.channel.ChannelOption
 import kotlinx.coroutines.runBlocking
+import org.signal.libsignal.protocol.state.SignalProtocolStore
 import java.net.BindException
 
-class DesktopPasteServer(private val configManager: ConfigManager) : PasteServer {
+class DesktopPasteServer(
+    private val appInfo: AppInfo,
+    private val appWindowManager: AppWindowManager,
+    private val appTokenService: AppTokenService,
+    private val cacheManager: CacheManager,
+    private val configManager: ConfigManager,
+    private val pasteboardService: PasteboardService,
+    private val signalDao: SignalDao,
+    private val signalProtocolStore: SignalProtocolStore,
+    private val signalProcessorCache: SignalProcessorCache,
+    private val syncManager: SyncManager,
+    private val signalServerEncryptPluginFactory: SignalServerEncryptPluginFactory,
+    private val signalServerDecryptionPluginFactory: SignalServerDecryptionPluginFactory,
+    private val userDataPathProvider: UserDataPathProvider,
+) : PasteServer {
 
     private val logger = KotlinLogging.logger {}
 
@@ -62,15 +86,30 @@ class DesktopPasteServer(private val configManager: ConfigManager) : PasteServer
                 }
                 signalExceptionHandler()
             }
-            install(SIGNAL_SERVER_ENCRYPT_PLUGIN)
-            install(SIGNAL_SERVER_DECRYPT_PLUGIN)
+            install(signalServerEncryptPluginFactory.createPlugin())
+            install(signalServerDecryptionPluginFactory.createPlugin())
             intercept(ApplicationCallPipeline.Setup) {
                 logger.info { "Received request: ${call.request.httpMethod.value} ${call.request.uri} ${call.request.contentType()}" }
             }
             routing {
-                syncRouting()
-                pasteRouting()
-                pullRouting()
+                syncRouting(
+                    appInfo,
+                    appWindowManager,
+                    appTokenService,
+                    signalDao,
+                    signalProtocolStore,
+                    signalProcessorCache,
+                    syncManager,
+                )
+                pasteRouting(
+                    syncManager,
+                    pasteboardService,
+                )
+                pullRouting(
+                    cacheManager,
+                    syncManager,
+                    userDataPathProvider,
+                )
             }
         }
     }
