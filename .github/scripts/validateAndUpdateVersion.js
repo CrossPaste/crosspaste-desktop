@@ -5,13 +5,20 @@ const path = require('path');
 async function validateAndUpdateVersion() {
     // Retrieve the Git tag
     const tag = process.env.GITHUB_REF.replace('refs/tags/', '');
+
+    const tagSplit = tag.split('.');
+
+    const currentVersionString = tagSplit.slice(0, 3).join('.');
+
+    const revision = tagSplit[3] || '0';
+
     const isPreRelease = process.env.PRE_RELEASE.toLowerCase() === 'true'
-    if (!semver.valid(tag)) {
-        console.log(`Invalid version tag: ${tag}`);
+    if (!semver.valid(currentVersionString)) {
+        console.log(`Invalid tag : ${tag}`);
         process.exit(1);
     }
 
-    let currentVersion = semver.parse(tag);
+    let currentVersion = semver.parse(currentVersionString);
 
     // Read the properties file
     const propertiesPath = path.join(__dirname, '../../composeApp/src/desktopMain/resources/crosspaste-version.properties');
@@ -59,6 +66,7 @@ async function validateAndUpdateVersion() {
             }
         }
         fs.appendFileSync(envPath, `VERSION=${version}\n`);
+        fs.appendFileSync(envPath, `REVISION=${revision}\n`);
     } else {
         console.log('Version mismatch.');
         process.exit(1);
