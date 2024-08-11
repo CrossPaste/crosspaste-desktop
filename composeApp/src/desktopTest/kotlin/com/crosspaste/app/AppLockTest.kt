@@ -1,6 +1,6 @@
 package com.crosspaste.app
 
-import com.crosspaste.path.TestPathProviderMock.Companion.testUseMockTestPathProvider
+import com.crosspaste.path.TestAppPathProviderMock.useMockAppPathProvider
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -12,7 +12,7 @@ class AppLockTest {
 
     @Test
     fun testSingleInstanceLock() {
-        testUseMockTestPathProvider { _, _, _, _ ->
+        useMockAppPathProvider { _, _, _, _ ->
             runBlocking {
                 val job1 =
                     launch {
@@ -43,7 +43,7 @@ class AppLockTest {
 
     @Test
     fun testLockRelease() {
-        testUseMockTestPathProvider { _, _, _, _ ->
+        useMockAppPathProvider { _, _, _, _ ->
             runBlocking {
                 assertTrue(DesktopAppLaunch.acquireLock().first, "Instance should be able to acquire the lock initially")
                 DesktopAppLaunch.releaseLock()
