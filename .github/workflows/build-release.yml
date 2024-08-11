@@ -3,7 +3,7 @@ name: "Build Package"
 on:
   push:
     tags:
-      - 'v*'
+      - '[0-9]+.[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
   check-dylib-cache:
@@ -111,12 +111,18 @@ jobs:
 
       - name: Set Revision
         run: |
-          REVISION=$(git rev-list --count HEAD)
-          echo "REVISION=$REVISION" >> $GITHUB_ENV
-          echo -e "\nrevision=$REVISION" >> composeApp/src/desktopMain/resources/crosspaste-version.properties
+          CALCULATED_REVISION=$(git rev-list --count HEAD)
+          if [ "$CALCULATED_REVISION" = "${{ env.REVISION }}" ]; then
+            echo "Calculated revision matches the one in GitHub environment."
+            echo -e "\nrevision=$CALCULATED_REVISION" >> composeApp/src/desktopMain/resources/crosspaste-version.properties
+            echo "Revision has been written to properties file."
+          else
+            echo "Error: Calculated revision ($CALCULATED_REVISION) does not match the one in GitHub environment (${{ env.REVISION }})."
+            exit 1
+          fi
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -188,7 +194,7 @@ jobs:
           key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
           region: oss-cn-shenzhen
           bucket: crosspaste-desktop
-          assets: output/**:/${{ env.VERSION }}/
+          assets: output/**:/${{ env.VERSION }}.${{ env.REVISION }}/
 
       # conveyor default cache directory is .conveyor/cache
       # Avoid caching it, causing Github space payment

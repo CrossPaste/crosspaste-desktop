@@ -5,13 +5,20 @@ const path = require('path');
 async function validateAndUpdateVersion() {
     // Retrieve the Git tag
     const tag = process.env.GITHUB_REF.replace('refs/tags/', '');
+
+    const tagSplit = tag.split('.');
+
+    const currentVersionString = tagSplit.slice(0, 3).join('.');
+
+    const revision = tagSplit[3] || '0';
+
     const isPreRelease = process.env.PRE_RELEASE.toLowerCase() === 'true'
-    if (!semver.valid(tag)) {
-        console.log(`Invalid version tag: ${tag}`);
+    if (!semver.valid(currentVersionString)) {
+        console.log(`Invalid tag : ${tag}`);
         process.exit(1);
     }
 
-    let currentVersion = semver.parse(tag);
+    let currentVersion = semver.parse(currentVersionString);
 
     // Read the properties file
     const propertiesPath = path.join(__dirname, '../../composeApp/src/desktopMain/resources/crosspaste-version.properties');
@@ -39,11 +46,11 @@ async function validateAndUpdateVersion() {
         console.log('Version match successful.');
 
         // Parse the tag to extract pre-release information
-        const version = `${semver.major(tag)}.${semver.minor(tag)}.${semver.patch(tag)}`;
+        const version = `${semver.major(currentVersionString)}.${semver.minor(currentVersionString)}.${semver.patch(currentVersionString)}`;
         const envPath = process.env.GITHUB_ENV || './.env';
         if (isPreRelease) {
             if (currentVersion.prerelease.length === 0) {
-                console.log('Pre-release version not found in tag.');
+                console.log('Pre-release version not found in tag ${tag}.');
                 process.exit(1);
             }
             const preReleaseVersion = currentVersion.prerelease.join('.');
@@ -54,11 +61,12 @@ async function validateAndUpdateVersion() {
             fs.appendFileSync(envPath, `PRE_RELEASE_VERSION=${preReleaseVersion}\n`);
         } else {
             if (currentVersion.prerelease.length > 0) {
-                console.log('Pre-release version found in tag.');
+                console.log(`Pre-release version found in tag ${tag}.`);
                 process.exit(1);
             }
         }
         fs.appendFileSync(envPath, `VERSION=${version}\n`);
+        fs.appendFileSync(envPath, `REVISION=${revision}\n`);
     } else {
         console.log('Version mismatch.');
         process.exit(1);
