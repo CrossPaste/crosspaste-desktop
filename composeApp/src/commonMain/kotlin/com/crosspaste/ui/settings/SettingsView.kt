@@ -269,7 +269,9 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                     text = "pasteboard_listening",
                     tint = Color(0xFF41B06E),
                 ) {
-                    var enablePasteboardListening by remember { mutableStateOf(configManager.config.enablePasteboardListening) }
+                    var enablePasteboardListening by remember(configManager.config) {
+                        mutableStateOf(configManager.config.enablePasteboardListening)
+                    }
                     CustomSwitch(
                         modifier =
                             Modifier.width(32.dp)
@@ -289,7 +291,9 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                     text = "encrypted_sync",
                     tint = Color(0xFF41C9E2),
                 ) {
-                    var isEncrypted by remember { mutableStateOf(configManager.config.isEncryptSync) }
+                    var isEncrypted by remember(configManager.config) {
+                        mutableStateOf(configManager.config.isEncryptSync)
+                    }
                     CustomSwitch(
                         modifier =
                             Modifier.width(32.dp)

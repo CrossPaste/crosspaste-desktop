@@ -1,5 +1,8 @@
 package com.crosspaste.config
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.presist.OneFilePersist
 import com.crosspaste.ui.base.MessageType
@@ -11,12 +14,13 @@ class DefaultConfigManager(
 ) : ConfigManager {
     override val deviceUtils = getDeviceUtils()
 
-    override var config =
+    override var config by mutableStateOf(
         try {
             loadConfig() ?: AppConfig(deviceUtils.createAppInstanceId())
         } catch (e: Exception) {
             AppConfig(deviceUtils.createAppInstanceId())
-        }
+        },
+    )
 
     override var notificationManager: NotificationManager? = null
 
