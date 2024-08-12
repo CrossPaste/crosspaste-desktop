@@ -1,7 +1,5 @@
 package com.crosspaste.ui
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
 import com.crosspaste.app.AppLaunchState
@@ -12,7 +10,6 @@ import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
 import dorkbox.systemTray.MenuItem
 import dorkbox.systemTray.SystemTray
 import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.core.KoinApplication
 import java.awt.GraphicsEnvironment
@@ -45,31 +42,27 @@ object LinuxTrayView {
         )
     }
 
-    @Composable
     fun setWindowPosition(
         appWindowManager: AppWindowManager,
         appLaunchState: AppLaunchState,
     ) {
-        LaunchedEffect(Unit) {
-            val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
-            val bounds = gd.defaultConfiguration.bounds
-            val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
+        val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
+        val bounds = gd.defaultConfiguration.bounds
+        val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
 
-            val usableWidth = bounds.width - insets.right
+        val usableWidth = bounds.width - insets.right
 
-            val windowWidth = appWindowManager.mainWindowState.size.width
+        val windowWidth = appWindowManager.mainWindowState.size.width
 
-            appWindowManager.mainWindowState.position =
-                WindowPosition.Absolute(
-                    x = usableWidth.dp - windowWidth,
-                    y = bounds.y.dp + insets.top.dp + 30.dp,
-                )
+        appWindowManager.mainWindowState.position =
+            WindowPosition.Absolute(
+                x = usableWidth.dp - windowWidth,
+                y = bounds.y.dp + insets.top.dp + 30.dp,
+            )
 
-            if (appLaunchState.firstLaunch && !appWindowManager.hasCompletedFirstLaunchShow) {
-                delay(1000)
-                appWindowManager.showMainWindow = true
-                appWindowManager.hasCompletedFirstLaunchShow = true
-            }
+        if (appLaunchState.firstLaunch && !appWindowManager.hasCompletedFirstLaunchShow) {
+            appWindowManager.showMainWindow = true
+            appWindowManager.hasCompletedFirstLaunchShow = true
         }
     }
 }
