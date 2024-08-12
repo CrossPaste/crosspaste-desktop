@@ -17,7 +17,7 @@
 - **🖥️ Unified Cross-platform**: Consistent interface on Mac, Windows, and Linux. No need to change habits.
 - **📋 Rich Type Support**: Easily handle various pasteboard types: Text、URL、HTML RTF、Images and Files.
 - **🔒 End-to-End Encryption**: Using Signal protocol to fully protect your data security.
-- **🌐 LAN-only Serverless**: Data stays local. No external servers, maximum privacy.
+- **🌐 LAN-only Serverless**: Local storage, serverless architecture. Privacy protection, in your control.
 - **🧹 Smart Space Management**: Auto-cleanup options manage pasteboard storage without manual effort.
 
 ## 🏗 Getting Started with Development
