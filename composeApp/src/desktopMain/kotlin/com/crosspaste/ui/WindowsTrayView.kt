@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,12 +29,14 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.rememberWindowState
 import com.crosspaste.LocalKoinApplication
+import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.WinAppWindowManager
 import com.crosspaste.ui.base.DesktopNotificationManager
 import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.awt.GraphicsDevice
 import java.awt.GraphicsEnvironment
@@ -48,6 +51,7 @@ import java.awt.event.WindowEvent
 fun WindowsTray() {
     val current = LocalKoinApplication.current
 
+    val appLaunchState = current.koin.get<AppLaunchState>()
     val appWindowManager = current.koin.get<AppWindowManager>()
     val notificationManager = current.koin.get<NotificationManager>() as DesktopNotificationManager
 
@@ -60,6 +64,15 @@ fun WindowsTray() {
             placement = WindowPlacement.Floating,
             size = DpSize(170.dp, 204.dp),
         )
+
+    LaunchedEffect(Unit) {
+        if (appLaunchState.firstLaunch && !appWindowManager.hasCompletedFirstLaunchShow) {
+            delay(1000)
+            refreshWindowPosition(appWindowManager, null) { _, _, _ -> }
+            appWindowManager.showMainWindow = true
+            appWindowManager.hasCompletedFirstLaunchShow = true
+        }
+    }
 
     CrossPasteTray(
         icon = trayIcon,
@@ -187,21 +200,29 @@ class WindowsTrayMouseClicked(
 ) : MouseAdapter() {
 
     override fun mouseClicked(e: MouseEvent) {
-        val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
-        val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
-        mouseClickedAction(e, gd, insets)
-
-        val bounds = gd.defaultConfiguration.bounds
-        val usableWidth = bounds.width - insets.right
-        val usableHeight = bounds.height - insets.bottom
-
-        val windowWidth = appWindowManager.mainWindowState.size.width
-        val windowHeight = appWindowManager.mainWindowState.size.height
-
-        appWindowManager.mainWindowState.position =
-            WindowPosition.Absolute(
-                x = usableWidth.dp - windowWidth + 8.dp,
-                y = usableHeight.dp - windowHeight + 8.dp,
-            )
+        refreshWindowPosition(appWindowManager, e, mouseClickedAction)
     }
+}
+
+private fun refreshWindowPosition(
+    appWindowManager: AppWindowManager,
+    event: MouseEvent?,
+    eventAction: (MouseEvent, GraphicsDevice, Insets) -> Unit,
+) {
+    val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
+    val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
+    event?.let { eventAction(it, gd, insets) }
+
+    val bounds = gd.defaultConfiguration.bounds
+    val usableWidth = bounds.width - insets.right
+    val usableHeight = bounds.height - insets.bottom
+
+    val windowWidth = appWindowManager.mainWindowState.size.width
+    val windowHeight = appWindowManager.mainWindowState.size.height
+
+    appWindowManager.mainWindowState.position =
+        WindowPosition.Absolute(
+            x = usableWidth.dp - windowWidth + 8.dp,
+            y = usableHeight.dp - windowHeight + 8.dp,
+        )
 }

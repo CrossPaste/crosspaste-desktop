@@ -39,6 +39,8 @@ abstract class AbstractAppWindowManager : AppWindowManager {
 
     protected val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
+    override var hasCompletedFirstLaunchShow by mutableStateOf(false)
+
     override var showMainWindow by mutableStateOf(false)
 
     override var mainWindowState: WindowState by mutableStateOf(

@@ -5,4 +5,6 @@ interface AppLock {
     fun acquireLock(): Pair<Boolean, Boolean>
 
     fun releaseLock()
+
+    fun resetFirstLaunchFlag()
 }

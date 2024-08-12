@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalExitApplication
 import com.crosspaste.LocalKoinApplication
+import com.crosspaste.app.AppLock
 import com.crosspaste.app.AppRestartService
 import com.crosspaste.app.ExitMode
 import com.crosspaste.i18n.GlobalCopywriter
@@ -55,6 +56,7 @@ fun CrossPasteGrantAccessibilityPermissions(
     val current = LocalKoinApplication.current
     val exitApplication = LocalExitApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
+    val appLock = current.koin.get<AppLock>()
     val appRestartService = current.koin.get<AppRestartService>()
     val uiSupport = current.koin.get<UISupport>()
 
@@ -206,7 +208,10 @@ fun CrossPasteGrantAccessibilityPermissions(
                                 modifier = Modifier.height(28.dp),
                                 onClick = {
                                     restarting = true
-                                    appRestartService.restart { exitApplication(ExitMode.RESTART) }
+                                    appLock.resetFirstLaunchFlag()
+                                    appRestartService.restart {
+                                        exitApplication(ExitMode.RESTART)
+                                    }
                                 },
                                 shape = RoundedCornerShape(4.dp),
                                 border = BorderStroke(1.dp, MaterialTheme.colors.primary),

@@ -495,7 +495,7 @@ class CrossPaste {
                         } else if (isWindows) {
                             WindowsTray()
                         } else if (isLinux) {
-                            setWindowPosition(appWindowManager)
+                            setWindowPosition(appWindowManager, appLaunchState)
                         }
 
                         CrossPasteMainWindow(exitApplication, systemTray, windowIcon)

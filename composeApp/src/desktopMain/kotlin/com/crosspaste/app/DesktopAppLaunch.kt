@@ -19,6 +19,7 @@ object DesktopAppLaunch : AppLaunch, AppLock {
 
     private var channel: FileChannel? = null
     private var lock: FileLock? = null
+    private var resetLock = false
 
     override fun acquireLock(): Pair<Boolean, Boolean> {
         val appLock = pathProvider.pasteUserPath.resolve("app.lock").toFile()
@@ -47,9 +48,19 @@ object DesktopAppLaunch : AppLaunch, AppLock {
         try {
             lock?.release()
             channel?.close()
+            if (resetLock) {
+                pathProvider.pasteUserPath.resolve("app.lock").toFile().delete()
+                logger.info { "Application lock released and reset." }
+            } else {
+                logger.info { "Application lock released." }
+            }
         } catch (e: Exception) {
             logger.error { "Failed to release lock: ${e.message}" }
         }
+    }
+
+    override fun resetFirstLaunchFlag() {
+        resetLock = true
     }
 
     override fun launch(): AppLaunchState {

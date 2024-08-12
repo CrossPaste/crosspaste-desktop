@@ -2,6 +2,7 @@ package com.crosspaste.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,9 +26,11 @@ import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.core.KoinApplication
 import java.awt.Color
+import java.awt.GraphicsEnvironment
 import java.awt.MenuItem
 import java.awt.PopupMenu
 import java.awt.event.InputEvent
@@ -41,10 +44,10 @@ fun MacTray() {
     val pageViewContext = LocalPageViewContent.current
     val applicationExit = LocalExitApplication.current
 
+    val appLaunchState = current.koin.get<AppLaunchState>()
     val appWindowManager = current.koin.get<AppWindowManager>()
     val notificationManager = current.koin.get<NotificationManager>() as DesktopNotificationManager
     val copywriter = current.koin.get<GlobalCopywriter>()
-    val appLaunchState = current.koin.get<AppLaunchState>()
 
     val trayIcon = painterResource("icon/crosspaste.tray.mac.png")
 
@@ -57,6 +60,29 @@ fun MacTray() {
         frame.add(menu)
         onDispose {
             frame.dispose()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (appLaunchState.firstLaunch && !appWindowManager.hasCompletedFirstLaunchShow) {
+            delay(1000)
+            val windowInfos = MacAppUtils.getTrayWindowInfos(appLaunchState.pid)
+            windowInfos.useAll {
+                val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                val screenDevice = ge.defaultScreenDevice
+
+                (windowInfos.firstOrNull { it.contained(screenDevice) } ?: windowInfos.firstOrNull())?.let {
+                    println(it.toString())
+                    appWindowManager.mainWindowState.position =
+                        WindowPosition.Absolute(
+                            x = it.x.dp + (it.width.dp / 2) - (appWindowManager.mainWindowState.size.width / 2),
+                            y = it.y.dp + 30.dp,
+                        )
+                    println(appWindowManager.mainWindowState.position.toString())
+                    appWindowManager.showMainWindow = true
+                    appWindowManager.hasCompletedFirstLaunchShow = true
+                }
+            }
         }
     }
 

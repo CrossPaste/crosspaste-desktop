@@ -8,6 +8,8 @@ import okio.Path
 
 interface AppWindowManager {
 
+    var hasCompletedFirstLaunchShow: Boolean
+
     var showMainWindow: Boolean
 
     var mainWindowState: WindowState

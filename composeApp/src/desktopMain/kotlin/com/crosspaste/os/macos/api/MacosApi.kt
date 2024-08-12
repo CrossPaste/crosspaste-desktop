@@ -5,6 +5,7 @@ import com.sun.jna.Native
 import com.sun.jna.Pointer
 import com.sun.jna.Structure
 import com.sun.jna.ptr.IntByReference
+import java.awt.GraphicsDevice
 
 interface MacosApi : Library {
 
@@ -109,6 +110,16 @@ class WindowInfo : Structure, AutoCloseable {
         y: Int,
     ): Boolean {
         return x >= this.x && x <= this.x + width && y >= this.y && y <= this.y + height
+    }
+
+    fun contained(graphicsDevice: GraphicsDevice): Boolean {
+        val displayWidth = graphicsDevice.displayMode.width
+        val displayHeight = graphicsDevice.displayMode.height
+        val bound = graphicsDevice.defaultConfiguration.bounds
+        return bound.x <= this.x &&
+            bound.x + displayWidth >= this.x + this.width &&
+            bound.y <= this.y &&
+            bound.y + displayHeight >= this.y + this.height
     }
 
     override fun toString(): String {
