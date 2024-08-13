@@ -22,8 +22,6 @@ interface FileUtils {
 
     val separator: String
 
-    val tempDirectory: Path
-
     fun formatBytes(bytesSize: Long): String
 
     fun bytesSize(
@@ -64,21 +62,6 @@ interface FileUtils {
         src: Path,
         dest: Path,
     ): Boolean
-
-    fun createTempFile(
-        src: Path,
-        name: String,
-    ): Path?
-
-    fun createTempFile(
-        srcBytes: ByteArray,
-        name: String,
-    ): Path?
-
-    fun createSymbolicLink(
-        src: Path,
-        name: String,
-    ): Path?
 
     fun createEmptyPasteFile(
         path: Path,

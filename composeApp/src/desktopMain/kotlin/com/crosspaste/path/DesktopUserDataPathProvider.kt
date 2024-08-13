@@ -37,6 +37,7 @@ class DesktopUserDataPathProvider(private val configManager: ConfigManager) : Us
             AppFileType.FAVICON,
             AppFileType.FILE_EXT_ICON,
             AppFileType.VIDEO,
+            AppFileType.TEMP,
         )
 
     override fun resolve(
@@ -64,6 +65,7 @@ class DesktopUserDataPathProvider(private val configManager: ConfigManager) : Us
                 AppFileType.FAVICON -> basePath.resolve("favicon")
                 AppFileType.FILE_EXT_ICON -> basePath.resolve("file_ext_icons")
                 AppFileType.VIDEO -> basePath.resolve("videos")
+                AppFileType.TEMP -> basePath.resolve("temp")
                 else -> basePath
             }
 
@@ -115,6 +117,14 @@ class DesktopUserDataPathProvider(private val configManager: ConfigManager) : Us
             } catch (ignore: Exception) {
             }
             throw e
+        }
+    }
+
+    override fun cleanTemp() {
+        try {
+            val tempPath = resolve(appFileType = AppFileType.TEMP)
+            tempPath.toFile().deleteRecursively()
+        } catch (ignore: Exception) {
         }
     }
 

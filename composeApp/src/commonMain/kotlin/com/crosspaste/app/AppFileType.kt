@@ -13,4 +13,5 @@ enum class AppFileType {
     IMAGE,
     VIDEO,
     FILE,
+    TEMP,
 }

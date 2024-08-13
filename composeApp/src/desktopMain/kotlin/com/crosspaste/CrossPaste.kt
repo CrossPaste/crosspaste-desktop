@@ -363,7 +363,7 @@ class CrossPaste {
                     single<ToastManager> { DesktopToastManager() }
                     single<NotificationManager> { DesktopNotificationManager(get(), get()) }
                     single<IconStyle> { DesktopIconStyle(get()) }
-                    single<UISupport> { DesktopUISupport(get(), get(), get()) }
+                    single<UISupport> { DesktopUISupport(get(), get(), get(), get()) }
                     single<ShortcutKeys> { DesktopShortcutKeys(get()) }
                     single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get()) }
                     single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get()) }
@@ -422,6 +422,8 @@ class CrossPaste {
             logger.info { "CleanPasteScheduler stop completed" }
             koinApplication.koin.get<GlobalListener>().stop()
             logger.info { "GlobalListener stop completed" }
+            koinApplication.koin.get<UserDataPathProvider>().cleanTemp()
+            logger.info { "UserDataPathProvider clean temp completed" }
             appExitService.beforeReleaseLockList.forEach {
                 it.invoke()
             }

@@ -11,7 +11,6 @@ import com.google.common.io.Files
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.utils.io.*
 import kotlinx.datetime.LocalDateTime
-import okio.FileSystem
 import okio.Path
 import okio.Path.Companion.toOkioPath
 import java.io.File
@@ -33,16 +32,8 @@ object DesktopFileUtils : FileUtils {
 
     override val separator: String = File.separator
 
-    override val tempDirectory: Path =
-        java.nio.file.Files.createTempDirectory("crosspaste")
-            .toOkioPath()
-
     private val units = arrayOf(B, KB, MB, GB, TB)
     private val decimalFormat = DecimalFormat("###0.#")
-
-    init {
-        tempDirectory.toFile().deleteOnExit()
-    }
 
     override fun formatBytes(bytesSize: Long): String {
         if (bytesSize < 1024) return "$bytesSize B"
@@ -188,47 +179,6 @@ object DesktopFileUtils : FileUtils {
             true
         } catch (e: Exception) {
             false
-        }
-    }
-
-    override fun createTempFile(
-        src: Path,
-        name: String,
-    ): Path? {
-        val tempFile = tempDirectory.resolve(name)
-        return if (copyFile(src, tempFile)) {
-            tempFile
-        } else {
-            null
-        }
-    }
-
-    override fun createTempFile(
-        srcBytes: ByteArray,
-        name: String,
-    ): Path? {
-        val tempFile = tempDirectory.resolve(name)
-        return try {
-            Files.write(srcBytes, tempFile.toFile())
-            tempFile
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    override fun createSymbolicLink(
-        src: Path,
-        name: String,
-    ): Path? {
-        try {
-            val path = tempDirectory.resolve(name)
-            if (FileSystem.SYSTEM.exists(path)) {
-                path.toFile().delete()
-            }
-            java.nio.file.Files.createSymbolicLink(tempDirectory.resolve(name).toNioPath(), src.toNioPath())
-            return path
-        } catch (e: Exception) {
-            return null
         }
     }
 
