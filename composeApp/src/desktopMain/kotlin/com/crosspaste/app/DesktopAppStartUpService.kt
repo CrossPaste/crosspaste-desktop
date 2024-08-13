@@ -29,7 +29,9 @@ class DesktopAppStartUpService(
         }
 
     override fun followConfig() {
-        appStartUpService.followConfig()
+        if (AppEnv.CURRENT.isProduction()) {
+            appStartUpService.followConfig()
+        }
     }
 
     override fun isAutoStartUp(): Boolean {
