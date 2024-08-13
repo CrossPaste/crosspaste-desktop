@@ -24,6 +24,7 @@ import io.realm.kotlin.notifications.UpdatedResults
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -62,76 +63,79 @@ class DesktopSyncManager(
 
     override var refreshing by mutableStateOf(false)
 
+    private val syncManagerListenJob: Job
+
     init {
-        realTimeSyncScope.launch(CoroutineName("SyncManagerListenChanger")) {
-            val syncRuntimeInfos = syncRuntimeInfoDao.getAllSyncRuntimeInfos()
-            internalSyncHandlers.putAll(
-                syncRuntimeInfos.map { syncRuntimeInfo ->
-                    syncRuntimeInfo.appInstanceId to
-                        DesktopSyncHandler(
-                            syncRuntimeInfo,
-                            tokenCache,
-                            telnetUtils,
-                            syncInfoFactory,
-                            syncClientApi,
-                            signalProtocolStore,
-                            signalProcessorCache,
-                            syncRuntimeInfoDao,
-                            signalDao,
-                            realTimeSyncScope,
-                        )
-                },
-            )
-            withContext(mainDispatcher) {
-                realTimeSyncRuntimeInfos.addAll(syncRuntimeInfos)
-                refreshWaitToVerifySyncRuntimeInfo()
-                deviceManager.refresh()
-                resolveSyncs()
-            }
-            val syncRuntimeInfosFlow = syncRuntimeInfos.asFlow()
-            syncRuntimeInfosFlow.collect { changes: ResultsChange<SyncRuntimeInfo> ->
-                when (changes) {
-                    is UpdatedResults -> {
-                        for (deletion in changes.deletions) {
-                            val deletionSyncRuntimeInfo = realTimeSyncRuntimeInfos[deletion]
-                            internalSyncHandlers.remove(deletionSyncRuntimeInfo.appInstanceId)!!
-                                .clearContext()
-                        }
+        syncManagerListenJob =
+            realTimeSyncScope.launch(CoroutineName("SyncManagerListenChanger")) {
+                val syncRuntimeInfos = syncRuntimeInfoDao.getAllSyncRuntimeInfos()
+                internalSyncHandlers.putAll(
+                    syncRuntimeInfos.map { syncRuntimeInfo ->
+                        syncRuntimeInfo.appInstanceId to
+                            DesktopSyncHandler(
+                                syncRuntimeInfo,
+                                tokenCache,
+                                telnetUtils,
+                                syncInfoFactory,
+                                syncClientApi,
+                                signalProtocolStore,
+                                signalProcessorCache,
+                                syncRuntimeInfoDao,
+                                signalDao,
+                                realTimeSyncScope,
+                            )
+                    },
+                )
+                withContext(mainDispatcher) {
+                    realTimeSyncRuntimeInfos.addAll(syncRuntimeInfos)
+                    refreshWaitToVerifySyncRuntimeInfo()
+                    deviceManager.refresh()
+                    resolveSyncs()
+                }
+                val syncRuntimeInfosFlow = syncRuntimeInfos.asFlow()
+                syncRuntimeInfosFlow.collect { changes: ResultsChange<SyncRuntimeInfo> ->
+                    when (changes) {
+                        is UpdatedResults -> {
+                            for (deletion in changes.deletions) {
+                                val deletionSyncRuntimeInfo = realTimeSyncRuntimeInfos[deletion]
+                                internalSyncHandlers.remove(deletionSyncRuntimeInfo.appInstanceId)!!
+                                    .clearContext()
+                            }
 
-                        for (insertion in changes.insertions) {
-                            val insertionSyncRuntimeInfo = changes.list[insertion]
-                            internalSyncHandlers[insertionSyncRuntimeInfo.appInstanceId] =
-                                DesktopSyncHandler(
-                                    insertionSyncRuntimeInfo,
-                                    tokenCache,
-                                    telnetUtils,
-                                    syncInfoFactory,
-                                    syncClientApi,
-                                    signalProtocolStore,
-                                    signalProcessorCache,
-                                    syncRuntimeInfoDao,
-                                    signalDao,
-                                    realTimeSyncScope,
-                                )
-                        }
+                            for (insertion in changes.insertions) {
+                                val insertionSyncRuntimeInfo = changes.list[insertion]
+                                internalSyncHandlers[insertionSyncRuntimeInfo.appInstanceId] =
+                                    DesktopSyncHandler(
+                                        insertionSyncRuntimeInfo,
+                                        tokenCache,
+                                        telnetUtils,
+                                        syncInfoFactory,
+                                        syncClientApi,
+                                        signalProtocolStore,
+                                        signalProcessorCache,
+                                        syncRuntimeInfoDao,
+                                        signalDao,
+                                        realTimeSyncScope,
+                                    )
+                            }
 
-                        // When the synchronization parameters change,
-                        // we will force resolve, so we do not need to process it redundantly here
-                        // for (change in changes.changes) { }
+                            // When the synchronization parameters change,
+                            // we will force resolve, so we do not need to process it redundantly here
+                            // for (change in changes.changes) { }
 
-                        withContext(Dispatchers.Main) {
-                            realTimeSyncRuntimeInfos.clear()
-                            realTimeSyncRuntimeInfos.addAll(changes.list)
-                            refreshWaitToVerifySyncRuntimeInfo()
-                            deviceManager.refresh()
+                            withContext(Dispatchers.Main) {
+                                realTimeSyncRuntimeInfos.clear()
+                                realTimeSyncRuntimeInfos.addAll(changes.list)
+                                refreshWaitToVerifySyncRuntimeInfo()
+                                deviceManager.refresh()
+                            }
                         }
-                    }
-                    else -> {
-                        // types other than UpdatedResults are not changes -- ignore them
+                        else -> {
+                            // types other than UpdatedResults are not changes -- ignore them
+                        }
                     }
                 }
             }
-        }
     }
 
     override fun refreshWaitToVerifySyncRuntimeInfo() {
@@ -198,7 +202,7 @@ class DesktopSyncManager(
     }
 
     override fun notifyExit() {
-        realTimeJob.cancel()
+        syncManagerListenJob.cancel()
         internalSyncHandlers.values.forEach { syncHandler ->
             // Ensure that the notification is completed before exiting
             runBlocking { syncHandler.notifyExit() }
