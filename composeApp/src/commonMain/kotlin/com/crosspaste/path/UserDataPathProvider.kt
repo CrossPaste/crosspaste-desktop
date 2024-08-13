@@ -21,4 +21,6 @@ interface UserDataPathProvider : PathProvider {
         migrationPath: Path,
         realmMigrationAction: (Path) -> Unit,
     )
+
+    fun cleanTemp()
 }

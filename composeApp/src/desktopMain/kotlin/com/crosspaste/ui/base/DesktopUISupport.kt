@@ -1,5 +1,6 @@
 package com.crosspaste.ui.base
 
+import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppUrls
 import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.dao.paste.PasteType
@@ -10,26 +11,27 @@ import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.currentPlatform
 import com.crosspaste.ui.paste.preview.getPasteItem
-import com.crosspaste.utils.getFileUtils
+import com.google.common.io.Files
 import io.github.oshai.kotlinlogging.KotlinLogging
 import okio.FileSystem
 import okio.Path
 import okio.Path.Companion.toPath
+import org.mongodb.kbson.ObjectId
 import java.awt.Desktop
 import java.io.File
 import java.net.URI
 
 class DesktopUISupport(
     private val appUrls: AppUrls,
-    private val notificationManager: NotificationManager,
     private val copywriter: GlobalCopywriter,
+    private val notificationManager: NotificationManager,
+    private val userDataPathProvider: UserDataPathProvider,
 ) : UISupport {
 
     private val logger = KotlinLogging.logger {}
-
-    private val fileUtils = getFileUtils()
 
     override fun openUrlInBrowser(url: String) {
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
@@ -65,15 +67,18 @@ class DesktopUISupport(
         }
     }
 
-    override fun openHtml(html: String) {
+    override fun openHtml(
+        objectId: ObjectId,
+        html: String,
+    ) {
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-            fileUtils.createTempFile(
-                html.toByteArray(),
-                fileUtils.createRandomFileName("html"),
-            )?.let { path ->
-                val desktop = Desktop.getDesktop()
-                desktop.browse(path.toFile().toURI())
+            val fileName = "${objectId.toHexString()}.html"
+            val filePath = userDataPathProvider.resolve(fileName, AppFileType.TEMP)
+            val file = filePath.toFile()
+            if (!file.exists()) {
+                Files.write(html.toByteArray(), file)
             }
+            Desktop.getDesktop().browse(file.toURI())
         } else {
             notificationManager.addNotification(
                 message = copywriter.getText("failed_to_open_Html_pasteboard"),
@@ -134,14 +139,18 @@ class DesktopUISupport(
         }
     }
 
-    override fun openText(text: String) {
+    override fun openText(
+        objectId: ObjectId,
+        text: String,
+    ) {
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
-            fileUtils.createTempFile(
-                text.toByteArray(),
-                fileUtils.createRandomFileName("txt"),
-            )?.let { path ->
-                Desktop.getDesktop().open(path.toFile())
+            val fileName = "${objectId.toHexString()}.txt"
+            val filePath = userDataPathProvider.resolve(fileName, AppFileType.TEMP)
+            val file = filePath.toFile()
+            if (!file.exists()) {
+                Files.write(text.toByteArray(), file)
             }
+            Desktop.getDesktop().open(file)
         } else {
             notificationManager.addNotification(
                 message = copywriter.getText("failed_to_open_Text_pasteboard"),
@@ -153,9 +162,9 @@ class DesktopUISupport(
     override fun openPasteData(pasteData: PasteData) {
         pasteData.getPasteItem()?.let { item ->
             when (pasteData.pasteType) {
-                PasteType.TEXT -> openText((item as TextPasteItem).text)
+                PasteType.TEXT -> openText(pasteData.id, (item as TextPasteItem).text)
                 PasteType.URL -> openUrlInBrowser((item as UrlPasteItem).url)
-                PasteType.HTML -> openHtml((item as HtmlPasteItem).html)
+                PasteType.HTML -> openHtml(pasteData.id, (item as HtmlPasteItem).html)
                 PasteType.FILE -> {
                     val relativePathList = (item as FilesPasteItem).relativePathList
                     if (relativePathList.size > 0) {

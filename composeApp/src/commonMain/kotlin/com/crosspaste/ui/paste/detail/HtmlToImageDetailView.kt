@@ -100,7 +100,7 @@ fun HtmlToImageDetailView(
                                         .onClick(
                                             onDoubleClick = onDoubleClick,
                                             onClick = {
-                                                uiSupport.openHtml(pasteHtml.html)
+                                                uiSupport.openHtml(pasteData.id, pasteHtml.html)
                                             },
                                         ),
                             ) {
