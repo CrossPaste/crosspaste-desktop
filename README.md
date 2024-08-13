@@ -56,7 +56,7 @@ systemProp.https.proxyPassword=password
 systemProp.http.nonProxyHosts=*.nonproxyrepos.com|localhost
 ```
 
-🗺️ Roadmap
+## 🗺️ Roadmap
 CrossPaste is continuously evolving! We plan to add more useful features in future versions. Here's an overview of our near-term development plans:
 
 - 1.1.0: Support for color clipboard
