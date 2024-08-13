@@ -10,14 +10,19 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
@@ -155,24 +160,33 @@ fun TokenView() {
 
 @Composable
 fun OTPCodeBox(appTokenService: AppTokenService) {
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        appTokenService.token.forEach { char ->
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier =
-                    Modifier
-                        .background(MaterialTheme.colors.background, RoundedCornerShape(4.dp))
-                        .border(1.dp, MaterialTheme.colors.primary, RoundedCornerShape(4.dp))
-                        .padding(vertical = 8.dp, horizontal = 12.dp),
-            ) {
-                Text(
-                    text = char.toString(),
-                    color = MaterialTheme.colors.primary,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace,
-                )
+    Column {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            appTokenService.token.forEach { char ->
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier =
+                        Modifier
+                            .background(MaterialTheme.colors.background, RoundedCornerShape(4.dp))
+                            .border(1.dp, MaterialTheme.colors.primary, RoundedCornerShape(4.dp))
+                            .padding(vertical = 8.dp, horizontal = 12.dp),
+                ) {
+                    Text(
+                        text = char.toString(),
+                        color = MaterialTheme.colors.primary,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                    )
+                }
             }
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+        Row(modifier = Modifier.width(300.dp).wrapContentHeight()) {
+            LinearProgressIndicator(
+                modifier = Modifier.fillMaxWidth().height(5.dp),
+                progress = appTokenService.showTokenProgress,
+            )
         }
     }
 }
