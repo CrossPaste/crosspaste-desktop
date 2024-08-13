@@ -59,7 +59,8 @@ systemProp.http.nonProxyHosts=*.nonproxyrepos.com|localhost
 
 ## 🤝 支持项目
 
-- **🌟 Star 这个项目**：这是支持 Clipevery 最简单的方法。
+- **🌟 Star 这个项目**：这是支持 CrossPaste 最简单的方法。
 - **🪲 报告错误**：在[问题追踪器](https://github.com/CrossPaste/crosspaste-desktop/issues/new/choose)上报告你发现的任何错误。
-- **📖 翻译**：帮助 Clipevery 翻译、润色到你的[语言](https://github.com/CrossPaste/crosspaste-desktop/tree/main/composeApp/src/desktopMain/resources/i18n)。
+- **📖 翻译**：帮助 CrossPaste 翻译、润色到你的[语言](https://github.com/CrossPaste/crosspaste-desktop/tree/main/composeApp/src/desktopMain/resources/i18n)。
 - **📝 贡献**：[贡献代码](./Contributing.zh-CN.md)、评论 issue，欢迎一切可以帮助到项目的贡献。
+- **💖 赞助支持**: 通过 [GitHub Sponsors](https://github.com/sponsors/CrossPaste) 在经济上支持项目，以帮助持续开发和维护。

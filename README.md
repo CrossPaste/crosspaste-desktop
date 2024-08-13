@@ -61,7 +61,9 @@ systemProp.http.nonProxyHosts=*.nonproxyrepos.com|localhost
 - **🌟 Star this repository**: This is the easiest way to support CrossPaste and costs nothing.
 - **🪲 Report bugs**: Report any bugs you find on the [issue tracker](https://github.com/CrossPaste/crosspaste-desktop/issues/new/choose).
 - **📖 Translate**: Help translate and polish CrossPaste into your [language](https://github.com/CrossPaste/crosspaste-desktop/tree/main/composeApp/src/desktopMain/resources/i18n).
-- **📝 Contribute**: [Contribute code](./Contributing.md), comment on issues, and any contributions that can help the project are welcome.
+- **📝 Contribute**: [Code](./Contributing.md), comment on issues, and any contributions that can help the project are welcome.
+- **💖 Sponsor**: Support financially via [GitHub Sponsors](https://github.com/sponsors/CrossPaste) to help with ongoing development and maintenance.
+
 
 
 
