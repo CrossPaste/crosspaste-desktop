@@ -17,6 +17,8 @@ class DesktopAppStartUpService(
 
     private val currentPlatform = currentPlatform()
 
+    private val isProduction = AppEnv.CURRENT.isProduction()
+
     private val appStartUpService: AppStartUpService =
         if (currentPlatform.isMacos()) {
             MacAppStartUpService(configManager)
@@ -29,21 +31,29 @@ class DesktopAppStartUpService(
         }
 
     override fun followConfig() {
-        if (AppEnv.CURRENT.isProduction()) {
+        if (isProduction) {
             appStartUpService.followConfig()
         }
     }
 
     override fun isAutoStartUp(): Boolean {
-        return appStartUpService.isAutoStartUp()
+        return if (isProduction) {
+            appStartUpService.isAutoStartUp()
+        } else {
+            false
+        }
     }
 
     override fun makeAutoStatUp() {
-        appStartUpService.makeAutoStatUp()
+        if (isProduction) {
+            appStartUpService.makeAutoStatUp()
+        }
     }
 
     override fun removeAutoStartUp() {
-        appStartUpService.removeAutoStartUp()
+        if (isProduction) {
+            appStartUpService.removeAutoStartUp()
+        }
     }
 }
 
