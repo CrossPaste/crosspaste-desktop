@@ -56,6 +56,14 @@ systemProp.https.proxyPassword=password
 systemProp.http.nonProxyHosts=*.nonproxyrepos.com|localhost
 ```
 
+## 🗺️ 路线图
+CrossPaste 正在持续发展中！我们计划在未来的版本中添加更多实用的功能。以下是我们近期的发展计划概览：
+
+- **v1.1.0**：支持颜色粘贴板
+- **v1.2.0**：支持原生粘贴板，改进性能
+- **v1.3.0**：引入命令行模式
+
+这只是我们计划的一小部分。想了解更多细节和长期规划？查看我们的[完整路线图](./Roadmap.zh-CN.md)。
 
 ## 🤝 支持项目
 
