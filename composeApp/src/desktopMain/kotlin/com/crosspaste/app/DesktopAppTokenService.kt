@@ -21,6 +21,7 @@ class DesktopAppTokenService : AppTokenService {
     private var refreshTokenJob: Job? = null
 
     private val scope = CoroutineScope(Dispatchers.IO)
+    override var showTokenProgress: Float by mutableStateOf(0.0f)
 
     override var showToken by mutableStateOf(false)
 
@@ -29,6 +30,7 @@ class DesktopAppTokenService : AppTokenService {
     private suspend fun refreshToken() {
         withContext(mainDispatcher) {
             token = CharArray(6) { (Random.nextInt(10) + '0'.code).toChar() }
+            showTokenProgress = 0.0f
         }
     }
 
@@ -39,7 +41,12 @@ class DesktopAppTokenService : AppTokenService {
                 scope.launch(CoroutineName("RefreshToken")) {
                     while (isActive) {
                         refreshToken()
-                        delay(30000)
+                        while (showTokenProgress < 0.99f) {
+                            withContext(mainDispatcher) {
+                                showTokenProgress += 0.01f
+                            }
+                            delay(300)
+                        }
                     }
                 }
         }
