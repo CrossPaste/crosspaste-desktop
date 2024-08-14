@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.sp
 val TOOLTIP_TEXT_STYLE =
     TextStyle(
         fontFamily = FontFamily.SansSerif,
+        lineHeight = 16.sp,
         fontSize = 12.sp,
     )
 
