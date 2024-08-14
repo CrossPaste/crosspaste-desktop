@@ -330,12 +330,12 @@ fun PasteMenuView(
                 }
             }
 
-            val sourceAndTypeText = getSourceAndTypeText(copywriter, pasteData)
+            val detailInfo = getDetailInfo(copywriter, pasteData)
             PasteTooltipAreaView(
                 Modifier.fillMaxWidth().height(25.dp),
-                text = sourceAndTypeText,
+                text = detailInfo,
                 computeTooltipPlacement = {
-                    val textWidth = measureTextWidth(sourceAndTypeText, TOOLTIP_TEXT_STYLE)
+                    val textWidth = measureTextWidth(detailInfo, TOOLTIP_TEXT_STYLE)
                     TooltipPlacement.ComponentRect(
                         anchor = Alignment.BottomStart,
                         alignment = Alignment.BottomEnd,

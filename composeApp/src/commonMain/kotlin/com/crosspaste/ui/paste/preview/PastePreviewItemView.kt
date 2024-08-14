@@ -42,7 +42,6 @@ import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
-import io.realm.kotlin.types.RealmInstant
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.reflect.KClass
@@ -86,18 +85,6 @@ fun PastePreviewItemView(
 
 val dateUtils = getDateUtils()
 
-fun getDateText(
-    createTime: RealmInstant,
-    copywriter: Copywriter,
-): String {
-    val date = dateUtils.convertRealmInstantToLocalDateTime(createTime)
-    dateUtils.getDateText(date)?.let {
-        return copywriter.getText(it)
-    } ?: run {
-        return copywriter.getDate(date)
-    }
-}
-
 @Composable
 fun PasteSpecificPreviewView(pasteData: PasteData) {
     if (pasteData.pasteState == PasteState.LOADING) {
@@ -136,11 +123,16 @@ fun PasteSpecificPreviewView(pasteData: PasteData) {
     }
 }
 
-fun getSourceAndTypeText(
+fun getDetailInfo(
     copywriter: Copywriter,
     pasteData: PasteData,
 ): String {
-    val source = pasteData.source?.let { "$it:" } ?: ""
+    val infos = mutableListOf<String>()
+    pasteData.source?.let {
+        infos.add(
+            "${copywriter.getText("source")}: $it",
+        )
+    }
     val typeText =
         when (pasteData.pasteType) {
             PasteType.TEXT -> "text"
@@ -150,7 +142,18 @@ fun getSourceAndTypeText(
             PasteType.FILE -> "file"
             else -> "unknown"
         }
-    return "$source${copywriter.getText(typeText)}"
+    infos.add(
+        "${copywriter.getText("type")}: ${copywriter.getText(typeText)}",
+    )
+    pasteData.createTime.let {
+        infos.add(
+            "${copywriter.getText("create_time")}: ${copywriter.getDate(
+                dateUtils.convertRealmInstantToLocalDateTime(it),
+                true,
+            )}",
+        )
+    }
+    return infos.joinToString("\n")
 }
 
 @Composable
