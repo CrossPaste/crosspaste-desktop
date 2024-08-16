@@ -6,6 +6,7 @@ import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.Constructor
 import java.io.FileReader
 import java.util.Properties
+import java.util.zip.ZipFile
 
 val versionProperties = Properties()
 versionProperties.load(
@@ -265,6 +266,12 @@ compose.desktop {
                 }
             }
 
+            val seleniumManagerJar: File =
+                configurations.detachedConfiguration(dependencies.create("org.seleniumhq.selenium:selenium-manager:4.23.1"))
+                    .resolve().first()
+
+            extract(seleniumManagerJar, appResourcesRootDir.get().asFile)
+
             // Add download info of jbr on all platforms
             val jbrYamlFile = project.projectDir.toPath().resolve("jbr.yaml").toFile()
             val jbrReleases = loadJbrReleases(jbrYamlFile)
@@ -272,11 +279,6 @@ compose.desktop {
             if (!jbrDir.exists()) {
                 jbrDir.mkdirs()
             }
-
-            // Add download info of chrome-driver and chrome-headless-shell on all platforms
-            val webDriverProperties = Properties()
-            val webDriverFile = project.projectDir.toPath().resolve("webDriver.properties").toFile()
-            webDriverProperties.load(FileReader(webDriverFile))
 
             if (os.isMacOsX || buildFullPlatform) {
                 targetFormats(TargetFormat.Dmg)
@@ -305,26 +307,18 @@ compose.desktop {
                     val result = process.inputStream.bufferedReader().use { it.readText() }.trim()
 
                     if (result == "x86_64" || buildFullPlatform) {
-                        getAllDependencies(
+                        getJbrReleases(
+                            "osx-x64",
                             jbrReleases,
                             jbrDir,
-                            webDriverProperties,
-                            appResourcesRootDir.get(),
-                            "osx-x64",
-                            "mac-x64",
-                            "macos-x64",
                         )
                     }
 
                     if (result == "arm64" || buildFullPlatform) {
-                        getAllDependencies(
+                        getJbrReleases(
+                            "osx-aarch64",
                             jbrReleases,
                             jbrDir,
-                            webDriverProperties,
-                            appResourcesRootDir.get(),
-                            "osx-aarch64",
-                            "mac-arm64",
-                            "macos-arm64",
                         )
                     }
                 }
@@ -337,14 +331,10 @@ compose.desktop {
                     val architecture = System.getProperty("os.arch")
 
                     if (architecture.contains("64")) {
-                        getAllDependencies(
+                        getJbrReleases(
+                            "windows-x64",
                             jbrReleases,
                             jbrDir,
-                            webDriverProperties,
-                            appResourcesRootDir.get(),
-                            "windows-x64",
-                            "win64",
-                            "windows-x64",
                         )
                     } else {
                         throw IllegalArgumentException("Unsupported architecture: $architecture")
@@ -356,14 +346,10 @@ compose.desktop {
                 linux {
                     targetFormats(TargetFormat.Deb)
 
-                    getAllDependencies(
+                    getJbrReleases(
+                        "linux-x64",
                         jbrReleases,
                         jbrDir,
-                        webDriverProperties,
-                        appResourcesRootDir.get(),
-                        "linux-x64",
-                        "linux64",
-                        "linux-x64",
                     )
                 }
             }
@@ -389,27 +375,6 @@ configurations.all {
         // https://github.com/JetBrains/compose-jb/issues/1404#issuecomment-1146894731
         attribute(Attribute.of("ui", String::class.java), "awt")
     }
-}
-
-fun getAllDependencies(
-    jbrReleases: JbrReleases,
-    jbrDir: File,
-    webDriverProperties: Properties,
-    chromeDir: Directory,
-    jbrArch: String,
-    chromeArch: String,
-    chromeDirName: String,
-) {
-    getJbrReleases(
-        jbrArch,
-        jbrReleases,
-        jbrDir,
-    )
-    getChromeDriver(
-        chromeArch,
-        webDriverProperties,
-        chromeDir.dir(chromeDirName),
-    )
 }
 
 fun getJbrReleases(
@@ -484,6 +449,23 @@ fun loadJbrReleases(file: File): JbrReleases {
     }
 }
 
+fun extractFile(
+    zip: ZipFile,
+    entry: java.util.zip.ZipEntry,
+    targetDir: Directory,
+) {
+    val targetFile = targetDir.file(entry.name.substringAfterLast("/"))
+    targetFile.asFile.parentFile.mkdirs()
+    zip.getInputStream(entry).use { input ->
+        targetFile.asFile.outputStream().use { output ->
+            input.copyTo(output)
+        }
+    }
+    // Make the file executable
+    targetFile.asFile.setExecutable(true, false)
+    println("Extracted: ${targetFile.asFile.absolutePath}")
+}
+
 data class JbrReleases(
     var jbr: Map<String, JbrDetails> = mutableMapOf(),
 )
@@ -492,3 +474,45 @@ data class JbrDetails(
     var url: String = "",
     var sha512: String = "",
 )
+
+fun extract(
+    jar: File,
+    outDir: File,
+) {
+    ZipFile(jar).use { zip ->
+        zip.entries().asSequence().forEach { entry ->
+            when (entry.name) {
+                "org/openqa/selenium/manager/linux/selenium-manager" -> {
+                    extractFile(zip, entry, outDir.resolve("linux-x64"))
+                }
+                "org/openqa/selenium/manager/macos/selenium-manager" -> {
+                    extractFile(zip, entry, outDir.resolve("macos-x64"))
+                    extractFile(zip, entry, outDir.resolve("macos-arm64"))
+                }
+                "org/openqa/selenium/manager/windows/selenium-manager.exe" -> {
+                    extractFile(zip, entry, outDir.resolve("windows-x64"))
+                }
+            }
+        }
+    }
+}
+
+fun extractFile(
+    zip: ZipFile,
+    entry: java.util.zip.ZipEntry,
+    targetDir: File,
+) {
+    val targetFile = targetDir.resolve(entry.name.substringAfterLast("/"))
+    targetFile.parentFile.mkdirs()
+    if (!targetFile.exists() || targetFile.lastModified() < entry.lastModifiedTime.toMillis()) {
+        zip.getInputStream(entry).use { input ->
+            targetFile.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
+        targetFile.setExecutable(true, false)
+        println("Extracted: ${targetFile.absolutePath}")
+    } else {
+        println("Skipped (up to date): ${targetFile.absolutePath}")
+    }
+}

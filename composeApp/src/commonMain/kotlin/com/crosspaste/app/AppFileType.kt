@@ -5,6 +5,7 @@ enum class AppFileType {
     USER,
     LOG,
     ENCRYPT,
+    MODULE,
     DATA,
     HTML,
     ICON, // use for app icon

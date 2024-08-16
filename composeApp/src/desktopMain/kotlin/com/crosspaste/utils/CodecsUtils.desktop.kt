@@ -1,6 +1,9 @@
 package com.crosspaste.utils
 
+import okio.Path
 import java.io.ByteArrayOutputStream
+import java.io.FileInputStream
+import java.security.MessageDigest
 import java.util.Base64
 
 actual fun getCodecsUtils(): CodecsUtils {
@@ -26,7 +29,7 @@ object DesktopCodecsUtils : CodecsUtils {
     }
 
     override fun md5(bytes: ByteArray): String {
-        val md = java.security.MessageDigest.getInstance("MD5")
+        val md = MessageDigest.getInstance("MD5")
         val digest = md.digest(bytes)
         return digest.fold("") { str, it -> str + "%02x".format(it) }
     }
@@ -48,5 +51,18 @@ object DesktopCodecsUtils : CodecsUtils {
 
     override fun md5ByString(string: String): String {
         return md5(string.toByteArray())
+    }
+
+    override fun sha256(path: Path): String {
+        val buffer = ByteArray(8192) // 8KB buffer
+        val digest = MessageDigest.getInstance("SHA-256")
+        var bytesRead: Int
+
+        FileInputStream(path.toFile()).use { fis ->
+            while (fis.read(buffer).also { bytesRead = it } != -1) {
+                digest.update(buffer, 0, bytesRead)
+            }
+        }
+        return digest.digest().joinToString("") { "%02x".format(it) }
     }
 }

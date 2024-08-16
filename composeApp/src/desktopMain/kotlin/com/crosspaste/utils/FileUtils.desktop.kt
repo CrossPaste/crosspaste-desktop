@@ -128,6 +128,22 @@ object DesktopFileUtils : FileUtils {
         return hc.toString()
     }
 
+    override fun existFile(path: Path): Boolean {
+        return path.toFile().exists()
+    }
+
+    override fun deleteFile(path: Path): Boolean {
+        return path.toFile().delete()
+    }
+
+    override fun createDir(path: Path): Boolean {
+        return if (!path.toFile().exists()) {
+            path.toFile().mkdirs()
+        } else {
+            true
+        }
+    }
+
     override fun copyPath(
         src: Path,
         dest: Path,

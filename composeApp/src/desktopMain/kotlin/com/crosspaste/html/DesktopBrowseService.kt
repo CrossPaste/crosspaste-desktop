@@ -1,13 +1,12 @@
-package com.crosspaste.paste
+package com.crosspaste.html
 
-import com.crosspaste.app.AppEnv
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.os.windows.WinProcessUtils
 import com.crosspaste.os.windows.WinProcessUtils.killProcessSet
 import com.crosspaste.os.windows.WindowDpiHelper
-import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.platform.currentPlatform
 import com.crosspaste.utils.DesktopHtmlUtils.dataUrl
+import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.Retry
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -16,7 +15,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
-import okio.Path
 import org.openqa.selenium.Dimension
 import org.openqa.selenium.OutputType
 import org.openqa.selenium.chrome.ChromeDriver
@@ -24,7 +22,7 @@ import org.openqa.selenium.chrome.ChromeDriverService
 import org.openqa.selenium.chrome.ChromeOptions
 import kotlin.math.max
 
-class DesktopChromeService(private val appWindowManager: AppWindowManager) : ChromeService {
+class DesktopBrowseService(private val appWindowManager: AppWindowManager) : BrowseService {
 
     companion object {
         private const val CHROME_DRIVER = "chromedriver"
@@ -62,34 +60,6 @@ class DesktopChromeService(private val appWindowManager: AppWindowManager) : Chr
             baseOptions
         }
 
-    private val initChromeDriver: (String, String, String, Path) -> Unit = { chromeSuffix, driverName, headlessName, resourcesPath ->
-        val chromeDriverFile =
-            resourcesPath
-                .resolve("$CHROME_DRIVER-$chromeSuffix")
-                .resolve(driverName)
-                .toFile()
-
-        val chromeHeadlessShellFile =
-            resourcesPath
-                .resolve("$CHROME_HEADLESS_SHELL-$chromeSuffix")
-                .resolve(headlessName)
-                .toFile()
-
-        if (!chromeDriverFile.canExecute()) {
-            chromeDriverFile.setExecutable(true)
-        }
-
-        if (!chromeHeadlessShellFile.canExecute()) {
-            chromeHeadlessShellFile.setExecutable(true)
-        }
-
-        System.setProperty(
-            "webdriver.chrome.driver",
-            chromeDriverFile.absolutePath,
-        )
-        options.setBinary(chromeHeadlessShellFile.absolutePath)
-    }
-
     private val windowDimension: Dimension =
         run {
             val detailViewDpSize = appWindowManager.searchWindowDetailViewDpSize
@@ -113,78 +83,35 @@ class DesktopChromeService(private val appWindowManager: AppWindowManager) : Chr
     }
 
     private fun initChromeDriver() {
-        val resourcesPath =
-            if (AppEnv.CURRENT.isDevelopment()) {
-                DesktopAppPathProvider.pasteAppJarPath.resolve("resources")
-            } else {
-                DesktopAppPathProvider.pasteAppJarPath
-            }
+        try {
+            chromeDriverService = ChromeDriverService.createDefaultService()
+            chromeDriver = ChromeDriver(chromeDriverService, options)
+        } catch (e: Exception) {
+            logger.error(e) { "chromeDriver auto init fail" }
+            val chromeDriverProperties =
+                DesktopResourceUtils
+                    .loadProperties("chrome-driver.properties")
 
-        // todo not support 32 bit OS
+            val chromeServiceModule = ChromeServiceServiceModule(chromeDriverProperties)
+            val loaderConfigs = chromeServiceModule.getModuleLoaderConfigs()
 
-        if (currentPlatform.isMacos()) {
-            if (currentPlatform.arch.contains("x86_64")) {
-                val macX64ResourcesPath =
-                    if (AppEnv.CURRENT.isDevelopment()) {
-                        resourcesPath.resolve("macos-x64")
-                    } else {
-                        resourcesPath
+            loaderConfigs[CHROME_DRIVER]?.let { driver ->
+                loaderConfigs[CHROME_HEADLESS_SHELL]?.let { chromeHeadlessShell ->
+                    val loader = ChromeModuleLoader()
+                    loader.load(driver)?.let { chromeDriverPath ->
+                        loader.load(chromeHeadlessShell)?.let { chromeHeadlessShellPath ->
+                            chromeDriverService = ChromeDriverService.createDefaultService()
+                            System.setProperty(
+                                "webdriver.chrome.driver",
+                                chromeDriverPath.toString(),
+                            )
+                            options.setBinary(chromeHeadlessShellPath.toFile())
+                            chromeDriver = ChromeDriver(chromeDriverService, options)
+                        }
                     }
-                initChromeDriver.invoke(
-                    "mac-x64",
-                    "chromedriver",
-                    "chrome-headless-shell",
-                    macX64ResourcesPath,
-                )
-            } else {
-                val macArm64ResourcesPath =
-                    if (AppEnv.CURRENT.isDevelopment()) {
-                        resourcesPath.resolve("macos-arm64")
-                    } else {
-                        resourcesPath
-                    }
-                initChromeDriver.invoke(
-                    "mac-arm64",
-                    "chromedriver",
-                    "chrome-headless-shell",
-                    macArm64ResourcesPath,
-                )
-            }
-        } else if (currentPlatform.isWindows()) {
-            if (currentPlatform.is64bit()) {
-                val win64ResourcesPath =
-                    if (AppEnv.CURRENT.isDevelopment()) {
-                        resourcesPath.resolve("windows-x64")
-                    } else {
-                        resourcesPath
-                    }
-                initChromeDriver.invoke(
-                    "win64",
-                    "chromedriver.exe",
-                    "chrome-headless-shell.exe",
-                    win64ResourcesPath,
-                )
-            }
-        } else if (currentPlatform.isLinux()) {
-            if (currentPlatform.is64bit()) {
-                val linux64ResourcesPath =
-                    if (AppEnv.CURRENT.isDevelopment()) {
-                        resourcesPath.resolve("linux-x64")
-                    } else {
-                        resourcesPath
-                    }
-                initChromeDriver.invoke(
-                    "linux64",
-                    "chromedriver",
-                    "chrome-headless-shell",
-                    linux64ResourcesPath,
-                )
+                }
             }
         }
-
-        chromeDriverService = ChromeDriverService.createDefaultService()
-
-        chromeDriver = ChromeDriver(chromeDriverService, options)
     }
 
     @Synchronized

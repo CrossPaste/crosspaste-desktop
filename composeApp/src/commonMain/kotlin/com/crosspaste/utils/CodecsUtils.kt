@@ -1,5 +1,7 @@
 package com.crosspaste.utils
 
+import okio.Path
+
 expect fun getCodecsUtils(): CodecsUtils
 
 interface CodecsUtils {
@@ -17,4 +19,6 @@ interface CodecsUtils {
     fun md5ByArray(array: Array<String>): String
 
     fun md5ByString(string: String): String
+
+    fun sha256(path: Path): String
 }

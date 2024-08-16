@@ -53,6 +53,12 @@ interface FileUtils {
 
     fun getFileMd5(path: Path): String
 
+    fun existFile(path: Path): Boolean
+
+    fun deleteFile(path: Path): Boolean
+
+    fun createDir(path: Path): Boolean
+
     fun copyPath(
         src: Path,
         dest: Path,
