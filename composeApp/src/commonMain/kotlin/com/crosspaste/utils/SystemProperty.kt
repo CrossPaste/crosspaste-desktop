@@ -12,4 +12,9 @@ interface SystemProperty {
         key: String,
         default: String,
     ): String
+
+    fun set(
+        key: String,
+        value: String,
+    )
 }
