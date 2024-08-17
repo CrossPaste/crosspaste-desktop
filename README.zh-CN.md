@@ -6,7 +6,7 @@
 
 **简体中文** / [**English**](./README.md)
 
-**官网**: [crosspaste.com](https://crosspaste.com)
+**官网**: [https://crosspaste.com](https://crosspaste.com)
 
 [![Main CI Test](https://github.com/CrossPaste/crosspaste-desktop/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/CrossPaste/crosspaste-desktop/actions/workflows/ci.yml)
 [![Build Release](https://github.com/CrossPaste/crosspaste-desktop/actions/workflows/build-release.yml/badge.svg)](https://github.com/CrossPaste/crosspaste-desktop/actions/workflows/build-release.yml)
