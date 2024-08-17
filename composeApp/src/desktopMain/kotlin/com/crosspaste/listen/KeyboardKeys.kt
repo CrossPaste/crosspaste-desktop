@@ -16,6 +16,8 @@ interface KeyboardKeys {
 
     val SPACE: KeyboardKeyDefine
 
+    val BACKTICK: KeyboardKeyDefine
+
     val UP: KeyboardKeyDefine
 
     val DOWN: KeyboardKeyDefine

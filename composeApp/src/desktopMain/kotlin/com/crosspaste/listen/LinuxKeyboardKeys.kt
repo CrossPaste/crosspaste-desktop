@@ -22,6 +22,9 @@ object LinuxKeyboardKeys : KeyboardKeys {
     override val SPACE: KeyboardKeyDefine =
         KeyboardKeyDefine("Space", NativeKeyEvent.VC_SPACE, 65) { it.keyCode == NativeKeyEvent.VC_SPACE }
 
+    override val BACKTICK: KeyboardKeyDefine =
+        KeyboardKeyDefine("`", NativeKeyEvent.VC_BACKQUOTE, 49) { it.keyCode == NativeKeyEvent.VC_BACKQUOTE }
+
     override val UP: KeyboardKeyDefine =
         KeyboardKeyDefine("↑", NativeKeyEvent.VC_UP, 98) { it.keyCode == NativeKeyEvent.VC_UP }
 
