@@ -91,7 +91,15 @@ class SeleniumManager private constructor() {
         args.add("java")
         args.add("--output")
         args.add("json")
-        return runCommand(getBinary(), args)
+        val result = runCommand(getBinary(), args)
+
+        if (result.code != 0) {
+            args.add("--driver-mirror-url")
+            args.add("https://registry.npmmirror.com/-/binary/chromedriver/")
+            return runCommand(getBinary(), args)
+        } else {
+            return result
+        }
     }
 
     @Throws(IOException::class)
