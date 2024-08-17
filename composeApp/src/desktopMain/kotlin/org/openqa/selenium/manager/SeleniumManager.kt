@@ -92,7 +92,6 @@ class SeleniumManager private constructor() {
         args.add("--output")
         args.add("json")
         val result = runCommand(getBinary(), args)
-
         if (result.code != 0) {
             args.add("--driver-mirror-url")
             args.add("https://registry.npmmirror.com/-/binary/chromedriver/")
@@ -193,12 +192,6 @@ class SeleniumManager private constructor() {
                 logger.info { "code=$code\noutput=$output" }
             } catch (e: Exception) {
                 throw WebDriverException("Failed to run command: $arguments", e)
-            }
-
-            if (code != 0) {
-                throw WebDriverException(
-                    "Command failed with code: $code, executed: $arguments\n$output",
-                )
             }
 
             try {
