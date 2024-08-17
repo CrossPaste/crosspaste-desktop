@@ -16,4 +16,11 @@ object DesktopSystemProperty : SystemProperty {
         key: String,
         default: String,
     ): String = System.getProperty(key, default)
+
+    override fun set(
+        key: String,
+        value: String,
+    ) {
+        System.setProperty(key, value)
+    }
 }
