@@ -18,22 +18,73 @@ object DesktopNetUtils : NetUtils {
 
     private val hostListProvider = ValueProvider<List<HostInfo>>()
 
-    private val en0IPAddressProvider = ValueProvider<String?>()
+    private val preferredLocalIPAddress = ValueProvider<String?>()
+
+    // Check if the given address is a private IP address
+    private fun isPrivateAddress(
+        address: InetAddress,
+        prefixLength: Short,
+    ): Boolean {
+        if (address !is Inet4Address) return false
+        val ip = address.address
+        return when {
+            prefixLength >= 8 &&
+                ip[0] == 10.toByte() -> true // 10.0.0.0/8
+            prefixLength >= 12 &&
+                ip[0] == 172.toByte() &&
+                (ip[1].toInt() and 0xFF) in 16..31 -> true // 172.16.0.0/12
+            prefixLength >= 16 &&
+                ip[0] == 192.toByte() &&
+                ip[1] == 168.toByte() -> true // 192.168.0.0/16
+            // Add other special-use addresses if needed
+            else -> false
+        }
+    }
+
+    // Get all potential local IP addresses
+    private fun getAllLocalAddresses(): Sequence<Pair<HostInfo, String>> {
+        return Collections.list(NetworkInterface.getNetworkInterfaces())
+            .asSequence()
+            .filter { it.isUp && !it.isLoopback && !it.isVirtual }
+            .flatMap { nic ->
+                nic.interfaceAddresses.asSequence().map { Pair(it, nic.name) }
+            }
+            .filter { (addr, _) -> addr.address is Inet4Address }
+            .map { (addr, nicName) ->
+                HostInfo().apply {
+                    networkPrefixLength = addr.networkPrefixLength
+                    hostAddress = addr.address.hostAddress
+                } to nicName
+            }
+            .filter { (hostInfo, _) ->
+                val address = InetAddress.getByName(hostInfo.hostAddress)
+                isPrivateAddress(address, hostInfo.networkPrefixLength) &&
+                    !hostInfo.hostAddress.endsWith(".0") &&
+                    !hostInfo.hostAddress.endsWith(".1") &&
+                    !hostInfo.hostAddress.endsWith(".255")
+            }
+    }
+
+    // Sort the addresses based on preference
+    private fun sortAddresses(addresses: Sequence<Pair<HostInfo, String>>): Sequence<Pair<HostInfo, String>> {
+        return addresses.sortedWith(
+            compareByDescending<Pair<HostInfo, String>> { (hostInfo, _) ->
+                // Prefer smaller networks (larger networkPrefixLength)
+                hostInfo.networkPrefixLength
+            }.thenByDescending { (hostInfo, _) ->
+                // Then sort by the last octet of the IP address
+                hostInfo.hostAddress.split(".").last().toIntOrNull() ?: 0
+            }.thenBy { (_, nicName) ->
+                // Prefer network interfaces named eth* or en*
+                if (nicName.startsWith("eth") || nicName.startsWith("en")) 0 else 1
+            },
+        )
+    }
 
     override fun getHostInfoList(hostInfoFilter: (HostInfo) -> Boolean): List<HostInfo> {
         return hostListProvider.getValue {
-            Collections.list(NetworkInterface.getNetworkInterfaces())
-                .asSequence()
-                .filter { it.isUp && !it.isLoopback }
-                .flatMap { it.interfaceAddresses }
-                .map { Pair(it.address, it.networkPrefixLength) }
-                .filter { it.first is Inet4Address }
-                .map {
-                    HostInfo().apply {
-                        networkPrefixLength = it.second
-                        hostAddress = it.first.hostAddress
-                    }
-                }
+            sortAddresses(getAllLocalAddresses())
+                .map { it.first }
                 .filter(hostInfoFilter)
                 .toList()
         } ?: listOf()
@@ -64,17 +115,12 @@ object DesktopNetUtils : NetUtils {
         return addr1 == addr2
     }
 
-    override fun getEn0IPAddress(): String? {
-        return en0IPAddressProvider.getValue {
+    // Get the preferred local IP address
+    override fun getPreferredLocalIPAddress(): String? {
+        return preferredLocalIPAddress.getValue {
             try {
-                NetworkInterface.getNetworkInterfaces().asSequence()
-                    .flatMap { Collections.list(it.inetAddresses).asSequence() }
-                    .filter { addr ->
-                        !addr.isLoopbackAddress &&
-                            addr is Inet4Address &&
-                            addr.isSiteLocalAddress
-                    }
-                    .map { it.hostAddress }
+                sortAddresses(getAllLocalAddresses())
+                    .map { (hostInfo, _) -> hostInfo.hostAddress }
                     .firstOrNull()
             } catch (e: Exception) {
                 null

@@ -14,5 +14,5 @@ interface NetUtils {
         prefixLength: Short,
     ): Boolean
 
-    fun getEn0IPAddress(): String?
+    fun getPreferredLocalIPAddress(): String?
 }
