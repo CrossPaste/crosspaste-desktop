@@ -61,7 +61,7 @@ fun NetSettingsView() {
     var port: String? by remember { mutableStateOf(null) }
 
     LaunchedEffect(Unit) {
-        ip = netUtils.getEn0IPAddress() ?: "N/A"
+        ip = netUtils.getPreferredLocalIPAddress() ?: "N/A"
         val currentPort = configManager.config.port
         port = if (currentPort == 0) "N/A" else currentPort.toString()
     }
