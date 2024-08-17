@@ -66,17 +66,19 @@ object DesktopNetUtils : NetUtils {
 
     override fun getEn0IPAddress(): String? {
         return en0IPAddressProvider.getValue {
-            Collections.list(NetworkInterface.getNetworkInterfaces())
-                .asSequence()
-                .filter { it.name.equals("en0", ignoreCase = true) }
-                .flatMap { Collections.list(it.inetAddresses) }
-                .filter { addr ->
-                    addr is InetAddress &&
+            try {
+                NetworkInterface.getNetworkInterfaces().asSequence()
+                    .flatMap { Collections.list(it.inetAddresses).asSequence() }
+                    .filter { addr ->
                         !addr.isLoopbackAddress &&
-                        addr.hostAddress.indexOf(":") == -1
-                }
-                .map { it.hostAddress }
-                .firstOrNull()
+                            addr is Inet4Address &&
+                            addr.isSiteLocalAddress
+                    }
+                    .map { it.hostAddress }
+                    .firstOrNull()
+            } catch (e: Exception) {
+                null
+            }
         }
     }
 }
