@@ -6,6 +6,10 @@
 
 **English** / [**简体中文**](./README.zh-CN.md)
 
+**official website**: [crosspaste.com](https://crosspaste.com/en/)
+
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/CrossPaste/crosspaste-desktop)](
+
 [![Main CI Test](https://github.com/CrossPaste/crosspaste-desktop/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/CrossPaste/crosspaste-desktop/actions/workflows/ci.yml)
 [![Build Release](https://github.com/CrossPaste/crosspaste-desktop/actions/workflows/build-release.yml/badge.svg)](https://github.com/CrossPaste/crosspaste-desktop/actions/workflows/build-release.yml)
 ![Dependabot](https://img.shields.io/badge/Dependabot-enabled-2cbe4e.svg?logo=dependabot&logoColor=white)
