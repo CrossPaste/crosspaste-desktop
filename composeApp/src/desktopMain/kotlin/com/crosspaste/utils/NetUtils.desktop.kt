@@ -32,7 +32,7 @@ object DesktopNetUtils : NetUtils {
                 ip[0] == 10.toByte() -> true // 10.0.0.0/8
             prefixLength >= 12 &&
                 ip[0] == 172.toByte() &&
-                (ip[1].toInt() and 0xFF) in 16..31 -> true // 172.16.0.0/12
+                ip[1].toInt() and 0xFF in 16..31 -> true // 172.16.0.0/12
             prefixLength >= 16 &&
                 ip[0] == 192.toByte() &&
                 ip[1] == 168.toByte() -> true // 192.168.0.0/16
@@ -83,10 +83,15 @@ object DesktopNetUtils : NetUtils {
 
     override fun getHostInfoList(hostInfoFilter: (HostInfo) -> Boolean): List<HostInfo> {
         return hostListProvider.getValue {
-            sortAddresses(getAllLocalAddresses())
-                .map { it.first }
-                .filter(hostInfoFilter)
-                .toList()
+            val list =
+                sortAddresses(getAllLocalAddresses())
+                    .map { it.first }
+                    .filter(hostInfoFilter)
+                    .toList()
+            for (hostInfo in list) {
+                logger.info { "Local IP address: ${hostInfo.hostAddress}" }
+            }
+            list
         } ?: listOf()
     }
 
