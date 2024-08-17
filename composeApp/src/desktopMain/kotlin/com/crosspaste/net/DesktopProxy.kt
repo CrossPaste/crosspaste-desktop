@@ -65,4 +65,19 @@ object DesktopProxy {
             false
         }
     }
+
+    fun proxyToCommandLine(proxy: Proxy): String? {
+        return when (proxy.type()) {
+            Proxy.Type.DIRECT -> null
+            Proxy.Type.HTTP -> {
+                try {
+                    "http://${proxy.address()}:${(proxy.address() as InetSocketAddress).port}"
+                } catch (e: Exception) {
+                    logger.warn { "Invalid proxy configuration: $e" }
+                    null
+                }
+            }
+            else -> null
+        }
+    }
 }

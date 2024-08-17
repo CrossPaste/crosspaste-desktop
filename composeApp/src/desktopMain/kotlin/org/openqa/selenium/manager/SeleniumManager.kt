@@ -16,6 +16,7 @@
 // under the License.
 package org.openqa.selenium.manager
 
+import com.crosspaste.net.DesktopProxy
 import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.platform.currentPlatform
 import com.crosspaste.utils.getJsonUtils
@@ -27,6 +28,7 @@ import org.openqa.selenium.WebDriverException
 import org.openqa.selenium.json.JsonException
 import org.openqa.selenium.os.ExternalProcess
 import java.io.IOException
+import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -85,20 +87,39 @@ class SeleniumManager private constructor() {
      * @return the locations of the assets from Selenium Manager execution
      */
     fun getBinaryPaths(arguments: List<String>): SeleniumManagerOutput.Result {
-        val args: MutableList<String> = ArrayList(arguments.size + 5)
+        val args: MutableList<String> = mutableListOf()
         args.addAll(arguments)
         args.add("--language-binding")
         args.add("java")
         args.add("--output")
         args.add("json")
-        val result = runCommand(getBinary(), args)
-        if (result.code != 0) {
-            args.add("--driver-mirror-url")
-            args.add("https://registry.npmmirror.com/-/binary/chromedriver/")
-            return runCommand(getBinary(), args)
-        } else {
-            return result
+
+        getBinaryByDefault(args).let {
+            if (it.code != 0) {
+                return getBinaryWithMirror(args)
+            }
+            return it
         }
+    }
+
+    private fun getBinaryByDefault(arguments: List<String>): SeleniumManagerOutput.Result {
+        val args: MutableList<String> = mutableListOf()
+        args.addAll(arguments)
+        val uri = URL("https://storage.googleapis.com").toURI()
+        val proxy = DesktopProxy.getProxy(uri)
+        DesktopProxy.proxyToCommandLine(proxy)?.let {
+            args.add("--proxy")
+            args.add(it)
+        }
+        return runCommand(getBinary(), args)
+    }
+
+    private fun getBinaryWithMirror(arguments: List<String>): SeleniumManagerOutput.Result {
+        val args: MutableList<String> = mutableListOf()
+        args.addAll(arguments)
+        args.add("--driver-mirror-url")
+        args.add("https://oss.crosspaste.com")
+        return runCommand(getBinary(), args)
     }
 
     @Throws(IOException::class)
