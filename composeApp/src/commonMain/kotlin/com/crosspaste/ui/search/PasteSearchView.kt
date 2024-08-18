@@ -47,6 +47,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -150,6 +151,18 @@ fun CrossPasteSearchWindowContent() {
                             }
                             Key.DirectionDown -> {
                                 pasteSearchService.downSelectedIndex()
+                                true
+                            }
+                            Key.N -> {
+                                if (it.isCtrlPressed) {
+                                    pasteSearchService.downSelectedIndex()
+                                }
+                                true
+                            }
+                            Key.P -> {
+                                if (it.isCtrlPressed) {
+                                    pasteSearchService.upSelectedIndex()
+                                }
                                 true
                             }
                             else -> {
