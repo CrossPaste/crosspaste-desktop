@@ -7,12 +7,18 @@ import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.platform.currentPlatform
 import java.util.Properties
 
-class ChromeServiceServiceModule(private val properties: Properties) : ServiceModule {
+class ChromeServiceServiceModule(
+    private val properties: Properties,
+    private val useMirror: Boolean = false,
+) : ServiceModule {
 
     companion object {
         const val CHROME_SERVICE_MODULE_NAME = "ChromeService"
         const val CHROME_DRIVER_MODULE_NAME = "chromedriver"
         const val CHROME_HEADLESS_SHELL_MODULE_NAME = "chrome-headless-shell"
+
+        const val DEFAULT_HOST = "https://storage.googleapis.com/chrome-for-testing-public"
+        const val MIRROR_HOST = "https://cdn.npmmirror.com/binaries/chrome-for-testing"
     }
 
     private val platform = currentPlatform()
@@ -26,6 +32,11 @@ class ChromeServiceServiceModule(private val properties: Properties) : ServiceMo
             CHROME_DRIVER_MODULE_NAME,
             CHROME_HEADLESS_SHELL_MODULE_NAME,
         )
+
+    private fun buildUrl(path: String): String {
+        val host = if (useMirror) MIRROR_HOST else DEFAULT_HOST
+        return "$host$path"
+    }
 
     override fun getModuleLoaderConfigs(): Map<String, ModuleLoaderConfig> {
         val chromeDriverDir =
@@ -42,13 +53,13 @@ class ChromeServiceServiceModule(private val properties: Properties) : ServiceMo
             return mapOf(
                 CHROME_DRIVER_MODULE_NAME to
                     ModuleLoaderConfig(
-                        url = properties.getProperty("chromedriver-win64"),
+                        url = buildUrl(properties.getProperty("chromedriver-win64")),
                         installPath = chromeDriverDir.resolve("chromedriver.exe"),
                         sha256 = properties.getProperty("chromedriver-win64-sha256"),
                     ),
                 CHROME_HEADLESS_SHELL_MODULE_NAME to
                     ModuleLoaderConfig(
-                        url = properties.getProperty("chrome-headless-shell-win64"),
+                        url = buildUrl(properties.getProperty("chrome-headless-shell-win64")),
                         installPath = chromeHeadlessShellDir.resolve("chrome-headless-shell.exe"),
                         sha256 = properties.getProperty("chrome-headless-shell-win64-sha256"),
                     ),
@@ -58,13 +69,13 @@ class ChromeServiceServiceModule(private val properties: Properties) : ServiceMo
                 mapOf(
                     CHROME_DRIVER_MODULE_NAME to
                         ModuleLoaderConfig(
-                            url = properties.getProperty("chromedriver-mac-x64"),
+                            url = buildUrl(properties.getProperty("chromedriver-mac-x64")),
                             installPath = chromeDriverDir.resolve("chromedriver"),
                             sha256 = properties.getProperty("chromedriver-mac-x64-sha256"),
                         ),
                     CHROME_HEADLESS_SHELL_MODULE_NAME to
                         ModuleLoaderConfig(
-                            url = properties.getProperty("chrome-headless-shell-mac-x64"),
+                            url = buildUrl(properties.getProperty("chrome-headless-shell-mac-x64")),
                             installPath = chromeHeadlessShellDir.resolve("chrome-headless-shell"),
                             sha256 = properties.getProperty("chrome-headless-shell-mac-x64-sha256"),
                         ),
@@ -73,13 +84,13 @@ class ChromeServiceServiceModule(private val properties: Properties) : ServiceMo
                 mapOf(
                     CHROME_DRIVER_MODULE_NAME to
                         ModuleLoaderConfig(
-                            url = properties.getProperty("chromedriver-mac-arm64"),
+                            url = buildUrl(properties.getProperty("chromedriver-mac-arm64")),
                             installPath = chromeDriverDir.resolve("chromedriver"),
                             sha256 = properties.getProperty("chromedriver-mac-arm64-sha256"),
                         ),
                     CHROME_HEADLESS_SHELL_MODULE_NAME to
                         ModuleLoaderConfig(
-                            url = properties.getProperty("chrome-headless-shell-mac-arm64"),
+                            url = buildUrl(properties.getProperty("chrome-headless-shell-mac-arm64")),
                             installPath = chromeHeadlessShellDir.resolve("chrome-headless-shell"),
                             sha256 = properties.getProperty("chrome-headless-shell-mac-arm64-sha256"),
                         ),
@@ -89,13 +100,13 @@ class ChromeServiceServiceModule(private val properties: Properties) : ServiceMo
             return mapOf(
                 CHROME_DRIVER_MODULE_NAME to
                     ModuleLoaderConfig(
-                        url = properties.getProperty("chromedriver-linux64"),
+                        url = buildUrl(properties.getProperty("chromedriver-linux64")),
                         installPath = chromeDriverDir.resolve("chromedriver"),
                         sha256 = properties.getProperty("chromedriver-linux64-sha256"),
                     ),
                 CHROME_HEADLESS_SHELL_MODULE_NAME to
                     ModuleLoaderConfig(
-                        url = properties.getProperty("chrome-headless-shell-linux64"),
+                        url = buildUrl(properties.getProperty("chrome-headless-shell-linux64")),
                         installPath = chromeHeadlessShellDir.resolve("chrome-headless-shell"),
                         sha256 = properties.getProperty("chrome-headless-shell-linux64-sha256"),
                     ),

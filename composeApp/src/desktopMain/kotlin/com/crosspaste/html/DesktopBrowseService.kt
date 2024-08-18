@@ -1,5 +1,8 @@
 package com.crosspaste.html
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.os.windows.WinProcessUtils
 import com.crosspaste.os.windows.WinProcessUtils.killProcessSet
@@ -15,11 +18,13 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
+import okio.Path
 import org.openqa.selenium.Dimension
 import org.openqa.selenium.OutputType
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeDriverService
 import org.openqa.selenium.chrome.ChromeOptions
+import java.util.Properties
 import kotlin.math.max
 
 class DesktopBrowseService(private val appWindowManager: AppWindowManager) : BrowseService {
@@ -78,6 +83,8 @@ class DesktopBrowseService(private val appWindowManager: AppWindowManager) : Bro
 
     private var chromeDriver: ChromeDriver? = null
 
+    override var startSuccess: Boolean by mutableStateOf(false)
+
     init {
         initChromeDriver()
     }
@@ -86,32 +93,49 @@ class DesktopBrowseService(private val appWindowManager: AppWindowManager) : Bro
         try {
             chromeDriverService = ChromeDriverService.createDefaultService()
             chromeDriver = ChromeDriver(chromeDriverService, options)
+            startSuccess = true
         } catch (e: Exception) {
             logger.error(e) { "chromeDriver auto init fail" }
             val chromeDriverProperties =
                 DesktopResourceUtils
                     .loadProperties("chrome-driver.properties")
 
-            val chromeServiceModule = ChromeServiceServiceModule(chromeDriverProperties)
-            val loaderConfigs = chromeServiceModule.getModuleLoaderConfigs()
+            (
+                loadModule(chromeDriverProperties, useMirror = false)
+                    ?: loadModule(chromeDriverProperties, useMirror = true)
+            )?.let {
+                val chromeDriverPath = it.first
+                val chromeHeadlessShellPath = it.second
+                chromeDriverService = ChromeDriverService.createDefaultService()
+                System.setProperty(
+                    "webdriver.chrome.driver",
+                    chromeDriverPath.toString(),
+                )
+                options.setBinary(chromeHeadlessShellPath.toFile())
+                chromeDriver = ChromeDriver(chromeDriverService, options)
+                startSuccess = true
+            }
+        }
+    }
 
-            loaderConfigs[CHROME_DRIVER]?.let { driver ->
-                loaderConfigs[CHROME_HEADLESS_SHELL]?.let { chromeHeadlessShell ->
-                    val loader = ChromeModuleLoader()
-                    loader.load(driver)?.let { chromeDriverPath ->
-                        loader.load(chromeHeadlessShell)?.let { chromeHeadlessShellPath ->
-                            chromeDriverService = ChromeDriverService.createDefaultService()
-                            System.setProperty(
-                                "webdriver.chrome.driver",
-                                chromeDriverPath.toString(),
-                            )
-                            options.setBinary(chromeHeadlessShellPath.toFile())
-                            chromeDriver = ChromeDriver(chromeDriverService, options)
-                        }
+    private fun loadModule(
+        chromeDriverProperties: Properties,
+        useMirror: Boolean,
+    ): Pair<Path, Path>? {
+        val chromeServiceModule = ChromeServiceServiceModule(chromeDriverProperties, useMirror)
+        val loaderConfigs = chromeServiceModule.getModuleLoaderConfigs()
+
+        loaderConfigs[CHROME_DRIVER]?.let { driver ->
+            loaderConfigs[CHROME_HEADLESS_SHELL]?.let { chromeHeadlessShell ->
+                val loader = ChromeModuleLoader()
+                loader.load(driver)?.let { chromeDriverPath ->
+                    loader.load(chromeHeadlessShell)?.let { chromeHeadlessShellPath ->
+                        return Pair(chromeDriverPath, chromeHeadlessShellPath)
                     }
                 }
             }
         }
+        return null
     }
 
     @Synchronized
