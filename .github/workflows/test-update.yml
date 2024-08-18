@@ -1,0 +1,38 @@
+name: Test-Update
+
+on:
+  push:
+    branches: [ 1692-* ]
+  pull_request:
+    branches: [ 1692-* ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      BUILD_FULL_PLATFORM: YES
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        run: npm install semver fs-extra axios
+
+      - name: Update known-good-versions-with-downloads.json
+        run: node .github/scripts/updateKnownGoodVersionsWithDownloads.js
+
+      - name: Upload known-good-versions-with-downloads.json
+        id: upload_release_app
+        uses: CrossPaste/oss-upload-action@main
+        with:
+          key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
+          key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
+          region: oss-cn-shenzhen
+          bucket: crosspaste-desktop
+          assets: known-good-versions-with-downloads.json:known-good-versions-with-downloads.json
