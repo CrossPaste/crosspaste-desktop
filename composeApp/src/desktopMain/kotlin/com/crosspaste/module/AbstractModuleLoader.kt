@@ -56,7 +56,10 @@ abstract class AbstractModuleLoader : ModuleLoader {
             val response = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
 
             if (response.statusCode() == 200) {
-                val contentLength = response.headers().firstValue("Content-Length").orElse("-1").toLong()
+                val contentLength =
+                    response.headers()
+                        .firstValue("Content-Length")
+                        .orElse("-1").toLong()
                 var bytesRead = 0L
                 var lastLogTime = Instant.EPOCH
                 var lastLoggedProgress = -1L

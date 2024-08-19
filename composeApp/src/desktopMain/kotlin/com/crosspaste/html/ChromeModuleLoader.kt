@@ -27,15 +27,10 @@ class ChromeModuleLoader(
         }
 
         try {
-            val installDir = installPath.noOptionParent
-            fileUtils.deleteFile(installDir)
-            fileUtils.createDir(installDir)
-
             ZipInputStream(FileInputStream(downloadPath.toFile())).use { zipIn ->
                 var entry = zipIn.nextEntry
                 while (entry != null) {
-                    val filePath = installDir.resolve(entry.name)
-
+                    val filePath = installPath.resolve(entry.name)
                     if (!entry.isDirectory) {
                         fileUtils.createDir(filePath.noOptionParent)
                         Files.copy(zipIn, filePath.toNioPath(), StandardCopyOption.REPLACE_EXISTING)
