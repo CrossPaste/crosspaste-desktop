@@ -2,14 +2,11 @@ package com.crosspaste.html
 
 import com.crosspaste.module.AbstractModuleLoader
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.utils.noOptionParent
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import okio.Path
-import java.io.FileInputStream
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 import java.util.zip.ZipInputStream
+import kotlin.io.path.createDirectories
 
 class ChromeModuleLoader(
     override val userDataPathProvider: UserDataPathProvider,
@@ -27,23 +24,40 @@ class ChromeModuleLoader(
         }
 
         try {
-            ZipInputStream(FileInputStream(downloadPath.toFile())).use { zipIn ->
-                var entry = zipIn.nextEntry
-                while (entry != null) {
-                    val filePath = installPath.resolve(entry.name)
-                    if (!entry.isDirectory) {
-                        fileUtils.createDir(filePath.noOptionParent)
-                        Files.copy(zipIn, filePath.toNioPath(), StandardCopyOption.REPLACE_EXISTING)
-                    }
-                    zipIn.closeEntry()
-                    entry = zipIn.nextEntry
-                }
-            }
+            // Decompress the downloaded file to installPath, this function needs to be idempotent and can be executed repeatedly
+            unzipFile(downloadPath, installPath)
             logger.info { "Module installed successfully" }
             return true
         } catch (e: Exception) {
             logger.error { "Error during module installation: ${e.message}" }
             return false
+        }
+    }
+
+    private fun unzipFile(
+        zipFile: Path,
+        destDir: Path,
+    ) {
+        // Ensure the destination directory exists
+        destDir.toNioPath().createDirectories()
+
+        ZipInputStream(zipFile.toFile().inputStream()).use { zis ->
+            var zipEntry = zis.nextEntry
+            while (zipEntry != null) {
+                val newFile = destDir.resolve(zipEntry.name)
+                if (zipEntry.isDirectory) {
+                    newFile.toNioPath().createDirectories()
+                } else {
+                    // Create parent directories if they don't exist
+                    newFile.parent?.toNioPath()?.createDirectories()
+                    // Write file content
+                    newFile.toFile().outputStream().use { fos ->
+                        zis.copyTo(fos)
+                    }
+                }
+                zipEntry = zis.nextEntry
+            }
+            zis.closeEntry()
         }
     }
 }
