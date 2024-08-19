@@ -104,7 +104,20 @@ jobs:
           node-version: '16'
 
       - name: Install dependencies
-        run: npm install semver fs-extra
+        run: npm install semver fs-extra axios
+
+      - name: Update known-good-versions-with-downloads.json
+        run: node .github/scripts/updateKnownGoodVersionsWithDownloads.js
+
+      - name: Upload known-good-versions-with-downloads.json
+        id: upload_release_app
+        uses: CrossPaste/oss-upload-action@main
+        with:
+          key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
+          key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
+          region: oss-cn-shenzhen
+          bucket: crosspaste-desktop
+          assets: known-good-versions-with-downloads.json:known-good-versions-with-downloads.json
 
       - name: Validate and update version
         run: node .github/scripts/validateAndUpdateVersion.js
@@ -188,7 +201,7 @@ jobs:
 
       - name: Upload release app
         id: upload_release_app
-        uses: JohnGuan/oss-upload-action@main
+        uses: CrossPaste/oss-upload-action@main
         with:
           key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
           key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}

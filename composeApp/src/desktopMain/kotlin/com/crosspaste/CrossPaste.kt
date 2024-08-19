@@ -44,6 +44,8 @@ import com.crosspaste.dao.task.PasteTaskDao
 import com.crosspaste.dao.task.PasteTaskRealm
 import com.crosspaste.endpoint.DesktopEndpointInfoFactory
 import com.crosspaste.endpoint.EndpointInfoFactory
+import com.crosspaste.html.ChromeService
+import com.crosspaste.html.DesktopChromeService
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.i18n.GlobalCopywriterImpl
 import com.crosspaste.image.DesktopFaviconLoader
@@ -87,8 +89,6 @@ import com.crosspaste.net.plugin.SignalServerDecryptionPluginFactory
 import com.crosspaste.net.plugin.SignalServerEncryptPluginFactory
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.CacheManagerImpl
-import com.crosspaste.paste.ChromeService
-import com.crosspaste.paste.DesktopChromeService
 import com.crosspaste.paste.DesktopPastePreviewService
 import com.crosspaste.paste.DesktopPasteSearchService
 import com.crosspaste.paste.DesktopPasteSyncProcessManager
@@ -328,7 +328,7 @@ class CrossPaste {
                             ),
                         )
                     }
-                    single<ChromeService> { DesktopChromeService(get()) }
+                    single<ChromeService> { DesktopChromeService(get(), get()) }
                     single<PastePreviewService> { DesktopPastePreviewService(get()) }
                     single<PasteSyncProcessManager<ObjectId>> { DesktopPasteSyncProcessManager() }
                     single<PasteSearchService> { DesktopPasteSearchService(get(), get(), get()) }
@@ -340,7 +340,7 @@ class CrossPaste {
                                 DeletePasteTaskExecutor(get()),
                                 PullFileTaskExecutor(get(), get(), get(), get(), get(), get()),
                                 CleanPasteTaskExecutor(get(), get()),
-                                Html2ImageTaskExecutor(get(), get(), get(), get()),
+                                Html2ImageTaskExecutor(lazy { get() }, get(), get(), get()),
                                 PullIconTaskExecutor(get(), get(), get(), get()),
                             ),
                             get(),

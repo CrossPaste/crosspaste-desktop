@@ -1,10 +1,11 @@
 package com.crosspaste.image
 
 import com.crosspaste.utils.ConcurrentPlatformMap
+import com.crosspaste.utils.Loader
 import com.crosspaste.utils.PlatformLock
 import com.crosspaste.utils.createPlatformLock
 
-interface ConcurrentLoader<T, R> : ImageLoader<T, R> {
+interface ConcurrentLoader<T, R> : Loader<T, R> {
 
     val lockMap: ConcurrentPlatformMap<String, PlatformLock>
 

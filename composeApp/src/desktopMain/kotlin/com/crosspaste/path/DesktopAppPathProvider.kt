@@ -34,6 +34,7 @@ object DesktopAppPathProvider : AppPathProvider, PathProvider {
                 AppFileType.LOG -> pasteUserPath.resolve("logs")
                 AppFileType.ENCRYPT -> pasteUserPath.resolve("encrypt")
                 AppFileType.USER -> pasteUserPath
+                AppFileType.MODULE -> pasteUserPath.resolve("module")
                 else -> pasteAppPath
             }
 
@@ -77,7 +78,7 @@ class DevelopmentAppPathProvider : AppPathProvider {
 
     override val pasteAppPath: Path = getAppPath()
 
-    override val pasteAppJarPath: Path = getAppPath()
+    override val pasteAppJarPath: Path = getResources()
 
     override val pasteUserPath: Path = getUserPath()
 
@@ -105,6 +106,26 @@ class DevelopmentAppPathProvider : AppPathProvider {
         } ?: run {
             return composeAppDir.toPath()
         }
+    }
+
+    private fun getResources(): Path {
+        val resources = composeAppDir.toPath().resolve("resources")
+        val platform = currentPlatform()
+        val platformAndArch =
+            if (platform.isWindows() && platform.is64bit()) {
+                "windows-x64"
+            } else if (platform.isMacos()) {
+                if (platform.arch.contains("x86_64")) {
+                    "macos-x64"
+                } else {
+                    "macos-arm64"
+                }
+            } else if (platform.isLinux() && platform.is64bit()) {
+                "linux-x64"
+            } else {
+                throw IllegalStateException("Unknown platform: ${platform.name}")
+            }
+        return resources.resolve(platformAndArch)
     }
 }
 

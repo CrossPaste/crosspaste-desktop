@@ -8,6 +8,8 @@ development.properties
 local.properties
 local.conveyor.conf
 package*.json
+selenium-manager
+selenium-manager.exe
 !src/**/build/
 build
 buildSrc/build/
@@ -17,8 +19,6 @@ composeApp/GPUCache/
 composeApp/build/
 composeApp/dylib/
 composeApp/jbr/
-chrome-headless-shell-*/
-chromedriver-*/
 logs/
 node_modules/
 output*/

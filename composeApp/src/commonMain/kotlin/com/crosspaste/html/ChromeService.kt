@@ -1,6 +1,8 @@
-package com.crosspaste.paste
+package com.crosspaste.html
 
 interface ChromeService {
+
+    var startSuccess: Boolean
 
     fun html2Image(html: String): ByteArray?
 

@@ -34,10 +34,11 @@ interface PathProvider {
     }
 
     fun autoCreateDir(path: Path) {
-        if (!path.toFile().exists()) {
-            if (!path.toFile().mkdirs()) {
-                throw PasteException(StandardErrorCode.CANT_CREATE_DIR.toErrorCode(), "Failed to create directory: $path")
-            }
+        if (!fileUtils.createDir(path)) {
+            throw PasteException(
+                StandardErrorCode.CANT_CREATE_DIR.toErrorCode(),
+                "Failed to create directory: $path",
+            )
         }
     }
 }
