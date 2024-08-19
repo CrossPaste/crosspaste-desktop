@@ -32,6 +32,8 @@ abstract class AbstractModuleLoader : ModuleLoader {
         return try {
             fileUtils.deleteFile(path)
 
+            logger.info { "Downloading: $url" }
+
             val httpsUrl = URL(url)
             val uri = httpsUrl.toURI()
             val proxy = DesktopProxy.getProxy(uri)
@@ -41,6 +43,7 @@ abstract class AbstractModuleLoader : ModuleLoader {
                     .followRedirects(HttpClient.Redirect.NORMAL)
 
             (proxy.address() as? InetSocketAddress)?.let { address ->
+                logger.info { "Using proxy: $address" }
                 clientBuilder.proxy(ProxySelector.of(address))
             }
 
