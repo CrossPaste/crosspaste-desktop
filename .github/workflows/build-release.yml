@@ -151,12 +151,6 @@ jobs:
             ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*',
             '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
 
-      - name: Cache Chrome Driver And Headless Shell
-        uses: actions/cache@v4
-        with:
-          path: ./composeApp/resources
-          key: chrome-driver-headless-shell-${{ hashFiles('**/webDriver.properties') }}
-
       - name: Cache Jetbrains Runtime JDK
         uses: actions/cache@v4
         with:
