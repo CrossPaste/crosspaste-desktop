@@ -19,7 +19,7 @@ class ChromeModuleLoader(
         installPath: Path,
     ): Boolean {
         if (!downloadPath.toString().lowercase().endsWith(".zip")) {
-            println("Error: Downloaded file is not a zip archive")
+            logger.error { "Error: Downloaded file is not a zip archive" }
             return false
         }
 

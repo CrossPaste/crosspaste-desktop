@@ -13,11 +13,11 @@ object DesktopRetryUtils : RetryUtils {
 
     override fun <T> retry(
         maxRetries: Int,
-        block: () -> T,
+        block: (Int) -> T,
     ): T? {
         repeat(maxRetries) { attempt ->
             try {
-                val result = block()
+                val result = block(attempt)
                 if (result != null) {
                     return result
                 }

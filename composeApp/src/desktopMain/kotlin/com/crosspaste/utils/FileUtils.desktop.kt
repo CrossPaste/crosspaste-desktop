@@ -136,6 +136,19 @@ object DesktopFileUtils : FileUtils {
         return path.toFile().delete()
     }
 
+    override fun createFile(path: Path): Boolean {
+        return if (path.toFile().exists()) {
+            false
+        } else {
+            try {
+                path.toFile().createNewFile()
+            } catch (e: Exception) {
+                logger.warn(e) { "Failed to create file: $path" }
+                false
+            }
+        }
+    }
+
     override fun createDir(path: Path): Boolean {
         return if (!path.toFile().exists()) {
             path.toFile().mkdirs()

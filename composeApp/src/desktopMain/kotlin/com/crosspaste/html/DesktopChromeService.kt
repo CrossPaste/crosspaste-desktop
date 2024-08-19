@@ -4,6 +4,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.crosspaste.app.AppWindowManager
+import com.crosspaste.html.ChromeServiceServiceModule.Companion.CHROME_DRIVER_MODULE_ITEM_NAME
+import com.crosspaste.html.ChromeServiceServiceModule.Companion.CHROME_HEADLESS_SHELL_MODULE_ITEM_NAME
+import com.crosspaste.module.ModuleLoaderConfig
 import com.crosspaste.os.windows.WinProcessUtils
 import com.crosspaste.os.windows.WinProcessUtils.killProcessSet
 import com.crosspaste.os.windows.WindowDpiHelper
@@ -19,13 +22,11 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
-import okio.Path
 import org.openqa.selenium.Dimension
 import org.openqa.selenium.OutputType
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeDriverService
 import org.openqa.selenium.chrome.ChromeOptions
-import java.util.Properties
 import kotlin.math.max
 
 class DesktopChromeService(
@@ -33,13 +34,7 @@ class DesktopChromeService(
     private val userDataPathProvider: UserDataPathProvider,
 ) : ChromeService {
 
-    companion object {
-        private const val CHROME_DRIVER = "chromedriver"
-
-        private const val CHROME_HEADLESS_SHELL = "chrome-headless-shell"
-
-        private val logger = KotlinLogging.logger {}
-    }
+    private val logger = KotlinLogging.logger {}
 
     private val currentPlatform = currentPlatform()
 
@@ -89,57 +84,60 @@ class DesktopChromeService(
 
     override var startSuccess: Boolean by mutableStateOf(false)
 
+    private val chromeDriverProperties =
+        DesktopResourceUtils
+            .loadProperties("chrome-driver.properties")
+
     init {
         initChromeDriver()
     }
 
     private fun initChromeDriver() {
+        val chromeModuleLoader = ChromeModuleLoader(userDataPathProvider)
+        val chromeServiceModule = ChromeServiceServiceModule(chromeDriverProperties)
+
+        val optLoaderConfig = chromeServiceModule.getModuleLoaderConfig()
+        optLoaderConfig?.let { loaderConfig ->
+            if (chromeModuleLoader.installed(loaderConfig.installPath)) {
+                startByLoaderModule(loaderConfig)
+                startSuccess = true
+                return
+            }
+        }
+
         try {
             chromeDriverService = ChromeDriverService.createDefaultService()
             chromeDriver = ChromeDriver(chromeDriverService, options)
             startSuccess = true
         } catch (e: Exception) {
             logger.error(e) { "chromeDriver auto init fail" }
-            val chromeDriverProperties =
-                DesktopResourceUtils
-                    .loadProperties("chrome-driver.properties")
-
-            (
-                loadModule(chromeDriverProperties, useMirror = false)
-                    ?: loadModule(chromeDriverProperties, useMirror = true)
-            )?.let {
-                val chromeDriverPath = it.first
-                val chromeHeadlessShellPath = it.second
-                chromeDriverService = ChromeDriverService.createDefaultService()
-                System.setProperty(
-                    "webdriver.chrome.driver",
-                    chromeDriverPath.toString(),
-                )
-                options.setBinary(chromeHeadlessShellPath.toFile())
-                chromeDriver = ChromeDriver(chromeDriverService, options)
-                startSuccess = true
+            optLoaderConfig?.let { loaderConfig ->
+                if (chromeModuleLoader.load(loaderConfig)) {
+                    startByLoaderModule(loaderConfig)
+                    startSuccess = true
+                    return
+                }
             }
+            startSuccess = false
+            return
         }
     }
 
-    private fun loadModule(
-        chromeDriverProperties: Properties,
-        useMirror: Boolean,
-    ): Pair<Path, Path>? {
-        val chromeServiceModule = ChromeServiceServiceModule(chromeDriverProperties, useMirror)
-        val loaderConfigs = chromeServiceModule.getModuleLoaderConfigs()
-
-        loaderConfigs[CHROME_DRIVER]?.let { driver ->
-            loaderConfigs[CHROME_HEADLESS_SHELL]?.let { chromeHeadlessShell ->
-                val loader = ChromeModuleLoader(userDataPathProvider)
-                loader.load(driver)?.let { chromeDriverPath ->
-                    loader.load(chromeHeadlessShell)?.let { chromeHeadlessShellPath ->
-                        return Pair(chromeDriverPath, chromeHeadlessShellPath)
-                    }
-                }
+    private fun startByLoaderModule(moduleLoaderConfig: ModuleLoaderConfig): Boolean {
+        val installPath = moduleLoaderConfig.installPath
+        moduleLoaderConfig.getModuleItem(CHROME_DRIVER_MODULE_ITEM_NAME)?.let { chromeDriverModule ->
+            moduleLoaderConfig.getModuleItem(CHROME_HEADLESS_SHELL_MODULE_ITEM_NAME)?.let { chromeHeadlessShellModule ->
+                chromeDriverService = ChromeDriverService.createDefaultService()
+                System.setProperty(
+                    "webdriver.chrome.driver",
+                    chromeDriverModule.getModuleFilePath(installPath).toString(),
+                )
+                options.setBinary(chromeHeadlessShellModule.getModuleFilePath(installPath).toFile())
+                chromeDriver = ChromeDriver(chromeDriverService, options)
+                return true
             }
         }
-        return null
+        return false
     }
 
     @Synchronized

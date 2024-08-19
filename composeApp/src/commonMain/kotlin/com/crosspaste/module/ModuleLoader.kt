@@ -8,7 +8,7 @@ import com.crosspaste.utils.Loader
 import com.crosspaste.utils.RetryUtils
 import okio.Path
 
-interface ModuleLoader : Loader<ModuleLoaderConfig, Path> {
+interface ModuleLoader : Loader<ModuleLoaderConfig, Boolean> {
 
     val retryUtils: RetryUtils
 
@@ -21,7 +21,7 @@ interface ModuleLoader : Loader<ModuleLoaderConfig, Path> {
     /**
      * Verify module by path and sha256
      */
-    fun verifyModule(
+    fun verifyInstall(
         path: Path,
         sha256: String,
     ): Boolean {
@@ -44,27 +44,52 @@ interface ModuleLoader : Loader<ModuleLoaderConfig, Path> {
         path: Path,
     ): Boolean
 
-    override fun load(value: ModuleLoaderConfig): Path? {
-        return retryUtils.retry(value.retryNumber) {
-            val downTempPath = userDataPathProvider.resolve(value.downloadFileName, AppFileType.TEMP)
+    fun makeInstalled(installPath: Path) {
+        fileUtils.createFile(installPath.resolve(".success"))
+    }
 
-            if (!fileUtils.existFile(downTempPath)) {
-                if (!downloadModule(value.url, downTempPath)) {
-                    fileUtils.deleteFile(downTempPath)
-                    return@retry null
+    fun installed(installPath: Path): Boolean {
+        return fileUtils.existFile(installPath.resolve(".success"))
+    }
+
+    override fun load(value: ModuleLoaderConfig): Boolean {
+        val installPath = value.installPath
+        for (moduleItem in value.moduleItems) {
+            val urls = moduleItem.getUrls()
+            val installResult: Boolean? =
+                retryUtils.retry(value.retryNumber) {
+                    val downTempPath = userDataPathProvider.resolve(moduleItem.downloadFileName, AppFileType.TEMP)
+                    if (!fileUtils.existFile(downTempPath)) {
+                        if (!downloadModule(urls[it], downTempPath)) {
+                            fileUtils.deleteFile(downTempPath)
+                            return@retry null
+                        }
+                    }
+
+                    if (!verifyInstall(downTempPath, moduleItem.sha256)) {
+                        fileUtils.deleteFile(downTempPath)
+                        return@retry null
+                    }
+
+                    if (installModule(downTempPath, installPath)) {
+                        return@retry true
+                    } else {
+                        return@retry null
+                    }
                 }
-            }
 
-            if (!verifyModule(downTempPath, value.sha256)) {
-                fileUtils.deleteFile(downTempPath)
-                return@retry null
-            }
-
-            if (installModule(downTempPath, value.installPath)) {
-                value.getModuleFilePath()
-            } else {
-                null
+            if (installResult != true) {
+                return false
             }
         }
+
+        makeInstalled(installPath)
+
+        for (moduleItem in value.moduleItems) {
+            val downTempPath = userDataPathProvider.resolve(moduleItem.downloadFileName, AppFileType.TEMP)
+            fileUtils.deleteFile(downTempPath)
+        }
+
+        return true
     }
 }

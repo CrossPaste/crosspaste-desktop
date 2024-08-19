@@ -57,6 +57,8 @@ interface FileUtils {
 
     fun deleteFile(path: Path): Boolean
 
+    fun createFile(path: Path): Boolean
+
     fun createDir(path: Path): Boolean
 
     fun copyPath(
