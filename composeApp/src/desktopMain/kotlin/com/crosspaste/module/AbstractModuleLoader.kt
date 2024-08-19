@@ -5,7 +5,6 @@ import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getRetryUtils
 import io.github.oshai.kotlinlogging.KLogger
-import io.github.oshai.kotlinlogging.KotlinLogging
 import okio.Path
 import java.net.InetSocketAddress
 import java.net.ProxySelector
@@ -17,7 +16,7 @@ import java.time.Duration
 
 abstract class AbstractModuleLoader : ModuleLoader {
 
-    private val logger: KLogger = KotlinLogging.logger {}
+    abstract val logger: KLogger
 
     override val retryUtils = getRetryUtils()
 

@@ -1,10 +1,11 @@
 package com.crosspaste.module
 
+import com.crosspaste.app.AppFileType
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.CodecsUtils
 import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.Loader
 import com.crosspaste.utils.RetryUtils
-import com.crosspaste.utils.noOptionParent
 import okio.Path
 
 interface ModuleLoader : Loader<ModuleLoaderConfig, Path> {
@@ -15,6 +16,8 @@ interface ModuleLoader : Loader<ModuleLoaderConfig, Path> {
 
     val codecsUtils: CodecsUtils
 
+    val userDataPathProvider: UserDataPathProvider
+
     fun verifyModule(
         path: Path,
         sha256: String,
@@ -22,9 +25,10 @@ interface ModuleLoader : Loader<ModuleLoaderConfig, Path> {
         return codecsUtils.sha256(path) == sha256
     }
 
-    fun installModule(path: Path): Boolean {
-        return true
-    }
+    fun installModule(
+        downloadPath: Path,
+        installPath: Path,
+    ): Boolean
 
     fun downloadModule(
         url: String,
@@ -33,20 +37,21 @@ interface ModuleLoader : Loader<ModuleLoaderConfig, Path> {
 
     override fun load(value: ModuleLoaderConfig): Path? {
         return retryUtils.retry(value.retryNumber) {
-            if (!fileUtils.existFile(value.installPath)) {
-                fileUtils.createDir(value.installPath.noOptionParent)
-                if (!downloadModule(value.url, value.installPath)) {
-                    fileUtils.deleteFile(value.installPath)
+            val downTempPath = userDataPathProvider.resolve(value.fileName, AppFileType.TEMP)
+
+            if (!fileUtils.existFile(downTempPath)) {
+                if (!downloadModule(value.url, downTempPath)) {
+                    fileUtils.deleteFile(downTempPath)
                     return@retry null
                 }
             }
 
-            if (!verifyModule(value.installPath, value.sha256)) {
-                fileUtils.deleteFile(value.installPath)
+            if (!verifyModule(downTempPath, value.sha256)) {
+                fileUtils.deleteFile(downTempPath)
                 return@retry null
             }
 
-            if (installModule(value.installPath)) {
+            if (installModule(downTempPath, value.installPath)) {
                 value.installPath
             } else {
                 null

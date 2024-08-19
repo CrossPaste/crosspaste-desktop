@@ -44,8 +44,8 @@ import com.crosspaste.dao.task.PasteTaskDao
 import com.crosspaste.dao.task.PasteTaskRealm
 import com.crosspaste.endpoint.DesktopEndpointInfoFactory
 import com.crosspaste.endpoint.EndpointInfoFactory
-import com.crosspaste.html.BrowseService
-import com.crosspaste.html.DesktopBrowseService
+import com.crosspaste.html.ChromeService
+import com.crosspaste.html.DesktopChromeService
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.i18n.GlobalCopywriterImpl
 import com.crosspaste.image.DesktopFaviconLoader
@@ -328,7 +328,7 @@ class CrossPaste {
                             ),
                         )
                     }
-                    single<BrowseService> { DesktopBrowseService(get()) }
+                    single<ChromeService> { DesktopChromeService(get(), get()) }
                     single<PastePreviewService> { DesktopPastePreviewService(get()) }
                     single<PasteSyncProcessManager<ObjectId>> { DesktopPasteSyncProcessManager() }
                     single<PasteSearchService> { DesktopPasteSearchService(get(), get(), get()) }
@@ -408,8 +408,8 @@ class CrossPaste {
                 it.invoke()
             }
             logger.debug { "beforeExitList execution completed" }
-            koinApplication.koin.get<BrowseService>().quit()
-            logger.info { "BrowseService quit completed" }
+            koinApplication.koin.get<ChromeService>().quit()
+            logger.info { "ChromeService quit completed" }
             koinApplication.koin.get<PasteboardService>().stop()
             logger.info { "PasteboardService stop completed" }
             koinApplication.koin.get<PasteBonjourService>().unregisterService()

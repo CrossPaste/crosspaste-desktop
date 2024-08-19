@@ -7,6 +7,7 @@ import com.crosspaste.app.AppWindowManager
 import com.crosspaste.os.windows.WinProcessUtils
 import com.crosspaste.os.windows.WinProcessUtils.killProcessSet
 import com.crosspaste.os.windows.WindowDpiHelper
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.currentPlatform
 import com.crosspaste.utils.DesktopHtmlUtils.dataUrl
 import com.crosspaste.utils.DesktopResourceUtils
@@ -27,7 +28,10 @@ import org.openqa.selenium.chrome.ChromeOptions
 import java.util.Properties
 import kotlin.math.max
 
-class DesktopBrowseService(private val appWindowManager: AppWindowManager) : BrowseService {
+class DesktopChromeService(
+    private val appWindowManager: AppWindowManager,
+    private val userDataPathProvider: UserDataPathProvider,
+) : ChromeService {
 
     companion object {
         private const val CHROME_DRIVER = "chromedriver"
@@ -127,7 +131,7 @@ class DesktopBrowseService(private val appWindowManager: AppWindowManager) : Bro
 
         loaderConfigs[CHROME_DRIVER]?.let { driver ->
             loaderConfigs[CHROME_HEADLESS_SHELL]?.let { chromeHeadlessShell ->
-                val loader = ChromeModuleLoader()
+                val loader = ChromeModuleLoader(userDataPathProvider)
                 loader.load(driver)?.let { chromeDriverPath ->
                     loader.load(chromeHeadlessShell)?.let { chromeHeadlessShellPath ->
                         return Pair(chromeDriverPath, chromeHeadlessShellPath)

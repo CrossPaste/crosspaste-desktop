@@ -1,6 +1,6 @@
 package com.crosspaste.html
 
-interface BrowseService {
+interface ChromeService {
 
     var startSuccess: Boolean
 

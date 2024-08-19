@@ -4,7 +4,7 @@ import com.crosspaste.dao.paste.PasteDao
 import com.crosspaste.dao.task.PasteTask
 import com.crosspaste.dao.task.TaskType
 import com.crosspaste.exception.StandardErrorCode
-import com.crosspaste.html.BrowseService
+import com.crosspaste.html.ChromeService
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.path.UserDataPathProvider
@@ -18,7 +18,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 class Html2ImageTaskExecutor(
-    private val lazyBrowseService: Lazy<BrowseService>,
+    private val lazyChromeService: Lazy<ChromeService>,
     private val pasteDao: PasteDao,
     private val filePersist: FilePersist,
     private val userDataPathProvider: UserDataPathProvider,
@@ -32,7 +32,7 @@ class Html2ImageTaskExecutor(
 
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         mutex.withLock {
-            val chromeService = lazyBrowseService.value
+            val chromeService = lazyChromeService.value
             try {
                 pasteDao.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
                     pasteData.getPasteItem()?.let { pasteItem ->
