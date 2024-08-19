@@ -110,7 +110,7 @@ jobs:
         run: node .github/scripts/updateKnownGoodVersionsWithDownloads.js
 
       - name: Upload known-good-versions-with-downloads.json
-        id: upload_release_app
+        id: upload_known_good_versions_with_downloads_json
         uses: CrossPaste/oss-upload-action@main
         with:
           key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
