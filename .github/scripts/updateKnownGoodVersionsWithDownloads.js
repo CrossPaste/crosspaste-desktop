@@ -14,13 +14,34 @@ function processJson(inputJson) {
     const processedJson = JSON.parse(JSON.stringify(inputJson));
 
     processedJson.versions.forEach(version => {
-        if (version.downloads && version.downloads.chromedriver) {
-            version.downloads.chromedriver.forEach(item => {
-                item.url = convertUrl(item.url);
-            });
-        }
         if (version.downloads) {
-            version.downloads = { chromedriver: version.downloads.chromedriver || [] };
+            // Process chromedriver
+            if (version.downloads['chromedriver']) {
+                version.downloads['chromedriver'].forEach(item => {
+                    item.url = convertUrl(item.url);
+                });
+            }
+
+            // Process chrome-headless-shell
+            if (version.downloads['chrome-headless-shell']) {
+                version.downloads['chrome-headless-shell'].forEach(item => {
+                    item.url = convertUrl(item.url);
+                });
+            }
+
+            // Process chrome
+            if (version.downloads['chrome']) {
+                version.downloads['chrome'].forEach(item => {
+                    item.url = convertUrl(item.url);
+                });
+            }
+
+            // Keep only chromedriver, chrome-headless-shell, and chrome
+            version.downloads = {
+                'chromedriver': version.downloads['chromedriver'] || [],
+                'chrome-headless-shell': version.downloads['chrome-headless-shell'] || [],
+                'chrome': version.downloads['chrome'] || []
+            };
         }
     });
 
