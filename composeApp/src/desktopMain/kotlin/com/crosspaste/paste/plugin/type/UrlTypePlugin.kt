@@ -8,8 +8,10 @@ import com.crosspaste.paste.PasteDataFlavors.URL_FLAVOR
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.paste.toPasteDataFlavor
+import com.crosspaste.platform.currentPlatform
 import com.crosspaste.utils.getCodecsUtils
 import io.realm.kotlin.MutableRealm
+import java.net.MalformedURLException
 import java.net.URL
 
 class UrlTypePlugin : PasteTypePlugin {
@@ -19,6 +21,8 @@ class UrlTypePlugin : PasteTypePlugin {
 
         private val codecsUtils = getCodecsUtils()
     }
+
+    private val platform = currentPlatform()
 
     override fun getPasteType(): Int {
         return PasteType.URL
@@ -62,6 +66,17 @@ class UrlTypePlugin : PasteTypePlugin {
                 }
             }
             pasteCollector.updateCollectItem(itemIndex, this::class, update)
+        }
+    }
+
+    override fun collectError(
+        error: Exception,
+        pasteId: Long,
+        itemIndex: Int,
+        pasteCollector: PasteCollector,
+    ) {
+        if (!platform.isWindows() || error !is MalformedURLException) {
+            super.collectError(error, pasteId, itemIndex, pasteCollector)
         }
     }
 
