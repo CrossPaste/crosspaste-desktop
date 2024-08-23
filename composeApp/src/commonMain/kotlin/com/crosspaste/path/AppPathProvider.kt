@@ -10,5 +10,7 @@ interface AppPathProvider {
 
     val pasteAppJarPath: Path
 
+    val pasteAppExePath: Path
+
     val pasteUserPath: Path
 }

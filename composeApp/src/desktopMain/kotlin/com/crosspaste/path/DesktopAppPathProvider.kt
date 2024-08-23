@@ -22,6 +22,8 @@ object DesktopAppPathProvider : AppPathProvider, PathProvider {
 
     override val pasteAppJarPath: Path = appPathProvider.pasteAppJarPath
 
+    override val pasteAppExePath: Path = appPathProvider.pasteAppExePath
+
     override val pasteUserPath: Path = appPathProvider.pasteUserPath
 
     override fun resolve(
@@ -79,6 +81,8 @@ class DevelopmentAppPathProvider : AppPathProvider {
     override val pasteAppPath: Path = getAppPath()
 
     override val pasteAppJarPath: Path = getResources()
+
+    override val pasteAppExePath: Path = getResources()
 
     override val pasteUserPath: Path = getUserPath()
 
@@ -139,6 +143,8 @@ class WindowsAppPathProvider : AppPathProvider {
 
     override val pasteAppJarPath: Path = getAppJarPath()
 
+    override val pasteAppExePath: Path = getAppExePath()
+
     override val pasteUserPath: Path = getUserPath()
 
     private fun getAppJarPath(): Path {
@@ -149,6 +155,10 @@ class WindowsAppPathProvider : AppPathProvider {
             return it.toPath()
         }
         throw IllegalStateException("Could not find app path")
+    }
+
+    private fun getAppExePath(): Path {
+        return getAppJarPath().noOptionParent.resolve("bin").normalized()
     }
 
     private fun getUserPath(): Path {
@@ -176,6 +186,8 @@ class MacosAppPathProvider : AppPathProvider {
 
     override val pasteAppJarPath: Path = getAppJarPath()
 
+    override val pasteAppExePath: Path = getAppExePath()
+
     override val pasteUserPath: Path = getUserPath()
 
     private fun getAppJarPath(): Path {
@@ -186,6 +198,15 @@ class MacosAppPathProvider : AppPathProvider {
             return it.toPath()
         }
         throw IllegalStateException("Could not find app path")
+    }
+
+    private fun getAppExePath(): Path {
+        return getAppJarPath().noOptionParent
+            .resolve("runtime")
+            .resolve("Contents")
+            .resolve("Home")
+            .resolve("lib")
+            .normalized()
     }
 
     private fun getUserPath(): Path {
@@ -212,6 +233,8 @@ class LinuxAppPathProvider : AppPathProvider {
 
     override val pasteAppJarPath: Path = getAppJarPath()
 
+    override val pasteAppExePath: Path = getAppExePath()
+
     override val pasteUserPath: Path = getUserPath()
 
     private fun getAppJarPath(): Path {
@@ -222,6 +245,10 @@ class LinuxAppPathProvider : AppPathProvider {
             return it.toPath()
         }
         throw IllegalStateException("Could not find app path")
+    }
+
+    private fun getAppExePath(): Path {
+        return getAppJarPath().noOptionParent.resolve("runtime").resolve("lib").normalized()
     }
 
     private fun getUserPath(): Path {

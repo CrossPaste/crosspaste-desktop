@@ -58,7 +58,13 @@ class SeleniumManager private constructor() {
         } else {
             "selenium-manager"
         }
-    private var binary = DesktopAppPathProvider.pasteAppJarPath.resolve(fileName).toNioPath()
+    private var binary =
+        if (platform.isWindows()) {
+            DesktopAppPathProvider.pasteAppExePath.resolve(fileName).normalized().toNioPath()
+        } else {
+            DesktopAppPathProvider.pasteAppJarPath.resolve(fileName).normalized().toNioPath()
+        }
+
     private val seleniumManagerVersion: String
     private var binaryInTemporalFolder = false
 
