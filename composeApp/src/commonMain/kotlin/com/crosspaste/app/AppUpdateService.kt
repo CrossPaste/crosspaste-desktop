@@ -13,4 +13,8 @@ interface AppUpdateService {
     fun jumpDownload()
 
     fun existNewVersion(): Boolean
+
+    fun start()
+
+    fun stop()
 }

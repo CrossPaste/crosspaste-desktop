@@ -377,19 +377,21 @@ class CrossPaste {
         @Throws(Exception::class)
         private fun initInject() {
             try {
-                val appLaunchState = koinApplication.koin.get<AppLaunchState>()
+                val koin = koinApplication.koin
+                val appLaunchState = koin.get<AppLaunchState>()
                 if (appLaunchState.acquireLock) {
-                    if (koinApplication.koin.get<ConfigManager>().config.enablePasteboardListening) {
-                        koinApplication.koin.get<PasteboardService>().start()
+                    if (koin.get<ConfigManager>().config.enablePasteboardListening) {
+                        koin.get<PasteboardService>().start()
                     }
-                    koinApplication.koin.get<QRCodeGenerator>()
-                    koinApplication.koin.get<PasteServer>().start()
-                    koinApplication.koin.get<PasteClient>()
+                    koin.get<QRCodeGenerator>()
+                    koin.get<PasteServer>().start()
+                    koin.get<PasteClient>()
                     // bonjour service should be registered after paste server started
                     // only server started, bonjour service can get the port
-                    koinApplication.koin.get<PasteBonjourService>().registerService()
-                    koinApplication.koin.get<CleanPasteScheduler>().start()
-                    koinApplication.koin.get<AppStartUpService>().followConfig()
+                    koin.get<PasteBonjourService>().registerService()
+                    koin.get<CleanPasteScheduler>().start()
+                    koin.get<AppStartUpService>().followConfig()
+                    koin.get<AppUpdateService>().start()
                 } else {
                     exitProcess(0)
                 }
@@ -403,35 +405,38 @@ class CrossPaste {
             exitMode: ExitMode,
             exitApplication: () -> Unit,
         ) {
-            val appExitService = koinApplication.koin.get<AppExitService>()
+            val koin = koinApplication.koin
+            val appExitService = koin.get<AppExitService>()
             appExitService.beforeExitList.forEach {
                 it.invoke()
             }
             logger.debug { "beforeExitList execution completed" }
-            koinApplication.koin.get<ChromeService>().quit()
+            koin.get<AppUpdateService>().stop()
+            logger.info { "AppUpdateService stop completed" }
+            koin.get<ChromeService>().quit()
             logger.info { "ChromeService quit completed" }
-            koinApplication.koin.get<PasteboardService>().stop()
+            koin.get<PasteboardService>().stop()
             logger.info { "PasteboardService stop completed" }
-            koinApplication.koin.get<PasteBonjourService>().unregisterService()
+            koin.get<PasteBonjourService>().unregisterService()
             logger.info { "PasteBonjourService unregister completed" }
-            koinApplication.koin.get<PasteServer>().stop()
+            koin.get<PasteServer>().stop()
             logger.info { "PasteServer stop completed" }
-            koinApplication.koin.get<SyncManager>().notifyExit()
+            koin.get<SyncManager>().notifyExit()
             logger.info { "SyncManager notify exit completed" }
-            koinApplication.koin.get<CleanPasteScheduler>().stop()
+            koin.get<CleanPasteScheduler>().stop()
             logger.info { "CleanPasteScheduler stop completed" }
-            koinApplication.koin.get<GlobalListener>().stop()
+            koin.get<GlobalListener>().stop()
             logger.info { "GlobalListener stop completed" }
-            koinApplication.koin.get<UserDataPathProvider>().cleanTemp()
+            koin.get<UserDataPathProvider>().cleanTemp()
             logger.info { "UserDataPathProvider clean temp completed" }
             appExitService.beforeReleaseLockList.forEach {
                 it.invoke()
             }
             logger.info { "beforeReleaseLockList execution completed" }
-            koinApplication.koin.get<AppLock>().releaseLock()
+            koin.get<AppLock>().releaseLock()
             logger.info { "AppLock release completed" }
             if (exitMode == ExitMode.MIGRATION) {
-                val appWindowManager = koinApplication.koin.get<AppWindowManager>()
+                val appWindowManager = koin.get<AppWindowManager>()
                 appWindowManager.showMainWindow = false
             }
             exitApplication()
