@@ -56,7 +56,9 @@ suspend inline fun <T> request(
 ): ClientApiResult {
     try {
         val response = request()
-        if (response.status.value != 200) {
+        if (response.status.value == 404) {
+            return createFailureResult(StandardErrorCode.NOT_FOUND_API, "Not found Api")
+        } else if (response.status.value != 200) {
             val failResponse = response.body<FailResponse>()
             return createFailureResult(failResponse)
         }

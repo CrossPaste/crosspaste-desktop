@@ -33,6 +33,16 @@ class DesktopSyncClientApi(
         }
     }
 
+    override suspend fun syncInfo(): ClientApiResult {
+        return request(logger, request = {
+            pasteClient.get(urlBuilder = {
+                buildUrl(it, "sync", "syncInfo")
+            })
+        }) { response ->
+            response.body<SyncInfo>()
+        }
+    }
+
     override suspend fun createSession(
         syncInfo: SyncInfo,
         signalMessageProcessor: SignalMessageProcessor,
