@@ -8,7 +8,7 @@ interface SyncClientApi {
 
     suspend fun getPreKeyBundle(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult
 
-    suspend fun syncInfo(): ClientApiResult
+    suspend fun syncInfo(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult
 
     suspend fun createSession(
         syncInfo: SyncInfo,

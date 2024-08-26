@@ -33,7 +33,7 @@ class DesktopSyncClientApi(
         }
     }
 
-    override suspend fun syncInfo(): ClientApiResult {
+    override suspend fun syncInfo(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult {
         return request(logger, request = {
             pasteClient.get(urlBuilder = {
                 buildUrl(it, "sync", "syncInfo")
