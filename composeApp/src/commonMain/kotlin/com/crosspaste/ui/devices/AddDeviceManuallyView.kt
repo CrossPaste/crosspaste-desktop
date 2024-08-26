@@ -163,7 +163,7 @@ fun AddDeviceManuallyForm() {
                     when (
                         val result =
                             syncClientApi.syncInfo { urlBuilder ->
-                                buildUrl(urlBuilder, host, port.toInt())
+                                buildUrl(urlBuilder, ip, port.toInt())
                             }
                     ) {
                         is SuccessResult -> {
