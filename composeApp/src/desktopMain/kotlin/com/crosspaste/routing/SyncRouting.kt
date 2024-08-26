@@ -46,7 +46,7 @@ fun Routing.syncRouting(
         successResponse(call)
     }
 
-    get("sync/syncInfo") {
+    get("/sync/syncInfo") {
         val endpointInfo = endpointInfoFactory.createEndpointInfo()
         val syncInfo = SyncInfo(appInfo, endpointInfo)
         successResponse(call, syncInfo)
