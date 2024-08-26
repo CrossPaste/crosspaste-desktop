@@ -5,6 +5,7 @@ import com.crosspaste.app.AppTokenService
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dao.signal.SignalDao
+import com.crosspaste.endpoint.EndpointInfoFactory
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.exception.signalExceptionHandler
 import com.crosspaste.net.plugin.SignalServerDecryptionPluginFactory
@@ -40,6 +41,7 @@ class DesktopPasteServer(
     private val appTokenService: AppTokenService,
     private val cacheManager: CacheManager,
     private val configManager: ConfigManager,
+    private val endpointInfoFactory: EndpointInfoFactory,
     private val pasteboardService: PasteboardService,
     private val signalDao: SignalDao,
     private val signalProtocolStore: SignalProtocolStore,
@@ -96,6 +98,7 @@ class DesktopPasteServer(
                     appInfo,
                     appWindowManager,
                     appTokenService,
+                    endpointInfoFactory,
                     signalDao,
                     signalProtocolStore,
                     signalProcessorCache,

@@ -251,7 +251,7 @@ class CrossPaste {
                     single<PasteClient> { DesktopPasteClient(get<AppInfo>(), get(), get()) }
                     single<PasteServer> {
                         DesktopPasteServer(
-                            get(), get(), get(), get(), get(), get(),
+                            get(), get(), get(), get(), get(), get(), get(),
                             get(), get(), get(), get(), get(), get(), get(),
                         )
                     }

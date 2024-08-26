@@ -7,6 +7,7 @@ enum class StandardErrorCode(code: Int, errorType: ErrorType) : ErrorCodeSupplie
     UNKNOWN_ERROR(0, ErrorType.INTERNAL_ERROR),
     BOOTSTRAP_ERROR(1, ErrorType.INTERNAL_ERROR),
     INVALID_PARAMETER(2, ErrorType.USER_ERROR),
+    NOT_FOUND_API(3, ErrorType.USER_ERROR),
 
     CANT_CREATE_DIR(100, ErrorType.INTERNAL_ERROR),
     CANT_CREATE_FILE(101, ErrorType.INTERNAL_ERROR),

@@ -7,12 +7,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
-import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
-import androidx.compose.material.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,11 +21,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.ui.devices.measureTextWidth
 
 @Composable
 fun Counter(
@@ -38,18 +32,6 @@ fun Counter(
     onChange: (Long) -> Unit,
 ) {
     var count by remember { mutableStateOf(defaultValue) }
-
-    val textWidth =
-        measureTextWidth(
-            "$count",
-            LocalTextStyle.current.copy(
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colors.primary,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Monospace,
-            ),
-        )
 
     Row(
         modifier = Modifier.wrapContentSize(),
@@ -79,8 +61,7 @@ fun Counter(
             )
         }
         Spacer(modifier = Modifier.width(4.dp))
-        CustomTextField(
-            modifier = Modifier.width(textWidth + 16.dp).wrapContentHeight(),
+        DefaultTextField(
             value = "$count",
             onValueChange = {
                 if (it.matches(Regex("^\\d+$"))) {
@@ -91,23 +72,6 @@ fun Counter(
                     }
                 }
             },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            textStyle =
-                LocalTextStyle.current.copy(
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colors.primary,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace,
-                    lineHeight = 10.sp,
-                ),
-            colors =
-                TextFieldDefaults.textFieldColors(
-                    focusedIndicatorColor = MaterialTheme.colors.primary,
-                    unfocusedIndicatorColor = Color.Transparent,
-                ),
-            contentPadding = PaddingValues(0.dp),
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(

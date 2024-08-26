@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.ZeroCornerSize
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -19,11 +21,20 @@ import androidx.compose.material.TextFieldDefaults.textFieldWithoutLabelPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.crosspaste.ui.devices.measureTextWidth
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
@@ -106,5 +117,50 @@ fun CustomTextField(
                 )
             },
         )
+    )
+}
+
+@Composable
+fun DefaultTextField(
+    fixContentWidth: Dp? = null,
+    isError: Boolean = false,
+    value: String,
+    onValueChange: (String) -> Unit,
+) {
+    val textWidth =
+        fixContentWidth
+            ?: measureTextWidth(
+                value,
+                LocalTextStyle.current.copy(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace,
+                ),
+            )
+
+    CustomTextField(
+        modifier = Modifier.width(textWidth + 16.dp).wrapContentHeight(),
+        value = value,
+        onValueChange = onValueChange,
+        isError = isError,
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        textStyle =
+            LocalTextStyle.current.copy(
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colors.primary,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+                lineHeight = 10.sp,
+            ),
+        colors =
+            TextFieldDefaults.textFieldColors(
+                focusedIndicatorColor = MaterialTheme.colors.primary,
+                unfocusedIndicatorColor = Color.Transparent,
+            ),
+        contentPadding = PaddingValues(0.dp),
     )
 }

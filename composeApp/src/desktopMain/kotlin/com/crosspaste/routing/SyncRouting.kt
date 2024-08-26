@@ -7,6 +7,7 @@ import com.crosspaste.dao.signal.SignalDao
 import com.crosspaste.dto.sync.DataContent
 import com.crosspaste.dto.sync.RequestTrust
 import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.endpoint.EndpointInfoFactory
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.serializer.PreKeyBundleSerializer
 import com.crosspaste.signal.SignalMessageProcessorImpl
@@ -33,6 +34,7 @@ fun Routing.syncRouting(
     appInfo: AppInfo,
     appWindowManager: AppWindowManager,
     appTokenService: AppTokenService,
+    endpointInfoFactory: EndpointInfoFactory,
     signalDao: SignalDao,
     signalProtocolStore: SignalProtocolStore,
     signalProcessorCache: SignalProcessorCache,
@@ -42,6 +44,12 @@ fun Routing.syncRouting(
 
     get("/sync/telnet") {
         successResponse(call)
+    }
+
+    get("/sync/syncInfo") {
+        val endpointInfo = endpointInfoFactory.createEndpointInfo()
+        val syncInfo = SyncInfo(appInfo, endpointInfo)
+        successResponse(call, syncInfo)
     }
 
     get("/sync/preKeyBundle") {

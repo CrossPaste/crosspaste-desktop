@@ -88,6 +88,10 @@ fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
                 Spacer(modifier = Modifier.height(10.dp))
             }
 
+            ExpandView("add_device_manually", defaultExpand = false) {
+                AddDeviceManuallyView()
+            }
+            Spacer(modifier = Modifier.height(10.dp))
             ExpandView("nearby_devices", defaultExpand = true) {
                 NearbyDevicesView()
             }
