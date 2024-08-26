@@ -171,6 +171,8 @@ fun AddDeviceManuallyForm() {
                             val syncInfo = result.getResult<SyncInfo>()
                             val newSyncRuntimeInfo = createSyncRuntimeInfo(syncInfo)
                             syncRuntimeInfoDao.insertOrUpdate(newSyncRuntimeInfo)
+                            ip = ""
+                            port = ""
                         }
                         else -> {
                             notificationManager.addNotification(
