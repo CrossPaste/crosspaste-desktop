@@ -11,7 +11,7 @@ import com.crosspaste.utils.getCodecsUtils
 import io.realm.kotlin.MutableRealm
 import java.awt.datatransfer.DataFlavor
 
-class TextTypePlugin : PasteTypePlugin {
+class TextTypePlugin : PasteTypePlugin, TextUpdater {
 
     companion object TextItemService {
 
@@ -57,13 +57,23 @@ class TextTypePlugin : PasteTypePlugin {
             val textBytes = transferData.toByteArray()
             val md5 = codecsUtils.md5(textBytes)
             val update: (PasteItem, MutableRealm) -> Unit = { pasteItem, realm ->
-                realm.query(TextPasteItem::class, "id == $0", pasteItem.id).first().find()?.apply {
-                    this.text = transferData
-                    this.size = textBytes.size.toLong()
-                    this.md5 = md5
-                }
+                updateText(transferData, textBytes.size.toLong(), md5, pasteItem, realm)
             }
             pasteCollector.updateCollectItem(itemIndex, this::class, update)
+        }
+    }
+
+    override fun updateText(
+        newText: String,
+        size: Long,
+        md5: String,
+        pasteItem: PasteItem,
+        realm: MutableRealm,
+    ) {
+        realm.query(TextPasteItem::class, "id == $0", pasteItem.id).first().find()?.apply {
+            this.text = newText
+            this.size = size
+            this.md5 = md5
         }
     }
 

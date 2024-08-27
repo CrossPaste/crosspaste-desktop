@@ -38,5 +38,6 @@ enum class PageViewType {
     SETTINGS,
     SHORTCUT_KEYS,
     ABOUT,
+    PASTE_TEXT_EDIT,
     DEBUG,
 }

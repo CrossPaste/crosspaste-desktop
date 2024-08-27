@@ -15,6 +15,11 @@ fun search(): Painter {
 }
 
 @Composable
+fun save(): Painter {
+    return painterResource("icon/base/save.svg")
+}
+
+@Composable
 fun question(): Painter {
     return painterResource("icon/base/question.svg")
 }

@@ -32,6 +32,7 @@ import com.crosspaste.ui.base.ToastManager
 import com.crosspaste.ui.base.ToastView
 import com.crosspaste.ui.devices.DeviceDetailView
 import com.crosspaste.ui.devices.TokenView
+import com.crosspaste.ui.paste.edit.PasteTextEditView
 import com.crosspaste.ui.settings.SettingsView
 import com.crosspaste.ui.settings.ShortcutKeysView
 import com.crosspaste.utils.GlobalCoroutineScope
@@ -143,6 +144,9 @@ fun CrossPasteContent() {
         }
         PageViewType.DEVICE_DETAIL -> {
             DeviceDetailView(currentPageViewContext)
+        }
+        PageViewType.PASTE_TEXT_EDIT -> {
+            PasteTextEditView(currentPageViewContext)
         }
     }
 }
