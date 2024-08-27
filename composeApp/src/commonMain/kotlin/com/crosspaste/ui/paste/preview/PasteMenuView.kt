@@ -46,11 +46,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.LocalKoinApplication
+import com.crosspaste.LocalPageViewContent
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.dao.paste.PasteDao
 import com.crosspaste.dao.paste.PasteData
+import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteboardService
+import com.crosspaste.ui.PageViewContext
+import com.crosspaste.ui.PageViewType
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.MessageType
 import com.crosspaste.ui.base.NotificationManager
@@ -84,7 +88,6 @@ fun PasteMenuView(
     val pasteboardService = current.koin.get<PasteboardService>()
     val copywriter = current.koin.get<GlobalCopywriter>()
     val notificationManager = current.koin.get<NotificationManager>()
-    val uiSupport = current.koin.get<UISupport>()
 
     var parentBounds by remember { mutableStateOf(Rect.Zero) }
     var cursorPosition by remember { mutableStateOf(Offset.Zero) }
@@ -400,47 +403,70 @@ fun PasteMenuView(
                     dismissOnClickOutside = true,
                 ),
         ) {
-            Box(
-                modifier =
-                    Modifier
-                        .wrapContentSize()
-                        .background(Color.Transparent)
-                        .shadow(15.dp),
-            ) {
-                val menuTexts =
-                    arrayOf(
-                        copywriter.getText("open"),
-                        copywriter.getText("delete"),
-                    )
-
-                val maxWidth = getMenWidth(menuTexts)
-
-                Column(
-                    modifier =
-                        Modifier
-                            .width(maxWidth)
-                            .wrapContentHeight()
-                            .clip(RoundedCornerShape(5.dp))
-                            .background(MaterialTheme.colors.surface),
-                ) {
-                    MenuItem(copywriter.getText("open")) {
-                        uiSupport.openPasteData(pasteData)
-                        showPopup = false
-                        showMenu = false
-                        toShow(false)
-                    }
-                    MenuItem(copywriter.getText("delete")) {
-                        runBlocking {
-                            pasteDao.markDeletePasteData(pasteData.id)
-                        }
-                        showPopup = false
-                        showMenu = false
-                        toShow(false)
-                    }
-                }
+            MoreMenuItems(pasteData) {
+                showPopup = false
+                showMenu = false
+                toShow(false)
             }
         }
     }
 }
 
 private val PointerEvent.position get() = changes.first().position
+
+@Composable
+fun MoreMenuItems(
+    pasteData: PasteData,
+    hideMore: () -> Unit,
+) {
+    val current = LocalKoinApplication.current
+    val currentPage = LocalPageViewContent.current
+    val copywriter = current.koin.get<GlobalCopywriter>()
+    val pasteDao = current.koin.get<PasteDao>()
+    val uiSupport = current.koin.get<UISupport>()
+    Box(
+        modifier =
+            Modifier
+                .wrapContentSize()
+                .background(Color.Transparent)
+                .shadow(15.dp),
+    ) {
+        val menuTexts =
+            arrayOf(
+                copywriter.getText("open"),
+                copywriter.getText("delete"),
+            )
+
+        val maxWidth = getMenWidth(menuTexts)
+
+        Column(
+            modifier =
+                Modifier
+                    .width(maxWidth)
+                    .wrapContentHeight()
+                    .clip(RoundedCornerShape(5.dp))
+                    .background(MaterialTheme.colors.surface),
+        ) {
+            MenuItem(copywriter.getText("open")) {
+                if (pasteData.pasteType == PasteType.TEXT) {
+                    hideMore()
+                    currentPage.value =
+                        PageViewContext(
+                            PageViewType.PASTE_TEXT_EDIT,
+                            currentPage.value,
+                            pasteData,
+                        )
+                } else {
+                    uiSupport.openPasteData(pasteData)
+                    hideMore()
+                }
+            }
+            MenuItem(copywriter.getText("delete")) {
+                runBlocking {
+                    pasteDao.markDeletePasteData(pasteData.id)
+                }
+                hideMore()
+            }
+        }
+    }
+}

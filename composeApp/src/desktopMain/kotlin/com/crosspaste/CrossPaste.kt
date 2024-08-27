@@ -110,6 +110,7 @@ import com.crosspaste.paste.plugin.type.FilesTypePlugin
 import com.crosspaste.paste.plugin.type.HtmlTypePlugin
 import com.crosspaste.paste.plugin.type.ImageTypePlugin
 import com.crosspaste.paste.plugin.type.TextTypePlugin
+import com.crosspaste.paste.plugin.type.TextUpdater
 import com.crosspaste.paste.plugin.type.UrlTypePlugin
 import com.crosspaste.path.AppPathProvider
 import com.crosspaste.path.DesktopAppPathProvider
@@ -294,6 +295,7 @@ class CrossPaste {
                     single<HtmlTypePlugin> { HtmlTypePlugin(get()) }
                     single<ImageTypePlugin> { ImageTypePlugin(get(), get()) }
                     single<TextTypePlugin> { TextTypePlugin() }
+                    single<TextUpdater> { get<TextTypePlugin>() }
                     single<UrlTypePlugin> { UrlTypePlugin() }
                     single<PasteboardService> { getDesktopPasteboardService(get(), get(), get(), get(), get()) }
                     single<TransferableConsumer> {
