@@ -1,9 +1,9 @@
 package com.crosspaste.module
 
 import com.crosspaste.net.DesktopProxy
+import com.crosspaste.utils.RetryUtils
 import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getFileUtils
-import com.crosspaste.utils.getRetryUtils
 import io.github.oshai.kotlinlogging.KLogger
 import okio.Path
 import java.net.InetSocketAddress
@@ -19,7 +19,7 @@ abstract class AbstractModuleLoader : ModuleLoader {
 
     abstract val logger: KLogger
 
-    override val retryUtils = getRetryUtils()
+    override val retryUtils = RetryUtils
 
     override val fileUtils = getFileUtils()
 
