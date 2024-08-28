@@ -26,7 +26,7 @@ interface FileUtils {
 
     fun bytesSize(
         size: Long,
-        unit: String,
+        unit: String = MB,
     ): Long {
         return when (unit) {
             KB -> size * 1024
