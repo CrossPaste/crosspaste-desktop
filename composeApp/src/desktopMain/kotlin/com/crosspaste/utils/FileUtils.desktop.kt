@@ -1,7 +1,5 @@
 package com.crosspaste.utils
 
-import com.crosspaste.app.AppFileType
-import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.FileInfoTreeBuilder
 import com.crosspaste.presist.FilesChunk
@@ -46,30 +44,8 @@ object DesktopFileUtils : FileUtils {
         return "${decimalFormat.format(value)} ${units[unitIndex]}"
     }
 
-    override fun bytesSize(
-        size: Long,
-        unit: String,
-    ): Long {
-        return when (unit) {
-            KB -> size * 1024
-            MB -> size * 1024 * 1024
-            GB -> size * 1024 * 1024 * 1024
-            TB -> size * 1024 * 1024 * 1024 * 1024
-            else -> size
-        }
-    }
-
     override fun createRandomFileName(ext: String): String {
         return "${UUID.randomUUID()}.$ext"
-    }
-
-    override fun getExtFromFileName(fileName: String): String? {
-        val index = fileName.lastIndexOf(".")
-        return if (index != -1) {
-            fileName.substring(index + 1)
-        } else {
-            null
-        }
     }
 
     override fun createPasteRelativePath(
@@ -80,16 +56,6 @@ object DesktopFileUtils : FileUtils {
     ): String {
         val dateYYYYMMDD = dateUtils.getYYYYMMDD(date)
         return Paths.get(appInstanceId, dateYYYYMMDD, pasteId.toString(), fileName).pathString
-    }
-
-    override fun createPastePath(
-        fileRelativePath: String,
-        isFile: Boolean,
-        appFileType: AppFileType,
-        userDataPathProvider: UserDataPathProvider,
-    ): Path {
-        val basePath = userDataPathProvider.resolve(appFileType = appFileType)
-        return userDataPathProvider.resolve(basePath, fileRelativePath, isFile = isFile)
     }
 
     override fun getFileInfoTree(path: Path): FileInfoTree {

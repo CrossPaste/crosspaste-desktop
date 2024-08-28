@@ -26,12 +26,27 @@ interface FileUtils {
 
     fun bytesSize(
         size: Long,
-        unit: String = MB,
-    ): Long
+        unit: String,
+    ): Long {
+        return when (unit) {
+            KB -> size * 1024
+            MB -> size * 1024 * 1024
+            GB -> size * 1024 * 1024 * 1024
+            TB -> size * 1024 * 1024 * 1024 * 1024
+            else -> size
+        }
+    }
 
     fun createRandomFileName(ext: String): String
 
-    fun getExtFromFileName(fileName: String): String?
+    fun getExtFromFileName(fileName: String): String? {
+        val index = fileName.lastIndexOf(".")
+        return if (index != -1) {
+            fileName.substring(index + 1)
+        } else {
+            null
+        }
+    }
 
     fun createPasteRelativePath(
         appInstanceId: String,
@@ -45,7 +60,10 @@ interface FileUtils {
         isFile: Boolean,
         appFileType: AppFileType,
         userDataPathProvider: UserDataPathProvider,
-    ): Path
+    ): Path {
+        val basePath = userDataPathProvider.resolve(appFileType = appFileType)
+        return userDataPathProvider.resolve(basePath, fileRelativePath, isFile = isFile)
+    }
 
     fun getFileInfoTree(path: Path): FileInfoTree
 
