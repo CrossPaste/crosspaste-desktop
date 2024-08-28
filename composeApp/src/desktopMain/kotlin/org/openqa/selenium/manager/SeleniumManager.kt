@@ -52,12 +52,8 @@ import kotlin.concurrent.Volatile
 class SeleniumManager private constructor() {
 
     private val platform = currentPlatform()
-    private val fileName =
-        if (platform.isWindows()) {
-            "selenium-manager.exe"
-        } else {
-            "selenium-manager"
-        }
+    private val fileName = "selenium-manager"
+
     private var binary =
         if (platform.isWindows()) {
             DesktopAppPathProvider.pasteAppExePath.resolve(fileName).normalized().toNioPath()
@@ -161,7 +157,6 @@ class SeleniumManager private constructor() {
         private const val HOME = "~"
         private const val CACHE_PATH_ENV = "SE_CACHE_PATH"
         private const val BETA_PREFIX = "0."
-        private const val EXE = ".exe"
         private const val SE_ENV_PREFIX = "SE_"
 
         @Volatile

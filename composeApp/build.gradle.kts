@@ -502,7 +502,14 @@ fun extractFile(
     entry: java.util.zip.ZipEntry,
     targetDir: File,
 ) {
-    val targetFile = targetDir.resolve(entry.name.substringAfterLast("/"))
+    val fileName = entry.name.substringAfterLast("/")
+    val targetFileName =
+        if (fileName.endsWith(".exe", ignoreCase = true)) {
+            fileName.substringBeforeLast(".", "")
+        } else {
+            fileName
+        }
+    val targetFile = targetDir.resolve(targetFileName)
     targetFile.parentFile.mkdirs()
     if (!targetFile.exists() || targetFile.lastModified() < entry.lastModifiedTime.toMillis()) {
         zip.getInputStream(entry).use { input ->
