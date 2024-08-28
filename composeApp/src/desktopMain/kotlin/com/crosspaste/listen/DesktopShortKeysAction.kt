@@ -1,7 +1,7 @@
 package com.crosspaste.listen
 
 import com.crosspaste.app.AppInfo
-import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dao.paste.PasteDao
 import com.crosspaste.dao.paste.PasteData
@@ -14,7 +14,7 @@ import com.crosspaste.listen.DesktopShortcutKeys.Companion.SHOW_SEARCH
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.SWITCH_ENCRYPT
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.SWITCH_MONITOR_PASTEBOARD
 import com.crosspaste.listener.ShortcutKeysAction
-import com.crosspaste.paste.PasteSearchService
+import com.crosspaste.paste.DesktopPasteSearchService
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
@@ -28,8 +28,8 @@ class DesktopShortKeysAction(
     private val appInfo: AppInfo,
     private val pasteDao: PasteDao,
     private val configManager: ConfigManager,
-    private val appWindowManager: AppWindowManager,
-    private val pasteSearchService: PasteSearchService,
+    private val appWindowManager: DesktopAppWindowManager,
+    private val pasteSearchService: DesktopPasteSearchService,
     private val pasteboardService: PasteboardService,
 ) : ShortcutKeysAction {
 

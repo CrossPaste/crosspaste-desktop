@@ -30,7 +30,7 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.rememberWindowState
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppLaunchState
-import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.WinAppWindowManager
 import com.crosspaste.ui.base.DesktopNotificationManager
 import com.crosspaste.ui.base.NotificationManager
@@ -52,7 +52,7 @@ fun WindowsTray() {
     val current = LocalKoinApplication.current
 
     val appLaunchState = current.koin.get<AppLaunchState>()
-    val appWindowManager = current.koin.get<AppWindowManager>()
+    val appWindowManager = current.koin.get<DesktopAppWindowManager>()
     val notificationManager = current.koin.get<NotificationManager>() as DesktopNotificationManager
 
     val trayIcon = painterResource("icon/crosspaste.png")
@@ -139,7 +139,7 @@ fun WindowsTray() {
 @Composable
 fun WindowTrayMenu(hideMenu: () -> Unit) {
     val current = LocalKoinApplication.current
-    val appWindowManager = current.koin.get<AppWindowManager>()
+    val appWindowManager = current.koin.get<DesktopAppWindowManager>()
 
     CrossPasteTheme {
         Box(
@@ -195,7 +195,7 @@ fun WindowTrayMenu(hideMenu: () -> Unit) {
 }
 
 class WindowsTrayMouseClicked(
-    private val appWindowManager: AppWindowManager,
+    private val appWindowManager: DesktopAppWindowManager,
     private val mouseClickedAction: (MouseEvent, GraphicsDevice, Insets) -> Unit,
 ) : MouseAdapter() {
 
@@ -205,7 +205,7 @@ class WindowsTrayMouseClicked(
 }
 
 private fun refreshWindowPosition(
-    appWindowManager: AppWindowManager,
+    appWindowManager: DesktopAppWindowManager,
     event: MouseEvent?,
     eventAction: (MouseEvent, GraphicsDevice, Insets) -> Unit,
 ) {

@@ -2,7 +2,7 @@ package com.crosspaste.routing
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenService
-import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.dao.signal.SignalDao
 import com.crosspaste.dto.sync.DataContent
 import com.crosspaste.dto.sync.RequestTrust
@@ -32,7 +32,7 @@ import org.signal.libsignal.protocol.state.SignedPreKeyRecord
 
 fun Routing.syncRouting(
     appInfo: AppInfo,
-    appWindowManager: AppWindowManager,
+    appWindowManager: DesktopAppWindowManager,
     appTokenService: AppTokenService,
     endpointInfoFactory: EndpointInfoFactory,
     signalDao: SignalDao,

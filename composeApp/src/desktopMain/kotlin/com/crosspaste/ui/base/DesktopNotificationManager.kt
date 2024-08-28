@@ -2,12 +2,12 @@ package com.crosspaste.ui.base
 
 import androidx.compose.ui.window.Notification
 import com.crosspaste.app.AppName
-import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.os.linux.api.NotificationSender.sendNotification
 import com.crosspaste.platform.currentPlatform
 
 class DesktopNotificationManager(
-    private val appWindowManager: AppWindowManager,
+    private val appWindowManager: DesktopAppWindowManager,
     private val toastManager: ToastManager,
 ) : NotificationManager {
 

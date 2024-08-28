@@ -4,7 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.dao.paste.PasteDao
 import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.utils.ioDispatcher
@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class DesktopPasteSearchService(
-    override val appWindowManager: AppWindowManager,
+    private val appWindowManager: DesktopAppWindowManager,
     private val pasteboardService: PasteboardService,
     private val pasteDao: PasteDao,
 ) : PasteSearchService {
@@ -200,7 +200,7 @@ class DesktopPasteSearchService(
         }
     }
 
-    override suspend fun activeWindow() {
+    suspend fun activeWindow() {
         appWindowManager.activeSearchWindow()
         inputSearch = ""
         searchFavorite = false
@@ -208,7 +208,7 @@ class DesktopPasteSearchService(
         searchLimit = 50
     }
 
-    override suspend fun unActiveWindow() {
+    suspend fun unActiveWindow() {
         appWindowManager.unActiveSearchWindow { false }
         innerSetSelectedIndex(0)
     }

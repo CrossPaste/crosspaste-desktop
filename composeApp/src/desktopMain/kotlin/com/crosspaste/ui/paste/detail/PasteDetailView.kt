@@ -16,7 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.crosspaste.LocalKoinApplication
-import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.DesktopAppWindowManager
 
 @Composable
 fun PasteDetailView(
@@ -24,7 +24,7 @@ fun PasteDetailView(
     detailInfoView: @Composable () -> Unit,
 ) {
     val current = LocalKoinApplication.current
-    val appWindowManager = current.koin.get<AppWindowManager>()
+    val appWindowManager = current.koin.get<DesktopAppWindowManager>()
 
     val dpSize by remember { mutableStateOf(appWindowManager.searchWindowDetailViewDpSize) }
     Column(modifier = Modifier.fillMaxSize()) {

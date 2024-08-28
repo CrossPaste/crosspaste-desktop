@@ -16,7 +16,7 @@ class MacAppWindowManager(
     lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val activeGraphicsDevice: ActiveGraphicsDevice,
     private val userDataPathProvider: UserDataPathProvider,
-) : AbstractAppWindowManager() {
+) : DesktopAppWindowManager() {
 
     private val crosspasteBundleID = getSystemProperty().get("mac.bundleID")
 

@@ -3,7 +3,7 @@ package com.crosspaste.ui
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
 import com.crosspaste.app.AppLaunchState
-import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
 import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
@@ -22,7 +22,7 @@ object LinuxTrayView {
         koinApplication: KoinApplication,
         exitApplication: (ExitMode) -> Unit,
     ) {
-        val appWindowManager = koinApplication.koin.get<AppWindowManager>()
+        val appWindowManager = koinApplication.koin.get<DesktopAppWindowManager>()
 
         systemTray.setImage(DesktopResourceUtils.resourceInputStream("icon/crosspaste.png"))
 
@@ -43,7 +43,7 @@ object LinuxTrayView {
     }
 
     fun setWindowPosition(
-        appWindowManager: AppWindowManager,
+        appWindowManager: DesktopAppWindowManager,
         appLaunchState: AppLaunchState,
     ) {
         val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice

@@ -6,15 +6,15 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.Window
 import com.crosspaste.CrossPaste.Companion.koinApplication
-import com.crosspaste.app.AbstractAppWindowManager.Companion.SEARCH_WINDOW_TITLE
-import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.DesktopAppWindowManager
+import com.crosspaste.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.crosspaste.ui.search.CrossPasteSearchWindowContent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 
 @Composable
 fun ApplicationScope.CrossPasteSearchWindow(windowIcon: Painter?) {
-    val appWindowManager = koinApplication.koin.get<AppWindowManager>()
+    val appWindowManager = koinApplication.koin.get<DesktopAppWindowManager>()
 
     Window(
         onCloseRequest = ::exitApplication,

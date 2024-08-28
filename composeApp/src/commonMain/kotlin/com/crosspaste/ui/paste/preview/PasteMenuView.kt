@@ -59,6 +59,7 @@ import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.MessageType
 import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.PasteTooltipAreaView
+import com.crosspaste.ui.base.PasteTypeIconView
 import com.crosspaste.ui.base.TOOLTIP_TEXT_STYLE
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.clipboard
@@ -67,7 +68,6 @@ import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.noFavorite
 import com.crosspaste.ui.devices.measureTextWidth
 import com.crosspaste.ui.favoriteColor
-import com.crosspaste.ui.search.PasteTypeIconView
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
 import kotlinx.coroutines.Job

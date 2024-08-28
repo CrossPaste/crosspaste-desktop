@@ -1,4 +1,4 @@
-package com.crosspaste
+package com.crosspaste.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,12 +21,9 @@ import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import com.crosspaste.app.AppWindowManager
-import com.crosspaste.ui.AboutView
-import com.crosspaste.ui.CrossPasteTheme
-import com.crosspaste.ui.HomeView
-import com.crosspaste.ui.PageViewType
-import com.crosspaste.ui.ThemeBackground
+import com.crosspaste.LocalKoinApplication
+import com.crosspaste.LocalPageViewContent
+import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.ToastManager
 import com.crosspaste.ui.base.ToastView
@@ -42,7 +39,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun CrossPasteMainWindowContent(hideWindow: suspend () -> Unit) {
     val current = LocalKoinApplication.current
-    val appWindowManager = current.koin.get<AppWindowManager>()
+    val appWindowManager = current.koin.get<DesktopAppWindowManager>()
     val toastManager = current.koin.get<ToastManager>()
     val dialogService = current.koin.get<DialogService>()
     val globalCoroutineScope = current.koin.get<GlobalCoroutineScope>()

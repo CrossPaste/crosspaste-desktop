@@ -68,7 +68,7 @@ import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppUpdateService
-import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteSearchService
@@ -99,7 +99,7 @@ fun CrossPasteSearchWindowContent() {
     val density = LocalDensity.current
     val appInfo = current.koin.get<AppInfo>()
     val copywriter = current.koin.get<GlobalCopywriter>()
-    val appWindowManager = current.koin.get<AppWindowManager>()
+    val appWindowManager = current.koin.get<DesktopAppWindowManager>()
     val pasteSearchService = current.koin.get<PasteSearchService>()
     val appUpdateService = current.koin.get<AppUpdateService>()
     val logger = current.koin.get<KLogger>()
