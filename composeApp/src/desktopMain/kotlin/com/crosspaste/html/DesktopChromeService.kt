@@ -3,7 +3,7 @@ package com.crosspaste.html
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.html.ChromeServiceServiceModule.Companion.CHROME_DRIVER_MODULE_ITEM_NAME
 import com.crosspaste.html.ChromeServiceServiceModule.Companion.CHROME_HEADLESS_SHELL_MODULE_ITEM_NAME
 import com.crosspaste.module.ModuleLoaderConfig
@@ -30,7 +30,7 @@ import org.openqa.selenium.chrome.ChromeOptions
 import kotlin.math.max
 
 class DesktopChromeService(
-    private val appWindowManager: AppWindowManager,
+    private val appWindowManager: DesktopAppWindowManager,
     private val userDataPathProvider: UserDataPathProvider,
 ) : ChromeService {
 

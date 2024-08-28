@@ -1,5 +1,6 @@
 package com.crosspaste.paste
 
+import com.crosspaste.app.AppWindowManager
 import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.dao.paste.PasteItem
 import java.awt.datatransfer.Clipboard
@@ -11,6 +12,8 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
     abstract var ownerTransferable: Transferable?
 
     abstract val systemClipboard: Clipboard
+
+    abstract val appWindowManager: AppWindowManager
 
     abstract val pasteConsumer: TransferableConsumer
 

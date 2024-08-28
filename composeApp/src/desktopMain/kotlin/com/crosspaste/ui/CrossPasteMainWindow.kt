@@ -5,9 +5,8 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.window.Window
 import com.crosspaste.CrossPaste.Companion.koinApplication
-import com.crosspaste.CrossPasteMainWindowContent
-import com.crosspaste.app.AbstractAppWindowManager.Companion.MAIN_WINDOW_TITLE
-import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.DesktopAppWindowManager
+import com.crosspaste.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
 import com.crosspaste.app.ExitMode
 import com.crosspaste.listener.GlobalListener
 import com.crosspaste.ui.LinuxTrayView.initSystemTray
@@ -24,7 +23,7 @@ fun CrossPasteMainWindow(
     systemTray: SystemTray?,
     windowIcon: Painter?,
 ) {
-    val appWindowManager = koinApplication.koin.get<AppWindowManager>()
+    val appWindowManager = koinApplication.koin.get<DesktopAppWindowManager>()
     val globalListener = koinApplication.koin.get<GlobalListener>()
 
     Window(

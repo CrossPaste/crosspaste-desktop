@@ -1,7 +1,7 @@
 package com.crosspaste.os.windows.api
 
-import com.crosspaste.app.AbstractAppWindowManager.Companion.MAIN_WINDOW_TITLE
-import com.crosspaste.app.AbstractAppWindowManager.Companion.SEARCH_WINDOW_TITLE
+import com.crosspaste.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
+import com.crosspaste.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.crosspaste.app.WinAppInfo
 import com.crosspaste.path.DesktopAppPathProvider
 import com.sun.jna.Memory

@@ -51,7 +51,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
-import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PastePreviewService
 import com.crosspaste.ui.base.PasteIconButton
@@ -67,7 +67,7 @@ import kotlinx.coroutines.launch
 fun PastePreviewsView() {
     val current = LocalKoinApplication.current
     val pastePreviewService = current.koin.get<PastePreviewService>()
-    val appWindowManager = current.koin.get<AppWindowManager>()
+    val appWindowManager = current.koin.get<DesktopAppWindowManager>()
 
     val listState = rememberLazyListState()
     var isScrolling by remember { mutableStateOf(false) }

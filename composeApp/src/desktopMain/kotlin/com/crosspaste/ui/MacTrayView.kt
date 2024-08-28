@@ -15,7 +15,7 @@ import com.crosspaste.LocalExitApplication
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.LocalPageViewContent
 import com.crosspaste.app.AppLaunchState
-import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.os.macos.MacAppUtils
@@ -45,7 +45,7 @@ fun MacTray() {
     val applicationExit = LocalExitApplication.current
 
     val appLaunchState = current.koin.get<AppLaunchState>()
-    val appWindowManager = current.koin.get<AppWindowManager>()
+    val appWindowManager = current.koin.get<DesktopAppWindowManager>()
     val notificationManager = current.koin.get<NotificationManager>() as DesktopNotificationManager
     val copywriter = current.koin.get<GlobalCopywriter>()
 
@@ -117,7 +117,7 @@ fun createPopupMenu(
     applicationExit: (ExitMode) -> Unit,
 ): PopupMenu {
     val copywriter = koinApplication.koin.get<GlobalCopywriter>()
-    val appWindowManager = koinApplication.koin.get<AppWindowManager>()
+    val appWindowManager = koinApplication.koin.get<DesktopAppWindowManager>()
     val uiSupport = koinApplication.koin.get<UISupport>()
 
     val popup = PopupMenu()
@@ -177,7 +177,7 @@ fun createMenuItem(
 }
 
 class MacTrayMouseClicked(
-    private val appWindowManager: AppWindowManager,
+    private val appWindowManager: DesktopAppWindowManager,
     private val appLaunchState: AppLaunchState,
     private val mouseClickedAction: (MouseEvent, WindowInfo) -> Unit,
 ) : MouseAdapter() {

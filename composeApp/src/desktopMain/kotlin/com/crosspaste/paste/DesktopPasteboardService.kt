@@ -1,12 +1,12 @@
 package com.crosspaste.paste
 
-import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dao.paste.PasteDao
 import com.crosspaste.platform.currentPlatform
 
 fun getDesktopPasteboardService(
-    appWindowManager: AppWindowManager,
+    appWindowManager: DesktopAppWindowManager,
     pasteDao: PasteDao,
     configManager: ConfigManager,
     pasteConsumer: TransferableConsumer,

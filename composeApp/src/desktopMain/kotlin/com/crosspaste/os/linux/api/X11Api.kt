@@ -1,7 +1,7 @@
 package com.crosspaste.os.linux.api
 
-import com.crosspaste.app.AbstractAppWindowManager.Companion.MAIN_WINDOW_TITLE
-import com.crosspaste.app.AbstractAppWindowManager.Companion.SEARCH_WINDOW_TITLE
+import com.crosspaste.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
+import com.crosspaste.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.crosspaste.app.LinuxAppInfo
 import com.crosspaste.os.linux.api.WMCtrl.getActiveWindow
 import com.sun.jna.Native

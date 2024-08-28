@@ -1,6 +1,5 @@
 package com.crosspaste.paste
 
-import com.crosspaste.app.AppWindowManager
 import com.crosspaste.dao.paste.PasteData
 
 interface PasteSearchService {
@@ -23,8 +22,6 @@ interface PasteSearchService {
 
     val currentPasteData: PasteData?
 
-    val appWindowManager: AppWindowManager
-
     fun updateInputSearch(inputSearch: String)
 
     fun switchFavorite()
@@ -42,10 +39,6 @@ interface PasteSearchService {
     fun upSelectedIndex()
 
     fun downSelectedIndex()
-
-    suspend fun activeWindow()
-
-    suspend fun unActiveWindow()
 
     suspend fun toPaste()
 }

@@ -52,10 +52,10 @@ import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.AppUpdateService
-import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.paste.PasteSearchService
+import com.crosspaste.paste.DesktopPasteSearchService
 import com.crosspaste.ui.base.Fonts.ROBOTO_FONT_FAMILY
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.UISupport
@@ -77,9 +77,9 @@ fun HomeWindowDecoration() {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val appLaunchState = current.koin.get<AppLaunchState>()
-    val appWindowManager = current.koin.get<AppWindowManager>()
+    val appWindowManager = current.koin.get<DesktopAppWindowManager>()
     val appUpdateService = current.koin.get<AppUpdateService>()
-    val pasteSearchService = current.koin.get<PasteSearchService>()
+    val pasteSearchService = current.koin.get<DesktopPasteSearchService>()
     val configManager = current.koin.get<ConfigManager>()
     val uiSupport = current.koin.get<UISupport>()
 

@@ -1,6 +1,6 @@
 package com.crosspaste.paste
 
-import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dao.paste.PasteDao
 import com.crosspaste.os.macos.api.MacosApi
@@ -23,7 +23,7 @@ import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.Transferable
 
 class MacosPasteboardService(
-    override val appWindowManager: AppWindowManager,
+    override val appWindowManager: DesktopAppWindowManager,
     override val pasteDao: PasteDao,
     override val configManager: ConfigManager,
     override val pasteConsumer: TransferableConsumer,

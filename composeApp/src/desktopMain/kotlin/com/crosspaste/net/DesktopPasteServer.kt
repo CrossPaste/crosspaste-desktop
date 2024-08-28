@@ -2,7 +2,7 @@ package com.crosspaste.net
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenService
-import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dao.signal.SignalDao
 import com.crosspaste.endpoint.EndpointInfoFactory
@@ -37,7 +37,7 @@ import java.net.BindException
 
 class DesktopPasteServer(
     private val appInfo: AppInfo,
-    private val appWindowManager: AppWindowManager,
+    private val appWindowManager: DesktopAppWindowManager,
     private val appTokenService: AppTokenService,
     private val cacheManager: CacheManager,
     private val configManager: ConfigManager,

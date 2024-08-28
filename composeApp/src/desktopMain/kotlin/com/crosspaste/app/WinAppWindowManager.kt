@@ -19,7 +19,7 @@ class WinAppWindowManager(
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val activeGraphicsDevice: ActiveGraphicsDevice,
     private val userDataPathProvider: UserDataPathProvider,
-) : AbstractAppWindowManager() {
+) : DesktopAppWindowManager() {
 
     private var prevWinAppInfo: WinAppInfo? by mutableStateOf(null)
 

@@ -6,7 +6,7 @@ import androidx.compose.runtime.setValue
 
 class TestWindowManager(
     private val mockOS: MockOS,
-) : AbstractAppWindowManager() {
+) : DesktopAppWindowManager() {
 
     var prevApp: String? by mutableStateOf(null)
 

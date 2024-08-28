@@ -28,6 +28,7 @@ import com.crosspaste.app.DesktopAppStartUpService
 import com.crosspaste.app.DesktopAppTokenService
 import com.crosspaste.app.DesktopAppUpdateService
 import com.crosspaste.app.DesktopAppUrls
+import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
 import com.crosspaste.app.getDesktopAppWindowManager
 import com.crosspaste.clean.CleanPasteScheduler
@@ -333,7 +334,8 @@ class CrossPaste {
                     single<ChromeService> { DesktopChromeService(get(), get()) }
                     single<PastePreviewService> { DesktopPastePreviewService(get()) }
                     single<PasteSyncProcessManager<ObjectId>> { DesktopPasteSyncProcessManager() }
-                    single<PasteSearchService> { DesktopPasteSearchService(get(), get(), get()) }
+                    single<DesktopPasteSearchService> { DesktopPasteSearchService(get(), get(), get()) }
+                    single<PasteSearchService> { get<DesktopPasteSearchService>() }
                     single<CleanPasteScheduler> { DesktopCleanPasteScheduler(get(), get(), get()) }
                     single<TaskExecutor> {
                         DesktopTaskExecutor(
@@ -350,7 +352,8 @@ class CrossPaste {
                     }
 
                     // ui component
-                    single<AppWindowManager> { getDesktopAppWindowManager(lazy { get() }, get(), get()) }
+                    single<DesktopAppWindowManager> { getDesktopAppWindowManager(lazy { get() }, get(), get()) }
+                    single<AppWindowManager> { get<DesktopAppWindowManager>() }
                     single<AppTokenService> { DesktopAppTokenService() }
                     single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
                     single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get()) }
@@ -438,7 +441,7 @@ class CrossPaste {
             koin.get<AppLock>().releaseLock()
             logger.info { "AppLock release completed" }
             if (exitMode == ExitMode.MIGRATION) {
-                val appWindowManager = koin.get<AppWindowManager>()
+                val appWindowManager = koin.get<DesktopAppWindowManager>()
                 appWindowManager.showMainWindow = false
             }
             exitApplication()
@@ -455,7 +458,7 @@ class CrossPaste {
             logger.info { "CrossPaste started" }
 
             val appLaunchState = koinApplication.koin.get<AppLaunchState>()
-            val appWindowManager = koinApplication.koin.get<AppWindowManager>()
+            val appWindowManager = koinApplication.koin.get<DesktopAppWindowManager>()
             val platform = currentPlatform()
 
             val isMacos = platform.isMacos()

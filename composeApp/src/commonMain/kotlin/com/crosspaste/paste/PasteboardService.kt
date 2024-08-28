@@ -1,6 +1,5 @@
 package com.crosspaste.paste
 
-import com.crosspaste.app.AppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dao.paste.PasteDao
 import com.crosspaste.dao.paste.PasteData
@@ -13,8 +12,6 @@ interface PasteboardService : PasteboardMonitor {
     val logger: KLogger
 
     var owner: Boolean
-
-    val appWindowManager: AppWindowManager
 
     val pasteDao: PasteDao
 
