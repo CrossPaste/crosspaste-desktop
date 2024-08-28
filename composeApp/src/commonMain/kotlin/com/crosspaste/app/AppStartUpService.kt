@@ -6,7 +6,7 @@ interface AppStartUpService {
 
     fun isAutoStartUp(): Boolean
 
-    fun makeAutoStatUp()
+    fun makeAutoStartUp()
 
     fun removeAutoStartUp()
 }

@@ -44,9 +44,9 @@ class DesktopAppStartUpService(
         }
     }
 
-    override fun makeAutoStatUp() {
+    override fun makeAutoStartUp() {
         if (isProduction) {
-            appStartUpService.makeAutoStatUp()
+            appStartUpService.makeAutoStartUp()
         }
     }
 
@@ -71,7 +71,7 @@ class MacAppStartUpService(private val configManager: ConfigManager) : AppStartU
 
     override fun followConfig() {
         if (configManager.config.enableAutoStartUp) {
-            makeAutoStatUp()
+            makeAutoStartUp()
         } else {
             removeAutoStartUp()
         }
@@ -81,7 +81,7 @@ class MacAppStartUpService(private val configManager: ConfigManager) : AppStartU
         return pathProvider.userHome.resolve("Library/LaunchAgents/$plist").toFile().exists()
     }
 
-    override fun makeAutoStatUp() {
+    override fun makeAutoStartUp() {
         try {
             if (!isAutoStartUp()) {
                 logger.info { "Make auto startup" }
@@ -156,7 +156,7 @@ class WindowsAppStartUpService(
 
     override fun followConfig() {
         if (configManager.config.enableAutoStartUp) {
-            makeAutoStatUp()
+            makeAutoStartUp()
         } else {
             removeAutoStartUp()
         }
@@ -187,7 +187,7 @@ class WindowsAppStartUpService(
         return false
     }
 
-    override fun makeAutoStatUp() {
+    override fun makeAutoStartUp() {
         try {
             if (!isAutoStartUp()) {
                 val command = (
@@ -234,7 +234,7 @@ class LinuxAppStartUpService(private val configManager: ConfigManager) : AppStar
 
     override fun followConfig() {
         if (configManager.config.enableAutoStartUp) {
-            makeAutoStatUp()
+            makeAutoStartUp()
         } else {
             removeAutoStartUp()
         }
@@ -244,7 +244,7 @@ class LinuxAppStartUpService(private val configManager: ConfigManager) : AppStar
         return pathProvider.userHome.resolve(".config/autostart/$desktopFile").toFile().exists()
     }
 
-    override fun makeAutoStatUp() {
+    override fun makeAutoStartUp() {
         try {
             if (!isAutoStartUp()) {
                 logger.info { "Make auto startup" }
