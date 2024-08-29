@@ -27,7 +27,7 @@ class SerializerTest {
             TextPasteItem().apply {
                 this.identifier = TextTypePlugin.TEXT
                 this.text = "testPasteData"
-                this.md5 = codecsUtils.md5ByString(this.text)
+                this.hash = codecsUtils.hashByString(this.text)
             }
 
         val pasteData =
@@ -40,7 +40,7 @@ class SerializerTest {
                     }
                 this.pasteSearchContent = textPasteItem.text.lowercase()
                 this.pasteType = PasteType.TEXT
-                this.md5 = textPasteItem.md5
+                this.hash = textPasteItem.hash
                 this.pasteState = PasteState.LOADED
                 this.createTime = RealmInstant.now()
                 this.appInstanceId = UUID.randomUUID().toString()
@@ -53,11 +53,11 @@ class SerializerTest {
         val newTextPasteItem = PasteCollection.getPasteItem(newPasteData.pasteAppearItem)
         assertTrue(newTextPasteItem is TextPasteItem)
         assertEquals(textPasteItem.text, newTextPasteItem.text)
-        assertEquals(textPasteItem.md5, newTextPasteItem.md5)
+        assertEquals(textPasteItem.hash, newTextPasteItem.hash)
         assertEquals(textPasteItem.identifier, newTextPasteItem.identifier)
         assertEquals(pasteData.pasteSearchContent, newPasteData.pasteSearchContent)
         assertEquals(pasteData.pasteType, newPasteData.pasteType)
-        assertEquals(pasteData.md5, newPasteData.md5)
+        assertEquals(pasteData.hash, newPasteData.hash)
         assertEquals(PasteState.LOADING, newPasteData.pasteState)
         assertNotEquals(pasteData.createTime, newPasteData.createTime)
         assertEquals(pasteData.appInstanceId, newPasteData.appInstanceId)

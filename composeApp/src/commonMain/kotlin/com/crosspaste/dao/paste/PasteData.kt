@@ -58,7 +58,7 @@ class PasteData : RealmObject {
     var size: Long = 0
 
     @Index
-    var md5: String = ""
+    var hash: String = ""
 
     @Index
     @Transient

@@ -32,7 +32,7 @@ object PasteDataSerializer : KSerializer<PasteData> {
             element<Int>("pasteType")
             element<String?>("source")
             element<Long>("size")
-            element<String>("md5")
+            element<String>("hash")
             element<Boolean>("favorite")
             element<RealmSet<PasteLabel>>("labels")
         }
@@ -48,7 +48,7 @@ object PasteDataSerializer : KSerializer<PasteData> {
         var pasteType = 0
         var source: String? = null
         var size = 0L
-        var md5 = ""
+        var hash = ""
         var favorite = false
         var labels: RealmSet<PasteLabel> = realmSetOf()
         loop@ while (true) {
@@ -61,7 +61,7 @@ object PasteDataSerializer : KSerializer<PasteData> {
                 5 -> pasteType = dec.decodeIntElement(descriptor, index)
                 6 -> source = dec.decodeNullableSerializableElement(descriptor, index, String.serializer())
                 7 -> size = dec.decodeLongElement(descriptor, index)
-                8 -> md5 = dec.decodeStringElement(descriptor, index)
+                8 -> hash = dec.decodeStringElement(descriptor, index)
                 9 -> favorite = dec.decodeBooleanElement(descriptor, index)
                 10 -> labels = dec.decodeSerializableElement(descriptor, index, RealmSetKSerializer(PasteLabel.serializer()))
                 else -> break@loop
@@ -82,7 +82,7 @@ object PasteDataSerializer : KSerializer<PasteData> {
                         source,
                         PasteCollection.getPasteItem(pasteAppearContent)?.getSearchContent(),
                     )
-                this.md5 = md5
+                this.hash = hash
                 this.size = size
                 this.createTime = RealmInstant.now()
                 this.pasteState = PasteState.LOADING
@@ -117,7 +117,7 @@ object PasteDataSerializer : KSerializer<PasteData> {
         compositeOutput.encodeIntElement(descriptor, 5, value.pasteType)
         compositeOutput.encodeNullableSerializableElement(descriptor, 6, String.serializer(), value.source)
         compositeOutput.encodeLongElement(descriptor, 7, value.size)
-        compositeOutput.encodeStringElement(descriptor, 8, value.md5)
+        compositeOutput.encodeStringElement(descriptor, 8, value.hash)
         compositeOutput.encodeBooleanElement(descriptor, 9, value.favorite)
         compositeOutput.encodeSerializableElement(descriptor, 10, RealmSetKSerializer(PasteLabel.serializer()), value.labels)
         compositeOutput.endStructure(descriptor)

@@ -105,7 +105,7 @@ class PasteCollector(
                     this.pasteCollection = pasteCollection
                     this.pasteType = PasteType.INVALID
                     this.source = source
-                    this.md5 = ""
+                    this.hash = ""
                     this.appInstanceId = appInfo.appInstanceId
                     this.createTime = RealmInstant.now()
                     this.pasteState = PasteState.LOADING

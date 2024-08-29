@@ -61,7 +61,7 @@ class RealmManagerImpl private constructor(private val config: RealmConfiguratio
 
         private const val NAME = "crosspaste.realm"
 
-        private const val SCHEMA_VALUE: Long = 2
+        private const val SCHEMA_VALUE: Long = 3
 
         fun createRealmManager(userDataPathProvider: UserDataPathProvider): RealmManager {
             val path = userDataPathProvider.resolve(appFileType = AppFileType.DATA)

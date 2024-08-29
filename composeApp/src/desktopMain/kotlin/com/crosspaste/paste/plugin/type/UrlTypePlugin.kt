@@ -57,12 +57,12 @@ class UrlTypePlugin : PasteTypePlugin {
     ) {
         if (transferData is String) {
             val urlBytes = transferData.toByteArray()
-            val md5 = codecsUtils.md5(urlBytes)
+            val hash = codecsUtils.hash(urlBytes)
             val update: (PasteItem, MutableRealm) -> Unit = { pasteItem, realm ->
                 realm.query(UrlPasteItem::class, "id == $0", pasteItem.id).first().find()?.apply {
                     this.url = transferData
                     this.size = urlBytes.size.toLong()
-                    this.md5 = md5
+                    this.hash = hash
                 }
             }
             pasteCollector.updateCollectItem(itemIndex, this::class, update)

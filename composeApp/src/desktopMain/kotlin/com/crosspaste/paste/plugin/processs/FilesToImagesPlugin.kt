@@ -38,7 +38,7 @@ class FilesToImagesPlugin(
                     val fileInfoTree = pasteAppearItem.fileInfoTree
                     val count = pasteAppearItem.count
                     val size = pasteAppearItem.size
-                    val md5 = pasteAppearItem.md5
+                    val hash = pasteAppearItem.hash
                     pasteAppearItem.clear(realm, userDataPathProvider, clearResource = false)
                     ImagesPasteItem().apply {
                         this.identifiers = identifierList
@@ -46,7 +46,7 @@ class FilesToImagesPlugin(
                         this.fileInfoTree = fileInfoTree
                         this.count = count
                         this.size = size
-                        this.md5 = md5
+                        this.hash = hash
                     }
                 } else {
                     pasteAppearItem

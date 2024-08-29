@@ -33,7 +33,7 @@ class UrlPasteItem : RealmObject, PasteItem, PasteUrl {
 
     override var size: Long = 0L
 
-    override var md5: String = ""
+    override var hash: String = ""
 
     @Index
     @Transient
@@ -55,11 +55,11 @@ class UrlPasteItem : RealmObject, PasteItem, PasteUrl {
 
     override fun update(
         data: Any,
-        md5: String,
+        hash: String,
     ) {
         (data as? String)?.let { url ->
             this.url = url
-            this.md5 = md5
+            this.hash = hash
         }
     }
 

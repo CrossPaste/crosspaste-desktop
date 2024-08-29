@@ -58,7 +58,7 @@ class HtmlTypePlugin(private val appInfo: AppInfo) : PasteTypePlugin {
         if (transferData is String) {
             val html = extractHtml(transferData)
             val htmlBytes = html.toByteArray()
-            val md5 = codecsUtils.md5(htmlBytes)
+            val hash = codecsUtils.hash(htmlBytes)
             val relativePath =
                 DesktopFileUtils.createPasteRelativePath(
                     appInstanceId = appInfo.appInstanceId,
@@ -70,7 +70,7 @@ class HtmlTypePlugin(private val appInfo: AppInfo) : PasteTypePlugin {
                     this.html = html
                     this.relativePath = relativePath
                     this.size = htmlBytes.size.toLong()
-                    this.md5 = md5
+                    this.hash = hash
                 }
             }
             pasteCollector.updateCollectItem(itemIndex, this::class, update)

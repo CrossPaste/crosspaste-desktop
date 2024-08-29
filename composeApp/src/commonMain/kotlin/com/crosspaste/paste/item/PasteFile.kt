@@ -6,16 +6,16 @@ interface PasteFile {
 
     fun getFilePath(): Path
 
-    fun getMd5(): String
+    fun getHash(): String
 }
 
-class PasteFileImpl(private val path: Path, private val md5: String) : PasteFile {
+class PasteFileImpl(private val path: Path, private val hash: String) : PasteFile {
 
     override fun getFilePath(): Path {
         return path
     }
 
-    override fun getMd5(): String {
-        return md5
+    override fun getHash(): String {
+        return hash
     }
 }

@@ -79,9 +79,9 @@ fun PasteTextEditContentView(pasteData: PasteData) {
                 ) {
                     if (text != (it as PasteText).text && text.isNotEmpty()) {
                         val textBytes = text.toByteArray()
-                        val md5 = codecsUtils.md5(textBytes)
+                        val hash = codecsUtils.hash(textBytes)
                         pasteDao.update { realm ->
-                            textUpdater.updateText(text, textBytes.size.toLong(), md5, it, realm)
+                            textUpdater.updateText(text, textBytes.size.toLong(), hash, it, realm)
                         }
                     }
                 }

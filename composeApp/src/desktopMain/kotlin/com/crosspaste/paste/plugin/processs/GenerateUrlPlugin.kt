@@ -22,7 +22,7 @@ object GenerateUrlPlugin : PasteProcessPlugin {
                             this.identifier = it.identifier
                             this.url = it.text
                             this.size = it.size
-                            this.md5 = it.md5
+                            this.hash = it.hash
                         }
                 }
             }

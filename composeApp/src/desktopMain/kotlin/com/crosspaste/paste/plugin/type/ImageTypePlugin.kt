@@ -112,7 +112,7 @@ class ImageTypePlugin(
                 val fileInfoTreeJsonString = DesktopJsonUtils.JSON.encodeToString(mapOf(name to fileTree))
                 val count = fileTree.getCount()
                 val size = fileTree.size
-                val md5 = fileTree.md5
+                val hash = fileTree.hash
 
                 val update: (PasteItem, MutableRealm) -> Unit = { pasteItem, realm ->
                     realm.query(ImagesPasteItem::class, "id == $0", pasteItem.id).first().find()?.apply {
@@ -120,7 +120,7 @@ class ImageTypePlugin(
                         this.fileInfoTree = fileInfoTreeJsonString
                         this.count = count
                         this.size = size
-                        this.md5 = md5
+                        this.hash = hash
                     }
                 }
                 pasteCollector.updateCollectItem(itemIndex, this::class, update)

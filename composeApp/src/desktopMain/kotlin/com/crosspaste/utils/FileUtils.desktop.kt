@@ -76,18 +76,18 @@ object DesktopFileUtils : FileUtils {
 
     private fun getSingleFileInfoTree(path: Path): FileInfoTree {
         val size = getFileSize(path)
-        val md5 = getFileMd5(path)
-        return SingleFileInfoTree(size, md5)
+        val hash = getFileHash(path)
+        return SingleFileInfoTree(size, hash)
     }
 
     override fun getFileSize(path: Path): Long {
         return path.toFile().length()
     }
 
-    override fun getFileMd5(path: Path): String {
+    override fun getFileHash(path: Path): String {
         val file: File = path.toFile()
         val byteSource = Files.asByteSource(file)
-        val hc = byteSource.hash(Hashing.sha256())
+        val hc = byteSource.hash(Hashing.goodFastHash(128))
         return hc.toString()
     }
 
