@@ -6,7 +6,6 @@ import com.crosspaste.presist.FilesChunk
 import com.crosspaste.presist.SingleFileInfoTree
 import com.google.common.hash.Hashing
 import com.google.common.io.Files
-import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.utils.io.*
 import kotlinx.datetime.LocalDateTime
 import okio.Path
@@ -23,8 +22,6 @@ actual fun getFileUtils(): FileUtils {
 }
 
 object DesktopFileUtils : FileUtils {
-
-    private val logger = KotlinLogging.logger {}
 
     override val dateUtils = getDateUtils()
 
@@ -94,102 +91,15 @@ object DesktopFileUtils : FileUtils {
         return hc.toString()
     }
 
-    override fun existFile(path: Path): Boolean {
-        return path.toFile().exists()
-    }
-
-    override fun deleteFile(path: Path): Boolean {
-        return path.toFile().delete()
-    }
-
-    override fun createFile(path: Path): Boolean {
-        return if (path.toFile().exists()) {
-            false
-        } else {
-            try {
-                path.toFile().createNewFile()
-            } catch (e: Exception) {
-                logger.warn(e) { "Failed to create file: $path" }
-                false
-            }
-        }
-    }
-
-    override fun createDir(path: Path): Boolean {
-        return if (!path.toFile().exists()) {
-            path.toFile().mkdirs()
-        } else {
-            true
-        }
-    }
-
-    override fun copyPath(
-        src: Path,
-        dest: Path,
-    ): Boolean {
-        return if (src.isDirectory) {
-            copyDir(src, dest)
-        } else {
-            copyFile(src, dest)
-        }
-    }
-
-    private fun copyFile(
-        src: Path,
-        dest: Path,
-    ): Boolean {
-        return try {
-            Files.copy(src.toFile(), dest.toFile())
-            true
-        } catch (e: Exception) {
-            logger.warn(e) { "Failed to copy file: $src to $dest" }
-            false
-        }
-    }
-
-    private fun copyDir(
-        src: Path,
-        dest: Path,
-    ): Boolean {
-        val newDirFile = dest.toFile()
-        return if (newDirFile.mkdirs()) {
-            src.toFile().listFiles()?.forEach {
-                if (!copyPath(it.toOkioPath(), dest.resolve(it.name))) {
-                    return false
-                }
-            }
-            true
-        } else {
-            logger.warn { "Failed to create directory: $newDirFile" }
-            false
-        }
-    }
-
-    override fun moveFile(
-        src: Path,
-        dest: Path,
-    ): Boolean {
-        return try {
-            Files.move(src.toFile(), dest.toFile())
-            true
-        } catch (e: Exception) {
-            false
-        }
-    }
-
     override fun createEmptyPasteFile(
         path: Path,
         length: Long,
-    ): Boolean {
-        try {
+    ): Result<Unit> =
+        runCatching {
             RandomAccessFile(path.toFile(), "rw").use { file ->
                 file.setLength(length)
             }
-            return true
-        } catch (e: Exception) {
-            return false
         }
-    }
 
     override suspend fun writeFile(
         path: Path,

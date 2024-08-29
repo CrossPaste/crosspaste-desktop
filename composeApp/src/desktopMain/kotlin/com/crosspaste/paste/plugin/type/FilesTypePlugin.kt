@@ -126,7 +126,7 @@ class FilesTypePlugin(
                             AppFileType.FILE,
                             userDataPathProvider,
                         )
-                    if (copyPath(path, filePath)) {
+                    if (copyPath(path, filePath).isSuccess) {
                         fileInfoTrees[file.name] = DesktopFileUtils.getFileInfoTree(filePath)
                     } else {
                         throw IllegalStateException("Failed to copy file")

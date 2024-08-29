@@ -29,7 +29,7 @@ class FilesToImagesPlugin(
                     pasteAppearItem.relativePathList.map {
                         val srcPath = userDataPathProvider.resolve(fileBasePath, it, autoCreate = false, isFile = true)
                         val destPath = userDataPathProvider.resolve(imageBasePath, it, autoCreate = true, isFile = true)
-                        if (!DesktopFileUtils.moveFile(srcPath, destPath)) {
+                        if (DesktopFileUtils.moveFile(srcPath, destPath).isFailure) {
                             throw IllegalStateException("Failed to move file from $srcPath to $destPath")
                         }
                     }
