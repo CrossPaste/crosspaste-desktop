@@ -104,15 +104,17 @@ class PasteRealm(
         }
     }
 
-    private fun MutableRealm.markDeleteSameMd5(
+    private fun MutableRealm.markDeleteSameHash(
         newPasteDataId: ObjectId,
-        newPasteDataMd5: String,
+        newPasteDataType: Int,
+        newPasteDataHash: String,
     ): List<ObjectId> {
         val tasks = mutableListOf<ObjectId>()
         query(
             PasteData::class,
-            "md5 == $0 AND createTime > $1 AND id != $2 AND pasteState != $3",
-            newPasteDataMd5,
+            "hash == $0 AND pasteType == $1 AND createTime > $2 AND id != $3 AND pasteState != $4",
+            newPasteDataHash,
+            newPasteDataType,
             dateUtils.getPrevDay(),
             newPasteDataId,
             PasteState.DELETED,
@@ -281,7 +283,7 @@ class PasteRealm(
                     while (iterator.hasNext()) {
                         val anyValue = iterator.next()
                         PasteCollection.getPasteItem(anyValue)?.let {
-                            if (it.md5 == "") {
+                            if (it.hash == "") {
                                 iterator.remove()
                                 it.clear(this, userDataPathProvider)
                             }
@@ -319,7 +321,7 @@ class PasteRealm(
                             pasteData.source,
                             getSearchContent(firstItem, remainingItems),
                         )
-                    pasteData.md5 = firstItem.md5
+                    pasteData.hash = firstItem.hash
                     pasteData.size = size
                     pasteData.pasteState = PasteState.LOADED
 
@@ -332,7 +334,7 @@ class PasteRealm(
                     ) {
                         tasks.add(copyToRealm(createTask(pasteData.id, TaskType.SYNC_PASTE_TASK, SyncExtraInfo())).taskId)
                     }
-                    tasks.addAll(markDeleteSameMd5(pasteData.id, pasteData.md5))
+                    tasks.addAll(markDeleteSameHash(pasteData.id, pasteData.pasteType, pasteData.hash))
                     return@write tasks
                 }
             }
@@ -372,7 +374,7 @@ class PasteRealm(
             if (!existFile) {
                 pasteData.updatePasteState(PasteState.LOADED)
                 copyToRealm(pasteData)
-                tasks.addAll(markDeleteSameMd5(pasteData.id, pasteData.md5))
+                tasks.addAll(markDeleteSameHash(pasteData.id, pasteData.pasteType, pasteData.hash))
                 if (pasteData.pasteType == PasteType.HTML) {
                     tasks.add(copyToRealm(createTask(pasteData.id, TaskType.HTML_TO_IMAGE_TASK)).taskId)
                 }
@@ -407,7 +409,7 @@ class PasteRealm(
         realm.write {
             query(PasteData::class, "id == $0", id).first().find()?.let { pasteData ->
                 pasteData.updatePasteState(PasteState.LOADED)
-                tasks.addAll(markDeleteSameMd5(pasteData.id, pasteData.md5))
+                tasks.addAll(markDeleteSameHash(pasteData.id, pasteData.pasteType, pasteData.hash))
                 return@write pasteData
             }
         }?.let { pasteData ->

@@ -1,5 +1,7 @@
 package com.crosspaste.utils
 
+import com.google.common.hash.Hashing
+import com.google.common.io.ByteSource
 import okio.Path
 import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
@@ -28,13 +30,13 @@ object DesktopCodecsUtils : CodecsUtils {
         return Base64.getMimeDecoder().decode(string)
     }
 
-    override fun md5(bytes: ByteArray): String {
-        val md = MessageDigest.getInstance("MD5")
-        val digest = md.digest(bytes)
-        return digest.fold("") { str, it -> str + "%02x".format(it) }
+    override fun hash(bytes: ByteArray): String {
+        return ByteSource.wrap(bytes)
+            .hash(Hashing.goodFastHash(128))
+            .toString()
     }
 
-    override fun md5ByArray(array: Array<String>): String {
+    override fun hashByArray(array: Array<String>): String {
         if (array.isEmpty()) {
             throw IllegalArgumentException("Array is empty")
         }
@@ -45,12 +47,12 @@ object DesktopCodecsUtils : CodecsUtils {
             array.forEach {
                 outputStream.write(it.toByteArray())
             }
-            return md5(outputStream.toByteArray())
+            return hash(outputStream.toByteArray())
         }
     }
 
-    override fun md5ByString(string: String): String {
-        return md5(string.toByteArray())
+    override fun hashByString(string: String): String {
+        return hash(string.toByteArray())
     }
 
     override fun sha256(path: Path): String {

@@ -7,7 +7,7 @@ interface TextUpdater {
     fun updateText(
         newText: String,
         size: Long,
-        md5: String,
+        hash: String,
         pasteItem: PasteItem,
         realm: MutableRealm,
     )

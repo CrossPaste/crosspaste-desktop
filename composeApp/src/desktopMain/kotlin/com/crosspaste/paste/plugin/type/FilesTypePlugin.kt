@@ -136,7 +136,7 @@ class FilesTypePlugin(
 
             val relativePathRealmList = relativePathList.toRealmList()
             val fileInfoTreeJsonString = DesktopJsonUtils.JSON.encodeToString(fileInfoTrees)
-            val md5 = codecsUtils.md5ByArray(files.mapNotNull { fileInfoTrees[it.name]?.md5 }.toTypedArray())
+            val hash = codecsUtils.hashByArray(files.mapNotNull { fileInfoTrees[it.name]?.hash }.toTypedArray())
             val count = fileInfoTrees.map { it.value.getCount() }.sum()
             val size = fileInfoTrees.map { it.value.size }.sum()
 
@@ -147,7 +147,7 @@ class FilesTypePlugin(
                     this.count = count
                     this.basePath = if (useRefCopyFiles) parentPath.toString() else null
                     this.size = size
-                    this.md5 = md5
+                    this.hash = hash
                 }
             }
             pasteCollector.updateCollectItem(itemIndex, this::class, update)

@@ -14,11 +14,11 @@ interface CodecsUtils {
 
     fun base64mimeDecode(string: String): ByteArray
 
-    fun md5(bytes: ByteArray): String
+    fun hash(bytes: ByteArray): String
 
-    fun md5ByArray(array: Array<String>): String
+    fun hashByArray(array: Array<String>): String
 
-    fun md5ByString(string: String): String
+    fun hashByString(string: String): String
 
     fun sha256(path: Path): String
 }

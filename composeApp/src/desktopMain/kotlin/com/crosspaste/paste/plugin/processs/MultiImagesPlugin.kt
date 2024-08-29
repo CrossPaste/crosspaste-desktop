@@ -32,16 +32,16 @@ class MultiImagesPlugin(private val userDataPathProvider: UserDataPathProvider) 
             val fileInfoMapJsonString = DesktopJsonUtils.JSON.encodeToString(fileInfoMap)
             val count = fileInfoMap.map { it.value.getCount() }.sum()
             val size = fileInfoMap.map { it.value.size }.sum()
-            val md5 =
-                pasteItems.map { it as FilesPasteItem }.map { it.md5 }
-                    .toTypedArray().let { codecsUtils.md5ByArray(it) }
+            val hash =
+                pasteItems.map { it as FilesPasteItem }.map { it.hash }
+                    .toTypedArray().let { codecsUtils.hashByArray(it) }
             pasteItems.forEach { it.clear(realm, userDataPathProvider, clearResource = false) }
             return ImagesPasteItem().apply {
                 this.relativePathList = relativePathList
                 this.fileInfoTree = fileInfoMapJsonString
                 this.count = count
                 this.size = size
-                this.md5 = md5
+                this.hash = hash
             }.let { listOf(it) }
         }
     }

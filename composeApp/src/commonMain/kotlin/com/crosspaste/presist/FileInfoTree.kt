@@ -12,7 +12,7 @@ interface FileInfoTree {
 
     val size: Long
 
-    val md5: String
+    val hash: String
 
     fun isFile(): Boolean
 
@@ -26,7 +26,7 @@ interface FileInfoTree {
 class DirFileInfoTree(
     private val tree: Map<String, FileInfoTree>,
     override val size: Long,
-    override val md5: String,
+    override val hash: String,
 ) : FileInfoTree {
     @Transient
     private val sortTree: List<Pair<String, FileInfoTree>> =
@@ -56,7 +56,7 @@ class DirFileInfoTree(
 @SerialName("file")
 class SingleFileInfoTree(
     override val size: Long,
-    override val md5: String,
+    override val hash: String,
 ) : FileInfoTree {
 
     override fun isFile(): Boolean {
@@ -64,7 +64,7 @@ class SingleFileInfoTree(
     }
 
     override fun getPasteFileList(path: Path): List<PasteFile> {
-        return listOf(PasteFileImpl(path, md5))
+        return listOf(PasteFileImpl(path, hash))
     }
 
     override fun getCount(): Long {
@@ -80,7 +80,7 @@ class FileInfoTreeBuilder {
 
     private var size = 0L
 
-    private val md5List = mutableListOf<String>()
+    private val hashList = mutableListOf<String>()
 
     fun addFileInfoTree(
         name: String,
@@ -88,16 +88,16 @@ class FileInfoTreeBuilder {
     ) {
         tree[name] = fileInfoTree
         size += fileInfoTree.size
-        md5List.add(fileInfoTree.md5)
+        hashList.add(fileInfoTree.hash)
     }
 
     fun build(path: Path): FileInfoTree {
-        val md5 =
-            if (md5List.isEmpty()) {
-                codecsUtils.md5ByString(path.name)
+        val hash =
+            if (hashList.isEmpty()) {
+                codecsUtils.hashByString(path.name)
             } else {
-                codecsUtils.md5ByArray(md5List.toTypedArray())
+                codecsUtils.hashByArray(hashList.toTypedArray())
             }
-        return DirFileInfoTree(tree, size, md5)
+        return DirFileInfoTree(tree, size, hash)
     }
 }

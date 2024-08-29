@@ -55,9 +55,9 @@ class TextTypePlugin : PasteTypePlugin, TextUpdater {
     ) {
         if (transferData is String) {
             val textBytes = transferData.toByteArray()
-            val md5 = codecsUtils.md5(textBytes)
+            val hash = codecsUtils.hash(textBytes)
             val update: (PasteItem, MutableRealm) -> Unit = { pasteItem, realm ->
-                updateText(transferData, textBytes.size.toLong(), md5, pasteItem, realm)
+                updateText(transferData, textBytes.size.toLong(), hash, pasteItem, realm)
             }
             pasteCollector.updateCollectItem(itemIndex, this::class, update)
         }
@@ -66,14 +66,14 @@ class TextTypePlugin : PasteTypePlugin, TextUpdater {
     override fun updateText(
         newText: String,
         size: Long,
-        md5: String,
+        hash: String,
         pasteItem: PasteItem,
         realm: MutableRealm,
     ) {
         realm.query(TextPasteItem::class, "id == $0", pasteItem.id).first().find()?.apply {
             this.text = newText
             this.size = size
-            this.md5 = md5
+            this.hash = hash
         }
     }
 

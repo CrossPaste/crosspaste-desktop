@@ -29,14 +29,14 @@ class MultFilesPlugin(private val userDataPathProvider: UserDataPathProvider) : 
                     .flatMap { it.getFileInfoTreeMap().entries }
                     .associate { it.key to it.value }
             val fileInfoMapJsonString = DesktopJsonUtils.JSON.encodeToString(fileInfoMap)
-            val md5 =
-                pasteItems.map { it as FilesPasteItem }.map { it.md5 }
-                    .toTypedArray().let { codecsUtils.md5ByArray(it) }
+            val hash =
+                pasteItems.map { it as FilesPasteItem }.map { it.hash }
+                    .toTypedArray().let { codecsUtils.hashByArray(it) }
             pasteItems.forEach { it.clear(realm, userDataPathProvider, clearResource = false) }
             return FilesPasteItem().apply {
                 this.relativePathList = relativePathList
                 this.fileInfoTree = fileInfoMapJsonString
-                this.md5 = md5
+                this.hash = hash
             }.let { listOf(it) }
         }
     }

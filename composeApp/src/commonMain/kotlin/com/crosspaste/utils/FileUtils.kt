@@ -70,7 +70,7 @@ interface FileUtils {
 
     fun getFileSize(path: Path): Long
 
-    fun getFileMd5(path: Path): String
+    fun getFileHash(path: Path): String
 
     fun existFile(path: Path): Boolean {
         return FileSystem.SYSTEM.exists(path)

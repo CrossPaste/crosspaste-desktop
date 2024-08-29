@@ -16,7 +16,7 @@ interface PasteItem {
 
     var favorite: Boolean
 
-    var md5: String
+    var hash: String
 
     var size: Long
 
@@ -26,7 +26,7 @@ interface PasteItem {
 
     fun update(
         data: Any,
-        md5: String,
+        hash: String,
     )
 
     fun clear(

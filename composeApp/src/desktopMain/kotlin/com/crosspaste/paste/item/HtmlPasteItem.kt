@@ -41,7 +41,7 @@ class HtmlPasteItem : RealmObject, PasteItem, PasteHtml {
 
     override var size: Long = 0L
 
-    override var md5: String = ""
+    override var hash: String = ""
 
     @Index
     @Transient
@@ -80,11 +80,11 @@ class HtmlPasteItem : RealmObject, PasteItem, PasteHtml {
 
     override fun update(
         data: Any,
-        md5: String,
+        hash: String,
     ) {
         (data as? String)?.let { html ->
             this.html = html
-            this.md5 = md5
+            this.hash = hash
         }
     }
 

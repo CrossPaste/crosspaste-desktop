@@ -51,7 +51,7 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
 
     override var size: Long = 0L
 
-    override var md5: String = ""
+    override var hash: String = ""
 
     @Index
     @Transient
@@ -98,7 +98,7 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
 
     override fun update(
         data: Any,
-        md5: String,
+        hash: String,
     ) {}
 
     override fun clear(
