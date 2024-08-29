@@ -6,6 +6,7 @@ import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.FilesChunk
 import io.ktor.utils.io.*
 import kotlinx.datetime.LocalDateTime
+import okio.FileSystem
 import okio.Path
 
 expect fun getFileUtils(): FileUtils
@@ -71,28 +72,73 @@ interface FileUtils {
 
     fun getFileMd5(path: Path): String
 
-    fun existFile(path: Path): Boolean
+    fun existFile(path: Path): Boolean {
+        return FileSystem.SYSTEM.exists(path)
+    }
 
-    fun deleteFile(path: Path): Boolean
+    fun deleteFile(path: Path): Result<Unit> =
+        runCatching {
+            FileSystem.SYSTEM.delete(path)
+        }
 
-    fun createFile(path: Path): Boolean
+    fun createFile(
+        path: Path,
+        mustCreate: Boolean = false,
+    ): Result<Unit> =
+        runCatching {
+            FileSystem.SYSTEM.write(path, mustCreate = mustCreate) {
+                // Create an empty file
+            }
+        }
 
-    fun createDir(path: Path): Boolean
+    fun createDir(
+        path: Path,
+        mustCreate: Boolean = false,
+    ): Result<Unit> =
+        runCatching {
+            FileSystem.SYSTEM.createDirectories(path, mustCreate = mustCreate)
+        }
 
     fun copyPath(
         src: Path,
         dest: Path,
-    ): Boolean
+    ): Result<Unit> =
+        runCatching {
+            if (FileSystem.SYSTEM.metadata(src).isDirectory) {
+                copyDirectory(src, dest)
+            } else {
+                FileSystem.SYSTEM.copy(src, dest)
+            }
+        }
+
+    private fun copyDirectory(
+        src: Path,
+        dest: Path,
+    ) {
+        FileSystem.SYSTEM.createDirectory(dest)
+        FileSystem.SYSTEM.list(src).forEach { item ->
+            val newSrc = src / item.name
+            val newDest = dest / item.name
+            if (FileSystem.SYSTEM.metadata(newSrc).isDirectory) {
+                copyDirectory(newSrc, newDest)
+            } else {
+                FileSystem.SYSTEM.copy(newSrc, newDest)
+            }
+        }
+    }
 
     fun moveFile(
         src: Path,
         dest: Path,
-    ): Boolean
+    ): Result<Unit> =
+        runCatching {
+            FileSystem.SYSTEM.atomicMove(src, dest)
+        }
 
     fun createEmptyPasteFile(
         path: Path,
         length: Long,
-    ): Boolean
+    ): Result<Unit>
 
     suspend fun writeFile(
         path: Path,

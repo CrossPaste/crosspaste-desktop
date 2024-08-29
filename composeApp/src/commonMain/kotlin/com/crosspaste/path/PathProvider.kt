@@ -34,7 +34,7 @@ interface PathProvider {
     }
 
     fun autoCreateDir(path: Path) {
-        if (!fileUtils.createDir(path)) {
+        if (fileUtils.createDir(path).isFailure) {
             throw PasteException(
                 StandardErrorCode.CANT_CREATE_DIR.toErrorCode(),
                 "Failed to create directory: $path",

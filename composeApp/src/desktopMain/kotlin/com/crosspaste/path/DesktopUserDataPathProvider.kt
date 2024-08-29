@@ -167,7 +167,7 @@ class DesktopUserDataPathProvider(private val configManager: ConfigManager) : Us
         if (fileInfoTree.isFile()) {
             val filePath = basePath.resolve(name)
             if (isPull) {
-                if (!fileUtils.createEmptyPasteFile(filePath, fileInfoTree.size)) {
+                if (fileUtils.createEmptyPasteFile(filePath, fileInfoTree.size).isFailure) {
                     throw PasteException(
                         StandardErrorCode.CANT_CREATE_FILE.toErrorCode(),
                         "Failed to create file: $filePath",
