@@ -4,7 +4,7 @@ import com.crosspaste.config.ConfigManager
 import com.crosspaste.dao.task.PasteTaskDao
 import com.crosspaste.dao.task.TaskType
 import com.crosspaste.task.TaskExecutor
-import com.crosspaste.utils.TaskUtils
+import com.crosspaste.utils.DesktopTaskUtils
 import com.crosspaste.utils.cpuDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
@@ -27,7 +27,7 @@ class DesktopCleanPasteScheduler(
         coroutineScope.launch {
             while (isActive) {
                 if (configManager.config.isExpirationCleanup) {
-                    val taskId = taskDao.createTask(TaskUtils.createTask(null, TaskType.CLEAN_PASTE_TASK))
+                    val taskId = taskDao.createTask(DesktopTaskUtils.createTask(null, TaskType.CLEAN_PASTE_TASK))
                     taskExecutor.submitTask(taskId)
                     logger.info { "submit clean paste task: $taskId" }
                 }

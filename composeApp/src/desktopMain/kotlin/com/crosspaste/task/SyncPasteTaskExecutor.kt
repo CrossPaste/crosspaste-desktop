@@ -11,8 +11,8 @@ import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.extra.SyncExtraInfo
 import com.crosspaste.utils.DesktopJsonUtils
-import com.crosspaste.utils.TaskUtils
-import com.crosspaste.utils.TaskUtils.createFailurePasteTaskResult
+import com.crosspaste.utils.DesktopTaskUtils
+import com.crosspaste.utils.DesktopTaskUtils.createFailurePasteTaskResult
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -35,7 +35,7 @@ class SyncPasteTaskExecutor(
     override val taskType: Int = TaskType.SYNC_PASTE_TASK
 
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
-        val syncExtraInfo: SyncExtraInfo = TaskUtils.getExtraInfo(pasteTask, SyncExtraInfo::class)
+        val syncExtraInfo: SyncExtraInfo = DesktopTaskUtils.getExtraInfo(pasteTask, SyncExtraInfo::class)
         val mapResult =
             pasteDao.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
                 val deferredResults: MutableList<Deferred<Pair<String, ClientApiResult>>> = mutableListOf()

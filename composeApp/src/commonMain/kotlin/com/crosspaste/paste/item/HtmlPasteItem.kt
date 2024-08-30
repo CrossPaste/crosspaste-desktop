@@ -5,8 +5,8 @@ import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.dao.paste.PasteState
 import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.presist.DesktopOneFilePersist
-import com.crosspaste.utils.DesktopFileUtils
+import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.getHtmlUtils
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.Index
@@ -15,7 +15,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import okio.Path
-import org.jsoup.Jsoup
 import org.mongodb.kbson.BsonObjectId
 import org.mongodb.kbson.ObjectId
 
@@ -23,7 +22,10 @@ import org.mongodb.kbson.ObjectId
 @SerialName("html")
 class HtmlPasteItem : RealmObject, PasteItem, PasteHtml {
 
-    companion object {}
+    companion object {
+        val fileUtils = getFileUtils()
+        val htmlUtils = getHtmlUtils()
+    }
 
     @PrimaryKey
     @Transient
@@ -59,7 +61,7 @@ class HtmlPasteItem : RealmObject, PasteItem, PasteHtml {
         pasteId: Long,
     ) {
         relativePath =
-            DesktopFileUtils.createPasteRelativePath(
+            fileUtils.createPasteRelativePath(
                 appInstanceId = appInstanceId,
                 pasteId = pasteId,
                 fileName = "html2Image.png",
@@ -75,7 +77,7 @@ class HtmlPasteItem : RealmObject, PasteItem, PasteHtml {
     }
 
     override fun getSearchContent(): String {
-        return Jsoup.parse(html).text().lowercase()
+        return htmlUtils.getHtmlText(html).lowercase()
     }
 
     override fun update(
@@ -94,7 +96,7 @@ class HtmlPasteItem : RealmObject, PasteItem, PasteHtml {
         clearResource: Boolean,
     ) {
         if (clearResource) {
-            DesktopOneFilePersist(getHtmlImagePath(userDataPathProvider)).delete()
+            fileUtils.deleteFile(getHtmlImagePath(userDataPathProvider))
         }
         realm.delete(this)
     }

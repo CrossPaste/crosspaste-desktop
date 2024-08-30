@@ -6,8 +6,8 @@ import com.crosspaste.dao.task.TaskType
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.task.extra.BaseExtraInfo
-import com.crosspaste.utils.TaskUtils
-import com.crosspaste.utils.TaskUtils.createFailurePasteTaskResult
+import com.crosspaste.utils.DesktopTaskUtils
+import com.crosspaste.utils.DesktopTaskUtils.createFailurePasteTaskResult
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 class DeletePasteTaskExecutor(private val pasteDao: PasteDao) : SingleTypeTaskExecutor {
@@ -26,7 +26,7 @@ class DeletePasteTaskExecutor(private val pasteDao: PasteDao) : SingleTypeTaskEx
                 retryHandler = { false },
                 startTime = pasteTask.modifyTime,
                 fails = listOf(createFailureResult(StandardErrorCode.DELETE_TASK_FAIL, e)),
-                extraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class),
+                extraInfo = DesktopTaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class),
             )
         }
     }

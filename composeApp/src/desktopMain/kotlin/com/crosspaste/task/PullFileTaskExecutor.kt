@@ -20,9 +20,9 @@ import com.crosspaste.presist.FilesIndexBuilder
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.extra.PullExtraInfo
 import com.crosspaste.utils.DateUtils
+import com.crosspaste.utils.DesktopTaskUtils
+import com.crosspaste.utils.DesktopTaskUtils.createFailurePasteTaskResult
 import com.crosspaste.utils.FileUtils
-import com.crosspaste.utils.TaskUtils
-import com.crosspaste.utils.TaskUtils.createFailurePasteTaskResult
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
@@ -54,7 +54,7 @@ class PullFileTaskExecutor(
     override val taskType: Int = TaskType.PULL_FILE_TASK
 
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
-        val pullExtraInfo: PullExtraInfo = TaskUtils.getExtraInfo(pasteTask, PullExtraInfo::class)
+        val pullExtraInfo: PullExtraInfo = DesktopTaskUtils.getExtraInfo(pasteTask, PullExtraInfo::class)
 
         pasteDao.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
             val fileItems = pasteData.getPasteAppearItems().filter { it is PasteFiles }

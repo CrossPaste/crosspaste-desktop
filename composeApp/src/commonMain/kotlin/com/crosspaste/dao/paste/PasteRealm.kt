@@ -14,9 +14,9 @@ import com.crosspaste.task.TaskExecutor
 import com.crosspaste.task.extra.SyncExtraInfo
 import com.crosspaste.utils.LoggerExtension.logExecutionTime
 import com.crosspaste.utils.LoggerExtension.logSuspendExecutionTime
-import com.crosspaste.utils.TaskUtils.createTask
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.getTaskUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.Realm
@@ -40,9 +40,13 @@ class PasteRealm(
 
     val logger = KotlinLogging.logger {}
 
-    private val dateUtils = getDateUtils()
+    companion object {
+        private val dateUtils = getDateUtils()
 
-    private val fileUtils = getFileUtils()
+        private val fileUtils = getFileUtils()
+
+        private val taskUtils = getTaskUtils()
+    }
 
     private val taskExecutor by lazy { lazyTaskExecutor.value }
 
@@ -91,7 +95,9 @@ class PasteRealm(
     override suspend fun markDeletePasteData(id: ObjectId) {
         taskExecutor.submitTasks(
             realm.write {
-                val markDeletePasteData = query(PasteData::class, "id == $0", id).first().find()?.let { listOf(it) } ?: emptyList()
+                val markDeletePasteData =
+                    query(PasteData::class, "id == $0", id)
+                        .first().find()?.let { listOf(it) } ?: emptyList()
                 doMarkDeletePasteData(markDeletePasteData)
             },
         )
@@ -100,7 +106,7 @@ class PasteRealm(
     private fun MutableRealm.doMarkDeletePasteData(markDeletePasteData: List<PasteData>): List<ObjectId> {
         return markDeletePasteData.map {
             it.updatePasteState(PasteState.DELETED)
-            copyToRealm(createTask(it.id, TaskType.DELETE_PASTE_TASK)).taskId
+            copyToRealm(taskUtils.createTask(it.id, TaskType.DELETE_PASTE_TASK)).taskId
         }
     }
 
@@ -133,7 +139,12 @@ class PasteRealm(
 
     override fun getSize(allOrFavorite: Boolean): Long {
         return if (allOrFavorite) {
-            realm.query(PasteData::class, "pasteState = $0 AND pasteState != $1", PasteState.LOADED, PasteState.DELETED)
+            realm.query(
+                PasteData::class,
+                "pasteState = $0 AND pasteState != $1",
+                PasteState.LOADED,
+                PasteState.DELETED,
+            )
                 .sum<Long>("size").find()
         } else {
             realm.query(
@@ -155,7 +166,12 @@ class PasteRealm(
     }
 
     override fun getSizeByTimeLessThan(time: RealmInstant): Long {
-        return realm.query(PasteData::class, "createTime < $0 AND pasteState != $1", time, PasteState.DELETED)
+        return realm.query(
+            PasteData::class,
+            "createTime < $0 AND pasteState != $1",
+            time,
+            PasteState.DELETED,
+        )
             .sum<Long>("size").find()
     }
 
@@ -200,26 +216,62 @@ class PasteRealm(
     }
 
     private fun getFavoritePasteResourceInfo(): PasteResourceInfo {
-        val query = realm.query(PasteData::class, "favorite == $0 AND pasteState != $1", true, PasteState.DELETED)
+        val query =
+            realm.query(
+                PasteData::class,
+                "favorite == $0 AND pasteState != $1",
+                true,
+                PasteState.DELETED,
+            )
         val size = query.sum<Long>("size").find()
 
-        val textQuery = realm.query(TextPasteItem::class, "favorite == $0 AND pasteState != $1", true, PasteState.DELETED)
+        val textQuery =
+            realm.query(
+                TextPasteItem::class,
+                "favorite == $0 AND pasteState != $1",
+                true,
+                PasteState.DELETED,
+            )
         val textCount = textQuery.count().find()
         val textSize = textQuery.sum<Long>("size").find()
 
-        val urlQuery = realm.query(UrlPasteItem::class, "favorite == $0 AND pasteState != $1", true, PasteState.DELETED)
+        val urlQuery =
+            realm.query(
+                UrlPasteItem::class,
+                "favorite == $0 AND pasteState != $1",
+                true,
+                PasteState.DELETED,
+            )
         val urlCount = urlQuery.count().find()
         val urlSize = urlQuery.sum<Long>("size").find()
 
-        val htmlQuery = realm.query(HtmlPasteItem::class, "favorite == $0 AND pasteState != $1", true, PasteState.DELETED)
+        val htmlQuery =
+            realm.query(
+                HtmlPasteItem::class,
+                "favorite == $0 AND pasteState != $1",
+                true,
+                PasteState.DELETED,
+            )
         val htmlCount = htmlQuery.count().find()
         val htmlSize = htmlQuery.sum<Long>("size").find()
 
-        val imageQuery = realm.query(ImagesPasteItem::class, "favorite == $0 AND pasteState != $1", true, PasteState.DELETED)
+        val imageQuery =
+            realm.query(
+                ImagesPasteItem::class,
+                "favorite == $0 AND pasteState != $1",
+                true,
+                PasteState.DELETED,
+            )
         val imageCount = imageQuery.sum<Long>("count").find()
         val imageSize = imageQuery.sum<Long>("size").find()
 
-        val fileQuery = realm.query(FilesPasteItem::class, "favorite == $0 AND pasteState != $1", true, PasteState.DELETED)
+        val fileQuery =
+            realm.query(
+                FilesPasteItem::class,
+                "favorite == $0 AND pasteState != $1",
+                true,
+                PasteState.DELETED,
+            )
         val fileCount = fileQuery.sum<Long>("count").find()
         val fileSize = fileQuery.sum<Long>("size").find()
 
@@ -249,13 +301,21 @@ class PasteRealm(
     ): RealmResults<PasteData> {
         val query =
             appInstanceId?.let {
-                realm.query(PasteData::class, "appInstanceId == $0 AND pasteState != $1", appInstanceId, PasteState.DELETED)
+                realm.query(
+                    PasteData::class, "appInstanceId == $0 AND pasteState != $1", appInstanceId,
+                    PasteState.DELETED,
+                )
             } ?: realm.query(PasteData::class, "pasteState != $0", PasteState.DELETED)
         return query.sort("createTime", Sort.DESCENDING).limit(limit).find()
     }
 
     override fun getPasteData(id: ObjectId): PasteData? {
-        return realm.query(PasteData::class, "id == $0 AND pasteState != $1", id, PasteState.DELETED).first().find()
+        return realm.query(
+            PasteData::class,
+            "id == $0 AND pasteState != $1",
+            id,
+            PasteState.DELETED,
+        ).first().find()
     }
 
     override fun getPasteData(
@@ -327,12 +387,12 @@ class PasteRealm(
 
                     val tasks = mutableListOf<ObjectId>()
                     if (pasteData.pasteType == PasteType.HTML) {
-                        tasks.add(copyToRealm(createTask(pasteData.id, TaskType.HTML_TO_IMAGE_TASK)).taskId)
+                        tasks.add(copyToRealm(taskUtils.createTask(pasteData.id, TaskType.HTML_TO_IMAGE_TASK)).taskId)
                     }
                     if (!configManager.config.enabledSyncFileSizeLimit ||
                         fileUtils.bytesSize(configManager.config.maxSyncFileSize) > size
                     ) {
-                        tasks.add(copyToRealm(createTask(pasteData.id, TaskType.SYNC_PASTE_TASK, SyncExtraInfo())).taskId)
+                        tasks.add(copyToRealm(taskUtils.createTask(pasteData.id, TaskType.SYNC_PASTE_TASK, SyncExtraInfo())).taskId)
                     }
                     tasks.addAll(markDeleteSameHash(pasteData.id, pasteData.pasteType, pasteData.hash))
                     return@write tasks
@@ -367,7 +427,12 @@ class PasteRealm(
             }
 
         realm.write(block = {
-            query(PasteData::class, "id == $0 AND pasteState != $1", pasteData.id, PasteState.DELETED)
+            query(
+                PasteData::class,
+                "id == $0 AND pasteState != $1",
+                pasteData.id,
+                PasteState.DELETED,
+            )
                 .first().find()?.let {
                     return@write null
                 }
@@ -376,10 +441,10 @@ class PasteRealm(
                 copyToRealm(pasteData)
                 tasks.addAll(markDeleteSameHash(pasteData.id, pasteData.pasteType, pasteData.hash))
                 if (pasteData.pasteType == PasteType.HTML) {
-                    tasks.add(copyToRealm(createTask(pasteData.id, TaskType.HTML_TO_IMAGE_TASK)).taskId)
+                    tasks.add(copyToRealm(taskUtils.createTask(pasteData.id, TaskType.HTML_TO_IMAGE_TASK)).taskId)
                 }
             } else {
-                val pullFileTask = createTask(pasteData.id, TaskType.PULL_FILE_TASK)
+                val pullFileTask = taskUtils.createTask(pasteData.id, TaskType.PULL_FILE_TASK)
                 pasteData.adaptRelativePaths(pasteData.appInstanceId, pasteData.pasteId)
                 copyToRealm(pasteData)
                 copyToRealm(pullFileTask)
@@ -388,7 +453,7 @@ class PasteRealm(
 
             existIconFile?.let {
                 if (!it) {
-                    val pullIconTask = createTask(pasteData.id, TaskType.PULL_ICON_TASK)
+                    val pullIconTask = taskUtils.createTask(pasteData.id, TaskType.PULL_ICON_TASK)
                     copyToRealm(pullIconTask)
                     tasks.add(pullIconTask.taskId)
                 }
@@ -441,7 +506,10 @@ class PasteRealm(
                     PasteData::class, "appInstanceId == $0 AND createTime <= $1 AND pasteState != $2",
                     appInstanceId, createTime, PasteState.DELETED,
                 )
-            } ?: realm.query(PasteData::class, "createTime <= $0 AND pasteState != $1", createTime, PasteState.DELETED)
+            } ?: realm.query(
+                PasteData::class, "createTime <= $0 AND pasteState != $1", createTime,
+                PasteState.DELETED,
+            )
         return query.sort("createTime", Sort.DESCENDING).limit(limit).find()
     }
 
