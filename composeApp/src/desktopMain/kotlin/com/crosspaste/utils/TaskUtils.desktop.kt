@@ -6,7 +6,6 @@ import com.crosspaste.dao.task.PasteTaskExtraInfo
 import com.crosspaste.dao.task.TaskStatus
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.task.FailurePasteTaskResult
-import com.crosspaste.task.extra.BaseExtraInfo
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -19,12 +18,16 @@ import java.io.PrintWriter
 import java.io.StringWriter
 import kotlin.reflect.KClass
 
-object TaskUtils {
+actual fun getTaskUtils(): TaskUtils {
+    return DesktopTaskUtils
+}
 
-    fun createTask(
+object DesktopTaskUtils : TaskUtils {
+
+    override fun createTask(
         pasteDataId: ObjectId?,
         taskType: Int,
-        extraInfo: PasteTaskExtraInfo = BaseExtraInfo(),
+        extraInfo: PasteTaskExtraInfo,
     ): PasteTask {
         return PasteTask().apply {
             this.pasteDataId = pasteDataId
@@ -37,7 +40,7 @@ object TaskUtils {
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <T : PasteTaskExtraInfo> getExtraInfo(
+    override fun <T : PasteTaskExtraInfo> getExtraInfo(
         pasteTask: PasteTask,
         kclass: KClass<T>,
     ): T {
@@ -45,7 +48,7 @@ object TaskUtils {
         return DesktopJsonUtils.JSON.decodeFromString(serializer, pasteTask.extraInfo) as T
     }
 
-    fun createFailExtraInfo(
+    override fun createFailExtraInfo(
         pasteTask: PasteTask,
         throwable: Throwable,
     ): String {

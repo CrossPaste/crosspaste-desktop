@@ -11,9 +11,9 @@ import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.extra.BaseExtraInfo
+import com.crosspaste.utils.DesktopTaskUtils
+import com.crosspaste.utils.DesktopTaskUtils.createFailurePasteTaskResult
 import com.crosspaste.utils.FileUtils
-import com.crosspaste.utils.TaskUtils
-import com.crosspaste.utils.TaskUtils.createFailurePasteTaskResult
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -43,7 +43,7 @@ class PullIconTaskExecutor(
     private val locks: MutableMap<String, Mutex> = ConcurrentHashMap<String, Mutex>()
 
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
-        val baseExtraInfo: BaseExtraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class)
+        val baseExtraInfo: BaseExtraInfo = DesktopTaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class)
 
         pasteDao.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
             pasteData.source?.let { source ->

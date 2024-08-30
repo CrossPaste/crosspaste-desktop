@@ -11,8 +11,8 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.task.extra.BaseExtraInfo
 import com.crosspaste.ui.paste.preview.getPasteItem
-import com.crosspaste.utils.TaskUtils
-import com.crosspaste.utils.TaskUtils.createFailurePasteTaskResult
+import com.crosspaste.utils.DesktopTaskUtils
+import com.crosspaste.utils.DesktopTaskUtils.createFailurePasteTaskResult
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
@@ -61,7 +61,7 @@ class Html2ImageTaskExecutor(
                     retryHandler = { false },
                     startTime = pasteTask.modifyTime,
                     fails = listOf(createFailureResult(StandardErrorCode.HTML_2_IMAGE_TASK_FAIL, e)),
-                    extraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class),
+                    extraInfo = DesktopTaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class),
                 )
             }
         }

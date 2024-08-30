@@ -2,7 +2,7 @@ package com.crosspaste.task
 
 import com.crosspaste.dao.task.PasteTaskDao
 import com.crosspaste.dao.task.TaskStatus
-import com.crosspaste.utils.TaskUtils.createFailExtraInfo
+import com.crosspaste.utils.DesktopTaskUtils.createFailExtraInfo
 import com.crosspaste.utils.cpuDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName

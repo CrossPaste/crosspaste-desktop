@@ -10,8 +10,8 @@ import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.task.extra.BaseExtraInfo
 import com.crosspaste.utils.DateUtils
-import com.crosspaste.utils.TaskUtils
-import com.crosspaste.utils.TaskUtils.createFailurePasteTaskResult
+import com.crosspaste.utils.DesktopTaskUtils
+import com.crosspaste.utils.DesktopTaskUtils.createFailurePasteTaskResult
 import com.crosspaste.utils.getDateUtils
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -45,7 +45,7 @@ class CleanPasteTaskExecutor(
                     pasteDao.markDeleteByCleanTime(fileCleanTimeInstant, PasteType.FILE)
                 }
             } catch (e: Throwable) {
-                val baseExtraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class)
+                val baseExtraInfo = DesktopTaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class)
                 return createFailurePasteTaskResult(
                     logger = logger,
                     retryHandler = { baseExtraInfo.executionHistories.size < 2 },
@@ -69,7 +69,7 @@ class CleanPasteTaskExecutor(
                     }
                 }
             } catch (e: Throwable) {
-                val baseExtraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class)
+                val baseExtraInfo = DesktopTaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class)
                 return createFailurePasteTaskResult(
                     logger = logger,
                     retryHandler = { baseExtraInfo.executionHistories.size < 2 },

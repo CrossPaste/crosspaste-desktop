@@ -5,11 +5,11 @@ import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.dao.paste.PasteState
 import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.presist.DesktopOneFilePersist
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.serializer.PathStringRealmListSerializer
 import com.crosspaste.serializer.StringRealmListSerializer
-import com.crosspaste.utils.DesktopJsonUtils
+import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.getJsonUtils
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.types.RealmList
@@ -20,15 +20,18 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import okio.Path
+import okio.Path.Companion.toPath
 import org.mongodb.kbson.BsonObjectId
 import org.mongodb.kbson.ObjectId
-import java.nio.file.Paths
 
 @Serializable
 @SerialName("images")
 class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
 
-    companion object {}
+    companion object {
+        val fileUtils = getFileUtils()
+        val jsonUtils = getJsonUtils()
+    }
 
     @PrimaryKey
     @Transient
@@ -71,7 +74,7 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
     }
 
     override fun getFileInfoTreeMap(): Map<String, FileInfoTree> {
-        return DesktopJsonUtils.JSON.decodeFromString(fileInfoTree)
+        return jsonUtils.JSON.decodeFromString(fileInfoTree)
     }
 
     override fun getPasteFiles(userDataPathProvider: UserDataPathProvider): List<PasteFile> {
@@ -92,7 +95,7 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
 
     override fun getSearchContent(): String {
         return relativePathList.joinToString(separator = " ") { path ->
-            Paths.get(path).fileName.toString().lowercase()
+            path.toPath().name.lowercase()
         }
     }
 
@@ -110,7 +113,7 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
             // Non-reference types need to clean up copied files
             if (basePath == null) {
                 for (path in getFilePaths(userDataPathProvider)) {
-                    DesktopOneFilePersist(path).delete()
+                    fileUtils.deleteFile(path)
                 }
             }
         }
