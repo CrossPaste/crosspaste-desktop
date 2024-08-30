@@ -18,7 +18,6 @@ package org.openqa.selenium.manager
 
 import com.crosspaste.net.DesktopProxy
 import com.crosspaste.path.DesktopAppPathProvider
-import com.crosspaste.platform.currentPlatform
 import com.crosspaste.utils.getJsonUtils
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -51,15 +50,9 @@ import kotlin.concurrent.Volatile
 @Beta
 class SeleniumManager private constructor() {
 
-    private val platform = currentPlatform()
     private val fileName = "selenium-manager"
 
-    private var binary =
-        if (platform.isWindows()) {
-            DesktopAppPathProvider.pasteAppExePath.resolve(fileName).normalized().toNioPath()
-        } else {
-            DesktopAppPathProvider.pasteAppJarPath.resolve(fileName).normalized().toNioPath()
-        }
+    private var binary = DesktopAppPathProvider.pasteAppJarPath.resolve(fileName).normalized().toNioPath()
 
     private val seleniumManagerVersion: String
     private var binaryInTemporalFolder = false
