@@ -43,10 +43,6 @@ object DesktopCodecsUtils : CodecsUtils {
         }
     }
 
-    override fun hashByString(string: String): String {
-        return hash(string.toByteArray())
-    }
-
     override fun sha256(path: Path): String {
         val buffer = ByteArray(8192) // 8KB buffer
         val digest = MessageDigest.getInstance("SHA-256")

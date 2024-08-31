@@ -27,6 +27,14 @@ interface CodecsUtils {
         }
     }
 
+    fun hashByString(string: String): String {
+        return hash(string.toByteArray())
+    }
+
+    fun hashByArray(array: Array<String>): String
+
+    fun sha256(path: Path): String
+
     private fun StringBuilder.appendHex(value: ULong) {
         for (i in 0 until 8) {
             val byte = (value shr i * 8).toByte()
@@ -34,10 +42,4 @@ interface CodecsUtils {
             append(HEX_DIGITS[byte.toInt() and 0xf])
         }
     }
-
-    fun hashByArray(array: Array<String>): String
-
-    fun hashByString(string: String): String
-
-    fun sha256(path: Path): String
 }
