@@ -3,6 +3,7 @@ package com.crosspaste.dao.paste
 import com.crosspaste.app.AppFileType
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dao.task.TaskType
+import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
@@ -33,8 +34,9 @@ import org.mongodb.kbson.ObjectId
 
 class PasteRealm(
     private val realm: Realm,
-    private val userDataPathProvider: UserDataPathProvider,
     private val configManager: ConfigManager,
+    private val currentPaste: CurrentPaste,
+    private val userDataPathProvider: UserDataPathProvider,
     private val lazyTaskExecutor: Lazy<TaskExecutor>,
 ) : PasteDao {
 
@@ -401,6 +403,7 @@ class PasteRealm(
         }?.let { tasks ->
             taskExecutor.submitTasks(tasks)
         }
+        currentPaste.setPasteId(id)
     }
 
     private fun getSearchContent(

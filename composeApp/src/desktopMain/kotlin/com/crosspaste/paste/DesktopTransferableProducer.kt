@@ -26,7 +26,7 @@ class DesktopTransferableProducer(
             }
         } else {
             pasteTypePluginMap[pasteItem.getPasteType()]?.let {
-                builder.add(it, pasteItem)
+                builder.add(it, pasteItem, singleType = true)
             }
         }
 
@@ -44,19 +44,30 @@ class DesktopTransferableProducer(
         pasteData: PasteData,
         localOnly: Boolean,
         filterFile: Boolean,
+        primary: Boolean,
     ): DesktopWriteTransferable? {
         val builder = DesktopWriteTransferableBuilder()
 
         val pasteAppearItems = pasteData.getPasteAppearItems()
 
-        for (pasteAppearItem in pasteAppearItems.reversed()) {
-            if (filterFile) {
-                if (pasteAppearItem is PasteFiles) {
-                    continue
+        if (primary) {
+            pasteAppearItems.firstOrNull()?.let { pasteAppearItem ->
+                if (!filterFile || pasteAppearItem !is PasteFiles) {
+                    pasteTypePluginMap[pasteAppearItem.getPasteType()]?.let {
+                        builder.add(it, pasteAppearItem, singleType = true)
+                    }
                 }
-            } else {
-                pasteTypePluginMap[pasteAppearItem.getPasteType()]?.let {
-                    builder.add(it, pasteAppearItem)
+            }
+        } else {
+            for (pasteAppearItem in pasteAppearItems.reversed()) {
+                if (filterFile) {
+                    if (pasteAppearItem is PasteFiles) {
+                        continue
+                    }
+                } else {
+                    pasteTypePluginMap[pasteAppearItem.getPasteType()]?.let {
+                        builder.add(it, pasteAppearItem)
+                    }
                 }
             }
         }

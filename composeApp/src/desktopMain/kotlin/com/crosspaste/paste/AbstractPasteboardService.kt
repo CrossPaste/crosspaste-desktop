@@ -3,6 +3,7 @@ package com.crosspaste.paste
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.dao.paste.PasteItem
+import org.mongodb.kbson.ObjectId
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.ClipboardOwner
 import java.awt.datatransfer.Transferable
@@ -19,6 +20,8 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
 
     abstract val pasteProducer: TransferableProducer
 
+    abstract val currentPaste: CurrentPaste
+
     fun isValidContents(contents: Transferable?): Boolean {
         return contents != null && contents.transferDataFlavors.isNotEmpty()
     }
@@ -33,6 +36,7 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
     }
 
     override suspend fun tryWritePasteboard(
+        id: ObjectId,
         pasteItem: PasteItem,
         localOnly: Boolean,
         filterFile: Boolean,
@@ -40,9 +44,10 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
         try {
             pasteProducer.produce(pasteItem, localOnly, filterFile)?.let {
                 it as DesktopWriteTransferable
+                systemClipboard.setContents(it, this)
                 ownerTransferable = it
                 owner = true
-                systemClipboard.setContents(ownerTransferable, this)
+                currentPaste.setPasteId(id)
             }
         } catch (e: Exception) {
             logger.error(e) { "tryWritePasteboard error" }
@@ -53,13 +58,15 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
         pasteData: PasteData,
         localOnly: Boolean,
         filterFile: Boolean,
+        primary: Boolean,
     ) {
         try {
-            pasteProducer.produce(pasteData, localOnly, filterFile)?.let {
+            pasteProducer.produce(pasteData, localOnly, filterFile, primary)?.let {
                 it as DesktopWriteTransferable
+                systemClipboard.setContents(it, this)
                 ownerTransferable = it
                 owner = true
-                systemClipboard.setContents(ownerTransferable, this)
+                currentPaste.setPasteId(pasteData.id)
             }
         } catch (e: Exception) {
             logger.error(e) { "tryWritePasteboard error" }

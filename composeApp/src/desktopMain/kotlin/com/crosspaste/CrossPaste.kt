@@ -90,6 +90,8 @@ import com.crosspaste.net.plugin.SignalServerDecryptionPluginFactory
 import com.crosspaste.net.plugin.SignalServerEncryptPluginFactory
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.CacheManagerImpl
+import com.crosspaste.paste.CurrentPaste
+import com.crosspaste.paste.DesktopCurrentPaste
 import com.crosspaste.paste.DesktopPastePreviewService
 import com.crosspaste.paste.DesktopPasteSearchService
 import com.crosspaste.paste.DesktopPasteSyncProcessManager
@@ -246,7 +248,7 @@ class CrossPaste {
                     single<RealmManager> { RealmManagerImpl.createRealmManager(get()) }
                     single<SignalDao> { SignalRealm(get<RealmManager>().realm) }
                     single<SyncRuntimeInfoDao> { SyncRuntimeInfoRealm(get<RealmManager>().realm) }
-                    single<PasteDao> { PasteRealm(get<RealmManager>().realm, get(), get(), lazy { get() }) }
+                    single<PasteDao> { PasteRealm(get<RealmManager>().realm, get(), get(), get(), lazy { get() }) }
                     single<PasteTaskDao> { PasteTaskRealm(get<RealmManager>().realm) }
 
                     // net component
@@ -298,7 +300,7 @@ class CrossPaste {
                     single<TextTypePlugin> { TextTypePlugin() }
                     single<TextUpdater> { get<TextTypePlugin>() }
                     single<UrlTypePlugin> { UrlTypePlugin() }
-                    single<PasteboardService> { getDesktopPasteboardService(get(), get(), get(), get(), get()) }
+                    single<PasteboardService> { getDesktopPasteboardService(get(), get(), get(), get(), get(), get()) }
                     single<TransferableConsumer> {
                         DesktopTransferableConsumer(
                             get(),
@@ -335,6 +337,7 @@ class CrossPaste {
                     single<PastePreviewService> { DesktopPastePreviewService(get()) }
                     single<PasteSyncProcessManager<ObjectId>> { DesktopPasteSyncProcessManager() }
                     single<DesktopPasteSearchService> { DesktopPasteSearchService(get(), get(), get()) }
+                    single<CurrentPaste> { DesktopCurrentPaste(lazy { get() }) }
                     single<PasteSearchService> { get<DesktopPasteSearchService>() }
                     single<CleanPasteScheduler> { DesktopCleanPasteScheduler(get(), get(), get()) }
                     single<TaskExecutor> {
@@ -371,7 +374,7 @@ class CrossPaste {
                     single<UISupport> { DesktopUISupport(get(), get(), get(), get()) }
                     single<ShortcutKeys> { DesktopShortcutKeys(get()) }
                     single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get()) }
-                    single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get()) }
+                    single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get(), get()) }
                     single<DialogService> { DesktopDialogService() }
                 }
             return GlobalContext.startKoin {

@@ -79,6 +79,7 @@ class HtmlTypePlugin(private val appInfo: AppInfo) : PasteTypePlugin {
 
     override fun buildTransferable(
         pasteItem: PasteItem,
+        singleType: Boolean,
         map: MutableMap<PasteDataFlavor, Any>,
     ) {
         pasteItem as HtmlPasteItem

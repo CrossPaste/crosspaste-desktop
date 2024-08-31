@@ -31,6 +31,7 @@ class WindowsPasteboardService(
     override val appWindowManager: DesktopAppWindowManager,
     override val pasteDao: PasteDao,
     override val configManager: ConfigManager,
+    override val currentPaste: CurrentPaste,
     override val pasteConsumer: TransferableConsumer,
     override val pasteProducer: TransferableProducer,
 ) : AbstractPasteboardService(), User32.WNDPROC {

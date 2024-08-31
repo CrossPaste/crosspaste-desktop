@@ -15,5 +15,6 @@ interface TransferableProducer {
         pasteData: PasteData,
         localOnly: Boolean = false,
         filterFile: Boolean = false,
+        primary: Boolean = false,
     ): PasteTransferable?
 }
