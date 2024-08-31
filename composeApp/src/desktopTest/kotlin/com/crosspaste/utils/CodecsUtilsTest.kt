@@ -11,10 +11,10 @@ class CodecsUtilsTest {
     @Test
     fun testHash() {
         val hash = codecsUtils.hash("test".toByteArray())
-        assertEquals("2e97157971471d75", hash)
+        assertEquals("2e9715792ae84f8c71471d75ace36b46", hash)
         val hashStr = codecsUtils.hashByString("test")
-        assertEquals("2e97157971471d75", hashStr)
+        assertEquals("2e9715792ae84f8c71471d75ace36b46", hashStr)
         val hashArray = codecsUtils.hashByArray(arrayOf("test"))
-        assertEquals("2e97157971471d75", hashArray)
+        assertEquals("2e9715792ae84f8c71471d75ace36b46", hashArray)
     }
 }
