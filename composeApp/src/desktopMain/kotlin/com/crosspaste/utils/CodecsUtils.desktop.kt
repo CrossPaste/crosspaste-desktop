@@ -1,7 +1,5 @@
 package com.crosspaste.utils
 
-import com.google.common.hash.Hashing
-import com.google.common.io.ByteSource
 import okio.Path
 import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
@@ -30,18 +28,12 @@ object DesktopCodecsUtils : CodecsUtils {
         return Base64.getMimeDecoder().decode(string)
     }
 
-    override fun hash(bytes: ByteArray): String {
-        return ByteSource.wrap(bytes)
-            .hash(Hashing.goodFastHash(128))
-            .toString()
-    }
-
     override fun hashByArray(array: Array<String>): String {
         if (array.isEmpty()) {
             throw IllegalArgumentException("Array is empty")
         }
         if (array.size == 1) {
-            return array[0]
+            return hashByString(array[0])
         } else {
             val outputStream = ByteArrayOutputStream()
             array.forEach {
