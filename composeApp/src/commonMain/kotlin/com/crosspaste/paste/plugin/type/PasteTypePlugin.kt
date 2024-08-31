@@ -56,6 +56,7 @@ interface PasteTypePlugin {
 
     fun buildTransferable(
         pasteItem: PasteItem,
+        singleType: Boolean,
         map: MutableMap<PasteDataFlavor, Any>,
     )
 }

@@ -156,15 +156,21 @@ class FilesTypePlugin(
 
     override fun buildTransferable(
         pasteItem: PasteItem,
+        singleType: Boolean,
         map: MutableMap<PasteDataFlavor, Any>,
     ) {
         pasteItem as FilesPasteItem
         val fileList: List<File> = pasteItem.getFilePaths(userDataPathProvider).map { it.toFile() }
         map[DataFlavor.javaFileListFlavor.toPasteDataFlavor()] = fileList
-        map[PasteDataFlavors.URI_LIST_FLAVOR.toPasteDataFlavor()] =
-            ByteArrayInputStream(fileList.joinToString(separator = "\n") { it.absolutePath }.toByteArray())
-        map[DataFlavor.stringFlavor.toPasteDataFlavor()] = fileList.joinToString(separator = "\n") { it.name }
-
+        if (!singleType) {
+            map[PasteDataFlavors.URI_LIST_FLAVOR.toPasteDataFlavor()] =
+                ByteArrayInputStream(
+                    fileList.joinToString(separator = "\n") { it.absolutePath }
+                        .toByteArray(),
+                )
+            map[DataFlavor.stringFlavor.toPasteDataFlavor()] =
+                fileList.joinToString(separator = "\n") { it.name }
+        }
         if (currentPlatform().isLinux()) {
             val content =
                 fileList.joinToString(

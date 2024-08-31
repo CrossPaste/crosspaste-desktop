@@ -188,32 +188,36 @@ class ImageTypePlugin(
 
     override fun buildTransferable(
         pasteItem: PasteItem,
+        singleType: Boolean,
         map: MutableMap<PasteDataFlavor, Any>,
     ) {
         pasteItem as ImagesPasteItem
         val filePaths = pasteItem.getFilePaths(userDataPathProvider)
         val fileList: List<File> = filePaths.map { it.toFile() }
         map[DataFlavor.javaFileListFlavor.toPasteDataFlavor()] = fileList
-        map[PasteDataFlavors.URI_LIST_FLAVOR.toPasteDataFlavor()] =
-            ByteArrayInputStream(
-                fileList.joinToString(separator = "\n") {
-                    it.absolutePath
-                }.toByteArray(),
-            )
-        map[DataFlavor.stringFlavor.toPasteDataFlavor()] =
-            fileList.joinToString(separator = "\n") {
-                it.name
-            }
 
-        if (fileList.size == 1) {
-            try {
-                val start = System.currentTimeMillis()
-                val image: BufferedImage? = ImageIO.read(fileList[0])
-                image?.let { map[DataFlavor.imageFlavor.toPasteDataFlavor()] = it }
-                val end = System.currentTimeMillis()
-                logger.debug { "read image ${fileList[0].absolutePath} use time: ${end - start} ms" }
-            } catch (e: Exception) {
-                logger.error(e) { "read image fail" }
+        if (!singleType) {
+            map[PasteDataFlavors.URI_LIST_FLAVOR.toPasteDataFlavor()] =
+                ByteArrayInputStream(
+                    fileList.joinToString(separator = "\n") {
+                        it.absolutePath
+                    }.toByteArray(),
+                )
+            map[DataFlavor.stringFlavor.toPasteDataFlavor()] =
+                fileList.joinToString(separator = "\n") {
+                    it.name
+                }
+
+            if (fileList.size == 1) {
+                try {
+                    val start = System.currentTimeMillis()
+                    val image: BufferedImage? = ImageIO.read(fileList[0])
+                    image?.let { map[DataFlavor.imageFlavor.toPasteDataFlavor()] = it }
+                    val end = System.currentTimeMillis()
+                    logger.debug { "read image ${fileList[0].absolutePath} use time: ${end - start} ms" }
+                } catch (e: Exception) {
+                    logger.error(e) { "read image fail" }
+                }
             }
         }
 

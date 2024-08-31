@@ -96,6 +96,10 @@ fun ShortcutKeysContentView() {
 
                 Divider(modifier = Modifier.padding(start = 15.dp))
 
+                ShortcutKeyRow("paste_primary_type")
+
+                Divider(modifier = Modifier.padding(start = 15.dp))
+
                 ShortcutKeyRow("paste_local_last")
 
                 Divider(modifier = Modifier.padding(start = 15.dp))

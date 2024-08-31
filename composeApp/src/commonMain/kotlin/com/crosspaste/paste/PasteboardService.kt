@@ -6,6 +6,7 @@ import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.dao.paste.PasteItem
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.channels.Channel
+import org.mongodb.kbson.ObjectId
 
 interface PasteboardService : PasteboardMonitor {
 
@@ -20,6 +21,7 @@ interface PasteboardService : PasteboardMonitor {
     val pasteboardChannel: Channel<suspend () -> Unit>
 
     suspend fun tryWritePasteboard(
+        id: ObjectId,
         pasteItem: PasteItem,
         localOnly: Boolean = false,
         filterFile: Boolean = false,
@@ -29,6 +31,7 @@ interface PasteboardService : PasteboardMonitor {
         pasteData: PasteData,
         localOnly: Boolean = false,
         filterFile: Boolean = false,
+        primary: Boolean = false,
     )
 
     suspend fun tryWriteRemotePasteboard(pasteData: PasteData)

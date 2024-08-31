@@ -29,6 +29,7 @@ class DesktopShortcutKeys(
     companion object {
         const val PASTE = "paste"
         const val PASTE_PLAIN_TEXT = "paste_plain_text"
+        const val PASTE_PRIMARY_TYPE = "paste_primary_type"
         const val PASTE_LOCAL_LAST = "paste_local_last"
         const val PASTE_REMOTE_LAST = "paste_remote_last"
         const val SHOW_MAIN = "show_main"

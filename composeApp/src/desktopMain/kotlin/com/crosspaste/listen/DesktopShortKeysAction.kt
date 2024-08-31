@@ -8,12 +8,14 @@ import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.HIDE_WINDOW
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_LOCAL_LAST
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_PLAIN_TEXT
+import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_PRIMARY_TYPE
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_REMOTE_LAST
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.SHOW_MAIN
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.SHOW_SEARCH
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.SWITCH_ENCRYPT
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.SWITCH_MONITOR_PASTEBOARD
 import com.crosspaste.listener.ShortcutKeysAction
+import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.DesktopPasteSearchService
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.PasteText
@@ -28,6 +30,7 @@ class DesktopShortKeysAction(
     private val appInfo: AppInfo,
     private val pasteDao: PasteDao,
     private val configManager: ConfigManager,
+    private val currentPaste: CurrentPaste,
     private val appWindowManager: DesktopAppWindowManager,
     private val pasteSearchService: DesktopPasteSearchService,
     private val pasteboardService: PasteboardService,
@@ -38,6 +41,7 @@ class DesktopShortKeysAction(
     override val action: (String) -> Unit = { actionName ->
         when (actionName) {
             PASTE_PLAIN_TEXT -> pastePlainText()
+            PASTE_PRIMARY_TYPE -> pastePrimaryType()
             PASTE_LOCAL_LAST -> pasteLast(true)
             PASTE_REMOTE_LAST -> pasteLast(false)
             SHOW_MAIN -> showMainWindow()
@@ -81,19 +85,24 @@ class DesktopShortKeysAction(
     private fun pastePlainText() {
         logger.info { "Paste Plain Text" }
         mainCoroutineDispatcher.launch(CoroutineName("PastePlainText")) {
-            val result =
-                pasteDao.searchPasteData(
-                    searchTerms = listOf(),
-                    favorite = null,
-                    limit = 1,
-                )
-
-            if (result.size > 0) {
+            currentPaste.getCurrentPaste()?.let { pasteData ->
                 mainCoroutineDispatcher.launch(ioDispatcher) {
-                    result[0].getPasteAppearItems().firstOrNull { it is PasteText }?.let {
-                        pasteboardService.tryWritePasteboard(it, localOnly = true)
+                    pasteData.getPasteAppearItems().firstOrNull { it is PasteText }?.let {
+                        pasteboardService.tryWritePasteboard(pasteData.id, it, localOnly = true)
                         appWindowManager.toPaste()
                     }
+                }
+            }
+        }
+    }
+
+    private fun pastePrimaryType() {
+        logger.info { "Paste Primary Type" }
+        mainCoroutineDispatcher.launch(CoroutineName("PastePrimaryType")) {
+            currentPaste.getCurrentPaste()?.let {
+                mainCoroutineDispatcher.launch(ioDispatcher) {
+                    pasteboardService.tryWritePasteboard(it, localOnly = true, primary = true)
+                    appWindowManager.toPaste()
                 }
             }
         }
