@@ -12,6 +12,7 @@ import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
+import com.crosspaste.app.logger
 import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
 import dorkbox.systemTray.MenuItem
@@ -33,10 +34,11 @@ fun LinuxTray() {
         if (trayType != TrayType.AutoDetect) {
             SystemTray.FORCE_TRAY_TYPE = trayType
         }
-
+        logger.info { "Tray type: $trayType" }
         val innerTray =
             SystemTray.get() ?: run {
                 SystemTray.FORCE_TRAY_TYPE = TrayType.AutoDetect
+                logger.info { "Tray type fail back : ${TrayType.AutoDetect}" }
                 SystemTray.get()
             }
         mutableStateOf(innerTray)
@@ -79,7 +81,7 @@ fun LinuxTray() {
 }
 
 fun getTrayType(): TrayType {
-    return System.getProperty("linux.force.tray-type")?.let {
+    return System.getProperty("linux.force.trayType")?.let {
         safeFromString(it)
     } ?: TrayType.AutoDetect
 }
