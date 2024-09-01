@@ -9,9 +9,7 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
 import com.crosspaste.app.ExitMode
 import com.crosspaste.listener.GlobalListener
-import com.crosspaste.ui.LinuxTrayView.initSystemTray
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
-import dorkbox.systemTray.SystemTray
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch
 import java.awt.event.WindowAdapter
@@ -20,7 +18,6 @@ import java.awt.event.WindowEvent
 @Composable
 fun CrossPasteMainWindow(
     exitApplication: (ExitMode) -> Unit,
-    systemTray: SystemTray?,
     windowIcon: Painter?,
 ) {
     val appWindowManager = koinApplication.koin.get<DesktopAppWindowManager>()
@@ -39,10 +36,6 @@ fun CrossPasteMainWindow(
     ) {
         DisposableEffect(Unit) {
             appWindowManager.mainComposeWindow = window
-
-            systemTray?.let { tray ->
-                initSystemTray(tray, koinApplication, exitApplication)
-            }
 
             globalListener.start()
 

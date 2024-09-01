@@ -175,7 +175,6 @@ import com.crosspaste.utils.TelnetUtils
 import com.crosspaste.utils.ioDispatcher
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
 import com.github.kwhat.jnativehook.mouse.NativeMouseListener
-import dorkbox.systemTray.SystemTray
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
@@ -468,13 +467,6 @@ class CrossPaste {
             val isWindows = platform.isWindows()
             val isLinux = platform.isLinux()
 
-            val systemTray: SystemTray? =
-                if (platform.isLinux()) {
-                    SystemTray.get() ?: throw RuntimeException("Unable to load SystemTray!")
-                } else {
-                    null
-                }
-
             application {
                 val ioScope = rememberCoroutineScope { ioDispatcher }
 
@@ -513,7 +505,7 @@ class CrossPaste {
                             LinuxTray()
                         }
 
-                        CrossPasteMainWindow(exitApplication, systemTray, windowIcon)
+                        CrossPasteMainWindow(exitApplication, windowIcon)
 
                         CrossPasteSearchWindow(windowIcon)
                     } else {
