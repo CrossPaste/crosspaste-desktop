@@ -42,7 +42,7 @@
    ./gradlew composeApp:run
    ```
    
-First start will download [JBR](https://github.com/JetBrains/JetBrainsRuntime) / [chromeDriver](https://googlechromelabs.github.io/chrome-for-testing/) / [chrome-headless-shell](https://googlechromelabs.github.io/chrome-for-testing/) / gradle dependencies.
+First start will download [JBR](https://github.com/JetBrains/JetBrainsRuntime) / gradle dependencies.
 
 If you encounter the following error:
 ```log
