@@ -148,7 +148,7 @@ import com.crosspaste.ui.CrossPasteMainWindow
 import com.crosspaste.ui.CrossPasteSearchWindow
 import com.crosspaste.ui.DesktopThemeDetector
 import com.crosspaste.ui.GrantAccessibilityPermissionsWindow
-import com.crosspaste.ui.LinuxTrayView.setWindowPosition
+import com.crosspaste.ui.LinuxTray
 import com.crosspaste.ui.MacTray
 import com.crosspaste.ui.PageViewContext
 import com.crosspaste.ui.PageViewType
@@ -175,7 +175,6 @@ import com.crosspaste.utils.TelnetUtils
 import com.crosspaste.utils.ioDispatcher
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
 import com.github.kwhat.jnativehook.mouse.NativeMouseListener
-import dorkbox.systemTray.SystemTray
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
@@ -468,13 +467,6 @@ class CrossPaste {
             val isWindows = platform.isWindows()
             val isLinux = platform.isLinux()
 
-            val systemTray: SystemTray? =
-                if (platform.isLinux()) {
-                    SystemTray.get() ?: throw RuntimeException("Unable to load SystemTray!")
-                } else {
-                    null
-                }
-
             application {
                 val ioScope = rememberCoroutineScope { ioDispatcher }
 
@@ -510,10 +502,10 @@ class CrossPaste {
                         } else if (isWindows) {
                             WindowsTray()
                         } else if (isLinux) {
-                            setWindowPosition(appWindowManager, appLaunchState)
+                            LinuxTray()
                         }
 
-                        CrossPasteMainWindow(exitApplication, systemTray, windowIcon)
+                        CrossPasteMainWindow(exitApplication, windowIcon)
 
                         CrossPasteSearchWindow(windowIcon)
                     } else {
