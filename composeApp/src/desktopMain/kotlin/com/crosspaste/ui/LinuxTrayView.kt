@@ -80,8 +80,8 @@ fun refreshWindowPosition(appWindowManager: DesktopAppWindowManager) {
 
     appWindowManager.mainWindowState.position =
         WindowPosition.Absolute(
-            x = bounds.x.dp - insets.left.dp - windowWidth,
-            y = bounds.y.dp + insets.top.dp,
+            x = (bounds.x + bounds.width).dp - windowWidth + 20.dp,
+            y = (bounds.y + insets.top).dp,
         )
 }
 
