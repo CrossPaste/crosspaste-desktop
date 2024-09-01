@@ -344,6 +344,7 @@ compose.desktop {
             }
 
             if (os.isLinux || buildFullPlatform) {
+                jvmArgs("-Dlinux.force.trayType=AppIndicator")
                 linux {
                     targetFormats(TargetFormat.Deb)
 

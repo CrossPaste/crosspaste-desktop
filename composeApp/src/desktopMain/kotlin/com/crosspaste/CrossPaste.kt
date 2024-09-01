@@ -148,7 +148,7 @@ import com.crosspaste.ui.CrossPasteMainWindow
 import com.crosspaste.ui.CrossPasteSearchWindow
 import com.crosspaste.ui.DesktopThemeDetector
 import com.crosspaste.ui.GrantAccessibilityPermissionsWindow
-import com.crosspaste.ui.LinuxTrayView.setWindowPosition
+import com.crosspaste.ui.LinuxTray
 import com.crosspaste.ui.MacTray
 import com.crosspaste.ui.PageViewContext
 import com.crosspaste.ui.PageViewType
@@ -510,7 +510,7 @@ class CrossPaste {
                         } else if (isWindows) {
                             WindowsTray()
                         } else if (isLinux) {
-                            setWindowPosition(appWindowManager, appLaunchState)
+                            LinuxTray()
                         }
 
                         CrossPasteMainWindow(exitApplication, systemTray, windowIcon)
