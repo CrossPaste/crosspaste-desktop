@@ -50,6 +50,7 @@ fun LinuxTray() {
         tray?.menu?.add(
             MenuItem("Open CrossPaste") {
                 mainCoroutineDispatcher.launch(CoroutineName("Open CrossPaste")) {
+                    refreshWindowPosition(appWindowManager)
                     appWindowManager.activeMainWindow()
                 }
             },
@@ -61,23 +62,27 @@ fun LinuxTray() {
             },
         )
 
-        val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
-        val bounds = gd.defaultConfiguration.bounds
-        val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
-
-        val windowWidth = appWindowManager.mainWindowState.size.width
-
-        appWindowManager.mainWindowState.position =
-            WindowPosition.Absolute(
-                x = bounds.x.dp - insets.left.dp - windowWidth,
-                y = bounds.y.dp + insets.top.dp,
-            )
+        refreshWindowPosition(appWindowManager)
 
         if (appLaunchState.firstLaunch && !appWindowManager.hasCompletedFirstLaunchShow) {
             appWindowManager.showMainWindow = true
             appWindowManager.hasCompletedFirstLaunchShow = true
         }
     }
+}
+
+fun refreshWindowPosition(appWindowManager: DesktopAppWindowManager) {
+    val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
+    val bounds = gd.defaultConfiguration.bounds
+    val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
+
+    val windowWidth = appWindowManager.mainWindowState.size.width
+
+    appWindowManager.mainWindowState.position =
+        WindowPosition.Absolute(
+            x = bounds.x.dp - insets.left.dp - windowWidth,
+            y = bounds.y.dp + insets.top.dp,
+        )
 }
 
 fun getTrayType(): TrayType {
