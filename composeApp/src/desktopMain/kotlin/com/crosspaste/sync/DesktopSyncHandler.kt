@@ -1,5 +1,7 @@
 package com.crosspaste.sync
 
+import com.crosspaste.app.AppInfo
+import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.dao.signal.SignalDao
 import com.crosspaste.dao.sync.HostInfo
 import com.crosspaste.dao.sync.SyncRuntimeInfo
@@ -31,7 +33,9 @@ import org.signal.libsignal.protocol.state.SignalProtocolStore
 import kotlin.math.min
 
 class DesktopSyncHandler(
+    private val appInfo: AppInfo,
     override var syncRuntimeInfo: SyncRuntimeInfo,
+    private val checker: VersionCompatibilityChecker,
     private val tokenCache: TokenCache,
     private val telnetUtils: TelnetUtils,
     private val syncInfoFactory: SyncInfoFactory,
@@ -44,6 +48,13 @@ class DesktopSyncHandler(
 ) : SyncHandler {
 
     private val logger = KotlinLogging.logger {}
+
+    @Volatile
+    override var compatibility: Boolean =
+        !checker.hasApiCompatibilityChangesBetween(
+            appInfo.appVersion,
+            syncRuntimeInfo.appVersion,
+        )
 
     override val signalProcessor = signalProcessorCache.getSignalMessageProcessor(syncRuntimeInfo.appInstanceId)
 
@@ -201,6 +212,11 @@ class DesktopSyncHandler(
             block()
         }?. let {
             this.syncRuntimeInfo = it
+            this.compatibility =
+                !checker.hasApiCompatibilityChangesBetween(
+                    appInfo.appVersion,
+                    it.appVersion,
+                )
             return it
         } ?: run {
             return null

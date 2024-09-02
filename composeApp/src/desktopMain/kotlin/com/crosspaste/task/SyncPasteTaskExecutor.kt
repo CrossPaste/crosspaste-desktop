@@ -40,7 +40,7 @@ class SyncPasteTaskExecutor(
             pasteDao.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
                 val deferredResults: MutableList<Deferred<Pair<String, ClientApiResult>>> = mutableListOf()
                 for (entryHandler in syncManager.getSyncHandlers()) {
-                    if (entryHandler.value.syncRuntimeInfo.allowSend) {
+                    if (entryHandler.value.syncRuntimeInfo.allowSend && entryHandler.value.compatibility) {
                         val deferred =
                             ioScope.async {
                                 try {
