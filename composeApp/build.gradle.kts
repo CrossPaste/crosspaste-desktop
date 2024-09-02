@@ -268,7 +268,7 @@ compose.desktop {
             }
 
             val seleniumManagerJar: File =
-                configurations.detachedConfiguration(dependencies.create("org.seleniumhq.selenium:selenium-manager:4.23.1"))
+                configurations.detachedConfiguration(dependencies.create("org.seleniumhq.selenium:selenium-manager:4.24.0"))
                     .resolve().first()
 
             extract(seleniumManagerJar, appResourcesRootDir.get().asFile)
