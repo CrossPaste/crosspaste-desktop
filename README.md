@@ -1,5 +1,5 @@
 <div align="center">
-   <img src="marketing/en/marketing.webp" width="768px" height="432px" alt="poster" />
+   <img src="doc/en/marketing.webp" width="768px" height="432px" alt="poster" />
    <h1>CrossPaste: Universal Pasteboard Across Devices</h1>
    <h4>Copy anything and paste it on any device, seamlessly.</h4>
 </div>
@@ -70,7 +70,7 @@ CrossPaste is continuously evolving! We plan to add more useful features in futu
 - **v1.2.0**: Native pasteboard support, performance improvements
 - **v1.3.0**: Introduction of command-line mode
 
-This is just a small part of our plans. Want to learn more details and long-term plans? Check out our [full roadmap](./Roadmap.md).
+This is just a small part of our plans. Want to learn more details and long-term plans? Check out our [full roadmap](doc/en/Roadmap.md).
 
 
 ## 🤝 Support the project
@@ -78,7 +78,7 @@ This is just a small part of our plans. Want to learn more details and long-term
 - **🌟 Star this repository**: This is the easiest way to support CrossPaste and costs nothing.
 - **🪲 Report bugs**: Report any bugs you find on the [issue tracker](https://github.com/CrossPaste/crosspaste-desktop/issues/new/choose).
 - **📖 Translate**: Help translate and polish CrossPaste into your [language](https://github.com/CrossPaste/crosspaste-desktop/tree/main/composeApp/src/desktopMain/resources/i18n).
-- **📝 Contribute**: [Code](./Contributing.md), comment on issues, and any contributions that can help the project are welcome.
+- **📝 Contribute**: [Code](doc/en/Contributing.md), comment on issues, and any contributions that can help the project are welcome.
 - **💖 Sponsor**: Support financially via [GitHub Sponsors](https://github.com/sponsors/CrossPaste) to help with ongoing development and maintenance.
 
 
