@@ -117,6 +117,10 @@ class PasteRealm(
         newPasteDataType: Int,
         newPasteDataHash: String,
     ): List<ObjectId> {
+        if (newPasteDataHash.isEmpty()) {
+            return emptyList()
+        }
+
         val tasks = mutableListOf<ObjectId>()
         query(
             PasteData::class,
