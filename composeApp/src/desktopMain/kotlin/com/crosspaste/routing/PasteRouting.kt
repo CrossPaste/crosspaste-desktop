@@ -28,13 +28,19 @@ fun Routing.pasteRouting(
                     return@post
                 }
 
-                val pasteData = call.receive<PasteData>()
+                try {
+                    val pasteData = call.receive<PasteData>()
 
-                launch {
-                    pasteboardService.tryWriteRemotePasteboard(pasteData)
+                    launch {
+                        pasteboardService.tryWriteRemotePasteboard(pasteData)
+                    }
+                    logger.debug { "sync handler ($appInstanceId) receive pasteData: $pasteData" }
+                    successResponse(call)
+                } catch (e: Exception) {
+                    logger.error(e) { "sync handler ($appInstanceId) receive pasteData error" }
+                    failResponse(call, StandardErrorCode.UNKNOWN_ERROR.toErrorCode())
+                    return@post
                 }
-                logger.debug { "sync handler ($appInstanceId) receive pasteData: $pasteData" }
-                successResponse(call)
             } ?: run {
                 logger.error { "not found appInstance id: $appInstanceId" }
                 failResponse(call, StandardErrorCode.NOT_FOUND_APP_INSTANCE_ID.toErrorCode())

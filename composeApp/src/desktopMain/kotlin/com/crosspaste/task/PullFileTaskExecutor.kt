@@ -87,6 +87,13 @@ class PullFileTaskExecutor(
                 it.getConnectHostAddress()?.let { host ->
                     return pullFiles(pasteData, host, port, filesIndex, pullExtraInfo)
                 } ?: run {
+                    val needRetry = pullExtraInfo.executionHistories.size < 3
+
+                    if (!needRetry) {
+                        logger.error { "exist pull chunk fail" }
+                        pasteboardService.clearRemotePasteboard(pasteData)
+                    }
+
                     return createFailurePasteTaskResult(
                         logger = logger,
                         retryHandler = { pullExtraInfo.executionHistories.size < 3 },
@@ -102,6 +109,13 @@ class PullFileTaskExecutor(
                     )
                 }
             } ?: run {
+                val needRetry = pullExtraInfo.executionHistories.size < 3
+
+                if (!needRetry) {
+                    logger.error { "exist pull chunk fail" }
+                    pasteboardService.clearRemotePasteboard(pasteData)
+                }
+
                 return createFailurePasteTaskResult(
                     logger = logger,
                     retryHandler = { pullExtraInfo.executionHistories.size < 3 },
