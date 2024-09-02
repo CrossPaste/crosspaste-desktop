@@ -257,6 +257,8 @@ compose.desktop {
 
             jvmArgs("-DloggerLevel=$loggerLevel")
             jvmArgs("-DappEnv=$appEnv")
+            jvmArgs("-Djava.net.preferIPv4Stack=true")
+            jvmArgs("-Djava.net.preferIPv6Addresses=false")
             jvmArgs("-DglobalListener=$globalListener")
             jvmArgs("-Dio.netty.maxDirectMemory=268435456")
             jvmArgs("-DloggerDebugPackages=com.crosspaste.routing,com.crosspaste.net.clientapi,com.crosspaste.net.plugin")
