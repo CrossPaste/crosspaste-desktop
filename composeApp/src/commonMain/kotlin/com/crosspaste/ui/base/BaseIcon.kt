@@ -5,6 +5,11 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 
 @Composable
+fun alertCircle(): Painter {
+    return painterResource("icon/base/alert_circle.svg")
+}
+
+@Composable
 fun settings(): Painter {
     return painterResource("icon/base/settings.svg")
 }

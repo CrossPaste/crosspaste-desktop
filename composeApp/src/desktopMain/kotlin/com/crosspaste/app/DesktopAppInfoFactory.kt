@@ -51,6 +51,16 @@ class DesktopAppInfoFactory(private val configManager: ConfigManager) : AppInfoF
         return Paths.get(userHome).toFile().name
     }
 
+    override fun createVersionCompatibilityChecker(): VersionCompatibilityChecker {
+        val map =
+            properties?.entries?.filter { it.key.toString().startsWith("api-") }
+                ?.associate { entry ->
+                    val version = entry.key.toString().replace("api-", "")
+                    version to createAppVersionInfo(version, entry.value.toString())
+                }?.toMap() ?: emptyMap()
+        return VersionCompatibilityChecker(map)
+    }
+
     companion object {
 
         fun getVersion(

@@ -30,6 +30,7 @@ import com.crosspaste.app.DesktopAppUpdateService
 import com.crosspaste.app.DesktopAppUrls
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
+import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.app.getDesktopAppWindowManager
 import com.crosspaste.clean.CleanPasteScheduler
 import com.crosspaste.clean.DesktopCleanPasteScheduler
@@ -228,6 +229,9 @@ class CrossPaste {
                     single<AppRestartService> { DesktopAppRestartService }
                     single<AppExitService> { DesktopAppExitService }
                     single<AppUpdateService> { DesktopAppUpdateService(get(), get(), get(), get(), get()) }
+                    single<VersionCompatibilityChecker> {
+                        get<AppInfoFactory>().createVersionCompatibilityChecker()
+                    }
                     single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<PasteServer>() }) }
                     single<GlobalCoroutineScope> { GlobalCoroutineScopeImpl }
                     single<SyncInfoFactory> { DesktopSyncInfoFactory(get(), get()) }
@@ -265,13 +269,7 @@ class CrossPaste {
                     single<PullClientApi> { DesktopPullClientApi(get(), get()) }
                     single<DesktopSyncManager> {
                         DesktopSyncManager(
-                            get(),
-                            get(),
-                            get(),
-                            get(),
-                            get(),
-                            get(),
-                            get(),
+                            get(), get(), get(), get(), get(), get(), get(), get(), get(),
                             lazy { get() },
                         )
                     }

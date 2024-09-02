@@ -50,6 +50,8 @@ import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.LocalKoinApplication
+import com.crosspaste.app.AppInfo
+import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.dao.sync.SyncRuntimeInfo
 import com.crosspaste.dao.sync.SyncState
 import com.crosspaste.i18n.GlobalCopywriter
@@ -81,20 +83,22 @@ fun DeviceConnectView(
 ) {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
+    val appInfo = current.koin.get<AppInfo>()
+    val checker = current.koin.get<VersionCompatibilityChecker>()
     val copywriter = current.koin.get<GlobalCopywriter>()
     val syncManager = current.koin.get<SyncManager>()
 
-    val (connectColor, connectText) =
-        if (syncRuntimeInfo.allowSend || syncRuntimeInfo.allowReceive) {
-            getConnectStateColorAndText(syncRuntimeInfo.connectState)
-        } else {
-            Pair(Color.Red, "OFF_CONNECTED")
-        }
+    val (connectColor, connectText) = getConnectStateColorAndText(appInfo, syncRuntimeInfo, checker)
 
     val connectIcon = getAllowSendAndReceiveImage(syncRuntimeInfo)
 
     var hover by remember { mutableStateOf(false) }
-    val backgroundColor = if (hover) MaterialTheme.colors.selectColor() else MaterialTheme.colors.background
+    val backgroundColor =
+        if (hover) {
+            MaterialTheme.colors.selectColor()
+        } else {
+            MaterialTheme.colors.background
+        }
 
     var modifier =
         Modifier
@@ -262,13 +266,29 @@ fun getAllowSendAndReceiveImage(syncRuntimeInfo: SyncRuntimeInfo): Painter {
     }
 }
 
-fun getConnectStateColorAndText(connectState: Int): Pair<Color, String> {
-    return when (connectState) {
-        SyncState.CONNECTED -> Pair(connectedColor(), "connected")
-        SyncState.CONNECTING -> Pair(connectingColor(), "connecting")
-        SyncState.DISCONNECTED -> Pair(disconnectedColor(), "disconnected")
-        SyncState.UNMATCHED -> Pair(unmatchedColor(), "unmatched")
-        SyncState.UNVERIFIED -> Pair(unverifiedColor(), "unverified")
-        else -> throw IllegalArgumentException("Unknown connectState: $connectState")
+fun getConnectStateColorAndText(
+    appInfo: AppInfo,
+    syncRuntimeInfo: SyncRuntimeInfo,
+    checker: VersionCompatibilityChecker,
+): Pair<Color, String> {
+    val hasApiCompatibilityChangesBetween =
+        checker.hasApiCompatibilityChangesBetween(
+            appInfo.appVersion,
+            syncRuntimeInfo.appVersion,
+        )
+
+    return if (hasApiCompatibilityChangesBetween) {
+        Pair(unmatchedColor(), "no_compatible")
+    } else if (syncRuntimeInfo.allowSend || syncRuntimeInfo.allowReceive) {
+        when (syncRuntimeInfo.connectState) {
+            SyncState.CONNECTED -> Pair(connectedColor(), "connected")
+            SyncState.CONNECTING -> Pair(connectingColor(), "connecting")
+            SyncState.DISCONNECTED -> Pair(disconnectedColor(), "disconnected")
+            SyncState.UNMATCHED -> Pair(unmatchedColor(), "unmatched")
+            SyncState.UNVERIFIED -> Pair(unverifiedColor(), "unverified")
+            else -> throw IllegalArgumentException("Unknown connectState: ${syncRuntimeInfo.connectState}")
+        }
+    } else {
+        Pair(disconnectedColor(), "off_connected")
     }
 }

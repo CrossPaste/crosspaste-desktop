@@ -8,10 +8,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
+import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -33,13 +35,17 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
+import com.crosspaste.app.AppInfo
+import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.dao.sync.SyncRuntimeInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.PageViewContext
 import com.crosspaste.ui.WindowDecoration
 import com.crosspaste.ui.base.CustomSwitch
+import com.crosspaste.ui.base.alertCircle
 import com.crosspaste.ui.connectedColor
+import com.crosspaste.ui.unmatchedColor
 import kotlinx.coroutines.runBlocking
 
 @Composable
@@ -51,10 +57,18 @@ fun DeviceDetailView(currentPageViewContext: MutableState<PageViewContext>) {
 @Composable
 fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext>) {
     val current = LocalKoinApplication.current
+    val appInfo = current.koin.get<AppInfo>()
+    val checker = current.koin.get<VersionCompatibilityChecker>()
     val copywriter = current.koin.get<GlobalCopywriter>()
     val syncManager = current.koin.get<SyncManager>()
 
     var syncRuntimeInfo by remember { mutableStateOf(currentPageViewContext.value.context as SyncRuntimeInfo) }
+
+    val compatibility by remember {
+        mutableStateOf(
+            !checker.hasApiCompatibilityChangesBetween(appInfo.appVersion, syncRuntimeInfo.appVersion),
+        )
+    }
 
     DeviceConnectView(syncRuntimeInfo, currentPageViewContext, false) { }
 
@@ -63,6 +77,45 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
             Modifier.fillMaxSize()
                 .padding(16.dp),
     ) {
+        if (!compatibility) {
+            Column(
+                modifier =
+                    Modifier.wrapContentSize()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colors.background),
+            ) {
+                Row(
+                    modifier =
+                        Modifier.wrapContentSize()
+                            .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        painter = alertCircle(),
+                        contentDescription = "Warning",
+                        tint = unmatchedColor(),
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text(
+                        text =
+                            "${copywriter.getText("current_software_version")}: ${appInfo.appVersion}\n" +
+                                "${copywriter.getText("connected_software_version")}: ${syncRuntimeInfo.appVersion}\n" +
+                                copywriter.getText("incompatible_info"),
+                        color = unmatchedColor(),
+                        style =
+                            TextStyle(
+                                fontWeight = FontWeight.Light,
+                                lineHeight = 20.sp,
+                            ),
+                        fontFamily = FontFamily.SansSerif,
+                        fontSize = 14.sp,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+        }
+
         // Header
         Text(
             modifier =

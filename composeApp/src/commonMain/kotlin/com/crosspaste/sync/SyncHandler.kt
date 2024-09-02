@@ -5,6 +5,8 @@ import com.crosspaste.signal.SignalMessageProcessor
 
 interface SyncHandler {
 
+    var compatibility: Boolean
+
     var recommendedRefreshTime: Long
 
     var syncRuntimeInfo: SyncRuntimeInfo

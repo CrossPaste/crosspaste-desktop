@@ -4,6 +4,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.crosspaste.app.AppInfo
+import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.dao.signal.SignalDao
 import com.crosspaste.dao.sync.SyncRuntimeInfo
 import com.crosspaste.dao.sync.SyncRuntimeInfoDao
@@ -33,6 +35,8 @@ import kotlinx.coroutines.withContext
 import org.signal.libsignal.protocol.state.SignalProtocolStore
 
 class DesktopSyncManager(
+    private val appInfo: AppInfo,
+    private val checker: VersionCompatibilityChecker,
     private val telnetUtils: TelnetUtils,
     private val syncInfoFactory: SyncInfoFactory,
     private val syncClientApi: SyncClientApi,
@@ -73,7 +77,9 @@ class DesktopSyncManager(
                     syncRuntimeInfos.map { syncRuntimeInfo ->
                         syncRuntimeInfo.appInstanceId to
                             DesktopSyncHandler(
+                                appInfo,
                                 syncRuntimeInfo,
+                                checker,
                                 tokenCache,
                                 telnetUtils,
                                 syncInfoFactory,
@@ -106,7 +112,9 @@ class DesktopSyncManager(
                                 val insertionSyncRuntimeInfo = changes.list[insertion]
                                 internalSyncHandlers[insertionSyncRuntimeInfo.appInstanceId] =
                                     DesktopSyncHandler(
+                                        appInfo,
                                         insertionSyncRuntimeInfo,
+                                        checker,
                                         tokenCache,
                                         telnetUtils,
                                         syncInfoFactory,
