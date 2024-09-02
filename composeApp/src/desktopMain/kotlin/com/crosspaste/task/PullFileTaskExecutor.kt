@@ -87,47 +87,27 @@ class PullFileTaskExecutor(
                 it.getConnectHostAddress()?.let { host ->
                     return pullFiles(pasteData, host, port, filesIndex, pullExtraInfo)
                 } ?: run {
-                    val needRetry = pullExtraInfo.executionHistories.size < 3
-
-                    if (!needRetry) {
-                        logger.error { "exist pull chunk fail" }
-                        pasteboardService.clearRemotePasteboard(pasteData)
-                    }
-
-                    return createFailurePasteTaskResult(
-                        logger = logger,
-                        retryHandler = { pullExtraInfo.executionHistories.size < 3 },
-                        startTime = pasteTask.modifyTime,
-                        fails =
-                            listOf(
-                                createFailureResult(
-                                    StandardErrorCode.CANT_GET_SYNC_ADDRESS,
-                                    "Failed to get connect host address by $appInstanceId",
-                                ),
+                    return doFailure(
+                        pasteData, pullExtraInfo,
+                        listOf(
+                            createFailureResult(
+                                StandardErrorCode.CANT_GET_SYNC_ADDRESS,
+                                "Failed to get connect host address by $appInstanceId",
                             ),
-                        extraInfo = pullExtraInfo,
+                        ),
+                        pasteTask.modifyTime,
                     )
                 }
             } ?: run {
-                val needRetry = pullExtraInfo.executionHistories.size < 3
-
-                if (!needRetry) {
-                    logger.error { "exist pull chunk fail" }
-                    pasteboardService.clearRemotePasteboard(pasteData)
-                }
-
-                return createFailurePasteTaskResult(
-                    logger = logger,
-                    retryHandler = { pullExtraInfo.executionHistories.size < 3 },
-                    startTime = pasteTask.modifyTime,
-                    fails =
-                        listOf(
-                            createFailureResult(
-                                StandardErrorCode.PULL_FILE_TASK_FAIL,
-                                "Failed to get sync handler by $appInstanceId",
-                            ),
+                return doFailure(
+                    pasteData, pullExtraInfo,
+                    listOf(
+                        createFailureResult(
+                            StandardErrorCode.PULL_FILE_TASK_FAIL,
+                            "Failed to get sync handler by $appInstanceId",
                         ),
-                    extraInfo = pullExtraInfo,
+                    ),
+                    pasteTask.modifyTime,
                 )
             }
         } ?: run {
@@ -193,24 +173,33 @@ class PullFileTaskExecutor(
         }
 
         return if (pullExtraInfo.pullChunks.contains(0)) {
-            val needRetry = pullExtraInfo.executionHistories.size < 3
-
-            if (!needRetry) {
-                logger.error { "exist pull chunk fail" }
-                pasteboardService.clearRemotePasteboard(pasteData)
-            }
-
-            createFailurePasteTaskResult(
-                logger = logger,
-                retryHandler = { needRetry },
-                startTime = System.currentTimeMillis(),
-                fails = fails.values,
-                extraInfo = pullExtraInfo,
-            )
+            doFailure(pasteData, pullExtraInfo, fails.values)
         } else {
             pasteSyncProcessManager.cleanProcess(pasteData.id)
             pasteboardService.tryWriteRemotePasteboardWithFile(pasteData)
             SuccessPasteTaskResult()
         }
+    }
+
+    suspend fun doFailure(
+        pasteData: PasteData,
+        pullExtraInfo: PullExtraInfo,
+        fails: Collection<FailureResult>,
+        startTime: Long = System.currentTimeMillis(),
+    ): PasteTaskResult {
+        val needRetry = pullExtraInfo.executionHistories.size < 3
+
+        if (!needRetry) {
+            logger.error { "exist pull chunk fail" }
+            pasteboardService.clearRemotePasteboard(pasteData)
+        }
+
+        return createFailurePasteTaskResult(
+            logger = logger,
+            retryHandler = { needRetry },
+            startTime = startTime,
+            fails = fails,
+            extraInfo = pullExtraInfo,
+        )
     }
 }
