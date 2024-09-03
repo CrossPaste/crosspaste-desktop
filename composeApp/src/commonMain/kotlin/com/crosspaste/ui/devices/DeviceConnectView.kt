@@ -187,7 +187,7 @@ fun DeviceConnectView(
                     modifier =
                         Modifier
                             .background(Color.Transparent, CircleShape)
-                            .padding(horizontal = 8.dp),
+                            .padding(end = 8.dp),
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Refresh,
