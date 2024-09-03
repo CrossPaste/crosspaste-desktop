@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -162,37 +163,45 @@ fun DeviceConnectView(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.End,
         ) {
-            PasteIconButton(
-                size = 20.dp,
-                onClick = {
-                    scope.launch {
-                        try {
-                            refresh = true
-                            withContext(cpuDispatcher) {
-                                syncManager.resolveSync(syncRuntimeInfo.appInstanceId)
+            if (!refresh) {
+                PasteIconButton(
+                    size = 20.dp,
+                    onClick = {
+                        scope.launch {
+                            try {
+                                refresh = true
+                                withContext(cpuDispatcher) {
+                                    syncManager.resolveSync(syncRuntimeInfo.appInstanceId)
+                                }
+                                delay(1000)
+                            } catch (e: Exception) {
+                                notificationManager.addNotification(
+                                    "${copywriter.getText("refresh_connection_failed")}:\n${e.message}",
+                                    MessageType.Error,
+                                )
+                            } finally {
+                                refresh = false
                             }
-                            delay(1000)
-                        } catch (e: Exception) {
-                            notificationManager.addNotification(
-                                "${copywriter.getText("refresh_connection_failed")}:\n${e.message}",
-                                MessageType.Error,
-                            )
-                        } finally {
-                            refresh = false
                         }
-                    }
-                },
-                modifier =
-                    Modifier
-                        .background(Color.Transparent, CircleShape)
-                        .padding(horizontal = 8.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Refresh,
-                    contentDescription = "refresh",
+                    },
+                    modifier =
+                        Modifier
+                            .background(Color.Transparent, CircleShape)
+                            .padding(horizontal = 8.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Refresh,
+                        contentDescription = "refresh",
+                        modifier = Modifier.size(18.dp),
+                        tint = connectColor,
+                    )
+                }
+            } else {
+                CircularProgressIndicator(
                     modifier = Modifier.size(18.dp),
-                    tint = connectColor,
+                    color = connectColor,
                 )
+                Spacer(modifier = Modifier.width(8.dp))
             }
             Icon(
                 painter = connectIcon,
