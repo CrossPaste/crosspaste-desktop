@@ -21,11 +21,13 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -59,6 +61,8 @@ import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.PageViewContext
 import com.crosspaste.ui.PageViewType
 import com.crosspaste.ui.base.MenuItem
+import com.crosspaste.ui.base.MessageType
+import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.allowReceive
 import com.crosspaste.ui.base.allowSend
@@ -72,6 +76,10 @@ import com.crosspaste.ui.disconnectedColor
 import com.crosspaste.ui.selectColor
 import com.crosspaste.ui.unmatchedColor
 import com.crosspaste.ui.unverifiedColor
+import com.crosspaste.utils.cpuDispatcher
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -86,9 +94,20 @@ fun DeviceConnectView(
     val appInfo = current.koin.get<AppInfo>()
     val checker = current.koin.get<VersionCompatibilityChecker>()
     val copywriter = current.koin.get<GlobalCopywriter>()
+    val notificationManager = current.koin.get<NotificationManager>()
     val syncManager = current.koin.get<SyncManager>()
 
-    val (connectColor, connectText) = getConnectStateColorAndText(appInfo, syncRuntimeInfo, checker)
+    val scope = rememberCoroutineScope()
+
+    var refresh by remember { mutableStateOf(false) }
+
+    val (connectColor, connectText) =
+        getConnectStateColorAndText(
+            appInfo,
+            syncRuntimeInfo,
+            checker,
+            refresh,
+        )
 
     val connectIcon = getAllowSendAndReceiveImage(syncRuntimeInfo)
 
@@ -143,6 +162,38 @@ fun DeviceConnectView(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.End,
         ) {
+            PasteIconButton(
+                size = 20.dp,
+                onClick = {
+                    scope.launch {
+                        try {
+                            refresh = true
+                            withContext(cpuDispatcher) {
+                                syncManager.resolveSync(syncRuntimeInfo.appInstanceId)
+                            }
+                            delay(1000)
+                        } catch (e: Exception) {
+                            notificationManager.addNotification(
+                                "${copywriter.getText("refresh_connection_failed")}:\n${e.message}",
+                                MessageType.Error,
+                            )
+                        } finally {
+                            refresh = false
+                        }
+                    }
+                },
+                modifier =
+                    Modifier
+                        .background(Color.Transparent, CircleShape)
+                        .padding(horizontal = 8.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Refresh,
+                    contentDescription = "refresh",
+                    modifier = Modifier.size(18.dp),
+                    tint = connectColor,
+                )
+            }
             Icon(
                 painter = connectIcon,
                 contentDescription = "connectState",
@@ -178,7 +229,7 @@ fun DeviceConnectView(
                             .onGloballyPositioned { coordinates ->
                                 buttonPosition = coordinates.localToWindow(Offset.Zero)
                                 buttonSize = coordinates.size.toSize()
-                            }.padding(horizontal = 12.dp),
+                            }.padding(horizontal = 8.dp),
                 ) {
                     Icon(
                         Icons.Outlined.MoreVert,
@@ -270,25 +321,30 @@ fun getConnectStateColorAndText(
     appInfo: AppInfo,
     syncRuntimeInfo: SyncRuntimeInfo,
     checker: VersionCompatibilityChecker,
+    refresh: Boolean,
 ): Pair<Color, String> {
-    val hasApiCompatibilityChangesBetween =
-        checker.hasApiCompatibilityChangesBetween(
-            appInfo.appVersion,
-            syncRuntimeInfo.appVersion,
-        )
-
-    return if (hasApiCompatibilityChangesBetween) {
-        Pair(unmatchedColor(), "no_compatible")
-    } else if (syncRuntimeInfo.allowSend || syncRuntimeInfo.allowReceive) {
-        when (syncRuntimeInfo.connectState) {
-            SyncState.CONNECTED -> Pair(connectedColor(), "connected")
-            SyncState.CONNECTING -> Pair(connectingColor(), "connecting")
-            SyncState.DISCONNECTED -> Pair(disconnectedColor(), "disconnected")
-            SyncState.UNMATCHED -> Pair(unmatchedColor(), "unmatched")
-            SyncState.UNVERIFIED -> Pair(unverifiedColor(), "unverified")
-            else -> throw IllegalArgumentException("Unknown connectState: ${syncRuntimeInfo.connectState}")
-        }
+    return if (refresh) {
+        Pair(connectingColor(), "connecting")
     } else {
-        Pair(disconnectedColor(), "off_connected")
+        val hasApiCompatibilityChangesBetween =
+            checker.hasApiCompatibilityChangesBetween(
+                appInfo.appVersion,
+                syncRuntimeInfo.appVersion,
+            )
+
+        if (hasApiCompatibilityChangesBetween) {
+            Pair(unmatchedColor(), "no_compatible")
+        } else if (syncRuntimeInfo.allowSend || syncRuntimeInfo.allowReceive) {
+            when (syncRuntimeInfo.connectState) {
+                SyncState.CONNECTED -> Pair(connectedColor(), "connected")
+                SyncState.CONNECTING -> Pair(connectingColor(), "connecting")
+                SyncState.DISCONNECTED -> Pair(disconnectedColor(), "disconnected")
+                SyncState.UNMATCHED -> Pair(unmatchedColor(), "unmatched")
+                SyncState.UNVERIFIED -> Pair(unverifiedColor(), "unverified")
+                else -> throw IllegalArgumentException("Unknown connectState: ${syncRuntimeInfo.connectState}")
+            }
+        } else {
+            Pair(disconnectedColor(), "off_connected")
+        }
     }
 }
