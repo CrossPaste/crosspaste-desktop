@@ -24,7 +24,7 @@ async function validateAndUpdateVersion() {
     const propertiesPath = path.join(__dirname, '../../composeApp/src/desktopMain/resources/crosspaste-version.properties');
     console.log('Reading properties file:', propertiesPath);
     let propertiesContent = await fs.readFile(propertiesPath, 'utf8');
-    const propertiesVersionMatch = propertiesContent.match(/version=(.*)$/);
+    const propertiesVersionMatch = propertiesContent.match(/^version=([^\r\n]+)/m);
     if (!propertiesVersionMatch) {
         console.log('Version not found in properties file.');
         process.exit(1);
