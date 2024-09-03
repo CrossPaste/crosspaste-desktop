@@ -51,11 +51,15 @@ class VersionCompatibilityChecker(private val versionInfos: Map<String, AppVersi
                 getVersionString(semverVersion1) to getVersionString(semverVersion2)
             }
 
+        if (fromVersion == toVersion) {
+            return false
+        }
+
         val fromIndex = versionIndexMap[fromVersion] ?: return false
         val toIndex = versionIndexMap[toVersion] ?: return false
 
-        val startIndex = min(fromIndex + 1, toIndex)
-        val endIndex = max(fromIndex + 1, toIndex)
+        val startIndex = min(min(fromIndex + 1, versionIndexMap.size - 1), toIndex)
+        val endIndex = max(min(fromIndex + 1, versionIndexMap.size - 1), toIndex)
 
         for (i in startIndex..endIndex) {
             if (apiCompatibilityChanges[i]) {
