@@ -275,7 +275,7 @@ class CrossPaste {
                     }
                     single<SyncRefresher> { get<DesktopSyncManager>() }
                     single<SyncManager> { get<DesktopSyncManager>() }
-                    single<DeviceManager> { DesktopDeviceManager(get(), get(), get()) }
+                    single<DeviceManager> { DesktopDeviceManager(get(), get(), get(), get()) }
                     single<FaviconLoader> { DesktopFaviconLoader(get()) }
 
                     // signal component

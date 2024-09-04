@@ -77,10 +77,8 @@ import com.crosspaste.ui.disconnectedColor
 import com.crosspaste.ui.selectColor
 import com.crosspaste.ui.unmatchedColor
 import com.crosspaste.ui.unverifiedColor
-import com.crosspaste.utils.cpuDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -170,9 +168,7 @@ fun DeviceConnectView(
                         scope.launch {
                             try {
                                 refresh = true
-                                withContext(cpuDispatcher) {
-                                    syncManager.resolveSync(syncRuntimeInfo.appInstanceId)
-                                }
+                                syncManager.resolveSync(syncRuntimeInfo.appInstanceId)
                                 delay(1000)
                             } catch (e: Exception) {
                                 notificationManager.addNotification(

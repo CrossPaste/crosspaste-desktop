@@ -6,6 +6,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.crosspaste.app.AppInfo
 import com.crosspaste.config.ConfigManager
+import com.crosspaste.dao.sync.SyncRuntimeInfoDao
+import com.crosspaste.dao.sync.createSyncRuntimeInfo
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.utils.DesktopJsonUtils
 import com.crosspaste.utils.TxtRecordUtils
@@ -19,6 +21,7 @@ class DesktopDeviceManager(
     private val appInfo: AppInfo,
     private val configManager: ConfigManager,
     private val syncManager: SyncManager,
+    private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
 ) : DeviceManager, ServiceListener {
 
     private val logger = KotlinLogging.logger {}
@@ -53,6 +56,15 @@ class DesktopDeviceManager(
         searching = true
         try {
             syncInfos.clear()
+            val existSyncRuntimeInfos =
+                allSyncInfos.filter { !isNew(it.key) }
+                    .map { createSyncRuntimeInfo(it.value) }
+            if (existSyncRuntimeInfos.isNotEmpty()) {
+                syncRuntimeInfoDao.update(existSyncRuntimeInfos)
+                    .forEach {
+                        syncManager.resolveSync(it)
+                    }
+            }
             syncInfos.addAll(allSyncInfos.filter { isNew(it.key) && !isBlackListed(it.key) }.values)
         } finally {
             searching = false

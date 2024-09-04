@@ -476,6 +476,7 @@ class DesktopSyncHandler(
     }
 
     override suspend fun markExit() {
+        logger.info { "markExit ${syncRuntimeInfo.appInstanceId}" }
         update {
             this.connectState = SyncState.DISCONNECTED
             this.modifyTime = RealmInstant.now()
