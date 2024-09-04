@@ -178,8 +178,12 @@ import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
 import com.github.kwhat.jnativehook.mouse.NativeMouseListener
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withContext
 import org.koin.core.KoinApplication
 import org.koin.core.context.GlobalContext
 import org.koin.dsl.module
@@ -406,37 +410,19 @@ class CrossPaste {
             }
         }
 
-        private fun exitCrossPasteApplication(
+        private suspend fun exitCrossPasteApplication(
             exitMode: ExitMode,
-            exitApplication: () -> Unit,
-        ) {
+            scope: CoroutineScope,
+        ) = withContext(scope.coroutineContext) {
             val koin = koinApplication.koin
             val appExitService = koin.get<AppExitService>()
             appExitService.beforeExitList.forEach {
                 it.invoke()
             }
-            logger.debug { "beforeExitList execution completed" }
-            koin.get<AppUpdateService>().stop()
-            logger.info { "AppUpdateService stop completed" }
-            koin.get<ChromeService>().quit()
-            logger.info { "ChromeService quit completed" }
-            koin.get<PasteboardService>().stop()
-            logger.info { "PasteboardService stop completed" }
-            koin.get<PasteBonjourService>().unregisterService()
-            logger.info { "PasteBonjourService unregister completed" }
-            koin.get<PasteServer>().stop()
-            logger.info { "PasteServer stop completed" }
-            koin.get<SyncManager>().notifyExit()
-            logger.info { "SyncManager notify exit completed" }
-            koin.get<CleanPasteScheduler>().stop()
-            logger.info { "CleanPasteScheduler stop completed" }
-            koin.get<GlobalListener>().stop()
-            logger.info { "GlobalListener stop completed" }
-            koin.get<UserDataPathProvider>().cleanTemp()
-            logger.info { "UserDataPathProvider clean temp completed" }
-            appExitService.beforeReleaseLockList.forEach {
-                it.invoke()
-            }
+
+            shutdownAllServices()
+
+            appExitService.beforeReleaseLockList.forEach { it.invoke() }
             logger.info { "beforeReleaseLockList execution completed" }
             koin.get<AppLock>().releaseLock()
             logger.info { "AppLock release completed" }
@@ -444,7 +430,38 @@ class CrossPaste {
                 val appWindowManager = koin.get<DesktopAppWindowManager>()
                 appWindowManager.showMainWindow = false
             }
-            exitApplication()
+        }
+
+        private suspend fun shutdownAllServices() {
+            supervisorScope {
+                val jobs =
+                    listOf(
+                        async { stopService<AppUpdateService>("AppUpdateService") { it.stop() } },
+                        async { stopService<ChromeService>("ChromeService") { it.quit() } },
+                        async { stopService<PasteboardService>("PasteboardService") { it.stop() } },
+                        async { stopService<PasteBonjourService>("PasteBonjourService") { it.unregisterService() } },
+                        async { stopService<PasteServer>("PasteServer") { it.stop() } },
+                        async { stopService<SyncManager>("SyncManager") { it.notifyExit() } },
+                        async { stopService<CleanPasteScheduler>("CleanPasteScheduler") { it.stop() } },
+                        async { stopService<GlobalListener>("GlobalListener") { it.stop() } },
+                        async { stopService<UserDataPathProvider>("UserDataPathProvider") { it.cleanTemp() } },
+                    )
+
+                jobs.awaitAll()
+            }
+        }
+
+        private inline fun <reified T : Any> stopService(
+            serviceName: String,
+            stopAction: (T) -> Unit,
+        ) {
+            try {
+                val service = koinApplication.koin.get<T>()
+                stopAction(service)
+                logger.info { "$serviceName stop completed" }
+            } catch (e: Exception) {
+                logger.error(e) { "Error stopping $serviceName" }
+            }
         }
 
         @JvmStatic
@@ -473,9 +490,10 @@ class CrossPaste {
                         appWindowManager.showMainWindow = false
                     }
                     appWindowManager.showSearchWindow = false
-                    ioScope.launch(CoroutineName("ExitApplication")) {
-                        exitCrossPasteApplication(mode) { exitApplication() }
+                    runBlocking {
+                        exitCrossPasteApplication(mode, ioScope)
                     }
+                    exitApplication()
                 }
 
                 val currentPageViewContext = remember { mutableStateOf(PageViewContext(PageViewType.PASTE_PREVIEW)) }
