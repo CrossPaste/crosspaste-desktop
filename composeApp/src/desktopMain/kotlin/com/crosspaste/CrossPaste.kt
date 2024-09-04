@@ -181,7 +181,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 import org.koin.core.KoinApplication
@@ -413,6 +413,7 @@ class CrossPaste {
         private suspend fun exitCrossPasteApplication(
             exitMode: ExitMode,
             scope: CoroutineScope,
+            exitApplication: () -> Unit,
         ) = withContext(scope.coroutineContext) {
             val koin = koinApplication.koin
             val appExitService = koin.get<AppExitService>()
@@ -430,6 +431,7 @@ class CrossPaste {
                 val appWindowManager = koin.get<DesktopAppWindowManager>()
                 appWindowManager.showMainWindow = false
             }
+            exitApplication()
         }
 
         private suspend fun shutdownAllServices() {
@@ -490,10 +492,9 @@ class CrossPaste {
                         appWindowManager.showMainWindow = false
                     }
                     appWindowManager.showSearchWindow = false
-                    runBlocking {
-                        exitCrossPasteApplication(mode, ioScope)
+                    ioScope.launch {
+                        exitCrossPasteApplication(mode, ioScope) { exitApplication() }
                     }
-                    exitApplication()
                 }
 
                 val currentPageViewContext = remember { mutableStateOf(PageViewContext(PageViewType.PASTE_PREVIEW)) }
