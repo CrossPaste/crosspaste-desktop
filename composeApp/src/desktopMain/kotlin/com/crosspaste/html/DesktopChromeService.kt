@@ -127,12 +127,23 @@ class DesktopChromeService(
         val installPath = moduleLoaderConfig.installPath
         moduleLoaderConfig.getModuleItem(CHROME_DRIVER_MODULE_ITEM_NAME)?.let { chromeDriverModule ->
             moduleLoaderConfig.getModuleItem(CHROME_HEADLESS_SHELL_MODULE_ITEM_NAME)?.let { chromeHeadlessShellModule ->
+                val chromeDriverFile = chromeDriverModule.getModuleFilePath(installPath).toFile()
+                val chromeHeadlessShellFile = chromeHeadlessShellModule.getModuleFilePath(installPath).toFile()
+
+                if (!chromeDriverFile.canExecute()) {
+                    chromeDriverFile.setExecutable(true)
+                }
+
+                if (!chromeHeadlessShellFile.canExecute()) {
+                    chromeHeadlessShellFile.setExecutable(true)
+                }
+
                 chromeDriverService = ChromeDriverService.createDefaultService()
                 System.setProperty(
                     "webdriver.chrome.driver",
-                    chromeDriverModule.getModuleFilePath(installPath).toString(),
+                    chromeDriverFile.absolutePath,
                 )
-                options.setBinary(chromeHeadlessShellModule.getModuleFilePath(installPath).toFile())
+                options.setBinary(chromeHeadlessShellFile)
                 chromeDriver = ChromeDriver(chromeDriverService, options)
                 return true
             }
