@@ -30,6 +30,7 @@ import kotlinx.coroutines.sync.withLock
 import org.signal.libsignal.protocol.SessionBuilder
 import org.signal.libsignal.protocol.state.PreKeyBundle
 import org.signal.libsignal.protocol.state.SignalProtocolStore
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.min
 
 class DesktopSyncHandler(
@@ -75,7 +76,9 @@ class DesktopSyncHandler(
                     try {
                         pollingResolve()
                     } catch (e: Exception) {
-                        logger.error(e) { "resolve error" }
+                        if (e !is CancellationException) {
+                            logger.error(e) { "resolve error" }
+                        }
                     }
                 }
             }
