@@ -161,43 +161,45 @@ fun DeviceConnectView(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.End,
         ) {
-            if (!refresh) {
-                PasteIconButton(
-                    size = 20.dp,
-                    onClick = {
-                        scope.launch {
-                            try {
-                                refresh = true
-                                syncManager.resolveSync(syncRuntimeInfo.appInstanceId)
-                                delay(1000)
-                            } catch (e: Exception) {
-                                notificationManager.addNotification(
-                                    "${copywriter.getText("refresh_connection_failed")}:\n${e.message}",
-                                    MessageType.Error,
-                                )
-                            } finally {
-                                refresh = false
+            if (deviceInteractionEnabled) {
+                if (!refresh) {
+                    PasteIconButton(
+                        size = 20.dp,
+                        onClick = {
+                            scope.launch {
+                                try {
+                                    refresh = true
+                                    syncManager.resolveSync(syncRuntimeInfo.appInstanceId)
+                                    delay(1000)
+                                } catch (e: Exception) {
+                                    notificationManager.addNotification(
+                                        "${copywriter.getText("refresh_connection_failed")}:\n${e.message}",
+                                        MessageType.Error,
+                                    )
+                                } finally {
+                                    refresh = false
+                                }
                             }
-                        }
-                    },
-                    modifier =
-                        Modifier
-                            .background(Color.Transparent, CircleShape)
-                            .padding(end = 8.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Refresh,
-                        contentDescription = "refresh",
+                        },
+                        modifier =
+                            Modifier
+                                .background(Color.Transparent, CircleShape)
+                                .padding(end = 8.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Refresh,
+                            contentDescription = "refresh",
+                            modifier = Modifier.size(18.dp),
+                            tint = connectColor,
+                        )
+                    }
+                } else {
+                    CircularProgressIndicator(
                         modifier = Modifier.size(18.dp),
-                        tint = connectColor,
+                        color = connectColor,
                     )
+                    Spacer(modifier = Modifier.width(8.dp))
                 }
-            } else {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(18.dp),
-                    color = connectColor,
-                )
-                Spacer(modifier = Modifier.width(8.dp))
             }
             Icon(
                 painter = connectIcon,

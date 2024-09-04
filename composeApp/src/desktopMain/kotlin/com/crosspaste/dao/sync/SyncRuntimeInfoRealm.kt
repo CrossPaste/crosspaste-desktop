@@ -4,6 +4,7 @@ import io.realm.kotlin.Realm
 import io.realm.kotlin.query.RealmResults
 import io.realm.kotlin.query.Sort
 import io.realm.kotlin.types.RealmInstant
+import kotlin.reflect.KMutableProperty1
 
 class SyncRuntimeInfoRealm(private val realm: Realm) : SyncRuntimeInfoDao {
 
@@ -52,68 +53,50 @@ class SyncRuntimeInfoRealm(private val realm: Realm) : SyncRuntimeInfoDao {
         var netChange = false
         var infoChange = false
 
-        if (!hostInfoListEqual(syncRuntimeInfo.hostInfoList, newSyncRuntimeInfo.hostInfoList)) {
-            syncRuntimeInfo.hostInfoList = newSyncRuntimeInfo.hostInfoList
-            netChange = true
+        fun <T> updateField(
+            field: KMutableProperty1<SyncRuntimeInfo, T>,
+            isNetField: Boolean = false,
+            customEquals: ((T, T) -> Boolean)? = null,
+        ): Boolean {
+            val oldValue = field.get(syncRuntimeInfo)
+            val newValue = field.get(newSyncRuntimeInfo)
+            val areEqual = customEquals?.invoke(oldValue, newValue) ?: (oldValue == newValue)
+            return if (!areEqual) {
+                field.set(syncRuntimeInfo, newValue)
+                if (isNetField) {
+                    netChange = true
+                } else {
+                    infoChange = true
+                }
+                true
+            } else {
+                false
+            }
         }
 
-        if (syncRuntimeInfo.port != newSyncRuntimeInfo.port) {
-            syncRuntimeInfo.port = newSyncRuntimeInfo.port
-            netChange = true
-        }
+        // Update network-related fields
+        updateField(SyncRuntimeInfo::hostInfoList, true, ::hostInfoListEqual)
+        updateField(SyncRuntimeInfo::port, true)
 
-        if (syncRuntimeInfo.appVersion != newSyncRuntimeInfo.appVersion) {
-            syncRuntimeInfo.appVersion = newSyncRuntimeInfo.appVersion
-            infoChange = true
-        }
+        // Update info-related fields
+        updateField(SyncRuntimeInfo::appVersion)
+        updateField(SyncRuntimeInfo::userName)
+        updateField(SyncRuntimeInfo::deviceId)
+        updateField(SyncRuntimeInfo::deviceName)
+        updateField(SyncRuntimeInfo::platformName)
+        updateField(SyncRuntimeInfo::platformVersion)
+        updateField(SyncRuntimeInfo::platformArch)
+        updateField(SyncRuntimeInfo::platformBitMode)
 
-        if (syncRuntimeInfo.userName != newSyncRuntimeInfo.userName) {
-            syncRuntimeInfo.userName = newSyncRuntimeInfo.userName
-            infoChange = true
-        }
-
-        if (syncRuntimeInfo.deviceId != newSyncRuntimeInfo.deviceId) {
-            syncRuntimeInfo.deviceId = newSyncRuntimeInfo.deviceId
-            infoChange = true
-        }
-
-        if (syncRuntimeInfo.deviceName != newSyncRuntimeInfo.deviceName) {
-            syncRuntimeInfo.deviceName = newSyncRuntimeInfo.deviceName
-            infoChange = true
-        }
-
-        if (syncRuntimeInfo.platformName != newSyncRuntimeInfo.platformName) {
-            syncRuntimeInfo.platformName = newSyncRuntimeInfo.platformName
-            infoChange = true
-        }
-
-        if (syncRuntimeInfo.platformVersion != newSyncRuntimeInfo.platformVersion) {
-            syncRuntimeInfo.platformVersion = newSyncRuntimeInfo.platformVersion
-            infoChange = true
-        }
-
-        if (syncRuntimeInfo.platformArch != newSyncRuntimeInfo.platformArch) {
-            syncRuntimeInfo.platformArch = newSyncRuntimeInfo.platformArch
-            infoChange = true
-        }
-
-        if (syncRuntimeInfo.platformBitMode != newSyncRuntimeInfo.platformBitMode) {
-            syncRuntimeInfo.platformBitMode = newSyncRuntimeInfo.platformBitMode
-            infoChange = true
-        }
-
-        // When the state is not connected,
-        // we will update the modifyTime at least to drive the refresh
+        // Update modifyTime if necessary
         if (netChange || infoChange || syncRuntimeInfo.connectState != SyncState.CONNECTED) {
             syncRuntimeInfo.modifyTime = RealmInstant.now()
         }
 
-        return if (netChange) {
-            ChangeType.NET_CHANGE
-        } else if (infoChange) {
-            ChangeType.INFO_CHANGE
-        } else {
-            ChangeType.NO_CHANGE
+        return when {
+            netChange -> ChangeType.NET_CHANGE
+            infoChange -> ChangeType.INFO_CHANGE
+            else -> ChangeType.NO_CHANGE
         }
     }
 
