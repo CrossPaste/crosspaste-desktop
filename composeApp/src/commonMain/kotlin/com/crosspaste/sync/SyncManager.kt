@@ -9,9 +9,9 @@ interface SyncManager {
 
     var waitToVerifySyncRuntimeInfo: SyncRuntimeInfo?
 
-    suspend fun resolveSyncs()
+    fun resolveSyncs()
 
-    suspend fun resolveSync(id: String)
+    fun resolveSync(id: String)
 
     fun getSyncHandlers(): Map<String, SyncHandler>
 

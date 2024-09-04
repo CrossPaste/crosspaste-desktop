@@ -18,7 +18,16 @@ interface SyncRuntimeInfoDao {
         block: SyncRuntimeInfo.() -> Unit,
     ): SyncRuntimeInfo?
 
-    fun insertOrUpdate(syncRuntimeInfo: SyncRuntimeInfo): Boolean
+    fun insertOrUpdate(syncRuntimeInfo: SyncRuntimeInfo): ChangeType
+
+    fun update(syncRuntimeInfos: List<SyncRuntimeInfo>): List<String>
 
     fun deleteSyncRuntimeInfo(appInstanceId: String)
+}
+
+enum class ChangeType {
+    NEW_INSTANCE,
+    NO_CHANGE,
+    NET_CHANGE,
+    INFO_CHANGE,
 }

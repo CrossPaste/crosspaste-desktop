@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.dao.signal.SignalDao
+import com.crosspaste.dao.sync.ChangeType
 import com.crosspaste.dao.sync.SyncRuntimeInfo
 import com.crosspaste.dao.sync.SyncRuntimeInfoDao
 import com.crosspaste.dao.sync.SyncState
@@ -163,7 +164,7 @@ class DesktopSyncManager(
         refreshWaitToVerifySyncRuntimeInfo()
     }
 
-    override suspend fun resolveSyncs() {
+    override fun resolveSyncs() {
         internalSyncHandlers.values.forEach { syncHandler ->
             realTimeSyncScope.launch {
                 doResolveSync(syncHandler)
@@ -171,7 +172,7 @@ class DesktopSyncManager(
         }
     }
 
-    override suspend fun resolveSync(id: String) {
+    override fun resolveSync(id: String) {
         internalSyncHandlers[id]?.let { syncHandler ->
             realTimeSyncScope.launch {
                 doResolveSync(syncHandler)
@@ -228,7 +229,7 @@ class DesktopSyncManager(
     override fun updateSyncInfo(syncInfo: SyncInfo) {
         realTimeSyncScope.launch(CoroutineName("UpdateSyncInfo")) {
             val newSyncRuntimeInfo = createSyncRuntimeInfo(syncInfo)
-            if (!syncRuntimeInfoDao.insertOrUpdate(newSyncRuntimeInfo)) {
+            if (syncRuntimeInfoDao.insertOrUpdate(newSyncRuntimeInfo) == ChangeType.NO_CHANGE) {
                 internalSyncHandlers[syncInfo.appInfo.appInstanceId]?.tryDirectUpdateConnected()
             }
         }
