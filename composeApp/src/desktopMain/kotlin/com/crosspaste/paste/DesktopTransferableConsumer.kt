@@ -4,7 +4,6 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.dao.paste.PasteDao
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.paste.plugin.type.PasteTypePlugin
-import com.crosspaste.utils.IDGenerator
 import com.crosspaste.utils.LoggerExtension.logExecutionTime
 import com.crosspaste.utils.LoggerExtension.logSuspendExecutionTime
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -12,7 +11,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 open class DesktopTransferableConsumer(
     private val appInfo: AppInfo,
     private val pasteDao: PasteDao,
-    private val idGenerator: IDGenerator,
+    private val idGenerator: PasteIDGenerator,
     private val pasteProcessPlugins: List<PasteProcessPlugin>,
     pasteTypePlugins: List<PasteTypePlugin>,
 ) : TransferableConsumer {

@@ -93,11 +93,13 @@ import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.CacheManagerImpl
 import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.DesktopCurrentPaste
+import com.crosspaste.paste.DesktopPasteIDGeneratorFactory
 import com.crosspaste.paste.DesktopPastePreviewService
 import com.crosspaste.paste.DesktopPasteSearchService
 import com.crosspaste.paste.DesktopPasteSyncProcessManager
 import com.crosspaste.paste.DesktopTransferableConsumer
 import com.crosspaste.paste.DesktopTransferableProducer
+import com.crosspaste.paste.PasteIDGenerator
 import com.crosspaste.paste.PastePreviewService
 import com.crosspaste.paste.PasteSearchService
 import com.crosspaste.paste.PasteSyncProcessManager
@@ -169,8 +171,6 @@ import com.crosspaste.ui.resource.DesktopAbsolutePasteResourceLoader
 import com.crosspaste.ui.resource.PasteResourceLoader
 import com.crosspaste.utils.GlobalCoroutineScope
 import com.crosspaste.utils.GlobalCoroutineScopeImpl
-import com.crosspaste.utils.IDGenerator
-import com.crosspaste.utils.IDGeneratorFactory
 import com.crosspaste.utils.QRCodeGenerator
 import com.crosspaste.utils.TelnetUtils
 import com.crosspaste.utils.ioDispatcher
@@ -244,7 +244,7 @@ class CrossPaste {
                     single<FilePersist> { DesktopFilePersist }
                     single<ConfigManager> { configManager }
                     single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
-                    single<IDGenerator> { IDGeneratorFactory(get()).createIDGenerator() }
+                    single<PasteIDGenerator> { DesktopPasteIDGeneratorFactory(get()).createIDGenerator() }
                     single<CacheManager> { CacheManagerImpl(get(), get()) }
                     single<CrossPasteLogger> { crossPasteLogger }
                     single<KLogger> { CrossPaste.logger }
