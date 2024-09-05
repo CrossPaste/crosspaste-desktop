@@ -70,12 +70,14 @@ CrossPaste 正在持续发展中！我们计划在未来的版本中添加更多
 - **v1.2.0**：支持原生粘贴板，改进性能
 - **v1.3.0**：引入命令行模式
 
-这只是我们计划的一小部分。想了解更多细节和长期规划？查看我们的[完整路线图](doc/zh/Roadmap.zh-CN.md)。
+这只是我们计划的一小部分。想了解更多细节和长期规划？查看我们的[完整路线图](doc/zh/Roadmap.md)。
+
+## 🙋 常见问题
+这是当前收集的一些[常见问题](doc/zh/FQA.md)，如果你有其他问题，请创建 [issue](https://github.com/CrossPaste/crosspaste-desktop/issues/new/choose) 让我们知道。
 
 ## 🤝 支持项目
-
 - **🌟 Star 这个项目**：这是支持 CrossPaste 最简单的方法。
 - **🪲 报告错误**：在[问题追踪器](https://github.com/CrossPaste/crosspaste-desktop/issues/new/choose)上报告你发现的任何错误。
 - **📖 翻译**：帮助 CrossPaste 翻译、润色到你的[语言](https://github.com/CrossPaste/crosspaste-desktop/tree/main/composeApp/src/desktopMain/resources/i18n)。
-- **📝 贡献**：[贡献代码](doc/zh/Contributing.zh-CN.md)、评论 issue，欢迎一切可以帮助到项目的贡献。
+- **📝 贡献**：[贡献代码](doc/zh/Contributing.md)、评论 issue，欢迎一切可以帮助到项目的贡献。
 - **💖 赞助支持**: 通过 [GitHub Sponsors](https://github.com/sponsors/CrossPaste) 在经济上支持项目，以帮助持续开发和维护。
