@@ -1,6 +1,6 @@
 # 常见问题
 
-## 查找不到附近的设备
+## 1. 查找不到附近的设备
 CrossPaste 使用 DNS-SD（DNS Service Discovery）进行服务发现，就像局域网打印服务发现是类似的。如果你的局域网内服务发现没有正常工作，这可能有多个原因
 
 1. 防火墙阻塞: 路由器或主机防火墙可能会阻止DNS-SD所需的UDP端口5353。这是mDNS(multicast DNS)使用的标准端口,用于服务发现。 防火墙也可能阻止组播流量,而DNS-SD依赖于组播通信。
@@ -28,5 +28,6 @@ dns-sd -B _crosspasteService._tcp
 sudo apt-get install avahi-utils
 avahi-browse -r _crosspasteService._tcp
 ```
+
 注意：已经添加到我的设备或者加入黑名单之后，这些设备不会再显示在附近的设备
 如果命令行工具能够发现服务，但是 CrossPaste 无法发现，那么可能是 CrossPaste 的问题，你可以提交 issue 给我们
