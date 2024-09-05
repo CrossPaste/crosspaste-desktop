@@ -73,7 +73,7 @@ CrossPaste is continuously evolving! We plan to add more useful features in futu
 This is just a small part of our plans. Want to learn more details and long-term plans? Check out our [full roadmap](doc/en/Roadmap.md).
 
 ## 🙋 FAQ
-Here are some [frequently asked questions](doc/en/FQA.md) that have been collected. If you have other questions, please create an [issue](https://github.com/CrossPaste/crosspaste-desktop/issues/new/choose) to let us know.
+Here are some [FAQs](doc/en/FQA.md) that have been collected. If you have other questions, please create an [issue](https://github.com/CrossPaste/crosspaste-desktop/issues/new/choose) to let us know.
 
 ## 🤝 Support the project
 - **🌟 Star this repository**: This is the easiest way to support CrossPaste and costs nothing.
