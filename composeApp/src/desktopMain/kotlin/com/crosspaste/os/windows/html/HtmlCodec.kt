@@ -323,18 +323,18 @@ internal class HTMLCodec(
             oldValue: String,
             newValue: String,
         ): String {
-            // 检查索引是否在字符串范围内
+            // Check if the index is within the string's range
             if (index !in 0..input.length) {
                 throw IllegalArgumentException("Index out of bounds")
             }
 
-            // 截取从索引开始到字符串末尾的部分
+            // Extract the substring from the given index to the end of the string
             val substring = input.substring(index)
 
-            // 在截取的部分中进行替换
+            // Perform the replacement in the extracted substring
             val replacedSubstring = substring.replace(oldValue, newValue)
 
-            // 将替换后的部分与原始字符串的前半部分拼接
+            // Concatenate the original part of the string (before the index) with the replaced substring
             return input.substring(0, index) + replacedSubstring
         }
 

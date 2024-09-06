@@ -88,14 +88,14 @@ object DesktopDateUtils : DateUtils {
     }
 
     override fun convertRealmInstantToLocalDateTime(realmInstant: RealmInstant): kotlinx.datetime.LocalDateTime {
-        // 1. 从 RealmInstant 获取秒和纳秒
+        // Get seconds and nanoseconds from RealmInstant
         val epochSeconds = realmInstant.epochSeconds
         val nanosecondsOfSecond = realmInstant.nanosecondsOfSecond
 
-        // 2. 使用 Instant.ofEpochSecond 创建 Instant
+        // Create an Instant using Instant.ofEpochSecond
         val instant = Instant.ofEpochSecond(epochSeconds, nanosecondsOfSecond.toLong())
 
-        // 3. 使用系统默认的时区将 Instant 转换为 LocalDateTime
+        // Convert Instant to LocalDateTime using the system default time zone
         return LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toKotlinLocalDateTime()
     }
 

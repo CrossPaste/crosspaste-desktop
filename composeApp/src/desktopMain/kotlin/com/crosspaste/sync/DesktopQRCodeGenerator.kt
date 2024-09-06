@@ -71,8 +71,9 @@ class DesktopQRCodeGenerator(
 
     private fun ByteArray.rotate(offset: Int): ByteArray {
         val effectiveOffset = offset % size
+        // If the offset is 0 or the array is empty, return a copy of the original array
         if (effectiveOffset == 0 || this.isEmpty()) {
-            return this.copyOf() // 如果偏移量为0或数组为空，则直接返回原数组的副本
+            return this.copyOf()
         }
 
         val result = ByteArray(this.size)

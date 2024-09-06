@@ -159,9 +159,9 @@ class ImageTypePlugin(
         try {
             val url = URL(urlString)
             var path: String = url.getPath()
-            // 删除路径末尾的斜杠（如果存在）
+            // Remove trailing slash from the path (if it exists)
             path = if (path.endsWith("/")) path.substring(0, path.length - 1) else path
-            // 获取最后一个路径部分
+            // Get the last path segment
             val lastSegment = path.substring(path.lastIndexOf('/') + 1)
             return lastSegment
         } catch (e: MalformedURLException) {
