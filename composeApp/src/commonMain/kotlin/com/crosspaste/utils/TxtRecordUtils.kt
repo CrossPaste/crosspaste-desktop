@@ -1,5 +1,7 @@
 package com.crosspaste.utils
 
+import io.ktor.utils.io.charsets.*
+import io.ktor.utils.io.core.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 
@@ -11,10 +13,10 @@ object TxtRecordUtils {
         chunkSize: Int = 128,
     ): Map<String, String> {
         // Serialize the object to a JSON string
-        val jsonString = DesktopJsonUtils.JSON.encodeToString(obj)
+        val jsonString = getJsonUtils().JSON.encodeToString(obj)
 
         // Convert the JSON string to a base64 encoded string
-        val base64Encoded = DesktopCodecsUtils.base64Encode(jsonString.toByteArray(Charsets.UTF_8))
+        val base64Encoded = getCodecsUtils().base64Encode(jsonString.toByteArray(Charsets.UTF_8))
 
         // Prepare a dictionary to store the split data
         val txtRecordDict = mutableMapOf<String, String>()
@@ -33,14 +35,16 @@ object TxtRecordUtils {
     inline fun <reified T : @Serializable Any> decodeFromTxtRecordDict(txtRecordDict: Map<String, ByteArray>): T {
         // Combine the split data into a complete base64 encoded string
         val base64Encoded =
-            txtRecordDict.toSortedMap().values.joinToString(separator = "") { chunk ->
-                String(chunk, Charsets.UTF_8)
-            }
+            txtRecordDict.entries
+                .sortedBy { it.key }
+                .joinToString(separator = "") { (_, value) ->
+                    value.decodeToString()
+                }
 
         // Decode the base64 string into a JSON string
-        val jsonString = String(DesktopCodecsUtils.base64Decode(base64Encoded), Charsets.UTF_8)
+        val jsonString = getCodecsUtils().base64Decode(base64Encoded).decodeToString()
 
         // Deserialize the object from the JSON string
-        return DesktopJsonUtils.JSON.decodeFromString(jsonString)
+        return getJsonUtils().JSON.decodeFromString(jsonString)
     }
 }
