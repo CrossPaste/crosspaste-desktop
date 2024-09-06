@@ -1,5 +1,7 @@
 package com.crosspaste.utils
 
+import io.ktor.utils.io.charsets.*
+import io.ktor.utils.io.core.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 
@@ -33,12 +35,14 @@ object TxtRecordUtils {
     inline fun <reified T : @Serializable Any> decodeFromTxtRecordDict(txtRecordDict: Map<String, ByteArray>): T {
         // Combine the split data into a complete base64 encoded string
         val base64Encoded =
-            txtRecordDict.toSortedMap().values.joinToString(separator = "") { chunk ->
-                String(chunk, Charsets.UTF_8)
-            }
+            txtRecordDict.entries
+                .sortedBy { it.key }
+                .joinToString(separator = "") { (_, value) ->
+                    value.decodeToString()
+                }
 
         // Decode the base64 string into a JSON string
-        val jsonString = String(getCodecsUtils().base64Decode(base64Encoded), Charsets.UTF_8)
+        val jsonString = getCodecsUtils().base64Decode(base64Encoded).decodeToString()
 
         // Deserialize the object from the JSON string
         return getJsonUtils().JSON.decodeFromString(jsonString)
