@@ -126,7 +126,6 @@ import com.crosspaste.platform.currentPlatform
 import com.crosspaste.presist.DesktopFilePersist
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.realm.RealmManager
-import com.crosspaste.realm.RealmManagerImpl
 import com.crosspaste.signal.DesktopPreKeyStore
 import com.crosspaste.signal.DesktopSessionStore
 import com.crosspaste.signal.DesktopSignalProtocolStore
@@ -252,7 +251,7 @@ class CrossPaste {
                     single<ThumbnailLoader> { DesktopThumbnailLoader }
 
                     // realm component
-                    single<RealmManager> { RealmManagerImpl.createRealmManager(get()) }
+                    single<RealmManager> { RealmManager.createRealmManager(get()) }
                     single<SignalDao> { SignalRealm(get<RealmManager>().realm) }
                     single<SyncRuntimeInfoDao> { SyncRuntimeInfoRealm(get<RealmManager>().realm) }
                     single<PasteDao> { PasteRealm(get<RealmManager>().realm, get(), get(), get(), lazy { get() }) }
