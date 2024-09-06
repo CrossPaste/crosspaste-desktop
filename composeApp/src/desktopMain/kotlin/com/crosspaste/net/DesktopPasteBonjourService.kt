@@ -2,11 +2,11 @@ package com.crosspaste.net
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.EndpointInfoFactory
-import com.crosspaste.app.logger
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.sync.DeviceManager
 import com.crosspaste.utils.TxtRecordUtils
 import com.crosspaste.utils.ioDispatcher
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.collections.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -28,6 +28,8 @@ class DesktopPasteBonjourService(
     companion object {
         private const val SERVICE_TYPE = "_crosspasteService._tcp.local."
     }
+
+    private val logger = KotlinLogging.logger {}
 
     private val supervisorJob = SupervisorJob()
 

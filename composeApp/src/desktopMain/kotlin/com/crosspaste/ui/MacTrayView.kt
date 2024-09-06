@@ -25,6 +25,7 @@ import com.crosspaste.ui.base.DesktopNotificationManager
 import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -38,170 +39,176 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.JFrame
 
-@Composable
-fun MacTray() {
-    val current = LocalKoinApplication.current
-    val pageViewContext = LocalPageViewContent.current
-    val applicationExit = LocalExitApplication.current
+object MacTrayView {
 
-    val appLaunchState = current.koin.get<AppLaunchState>()
-    val appWindowManager = current.koin.get<DesktopAppWindowManager>()
-    val notificationManager = current.koin.get<NotificationManager>() as DesktopNotificationManager
-    val copywriter = current.koin.get<GlobalCopywriter>()
+    val logger = KotlinLogging.logger {}
 
-    val trayIcon = painterResource("icon/crosspaste.tray.mac.png")
+    @Composable
+    fun Tray() {
+        val current = LocalKoinApplication.current
+        val pageViewContext = LocalPageViewContent.current
+        val applicationExit = LocalExitApplication.current
 
-    var menu by remember { mutableStateOf(createPopupMenu(current, pageViewContext, applicationExit)) }
-    val frame by remember { mutableStateOf(TransparentFrame()) }
+        val appLaunchState = current.koin.get<AppLaunchState>()
+        val appWindowManager = current.koin.get<DesktopAppWindowManager>()
+        val notificationManager = current.koin.get<NotificationManager>() as DesktopNotificationManager
+        val copywriter = current.koin.get<GlobalCopywriter>()
 
-    DisposableEffect(copywriter.language()) {
-        frame.removeAll()
-        menu = createPopupMenu(current, pageViewContext, applicationExit)
-        frame.add(menu)
-        onDispose {
-            frame.dispose()
+        val trayIcon = painterResource("icon/crosspaste.tray.mac.png")
+
+        var menu by remember { mutableStateOf(createPopupMenu(current, pageViewContext, applicationExit)) }
+        val frame by remember { mutableStateOf(TransparentFrame()) }
+
+        DisposableEffect(copywriter.language()) {
+            frame.removeAll()
+            menu = createPopupMenu(current, pageViewContext, applicationExit)
+            frame.add(menu)
+            onDispose {
+                frame.dispose()
+            }
         }
+
+        LaunchedEffect(Unit) {
+            if (appLaunchState.firstLaunch && !appWindowManager.hasCompletedFirstLaunchShow) {
+                delay(1000)
+                val windowInfos = MacAppUtils.getTrayWindowInfos(appLaunchState.pid)
+                windowInfos.useAll {
+                    val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                    val screenDevice = ge.defaultScreenDevice
+
+                    (windowInfos.firstOrNull { it.contained(screenDevice) } ?: windowInfos.firstOrNull())?.let {
+                        logger.debug { "windowInfo: $it" }
+                        appWindowManager.mainWindowState.position =
+                            WindowPosition.Absolute(
+                                x = it.x.dp + (it.width.dp / 2) - (appWindowManager.mainWindowState.size.width / 2),
+                                y = it.y.dp + 30.dp,
+                            )
+                        logger.debug { "main position: ${appWindowManager.mainWindowState.position}" }
+                        appWindowManager.showMainWindow = true
+                        appWindowManager.hasCompletedFirstLaunchShow = true
+                    }
+                }
+            }
+        }
+
+        CrossPasteTray(
+            icon = trayIcon,
+            state = remember { notificationManager.trayState },
+            tooltip = "CrossPaste",
+            mouseListener =
+                MacTrayMouseClicked(appWindowManager, appLaunchState) { event, windowInfo ->
+                    val isCtrlDown = (event.modifiersEx and InputEvent.CTRL_DOWN_MASK) != 0
+                    if (event.button == MouseEvent.BUTTON1 && !isCtrlDown) {
+                        mainCoroutineDispatcher.launch(CoroutineName("Switch CrossPaste")) {
+                            appWindowManager.switchMainWindow()
+                        }
+                    } else {
+                        mainCoroutineDispatcher.launch(CoroutineName("Hide CrossPaste")) {
+                            if (appWindowManager.showMainWindow) {
+                                appWindowManager.unActiveMainWindow()
+                            }
+                        }
+                        frame.setLocation(windowInfo.x.toInt(), (windowInfo.y + windowInfo.height + 6).toInt())
+                        frame.isVisible = true
+                        menu.show(frame, 0, 0)
+                    }
+                },
+        )
     }
 
-    LaunchedEffect(Unit) {
-        if (appLaunchState.firstLaunch && !appWindowManager.hasCompletedFirstLaunchShow) {
-            delay(1000)
+    fun createPopupMenu(
+        koinApplication: KoinApplication,
+        currentPage: MutableState<PageViewContext>,
+        applicationExit: (ExitMode) -> Unit,
+    ): PopupMenu {
+        val copywriter = koinApplication.koin.get<GlobalCopywriter>()
+        val appWindowManager = koinApplication.koin.get<DesktopAppWindowManager>()
+        val uiSupport = koinApplication.koin.get<UISupport>()
+
+        val popup = PopupMenu()
+
+        popup.add(
+            createMenuItem(copywriter.getText("settings")) {
+                mainCoroutineDispatcher.launch(CoroutineName("Open settings")) {
+                    appWindowManager.activeMainWindow()
+                    currentPage.value = PageViewContext(PageViewType.SETTINGS, currentPage.value)
+                }
+            },
+        )
+
+        popup.add(
+            createMenuItem(copywriter.getText("shortcut_keys")) {
+                mainCoroutineDispatcher.launch(CoroutineName("Open shortcut keys")) {
+                    appWindowManager.activeMainWindow()
+                    currentPage.value = PageViewContext(PageViewType.SHORTCUT_KEYS, currentPage.value)
+                }
+            },
+        )
+
+        popup.add(
+            createMenuItem(copywriter.getText("about")) {
+                mainCoroutineDispatcher.launch(CoroutineName("Open about")) {
+                    appWindowManager.activeMainWindow()
+                    currentPage.value = PageViewContext(PageViewType.ABOUT, currentPage.value)
+                }
+            },
+        )
+
+        popup.add(
+            createMenuItem(copywriter.getText("fqa")) {
+                uiSupport.openUrlInBrowser("https://www.crosspaste.com/FQA")
+            },
+        )
+
+        popup.addSeparator()
+
+        popup.add(
+            createMenuItem(copywriter.getText("quit")) {
+                applicationExit(ExitMode.EXIT)
+            },
+        )
+        return popup
+    }
+
+    fun createMenuItem(
+        text: String,
+        action: () -> Unit,
+    ): MenuItem {
+        val menuItem = MenuItem(text)
+        menuItem.addActionListener {
+            action()
+        }
+        return menuItem
+    }
+
+    class MacTrayMouseClicked(
+        private val appWindowManager: DesktopAppWindowManager,
+        private val appLaunchState: AppLaunchState,
+        private val mouseClickedAction: (MouseEvent, WindowInfo) -> Unit,
+    ) : MouseAdapter() {
+
+        override fun mouseClicked(e: MouseEvent) {
             val windowInfos = MacAppUtils.getTrayWindowInfos(appLaunchState.pid)
             windowInfos.useAll {
-                val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
-                val screenDevice = ge.defaultScreenDevice
-
-                (windowInfos.firstOrNull { it.contained(screenDevice) } ?: windowInfos.firstOrNull())?.let {
-                    println(it.toString())
+                windowInfos.first { it.contains(e.xOnScreen, e.yOnScreen) }.let {
+                    mouseClickedAction(e, it)
                     appWindowManager.mainWindowState.position =
                         WindowPosition.Absolute(
                             x = it.x.dp + (it.width.dp / 2) - (appWindowManager.mainWindowState.size.width / 2),
                             y = it.y.dp + 30.dp,
                         )
-                    println(appWindowManager.mainWindowState.position.toString())
-                    appWindowManager.showMainWindow = true
-                    appWindowManager.hasCompletedFirstLaunchShow = true
+                    logger.debug { "main position: ${appWindowManager.mainWindowState.position}" }
                 }
             }
         }
     }
 
-    CrossPasteTray(
-        icon = trayIcon,
-        state = remember { notificationManager.trayState },
-        tooltip = "CrossPaste",
-        mouseListener =
-            MacTrayMouseClicked(appWindowManager, appLaunchState) { event, windowInfo ->
-                val isCtrlDown = (event.modifiersEx and InputEvent.CTRL_DOWN_MASK) != 0
-                if (event.button == MouseEvent.BUTTON1 && !isCtrlDown) {
-                    mainCoroutineDispatcher.launch(CoroutineName("Switch CrossPaste")) {
-                        appWindowManager.switchMainWindow()
-                    }
-                } else {
-                    mainCoroutineDispatcher.launch(CoroutineName("Hide CrossPaste")) {
-                        if (appWindowManager.showMainWindow) {
-                            appWindowManager.unActiveMainWindow()
-                        }
-                    }
-                    frame.setLocation(windowInfo.x.toInt(), (windowInfo.y + windowInfo.height + 6).toInt())
-                    frame.isVisible = true
-                    menu.show(frame, 0, 0)
-                }
-            },
-    )
-}
-
-fun createPopupMenu(
-    koinApplication: KoinApplication,
-    currentPage: MutableState<PageViewContext>,
-    applicationExit: (ExitMode) -> Unit,
-): PopupMenu {
-    val copywriter = koinApplication.koin.get<GlobalCopywriter>()
-    val appWindowManager = koinApplication.koin.get<DesktopAppWindowManager>()
-    val uiSupport = koinApplication.koin.get<UISupport>()
-
-    val popup = PopupMenu()
-
-    popup.add(
-        createMenuItem(copywriter.getText("settings")) {
-            mainCoroutineDispatcher.launch(CoroutineName("Open settings")) {
-                appWindowManager.activeMainWindow()
-                currentPage.value = PageViewContext(PageViewType.SETTINGS, currentPage.value)
-            }
-        },
-    )
-
-    popup.add(
-        createMenuItem(copywriter.getText("shortcut_keys")) {
-            mainCoroutineDispatcher.launch(CoroutineName("Open shortcut keys")) {
-                appWindowManager.activeMainWindow()
-                currentPage.value = PageViewContext(PageViewType.SHORTCUT_KEYS, currentPage.value)
-            }
-        },
-    )
-
-    popup.add(
-        createMenuItem(copywriter.getText("about")) {
-            mainCoroutineDispatcher.launch(CoroutineName("Open about")) {
-                appWindowManager.activeMainWindow()
-                currentPage.value = PageViewContext(PageViewType.ABOUT, currentPage.value)
-            }
-        },
-    )
-
-    popup.add(
-        createMenuItem(copywriter.getText("fqa")) {
-            uiSupport.openUrlInBrowser("https://www.crosspaste.com/FQA")
-        },
-    )
-
-    popup.addSeparator()
-
-    popup.add(
-        createMenuItem(copywriter.getText("quit")) {
-            applicationExit(ExitMode.EXIT)
-        },
-    )
-    return popup
-}
-
-fun createMenuItem(
-    text: String,
-    action: () -> Unit,
-): MenuItem {
-    val menuItem = MenuItem(text)
-    menuItem.addActionListener {
-        action()
-    }
-    return menuItem
-}
-
-class MacTrayMouseClicked(
-    private val appWindowManager: DesktopAppWindowManager,
-    private val appLaunchState: AppLaunchState,
-    private val mouseClickedAction: (MouseEvent, WindowInfo) -> Unit,
-) : MouseAdapter() {
-
-    override fun mouseClicked(e: MouseEvent) {
-        val windowInfos = MacAppUtils.getTrayWindowInfos(appLaunchState.pid)
-        windowInfos.useAll {
-            windowInfos.first { it.contains(e.xOnScreen, e.yOnScreen) }.let {
-                mouseClickedAction(e, it)
-                appWindowManager.mainWindowState.position =
-                    WindowPosition.Absolute(
-                        x = it.x.dp + (it.width.dp / 2) - (appWindowManager.mainWindowState.size.width / 2),
-                        y = it.y.dp + 30.dp,
-                    )
-            }
+    class TransparentFrame : JFrame() {
+        init {
+            isUndecorated = true
+            background = Color(0, 0, 0, 0)
+            isVisible = true
+            setResizable(false)
         }
-    }
-}
-
-class TransparentFrame : JFrame() {
-    init {
-        isUndecorated = true
-        background = Color(0, 0, 0, 0)
-        isVisible = true
-        setResizable(false)
     }
 }

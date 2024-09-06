@@ -7,9 +7,9 @@ import java.io.IOException
 import java.nio.file.Paths
 import java.util.Properties
 
-val logger = KotlinLogging.logger {}
-
 class DesktopAppInfoFactory(private val configManager: ConfigManager) : AppInfoFactory {
+
+    private val logger = KotlinLogging.logger {}
 
     private val systemProperty = getSystemProperty()
 

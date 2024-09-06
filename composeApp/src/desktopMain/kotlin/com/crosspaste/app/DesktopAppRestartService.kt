@@ -105,6 +105,8 @@ class LinuxAppRestartService : AppRestartService {
         private const val SCRIPT = "start.sh"
     }
 
+    private val logger: KLogger = KotlinLogging.logger {}
+
     override fun restart(exitApplication: () -> Unit) {
         val pid = ProcessHandle.current().pid()
         val appPath = DesktopAppPathProvider.pasteAppPath
