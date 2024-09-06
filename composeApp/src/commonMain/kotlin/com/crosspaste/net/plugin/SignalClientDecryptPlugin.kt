@@ -11,7 +11,6 @@ import io.ktor.http.*
 import io.ktor.util.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
-import java.io.ByteArrayOutputStream
 
 class SignalClientDecryptPlugin(private val signalProcessorCache: SignalProcessorCache) :
     HttpClientPlugin<SignalConfig, SignalClientDecryptPlugin> {
@@ -58,19 +57,22 @@ class SignalClientDecryptPlugin(private val signalProcessorCache: SignalProcesso
                                 )
                             proceedWith(DefaultHttpResponse(it.call, responseData))
                         } else if (contentType == ContentType.Application.OctetStream) {
-                            val result = ByteArrayOutputStream()
-                            while (!byteReadChannel.isClosedForRead) {
-                                val size = byteReadChannel.readInt()
-                                val byteArray = ByteArray(size)
-                                var bytesRead = 0
-                                while (bytesRead < size) {
-                                    val currentRead = byteReadChannel.readAvailable(byteArray, bytesRead, size - bytesRead)
-                                    if (currentRead == -1) break
-                                    bytesRead += currentRead
+                            val result =
+                                buildPacket {
+                                    while (!byteReadChannel.isClosedForRead) {
+                                        val size = byteReadChannel.readInt()
+                                        val byteArray = ByteArray(size)
+                                        var bytesRead = 0
+                                        while (bytesRead < size) {
+                                            val currentRead = byteReadChannel.readAvailable(byteArray, bytesRead, size - bytesRead)
+                                            if (currentRead == -1) break
+                                            bytesRead += currentRead
+                                        }
+                                        writeFully(processor.decryptSignalMessage(byteArray))
+                                    }
                                 }
-                                result.write(processor.decryptSignalMessage(byteArray))
-                            }
-                            val newChannel = ByteReadChannel(result.toByteArray())
+
+                            val newChannel = ByteReadChannel(result.readBytes())
                             val responseData =
                                 HttpResponseData(
                                     it.status,

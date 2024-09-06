@@ -73,7 +73,6 @@ import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.log.CrossPasteLogger
 import com.crosspaste.log.initLogger
 import com.crosspaste.net.DesktopPasteBonjourService
-import com.crosspaste.net.DesktopPasteClient
 import com.crosspaste.net.DesktopPasteServer
 import com.crosspaste.net.DesktopSyncInfoFactory
 import com.crosspaste.net.PasteBonjourService
@@ -260,7 +259,7 @@ class CrossPaste {
                     single<PasteTaskDao> { PasteTaskRealm(get<RealmManager>().realm) }
 
                     // net component
-                    single<PasteClient> { DesktopPasteClient(get<AppInfo>(), get(), get()) }
+                    single<PasteClient> { PasteClient(get<AppInfo>(), get(), get()) }
                     single<PasteServer> {
                         DesktopPasteServer(
                             get(), get(), get(), get(), get(), get(), get(),
