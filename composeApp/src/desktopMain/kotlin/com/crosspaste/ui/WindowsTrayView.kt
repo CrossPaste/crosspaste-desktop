@@ -35,6 +35,7 @@ import com.crosspaste.app.WinAppWindowManager
 import com.crosspaste.ui.base.DesktopNotificationManager
 import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -47,182 +48,188 @@ import java.awt.event.MouseEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 
-@Composable
-fun WindowsTray() {
-    val current = LocalKoinApplication.current
+object WindowsTrayView {
 
-    val appLaunchState = current.koin.get<AppLaunchState>()
-    val appWindowManager = current.koin.get<DesktopAppWindowManager>()
-    val notificationManager = current.koin.get<NotificationManager>() as DesktopNotificationManager
+    val logger = KotlinLogging.logger {}
 
-    val trayIcon = painterResource("icon/crosspaste.png")
+    @Composable
+    fun Tray() {
+        val current = LocalKoinApplication.current
 
-    var showMenu by remember { mutableStateOf(false) }
+        val appLaunchState = current.koin.get<AppLaunchState>()
+        val appWindowManager = current.koin.get<DesktopAppWindowManager>()
+        val notificationManager = current.koin.get<NotificationManager>() as DesktopNotificationManager
 
-    val menuWindowState =
-        rememberWindowState(
-            placement = WindowPlacement.Floating,
-            size = DpSize(170.dp, 204.dp),
+        val trayIcon = painterResource("icon/crosspaste.png")
+
+        var showMenu by remember { mutableStateOf(false) }
+
+        val menuWindowState =
+            rememberWindowState(
+                placement = WindowPlacement.Floating,
+                size = DpSize(170.dp, 204.dp),
+            )
+
+        LaunchedEffect(Unit) {
+            if (appLaunchState.firstLaunch && !appWindowManager.hasCompletedFirstLaunchShow) {
+                delay(1000)
+                refreshWindowPosition(appWindowManager, null) { _, _, _ -> }
+                appWindowManager.showMainWindow = true
+                appWindowManager.hasCompletedFirstLaunchShow = true
+            }
+        }
+
+        CrossPasteTray(
+            icon = trayIcon,
+            state = remember { notificationManager.trayState },
+            tooltip = "CrossPaste",
+            mouseListener =
+                WindowsTrayMouseClicked(appWindowManager) { event, gd, insets ->
+                    if (event.button == MouseEvent.BUTTON1) {
+                        mainCoroutineDispatcher.launch(CoroutineName("Switch CrossPaste")) {
+                            appWindowManager.switchMainWindow()
+                        }
+                    } else {
+                        showMenu = true
+                        val bounds = gd.defaultConfiguration.bounds
+                        val density: Float = gd.displayMode.width.toFloat() / bounds.width
+                        menuWindowState.position =
+                            WindowPosition(
+                                x = ((event.x / density) - insets.left).dp - 32.dp,
+                                y = (bounds.height - insets.bottom).dp - 204.dp,
+                            )
+                    }
+                },
         )
 
-    LaunchedEffect(Unit) {
-        if (appLaunchState.firstLaunch && !appWindowManager.hasCompletedFirstLaunchShow) {
-            delay(1000)
-            refreshWindowPosition(appWindowManager, null) { _, _, _ -> }
-            appWindowManager.showMainWindow = true
-            appWindowManager.hasCompletedFirstLaunchShow = true
+        if (showMenu) {
+            Window(
+                onCloseRequest = { },
+                visible = true,
+                state = menuWindowState,
+                title = "CrossPaste Menu",
+                alwaysOnTop = true,
+                undecorated = true,
+                transparent = true,
+                resizable = false,
+            ) {
+                DisposableEffect(Unit) {
+                    val windowListener =
+                        object : WindowAdapter() {
+                            override fun windowGainedFocus(e: WindowEvent?) {
+                                showMenu = true
+                            }
+
+                            override fun windowLostFocus(e: WindowEvent?) {
+                                showMenu = false
+                            }
+                        }
+
+                    window.addWindowFocusListener(windowListener)
+
+                    (appWindowManager as WinAppWindowManager).initMenuHWND()
+
+                    onDispose {
+                        window.removeWindowFocusListener(windowListener)
+                    }
+                }
+
+                WindowTrayMenu {
+                    showMenu = false
+                }
+            }
         }
     }
 
-    CrossPasteTray(
-        icon = trayIcon,
-        state = remember { notificationManager.trayState },
-        tooltip = "CrossPaste",
-        mouseListener =
-            WindowsTrayMouseClicked(appWindowManager) { event, gd, insets ->
-                if (event.button == MouseEvent.BUTTON1) {
-                    mainCoroutineDispatcher.launch(CoroutineName("Switch CrossPaste")) {
-                        appWindowManager.switchMainWindow()
-                    }
-                } else {
-                    showMenu = true
-                    val bounds = gd.defaultConfiguration.bounds
-                    val density: Float = gd.displayMode.width.toFloat() / bounds.width
-                    menuWindowState.position =
-                        WindowPosition(
-                            x = ((event.x / density) - insets.left).dp - 32.dp,
-                            y = (bounds.height - insets.bottom).dp - 204.dp,
-                        )
-                }
-            },
-    )
+    @Composable
+    fun WindowTrayMenu(hideMenu: () -> Unit) {
+        val current = LocalKoinApplication.current
+        val appWindowManager = current.koin.get<DesktopAppWindowManager>()
 
-    if (showMenu) {
-        Window(
-            onCloseRequest = { },
-            visible = true,
-            state = menuWindowState,
-            title = "CrossPaste Menu",
-            alwaysOnTop = true,
-            undecorated = true,
-            transparent = true,
-            resizable = false,
-        ) {
-            DisposableEffect(Unit) {
-                val windowListener =
-                    object : WindowAdapter() {
-                        override fun windowGainedFocus(e: WindowEvent?) {
-                            showMenu = true
-                        }
-
-                        override fun windowLostFocus(e: WindowEvent?) {
-                            showMenu = false
-                        }
-                    }
-
-                window.addWindowFocusListener(windowListener)
-
-                (appWindowManager as WinAppWindowManager).initMenuHWND()
-
-                onDispose {
-                    window.removeWindowFocusListener(windowListener)
-                }
-            }
-
-            WindowTrayMenu {
-                showMenu = false
-            }
-        }
-    }
-}
-
-@Composable
-fun WindowTrayMenu(hideMenu: () -> Unit) {
-    val current = LocalKoinApplication.current
-    val appWindowManager = current.koin.get<DesktopAppWindowManager>()
-
-    CrossPasteTheme {
-        Box(
-            modifier =
-                Modifier
-                    .background(Color.Transparent)
-                    .pointerInput(Unit) {
-                        detectTapGestures(
-                            onDoubleTap = {
-                                hideMenu()
-                            },
-                            onTap = {
-                                hideMenu()
-                            },
-                            onLongPress = {
-                                hideMenu()
-                            },
-                            onPress = {},
-                        )
-                    }
-                    .clip(RoundedCornerShape(5.dp))
-                    .fillMaxSize()
-                    .padding(10.dp, 0.dp, 10.dp, 10.dp),
-            contentAlignment = Alignment.Center,
-        ) {
+        CrossPasteTheme {
             Box(
                 modifier =
                     Modifier
-                        .shadow(5.dp, RoundedCornerShape(5.dp), false)
-                        .fillMaxSize()
-                        .border(1.dp, MaterialTheme.colors.onSurface.copy(alpha = 0.12f), RoundedCornerShape(5.dp))
+                        .background(Color.Transparent)
                         .pointerInput(Unit) {
                             detectTapGestures(
-                                onDoubleTap = {},
-                                onTap = {},
-                                onLongPress = {},
+                                onDoubleTap = {
+                                    hideMenu()
+                                },
+                                onTap = {
+                                    hideMenu()
+                                },
+                                onLongPress = {
+                                    hideMenu()
+                                },
                                 onPress = {},
                             )
-                        },
+                        }
+                        .clip(RoundedCornerShape(5.dp))
+                        .fillMaxSize()
+                        .padding(10.dp, 0.dp, 10.dp, 10.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                HomeMenuView(
-                    openMainWindow = {
-                        mainCoroutineDispatcher.launch(CoroutineName("Open Menu")) {
-                            appWindowManager.activeMainWindow()
-                        }
-                    },
-                    close = { hideMenu() },
-                )
+                Box(
+                    modifier =
+                        Modifier
+                            .shadow(5.dp, RoundedCornerShape(5.dp), false)
+                            .fillMaxSize()
+                            .border(1.dp, MaterialTheme.colors.onSurface.copy(alpha = 0.12f), RoundedCornerShape(5.dp))
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onDoubleTap = {},
+                                    onTap = {},
+                                    onLongPress = {},
+                                    onPress = {},
+                                )
+                            },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    HomeMenuView(
+                        openMainWindow = {
+                            mainCoroutineDispatcher.launch(CoroutineName("Open Menu")) {
+                                appWindowManager.activeMainWindow()
+                            }
+                        },
+                        close = { hideMenu() },
+                    )
+                }
             }
         }
     }
-}
 
-class WindowsTrayMouseClicked(
-    private val appWindowManager: DesktopAppWindowManager,
-    private val mouseClickedAction: (MouseEvent, GraphicsDevice, Insets) -> Unit,
-) : MouseAdapter() {
+    fun refreshWindowPosition(
+        appWindowManager: DesktopAppWindowManager,
+        event: MouseEvent?,
+        eventAction: (MouseEvent, GraphicsDevice, Insets) -> Unit,
+    ) {
+        val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
+        val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
+        event?.let { eventAction(it, gd, insets) }
 
-    override fun mouseClicked(e: MouseEvent) {
-        refreshWindowPosition(appWindowManager, e, mouseClickedAction)
+        val bounds = gd.defaultConfiguration.bounds
+        val usableWidth = bounds.width - insets.right
+        val usableHeight = bounds.height - insets.bottom
+
+        val windowWidth = appWindowManager.mainWindowState.size.width
+        val windowHeight = appWindowManager.mainWindowState.size.height
+
+        appWindowManager.mainWindowState.position =
+            WindowPosition.Absolute(
+                x = usableWidth.dp - windowWidth + 8.dp,
+                y = usableHeight.dp - windowHeight + 8.dp,
+            )
+        logger.debug { "main position: ${appWindowManager.mainWindowState.position}" }
     }
-}
 
-private fun refreshWindowPosition(
-    appWindowManager: DesktopAppWindowManager,
-    event: MouseEvent?,
-    eventAction: (MouseEvent, GraphicsDevice, Insets) -> Unit,
-) {
-    val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
-    val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
-    event?.let { eventAction(it, gd, insets) }
+    class WindowsTrayMouseClicked(
+        private val appWindowManager: DesktopAppWindowManager,
+        private val mouseClickedAction: (MouseEvent, GraphicsDevice, Insets) -> Unit,
+    ) : MouseAdapter() {
 
-    val bounds = gd.defaultConfiguration.bounds
-    val usableWidth = bounds.width - insets.right
-    val usableHeight = bounds.height - insets.bottom
-
-    val windowWidth = appWindowManager.mainWindowState.size.width
-    val windowHeight = appWindowManager.mainWindowState.size.height
-
-    appWindowManager.mainWindowState.position =
-        WindowPosition.Absolute(
-            x = usableWidth.dp - windowWidth + 8.dp,
-            y = usableHeight.dp - windowHeight + 8.dp,
-        )
+        override fun mouseClicked(e: MouseEvent) {
+            refreshWindowPosition(appWindowManager, e, mouseClickedAction)
+        }
+    }
 }

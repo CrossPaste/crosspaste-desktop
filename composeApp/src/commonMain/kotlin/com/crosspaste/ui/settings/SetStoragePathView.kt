@@ -103,7 +103,6 @@ fun SetStoragePathView() {
                     checked = useDefaultStoragePath,
                     onCheckedChange = {
                         useDefaultStoragePath = !useDefaultStoragePath
-                        println("useDefaultStoragePath: $useDefaultStoragePath")
                     },
                 )
             }

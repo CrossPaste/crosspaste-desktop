@@ -150,12 +150,12 @@ import com.crosspaste.ui.CrossPasteMainWindow
 import com.crosspaste.ui.CrossPasteSearchWindow
 import com.crosspaste.ui.DesktopThemeDetector
 import com.crosspaste.ui.GrantAccessibilityPermissionsWindow
-import com.crosspaste.ui.LinuxTray
-import com.crosspaste.ui.MacTray
+import com.crosspaste.ui.LinuxTrayView
+import com.crosspaste.ui.MacTrayView
 import com.crosspaste.ui.PageViewContext
 import com.crosspaste.ui.PageViewType
 import com.crosspaste.ui.ThemeDetector
-import com.crosspaste.ui.WindowsTray
+import com.crosspaste.ui.WindowsTrayView
 import com.crosspaste.ui.base.DesktopDialogService
 import com.crosspaste.ui.base.DesktopIconStyle
 import com.crosspaste.ui.base.DesktopNotificationManager
@@ -514,11 +514,11 @@ class CrossPaste {
 
                     if (appLaunchState.accessibilityPermissions) {
                         if (isMacos) {
-                            MacTray()
+                            MacTrayView.Tray()
                         } else if (isWindows) {
-                            WindowsTray()
+                            WindowsTrayView.Tray()
                         } else if (isLinux) {
-                            LinuxTray()
+                            LinuxTrayView.Tray()
                         }
 
                         CrossPasteMainWindow(exitApplication, windowIcon)

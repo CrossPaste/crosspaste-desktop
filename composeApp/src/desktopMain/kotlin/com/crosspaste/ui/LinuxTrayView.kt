@@ -23,79 +23,84 @@ import kotlinx.coroutines.launch
 import java.awt.GraphicsEnvironment
 import java.awt.Toolkit
 
-@Composable
-fun LinuxTray() {
+object LinuxTrayView {
+
     val logger = KotlinLogging.logger {}
-    val current = LocalKoinApplication.current
-    val applicationExit = LocalExitApplication.current
-    val appLaunchState = current.koin.get<AppLaunchState>()
-    val appWindowManager = current.koin.get<DesktopAppWindowManager>()
-    val tray by remember {
-        val trayType = getTrayType()
-        if (trayType != TrayType.AutoDetect) {
-            SystemTray.FORCE_TRAY_TYPE = trayType
-        }
-        logger.info { "Tray type: $trayType" }
-        val innerTray =
-            SystemTray.get() ?: run {
-                SystemTray.FORCE_TRAY_TYPE = TrayType.AutoDetect
-                logger.info { "Tray type fail back : ${TrayType.AutoDetect}" }
-                SystemTray.get()
+
+    @Composable
+    fun Tray() {
+        val current = LocalKoinApplication.current
+        val applicationExit = LocalExitApplication.current
+        val appLaunchState = current.koin.get<AppLaunchState>()
+        val appWindowManager = current.koin.get<DesktopAppWindowManager>()
+        val tray by remember {
+            val trayType = getTrayType()
+            if (trayType != TrayType.AutoDetect) {
+                SystemTray.FORCE_TRAY_TYPE = trayType
             }
-        mutableStateOf(innerTray)
-    }
-
-    LaunchedEffect(Unit) {
-        tray?.setImage(DesktopResourceUtils.resourceInputStream("icon/crosspaste.png"))
-        tray?.setTooltip("CrossPaste")
-        tray?.menu?.add(
-            MenuItem("Open CrossPaste") {
-                mainCoroutineDispatcher.launch(CoroutineName("Open CrossPaste")) {
-                    refreshWindowPosition(appWindowManager)
-                    appWindowManager.activeMainWindow()
+            logger.debug { "Tray type: $trayType" }
+            val innerTray =
+                SystemTray.get() ?: run {
+                    SystemTray.FORCE_TRAY_TYPE = TrayType.AutoDetect
+                    logger.debug { "Tray type fail back : ${TrayType.AutoDetect}" }
+                    SystemTray.get()
                 }
-            },
-        )
+            mutableStateOf(innerTray)
+        }
 
-        tray?.menu?.add(
-            MenuItem("Quit CrossPaste") {
-                applicationExit(ExitMode.EXIT)
-            },
-        )
+        LaunchedEffect(Unit) {
+            tray?.setImage(DesktopResourceUtils.resourceInputStream("icon/crosspaste.png"))
+            tray?.setTooltip("CrossPaste")
+            tray?.menu?.add(
+                MenuItem("Open CrossPaste") {
+                    mainCoroutineDispatcher.launch(CoroutineName("Open CrossPaste")) {
+                        refreshWindowPosition(appWindowManager)
+                        appWindowManager.activeMainWindow()
+                    }
+                },
+            )
 
-        refreshWindowPosition(appWindowManager)
+            tray?.menu?.add(
+                MenuItem("Quit CrossPaste") {
+                    applicationExit(ExitMode.EXIT)
+                },
+            )
 
-        if (appLaunchState.firstLaunch && !appWindowManager.hasCompletedFirstLaunchShow) {
-            appWindowManager.showMainWindow = true
-            appWindowManager.hasCompletedFirstLaunchShow = true
+            refreshWindowPosition(appWindowManager)
+
+            if (appLaunchState.firstLaunch && !appWindowManager.hasCompletedFirstLaunchShow) {
+                appWindowManager.showMainWindow = true
+                appWindowManager.hasCompletedFirstLaunchShow = true
+            }
         }
     }
-}
 
-fun refreshWindowPosition(appWindowManager: DesktopAppWindowManager) {
-    val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
-    val bounds = gd.defaultConfiguration.bounds
-    val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
+    fun refreshWindowPosition(appWindowManager: DesktopAppWindowManager) {
+        val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
+        val bounds = gd.defaultConfiguration.bounds
+        val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
 
-    val windowWidth = appWindowManager.mainWindowState.size.width
+        val windowWidth = appWindowManager.mainWindowState.size.width
 
-    appWindowManager.mainWindowState.position =
-        WindowPosition.Absolute(
-            x = (bounds.x + bounds.width).dp - windowWidth + 20.dp,
-            y = (bounds.y + insets.top).dp,
-        )
-}
+        appWindowManager.mainWindowState.position =
+            WindowPosition.Absolute(
+                x = (bounds.x + bounds.width).dp - windowWidth + 20.dp,
+                y = (bounds.y + insets.top).dp,
+            )
+        logger.debug { "main position: ${appWindowManager.mainWindowState.position}" }
+    }
 
-fun getTrayType(): TrayType {
-    return System.getProperty("linux.force.trayType")?.let {
-        safeFromString(it)
-    } ?: TrayType.AutoDetect
-}
+    fun getTrayType(): TrayType {
+        return System.getProperty("linux.force.trayType")?.let {
+            safeFromString(it)
+        } ?: TrayType.AutoDetect
+    }
 
-fun safeFromString(trayName: String): TrayType {
-    return try {
-        TrayType.valueOf(trayName)
-    } catch (e: Exception) {
-        TrayType.AutoDetect
+    fun safeFromString(trayName: String): TrayType {
+        return try {
+            TrayType.valueOf(trayName)
+        } catch (e: Exception) {
+            TrayType.AutoDetect
+        }
     }
 }

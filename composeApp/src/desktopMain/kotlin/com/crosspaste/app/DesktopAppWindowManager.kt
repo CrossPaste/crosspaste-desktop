@@ -138,7 +138,6 @@ abstract class DesktopAppWindowManager : AppWindowManager {
                 showOpenDialog(it)
                 selectedFile?.let { file ->
                     val path = file.toOkioPath(normalize = true)
-                    println("path: $path")
                     if (path.toString().startsWith(currentStoragePath)) {
                         errorAction("cant_select_child_directory")
                     } else if (!file.exists()) {
