@@ -3,11 +3,11 @@ package com.crosspaste.routing
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenService
 import com.crosspaste.app.DesktopAppWindowManager
+import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.dao.signal.SignalDao
 import com.crosspaste.dto.sync.DataContent
 import com.crosspaste.dto.sync.RequestTrust
 import com.crosspaste.dto.sync.SyncInfo
-import com.crosspaste.endpoint.EndpointInfoFactory
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.serializer.PreKeyBundleSerializer
 import com.crosspaste.signal.SignalMessageProcessorImpl

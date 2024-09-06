@@ -1,4 +1,4 @@
-package com.crosspaste.endpoint
+package com.crosspaste.dto.sync
 
 import com.crosspaste.dao.sync.HostInfo
 import com.crosspaste.platform.Platform

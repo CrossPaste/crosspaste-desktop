@@ -1,6 +1,7 @@
-package com.crosspaste.endpoint
+package com.crosspaste.app
 
 import com.crosspaste.dao.sync.HostInfo
+import com.crosspaste.dto.sync.EndpointInfo
 import com.crosspaste.net.PasteServer
 import com.crosspaste.os.macos.MacDeviceUtils
 import com.crosspaste.platform.Platform
