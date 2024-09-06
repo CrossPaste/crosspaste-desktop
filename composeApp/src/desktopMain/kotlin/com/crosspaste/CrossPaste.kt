@@ -29,6 +29,8 @@ import com.crosspaste.app.DesktopAppTokenService
 import com.crosspaste.app.DesktopAppUpdateService
 import com.crosspaste.app.DesktopAppUrls
 import com.crosspaste.app.DesktopAppWindowManager
+import com.crosspaste.app.DesktopEndpointInfoFactory
+import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.app.ExitMode
 import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.app.getDesktopAppWindowManager
@@ -44,8 +46,6 @@ import com.crosspaste.dao.sync.SyncRuntimeInfoDao
 import com.crosspaste.dao.sync.SyncRuntimeInfoRealm
 import com.crosspaste.dao.task.PasteTaskDao
 import com.crosspaste.dao.task.PasteTaskRealm
-import com.crosspaste.endpoint.DesktopEndpointInfoFactory
-import com.crosspaste.endpoint.EndpointInfoFactory
 import com.crosspaste.html.ChromeService
 import com.crosspaste.html.DesktopChromeService
 import com.crosspaste.i18n.GlobalCopywriter

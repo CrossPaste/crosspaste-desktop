@@ -3,9 +3,9 @@ package com.crosspaste.net
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenService
 import com.crosspaste.app.DesktopAppWindowManager
+import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dao.signal.SignalDao
-import com.crosspaste.endpoint.EndpointInfoFactory
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.exception.signalExceptionHandler
 import com.crosspaste.net.plugin.SignalServerDecryptionPluginFactory

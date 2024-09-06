@@ -3,8 +3,8 @@ package com.crosspaste.sync
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.crosspaste.app.AppInfo
+import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.dto.sync.SyncInfo
-import com.crosspaste.endpoint.EndpointInfoFactory
 import com.crosspaste.utils.QRCodeGenerator
 import com.crosspaste.utils.getCodecsUtils
 import com.google.zxing.BarcodeFormat

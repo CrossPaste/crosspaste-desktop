@@ -1,9 +1,9 @@
 package com.crosspaste.net
 
 import com.crosspaste.app.AppInfo
+import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.app.logger
 import com.crosspaste.dto.sync.SyncInfo
-import com.crosspaste.endpoint.EndpointInfoFactory
 import com.crosspaste.sync.DeviceManager
 import com.crosspaste.utils.TxtRecordUtils
 import com.crosspaste.utils.ioDispatcher
