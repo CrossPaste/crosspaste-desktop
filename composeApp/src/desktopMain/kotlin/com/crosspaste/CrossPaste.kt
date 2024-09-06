@@ -1,9 +1,11 @@
 package com.crosspaste
 
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.application
@@ -486,10 +488,13 @@ class CrossPaste {
             application {
                 val ioScope = rememberCoroutineScope { ioDispatcher }
 
+                var exiting by remember { mutableStateOf(false) }
+
                 val exitApplication: (ExitMode) -> Unit = { mode ->
                     if (mode == ExitMode.EXIT || mode == ExitMode.RESTART) {
                         appWindowManager.showMainWindow = false
                     }
+                    exiting = true
                     appWindowManager.showSearchWindow = false
                     ioScope.launch {
                         exitCrossPasteApplication(mode, ioScope) { exitApplication() }
@@ -513,12 +518,14 @@ class CrossPaste {
                         }
 
                     if (appLaunchState.accessibilityPermissions) {
-                        if (isMacos) {
-                            MacTrayView.Tray()
-                        } else if (isWindows) {
-                            WindowsTrayView.Tray()
-                        } else if (isLinux) {
-                            LinuxTrayView.Tray()
+                        if (!exiting) {
+                            if (isMacos) {
+                                MacTrayView.Tray()
+                            } else if (isWindows) {
+                                WindowsTrayView.Tray()
+                            } else if (isLinux) {
+                                LinuxTrayView.Tray()
+                            }
                         }
 
                         CrossPasteMainWindow(exitApplication, windowIcon)
