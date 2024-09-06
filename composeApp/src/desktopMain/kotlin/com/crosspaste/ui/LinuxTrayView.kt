@@ -12,12 +12,12 @@ import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
-import com.crosspaste.app.logger
 import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
 import dorkbox.systemTray.MenuItem
 import dorkbox.systemTray.SystemTray
 import dorkbox.systemTray.SystemTray.TrayType
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch
 import java.awt.GraphicsEnvironment
@@ -25,6 +25,7 @@ import java.awt.Toolkit
 
 @Composable
 fun LinuxTray() {
+    val logger = KotlinLogging.logger {}
     val current = LocalKoinApplication.current
     val applicationExit = LocalExitApplication.current
     val appLaunchState = current.koin.get<AppLaunchState>()

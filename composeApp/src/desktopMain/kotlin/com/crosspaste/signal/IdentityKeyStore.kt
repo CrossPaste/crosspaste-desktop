@@ -61,8 +61,6 @@ class DesktopIdentityKeyStore(
     }
 }
 
-val logger = KotlinLogging.logger {}
-
 fun getPasteIdentityKeyStoreFactory(
     appInfo: AppInfo,
     signalDao: SignalDao,
@@ -112,6 +110,8 @@ class MacosIdentityKeyStoreFactory(
     private val appInfo: AppInfo,
     private val signalDao: SignalDao,
 ) : IdentityKeyStoreFactory {
+
+    private val logger = KotlinLogging.logger {}
 
     private val filePersist =
         DesktopOneFilePersist(
@@ -172,6 +172,8 @@ class WindowsIdentityKeyStoreFactory(
     private val signalDao: SignalDao,
 ) : IdentityKeyStoreFactory {
 
+    private val logger = KotlinLogging.logger {}
+
     private val filePersist =
         DesktopOneFilePersist(
             DesktopAppPathProvider.resolve("signal.data", AppFileType.ENCRYPT),
@@ -212,6 +214,8 @@ class WindowsIdentityKeyStoreFactory(
 class LinuxIdentityKeyStoreFactory(
     private val signalDao: SignalDao,
 ) : IdentityKeyStoreFactory {
+
+    private val logger = KotlinLogging.logger {}
 
     private val filePersist =
         DesktopOneFilePersist(

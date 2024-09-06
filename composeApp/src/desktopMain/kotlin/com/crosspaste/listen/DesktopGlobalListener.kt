@@ -13,8 +13,6 @@ import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
 import com.github.kwhat.jnativehook.mouse.NativeMouseListener
 import io.github.oshai.kotlinlogging.KotlinLogging
 
-val logger = KotlinLogging.logger {}
-
 class DesktopGlobalListener(
     private val appLaunchState: AppLaunchState,
     private val shortcutKeysListener: NativeKeyListener,
@@ -22,6 +20,8 @@ class DesktopGlobalListener(
     private val notificationManager: NotificationManager,
     private val copywriter: GlobalCopywriter,
 ) : GlobalListener {
+
+    private val logger = KotlinLogging.logger {}
 
     private val systemProperty = getSystemProperty()
 
