@@ -1,6 +1,7 @@
 package com.crosspaste.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -71,6 +72,12 @@ object LinuxTrayView {
             if (appLaunchState.firstLaunch && !appWindowManager.hasCompletedFirstLaunchShow) {
                 appWindowManager.showMainWindow = true
                 appWindowManager.hasCompletedFirstLaunchShow = true
+            }
+        }
+
+        DisposableEffect(Unit) {
+            onDispose {
+                tray?.remove()
             }
         }
     }
