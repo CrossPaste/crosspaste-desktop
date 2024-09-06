@@ -1,6 +1,7 @@
 package com.crosspaste.net.plugin
 
 import com.crosspaste.signal.SignalProcessorCache
+import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.content.*
@@ -10,10 +11,7 @@ import io.ktor.util.pipeline.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import java.io.ByteArrayOutputStream
-import java.nio.ByteBuffer
 
 class SignalServerEncryptPluginFactory(private val signalProcessorCache: SignalProcessorCache) {
 
@@ -46,7 +44,7 @@ class SignalServerEncryptPluginFactory(private val signalProcessorCache: SignalP
 object EncryptResponse :
     Hook<suspend EncryptResponse.Context.(ApplicationCall, OutgoingContent) -> Unit> {
 
-    val ioCoroutineDispatcher = CoroutineScope(Dispatchers.IO)
+    val ioCoroutineDispatcher = CoroutineScope(ioDispatcher)
 
     class Context(private val context: PipelineContext<Any, ApplicationCall>) {
         suspend fun transformBodyTo(
@@ -83,36 +81,23 @@ object EncryptResponse :
 
                         val deferred =
                             ioCoroutineDispatcher.async {
-                                val largeBuffer = ByteArrayOutputStream(targetBufferSize)
-                                val tempBuffer =
-                                    ByteBuffer.allocateDirect(4096) // Temporary buffer for reading from the channel
+                                val largeBuffer = BytePacketBuilder()
+                                val tempBuffer = ByteArray(4096) // Temporary buffer for reading from the channel
 
                                 while (true) {
-                                    tempBuffer.clear()
                                     val readSize = originChannel.readAvailable(tempBuffer)
-                                    if (readSize < 0 && largeBuffer.size() == 0) break // No more data to read and buffer is empty
+                                    if (readSize < 0 && largeBuffer.size == 0) break // No more data to read and buffer is empty
                                     if (readSize > 0) {
-                                        tempBuffer.flip()
-                                        val bytes = ByteArray(tempBuffer.remaining())
-                                        tempBuffer.get(bytes)
-                                        largeBuffer.write(
-                                            bytes,
-                                            0,
-                                            bytes.size,
-                                        ) // Accumulate bytes into the large buffer
+                                        largeBuffer.writeFully(tempBuffer, 0, readSize)
                                     }
 
                                     // Check if largeBuffer is filled or no more data is available to read
-                                    if (largeBuffer.size() >= targetBufferSize || (readSize < 0 && largeBuffer.size() > 0)) {
-                                        val byteArray = largeBuffer.toByteArray()
+                                    if (largeBuffer.size >= targetBufferSize || (readSize < 0 && largeBuffer.size > 0)) {
+                                        val byteArray = largeBuffer.build().readBytes()
                                         val encryptedData = encrypt(byteArray)
                                         encryptChannel.writeInt(encryptedData.size)
-                                        encryptChannel.writeFully(
-                                            encryptedData,
-                                            0,
-                                            encryptedData.size,
-                                        )
-                                        largeBuffer.reset() // Reset the buffer after processing
+                                        encryptChannel.writeFully(encryptedData)
+                                        largeBuffer.reset() // Clear the buffer after processing
                                     }
                                 }
                             }

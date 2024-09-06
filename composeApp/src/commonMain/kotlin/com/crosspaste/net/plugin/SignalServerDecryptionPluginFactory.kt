@@ -7,7 +7,6 @@ import io.ktor.server.application.*
 import io.ktor.server.application.hooks.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
-import java.nio.ByteBuffer
 
 class SignalServerDecryptionPluginFactory(private val signalProcessorCache: SignalProcessorCache) {
 
@@ -30,8 +29,8 @@ class SignalServerDecryptionPluginFactory(private val signalProcessorCache: Sign
                                 val processor =
                                     signalProcessorCache.getSignalMessageProcessor(appInstanceId)
                                 val encryptedContent = body.readRemaining().readBytes()
-                                val decrypt = processor.decryptSignalMessage(encryptedContent)
-                                channel.writeFully(ByteBuffer.wrap(decrypt))
+                                val decrypted = processor.decryptSignalMessage(encryptedContent)
+                                channel.writeFully(decrypted, 0, decrypted.size)
                             }.channel
                         }
                     }
