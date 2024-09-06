@@ -87,7 +87,8 @@ class CleanPasteTaskExecutor(
         minSize: Long,
         totalSize: Long,
     ) {
-        val minTime = pasteDao.getMinPasteDataCreateTime() ?: return // 如果没有数据，则直接返回
+        // If there's no data, return immediately
+        val minTime = pasteDao.getMinPasteDataCreateTime() ?: return
         val currentTime = RealmInstant.now()
 
         val proportion = minSize.toDouble() / totalSize

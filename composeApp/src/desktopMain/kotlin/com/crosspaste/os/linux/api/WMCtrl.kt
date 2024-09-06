@@ -346,7 +346,8 @@ object WMCtrl {
             val buffer = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
 
             val numPixels = width * height
-            val bytesPerPixel = 8 // 每个像素8字节，包括填充
+            // Define the number of bytes per pixel, including padding
+            val bytesPerPixel = 8
             val imageData = ByteArray(numPixels * bytesPerPixel)
 
             prop.read(16, imageData, 0, imageData.size)
