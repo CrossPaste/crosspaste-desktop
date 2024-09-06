@@ -120,8 +120,8 @@ import com.crosspaste.paste.plugin.type.TextUpdater
 import com.crosspaste.paste.plugin.type.UrlTypePlugin
 import com.crosspaste.path.AppPathProvider
 import com.crosspaste.path.DesktopAppPathProvider
-import com.crosspaste.path.DesktopUserDataPathProvider
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.path.getPlatformPathProvider
 import com.crosspaste.platform.currentPlatform
 import com.crosspaste.presist.DesktopFilePersist
 import com.crosspaste.presist.FilePersist
@@ -239,7 +239,7 @@ class CrossPaste {
                     single<GlobalCoroutineScope> { GlobalCoroutineScopeImpl }
                     single<SyncInfoFactory> { DesktopSyncInfoFactory(get(), get()) }
                     single<AppPathProvider> { appPathProvider }
-                    single<UserDataPathProvider> { DesktopUserDataPathProvider(get()) }
+                    single<UserDataPathProvider> { UserDataPathProvider(get(), getPlatformPathProvider()) }
                     single<FilePersist> { DesktopFilePersist }
                     single<ConfigManager> { configManager }
                     single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
