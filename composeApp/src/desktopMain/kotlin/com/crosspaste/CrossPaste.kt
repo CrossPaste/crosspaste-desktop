@@ -124,7 +124,6 @@ import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.path.getPlatformPathProvider
 import com.crosspaste.platform.getPlatform
-import com.crosspaste.presist.DesktopFilePersist
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.realm.RealmManager
 import com.crosspaste.signal.DesktopPreKeyStore
@@ -205,7 +204,7 @@ class CrossPaste {
 
         private val configManager =
             DefaultConfigManager(
-                DesktopFilePersist.createOneFilePersist(
+                FilePersist.createOneFilePersist(
                     appPathProvider.resolve("appConfig.json", AppFileType.USER),
                 ),
             )
@@ -241,7 +240,7 @@ class CrossPaste {
                     single<SyncInfoFactory> { DesktopSyncInfoFactory(get(), get()) }
                     single<AppPathProvider> { appPathProvider }
                     single<UserDataPathProvider> { UserDataPathProvider(get(), getPlatformPathProvider()) }
-                    single<FilePersist> { DesktopFilePersist }
+                    single<FilePersist> { FilePersist }
                     single<ConfigManager> { configManager }
                     single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
                     single<PasteIDGenerator> { DesktopPasteIDGeneratorFactory(get()).createIDGenerator() }
