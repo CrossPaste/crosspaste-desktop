@@ -7,11 +7,11 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.html.ChromeServiceServiceModule.Companion.CHROME_DRIVER_MODULE_ITEM_NAME
 import com.crosspaste.html.ChromeServiceServiceModule.Companion.CHROME_HEADLESS_SHELL_MODULE_ITEM_NAME
 import com.crosspaste.module.ModuleLoaderConfig
-import com.crosspaste.os.windows.WinProcessUtils
-import com.crosspaste.os.windows.WinProcessUtils.killProcessSet
-import com.crosspaste.os.windows.WindowDpiHelper
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.platform.currentPlatform
+import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.windows.WinProcessUtils
+import com.crosspaste.platform.windows.WinProcessUtils.killProcessSet
+import com.crosspaste.platform.windows.WindowDpiHelper
 import com.crosspaste.utils.DesktopHtmlUtils.dataUrl
 import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.Retry
@@ -36,7 +36,7 @@ class DesktopChromeService(
 
     private val logger = KotlinLogging.logger {}
 
-    private val currentPlatform = currentPlatform()
+    private val currentPlatform = getPlatform()
 
     private val scale: Double =
         if (currentPlatform.isWindows()) {

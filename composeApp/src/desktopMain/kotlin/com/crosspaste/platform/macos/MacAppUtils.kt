@@ -1,9 +1,9 @@
-package com.crosspaste.os.macos
+package com.crosspaste.platform.macos
 
-import com.crosspaste.os.macos.api.MacosApi
-import com.crosspaste.os.macos.api.MacosApi.Companion.INSTANCE
-import com.crosspaste.os.macos.api.WindowInfo
-import com.crosspaste.os.macos.api.WindowInfoArray
+import com.crosspaste.platform.macos.api.MacosApi
+import com.crosspaste.platform.macos.api.MacosApi.Companion.INSTANCE
+import com.crosspaste.platform.macos.api.WindowInfo
+import com.crosspaste.platform.macos.api.WindowInfoArray
 import com.sun.jna.Pointer
 
 object MacAppUtils {

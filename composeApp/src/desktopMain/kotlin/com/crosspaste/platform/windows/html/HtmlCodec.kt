@@ -1,4 +1,4 @@
-package com.crosspaste.os.windows.html
+package com.crosspaste.platform.windows.html
 
 import java.awt.datatransfer.DataFlavor
 import java.io.BufferedInputStream

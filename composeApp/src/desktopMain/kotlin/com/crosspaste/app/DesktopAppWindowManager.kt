@@ -14,7 +14,7 @@ import androidx.compose.ui.window.WindowState
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.platform.currentPlatform
+import com.crosspaste.platform.getPlatform
 import com.crosspaste.utils.Memoize
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KLogger
@@ -33,7 +33,7 @@ fun getDesktopAppWindowManager(
     activeGraphicsDevice: ActiveGraphicsDevice,
     userDataPathProvider: UserDataPathProvider,
 ): DesktopAppWindowManager {
-    val platform = currentPlatform()
+    val platform = getPlatform()
     return if (platform.isMacos()) {
         MacAppWindowManager(lazyShortcutKeys, activeGraphicsDevice, userDataPathProvider)
     } else if (platform.isWindows()) {

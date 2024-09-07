@@ -1,13 +1,13 @@
 package com.crosspaste.app
 
 import com.crosspaste.path.DesktopAppPathProvider
-import com.crosspaste.platform.currentPlatform
+import com.crosspaste.platform.getPlatform
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 object DesktopAppRestartService : AppRestartService {
 
-    private val currentPlatform = currentPlatform()
+    private val currentPlatform = getPlatform()
 
     private val appRestartService: AppRestartService =
         if (currentPlatform.isMacos()) {

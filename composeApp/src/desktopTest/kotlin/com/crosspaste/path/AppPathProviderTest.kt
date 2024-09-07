@@ -2,7 +2,7 @@ package com.crosspaste.path
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.path.TestAppPathProviderMock.useMockAppPathProvider
-import com.crosspaste.platform.currentPlatform
+import com.crosspaste.platform.getPlatform
 import com.crosspaste.utils.noOptionParent
 import kotlin.test.Ignore
 import kotlin.test.Test
@@ -26,7 +26,7 @@ class AppPathProviderTest {
         val configPath = DesktopAppPathProvider.resolve("test.config", AppFileType.USER)
 
         assertEquals("test.config", configPath.name)
-        val currentPlatform = currentPlatform()
+        val currentPlatform = getPlatform()
         if (currentPlatform.isMacos()) {
             assertEquals("CrossPaste", configPath.noOptionParent.name)
         } else if (currentPlatform.isWindows()) {

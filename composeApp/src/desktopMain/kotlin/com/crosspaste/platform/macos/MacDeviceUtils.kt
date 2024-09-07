@@ -1,7 +1,7 @@
-package com.crosspaste.os.macos
+package com.crosspaste.platform.macos
 
-import com.crosspaste.os.macos.api.MacosApi
-import com.crosspaste.os.macos.api.MacosApi.Companion.getString
+import com.crosspaste.platform.macos.api.MacosApi
+import com.crosspaste.platform.macos.api.MacosApi.Companion.getString
 
 object MacDeviceUtils {
 

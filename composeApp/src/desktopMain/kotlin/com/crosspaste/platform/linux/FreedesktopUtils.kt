@@ -1,4 +1,4 @@
-package com.crosspaste.os.linux
+package com.crosspaste.platform.linux
 
 import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.getFileUtils

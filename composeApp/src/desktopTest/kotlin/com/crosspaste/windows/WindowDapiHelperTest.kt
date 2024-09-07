@@ -1,7 +1,7 @@
 package com.crosspaste.windows
 
-import com.crosspaste.os.windows.WindowDapiHelper
-import com.crosspaste.platform.currentPlatform
+import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.windows.WindowDapiHelper
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -10,7 +10,7 @@ class WindowDapiHelperTest {
 
     @Test
     fun testDapi() {
-        val currentPlatform = currentPlatform()
+        val currentPlatform = getPlatform()
         if (currentPlatform.isWindows()) {
             val str = "test windows dapi"
             val encryptData = WindowDapiHelper.encryptData(str.encodeToByteArray())

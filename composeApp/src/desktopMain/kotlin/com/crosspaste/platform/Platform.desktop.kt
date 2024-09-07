@@ -1,9 +1,10 @@
 package com.crosspaste.platform
 
+import com.crosspaste.platform.linux.LinuxPlatform
 import com.crosspaste.utils.OnceFunction
 import com.crosspaste.utils.getSystemProperty
 
-actual fun currentPlatform(): Platform {
+actual fun getPlatform(): Platform {
     return OnceFunction { getCurrentPlatform() }.run()
 }
 

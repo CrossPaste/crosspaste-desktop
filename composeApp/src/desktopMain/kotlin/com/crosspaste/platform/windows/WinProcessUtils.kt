@@ -1,4 +1,4 @@
-package com.crosspaste.os.windows
+package com.crosspaste.platform.windows
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.IOException

@@ -1,7 +1,7 @@
-package com.crosspaste.os.windows
+package com.crosspaste.platform.windows
 
-import com.crosspaste.os.windows.api.Shell32
-import com.crosspaste.os.windows.api.User32
+import com.crosspaste.platform.windows.api.Shell32
+import com.crosspaste.platform.windows.api.User32
 import com.sun.jna.Memory
 import com.sun.jna.Pointer
 import com.sun.jna.WString

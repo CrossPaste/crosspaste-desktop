@@ -1,6 +1,6 @@
-package com.crosspaste.os.linux.api
+package com.crosspaste.platform.linux.api
 
-import com.crosspaste.os.linux.api.X11Api.Companion.INSTANCE
+import com.crosspaste.platform.linux.api.X11Api.Companion.INSTANCE
 import com.sun.jna.Library
 import com.sun.jna.Native
 import com.sun.jna.NativeLong

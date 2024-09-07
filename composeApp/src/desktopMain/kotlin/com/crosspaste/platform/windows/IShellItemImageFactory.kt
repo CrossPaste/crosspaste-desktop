@@ -1,4 +1,4 @@
-package com.crosspaste.os.windows
+package com.crosspaste.platform.windows
 
 import com.sun.jna.Pointer
 import com.sun.jna.Structure

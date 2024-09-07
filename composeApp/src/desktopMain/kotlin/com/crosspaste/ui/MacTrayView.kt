@@ -18,9 +18,9 @@ import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.os.macos.MacAppUtils
-import com.crosspaste.os.macos.MacAppUtils.useAll
-import com.crosspaste.os.macos.api.WindowInfo
+import com.crosspaste.platform.macos.MacAppUtils
+import com.crosspaste.platform.macos.MacAppUtils.useAll
+import com.crosspaste.platform.macos.api.WindowInfo
 import com.crosspaste.ui.base.DesktopNotificationManager
 import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.UISupport

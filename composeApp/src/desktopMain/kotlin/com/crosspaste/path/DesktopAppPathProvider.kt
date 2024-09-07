@@ -2,7 +2,7 @@ package com.crosspaste.path
 
 import com.crosspaste.app.AppEnv
 import com.crosspaste.app.AppFileType
-import com.crosspaste.platform.currentPlatform
+import com.crosspaste.platform.getPlatform
 import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.getSystemProperty
 import com.crosspaste.utils.noOptionParent
@@ -67,7 +67,7 @@ object DesktopAppPathProvider : AppPathProvider, PathProvider {
             // In the test environment, DesktopAppPathProvider will be mocked
             this
         } else {
-            val platform = currentPlatform()
+            val platform = getPlatform()
             if (platform.isWindows()) {
                 WindowsAppPathProvider()
             } else if (platform.isMacos()) {
@@ -127,7 +127,7 @@ class DevelopmentAppPathProvider : AppPathProvider {
 
     private fun getResources(): Path {
         val resources = composeAppDir.toPath().resolve("resources")
-        val platform = currentPlatform()
+        val platform = getPlatform()
         val platformAndArch =
             if (platform.isWindows() && platform.is64bit()) {
                 "windows-x64"

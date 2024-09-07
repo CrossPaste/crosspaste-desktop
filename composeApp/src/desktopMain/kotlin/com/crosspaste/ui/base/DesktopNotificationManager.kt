@@ -3,15 +3,15 @@ package com.crosspaste.ui.base
 import androidx.compose.ui.window.Notification
 import com.crosspaste.app.AppName
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.os.linux.api.NotificationSender.sendNotification
-import com.crosspaste.platform.currentPlatform
+import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.linux.api.NotificationSender.sendNotification
 
 class DesktopNotificationManager(
     private val appWindowManager: DesktopAppWindowManager,
     private val toastManager: ToastManager,
 ) : NotificationManager {
 
-    val platform = currentPlatform()
+    val platform = getPlatform()
 
     val trayState = CrossPasteTrayState()
 

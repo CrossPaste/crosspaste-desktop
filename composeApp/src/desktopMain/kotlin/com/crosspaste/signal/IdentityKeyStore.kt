@@ -4,10 +4,10 @@ import com.crosspaste.app.AppEnv
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
 import com.crosspaste.dao.signal.SignalDao
-import com.crosspaste.os.macos.MacosKeychainHelper
-import com.crosspaste.os.windows.WindowDapiHelper
 import com.crosspaste.path.DesktopAppPathProvider
-import com.crosspaste.platform.currentPlatform
+import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.macos.MacosKeychainHelper
+import com.crosspaste.platform.windows.WindowDapiHelper
 import com.crosspaste.presist.DesktopOneFilePersist
 import com.crosspaste.utils.EncryptUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -65,7 +65,7 @@ fun getPasteIdentityKeyStoreFactory(
     appInfo: AppInfo,
     signalDao: SignalDao,
 ): IdentityKeyStoreFactory {
-    val currentPlatform = currentPlatform()
+    val currentPlatform = getPlatform()
     return if (currentPlatform.isMacos()) {
         MacosIdentityKeyStoreFactory(appInfo, signalDao)
     } else if (currentPlatform.isWindows()) {

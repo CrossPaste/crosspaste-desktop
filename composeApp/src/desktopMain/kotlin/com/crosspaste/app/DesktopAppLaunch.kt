@@ -1,9 +1,9 @@
 package com.crosspaste.app
 
-import com.crosspaste.os.macos.MacAppUtils
-import com.crosspaste.os.windows.api.User32.Companion.isInstalledFromMicrosoftStore
 import com.crosspaste.path.DesktopAppPathProvider
-import com.crosspaste.platform.currentPlatform
+import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.macos.MacAppUtils
+import com.crosspaste.platform.windows.api.User32.Companion.isInstalledFromMicrosoftStore
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.nio.channels.FileChannel
@@ -65,7 +65,7 @@ object DesktopAppLaunch : AppLaunch, AppLock {
 
     override fun launch(): AppLaunchState {
         val pair = acquireLock()
-        val platform = currentPlatform()
+        val platform = getPlatform()
         val pid = ProcessHandle.current().pid()
         if (platform.isMacos()) {
             val accessibilityPermissions = MacAppUtils.checkAccessibilityPermissions()

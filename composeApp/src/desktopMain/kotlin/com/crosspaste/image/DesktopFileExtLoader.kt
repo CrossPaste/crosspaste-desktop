@@ -1,11 +1,11 @@
 package com.crosspaste.image
 
 import com.crosspaste.app.AppFileType
-import com.crosspaste.os.linux.FreedesktopUtils.saveExtIcon
-import com.crosspaste.os.macos.MacAppUtils
-import com.crosspaste.os.windows.JIconExtract
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.platform.currentPlatform
+import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.linux.FreedesktopUtils.saveExtIcon
+import com.crosspaste.platform.macos.MacAppUtils
+import com.crosspaste.platform.windows.JIconExtract
 import com.crosspaste.utils.ConcurrentPlatformMap
 import com.crosspaste.utils.PlatformLock
 import com.crosspaste.utils.createConcurrentPlatformMap
@@ -21,7 +21,7 @@ class DesktopFileExtLoader(
 
     override val lockMap: ConcurrentPlatformMap<String, PlatformLock> = createConcurrentPlatformMap()
 
-    private val platform = currentPlatform()
+    private val platform = getPlatform()
 
     private val toSave: (String, Path, Path) -> Unit =
         if (platform.isMacos()) {

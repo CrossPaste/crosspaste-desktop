@@ -1,8 +1,8 @@
-package com.crosspaste.os.macos
+package com.crosspaste.platform.macos
 
 import com.crosspaste.listener.KeyboardKey
 import com.crosspaste.listener.ShortcutKeys
-import com.crosspaste.os.macos.api.MacosApi
+import com.crosspaste.platform.macos.api.MacosApi
 import com.sun.jna.Memory
 
 class MacPasteUtils(private val shortcutKeys: ShortcutKeys) {

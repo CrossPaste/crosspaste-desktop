@@ -123,7 +123,7 @@ import com.crosspaste.path.AppPathProvider
 import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.path.getPlatformPathProvider
-import com.crosspaste.platform.currentPlatform
+import com.crosspaste.platform.getPlatform
 import com.crosspaste.presist.DesktopFilePersist
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.realm.RealmManager
@@ -478,7 +478,7 @@ class CrossPaste {
 
             val appLaunchState = koinApplication.koin.get<AppLaunchState>()
             val appWindowManager = koinApplication.koin.get<DesktopAppWindowManager>()
-            val platform = currentPlatform()
+            val platform = getPlatform()
 
             val isMacos = platform.isMacos()
             val isWindows = platform.isWindows()
