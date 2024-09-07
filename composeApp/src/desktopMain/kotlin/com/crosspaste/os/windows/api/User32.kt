@@ -27,8 +27,6 @@ import com.sun.jna.platform.win32.WinNT
 import com.sun.jna.platform.win32.WinNT.HANDLE
 import com.sun.jna.platform.win32.WinUser
 import com.sun.jna.platform.win32.WinUser.INPUT
-import com.sun.jna.platform.win32.WinUser.SM_CXSCREEN
-import com.sun.jna.platform.win32.WinUser.SM_CYSCREEN
 import com.sun.jna.platform.win32.WinUser.SW_HIDE
 import com.sun.jna.platform.win32.WinUser.SW_RESTORE
 import com.sun.jna.ptr.IntByReference
@@ -389,17 +387,6 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                     )
 
                     INSTANCE.ShowWindow(searchHWND, SW_RESTORE)
-
-                    val screenWidth = INSTANCE.GetSystemMetrics(SM_CXSCREEN)
-                    val screenHeight = INSTANCE.GetSystemMetrics(SM_CYSCREEN)
-
-                    INSTANCE.mouse_event(
-                        DWORD(0x0001),
-                        DWORD((screenWidth / 2).toLong()),
-                        DWORD((screenHeight / 2).toLong()),
-                        DWORD(0),
-                        ULONG_PTR(0),
-                    )
 
                     val result = INSTANCE.SetForegroundWindow(searchHWND)
                     INSTANCE.AttachThreadInput(
