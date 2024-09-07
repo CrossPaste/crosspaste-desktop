@@ -12,6 +12,19 @@ import okio.Path.Companion.toPath
 import java.nio.file.Files
 import java.nio.file.Paths
 
+interface AppPathProvider {
+
+    val userHome: Path
+
+    val pasteAppPath: Path
+
+    val pasteAppJarPath: Path
+
+    val pasteAppExePath: Path
+
+    val pasteUserPath: Path
+}
+
 object DesktopAppPathProvider : AppPathProvider, PathProvider {
 
     private val appPathProvider = getAppPathProvider()
