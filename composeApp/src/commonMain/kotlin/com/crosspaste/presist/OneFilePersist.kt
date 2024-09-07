@@ -1,6 +1,7 @@
 package com.crosspaste.presist
 
 import com.crosspaste.utils.getJsonUtils
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
 import okio.FileSystem
@@ -13,10 +14,11 @@ class OneFilePersist(val path: Path) {
     private val jsonUtils = getJsonUtils()
     private val fileSystem = FileSystem.SYSTEM
 
+    @OptIn(InternalSerializationApi::class)
     fun <T : Any> read(clazz: KClass<T>): T? {
         return if (fileSystem.exists(path)) {
             val content = fileSystem.read(path) { readUtf8() }
-            val serializer = serializer(clazz.java) as KSerializer<T>
+            val serializer = clazz.serializer()
             jsonUtils.JSON.decodeFromString(serializer, content)
         } else {
             null
@@ -31,9 +33,9 @@ class OneFilePersist(val path: Path) {
         }
     }
 
-    fun <T> save(config: T) {
-        val kClass = config!!::class
-        val serializer = serializer(kClass.java)
+    @OptIn(InternalSerializationApi::class)
+    fun <T : Any> save(config: T) {
+        val serializer: KSerializer<T> = config::class.serializer() as KSerializer<T>
         val jsonString = jsonUtils.JSON.encodeToString(serializer, config)
         writeWithParentDirs { writeUtf8(jsonString) }
     }
