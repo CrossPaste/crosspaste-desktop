@@ -5,9 +5,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listener.ShortcutKeys
-import com.crosspaste.os.macos.MacAppUtils
-import com.crosspaste.os.macos.MacPasteUtils
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.platform.macos.MacAppUtils
+import com.crosspaste.platform.macos.MacPasteUtils
 import com.crosspaste.utils.getSystemProperty
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

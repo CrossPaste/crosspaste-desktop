@@ -3,8 +3,8 @@ package com.crosspaste.paste
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dao.paste.PasteDao
-import com.crosspaste.os.windows.api.User32
-import com.crosspaste.platform.currentPlatform
+import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.windows.api.User32
 import com.crosspaste.utils.DesktopControlUtils.blockEnsureMinExecutionTime
 import com.crosspaste.utils.DesktopControlUtils.blockExponentialBackoffUntilValid
 import com.crosspaste.utils.cpuDispatcher
@@ -82,11 +82,19 @@ class WindowsPasteboardService(
                 null, 0, 0, null,
             )
         nextViewer = User32.INSTANCE.SetClipboardViewer(viewer)
-        val currentPlatform = currentPlatform()
+        val currentPlatform = getPlatform()
         if (currentPlatform.is64bit()) {
-            User32.INSTANCE.SetWindowLongPtr(viewer, User32.GWL_WNDPROC, this)
+            User32.INSTANCE.SetWindowLongPtr(
+                viewer,
+                User32.GWL_WNDPROC,
+                this,
+            )
         } else {
-            User32.INSTANCE.SetWindowLong(viewer, User32.GWL_WNDPROC, this)
+            User32.INSTANCE.SetWindowLong(
+                viewer,
+                User32.GWL_WNDPROC,
+                this,
+            )
         }
         val msg = MSG()
         val handles = arrayOf(event)
@@ -214,7 +222,11 @@ class WindowsPasteboardService(
                 return 0
             }
 
-            User32.WM_DESTROY -> User32.INSTANCE.ChangeClipboardChain(viewer, nextViewer)
+            User32.WM_DESTROY ->
+                User32.INSTANCE.ChangeClipboardChain(
+                    viewer,
+                    nextViewer,
+                )
         }
         return User32.INSTANCE.DefWindowProc(hWnd, uMsg, uParam, lParam).toInt()
     }

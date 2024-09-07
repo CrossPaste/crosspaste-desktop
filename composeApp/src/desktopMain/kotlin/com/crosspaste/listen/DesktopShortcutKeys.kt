@@ -8,7 +8,7 @@ import com.crosspaste.listener.KeyboardKey
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysCore
 import com.crosspaste.path.DesktopAppPathProvider
-import com.crosspaste.platform.currentPlatform
+import com.crosspaste.platform.getPlatform
 import com.crosspaste.utils.DesktopResourceUtils
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -41,7 +41,7 @@ class DesktopShortcutKeys(
 
     private val logger: KLogger = KotlinLogging.logger {}
 
-    private val platform = currentPlatform()
+    private val platform = getPlatform()
 
     override var shortcutKeysCore by mutableStateOf(defaultKeysCore())
 

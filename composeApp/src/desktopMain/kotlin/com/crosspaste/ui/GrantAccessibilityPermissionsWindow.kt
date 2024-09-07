@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.rememberDialogState
-import com.crosspaste.os.macos.api.MacosApi
+import com.crosspaste.platform.macos.api.MacosApi
 import com.crosspaste.ui.base.CrossPasteGrantAccessibilityPermissions
 
 @Composable

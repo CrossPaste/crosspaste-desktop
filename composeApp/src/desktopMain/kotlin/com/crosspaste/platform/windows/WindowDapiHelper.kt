@@ -1,4 +1,4 @@
-package com.crosspaste.os.windows
+package com.crosspaste.platform.windows
 
 import com.sun.jna.platform.win32.Crypt32Util.cryptProtectData
 import com.sun.jna.platform.win32.Crypt32Util.cryptUnprotectData

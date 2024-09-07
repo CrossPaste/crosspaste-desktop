@@ -15,7 +15,7 @@ import com.crosspaste.paste.plugin.type.FilesTypePlugin.FilesTypePlugin.FILE_LIS
 import com.crosspaste.paste.plugin.type.HtmlTypePlugin.HtmlTypePlugin.HTML_ID
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.platform.currentPlatform
+import com.crosspaste.platform.getPlatform
 import com.crosspaste.utils.DesktopFileUtils
 import com.crosspaste.utils.DesktopFileUtils.createPastePath
 import com.crosspaste.utils.DesktopFileUtils.createPasteRelativePath
@@ -221,7 +221,7 @@ class ImageTypePlugin(
             }
         }
 
-        if (currentPlatform().isLinux()) {
+        if (getPlatform().isLinux()) {
             val content =
                 fileList.joinToString(
                     separator = "\n",

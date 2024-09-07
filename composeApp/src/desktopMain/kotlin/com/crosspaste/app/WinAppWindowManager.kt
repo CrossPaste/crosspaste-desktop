@@ -6,8 +6,8 @@ import androidx.compose.runtime.setValue
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
-import com.crosspaste.os.windows.api.User32
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.platform.windows.api.User32
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
@@ -91,7 +91,14 @@ class WinAppWindowManager(
             lazyShortcutKeys.value.shortcutKeysCore.keys[PASTE]?.let {
                 it.map { key -> key.rawCode }
             } ?: listOf()
-        User32.bringToBack(MAIN_WINDOW_TITLE, mainHWND, searchHWND, prevWinAppInfo?.hwnd, false, keyCodes)
+        User32.bringToBack(
+            MAIN_WINDOW_TITLE,
+            mainHWND,
+            searchHWND,
+            prevWinAppInfo?.hwnd,
+            false,
+            keyCodes,
+        )
         showMainWindow = false
         mainFocusRequester.freeFocus()
     }
@@ -127,7 +134,14 @@ class WinAppWindowManager(
             lazyShortcutKeys.value.shortcutKeysCore.keys[PASTE]?.let {
                 it.map { key -> key.rawCode }
             } ?: listOf()
-        User32.bringToBack(SEARCH_WINDOW_TITLE, mainHWND, searchHWND, prevWinAppInfo?.hwnd, toPaste, keyCodes)
+        User32.bringToBack(
+            SEARCH_WINDOW_TITLE,
+            mainHWND,
+            searchHWND,
+            prevWinAppInfo?.hwnd,
+            toPaste,
+            keyCodes,
+        )
         showSearchWindow = false
         searchFocusRequester.freeFocus()
     }

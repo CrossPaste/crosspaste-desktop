@@ -2,7 +2,7 @@ package com.crosspaste.platform
 
 import kotlinx.serialization.Serializable
 
-expect fun currentPlatform(): Platform
+expect fun getPlatform(): Platform
 
 const val WINDOWS = "Windows"
 

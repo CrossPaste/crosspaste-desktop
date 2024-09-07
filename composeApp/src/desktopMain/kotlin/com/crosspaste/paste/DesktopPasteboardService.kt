@@ -3,7 +3,7 @@ package com.crosspaste.paste
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dao.paste.PasteDao
-import com.crosspaste.platform.currentPlatform
+import com.crosspaste.platform.getPlatform
 
 fun getDesktopPasteboardService(
     appWindowManager: DesktopAppWindowManager,
@@ -13,7 +13,7 @@ fun getDesktopPasteboardService(
     pasteConsumer: TransferableConsumer,
     pasteProducer: TransferableProducer,
 ): AbstractPasteboardService {
-    val currentPlatform = currentPlatform()
+    val currentPlatform = getPlatform()
     return if (currentPlatform.isMacos()) {
         MacosPasteboardService(appWindowManager, pasteDao, configManager, currentPaste, pasteConsumer, pasteProducer)
     } else if (currentPlatform.isWindows()) {

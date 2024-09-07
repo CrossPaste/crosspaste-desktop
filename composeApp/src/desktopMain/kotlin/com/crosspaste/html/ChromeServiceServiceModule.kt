@@ -5,7 +5,7 @@ import com.crosspaste.module.ModuleItem
 import com.crosspaste.module.ModuleLoaderConfig
 import com.crosspaste.module.ServiceModule
 import com.crosspaste.path.DesktopAppPathProvider
-import com.crosspaste.platform.currentPlatform
+import com.crosspaste.platform.getPlatform
 import java.util.Properties
 
 class ChromeServiceServiceModule(
@@ -25,7 +25,7 @@ class ChromeServiceServiceModule(
                 .resolve(CHROME_SERVICE_MODULE_NAME)
     }
 
-    private val platform = currentPlatform()
+    private val platform = getPlatform()
 
     private val hosts = listOf(DEFAULT_HOST, MIRROR_HOST)
 

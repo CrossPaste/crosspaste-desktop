@@ -1,4 +1,4 @@
-package com.crosspaste.os.windows.api
+package com.crosspaste.platform.windows.api
 
 import com.sun.jna.Native
 import com.sun.jna.Pointer

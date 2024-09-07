@@ -1,4 +1,4 @@
-package com.crosspaste.platform
+package com.crosspaste.platform.linux
 
 import java.io.File
 import java.io.IOException

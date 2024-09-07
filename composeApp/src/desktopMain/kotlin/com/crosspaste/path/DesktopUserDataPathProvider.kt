@@ -1,7 +1,7 @@
 package com.crosspaste.path
 
 import com.crosspaste.app.AppEnv
-import com.crosspaste.platform.currentPlatform
+import com.crosspaste.platform.getPlatform
 import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getSystemProperty
@@ -17,7 +17,7 @@ fun getPlatformPathProvider(): PlatformUserDataPathProvider {
         // In the test environment, DesktopPathProvider will be mocked
         TestPlatformUserDataPathProvider()
     } else {
-        val platform = currentPlatform()
+        val platform = getPlatform()
         if (platform.isWindows()) {
             WindowsPlatformUserDataPathProvider()
         } else if (platform.isMacos()) {
@@ -25,7 +25,7 @@ fun getPlatformPathProvider(): PlatformUserDataPathProvider {
         } else if (platform.isLinux()) {
             LinuxPlatformUserDataPathProvider()
         } else {
-            throw IllegalStateException("Unknown platform: ${currentPlatform().name}")
+            throw IllegalStateException("Unknown platform: ${getPlatform().name}")
         }
     }
 }

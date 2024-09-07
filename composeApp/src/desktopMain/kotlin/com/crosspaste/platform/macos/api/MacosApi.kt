@@ -1,4 +1,4 @@
-package com.crosspaste.os.macos.api
+package com.crosspaste.platform.macos.api
 
 import com.sun.jna.Library
 import com.sun.jna.Native

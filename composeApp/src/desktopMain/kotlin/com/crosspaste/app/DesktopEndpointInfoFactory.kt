@@ -3,9 +3,9 @@ package com.crosspaste.app
 import com.crosspaste.dao.sync.HostInfo
 import com.crosspaste.dto.sync.EndpointInfo
 import com.crosspaste.net.PasteServer
-import com.crosspaste.os.macos.MacDeviceUtils
 import com.crosspaste.platform.Platform
-import com.crosspaste.platform.currentPlatform
+import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.macos.MacDeviceUtils
 import com.crosspaste.utils.DesktopNetUtils
 import com.crosspaste.utils.getDeviceUtils
 import com.sun.jna.platform.win32.Kernel32Util
@@ -15,7 +15,7 @@ import java.io.InputStreamReader
 
 class DesktopEndpointInfoFactory(private val pasteServer: Lazy<PasteServer>) : EndpointInfoFactory {
     override fun createEndpointInfo(hostInfoFilter: (HostInfo) -> Boolean): EndpointInfo {
-        val platform = currentPlatform()
+        val platform = getPlatform()
         val port = pasteServer.value.port()
         return if (platform.isMacos()) {
             getMacEndpointInfo(port, platform, hostInfoFilter)

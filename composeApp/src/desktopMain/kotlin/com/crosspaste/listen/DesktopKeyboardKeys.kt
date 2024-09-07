@@ -1,9 +1,9 @@
 package com.crosspaste.listen
 
-import com.crosspaste.platform.currentPlatform
+import com.crosspaste.platform.getPlatform
 
 fun getDesktopKeyboardKeys(): KeyboardKeys {
-    val platform = currentPlatform()
+    val platform = getPlatform()
     return if (platform.isMacos()) {
         MacKeyboardKeys
     } else if (platform.isWindows()) {

@@ -12,7 +12,7 @@ import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.platform.currentPlatform
+import com.crosspaste.platform.getPlatform
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.utils.DesktopFileUtils
 import com.crosspaste.utils.DesktopFileUtils.copyPath
@@ -171,7 +171,7 @@ class FilesTypePlugin(
             map[DataFlavor.stringFlavor.toPasteDataFlavor()] =
                 fileList.joinToString(separator = "\n") { it.name }
         }
-        if (currentPlatform().isLinux()) {
+        if (getPlatform().isLinux()) {
             val content =
                 fileList.joinToString(
                     separator = "\n",

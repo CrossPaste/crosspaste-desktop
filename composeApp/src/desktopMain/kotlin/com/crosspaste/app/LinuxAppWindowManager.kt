@@ -6,8 +6,8 @@ import androidx.compose.runtime.setValue
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
-import com.crosspaste.os.linux.api.X11Api
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.platform.linux.api.X11Api
 import com.sun.jna.platform.unix.X11.Window
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

@@ -2,7 +2,7 @@ package com.crosspaste.app
 
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.path.DesktopAppPathProvider
-import com.crosspaste.platform.currentPlatform
+import com.crosspaste.platform.getPlatform
 import com.crosspaste.presist.DesktopFilePersist
 import com.crosspaste.utils.getSystemProperty
 import io.github.oshai.kotlinlogging.KLogger
@@ -15,7 +15,7 @@ class DesktopAppStartUpService(
     configManager: ConfigManager,
 ) : AppStartUpService {
 
-    private val currentPlatform = currentPlatform()
+    private val currentPlatform = getPlatform()
 
     private val isProduction = AppEnv.CURRENT.isProduction()
 

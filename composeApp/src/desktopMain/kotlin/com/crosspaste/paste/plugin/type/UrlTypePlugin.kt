@@ -8,7 +8,7 @@ import com.crosspaste.paste.PasteDataFlavors.URL_FLAVOR
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.paste.toPasteDataFlavor
-import com.crosspaste.platform.currentPlatform
+import com.crosspaste.platform.getPlatform
 import com.crosspaste.utils.getCodecsUtils
 import io.realm.kotlin.MutableRealm
 import java.net.MalformedURLException
@@ -22,7 +22,7 @@ class UrlTypePlugin : PasteTypePlugin {
         private val codecsUtils = getCodecsUtils()
     }
 
-    private val platform = currentPlatform()
+    private val platform = getPlatform()
 
     override fun getPasteType(): Int {
         return PasteType.URL

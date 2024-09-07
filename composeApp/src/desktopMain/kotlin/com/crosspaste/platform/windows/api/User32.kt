@@ -1,4 +1,4 @@
-package com.crosspaste.os.windows.api
+package com.crosspaste.platform.windows.api
 
 import com.crosspaste.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
 import com.crosspaste.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
@@ -202,7 +202,10 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                         )
                     ) {
                         val array: IntArray = lplpTranslate.value.getIntArray(0L, puLen.value / 4)
-                        val langAndCodepage = findLangAndCodepage(array) ?: return null
+                        val langAndCodepage =
+                            findLangAndCodepage(
+                                array,
+                            ) ?: return null
                         val l: Int = langAndCodepage and 0xFFFF
                         val m: Int = (langAndCodepage and -65536) shr 16
 
@@ -256,7 +259,14 @@ interface User32 : com.sun.jna.platform.win32.User32 {
         ) {
             val largeIcons = arrayOfNulls<HICON>(1) // Array to receive the large icon
             val smallIcons = arrayOfNulls<HICON>(1) // Array to receive the small icon
-            val iconCount = Shell32.INSTANCE.ExtractIconEx(filePath, 0, largeIcons, smallIcons, 1)
+            val iconCount =
+                Shell32.INSTANCE.ExtractIconEx(
+                    filePath,
+                    0,
+                    largeIcons,
+                    smallIcons,
+                    1,
+                )
 
             if (iconCount > 0 && largeIcons[0] != null) {
                 val icon = largeIcons[0]!!
@@ -341,7 +351,11 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                     previousHwnd.pointer != searchWindow?.pointer
                 ) {
                     val processIdRef = IntByReference()
-                    val pid = INSTANCE.GetWindowThreadProcessId(previousHwnd, processIdRef)
+                    val pid =
+                        INSTANCE.GetWindowThreadProcessId(
+                            previousHwnd,
+                            processIdRef,
+                        )
 
                     val processHandle =
                         Kernel32.INSTANCE.OpenProcess(

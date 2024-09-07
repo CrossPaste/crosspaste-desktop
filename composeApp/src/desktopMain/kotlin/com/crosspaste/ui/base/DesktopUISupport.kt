@@ -12,7 +12,7 @@ import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.platform.currentPlatform
+import com.crosspaste.platform.getPlatform
 import com.crosspaste.ui.paste.preview.getPasteItem
 import com.google.common.io.Files
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -93,7 +93,7 @@ class DesktopUISupport(
                 val desktop = Desktop.getDesktop()
                 desktop.browseFileDirectory(filePath.toFile())
             } else {
-                if (currentPlatform().isWindows() && openFileInExplorer(filePath.toFile())) {
+                if (getPlatform().isWindows() && openFileInExplorer(filePath.toFile())) {
                     return
                 }
                 notificationManager.addNotification(

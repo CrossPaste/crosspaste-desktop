@@ -1,4 +1,4 @@
-package com.crosspaste.os.linux.api
+package com.crosspaste.platform.linux.api
 
 import com.crosspaste.app.AppName
 import com.sun.jna.Library

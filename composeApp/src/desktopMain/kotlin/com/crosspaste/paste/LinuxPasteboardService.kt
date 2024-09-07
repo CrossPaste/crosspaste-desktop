@@ -3,9 +3,9 @@ package com.crosspaste.paste
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dao.paste.PasteDao
-import com.crosspaste.os.linux.api.X11Api
-import com.crosspaste.os.linux.api.XFixes
-import com.crosspaste.os.linux.api.XFixesSelectionNotifyEvent
+import com.crosspaste.platform.linux.api.X11Api
+import com.crosspaste.platform.linux.api.XFixes
+import com.crosspaste.platform.linux.api.XFixesSelectionNotifyEvent
 import com.crosspaste.utils.DesktopControlUtils.ensureMinExecutionTime
 import com.crosspaste.utils.DesktopControlUtils.exponentialBackoffUntilValid
 import com.crosspaste.utils.cpuDispatcher

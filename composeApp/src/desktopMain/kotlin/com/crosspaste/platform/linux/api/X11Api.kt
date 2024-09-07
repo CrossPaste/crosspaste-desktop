@@ -1,9 +1,9 @@
-package com.crosspaste.os.linux.api
+package com.crosspaste.platform.linux.api
 
 import com.crosspaste.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
 import com.crosspaste.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.crosspaste.app.LinuxAppInfo
-import com.crosspaste.os.linux.api.WMCtrl.getActiveWindow
+import com.crosspaste.platform.linux.api.WMCtrl.getActiveWindow
 import com.sun.jna.Native
 import com.sun.jna.NativeLong
 import com.sun.jna.platform.unix.X11

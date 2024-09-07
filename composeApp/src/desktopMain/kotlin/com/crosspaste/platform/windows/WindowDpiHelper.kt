@@ -1,6 +1,6 @@
-package com.crosspaste.os.windows
+package com.crosspaste.platform.windows
 
-import com.crosspaste.os.windows.api.User32
+import com.crosspaste.platform.windows.api.User32
 import com.sun.jna.Native
 import com.sun.jna.platform.win32.WinDef
 import com.sun.jna.platform.win32.WinDef.LPARAM
