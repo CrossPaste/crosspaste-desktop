@@ -25,6 +25,7 @@ interface PasteboardService : PasteboardMonitor {
         pasteItem: PasteItem,
         localOnly: Boolean = false,
         filterFile: Boolean = false,
+        updateCreateTime: Boolean = false,
     )
 
     suspend fun tryWritePasteboard(
@@ -32,6 +33,7 @@ interface PasteboardService : PasteboardMonitor {
         localOnly: Boolean = false,
         filterFile: Boolean = false,
         primary: Boolean = false,
+        updateCreateTime: Boolean = false,
     )
 
     suspend fun tryWriteRemotePasteboard(pasteData: PasteData)
