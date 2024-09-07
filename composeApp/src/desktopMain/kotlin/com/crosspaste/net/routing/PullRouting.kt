@@ -1,4 +1,4 @@
-package com.crosspaste.routing
+package com.crosspaste.net.routing
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.dto.pull.PullFileRequest

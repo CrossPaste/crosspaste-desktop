@@ -1,9 +1,8 @@
-package com.crosspaste.routing
+package com.crosspaste.net.routing
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenService
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.dao.signal.SignalDao
 import com.crosspaste.dto.sync.DataContent
 import com.crosspaste.dto.sync.RequestTrust
@@ -34,23 +33,12 @@ fun Routing.syncRouting(
     appInfo: AppInfo,
     appWindowManager: DesktopAppWindowManager,
     appTokenService: AppTokenService,
-    endpointInfoFactory: EndpointInfoFactory,
     signalDao: SignalDao,
     signalProtocolStore: SignalProtocolStore,
     signalProcessorCache: SignalProcessorCache,
     syncManager: SyncManager,
 ) {
     val logger = KotlinLogging.logger {}
-
-    get("/sync/telnet") {
-        successResponse(call)
-    }
-
-    get("/sync/syncInfo") {
-        val endpointInfo = endpointInfoFactory.createEndpointInfo()
-        val syncInfo = SyncInfo(appInfo, endpointInfo)
-        successResponse(call, syncInfo)
-    }
 
     get("/sync/preKeyBundle") {
         getAppInstanceId(call)?.let { appInstanceId ->
@@ -129,32 +117,6 @@ fun Routing.syncRouting(
         }
     }
 
-    post("/sync/heartbeat") {
-        getAppInstanceId(call)?.let { appInstanceId ->
-            val targetAppInstanceId = call.request.headers["targetAppInstanceId"]
-            if (targetAppInstanceId != appInfo.appInstanceId) {
-                logger.debug { "heartbeat targetAppInstanceId $targetAppInstanceId not match ${appInfo.appInstanceId}" }
-                failResponse(call, StandardErrorCode.SYNC_NOT_MATCH_APP_INSTANCE_ID.toErrorCode())
-                return@let
-            }
-            val dataContent = call.receive(DataContent::class)
-            val bytes = dataContent.data
-            val processor = signalProcessorCache.getSignalMessageProcessor(appInstanceId)
-            val decrypt = processor.decryptSignalMessage(bytes)
-
-            try {
-                val syncInfo = DesktopJsonUtils.JSON.decodeFromString<SyncInfo>(String(decrypt, Charsets.UTF_8))
-                // todo check diff time to update
-                syncManager.updateSyncInfo(syncInfo)
-                logger.debug { "$appInstanceId heartbeat to ${appInfo.appInstanceId} success" }
-                successResponse(call)
-            } catch (e: Exception) {
-                logger.error(e) { "$appInstanceId heartbeat to ${appInfo.appInstanceId} fail" }
-                failResponse(call, StandardErrorCode.SIGNAL_EXCHANGE_FAIL.toErrorCode())
-            }
-        }
-    }
-
     get("/sync/showToken") {
         appTokenService.showToken = true
         appWindowManager.showMainWindow = true
@@ -197,20 +159,6 @@ fun Routing.syncRouting(
                 logger.error { "token invalid: ${requestTrust.token}" }
                 failResponse(call, StandardErrorCode.TOKEN_INVALID.toErrorCode())
             }
-        }
-    }
-
-    get("/sync/notifyExit") {
-        getAppInstanceId(call)?.let { appInstanceId ->
-            syncManager.markExit(appInstanceId)
-            successResponse(call)
-        }
-    }
-
-    get("/sync/notifyRemove") {
-        getAppInstanceId(call)?.let { appInstanceId ->
-            syncManager.removeSyncHandler(appInstanceId)
-            successResponse(call)
         }
     }
 }
