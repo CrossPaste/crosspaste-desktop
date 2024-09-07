@@ -3,7 +3,7 @@ package com.crosspaste.net.exception
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.utils.failResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.server.plugins.statuspages.StatusPagesConfig
+import io.ktor.server.plugins.statuspages.*
 import org.signal.libsignal.protocol.InvalidKeyException
 import org.signal.libsignal.protocol.InvalidKeyIdException
 import org.signal.libsignal.protocol.InvalidMessageException
