@@ -74,6 +74,8 @@ interface PasteDao {
         favorite: Boolean,
     )
 
+    suspend fun updateCreateTime(id: ObjectId)
+
     fun searchPasteData(
         searchTerms: List<String>,
         favorite: Boolean? = null,

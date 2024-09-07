@@ -543,6 +543,14 @@ class PasteRealm(
         taskExecutor.submitTasks(taskIds)
     }
 
+    override suspend fun updateCreateTime(id: ObjectId) {
+        realm.write {
+            query(PasteData::class, "id == $0", id).first().find()?.let {
+                it.createTime = RealmInstant.now()
+            }
+        }
+    }
+
     override fun searchPasteData(
         searchTerms: List<String>,
         favorite: Boolean?,

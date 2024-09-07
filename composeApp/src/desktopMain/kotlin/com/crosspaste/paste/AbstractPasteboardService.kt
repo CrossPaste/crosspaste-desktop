@@ -40,6 +40,7 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
         pasteItem: PasteItem,
         localOnly: Boolean,
         filterFile: Boolean,
+        updateCreateTime: Boolean,
     ) {
         try {
             pasteProducer.produce(pasteItem, localOnly, filterFile)?.let {
@@ -47,7 +48,7 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
                 systemClipboard.setContents(it, this)
                 ownerTransferable = it
                 owner = true
-                currentPaste.setPasteId(id)
+                currentPaste.setPasteId(id, updateCreateTime)
             }
         } catch (e: Exception) {
             logger.error(e) { "tryWritePasteboard error" }
@@ -59,6 +60,7 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
         localOnly: Boolean,
         filterFile: Boolean,
         primary: Boolean,
+        updateCreateTime: Boolean,
     ) {
         try {
             pasteProducer.produce(pasteData, localOnly, filterFile, primary)?.let {
@@ -66,7 +68,7 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
                 systemClipboard.setContents(it, this)
                 ownerTransferable = it
                 owner = true
-                currentPaste.setPasteId(pasteData.id)
+                currentPaste.setPasteId(pasteData.id, updateCreateTime)
             }
         } catch (e: Exception) {
             logger.error(e) { "tryWritePasteboard error" }

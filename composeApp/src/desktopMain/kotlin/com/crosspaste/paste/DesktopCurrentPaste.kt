@@ -10,9 +10,15 @@ class DesktopCurrentPaste(private val lazyPasteDao: Lazy<PasteDao>) : CurrentPas
 
     override val pasteDao: PasteDao by lazy { lazyPasteDao.value }
 
-    override fun setPasteId(id: ObjectId) {
+    override suspend fun setPasteId(
+        id: ObjectId,
+        updateCreateTime: Boolean,
+    ) {
         logger.info { "Setting current paste id to $id" }
         currentId.set(id)
+        if (updateCreateTime) {
+            pasteDao.updateCreateTime(id)
+        }
     }
 
     override fun getPasteId(): ObjectId? {

@@ -11,7 +11,10 @@ abstract class CurrentPaste {
 
     abstract val pasteDao: PasteDao
 
-    abstract fun setPasteId(id: ObjectId)
+    abstract suspend fun setPasteId(
+        id: ObjectId,
+        updateCreateTime: Boolean = false,
+    )
 
     abstract fun getPasteId(): ObjectId?
 

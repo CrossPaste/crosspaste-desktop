@@ -88,7 +88,12 @@ class DesktopShortKeysAction(
             currentPaste.getCurrentPaste()?.let { pasteData ->
                 mainCoroutineDispatcher.launch(ioDispatcher) {
                     pasteData.getPasteAppearItems().firstOrNull { it is PasteText }?.let {
-                        pasteboardService.tryWritePasteboard(pasteData.id, it, localOnly = true)
+                        pasteboardService.tryWritePasteboard(
+                            id = pasteData.id,
+                            pasteItem = it,
+                            localOnly = true,
+                            updateCreateTime = true,
+                        )
                         appWindowManager.toPaste()
                     }
                 }
@@ -101,7 +106,12 @@ class DesktopShortKeysAction(
         mainCoroutineDispatcher.launch(CoroutineName("PastePrimaryType")) {
             currentPaste.getCurrentPaste()?.let {
                 mainCoroutineDispatcher.launch(ioDispatcher) {
-                    pasteboardService.tryWritePasteboard(it, localOnly = true, primary = true)
+                    pasteboardService.tryWritePasteboard(
+                        pasteData = it,
+                        localOnly = true,
+                        primary = true,
+                        updateCreateTime = true,
+                    )
                     appWindowManager.toPaste()
                 }
             }
@@ -128,7 +138,11 @@ class DesktopShortKeysAction(
 
             if (result.size > 0) {
                 mainCoroutineDispatcher.launch(ioDispatcher) {
-                    pasteboardService.tryWritePasteboard(result[0], localOnly = true)
+                    pasteboardService.tryWritePasteboard(
+                        pasteData = result[0],
+                        localOnly = true,
+                        updateCreateTime = true,
+                    )
                     appWindowManager.toPaste()
                 }
             }

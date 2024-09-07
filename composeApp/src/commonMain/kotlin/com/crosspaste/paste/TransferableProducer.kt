@@ -7,14 +7,14 @@ interface TransferableProducer {
 
     fun produce(
         pasteItem: PasteItem,
-        localOnly: Boolean = false,
-        filterFile: Boolean = false,
+        localOnly: Boolean,
+        filterFile: Boolean,
     ): PasteTransferable?
 
     fun produce(
         pasteData: PasteData,
-        localOnly: Boolean = false,
-        filterFile: Boolean = false,
-        primary: Boolean = false,
+        localOnly: Boolean,
+        filterFile: Boolean,
+        primary: Boolean,
     ): PasteTransferable?
 }

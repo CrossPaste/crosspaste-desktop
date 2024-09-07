@@ -217,7 +217,11 @@ class DesktopPasteSearchService(
         appWindowManager.unActiveSearchWindow {
             currentPasteData?.let { pasteData ->
                 withContext(ioDispatcher) {
-                    pasteboardService.tryWritePasteboard(pasteData, localOnly = true)
+                    pasteboardService.tryWritePasteboard(
+                        pasteData = pasteData,
+                        localOnly = true,
+                        updateCreateTime = true,
+                    )
                 }
                 true
             } ?: false
