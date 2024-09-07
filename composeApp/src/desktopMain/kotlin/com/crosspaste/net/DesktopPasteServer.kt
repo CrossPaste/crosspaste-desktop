@@ -10,12 +10,13 @@ import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.exception.signalExceptionHandler
 import com.crosspaste.net.plugin.SignalServerDecryptionPluginFactory
 import com.crosspaste.net.plugin.SignalServerEncryptPluginFactory
+import com.crosspaste.net.routing.baseSyncRouting
+import com.crosspaste.net.routing.pasteRouting
+import com.crosspaste.net.routing.pullRouting
+import com.crosspaste.net.routing.syncRouting
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.routing.pasteRouting
-import com.crosspaste.routing.pullRouting
-import com.crosspaste.routing.syncRouting
 import com.crosspaste.signal.SignalProcessorCache
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.DesktopJsonUtils
@@ -94,11 +95,16 @@ class DesktopPasteServer(
                 logger.info { "Received request: ${call.request.httpMethod.value} ${call.request.uri} ${call.request.contentType()}" }
             }
             routing {
+                baseSyncRouting(
+                    appInfo,
+                    endpointInfoFactory,
+                    signalProcessorCache,
+                    syncManager,
+                )
                 syncRouting(
                     appInfo,
                     appWindowManager,
                     appTokenService,
-                    endpointInfoFactory,
                     signalDao,
                     signalProtocolStore,
                     signalProcessorCache,

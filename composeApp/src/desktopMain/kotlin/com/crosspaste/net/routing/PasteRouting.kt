@@ -1,4 +1,4 @@
-package com.crosspaste.routing
+package com.crosspaste.net.routing
 
 import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.exception.StandardErrorCode
