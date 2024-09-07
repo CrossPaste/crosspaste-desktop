@@ -2,7 +2,9 @@ package com.crosspaste.presist
 
 import okio.Path
 
-interface FilePersist {
+object FilePersist {
 
-    fun createOneFilePersist(path: Path): OneFilePersist
+    fun createOneFilePersist(path: Path): OneFilePersist {
+        return OneFilePersist(path)
+    }
 }

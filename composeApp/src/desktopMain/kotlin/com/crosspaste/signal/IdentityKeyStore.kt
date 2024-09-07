@@ -8,7 +8,7 @@ import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.platform.macos.MacosKeychainHelper
 import com.crosspaste.platform.windows.WindowDapiHelper
-import com.crosspaste.presist.DesktopOneFilePersist
+import com.crosspaste.presist.FilePersist
 import com.crosspaste.utils.EncryptUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.signal.libsignal.protocol.IdentityKey
@@ -114,7 +114,7 @@ class MacosIdentityKeyStoreFactory(
     private val logger = KotlinLogging.logger {}
 
     private val filePersist =
-        DesktopOneFilePersist(
+        FilePersist.createOneFilePersist(
             DesktopAppPathProvider.resolve("signal.data", AppFileType.ENCRYPT),
         )
 
@@ -175,7 +175,7 @@ class WindowsIdentityKeyStoreFactory(
     private val logger = KotlinLogging.logger {}
 
     private val filePersist =
-        DesktopOneFilePersist(
+        FilePersist.createOneFilePersist(
             DesktopAppPathProvider.resolve("signal.data", AppFileType.ENCRYPT),
         )
 
@@ -218,7 +218,7 @@ class LinuxIdentityKeyStoreFactory(
     private val logger = KotlinLogging.logger {}
 
     private val filePersist =
-        DesktopOneFilePersist(
+        FilePersist.createOneFilePersist(
             DesktopAppPathProvider.resolve("signal.data", AppFileType.ENCRYPT),
         )
 

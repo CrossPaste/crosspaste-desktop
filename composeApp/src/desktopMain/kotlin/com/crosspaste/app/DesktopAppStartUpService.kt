@@ -3,7 +3,7 @@ package com.crosspaste.app
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.platform.getPlatform
-import com.crosspaste.presist.DesktopFilePersist
+import com.crosspaste.presist.FilePersist
 import com.crosspaste.utils.getSystemProperty
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -67,7 +67,7 @@ class MacAppStartUpService(private val configManager: ConfigManager) : AppStartU
 
     private val pathProvider = DesktopAppPathProvider
 
-    private val filePersist = DesktopFilePersist
+    private val filePersist = FilePersist
 
     override fun followConfig() {
         if (configManager.config.enableAutoStartUp) {
@@ -225,7 +225,7 @@ class LinuxAppStartUpService(private val configManager: ConfigManager) : AppStar
 
     private val pathProvider = DesktopAppPathProvider
 
-    private val filePersist = DesktopFilePersist
+    private val filePersist = FilePersist
 
     private val appExePath =
         pathProvider.pasteAppPath
