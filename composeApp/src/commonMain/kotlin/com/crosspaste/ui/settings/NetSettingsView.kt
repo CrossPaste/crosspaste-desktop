@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,6 +47,7 @@ import com.crosspaste.ui.base.wifi
 import com.crosspaste.ui.devices.SyncDeviceView
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.getNetUtils
+import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 
 @Composable
@@ -59,6 +61,7 @@ fun NetSettingsView() {
 
     var ip: String? by remember { mutableStateOf(null) }
     var port: String? by remember { mutableStateOf(null) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         ip = netUtils.getPreferredLocalIPAddress() ?: "N/A"
@@ -194,7 +197,9 @@ fun NetSettingsView() {
                             val newBlackList = jsonUtils.JSON.encodeToString(blackSyncInfos)
                             configManager.updateConfig("blacklist", newBlackList)
                             blacklist.remove(syncInfo)
-                            deviceManager.refresh()
+                            scope.launch {
+                                deviceManager.refresh()
+                            }
                         }
                         if (index != blacklist.size - 1) {
                             Divider(modifier = Modifier.fillMaxWidth())

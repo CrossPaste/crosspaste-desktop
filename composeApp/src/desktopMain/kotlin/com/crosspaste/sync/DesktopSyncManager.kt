@@ -26,7 +26,6 @@ import io.realm.kotlin.notifications.ResultsChange
 import io.realm.kotlin.notifications.UpdatedResults
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
@@ -132,7 +131,7 @@ class DesktopSyncManager(
                             // we will force resolve, so we do not need to process it redundantly here
                             // for (change in changes.changes) { }
 
-                            withContext(Dispatchers.Main) {
+                            withContext(mainDispatcher) {
                                 realTimeSyncRuntimeInfos.clear()
                                 realTimeSyncRuntimeInfos.addAll(changes.list)
                                 refreshWaitToVerifySyncRuntimeInfo()

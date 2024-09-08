@@ -30,6 +30,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -238,6 +239,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
     val syncRuntimeInfoDao = current.koin.get<SyncRuntimeInfoDao>()
     val configManager = current.koin.get<ConfigManager>()
     val jsonUtils = getJsonUtils()
+    val scope = rememberCoroutineScope()
     SyncDeviceView(syncInfo = syncInfo) {
         Button(
             modifier = Modifier.height(28.dp),
@@ -283,7 +285,9 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
                 blackSyncInfos.add(syncInfo)
                 val newBlackList = jsonUtils.JSON.encodeToString(blackSyncInfos)
                 configManager.updateConfig("blacklist", newBlackList)
-                deviceManager.refresh()
+                scope.launch {
+                    deviceManager.refresh()
+                }
             },
             shape = RoundedCornerShape(4.dp),
             border = BorderStroke(1.dp, disconnectedColor()),
