@@ -14,7 +14,7 @@ actual fun getNetUtils(): NetUtils {
 
 object DesktopNetUtils : NetUtils {
 
-    val logger = KotlinLogging.logger {}
+    private val logger = KotlinLogging.logger {}
 
     private val hostListProvider = ValueProvider<List<HostInfo>>()
 
@@ -49,11 +49,11 @@ object DesktopNetUtils : NetUtils {
             .flatMap { nic ->
                 nic.interfaceAddresses.asSequence().map { Pair(it, nic.name) }
             }
-            .filter { (addr, _) -> addr.address is Inet4Address }
+            .filter { (addr, _) -> addr.address is Inet4Address && addr.address.hostAddress != null }
             .map { (addr, nicName) ->
                 HostInfo().apply {
                     networkPrefixLength = addr.networkPrefixLength
-                    hostAddress = addr.address.hostAddress
+                    hostAddress = addr.address.hostAddress!!
                 } to nicName
             }
             .filter { (hostInfo, _) ->
