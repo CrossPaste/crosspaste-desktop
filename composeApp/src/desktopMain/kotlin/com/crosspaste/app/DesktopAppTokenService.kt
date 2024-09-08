@@ -14,7 +14,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.random.Random
 
-class DesktopAppTokenService : AppTokenService {
+class DesktopAppTokenService(
+    private val appWindowManager: DesktopAppWindowManager,
+) : AppTokenService {
 
     private var startRefreshNumber: Int = 0
 
@@ -26,6 +28,11 @@ class DesktopAppTokenService : AppTokenService {
     override var showToken by mutableStateOf(false)
 
     override var token by mutableStateOf(charArrayOf('0', '0', '0', '0', '0', '0'))
+
+    override fun toShowToken() {
+        appWindowManager.showMainWindow = true
+        showToken = true
+    }
 
     private suspend fun refreshToken() {
         withContext(mainDispatcher) {

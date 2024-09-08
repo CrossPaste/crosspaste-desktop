@@ -2,7 +2,6 @@ package com.crosspaste.net
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenService
-import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dao.signal.SignalDao
@@ -17,7 +16,10 @@ import com.crosspaste.net.routing.syncRouting
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.signal.PreKeyBundleCodecs
+import com.crosspaste.signal.PreKeySignalMessageFactory
 import com.crosspaste.signal.SignalProcessorCache
+import com.crosspaste.signal.SignalProtocolStoreInterface
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.DesktopJsonUtils
 import com.crosspaste.utils.failResponse
@@ -33,19 +35,19 @@ import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.netty.channel.ChannelOption
 import kotlinx.coroutines.runBlocking
-import org.signal.libsignal.protocol.state.SignalProtocolStore
 import java.net.BindException
 
 class DesktopPasteServer(
     private val appInfo: AppInfo,
-    private val appWindowManager: DesktopAppWindowManager,
     private val appTokenService: AppTokenService,
     private val cacheManager: CacheManager,
     private val configManager: ConfigManager,
     private val endpointInfoFactory: EndpointInfoFactory,
     private val pasteboardService: PasteboardService,
+    private val preKeyBundleCodecs: PreKeyBundleCodecs,
+    private val preKeySignalMessageFactory: PreKeySignalMessageFactory,
     private val signalDao: SignalDao,
-    private val signalProtocolStore: SignalProtocolStore,
+    private val signalProtocolStore: SignalProtocolStoreInterface,
     private val signalProcessorCache: SignalProcessorCache,
     private val syncManager: SyncManager,
     private val signalServerEncryptPluginFactory: SignalServerEncryptPluginFactory,
@@ -103,8 +105,9 @@ class DesktopPasteServer(
                 )
                 syncRouting(
                     appInfo,
-                    appWindowManager,
                     appTokenService,
+                    preKeyBundleCodecs,
+                    preKeySignalMessageFactory,
                     signalDao,
                     signalProtocolStore,
                     signalProcessorCache,

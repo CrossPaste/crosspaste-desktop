@@ -13,6 +13,7 @@ import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.SingleFileInfoTree
 import com.crosspaste.serializer.Base64ByteArraySerializer
 import com.crosspaste.serializer.PreKeyBundleSerializer
+import com.crosspaste.signal.PreKeyBundleInterface
 import com.crosspaste.task.extra.BaseExtraInfo
 import com.crosspaste.task.extra.PullExtraInfo
 import com.crosspaste.task.extra.SyncExtraInfo
@@ -24,7 +25,6 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.serializersModuleOf
 import kotlinx.serialization.modules.subclass
-import org.signal.libsignal.protocol.state.PreKeyBundle
 
 actual fun getJsonUtils(): JsonUtils {
     return DesktopJsonUtils
@@ -40,7 +40,7 @@ object DesktopJsonUtils : JsonUtils {
                 SerializersModule {
                     // use in http request
                     serializersModuleOf(ByteArray::class, Base64ByteArraySerializer)
-                    serializersModuleOf(PreKeyBundle::class, PreKeyBundleSerializer)
+                    serializersModuleOf(PreKeyBundleInterface::class, PreKeyBundleSerializer)
 
                     // use in paste data
                     serializersModuleOf(MutableRealmIntKSerializer)
