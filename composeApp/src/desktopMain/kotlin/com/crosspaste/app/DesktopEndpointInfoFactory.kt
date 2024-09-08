@@ -13,7 +13,9 @@ import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 
-class DesktopEndpointInfoFactory(private val pasteServer: Lazy<PasteServer>) : EndpointInfoFactory {
+class DesktopEndpointInfoFactory(
+    private val pasteServer: Lazy<PasteServer<*, *>>,
+) : EndpointInfoFactory {
     override fun createEndpointInfo(hostInfoFilter: (HostInfo) -> Boolean): EndpointInfo {
         val platform = getPlatform()
         val port = pasteServer.value.port()

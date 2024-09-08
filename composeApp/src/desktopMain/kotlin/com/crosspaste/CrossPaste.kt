@@ -73,11 +73,14 @@ import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.log.CrossPasteLogger
 import com.crosspaste.log.initLogger
 import com.crosspaste.net.DesktopPasteBonjourService
-import com.crosspaste.net.DesktopPasteServer
+import com.crosspaste.net.DesktopServerFactory
+import com.crosspaste.net.DesktopServerModule
 import com.crosspaste.net.DesktopSyncInfoFactory
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.net.PasteClient
 import com.crosspaste.net.PasteServer
+import com.crosspaste.net.ServerFactory
+import com.crosspaste.net.ServerModule
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.SyncRefresher
 import com.crosspaste.net.TelnetHelper
@@ -87,6 +90,8 @@ import com.crosspaste.net.clientapi.DesktopSyncClientApi
 import com.crosspaste.net.clientapi.PullClientApi
 import com.crosspaste.net.clientapi.SendPasteClientApi
 import com.crosspaste.net.clientapi.SyncClientApi
+import com.crosspaste.net.exception.DesktopExceptionHandler
+import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.net.plugin.SignalClientDecryptPlugin
 import com.crosspaste.net.plugin.SignalClientEncryptPlugin
 import com.crosspaste.net.plugin.SignalServerDecryptionPluginFactory
@@ -183,6 +188,8 @@ import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
 import com.github.kwhat.jnativehook.mouse.NativeMouseListener
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.server.engine.*
+import io.ktor.server.netty.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -240,7 +247,7 @@ class CrossPaste {
                     single<VersionCompatibilityChecker> {
                         get<AppInfoFactory>().createVersionCompatibilityChecker()
                     }
-                    single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<PasteServer>() }) }
+                    single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<PasteServer<*, *>>() }) }
                     single<GlobalCoroutineScope> { GlobalCoroutineScopeImpl }
                     single<SyncInfoFactory> { DesktopSyncInfoFactory(get(), get()) }
                     single<AppPathProvider> { appPathProvider }
@@ -264,11 +271,22 @@ class CrossPaste {
 
                     // net component
                     single<PasteClient> { PasteClient(get<AppInfo>(), get(), get()) }
-                    single<PasteServer> {
-                        DesktopPasteServer(
-                            get(), get(), get(), get(), get(), get(), get(),
+                    single<ServerModule> {
+                        DesktopServerModule(
                             get(), get(), get(), get(), get(), get(), get(), get(),
+                            get(), get(), get(), get(), get(), get(), get(),
                         )
+                    }
+                    single<PasteServer<*, *>> {
+                        PasteServer(
+                            get(),
+                            get<ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>>(),
+                            get(),
+                        )
+                    }
+                    single<ExceptionHandler> { DesktopExceptionHandler() }
+                    single<ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>> {
+                        DesktopServerFactory()
                     }
                     single<PasteBonjourService> { DesktopPasteBonjourService(get(), get(), get()) }
                     single<TelnetHelper> { TelnetHelper(get<PasteClient>()) }
@@ -400,7 +418,7 @@ class CrossPaste {
                         koin.get<PasteboardService>().start()
                     }
                     koin.get<QRCodeGenerator>()
-                    koin.get<PasteServer>().start()
+                    koin.get<PasteServer<*, *>>().start()
                     koin.get<PasteClient>()
                     // bonjour service should be registered after paste server started
                     // only server started, bonjour service can get the port
@@ -449,7 +467,7 @@ class CrossPaste {
                         async { stopService<ChromeService>("ChromeService") { it.quit() } },
                         async { stopService<PasteboardService>("PasteboardService") { it.stop() } },
                         async { stopService<PasteBonjourService>("PasteBonjourService") { it.unregisterService() } },
-                        async { stopService<PasteServer>("PasteServer") { it.stop() } },
+                        async { stopService<PasteServer<*, *>>("PasteServer") { it.stop() } },
                         async { stopService<SyncManager>("SyncManager") { it.notifyExit() } },
                         async { stopService<CleanPasteScheduler>("CleanPasteScheduler") { it.stop() } },
                         async { stopService<GlobalListener>("GlobalListener") { it.stop() } },
