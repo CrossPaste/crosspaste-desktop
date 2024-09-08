@@ -6,21 +6,23 @@ import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.net.PasteClient
 import com.crosspaste.serializer.PreKeyBundleSerializer
 import com.crosspaste.signal.SignalMessageProcessor
-import com.crosspaste.utils.DesktopJsonUtils
+import com.crosspaste.signal.SignalProtocolStoreInterface
 import com.crosspaste.utils.buildUrl
+import com.crosspaste.utils.getJsonUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.*
 import io.ktor.http.*
 import io.ktor.util.reflect.*
 import kotlinx.serialization.encodeToString
-import org.signal.libsignal.protocol.state.SignalProtocolStore
 
 class DesktopSyncClientApi(
     private val pasteClient: PasteClient,
-    private val signalProtocolStore: SignalProtocolStore,
+    private val signalProtocolStore: SignalProtocolStoreInterface,
 ) : SyncClientApi {
 
     private val logger = KotlinLogging.logger {}
+
+    private val jsonUtils = getJsonUtils()
 
     override suspend fun getPreKeyBundle(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult {
         return request(logger, request = {
@@ -50,7 +52,7 @@ class DesktopSyncClientApi(
         toUrl: URLBuilder.(URLBuilder) -> Unit,
     ): ClientApiResult {
         return request(logger, request = {
-            val data = DesktopJsonUtils.JSON.encodeToString(syncInfo).toByteArray()
+            val data = jsonUtils.JSON.encodeToString(syncInfo).toByteArray()
             val ciphertextMessageBytes = signalMessageProcessor.encrypt(data)
             val dataContent = DataContent(data = ciphertextMessageBytes)
             pasteClient.post(
@@ -71,7 +73,7 @@ class DesktopSyncClientApi(
         toUrl: URLBuilder.(URLBuilder) -> Unit,
     ): ClientApiResult {
         return request(logger, request = {
-            val data = DesktopJsonUtils.JSON.encodeToString(syncInfo).toByteArray()
+            val data = jsonUtils.JSON.encodeToString(syncInfo).toByteArray()
             val ciphertextMessageBytes = signalMessageProcessor.encrypt(data)
             val dataContent = DataContent(data = ciphertextMessageBytes)
             pasteClient.post(
@@ -106,8 +108,8 @@ class DesktopSyncClientApi(
         toUrl: URLBuilder.(URLBuilder) -> Unit,
     ): ClientApiResult {
         return request(logger, request = {
-            val identityKey = signalProtocolStore.identityKeyPair.publicKey
-            val requestTrust = RequestTrust(identityKey.serialize(), token)
+            val publicKey = signalProtocolStore.getIdentityKeyPublicKey()
+            val requestTrust = RequestTrust(publicKey, token)
             pasteClient.post(
                 requestTrust,
                 typeInfo<RequestTrust>(),

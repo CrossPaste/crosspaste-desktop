@@ -80,6 +80,7 @@ import com.crosspaste.net.PasteClient
 import com.crosspaste.net.PasteServer
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.SyncRefresher
+import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.clientapi.DesktopPullClientApi
 import com.crosspaste.net.clientapi.DesktopSendPasteClientApi
 import com.crosspaste.net.clientapi.DesktopSyncClientApi
@@ -126,15 +127,21 @@ import com.crosspaste.path.getPlatformPathProvider
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.realm.RealmManager
+import com.crosspaste.serializer.PreKeyBundleSerializer
+import com.crosspaste.signal.DesktopPreKeySignalMessageFactory
 import com.crosspaste.signal.DesktopPreKeyStore
+import com.crosspaste.signal.DesktopSessionBuilderFactory
 import com.crosspaste.signal.DesktopSessionStore
 import com.crosspaste.signal.DesktopSignalProtocolStore
 import com.crosspaste.signal.DesktopSignedPreKeyStore
+import com.crosspaste.signal.PreKeyBundleCodecs
+import com.crosspaste.signal.PreKeySignalMessageFactory
+import com.crosspaste.signal.SessionBuilderFactory
 import com.crosspaste.signal.SignalProcessorCache
 import com.crosspaste.signal.SignalProcessorCacheImpl
+import com.crosspaste.signal.SignalProtocolStoreInterface
 import com.crosspaste.signal.getPasteIdentityKeyStoreFactory
 import com.crosspaste.sync.DesktopQRCodeGenerator
-import com.crosspaste.sync.DesktopSyncManager
 import com.crosspaste.sync.DeviceListener
 import com.crosspaste.sync.DeviceManager
 import com.crosspaste.sync.SyncManager
@@ -171,7 +178,6 @@ import com.crosspaste.ui.resource.PasteResourceLoader
 import com.crosspaste.utils.GlobalCoroutineScope
 import com.crosspaste.utils.GlobalCoroutineScopeImpl
 import com.crosspaste.utils.QRCodeGenerator
-import com.crosspaste.utils.TelnetUtils
 import com.crosspaste.utils.ioDispatcher
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
 import com.github.kwhat.jnativehook.mouse.NativeMouseListener
@@ -190,7 +196,6 @@ import org.mongodb.kbson.ObjectId
 import org.signal.libsignal.protocol.state.IdentityKeyStore
 import org.signal.libsignal.protocol.state.PreKeyStore
 import org.signal.libsignal.protocol.state.SessionStore
-import org.signal.libsignal.protocol.state.SignalProtocolStore
 import org.signal.libsignal.protocol.state.SignedPreKeyStore
 import kotlin.system.exitProcess
 
@@ -262,22 +267,21 @@ class CrossPaste {
                     single<PasteServer> {
                         DesktopPasteServer(
                             get(), get(), get(), get(), get(), get(), get(),
-                            get(), get(), get(), get(), get(), get(), get(),
+                            get(), get(), get(), get(), get(), get(), get(), get(),
                         )
                     }
                     single<PasteBonjourService> { DesktopPasteBonjourService(get(), get(), get()) }
-                    single<TelnetUtils> { TelnetUtils(get<PasteClient>()) }
+                    single<TelnetHelper> { TelnetHelper(get<PasteClient>()) }
                     single<SyncClientApi> { DesktopSyncClientApi(get(), get()) }
                     single<SendPasteClientApi> { DesktopSendPasteClientApi(get(), get()) }
                     single<PullClientApi> { DesktopPullClientApi(get(), get()) }
-                    single<DesktopSyncManager> {
-                        DesktopSyncManager(
-                            get(), get(), get(), get(), get(), get(), get(), get(), get(),
+                    single<SyncManager> {
+                        SyncManager(
+                            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
                             lazy { get() },
                         )
                     }
-                    single<SyncRefresher> { get<DesktopSyncManager>() }
-                    single<SyncManager> { get<DesktopSyncManager>() }
+                    single<SyncRefresher> { get<SyncManager>() }
                     single<DeviceManager> { DeviceManager(get(), get(), get(), get()) }
                     single<DeviceListener> { get<DeviceManager>() }
                     single<FaviconLoader> { DesktopFaviconLoader(get()) }
@@ -286,8 +290,11 @@ class CrossPaste {
                     single<IdentityKeyStore> { getPasteIdentityKeyStoreFactory(get(), get()).createIdentityKeyStore() }
                     single<SessionStore> { DesktopSessionStore(get()) }
                     single<PreKeyStore> { DesktopPreKeyStore(get()) }
+                    single<PreKeySignalMessageFactory> { DesktopPreKeySignalMessageFactory() }
+                    single<PreKeyBundleCodecs> { PreKeyBundleSerializer }
                     single<SignedPreKeyStore> { DesktopSignedPreKeyStore(get()) }
-                    single<SignalProtocolStore> { DesktopSignalProtocolStore(get(), get(), get(), get()) }
+                    single<SignalProtocolStoreInterface> { DesktopSignalProtocolStore(get(), get(), get(), get()) }
+                    single<SessionBuilderFactory> { DesktopSessionBuilderFactory(get()) }
                     single<SignalProcessorCache> { SignalProcessorCacheImpl(get()) }
                     single<SignalClientEncryptPlugin> { SignalClientEncryptPlugin(get()) }
                     single<SignalClientDecryptPlugin> { SignalClientDecryptPlugin(get()) }
@@ -358,7 +365,7 @@ class CrossPaste {
                     // ui component
                     single<DesktopAppWindowManager> { getDesktopAppWindowManager(lazy { get() }, get(), get()) }
                     single<AppWindowManager> { get<DesktopAppWindowManager>() }
-                    single<AppTokenService> { DesktopAppTokenService() }
+                    single<AppTokenService> { DesktopAppTokenService(get()) }
                     single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
                     single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get()) }
                     single<ShortcutKeysListener> { get<DesktopShortcutKeysListener>() }

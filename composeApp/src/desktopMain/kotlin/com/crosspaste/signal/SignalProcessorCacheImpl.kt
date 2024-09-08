@@ -1,9 +1,8 @@
 package com.crosspaste.signal
 
 import io.ktor.util.collections.*
-import org.signal.libsignal.protocol.state.SignalProtocolStore
 
-class SignalProcessorCacheImpl(private val signalProtocolStore: SignalProtocolStore) : SignalProcessorCache {
+class SignalProcessorCacheImpl(private val signalProtocolStore: SignalProtocolStoreInterface) : SignalProcessorCache {
 
     private val sessionCipherCache: MutableMap<String, SignalMessageProcessor> = ConcurrentMap()
 

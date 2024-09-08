@@ -2,82 +2,56 @@ package com.crosspaste.net.routing
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenService
-import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.dao.signal.SignalDao
 import com.crosspaste.dto.sync.DataContent
 import com.crosspaste.dto.sync.RequestTrust
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.exception.StandardErrorCode
-import com.crosspaste.serializer.PreKeyBundleSerializer
-import com.crosspaste.signal.SignalMessageProcessorImpl
+import com.crosspaste.signal.PreKeyBundleCodecs
+import com.crosspaste.signal.PreKeySignalMessageFactory
+import com.crosspaste.signal.SignalAddress
 import com.crosspaste.signal.SignalProcessorCache
+import com.crosspaste.signal.SignalProtocolStoreInterface
 import com.crosspaste.sync.SyncManager
-import com.crosspaste.utils.DesktopJsonUtils
-import com.crosspaste.utils.EncryptUtils
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getAppInstanceId
+import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.successResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
-import org.signal.libsignal.protocol.IdentityKey
-import org.signal.libsignal.protocol.SignalProtocolAddress
-import org.signal.libsignal.protocol.message.PreKeySignalMessage
-import org.signal.libsignal.protocol.state.PreKeyBundle
-import org.signal.libsignal.protocol.state.PreKeyRecord
-import org.signal.libsignal.protocol.state.SignalProtocolStore
-import org.signal.libsignal.protocol.state.SignedPreKeyRecord
 
 fun Routing.syncRouting(
     appInfo: AppInfo,
-    appWindowManager: DesktopAppWindowManager,
     appTokenService: AppTokenService,
+    preKeyBundleCodecs: PreKeyBundleCodecs,
+    preKeySignalMessageFactory: PreKeySignalMessageFactory,
     signalDao: SignalDao,
-    signalProtocolStore: SignalProtocolStore,
+    signalProtocolStore: SignalProtocolStoreInterface,
     signalProcessorCache: SignalProcessorCache,
     syncManager: SyncManager,
 ) {
     val logger = KotlinLogging.logger {}
 
+    val jsonUtils = getJsonUtils()
+
     get("/sync/preKeyBundle") {
         getAppInstanceId(call)?.let { appInstanceId ->
 
-            val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
+            val signalAddress = SignalAddress(appInstanceId, 1)
+            val existIdentityKey = signalProtocolStore.existIdentity(signalAddress)
 
-            signalProtocolStore.getIdentity(signalProtocolAddress) ?: run {
+            if (!existIdentityKey) {
                 logger.debug { "${appInfo.appInstanceId} not trust $appInstanceId in /sync/preKeyBundle api" }
                 failResponse(call, StandardErrorCode.SIGNAL_UNTRUSTED_IDENTITY.toErrorCode(), "not trust $appInstanceId")
                 return@get
             }
 
-            val identityKeyPair = signalProtocolStore.identityKeyPair
-            val registrationId = signalProtocolStore.localRegistrationId
-            val deviceId = 1
-            val preKey = EncryptUtils.generatePreKeyPair(signalDao)
-            val preKeyId = preKey.id
-            val preKeyRecord = PreKeyRecord(preKey.serialized)
-            val preKeyPairPublicKey = preKeyRecord.keyPair.publicKey
+            val preKeyBundle = signalProtocolStore.generatePreKeyBundle(signalDao)
 
-            val signedPreKey = EncryptUtils.generatesSignedPreKeyPair(signalDao, identityKeyPair.privateKey)
-            val signedPreKeyId = signedPreKey.id
-            val signedPreKeyRecord = SignedPreKeyRecord(signedPreKey.serialized)
-            val signedPreKeySignature = signedPreKeyRecord.signature
-
-            val preKeyBundle =
-                PreKeyBundle(
-                    registrationId,
-                    deviceId,
-                    preKeyId,
-                    preKeyPairPublicKey,
-                    signedPreKeyId,
-                    signedPreKeyRecord.keyPair.publicKey,
-                    signedPreKeySignature,
-                    identityKeyPair.publicKey,
-                )
-
-            val bytes = PreKeyBundleSerializer.encodePreKeyBundle(preKeyBundle)
-            logger.debug { "${appInfo.appInstanceId} create preKeyBundle for $appInstanceId:\n ${preKeyBundle.getDescString()}" }
+            val bytes = preKeyBundleCodecs.encodePreKeyBundle(preKeyBundle)
+            logger.debug { "${appInfo.appInstanceId} create preKeyBundle for $appInstanceId:\n $preKeyBundle" }
             successResponse(call, DataContent(bytes))
         }
     }
@@ -88,20 +62,19 @@ fun Routing.syncRouting(
             val bytes = dataContent.data
             signalProcessorCache.removeSignalMessageProcessor(appInstanceId)
             val processor = signalProcessorCache.getSignalMessageProcessor(appInstanceId)
-            processor as SignalMessageProcessorImpl
-            val preKeySignalMessage = PreKeySignalMessage(bytes)
+            val preKeySignalMessage = preKeySignalMessageFactory.createPreKeySignalMessage(bytes)
 
-            val signedPreKeyId = preKeySignalMessage.signedPreKeyId
+            val signedPreKeyId = preKeySignalMessage.getSignedPreKeyId()
 
             if (signalProtocolStore.containsSignedPreKey(signedPreKeyId)) {
                 signalProtocolStore.saveIdentity(
-                    processor.signalProtocolAddress,
-                    preKeySignalMessage.identityKey,
+                    processor.getSignalAddress(),
+                    preKeySignalMessage,
                 )
                 val decrypt = processor.decryptPreKeySignalMessage(preKeySignalMessage)
 
                 try {
-                    val syncInfo = DesktopJsonUtils.JSON.decodeFromString<SyncInfo>(String(decrypt, Charsets.UTF_8))
+                    val syncInfo = jsonUtils.JSON.decodeFromString<SyncInfo>(String(decrypt, Charsets.UTF_8))
                     syncManager.updateSyncInfo(syncInfo)
                     logger.info { "$appInstanceId createSession to ${appInfo.appInstanceId} success" }
                     successResponse(call)
@@ -118,8 +91,7 @@ fun Routing.syncRouting(
     }
 
     get("/sync/showToken") {
-        appTokenService.showToken = true
-        appWindowManager.showMainWindow = true
+        appTokenService.toShowToken()
         logger.debug { "show token" }
         successResponse(call)
     }
@@ -132,11 +104,11 @@ fun Routing.syncRouting(
                 failResponse(call, StandardErrorCode.SYNC_NOT_MATCH_APP_INSTANCE_ID.toErrorCode())
                 return@let
             }
-            val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
-            signalProtocolStore.getIdentity(signalProtocolAddress)?.let {
+            val signalAddress = SignalAddress(appInstanceId, 1)
+            if (signalProtocolStore.existIdentity(signalAddress)) {
                 logger.debug { "${appInfo.appInstanceId} isTrust $appInstanceId" }
                 successResponse(call)
-            } ?: run {
+            } else {
                 logger.debug { "${appInfo.appInstanceId} not trust $appInstanceId in /sync/isTrust api" }
                 failResponse(call, StandardErrorCode.SIGNAL_UNTRUSTED_IDENTITY.toErrorCode(), "not trust $appInstanceId")
             }
@@ -147,10 +119,10 @@ fun Routing.syncRouting(
         getAppInstanceId(call)?.let { appInstanceId ->
             val requestTrust = call.receive(RequestTrust::class)
             if (requestTrust.token == String(appTokenService.token).toInt()) {
-                val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
+                val signalAddress = SignalAddress(appInstanceId, 1)
                 signalProtocolStore.saveIdentity(
-                    signalProtocolAddress,
-                    IdentityKey(requestTrust.identityKey),
+                    signalAddress,
+                    requestTrust,
                 )
                 appTokenService.showToken = false
                 logger.debug { "${appInfo.appInstanceId} to trust $appInstanceId" }
@@ -161,15 +133,4 @@ fun Routing.syncRouting(
             }
         }
     }
-}
-
-fun PreKeyBundle.getDescString(): String {
-    return "PreKeyBundle(registrationId=$registrationId, " +
-        "deviceId=$deviceId, " +
-        "preKeyId=$preKeyId, " +
-        "preKey=$preKey, " +
-        "signedPreKeyId=$signedPreKeyId, " +
-        "signedPreKey=$signedPreKey, " +
-        "signedPreKeySignature=$signedPreKeySignature, " +
-        "identityKey=$identityKey)"
 }

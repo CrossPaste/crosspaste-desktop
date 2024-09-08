@@ -1,5 +1,8 @@
 package com.crosspaste.serializer
 
+import com.crosspaste.signal.DesktopPreKeyBundle
+import com.crosspaste.signal.PreKeyBundleCodecs
+import com.crosspaste.signal.PreKeyBundleInterface
 import com.crosspaste.utils.getCodecsUtils
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -16,29 +19,29 @@ import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException
 
-object PreKeyBundleSerializer : KSerializer<PreKeyBundle> {
+object PreKeyBundleSerializer : KSerializer<PreKeyBundleInterface>, PreKeyBundleCodecs {
 
     private val codecsUtils = getCodecsUtils()
 
     override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("PreKeyBundle") {
+        buildClassSerialDescriptor("PreKeyBundleInterface") {
         }
 
     override fun serialize(
         encoder: Encoder,
-        value: PreKeyBundle,
+        value: PreKeyBundleInterface,
     ) {
         val byteArray = encodePreKeyBundle(value)
         encoder.encodeString(codecsUtils.base64Encode(byteArray))
     }
 
-    override fun deserialize(decoder: Decoder): PreKeyBundle {
+    override fun deserialize(decoder: Decoder): PreKeyBundleInterface {
         val byteArray = codecsUtils.base64Decode(decoder.decodeString())
         return decodePreKeyBundle(byteArray)
     }
 
     @Throws(IOException::class, InvalidKeyException::class)
-    fun decodePreKeyBundle(encoded: ByteArray): PreKeyBundle {
+    override fun decodePreKeyBundle(encoded: ByteArray): PreKeyBundleInterface {
         val byteStream = ByteArrayInputStream(encoded)
         val dataStream = DataInputStream(byteStream)
         val registrationId = dataStream.readInt()
@@ -64,19 +67,23 @@ object PreKeyBundleSerializer : KSerializer<PreKeyBundle> {
         dataStream.read(identityKeyBytes)
         val identityKey = IdentityKey(ECPublicKey(identityKeyBytes))
 
-        return PreKeyBundle(
-            registrationId,
-            deviceId,
-            preKeyId,
-            preKeyPublic,
-            signedPreKeyId,
-            signedPreKeyPublic,
-            signedPreKeySignatureBytes,
-            identityKey,
+        return DesktopPreKeyBundle(
+            PreKeyBundle(
+                registrationId,
+                deviceId,
+                preKeyId,
+                preKeyPublic,
+                signedPreKeyId,
+                signedPreKeyPublic,
+                signedPreKeySignatureBytes,
+                identityKey,
+            ),
         )
     }
 
-    fun encodePreKeyBundle(preKeyBundle: PreKeyBundle): ByteArray {
+    override fun encodePreKeyBundle(preKeyBundleInterface: PreKeyBundleInterface): ByteArray {
+        preKeyBundleInterface as DesktopPreKeyBundle
+        val preKeyBundle = preKeyBundleInterface.preKeyBundle
         val byteStream = ByteArrayOutputStream()
         val dataStream = DataOutputStream(byteStream)
         dataStream.writeInt(preKeyBundle.registrationId)

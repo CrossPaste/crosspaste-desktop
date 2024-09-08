@@ -1,7 +1,7 @@
-package com.crosspaste.utils
+package com.crosspaste.net
 
 import com.crosspaste.dao.sync.HostInfo
-import com.crosspaste.net.PasteClient
+import com.crosspaste.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineName
@@ -14,7 +14,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 
-class TelnetUtils(private val pasteClient: PasteClient) {
+class TelnetHelper(private val pasteClient: PasteClient) {
 
     private val logger = KotlinLogging.logger {}
 

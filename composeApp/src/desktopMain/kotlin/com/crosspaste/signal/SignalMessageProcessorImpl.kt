@@ -4,18 +4,20 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.SignalProtocolAddress
-import org.signal.libsignal.protocol.message.PreKeySignalMessage
 import org.signal.libsignal.protocol.message.SignalMessage
-import org.signal.libsignal.protocol.state.SignalProtocolStore
 
 class SignalMessageProcessorImpl(
     appInstanceId: String,
-    signalProtocolStore: SignalProtocolStore,
+    signalProtocolStore: SignalProtocolStoreInterface,
 ) : SignalMessageProcessor {
 
     val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
 
-    private val sessionCipher = SessionCipher(signalProtocolStore, signalProtocolAddress)
+    private val sessionCipher =
+        SessionCipher(
+            signalProtocolStore as DesktopSignalProtocolStore,
+            signalProtocolAddress,
+        )
 
     private val lock = Mutex()
 
@@ -30,9 +32,14 @@ class SignalMessageProcessorImpl(
         }
     }
 
-    suspend fun decryptPreKeySignalMessage(preKeySignalMessage: PreKeySignalMessage): ByteArray {
+    override fun getSignalAddress(): SignalAddress {
+        return SignalAddress(signalProtocolAddress.name, signalProtocolAddress.deviceId)
+    }
+
+    override suspend fun decryptPreKeySignalMessage(preKeySignalMessageInterface: PreKeySignalMessageInterface): ByteArray {
+        preKeySignalMessageInterface as DesktopPreKeySignalMessage
         lock.withLock {
-            return sessionCipher.decrypt(preKeySignalMessage)
+            return sessionCipher.decrypt(preKeySignalMessageInterface.preKeySignalMessage)
         }
     }
 }

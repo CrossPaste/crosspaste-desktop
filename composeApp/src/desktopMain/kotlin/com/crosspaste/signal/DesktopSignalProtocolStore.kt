@@ -1,5 +1,8 @@
 package com.crosspaste.signal
 
+import com.crosspaste.dao.signal.SignalDao
+import com.crosspaste.dto.sync.RequestTrust
+import com.crosspaste.utils.EncryptUtils
 import org.signal.libsignal.protocol.IdentityKey
 import org.signal.libsignal.protocol.IdentityKeyPair
 import org.signal.libsignal.protocol.InvalidKeyIdException
@@ -11,6 +14,7 @@ import org.signal.libsignal.protocol.groups.state.SenderKeyStore
 import org.signal.libsignal.protocol.state.IdentityKeyStore
 import org.signal.libsignal.protocol.state.KyberPreKeyRecord
 import org.signal.libsignal.protocol.state.KyberPreKeyStore
+import org.signal.libsignal.protocol.state.PreKeyBundle
 import org.signal.libsignal.protocol.state.PreKeyRecord
 import org.signal.libsignal.protocol.state.PreKeyStore
 import org.signal.libsignal.protocol.state.SessionRecord
@@ -28,7 +32,81 @@ class DesktopSignalProtocolStore(
     private val signedPreKeyStore: SignedPreKeyStore,
     private val senderKeyStore: SenderKeyStore = InMemorySenderKeyStore(),
     private val kyberPreKeyStore: KyberPreKeyStore = InMemoryKyberPreKeyStore(),
-) : SignalProtocolStore {
+) : SignalProtocolStore, SignalProtocolStoreInterface {
+
+    // common interface impl
+
+    override fun saveIdentity(
+        address: SignalAddress,
+        preKeyBundleInterface: PreKeyBundleInterface,
+    ) {
+        preKeyBundleInterface as DesktopPreKeyBundle
+        saveIdentity(
+            SignalProtocolAddress(address.name, address.deviceId),
+            preKeyBundleInterface.preKeyBundle.identityKey,
+        )
+    }
+
+    override fun saveIdentity(
+        address: SignalAddress,
+        preKeySignalMessageInterface: PreKeySignalMessageInterface,
+    ) {
+        preKeySignalMessageInterface as DesktopPreKeySignalMessage
+        saveIdentity(
+            SignalProtocolAddress(address.name, address.deviceId),
+            preKeySignalMessageInterface.preKeySignalMessage.identityKey,
+        )
+    }
+
+    override fun saveIdentity(
+        address: SignalAddress,
+        requestTrust: RequestTrust,
+    ) {
+        saveIdentity(
+            SignalProtocolAddress(address.name, address.deviceId),
+            IdentityKey(requestTrust.identityKey),
+        )
+    }
+
+    override fun getIdentityKeyPublicKey(): ByteArray {
+        return identityKeyPair.publicKey.serialize()
+    }
+
+    override fun existIdentity(address: SignalAddress): Boolean {
+        return getIdentity(SignalProtocolAddress(address.name, address.deviceId)) != null
+    }
+
+    override fun existSession(address: SignalAddress): Boolean {
+        return loadSession(SignalProtocolAddress(address.name, address.deviceId)) != null
+    }
+
+    override fun generatePreKeyBundle(signalDao: SignalDao): PreKeyBundleInterface {
+        val deviceId = 1
+        val preKey = EncryptUtils.generatePreKeyPair(signalDao)
+        val preKeyId = preKey.id
+        val preKeyRecord = PreKeyRecord(preKey.serialized)
+        val preKeyPairPublicKey = preKeyRecord.keyPair.publicKey
+
+        val signedPreKey = EncryptUtils.generatesSignedPreKeyPair(signalDao, identityKeyPair.privateKey)
+        val signedPreKeyId = signedPreKey.id
+        val signedPreKeyRecord = SignedPreKeyRecord(signedPreKey.serialized)
+        val signedPreKeySignature = signedPreKeyRecord.signature
+
+        val preKeyBundle =
+            PreKeyBundle(
+                localRegistrationId,
+                deviceId,
+                preKeyId,
+                preKeyPairPublicKey,
+                signedPreKeyId,
+                signedPreKeyRecord.keyPair.publicKey,
+                signedPreKeySignature,
+                identityKeyPair.publicKey,
+            )
+        return DesktopPreKeyBundle(preKeyBundle)
+    }
+
+    // desktop jvm impl
 
     override fun getIdentityKeyPair(): IdentityKeyPair {
         return identityKeyStore.getIdentityKeyPair()
@@ -39,8 +117,8 @@ class DesktopSignalProtocolStore(
     }
 
     override fun saveIdentity(
-        address: SignalProtocolAddress?,
-        identityKey: IdentityKey?,
+        address: SignalProtocolAddress,
+        identityKey: IdentityKey,
     ): Boolean {
         return identityKeyStore.saveIdentity(address, identityKey)
     }

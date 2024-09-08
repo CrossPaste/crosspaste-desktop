@@ -8,6 +8,8 @@ interface AppTokenService {
 
     var token: CharArray
 
+    fun toShowToken()
+
     fun startRefreshToken()
 
     fun stopRefreshToken()
