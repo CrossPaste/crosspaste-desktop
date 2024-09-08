@@ -42,7 +42,6 @@ class DesktopSignalProtocolStore(
     ) {
         preKeyBundleInterface as DesktopPreKeyBundle
         saveIdentity(
-            // TODO: check create new address is correct
             SignalProtocolAddress(address.name, address.deviceId),
             preKeyBundleInterface.preKeyBundle.identityKey,
         )
