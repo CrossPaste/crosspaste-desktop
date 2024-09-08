@@ -3,9 +3,10 @@ package com.crosspaste.net
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.dto.sync.SyncInfo
-import com.crosspaste.sync.DeviceManager
+import com.crosspaste.sync.DeviceListener
 import com.crosspaste.utils.TxtRecordUtils
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.mainDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.collections.*
 import kotlinx.coroutines.CoroutineScope
@@ -16,13 +17,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.net.InetAddress
 import javax.jmdns.JmDNS
+import javax.jmdns.ServiceEvent
 import javax.jmdns.ServiceInfo
 import javax.jmdns.ServiceListener
+import javax.jmdns.impl.util.ByteWrangler
 
 class DesktopPasteBonjourService(
     private val appInfo: AppInfo,
     private val endpointInfoFactory: EndpointInfoFactory,
-    private val deviceManager: DeviceManager,
+    private val deviceListener: DeviceListener,
 ) : PasteBonjourService {
 
     companion object {
@@ -44,7 +47,7 @@ class DesktopPasteBonjourService(
 
         val txtRecordDict = TxtRecordUtils.encodeToTxtRecordDict(syncInfo)
 
-        val serviceListener = deviceManager as ServiceListener
+        val serviceListener = DesktopServiceListener(deviceListener)
 
         for (hostInfo in endpointInfo.hostInfoList) {
             scope.launch {
@@ -82,5 +85,36 @@ class DesktopPasteBonjourService(
         runBlocking { deferred.await() }
         jmdnsMap.clear()
         return this
+    }
+}
+
+class DesktopServiceListener(
+    private val deviceListener: DeviceListener,
+) : ServiceListener {
+
+    private val logger = KotlinLogging.logger {}
+
+    private val coroutineScope = CoroutineScope(SupervisorJob() + mainDispatcher)
+
+    override fun serviceAdded(event: ServiceEvent) {
+        logger.debug { "Service added: " + event.info }
+    }
+
+    override fun serviceRemoved(event: ServiceEvent) {
+        val map: Map<String, ByteArray> = mutableMapOf()
+        ByteWrangler.readProperties(map, event.info.textBytes)
+        val syncInfo = TxtRecordUtils.decodeFromTxtRecordDict<SyncInfo>(map)
+        coroutineScope.launch {
+            deviceListener.removeDevice(syncInfo)
+        }
+    }
+
+    override fun serviceResolved(event: ServiceEvent) {
+        val map: Map<String, ByteArray> = mutableMapOf()
+        ByteWrangler.readProperties(map, event.info.textBytes)
+        val syncInfo = TxtRecordUtils.decodeFromTxtRecordDict<SyncInfo>(map)
+        coroutineScope.launch {
+            deviceListener.addDevice(syncInfo)
+        }
     }
 }

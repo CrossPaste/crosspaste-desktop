@@ -133,9 +133,9 @@ import com.crosspaste.signal.DesktopSignedPreKeyStore
 import com.crosspaste.signal.SignalProcessorCache
 import com.crosspaste.signal.SignalProcessorCacheImpl
 import com.crosspaste.signal.getPasteIdentityKeyStoreFactory
-import com.crosspaste.sync.DesktopDeviceManager
 import com.crosspaste.sync.DesktopQRCodeGenerator
 import com.crosspaste.sync.DesktopSyncManager
+import com.crosspaste.sync.DeviceListener
 import com.crosspaste.sync.DeviceManager
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.CleanPasteTaskExecutor
@@ -278,7 +278,8 @@ class CrossPaste {
                     }
                     single<SyncRefresher> { get<DesktopSyncManager>() }
                     single<SyncManager> { get<DesktopSyncManager>() }
-                    single<DeviceManager> { DesktopDeviceManager(get(), get(), get(), get()) }
+                    single<DeviceManager> { DeviceManager(get(), get(), get(), get()) }
+                    single<DeviceListener> { get<DeviceManager>() }
                     single<FaviconLoader> { DesktopFaviconLoader(get()) }
 
                     // signal component
