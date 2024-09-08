@@ -74,11 +74,13 @@ import com.crosspaste.log.CrossPasteLogger
 import com.crosspaste.log.initLogger
 import com.crosspaste.net.DesktopPasteBonjourService
 import com.crosspaste.net.DesktopServerFactory
+import com.crosspaste.net.DesktopServerModule
 import com.crosspaste.net.DesktopSyncInfoFactory
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.net.PasteClient
 import com.crosspaste.net.PasteServer
 import com.crosspaste.net.ServerFactory
+import com.crosspaste.net.ServerModule
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.SyncRefresher
 import com.crosspaste.net.TelnetHelper
@@ -269,11 +271,17 @@ class CrossPaste {
 
                     // net component
                     single<PasteClient> { PasteClient(get<AppInfo>(), get(), get()) }
+                    single<ServerModule> {
+                        DesktopServerModule(
+                            get(), get(), get(), get(), get(), get(), get(), get(),
+                            get(), get(), get(), get(), get(), get(), get(),
+                        )
+                    }
                     single<PasteServer<*, *>> {
                         PasteServer(
-                            get(), get(), get(), get(), get(), get(), get(), get(),
-                            get(), get(), get(), get(), get(), get(), get(), get(),
+                            get(),
                             get<ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>>(),
+                            get(),
                         )
                     }
                     single<ExceptionHandler> { DesktopExceptionHandler() }
