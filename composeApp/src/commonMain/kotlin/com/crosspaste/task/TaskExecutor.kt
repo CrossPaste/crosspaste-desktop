@@ -2,8 +2,8 @@ package com.crosspaste.task
 
 import com.crosspaste.dao.task.PasteTaskDao
 import com.crosspaste.dao.task.TaskStatus
+import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.cpuDispatcher
-import com.crosspaste.utils.getTaskUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -20,8 +20,6 @@ class TaskExecutor(
     private val pasteTaskDao: PasteTaskDao,
 ) {
     private val logger = KotlinLogging.logger {}
-
-    private val taskUtils = getTaskUtils()
 
     private val singleTypeTaskExecutorMap = singleTypeTaskExecutors.associateBy { it.taskType }
 
@@ -76,7 +74,7 @@ class TaskExecutor(
             logger.error(e) { "execute task error: $taskId" }
             pasteTaskDao.update(taskId) {
                 status = TaskStatus.FAILURE
-                extraInfo = taskUtils.createFailExtraInfo(this, e)
+                extraInfo = TaskUtils.createFailExtraInfo(this, e)
             }
         }
     }

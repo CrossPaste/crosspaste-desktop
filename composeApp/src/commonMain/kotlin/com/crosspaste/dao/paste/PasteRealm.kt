@@ -15,9 +15,9 @@ import com.crosspaste.task.TaskExecutor
 import com.crosspaste.task.extra.SyncExtraInfo
 import com.crosspaste.utils.LoggerExtension.logExecutionTime
 import com.crosspaste.utils.LoggerExtension.logSuspendExecutionTime
+import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
-import com.crosspaste.utils.getTaskUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.Realm
@@ -46,8 +46,6 @@ class PasteRealm(
         private val dateUtils = getDateUtils()
 
         private val fileUtils = getFileUtils()
-
-        private val taskUtils = getTaskUtils()
     }
 
     private val taskExecutor by lazy { lazyTaskExecutor.value }
@@ -108,7 +106,7 @@ class PasteRealm(
     private fun MutableRealm.doMarkDeletePasteData(markDeletePasteData: List<PasteData>): List<ObjectId> {
         return markDeletePasteData.map {
             it.updatePasteState(PasteState.DELETED)
-            copyToRealm(taskUtils.createTask(it.id, TaskType.DELETE_PASTE_TASK)).taskId
+            copyToRealm(TaskUtils.createTask(it.id, TaskType.DELETE_PASTE_TASK)).taskId
         }
     }
 
@@ -393,12 +391,12 @@ class PasteRealm(
 
                     val tasks = mutableListOf<ObjectId>()
                     if (pasteData.pasteType == PasteType.HTML) {
-                        tasks.add(copyToRealm(taskUtils.createTask(pasteData.id, TaskType.HTML_TO_IMAGE_TASK)).taskId)
+                        tasks.add(copyToRealm(TaskUtils.createTask(pasteData.id, TaskType.HTML_TO_IMAGE_TASK)).taskId)
                     }
                     if (!configManager.config.enabledSyncFileSizeLimit ||
                         fileUtils.bytesSize(configManager.config.maxSyncFileSize) > size
                     ) {
-                        tasks.add(copyToRealm(taskUtils.createTask(pasteData.id, TaskType.SYNC_PASTE_TASK, SyncExtraInfo())).taskId)
+                        tasks.add(copyToRealm(TaskUtils.createTask(pasteData.id, TaskType.SYNC_PASTE_TASK, SyncExtraInfo())).taskId)
                     }
                     tasks.addAll(markDeleteSameHash(pasteData.id, pasteData.pasteType, pasteData.hash))
                     return@write tasks
@@ -448,10 +446,10 @@ class PasteRealm(
                 copyToRealm(pasteData)
                 tasks.addAll(markDeleteSameHash(pasteData.id, pasteData.pasteType, pasteData.hash))
                 if (pasteData.pasteType == PasteType.HTML) {
-                    tasks.add(copyToRealm(taskUtils.createTask(pasteData.id, TaskType.HTML_TO_IMAGE_TASK)).taskId)
+                    tasks.add(copyToRealm(TaskUtils.createTask(pasteData.id, TaskType.HTML_TO_IMAGE_TASK)).taskId)
                 }
             } else {
-                val pullFileTask = taskUtils.createTask(pasteData.id, TaskType.PULL_FILE_TASK)
+                val pullFileTask = TaskUtils.createTask(pasteData.id, TaskType.PULL_FILE_TASK)
                 pasteData.adaptRelativePaths(pasteData.appInstanceId, pasteData.pasteId)
                 copyToRealm(pasteData)
                 copyToRealm(pullFileTask)
@@ -460,7 +458,7 @@ class PasteRealm(
 
             existIconFile?.let {
                 if (!it) {
-                    val pullIconTask = taskUtils.createTask(pasteData.id, TaskType.PULL_ICON_TASK)
+                    val pullIconTask = TaskUtils.createTask(pasteData.id, TaskType.PULL_ICON_TASK)
                     copyToRealm(pullIconTask)
                     tasks.add(pullIconTask.taskId)
                 }

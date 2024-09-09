@@ -1,8 +1,42 @@
 package com.crosspaste.clean
 
-interface CleanPasteScheduler {
+import com.crosspaste.config.ConfigManager
+import com.crosspaste.dao.task.PasteTaskDao
+import com.crosspaste.dao.task.TaskType
+import com.crosspaste.task.TaskExecutor
+import com.crosspaste.utils.TaskUtils
+import com.crosspaste.utils.cpuDispatcher
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
-    fun start()
+class CleanPasteScheduler(
+    private val taskDao: PasteTaskDao,
+    private val taskExecutor: TaskExecutor,
+    private val configManager: ConfigManager,
+) {
 
-    fun stop()
+    private val logger = KotlinLogging.logger {}
+
+    private val coroutineScope = CoroutineScope(cpuDispatcher)
+
+    fun start() {
+        coroutineScope.launch {
+            while (isActive) {
+                if (configManager.config.isExpirationCleanup) {
+                    val taskId = taskDao.createTask(TaskUtils.createTask(null, TaskType.CLEAN_PASTE_TASK))
+                    taskExecutor.submitTask(taskId)
+                    logger.info { "submit clean paste task: $taskId" }
+                }
+                delay(5 * 60 * 1000)
+            }
+        }
+    }
+
+    fun stop() {
+        coroutineScope.cancel()
+    }
 }

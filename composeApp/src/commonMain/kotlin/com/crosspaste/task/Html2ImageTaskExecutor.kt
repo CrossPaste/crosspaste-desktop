@@ -10,8 +10,8 @@ import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.task.extra.BaseExtraInfo
+import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.getFileUtils
-import com.crosspaste.utils.getTaskUtils
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
@@ -30,8 +30,6 @@ class Html2ImageTaskExecutor(
     private val logger = KotlinLogging.logger {}
 
     private val fileUtils = getFileUtils()
-
-    private val taskUtils = getTaskUtils()
 
     override val taskType: Int = TaskType.HTML_TO_IMAGE_TASK
 
@@ -59,12 +57,12 @@ class Html2ImageTaskExecutor(
                     }
                 }
             } catch (e: Throwable) {
-                return taskUtils.createFailurePasteTaskResult(
+                return TaskUtils.createFailurePasteTaskResult(
                     logger = logger,
                     retryHandler = { false },
                     startTime = pasteTask.modifyTime,
                     fails = listOf(createFailureResult(StandardErrorCode.HTML_2_IMAGE_TASK_FAIL, e)),
-                    extraInfo = taskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class),
+                    extraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class),
                 )
             }
         }

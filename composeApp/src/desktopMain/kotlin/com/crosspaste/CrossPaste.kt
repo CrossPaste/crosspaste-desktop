@@ -37,7 +37,6 @@ import com.crosspaste.app.ExitMode
 import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.app.getDesktopAppWindowManager
 import com.crosspaste.clean.CleanPasteScheduler
-import com.crosspaste.clean.DesktopCleanPasteScheduler
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.config.DefaultConfigManager
 import com.crosspaste.dao.paste.PasteDao
@@ -364,7 +363,7 @@ class CrossPaste {
                     single<DesktopPasteSearchService> { DesktopPasteSearchService(get(), get(), get()) }
                     single<CurrentPaste> { DesktopCurrentPaste(lazy { get() }) }
                     single<PasteSearchService> { get<DesktopPasteSearchService>() }
-                    single<CleanPasteScheduler> { DesktopCleanPasteScheduler(get(), get(), get()) }
+                    single<CleanPasteScheduler> { CleanPasteScheduler(get(), get(), get()) }
                     single<TaskExecutor> {
                         TaskExecutor(
                             listOf(
