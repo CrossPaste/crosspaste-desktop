@@ -26,7 +26,6 @@ import com.crosspaste.ui.paste.detail.PasteFilesDetailView
 import com.crosspaste.ui.paste.detail.PasteImagesDetailView
 import com.crosspaste.ui.paste.detail.PasteTextDetailView
 import com.crosspaste.ui.paste.detail.PasteUrlDetailView
-import com.crosspaste.ui.paste.preview.getPasteItem
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
 import kotlinx.coroutines.launch

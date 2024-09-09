@@ -153,7 +153,6 @@ import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.CleanPasteTaskExecutor
 import com.crosspaste.task.DeletePasteTaskExecutor
-import com.crosspaste.task.DesktopTaskExecutor
 import com.crosspaste.task.Html2ImageTaskExecutor
 import com.crosspaste.task.PullFileTaskExecutor
 import com.crosspaste.task.PullIconTaskExecutor
@@ -367,7 +366,7 @@ class CrossPaste {
                     single<PasteSearchService> { get<DesktopPasteSearchService>() }
                     single<CleanPasteScheduler> { DesktopCleanPasteScheduler(get(), get(), get()) }
                     single<TaskExecutor> {
-                        DesktopTaskExecutor(
+                        TaskExecutor(
                             listOf(
                                 SyncPasteTaskExecutor(get(), get(), get()),
                                 DeletePasteTaskExecutor(get()),

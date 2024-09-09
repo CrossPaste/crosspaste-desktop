@@ -8,7 +8,6 @@ import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.paste.item.PasteUrl
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.ui.paste.preview.getPasteItem
 
 fun getPasteTitle(
     pasteData: PasteData,

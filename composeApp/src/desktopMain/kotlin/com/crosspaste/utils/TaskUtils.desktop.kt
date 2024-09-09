@@ -75,7 +75,7 @@ object DesktopTaskUtils : TaskUtils {
         return DesktopJsonUtils.JSON.encodeToString(JsonObject(mutableJsonObject))
     }
 
-    fun createFailurePasteTaskResult(
+    override fun createFailurePasteTaskResult(
         logger: KLogger,
         retryHandler: () -> Boolean,
         startTime: Long,

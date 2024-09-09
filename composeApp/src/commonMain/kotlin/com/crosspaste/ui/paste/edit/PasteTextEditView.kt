@@ -28,7 +28,6 @@ import com.crosspaste.ui.PageViewContext
 import com.crosspaste.ui.WindowDecoration
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.save
-import com.crosspaste.ui.paste.preview.getPasteItem
 import com.crosspaste.utils.getCodecsUtils
 
 @Composable

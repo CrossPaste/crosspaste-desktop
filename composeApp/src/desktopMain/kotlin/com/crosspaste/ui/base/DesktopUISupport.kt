@@ -13,7 +13,6 @@ import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.getPlatform
-import com.crosspaste.ui.paste.preview.getPasteItem
 import com.google.common.io.Files
 import io.github.oshai.kotlinlogging.KotlinLogging
 import okio.FileSystem

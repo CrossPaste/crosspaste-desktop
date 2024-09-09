@@ -10,9 +10,8 @@ import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.task.extra.BaseExtraInfo
-import com.crosspaste.ui.paste.preview.getPasteItem
-import com.crosspaste.utils.DesktopTaskUtils
-import com.crosspaste.utils.DesktopTaskUtils.createFailurePasteTaskResult
+import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.getTaskUtils
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
@@ -29,6 +28,10 @@ class Html2ImageTaskExecutor(
 ) : SingleTypeTaskExecutor {
 
     private val logger = KotlinLogging.logger {}
+
+    private val fileUtils = getFileUtils()
+
+    private val taskUtils = getTaskUtils()
 
     override val taskType: Int = TaskType.HTML_TO_IMAGE_TASK
 
@@ -47,7 +50,7 @@ class Html2ImageTaskExecutor(
                     pasteData.getPasteItem()?.let { pasteItem ->
                         if (pasteItem is PasteHtml) {
                             val html2ImagePath = pasteItem.getHtmlImagePath(userDataPathProvider)
-                            if (!html2ImagePath.toFile().exists()) {
+                            if (!fileUtils.existFile(html2ImagePath)) {
                                 chromeService.html2Image(pasteItem.html)?.let { bytes ->
                                     filePersist.createOneFilePersist(html2ImagePath).saveBytes(bytes)
                                 }
@@ -56,12 +59,12 @@ class Html2ImageTaskExecutor(
                     }
                 }
             } catch (e: Throwable) {
-                return createFailurePasteTaskResult(
+                return taskUtils.createFailurePasteTaskResult(
                     logger = logger,
                     retryHandler = { false },
                     startTime = pasteTask.modifyTime,
                     fails = listOf(createFailureResult(StandardErrorCode.HTML_2_IMAGE_TASK_FAIL, e)),
-                    extraInfo = DesktopTaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class),
+                    extraInfo = taskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class),
                 )
             }
         }

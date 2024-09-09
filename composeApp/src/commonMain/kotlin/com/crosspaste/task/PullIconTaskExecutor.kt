@@ -11,19 +11,19 @@ import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.extra.BaseExtraInfo
-import com.crosspaste.utils.DesktopTaskUtils
-import com.crosspaste.utils.DesktopTaskUtils.createFailurePasteTaskResult
 import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.getTaskUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
+import io.ktor.util.collections.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.datetime.Clock
 import okio.FileSystem
 import okio.Path
-import java.util.concurrent.ConcurrentHashMap
 
 class PullIconTaskExecutor(
     private val pasteDao: PasteDao,
@@ -38,12 +38,14 @@ class PullIconTaskExecutor(
         private val fileUtils: FileUtils = getFileUtils()
     }
 
+    private val taskUtils = getTaskUtils()
+
     override val taskType: Int = TaskType.PULL_ICON_TASK
 
-    private val locks: MutableMap<String, Mutex> = ConcurrentHashMap<String, Mutex>()
+    private val locks: MutableMap<String, Mutex> = ConcurrentMap()
 
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
-        val baseExtraInfo: BaseExtraInfo = DesktopTaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class)
+        val baseExtraInfo: BaseExtraInfo = taskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class)
 
         pasteDao.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
             pasteData.source?.let { source ->
@@ -58,7 +60,7 @@ class PullIconTaskExecutor(
                                 it.getConnectHostAddress()?.let { host ->
                                     return pullIcon(source, iconPath, host, port, baseExtraInfo)
                                 } ?: run {
-                                    return createFailurePasteTaskResult(
+                                    return taskUtils.createFailurePasteTaskResult(
                                         logger = logger,
                                         retryHandler = { baseExtraInfo.executionHistories.size < 2 },
                                         startTime = pasteTask.modifyTime,
@@ -73,7 +75,7 @@ class PullIconTaskExecutor(
                                     )
                                 }
                             } ?: run {
-                                return createFailurePasteTaskResult(
+                                return taskUtils.createFailurePasteTaskResult(
                                     logger = logger,
                                     retryHandler = { baseExtraInfo.executionHistories.size < 2 },
                                     startTime = pasteTask.modifyTime,
@@ -117,10 +119,10 @@ class PullIconTaskExecutor(
 
             return SuccessPasteTaskResult()
         } else {
-            return createFailurePasteTaskResult(
+            return taskUtils.createFailurePasteTaskResult(
                 logger = logger,
                 retryHandler = { baseExtraInfo.executionHistories.size < 2 },
-                startTime = System.currentTimeMillis(),
+                startTime = Clock.System.now().toEpochMilliseconds(),
                 fails =
                     listOf(
                         createFailureResult(
