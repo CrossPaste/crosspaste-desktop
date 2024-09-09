@@ -18,7 +18,7 @@ kotlinx-datetime = "0.6.1"
 kotlinx-serialization = "1.7.2"
 ktlint = "12.1.1"
 ktor = "2.3.12"
-logback = "1.5.7"
+logback = "1.5.8"
 mockk = "1.13.12"
 murmurhash = "0.4.0"
 okio = "3.9.0"
@@ -44,7 +44,6 @@ imageio-core = { module = "com.twelvemonkeys.imageio:imageio-core", version.ref 
 imageio-jpeg = { module = "com.twelvemonkeys.imageio:imageio-jpeg", version.ref = "imageio" }
 jmdns = { module = "org.jmdns:jmdns", version.ref = "jmdns" }
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
-jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
 jnativehook = { module = "com.github.kwhat:jnativehook", version.ref = "jnativehook" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
