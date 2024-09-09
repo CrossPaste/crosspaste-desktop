@@ -29,9 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppWindowManager
-import com.crosspaste.dao.paste.PasteCollection
 import com.crosspaste.dao.paste.PasteData
-import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.dao.paste.PasteState
 import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.i18n.Copywriter
@@ -44,22 +42,6 @@ import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.reflect.KClass
-import kotlin.reflect.cast
-
-fun <T : Any> PasteData.getPasteItem(kclass: KClass<T>): T? {
-    return PasteCollection.getPasteItem(this.pasteAppearItem)?.let {
-        if (kclass.isInstance(it)) {
-            kclass.cast(it)
-        } else {
-            null
-        }
-    }
-}
-
-fun PasteData.getPasteItem(): PasteItem? {
-    return PasteCollection.getPasteItem(this.pasteAppearItem)
-}
 
 @Composable
 fun PastePreviewItemView(

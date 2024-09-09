@@ -17,6 +17,8 @@ import io.realm.kotlin.types.annotations.PrimaryKey
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.mongodb.kbson.ObjectId
+import kotlin.reflect.KClass
+import kotlin.reflect.cast
 
 @Serializable(with = PasteDataSerializer::class)
 class PasteData : RealmObject {
@@ -132,6 +134,20 @@ class PasteData : RealmObject {
         for (pasteAppearItem in this.getPasteAppearItems()) {
             pasteAppearItem.pasteState = PasteState.LOADED
         }
+    }
+
+    fun <T : Any> getPasteItem(kclass: KClass<T>): T? {
+        return getPasteItem(this.pasteAppearItem)?.let {
+            if (kclass.isInstance(it)) {
+                kclass.cast(it)
+            } else {
+                null
+            }
+        }
+    }
+
+    fun getPasteItem(): PasteItem? {
+        return getPasteItem(this.pasteAppearItem)
     }
 }
 

@@ -24,7 +24,6 @@ import com.crosspaste.image.getImageDataLoader
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteUrl
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.ui.paste.preview.getPasteItem
 import okio.FileSystem
 
 @Composable

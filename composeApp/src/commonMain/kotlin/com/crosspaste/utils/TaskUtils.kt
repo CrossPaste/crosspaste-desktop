@@ -2,7 +2,10 @@ package com.crosspaste.utils
 
 import com.crosspaste.dao.task.PasteTask
 import com.crosspaste.dao.task.PasteTaskExtraInfo
+import com.crosspaste.net.clientapi.FailureResult
+import com.crosspaste.task.FailurePasteTaskResult
 import com.crosspaste.task.extra.BaseExtraInfo
+import io.github.oshai.kotlinlogging.KLogger
 import org.mongodb.kbson.ObjectId
 import kotlin.reflect.KClass
 
@@ -25,4 +28,12 @@ interface TaskUtils {
         pasteTask: PasteTask,
         throwable: Throwable,
     ): String
+
+    fun createFailurePasteTaskResult(
+        logger: KLogger,
+        retryHandler: () -> Boolean,
+        startTime: Long,
+        fails: Collection<FailureResult>,
+        extraInfo: PasteTaskExtraInfo,
+    ): FailurePasteTaskResult
 }
