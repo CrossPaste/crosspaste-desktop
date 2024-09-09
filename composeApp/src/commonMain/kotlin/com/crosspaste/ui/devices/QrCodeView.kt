@@ -46,9 +46,9 @@ import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppTokenService
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.ui.base.autoRenew
 import com.crosspaste.ui.base.scan
-import com.crosspaste.utils.QRCodeGenerator
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.withContext
 
@@ -77,6 +77,7 @@ fun bindingQRCode() {
         qrImage =
             withContext(ioDispatcher) {
                 qrCodeGenerator.generateQRCode(width, height, appTokenService.token)
+                    .toImage() as ImageBitmap
             }
     }
 

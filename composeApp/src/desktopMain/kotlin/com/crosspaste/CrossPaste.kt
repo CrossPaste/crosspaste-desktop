@@ -149,6 +149,7 @@ import com.crosspaste.signal.getPasteIdentityKeyStoreFactory
 import com.crosspaste.sync.DesktopQRCodeGenerator
 import com.crosspaste.sync.DeviceListener
 import com.crosspaste.sync.DeviceManager
+import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.CleanPasteTaskExecutor
 import com.crosspaste.task.DeletePasteTaskExecutor
@@ -182,7 +183,6 @@ import com.crosspaste.ui.resource.DesktopAbsolutePasteResourceLoader
 import com.crosspaste.ui.resource.PasteResourceLoader
 import com.crosspaste.utils.GlobalCoroutineScope
 import com.crosspaste.utils.GlobalCoroutineScopeImpl
-import com.crosspaste.utils.QRCodeGenerator
 import com.crosspaste.utils.ioDispatcher
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
 import com.github.kwhat.jnativehook.mouse.NativeMouseListener
