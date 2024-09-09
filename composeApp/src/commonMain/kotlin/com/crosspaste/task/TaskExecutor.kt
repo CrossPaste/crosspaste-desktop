@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 import org.mongodb.kbson.ObjectId
 
 class TaskExecutor(
@@ -50,13 +51,13 @@ class TaskExecutor(
         try {
             pasteTaskDao.update(taskId, copeFromRealm = true) {
                 status = TaskStatus.EXECUTING
-                modifyTime = System.currentTimeMillis()
+                modifyTime = Clock.System.now().toEpochMilliseconds()
             }?.let { pasteTask ->
                 val executor = getExecutorImpl(pasteTask.taskType)
                 executor.executeTask(pasteTask, success = {
                     pasteTaskDao.update(taskId) {
                         status = TaskStatus.SUCCESS
-                        modifyTime = System.currentTimeMillis()
+                        modifyTime = Clock.System.now().toEpochMilliseconds()
                         it?.let { newExtraInfo ->
                             extraInfo = newExtraInfo
                         }
@@ -64,7 +65,7 @@ class TaskExecutor(
                 }, fail = { pasteTaskExtraInfo, needRetry ->
                     pasteTaskDao.update(taskId) {
                         status = if (needRetry) TaskStatus.PREPARING else TaskStatus.FAILURE
-                        modifyTime = System.currentTimeMillis()
+                        modifyTime = Clock.System.now().toEpochMilliseconds()
                         extraInfo = pasteTaskExtraInfo
                     }
                 }, retry = {
