@@ -9,8 +9,8 @@ import com.crosspaste.dao.task.TaskType
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.task.extra.BaseExtraInfo
+import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.getDateUtils
-import com.crosspaste.utils.getTaskUtils
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.types.RealmInstant
@@ -25,8 +25,6 @@ class CleanPasteTaskExecutor(
     private val logger: KLogger = KotlinLogging.logger {}
 
     private val dateUtils = getDateUtils()
-
-    private val taskUtils = getTaskUtils()
 
     override val taskType: Int = TaskType.CLEAN_PASTE_TASK
 
@@ -45,8 +43,8 @@ class CleanPasteTaskExecutor(
                     pasteDao.markDeleteByCleanTime(fileCleanTimeInstant, PasteType.FILE)
                 }
             } catch (e: Throwable) {
-                val baseExtraInfo = taskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class)
-                return taskUtils.createFailurePasteTaskResult(
+                val baseExtraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class)
+                return TaskUtils.createFailurePasteTaskResult(
                     logger = logger,
                     retryHandler = { baseExtraInfo.executionHistories.size < 2 },
                     startTime = pasteTask.modifyTime,
@@ -69,8 +67,8 @@ class CleanPasteTaskExecutor(
                     }
                 }
             } catch (e: Throwable) {
-                val baseExtraInfo = taskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class)
-                return taskUtils.createFailurePasteTaskResult(
+                val baseExtraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class)
+                return TaskUtils.createFailurePasteTaskResult(
                     logger = logger,
                     retryHandler = { baseExtraInfo.executionHistories.size < 2 },
                     startTime = pasteTask.modifyTime,

@@ -10,9 +10,9 @@ import com.crosspaste.net.clientapi.SendPasteClientApi
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.extra.SyncExtraInfo
+import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.getJsonUtils
-import com.crosspaste.utils.getTaskUtils
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
@@ -31,14 +31,12 @@ class SyncPasteTaskExecutor(
 
     private val jsonUtils = getJsonUtils()
 
-    private val taskUtils = getTaskUtils()
-
     private val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
     override val taskType: Int = TaskType.SYNC_PASTE_TASK
 
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
-        val syncExtraInfo: SyncExtraInfo = taskUtils.getExtraInfo(pasteTask, SyncExtraInfo::class)
+        val syncExtraInfo: SyncExtraInfo = TaskUtils.getExtraInfo(pasteTask, SyncExtraInfo::class)
         val mapResult =
             pasteDao.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
                 val deferredResults: MutableList<Deferred<Pair<String, ClientApiResult>>> = mutableListOf()
@@ -95,7 +93,7 @@ class SyncPasteTaskExecutor(
             return SuccessPasteTaskResult(jsonUtils.JSON.encodeToString(syncExtraInfo))
         } else {
             syncExtraInfo.syncFails.addAll(fails.keys)
-            return taskUtils.createFailurePasteTaskResult(
+            return TaskUtils.createFailurePasteTaskResult(
                 logger = logger,
                 retryHandler = { syncExtraInfo.executionHistories.size < 3 },
                 startTime = pasteTask.modifyTime,

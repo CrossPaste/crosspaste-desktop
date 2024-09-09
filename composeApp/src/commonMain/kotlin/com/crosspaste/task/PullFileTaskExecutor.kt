@@ -21,10 +21,10 @@ import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.extra.PullExtraInfo
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.FileUtils
+import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
-import com.crosspaste.utils.getTaskUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import io.ktor.utils.io.*
@@ -51,12 +51,10 @@ class PullFileTaskExecutor(
         private val fileUtils: FileUtils = getFileUtils()
     }
 
-    private val taskUtils = getTaskUtils()
-
     override val taskType: Int = TaskType.PULL_FILE_TASK
 
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
-        val pullExtraInfo: PullExtraInfo = taskUtils.getExtraInfo(pasteTask, PullExtraInfo::class)
+        val pullExtraInfo: PullExtraInfo = TaskUtils.getExtraInfo(pasteTask, PullExtraInfo::class)
 
         pasteDao.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
             val fileItems = pasteData.getPasteAppearItems().filter { it is PasteFiles }
@@ -196,7 +194,7 @@ class PullFileTaskExecutor(
             pasteboardService.clearRemotePasteboard(pasteData)
         }
 
-        return taskUtils.createFailurePasteTaskResult(
+        return TaskUtils.createFailurePasteTaskResult(
             logger = logger,
             retryHandler = { needRetry },
             startTime = startTime,
