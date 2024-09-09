@@ -91,7 +91,9 @@ kotlin {
             implementation(libs.selenium.devtools)
             implementation(libs.signal.client)
             implementation(libs.system.tray)
-            implementation(libs.theme.detector)
+            implementation("com.github.Dansoftowner:jSystemThemeDetector:3.8") {
+                exclude(group = "net.java.dev.jna")
+            }
             implementation(libs.webp.imageio)
             implementation(libs.zxing.core)
             implementation(libs.zxing.javase)
