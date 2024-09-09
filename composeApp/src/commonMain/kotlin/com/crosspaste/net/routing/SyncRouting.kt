@@ -74,7 +74,7 @@ fun Routing.syncRouting(
                 val decrypt = processor.decryptPreKeySignalMessage(preKeySignalMessage)
 
                 try {
-                    val syncInfo = jsonUtils.JSON.decodeFromString<SyncInfo>(String(decrypt, Charsets.UTF_8))
+                    val syncInfo = jsonUtils.JSON.decodeFromString<SyncInfo>(decrypt.decodeToString())
                     syncManager.updateSyncInfo(syncInfo)
                     logger.info { "$appInstanceId createSession to ${appInfo.appInstanceId} success" }
                     successResponse(call)
@@ -118,7 +118,7 @@ fun Routing.syncRouting(
     post("/sync/trust") {
         getAppInstanceId(call)?.let { appInstanceId ->
             val requestTrust = call.receive(RequestTrust::class)
-            if (requestTrust.token == String(appTokenService.token).toInt()) {
+            if (requestTrust.token == appTokenService.token.concatToString().toInt()) {
                 val signalAddress = SignalAddress(appInstanceId, 1)
                 signalProtocolStore.saveIdentity(
                     signalAddress,
