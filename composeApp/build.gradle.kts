@@ -128,6 +128,7 @@ kotlin {
                 exclude(group = "io.opentelemetry")
                 exclude(group = "io.opentelemetry.semconv")
                 exclude(group = "net.java.dev.jna", module = "jna-jpms")
+                exclude(group = "net.java.dev.jna", module = "jna-platform-jpms")
                 exclude(group = "org.seleniumhq.selenium", module = "selenium-firefox-driver")
                 exclude(group = "org.seleniumhq.selenium", module = "selenium-edge-driver")
                 exclude(group = "org.seleniumhq.selenium", module = "selenium-ie-driver")
