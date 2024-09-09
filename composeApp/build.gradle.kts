@@ -72,6 +72,7 @@ kotlin {
             implementation(libs.imageio.jpeg)
             implementation(libs.jmdns)
             implementation(libs.jna)
+            implementation(libs.jna.platform)
             implementation(libs.jnativehook)
             implementation(libs.jsoup)
             implementation(libs.koin.core)
@@ -91,7 +92,7 @@ kotlin {
             implementation(libs.signal.client)
             implementation(libs.system.tray)
             implementation("com.github.Dansoftowner:jSystemThemeDetector:3.8") {
-                exclude("net.java.dev.jna")
+                exclude(group = "net.java.dev.jna")
             }
             implementation(libs.webp.imageio)
             implementation(libs.zxing.core)
