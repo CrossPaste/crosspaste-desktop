@@ -1,8 +1,7 @@
 package com.crosspaste.image
 
-import com.crosspaste.utils.ConcurrentPlatformMap
 import com.crosspaste.utils.PlatformLock
-import com.crosspaste.utils.createConcurrentPlatformMap
+import io.ktor.util.collections.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -44,7 +43,7 @@ class ConcurrentLoaderTest {
 }
 
 class TestConcurrentLoader : ConcurrentLoader<String, String> {
-    override val lockMap: ConcurrentPlatformMap<String, PlatformLock> = createConcurrentPlatformMap()
+    override val lockMap: ConcurrentMap<String, PlatformLock> = ConcurrentMap()
 
     val saveKeys: MutableList<String> = mutableListOf()
 
