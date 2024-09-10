@@ -66,7 +66,6 @@ import com.crosspaste.log.initLogger
 import com.crosspaste.net.DesktopPasteBonjourService
 import com.crosspaste.net.DesktopServerFactory
 import com.crosspaste.net.DesktopServerModule
-import com.crosspaste.net.DesktopSyncInfoFactory
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.net.PasteClient
 import com.crosspaste.net.PasteServer
@@ -240,7 +239,7 @@ class CrossPaste {
                     }
                     single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<PasteServer<*, *>>() }) }
                     single<GlobalCoroutineScope> { GlobalCoroutineScopeImpl }
-                    single<SyncInfoFactory> { DesktopSyncInfoFactory(get(), get()) }
+                    single<SyncInfoFactory> { SyncInfoFactory(get(), get()) }
                     single<AppPathProvider> { appPathProvider }
                     single<UserDataPathProvider> { UserDataPathProvider(get(), getPlatformPathProvider()) }
                     single<FilePersist> { FilePersist }
