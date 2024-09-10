@@ -75,9 +75,6 @@ import com.crosspaste.net.ServerModule
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.SyncRefresher
 import com.crosspaste.net.TelnetHelper
-import com.crosspaste.net.clientapi.DesktopPullClientApi
-import com.crosspaste.net.clientapi.DesktopSendPasteClientApi
-import com.crosspaste.net.clientapi.DesktopSyncClientApi
 import com.crosspaste.net.clientapi.PullClientApi
 import com.crosspaste.net.clientapi.SendPasteClientApi
 import com.crosspaste.net.clientapi.SyncClientApi
@@ -289,9 +286,9 @@ class CrossPaste {
                     }
                     single<PasteBonjourService> { DesktopPasteBonjourService(get(), get(), get()) }
                     single<TelnetHelper> { TelnetHelper(get<PasteClient>()) }
-                    single<SyncClientApi> { DesktopSyncClientApi(get(), get()) }
-                    single<SendPasteClientApi> { DesktopSendPasteClientApi(get(), get()) }
-                    single<PullClientApi> { DesktopPullClientApi(get(), get()) }
+                    single<SyncClientApi> { SyncClientApi(get(), get(), get()) }
+                    single<SendPasteClientApi> { SendPasteClientApi(get(), get()) }
+                    single<PullClientApi> { PullClientApi(get(), get()) }
                     single<SyncManager> {
                         SyncManager(
                             get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
