@@ -122,6 +122,7 @@ import com.crosspaste.realm.RealmManager
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.realm.signal.SignalRealm
 import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
+import com.crosspaste.realm.task.PasteTaskRealm
 import com.crosspaste.serializer.PreKeyBundleSerializer
 import com.crosspaste.signal.DesktopPreKeySignalMessageFactory
 import com.crosspaste.signal.DesktopPreKeyStore
@@ -225,53 +226,48 @@ class CrossPaste {
                 module {
                     // simple component
                     single<AppEnv> { appEnv }
-                    single<AppInfoFactory> { DesktopAppInfoFactory(get()) }
-                    single<AppInfo> { get<AppInfoFactory>().createAppInfo() }
-                    single<AppLock> { DesktopAppLaunch }
-                    single<AppUrls> { DesktopAppUrls }
-                    single<AppLaunchState> { DesktopAppLaunch.launch() }
-                    single<AppStartUpService> { DesktopAppStartUpService(get(), get()) }
-                    single<AppRestartService> { DesktopAppRestartService }
                     single<AppExitService> { DesktopAppExitService }
+                    single<AppInfo> { get<AppInfoFactory>().createAppInfo() }
+                    single<AppInfoFactory> { DesktopAppInfoFactory(get()) }
+                    single<AppLaunchState> { DesktopAppLaunch.launch() }
+                    single<AppLock> { DesktopAppLaunch }
+                    single<AppPathProvider> { appPathProvider }
+                    single<AppRestartService> { DesktopAppRestartService }
+                    single<AppStartUpService> { DesktopAppStartUpService(get(), get()) }
                     single<AppUpdateService> { DesktopAppUpdateService(get(), get(), get(), get(), get()) }
+                    single<AppUrls> { DesktopAppUrls }
+                    single<CacheManager> { CacheManagerImpl(get(), get()) }
+                    single<ConfigManager> { configManager }
+                    single<CrossPasteLogger> { crossPasteLogger }
+                    single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<PasteServer<*, *>>() }) }
+                    single<FileExtImageLoader> { DesktopFileExtLoader(get()) }
+                    single<FilePersist> { FilePersist }
+                    single<GlobalCoroutineScope> { GlobalCoroutineScopeImpl }
+                    single<KLogger> { CrossPaste.logger }
+                    single<PasteIDGenerator> { DesktopPasteIDGeneratorFactory(get()).createIDGenerator() }
+                    single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
+                    single<SyncInfoFactory> { SyncInfoFactory(get(), get()) }
+                    single<ThumbnailLoader> { DesktopThumbnailLoader }
+                    single<UserDataPathProvider> { UserDataPathProvider(get(), getPlatformPathProvider()) }
                     single<VersionCompatibilityChecker> {
                         get<AppInfoFactory>().createVersionCompatibilityChecker()
                     }
-                    single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<PasteServer<*, *>>() }) }
-                    single<GlobalCoroutineScope> { GlobalCoroutineScopeImpl }
-                    single<SyncInfoFactory> { SyncInfoFactory(get(), get()) }
-                    single<AppPathProvider> { appPathProvider }
-                    single<UserDataPathProvider> { UserDataPathProvider(get(), getPlatformPathProvider()) }
-                    single<FilePersist> { FilePersist }
-                    single<ConfigManager> { configManager }
-                    single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
-                    single<PasteIDGenerator> { DesktopPasteIDGeneratorFactory(get()).createIDGenerator() }
-                    single<CacheManager> { CacheManagerImpl(get(), get()) }
-                    single<CrossPasteLogger> { crossPasteLogger }
-                    single<KLogger> { CrossPaste.logger }
-                    single<FileExtImageLoader> { DesktopFileExtLoader(get()) }
-                    single<ThumbnailLoader> { DesktopThumbnailLoader }
 
                     // realm component
-                    single<RealmManager> { RealmManager.createRealmManager(get()) }
+                    single<PasteRealm> { PasteRealm(get(), get(), get(), get(), lazy { get() }) }
+                    single<PasteTaskRealm> { PasteTaskRealm(get()) }
                     single<Realm> { get<RealmManager>().realm }
+                    single<RealmManager> { RealmManager.createRealmManager(get()) }
                     single<SignalRealm> { SignalRealm(get()) }
                     single<SyncRuntimeInfoRealm> { SyncRuntimeInfoRealm(get()) }
-                    single<PasteRealm> { PasteRealm(get(), get(), get(), get(), lazy { get() }) }
-                    single<com.crosspaste.realm.task.PasteTaskRealm> {
-                        com.crosspaste.realm.task.PasteTaskRealm(
-                            get(),
-                        )
-                    }
 
                     // net component
+                    single<DeviceListener> { get<DeviceManager>() }
+                    single<DeviceManager> { DeviceManager(get(), get(), get(), get()) }
+                    single<ExceptionHandler> { DesktopExceptionHandler() }
+                    single<FaviconLoader> { DesktopFaviconLoader(get()) }
+                    single<PasteBonjourService> { DesktopPasteBonjourService(get(), get(), get()) }
                     single<PasteClient> { PasteClient(get<AppInfo>(), get(), get()) }
-                    single<ServerModule> {
-                        DesktopServerModule(
-                            get(), get(), get(), get(), get(), get(), get(), get(),
-                            get(), get(), get(), get(), get(), get(), get(),
-                        )
-                    }
                     single<PasteServer<*, *>> {
                         PasteServer(
                             get(),
@@ -279,15 +275,18 @@ class CrossPaste {
                             get(),
                         )
                     }
-                    single<ExceptionHandler> { DesktopExceptionHandler() }
+                    single<PullClientApi> { PullClientApi(get(), get()) }
+                    single<SendPasteClientApi> { SendPasteClientApi(get(), get()) }
                     single<ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>> {
                         DesktopServerFactory()
                     }
-                    single<PasteBonjourService> { DesktopPasteBonjourService(get(), get(), get()) }
-                    single<TelnetHelper> { TelnetHelper(get<PasteClient>()) }
+                    single<ServerModule> {
+                        DesktopServerModule(
+                            get(), get(), get(), get(), get(), get(), get(), get(),
+                            get(), get(), get(), get(), get(), get(), get(),
+                        )
+                    }
                     single<SyncClientApi> { SyncClientApi(get(), get(), get()) }
-                    single<SendPasteClientApi> { SendPasteClientApi(get(), get()) }
-                    single<PullClientApi> { PullClientApi(get(), get()) }
                     single<SyncManager> {
                         SyncManager(
                             get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
@@ -295,33 +294,50 @@ class CrossPaste {
                         )
                     }
                     single<SyncRefresher> { get<SyncManager>() }
-                    single<DeviceManager> { DeviceManager(get(), get(), get(), get()) }
-                    single<DeviceListener> { get<DeviceManager>() }
-                    single<FaviconLoader> { DesktopFaviconLoader(get()) }
+                    single<TelnetHelper> { TelnetHelper(get<PasteClient>()) }
 
                     // signal component
                     single<IdentityKeyStore> { getPasteIdentityKeyStoreFactory(get(), get()).createIdentityKeyStore() }
-                    single<SessionStore> { DesktopSessionStore(get()) }
-                    single<PreKeyStore> { DesktopPreKeyStore(get()) }
-                    single<PreKeySignalMessageFactory> { DesktopPreKeySignalMessageFactory() }
                     single<PreKeyBundleCodecs> { PreKeyBundleSerializer }
-                    single<SignedPreKeyStore> { DesktopSignedPreKeyStore(get()) }
-                    single<SignalProtocolStoreInterface> { DesktopSignalProtocolStore(get(), get(), get(), get()) }
+                    single<PreKeySignalMessageFactory> { DesktopPreKeySignalMessageFactory() }
+                    single<PreKeyStore> { DesktopPreKeyStore(get()) }
                     single<SessionBuilderFactory> { DesktopSessionBuilderFactory(get()) }
-                    single<SignalProcessorCache> { SignalProcessorCacheImpl(get()) }
-                    single<SignalClientEncryptPlugin> { SignalClientEncryptPlugin(get()) }
+                    single<SessionStore> { DesktopSessionStore(get()) }
                     single<SignalClientDecryptPlugin> { SignalClientDecryptPlugin(get()) }
-                    single<SignalServerEncryptPluginFactory> { SignalServerEncryptPluginFactory(get()) }
+                    single<SignalClientEncryptPlugin> { SignalClientEncryptPlugin(get()) }
+                    single<SignalProcessorCache> { SignalProcessorCacheImpl(get()) }
+                    single<SignalProtocolStoreInterface> { DesktopSignalProtocolStore(get(), get(), get(), get()) }
                     single<SignalServerDecryptionPluginFactory> { SignalServerDecryptionPluginFactory(get()) }
+                    single<SignalServerEncryptPluginFactory> { SignalServerEncryptPluginFactory(get()) }
+                    single<SignedPreKeyStore> { DesktopSignedPreKeyStore(get()) }
 
                     // paste component
+                    single<ChromeService> { DesktopChromeService(get(), get()) }
+                    single<CleanPasteScheduler> { CleanPasteScheduler(get(), get(), get()) }
+                    single<CurrentPaste> { DesktopCurrentPaste(lazy { get() }) }
+                    single<DesktopPasteSearchService> { DesktopPasteSearchService(get(), get(), get()) }
                     single<FilesTypePlugin> { FilesTypePlugin(get(), get(), get()) }
                     single<HtmlTypePlugin> { HtmlTypePlugin(get()) }
                     single<ImageTypePlugin> { ImageTypePlugin(get(), get()) }
+                    single<PasteboardService> { getDesktopPasteboardService(get(), get(), get(), get(), get(), get()) }
+                    single<PastePreviewService> { DesktopPastePreviewService(get()) }
+                    single<PasteSearchService> { get<DesktopPasteSearchService>() }
+                    single<PasteSyncProcessManager<ObjectId>> { DesktopPasteSyncProcessManager() }
+                    single<TaskExecutor> {
+                        TaskExecutor(
+                            listOf(
+                                SyncPasteTaskExecutor(get(), get(), get()),
+                                DeletePasteTaskExecutor(get()),
+                                PullFileTaskExecutor(get(), get(), get(), get(), get(), get()),
+                                CleanPasteTaskExecutor(get(), get()),
+                                Html2ImageTaskExecutor(lazy { get() }, get(), get(), get()),
+                                PullIconTaskExecutor(get(), get(), get(), get()),
+                            ),
+                            get(),
+                        )
+                    }
                     single<TextTypePlugin> { TextTypePlugin() }
                     single<TextUpdater> { get<TextTypePlugin>() }
-                    single<UrlTypePlugin> { UrlTypePlugin() }
-                    single<PasteboardService> { getDesktopPasteboardService(get(), get(), get(), get(), get(), get()) }
                     single<TransferableConsumer> {
                         DesktopTransferableConsumer(
                             get(),
@@ -354,49 +370,30 @@ class CrossPaste {
                             ),
                         )
                     }
-                    single<ChromeService> { DesktopChromeService(get(), get()) }
-                    single<PastePreviewService> { DesktopPastePreviewService(get()) }
-                    single<PasteSyncProcessManager<ObjectId>> { DesktopPasteSyncProcessManager() }
-                    single<DesktopPasteSearchService> { DesktopPasteSearchService(get(), get(), get()) }
-                    single<CurrentPaste> { DesktopCurrentPaste(lazy { get() }) }
-                    single<PasteSearchService> { get<DesktopPasteSearchService>() }
-                    single<CleanPasteScheduler> { CleanPasteScheduler(get(), get(), get()) }
-                    single<TaskExecutor> {
-                        TaskExecutor(
-                            listOf(
-                                SyncPasteTaskExecutor(get(), get(), get()),
-                                DeletePasteTaskExecutor(get()),
-                                PullFileTaskExecutor(get(), get(), get(), get(), get(), get()),
-                                CleanPasteTaskExecutor(get(), get()),
-                                Html2ImageTaskExecutor(lazy { get() }, get(), get(), get()),
-                                PullIconTaskExecutor(get(), get(), get(), get()),
-                            ),
-                            get(),
-                        )
-                    }
+                    single<UrlTypePlugin> { UrlTypePlugin() }
 
                     // ui component
-                    single<DesktopAppWindowManager> { getDesktopAppWindowManager(lazy { get() }, get(), get()) }
-                    single<AppWindowManager> { get<DesktopAppWindowManager>() }
-                    single<AppTokenService> { DesktopAppTokenService(get()) }
-                    single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
-                    single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get()) }
-                    single<ShortcutKeysListener> { get<DesktopShortcutKeysListener>() }
-                    single<NativeKeyListener> { get<DesktopShortcutKeysListener>() }
-                    single<DesktopMouseListener> { DesktopMouseListener }
-                    single<NativeMouseListener> { get<DesktopMouseListener>() }
                     single<ActiveGraphicsDevice> { get<DesktopMouseListener>() }
-                    single<GlobalListener> { DesktopGlobalListener(get(), get(), get(), get(), get()) }
-                    single<ThemeDetector> { DesktopThemeDetector(get()) }
-                    single<PasteResourceLoader> { DesktopAbsolutePasteResourceLoader }
-                    single<ToastManager> { DesktopToastManager() }
-                    single<NotificationManager> { DesktopNotificationManager(get(), get()) }
-                    single<IconStyle> { DesktopIconStyle(get()) }
-                    single<UISupport> { DesktopUISupport(get(), get(), get(), get()) }
-                    single<ShortcutKeys> { DesktopShortcutKeys(get()) }
-                    single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get()) }
-                    single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get(), get()) }
+                    single<AppTokenService> { DesktopAppTokenService(get()) }
+                    single<AppWindowManager> { get<DesktopAppWindowManager>() }
+                    single<DesktopAppWindowManager> { getDesktopAppWindowManager(lazy { get() }, get(), get()) }
+                    single<DesktopMouseListener> { DesktopMouseListener }
+                    single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get()) }
                     single<DialogService> { DesktopDialogService() }
+                    single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
+                    single<GlobalListener> { DesktopGlobalListener(get(), get(), get(), get(), get()) }
+                    single<IconStyle> { DesktopIconStyle(get()) }
+                    single<NativeKeyListener> { get<DesktopShortcutKeysListener>() }
+                    single<NativeMouseListener> { get<DesktopMouseListener>() }
+                    single<NotificationManager> { DesktopNotificationManager(get(), get()) }
+                    single<PasteResourceLoader> { DesktopAbsolutePasteResourceLoader }
+                    single<ShortcutKeys> { DesktopShortcutKeys(get()) }
+                    single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get(), get()) }
+                    single<ShortcutKeysListener> { get<DesktopShortcutKeysListener>() }
+                    single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get()) }
+                    single<ThemeDetector> { DesktopThemeDetector(get()) }
+                    single<ToastManager> { DesktopToastManager() }
+                    single<UISupport> { DesktopUISupport(get(), get(), get(), get()) }
                 }
             return GlobalContext.startKoin {
                 modules(appModule)
