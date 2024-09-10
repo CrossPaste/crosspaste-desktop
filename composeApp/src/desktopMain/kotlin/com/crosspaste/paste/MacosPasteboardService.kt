@@ -4,9 +4,8 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.platform.macos.api.MacosApi
 import com.crosspaste.realm.paste.PasteRealm
-import com.crosspaste.utils.DesktopControlUtils.ensureMinExecutionTime
-import com.crosspaste.utils.DesktopControlUtils.exponentialBackoffUntilValid
 import com.crosspaste.utils.cpuDispatcher
+import com.crosspaste.utils.getControlUtils
 import com.sun.jna.ptr.IntByReference
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -31,6 +30,8 @@ class MacosPasteboardService(
     override val pasteProducer: TransferableProducer,
 ) : AbstractPasteboardService() {
     override val logger: KLogger = KotlinLogging.logger {}
+
+    private val controlUtils = getControlUtils()
 
     private var changeCount = configManager.config.lastPasteboardChangeCount
 
@@ -71,12 +72,12 @@ class MacosPasteboardService(
                                     logger.debug { "Ignoring crosspaste change" }
                                 } else {
                                     val source =
-                                        ensureMinExecutionTime(delayTime = 20) {
+                                        controlUtils.ensureMinExecutionTime(delayTime = 20) {
                                             appWindowManager.getCurrentActiveAppName()
                                         }
 
                                     val contents =
-                                        exponentialBackoffUntilValid(
+                                        controlUtils.exponentialBackoffUntilValid(
                                             initTime = 20L,
                                             maxTime = 1000L,
                                             isValidResult = ::isValidContents,

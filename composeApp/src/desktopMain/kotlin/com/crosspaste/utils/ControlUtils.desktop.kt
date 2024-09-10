@@ -1,7 +1,7 @@
 package com.crosspaste.utils
 
-import co.touchlab.stately.concurrency.AtomicLong
 import kotlinx.coroutines.delay
+import java.util.concurrent.atomic.AtomicLong
 
 actual fun getControlUtils(): ControlUtils {
     return DesktopControlUtils

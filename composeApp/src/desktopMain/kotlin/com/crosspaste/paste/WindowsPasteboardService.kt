@@ -5,9 +5,8 @@ import com.crosspaste.config.ConfigManager
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.platform.windows.api.User32
 import com.crosspaste.realm.paste.PasteRealm
-import com.crosspaste.utils.DesktopControlUtils.blockEnsureMinExecutionTime
-import com.crosspaste.utils.DesktopControlUtils.blockExponentialBackoffUntilValid
 import com.crosspaste.utils.cpuDispatcher
+import com.crosspaste.utils.getControlUtils
 import com.crosspaste.utils.ioDispatcher
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.Kernel32
@@ -36,6 +35,8 @@ class WindowsPasteboardService(
     override val pasteProducer: TransferableProducer,
 ) : AbstractPasteboardService(), User32.WNDPROC {
     override val logger: KLogger = KotlinLogging.logger {}
+
+    private val controlUtils = getControlUtils()
 
     @Volatile
     private var existNew = false
@@ -157,12 +158,12 @@ class WindowsPasteboardService(
     private fun onChange() {
         try {
             val source =
-                blockEnsureMinExecutionTime(delayTime = 20) {
+                controlUtils.blockEnsureMinExecutionTime(delayTime = 20) {
                     appWindowManager.getCurrentActiveAppName()
                 }
 
             val contents =
-                blockExponentialBackoffUntilValid(
+                controlUtils.blockExponentialBackoffUntilValid(
                     initTime = 20L,
                     maxTime = 1000L,
                     isValidResult = ::isValidContents,
