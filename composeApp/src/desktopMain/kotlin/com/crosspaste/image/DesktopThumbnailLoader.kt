@@ -3,11 +3,10 @@ package com.crosspaste.image
 import com.crosspaste.info.PasteInfos.DIMENSIONS
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.createPasteInfoWithoutConverter
-import com.crosspaste.utils.ConcurrentPlatformMap
 import com.crosspaste.utils.PlatformLock
-import com.crosspaste.utils.createConcurrentPlatformMap
 import com.crosspaste.utils.fileNameRemoveExtension
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.util.collections.*
 import okio.Path
 import okio.Path.Companion.toOkioPath
 import org.jetbrains.skia.Image
@@ -22,7 +21,7 @@ object DesktopThumbnailLoader : ConcurrentLoader<Path, Path>, ThumbnailLoader {
 
     private val logger = KotlinLogging.logger {}
 
-    override val lockMap: ConcurrentPlatformMap<String, PlatformLock> = createConcurrentPlatformMap()
+    override val lockMap: ConcurrentMap<String, PlatformLock> = ConcurrentMap()
 
     override fun resolve(
         key: String,

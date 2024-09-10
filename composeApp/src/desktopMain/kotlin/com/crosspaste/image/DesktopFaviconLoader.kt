@@ -3,11 +3,10 @@ package com.crosspaste.image
 import com.crosspaste.app.AppFileType
 import com.crosspaste.net.DesktopProxy
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.utils.ConcurrentPlatformMap
 import com.crosspaste.utils.PlatformLock
-import com.crosspaste.utils.createConcurrentPlatformMap
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
+import io.ktor.util.collections.*
 import okio.Path
 import java.io.FileOutputStream
 import java.net.InetSocketAddress
@@ -24,7 +23,7 @@ class DesktopFaviconLoader(
 
     private val logger = KotlinLogging.logger {}
 
-    override val lockMap: ConcurrentPlatformMap<String, PlatformLock> = createConcurrentPlatformMap()
+    override val lockMap: ConcurrentMap<String, PlatformLock> = ConcurrentMap()
 
     private fun getGoogleIconUrl(host: String): String {
         return "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://$host&size=32"

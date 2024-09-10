@@ -1,13 +1,13 @@
 package com.crosspaste.image
 
-import com.crosspaste.utils.ConcurrentPlatformMap
 import com.crosspaste.utils.Loader
 import com.crosspaste.utils.PlatformLock
 import com.crosspaste.utils.createPlatformLock
+import io.ktor.util.collections.*
 
 interface ConcurrentLoader<T, R> : Loader<T, R> {
 
-    val lockMap: ConcurrentPlatformMap<String, PlatformLock>
+    val lockMap: ConcurrentMap<String, PlatformLock>
 
     fun resolve(
         key: String,
