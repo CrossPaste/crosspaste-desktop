@@ -6,9 +6,8 @@ import com.crosspaste.platform.linux.api.X11Api
 import com.crosspaste.platform.linux.api.XFixes
 import com.crosspaste.platform.linux.api.XFixesSelectionNotifyEvent
 import com.crosspaste.realm.paste.PasteRealm
-import com.crosspaste.utils.DesktopControlUtils.ensureMinExecutionTime
-import com.crosspaste.utils.DesktopControlUtils.exponentialBackoffUntilValid
 import com.crosspaste.utils.cpuDispatcher
+import com.crosspaste.utils.getControlUtils
 import com.sun.jna.NativeLong
 import com.sun.jna.platform.unix.X11
 import com.sun.jna.platform.unix.X11.XA_PRIMARY
@@ -40,6 +39,8 @@ class LinuxPasteboardService(
     }
 
     override val logger: KLogger = KotlinLogging.logger {}
+
+    private val controlUtils = getControlUtils()
 
     private var changeCount = configManager.config.lastPasteboardChangeCount
 
@@ -107,12 +108,12 @@ class LinuxPasteboardService(
                                     changeCount++
 
                                     val source =
-                                        ensureMinExecutionTime(delayTime = 20) {
+                                        controlUtils.ensureMinExecutionTime(delayTime = 20) {
                                             appWindowManager.getCurrentActiveAppName()
                                         }
 
                                     val contents =
-                                        exponentialBackoffUntilValid(
+                                        controlUtils.exponentialBackoffUntilValid(
                                             initTime = 20L,
                                             maxTime = 1000L,
                                             isValidResult = ::isValidContents,
