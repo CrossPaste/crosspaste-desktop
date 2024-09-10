@@ -1,24 +1,15 @@
 package com.crosspaste.image
 
-import com.crosspaste.app.AppFileType
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.platform.linux.FreedesktopUtils.saveExtIcon
 import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.platform.windows.JIconExtract
-import com.crosspaste.utils.PlatformLock
-import com.crosspaste.utils.extension
-import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.util.collections.*
 import okio.Path
 
 class DesktopFileExtLoader(
-    private val userDataPathProvider: UserDataPathProvider,
-) : ConcurrentLoader<Path, Path>, FileExtImageLoader {
-
-    private val logger = KotlinLogging.logger {}
-
-    override val lockMap: ConcurrentMap<String, PlatformLock> = ConcurrentMap()
+    userDataPathProvider: UserDataPathProvider,
+) : AbstractFileExtImageLoader(userDataPathProvider) {
 
     private val platform = getPlatform()
 
@@ -33,34 +24,12 @@ class DesktopFileExtLoader(
             throw IllegalStateException("Unsupported platform: $platform")
         }
 
-    override fun resolve(
-        key: String,
-        value: Path,
-    ): Path {
-        return userDataPathProvider.resolve("$key.png", AppFileType.FILE_EXT_ICON)
-    }
-
-    override fun exist(result: Path): Boolean {
-        return result.toFile().exists()
-    }
-
-    override fun loggerWarning(
-        value: Path,
-        e: Exception,
-    ) {
-        logger.warn { "Failed to load icon for file extension: $value" }
-    }
-
     override fun save(
         key: String,
         value: Path,
         result: Path,
     ) {
         toSave(key, value, result)
-    }
-
-    override fun convertToKey(value: Path): String {
-        return value.extension
     }
 }
 
