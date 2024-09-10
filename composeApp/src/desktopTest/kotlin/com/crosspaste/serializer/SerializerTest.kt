@@ -1,11 +1,11 @@
 package com.crosspaste.serializer
 
-import com.crosspaste.dao.paste.PasteCollection
-import com.crosspaste.dao.paste.PasteData
-import com.crosspaste.dao.paste.PasteState
-import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.plugin.type.TextTypePlugin
+import com.crosspaste.realm.paste.PasteCollection
+import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteState
+import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.utils.DesktopJsonUtils
 import com.crosspaste.utils.getCodecsUtils
 import io.realm.kotlin.ext.realmListOf
