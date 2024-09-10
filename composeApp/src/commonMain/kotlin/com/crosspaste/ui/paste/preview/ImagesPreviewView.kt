@@ -10,9 +10,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.crosspaste.LocalKoinApplication
-import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.realm.paste.PasteData
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

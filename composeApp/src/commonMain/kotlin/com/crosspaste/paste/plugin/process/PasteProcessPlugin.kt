@@ -1,6 +1,6 @@
 package com.crosspaste.paste.plugin.process
 
-import com.crosspaste.dao.paste.PasteItem
+import com.crosspaste.realm.paste.PasteItem
 import io.realm.kotlin.MutableRealm
 
 interface PasteProcessPlugin {

@@ -1,8 +1,8 @@
 package com.crosspaste.net.routing
 
-import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.paste.PasteboardService
+import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getAppInstanceId

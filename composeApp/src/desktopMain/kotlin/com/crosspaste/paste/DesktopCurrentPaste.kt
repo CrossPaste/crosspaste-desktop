@@ -1,14 +1,14 @@
 package com.crosspaste.paste
 
-import com.crosspaste.dao.paste.PasteDao
+import com.crosspaste.realm.paste.PasteRealm
 import org.mongodb.kbson.ObjectId
 import java.util.concurrent.atomic.AtomicReference
 
-class DesktopCurrentPaste(private val lazyPasteDao: Lazy<PasteDao>) : CurrentPaste() {
+class DesktopCurrentPaste(private val lazyPasteRealm: Lazy<PasteRealm>) : CurrentPaste() {
 
     private val currentId: AtomicReference<ObjectId?> = AtomicReference<ObjectId?>()
 
-    override val pasteDao: PasteDao by lazy { lazyPasteDao.value }
+    override val pasteRealm: PasteRealm by lazy { lazyPasteRealm.value }
 
     override suspend fun setPasteId(
         id: ObjectId,
@@ -17,7 +17,7 @@ class DesktopCurrentPaste(private val lazyPasteDao: Lazy<PasteDao>) : CurrentPas
         logger.info { "Setting current paste id to $id" }
         currentId.set(id)
         if (updateCreateTime) {
-            pasteDao.updateCreateTime(id)
+            pasteRealm.updateCreateTime(id)
         }
     }
 

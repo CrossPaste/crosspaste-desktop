@@ -10,8 +10,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppWindowManager
-import com.crosspaste.dao.paste.PasteData
-import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteSearchService
 import com.crosspaste.paste.PasteboardService
@@ -19,6 +17,8 @@ import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.paste.item.PasteUrl
+import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.ui.base.MessageType
 import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.paste.detail.HtmlToImageDetailView

@@ -1,7 +1,7 @@
 package com.crosspaste.app
 
-import com.crosspaste.dao.sync.HostInfo
 import com.crosspaste.dto.sync.EndpointInfo
+import com.crosspaste.realm.sync.HostInfo
 
 interface EndpointInfoFactory {
 

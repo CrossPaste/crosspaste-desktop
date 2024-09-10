@@ -1,13 +1,13 @@
 package com.crosspaste.paste
 
 import co.touchlab.stately.concurrency.AtomicLong
-import com.crosspaste.dao.paste.PasteDao
+import com.crosspaste.realm.paste.PasteRealm
 
-class DesktopPasteIDGeneratorFactory(private val pasteDao: PasteDao) :
+class DesktopPasteIDGeneratorFactory(private val pasteRealm: PasteRealm) :
     PasteIDGeneratorFactory() {
 
     override fun createIDGenerator(): PasteIDGenerator {
-        return DesktopPasteIDGenerator(pasteDao.getMaxPasteId())
+        return DesktopPasteIDGenerator(pasteRealm.getMaxPasteId())
     }
 }
 

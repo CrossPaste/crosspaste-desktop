@@ -1,4 +1,4 @@
-package com.crosspaste.dao.signal
+package com.crosspaste.realm.signal
 
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey

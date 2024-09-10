@@ -1,14 +1,13 @@
 package com.crosspaste.task
 
 import com.crosspaste.app.AppFileType
-import com.crosspaste.dao.paste.PasteDao
-import com.crosspaste.dao.task.PasteTask
-import com.crosspaste.dao.task.TaskType
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.PullClientApi
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.realm.paste.PasteRealm
+import com.crosspaste.realm.task.TaskType
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.extra.BaseExtraInfo
 import com.crosspaste.utils.FileUtils
@@ -26,7 +25,7 @@ import okio.FileSystem
 import okio.Path
 
 class PullIconTaskExecutor(
-    private val pasteDao: PasteDao,
+    private val pasteRealm: PasteRealm,
     private val userDataPathProvider: UserDataPathProvider,
     private val pullClientApi: PullClientApi,
     private val syncManager: SyncManager,
@@ -42,10 +41,10 @@ class PullIconTaskExecutor(
 
     private val locks: MutableMap<String, Mutex> = ConcurrentMap()
 
-    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
+    override suspend fun doExecuteTask(pasteTask: com.crosspaste.realm.task.PasteTask): PasteTaskResult {
         val baseExtraInfo: BaseExtraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class)
 
-        pasteDao.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
+        pasteRealm.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
             pasteData.source?.let { source ->
                 locks.getOrPut(source) { Mutex() }.withLock {
                     try {

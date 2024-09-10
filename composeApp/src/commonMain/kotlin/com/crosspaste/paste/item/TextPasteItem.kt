@@ -1,9 +1,9 @@
 package com.crosspaste.paste.item
 
-import com.crosspaste.dao.paste.PasteItem
-import com.crosspaste.dao.paste.PasteState
-import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.realm.paste.PasteItem
+import com.crosspaste.realm.paste.PasteState
+import com.crosspaste.realm.paste.PasteType
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.Index

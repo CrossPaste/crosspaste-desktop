@@ -1,4 +1,4 @@
-package com.crosspaste.dao.task
+package com.crosspaste.realm.task
 
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.Index

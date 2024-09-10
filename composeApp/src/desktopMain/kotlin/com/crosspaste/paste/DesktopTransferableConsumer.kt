@@ -1,16 +1,16 @@
 package com.crosspaste.paste
 
 import com.crosspaste.app.AppInfo
-import com.crosspaste.dao.paste.PasteDao
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.paste.plugin.type.PasteTypePlugin
+import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.utils.LoggerExtension.logExecutionTime
 import com.crosspaste.utils.LoggerExtension.logSuspendExecutionTime
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 open class DesktopTransferableConsumer(
     private val appInfo: AppInfo,
-    private val pasteDao: PasteDao,
+    private val pasteRealm: PasteRealm,
     private val idGenerator: PasteIDGenerator,
     private val pasteProcessPlugins: List<PasteProcessPlugin>,
     pasteTypePlugins: List<PasteTypePlugin>,
@@ -51,7 +51,7 @@ open class DesktopTransferableConsumer(
                 return@logSuspendExecutionTime
             }
 
-            val pasteCollector = PasteCollector(dataFlavorMap.size, appInfo, pasteDao, pasteProcessPlugins)
+            val pasteCollector = PasteCollector(dataFlavorMap.size, appInfo, pasteRealm, pasteProcessPlugins)
 
             try {
                 preCollect(pasteId, dataFlavorMap, pasteTransferable, pasteCollector)

@@ -2,8 +2,6 @@ package com.crosspaste.ui.base
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppUrls
-import com.crosspaste.dao.paste.PasteData
-import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.i18n.GlobalCopywriterImpl.Companion.ZH
 import com.crosspaste.paste.item.FilesPasteItem
@@ -13,6 +11,8 @@ import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.getPlatform
+import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteType
 import com.google.common.io.Files
 import io.github.oshai.kotlinlogging.KotlinLogging
 import okio.FileSystem

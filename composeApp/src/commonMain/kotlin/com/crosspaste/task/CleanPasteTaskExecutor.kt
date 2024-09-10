@@ -2,12 +2,11 @@ package com.crosspaste.task
 
 import com.crosspaste.clean.CleanTime
 import com.crosspaste.config.ConfigManager
-import com.crosspaste.dao.paste.PasteDao
-import com.crosspaste.dao.paste.PasteType
-import com.crosspaste.dao.task.PasteTask
-import com.crosspaste.dao.task.TaskType
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.createFailureResult
+import com.crosspaste.realm.paste.PasteRealm
+import com.crosspaste.realm.paste.PasteType
+import com.crosspaste.realm.task.TaskType
 import com.crosspaste.task.extra.BaseExtraInfo
 import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.getDateUtils
@@ -18,7 +17,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 class CleanPasteTaskExecutor(
-    private val pasteDao: PasteDao,
+    private val pasteRealm: PasteRealm,
     private val configManager: ConfigManager,
 ) : SingleTypeTaskExecutor {
 
@@ -30,17 +29,17 @@ class CleanPasteTaskExecutor(
 
     private val cleanLock = Mutex()
 
-    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
+    override suspend fun doExecuteTask(pasteTask: com.crosspaste.realm.task.PasteTask): PasteTaskResult {
         if (configManager.config.isThresholdCleanup) {
             try {
                 cleanLock.withLock {
                     val imageCleanTime = CleanTime.entries[configManager.config.imageCleanTimeIndex]
                     val imageCleanTimeInstant = dateUtils.getRealmInstant(-imageCleanTime.days)
-                    pasteDao.markDeleteByCleanTime(imageCleanTimeInstant, PasteType.IMAGE)
+                    pasteRealm.markDeleteByCleanTime(imageCleanTimeInstant, PasteType.IMAGE)
 
                     val fileCleanTime = CleanTime.entries[configManager.config.fileCleanTimeIndex]
                     val fileCleanTimeInstant = dateUtils.getRealmInstant(-fileCleanTime.days)
-                    pasteDao.markDeleteByCleanTime(fileCleanTimeInstant, PasteType.FILE)
+                    pasteRealm.markDeleteByCleanTime(fileCleanTimeInstant, PasteType.FILE)
                 }
             } catch (e: Throwable) {
                 val baseExtraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class)
@@ -57,8 +56,8 @@ class CleanPasteTaskExecutor(
         if (configManager.config.isThresholdCleanup) {
             try {
                 cleanLock.withLock {
-                    val allSize = pasteDao.getSize(true)
-                    val favoriteSize = pasteDao.getSize(false)
+                    val allSize = pasteRealm.getSize(true)
+                    val favoriteSize = pasteRealm.getSize(false)
                     val noFavoriteSize = allSize - favoriteSize
                     if (noFavoriteSize > configManager.config.maxStorage * 1024 * 1024) {
                         val cleanSize = noFavoriteSize * configManager.config.cleanupPercentage / 100
@@ -86,7 +85,7 @@ class CleanPasteTaskExecutor(
         totalSize: Long,
     ) {
         // If there's no data, return immediately
-        val minTime = pasteDao.getMinPasteDataCreateTime() ?: return
+        val minTime = pasteRealm.getMinPasteDataCreateTime() ?: return
         val currentTime = RealmInstant.now()
 
         val proportion = minSize.toDouble() / totalSize
@@ -98,7 +97,7 @@ class CleanPasteTaskExecutor(
         var right = currentTime
         var targetTime = estimatedTargetTime
 
-        var size = pasteDao.getSizeByTimeLessThan(targetTime)
+        var size = pasteRealm.getSizeByTimeLessThan(targetTime)
         if (size > minSize) {
             right = targetTime
         } else if (size < minSize) {
@@ -111,7 +110,7 @@ class CleanPasteTaskExecutor(
                     (left.epochSeconds + right.epochSeconds) / 2,
                     (left.nanosecondsOfSecond + right.nanosecondsOfSecond) / 2,
                 )
-            size = pasteDao.getSizeByTimeLessThan(mid)
+            size = pasteRealm.getSizeByTimeLessThan(mid)
 
             if (size >= minSize) {
                 targetTime = mid
@@ -121,6 +120,6 @@ class CleanPasteTaskExecutor(
             }
         }
 
-        pasteDao.markDeleteByCleanTime(targetTime)
+        pasteRealm.markDeleteByCleanTime(targetTime)
     }
 }

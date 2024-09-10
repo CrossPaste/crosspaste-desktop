@@ -69,9 +69,9 @@ import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteSearchService
+import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.ui.CrossPasteTheme
 import com.crosspaste.ui.base.KeyboardView
 import com.crosspaste.ui.base.MenuItem
@@ -479,7 +479,9 @@ fun CrossPasteSearchWindowContent() {
 
                                                     if (currentType != "link") {
                                                         MenuItem(copywriter.getText("link"), textStyle, paddingValues) {
-                                                            pasteSearchService.setPasteType(PasteType.URL)
+                                                            pasteSearchService.setPasteType(
+                                                                PasteType.URL,
+                                                            )
                                                             currentType = "link"
                                                             showTypes = false
                                                             focusRequester.requestFocus() // keep textField focus
@@ -488,7 +490,9 @@ fun CrossPasteSearchWindowContent() {
 
                                                     if (currentType != "html") {
                                                         MenuItem(copywriter.getText("html"), textStyle, paddingValues) {
-                                                            pasteSearchService.setPasteType(PasteType.HTML)
+                                                            pasteSearchService.setPasteType(
+                                                                PasteType.HTML,
+                                                            )
                                                             currentType = "html"
                                                             showTypes = false
                                                             focusRequester.requestFocus() // keep textField focus
@@ -501,7 +505,9 @@ fun CrossPasteSearchWindowContent() {
                                                             textStyle,
                                                             paddingValues,
                                                         ) {
-                                                            pasteSearchService.setPasteType(PasteType.IMAGE)
+                                                            pasteSearchService.setPasteType(
+                                                                PasteType.IMAGE,
+                                                            )
                                                             currentType = "image"
                                                             showTypes = false
                                                             focusRequester.requestFocus() // keep textField focus
@@ -510,7 +516,9 @@ fun CrossPasteSearchWindowContent() {
 
                                                     if (currentType != "file") {
                                                         MenuItem(copywriter.getText("file"), textStyle, paddingValues) {
-                                                            pasteSearchService.setPasteType(PasteType.FILE)
+                                                            pasteSearchService.setPasteType(
+                                                                PasteType.FILE,
+                                                            )
                                                             currentType = "file"
                                                             showTypes = false
                                                             focusRequester.requestFocus() // keep textField focus

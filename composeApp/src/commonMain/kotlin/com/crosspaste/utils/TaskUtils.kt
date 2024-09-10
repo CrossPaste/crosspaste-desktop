@@ -1,10 +1,9 @@
 package com.crosspaste.utils
 
-import com.crosspaste.dao.task.ExecutionHistory
-import com.crosspaste.dao.task.PasteTask
-import com.crosspaste.dao.task.PasteTaskExtraInfo
-import com.crosspaste.dao.task.TaskStatus
 import com.crosspaste.net.clientapi.FailureResult
+import com.crosspaste.realm.task.ExecutionHistory
+import com.crosspaste.realm.task.PasteTaskExtraInfo
+import com.crosspaste.realm.task.TaskStatus
 import com.crosspaste.task.FailurePasteTaskResult
 import com.crosspaste.task.extra.BaseExtraInfo
 import io.github.oshai.kotlinlogging.KLogger
@@ -26,8 +25,8 @@ object TaskUtils {
         pasteDataId: ObjectId?,
         taskType: Int,
         extraInfo: PasteTaskExtraInfo = BaseExtraInfo(),
-    ): PasteTask {
-        return PasteTask().apply {
+    ): com.crosspaste.realm.task.PasteTask {
+        return com.crosspaste.realm.task.PasteTask().apply {
             this.pasteDataId = pasteDataId
             this.taskType = taskType
             this.status = TaskStatus.PREPARING
@@ -39,7 +38,7 @@ object TaskUtils {
 
     @OptIn(InternalSerializationApi::class)
     fun <T : PasteTaskExtraInfo> getExtraInfo(
-        pasteTask: PasteTask,
+        pasteTask: com.crosspaste.realm.task.PasteTask,
         kclass: KClass<T>,
     ): T {
         val serializer = kclass.serializer()
@@ -47,7 +46,7 @@ object TaskUtils {
     }
 
     fun createFailExtraInfo(
-        pasteTask: PasteTask,
+        pasteTask: com.crosspaste.realm.task.PasteTask,
         throwable: Throwable,
     ): String {
         val currentTime = Clock.System.now().toEpochMilliseconds()

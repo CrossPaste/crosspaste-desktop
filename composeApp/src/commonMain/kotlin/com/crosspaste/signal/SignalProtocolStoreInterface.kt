@@ -1,7 +1,7 @@
 package com.crosspaste.signal
 
-import com.crosspaste.dao.signal.SignalDao
 import com.crosspaste.dto.sync.RequestTrust
+import com.crosspaste.realm.signal.SignalRealm
 
 interface SignalProtocolStoreInterface {
 
@@ -26,7 +26,7 @@ interface SignalProtocolStoreInterface {
 
     fun existSession(address: SignalAddress): Boolean
 
-    fun generatePreKeyBundle(signalDao: SignalDao): PreKeyBundleInterface
+    fun generatePreKeyBundle(signalRealm: SignalRealm): PreKeyBundleInterface
 
     fun containsSignedPreKey(signedPreKeyId: Int): Boolean
 }

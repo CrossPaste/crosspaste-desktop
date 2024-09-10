@@ -1,7 +1,7 @@
 package com.crosspaste.paste
 
 import androidx.compose.runtime.snapshots.SnapshotStateMap
-import com.crosspaste.dao.paste.PasteData
+import com.crosspaste.realm.paste.PasteData
 import org.mongodb.kbson.ObjectId
 
 interface PastePreviewService {

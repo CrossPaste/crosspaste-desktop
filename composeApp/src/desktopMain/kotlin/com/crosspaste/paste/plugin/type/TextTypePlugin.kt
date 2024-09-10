@@ -1,12 +1,12 @@
 package com.crosspaste.paste.plugin.type
 
-import com.crosspaste.dao.paste.PasteItem
-import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.toPasteDataFlavor
+import com.crosspaste.realm.paste.PasteItem
+import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.utils.getCodecsUtils
 import io.realm.kotlin.MutableRealm
 import java.awt.datatransfer.DataFlavor

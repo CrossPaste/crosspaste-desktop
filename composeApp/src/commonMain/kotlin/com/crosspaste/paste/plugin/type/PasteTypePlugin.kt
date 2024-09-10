@@ -1,9 +1,9 @@
 package com.crosspaste.paste.plugin.type
 
-import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteTransferable
+import com.crosspaste.realm.paste.PasteItem
 
 interface PasteTypePlugin {
 

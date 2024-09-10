@@ -1,4 +1,4 @@
-package com.crosspaste.dao.sync
+package com.crosspaste.realm.sync
 
 import com.crosspaste.dto.sync.SyncInfo
 import io.realm.kotlin.ext.realmListOf

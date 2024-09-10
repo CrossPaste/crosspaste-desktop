@@ -39,14 +39,6 @@ import com.crosspaste.app.getDesktopAppWindowManager
 import com.crosspaste.clean.CleanPasteScheduler
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.config.DefaultConfigManager
-import com.crosspaste.dao.paste.PasteDao
-import com.crosspaste.dao.paste.PasteRealm
-import com.crosspaste.dao.signal.SignalDao
-import com.crosspaste.dao.signal.SignalRealm
-import com.crosspaste.dao.sync.SyncRuntimeInfoDao
-import com.crosspaste.dao.sync.SyncRuntimeInfoRealm
-import com.crosspaste.dao.task.PasteTaskDao
-import com.crosspaste.dao.task.PasteTaskRealm
 import com.crosspaste.html.ChromeService
 import com.crosspaste.html.DesktopChromeService
 import com.crosspaste.i18n.GlobalCopywriter
@@ -131,6 +123,9 @@ import com.crosspaste.path.getPlatformPathProvider
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.realm.RealmManager
+import com.crosspaste.realm.paste.PasteRealm
+import com.crosspaste.realm.signal.SignalRealm
+import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
 import com.crosspaste.serializer.PreKeyBundleSerializer
 import com.crosspaste.signal.DesktopPreKeySignalMessageFactory
 import com.crosspaste.signal.DesktopPreKeyStore
@@ -188,6 +183,7 @@ import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import io.realm.kotlin.Realm
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -262,10 +258,15 @@ class CrossPaste {
 
                     // realm component
                     single<RealmManager> { RealmManager.createRealmManager(get()) }
-                    single<SignalDao> { SignalRealm(get<RealmManager>().realm) }
-                    single<SyncRuntimeInfoDao> { SyncRuntimeInfoRealm(get<RealmManager>().realm) }
-                    single<PasteDao> { PasteRealm(get<RealmManager>().realm, get(), get(), get(), lazy { get() }) }
-                    single<PasteTaskDao> { PasteTaskRealm(get<RealmManager>().realm) }
+                    single<Realm> { get<RealmManager>().realm }
+                    single<SignalRealm> { SignalRealm(get()) }
+                    single<SyncRuntimeInfoRealm> { SyncRuntimeInfoRealm(get()) }
+                    single<PasteRealm> { PasteRealm(get(), get(), get(), get(), lazy { get() }) }
+                    single<com.crosspaste.realm.task.PasteTaskRealm> {
+                        com.crosspaste.realm.task.PasteTaskRealm(
+                            get(),
+                        )
+                    }
 
                     // net component
                     single<PasteClient> { PasteClient(get<AppInfo>(), get(), get()) }

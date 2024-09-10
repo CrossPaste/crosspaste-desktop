@@ -45,10 +45,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.config.ConfigManager
-import com.crosspaste.dao.sync.SyncRuntimeInfoDao
-import com.crosspaste.dao.sync.createSyncRuntimeInfo
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
+import com.crosspaste.realm.sync.createSyncRuntimeInfo
 import com.crosspaste.sync.DeviceManager
 import com.crosspaste.ui.base.magnifying
 import com.crosspaste.ui.connectedColor
@@ -236,7 +236,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
     val deviceManager = current.koin.get<DeviceManager>()
-    val syncRuntimeInfoDao = current.koin.get<SyncRuntimeInfoDao>()
+    val syncRuntimeInfoRealm = current.koin.get<SyncRuntimeInfoRealm>()
     val configManager = current.koin.get<ConfigManager>()
     val jsonUtils = getJsonUtils()
     val scope = rememberCoroutineScope()
@@ -245,7 +245,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
             modifier = Modifier.height(28.dp),
             onClick = {
                 val newSyncRuntimeInfo = createSyncRuntimeInfo(syncInfo)
-                syncRuntimeInfoDao.insertOrUpdate(newSyncRuntimeInfo)
+                syncRuntimeInfoRealm.insertOrUpdate(newSyncRuntimeInfo)
             },
             shape = RoundedCornerShape(4.dp),
             border = BorderStroke(1.dp, connectedColor()),

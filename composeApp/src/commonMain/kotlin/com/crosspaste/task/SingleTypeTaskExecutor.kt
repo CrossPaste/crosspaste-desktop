@@ -1,6 +1,6 @@
 package com.crosspaste.task
 
-import com.crosspaste.dao.task.PasteTask
+import com.crosspaste.realm.task.PasteTask
 
 interface SingleTypeTaskExecutor {
 

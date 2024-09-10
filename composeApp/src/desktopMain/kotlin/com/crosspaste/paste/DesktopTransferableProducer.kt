@@ -1,9 +1,9 @@
 package com.crosspaste.paste
 
-import com.crosspaste.dao.paste.PasteData
-import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.plugin.type.PasteTypePlugin
+import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteItem
 import java.awt.datatransfer.DataFlavor
 
 class DesktopTransferableProducer(

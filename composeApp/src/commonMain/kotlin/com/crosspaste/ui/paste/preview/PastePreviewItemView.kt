@@ -29,12 +29,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppWindowManager
-import com.crosspaste.dao.paste.PasteData
-import com.crosspaste.dao.paste.PasteState
-import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.i18n.Copywriter
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteboardService
+import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteState
+import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.ui.base.MessageType
 import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.utils.getDateUtils

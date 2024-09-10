@@ -47,10 +47,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppFileType
-import com.crosspaste.dao.paste.PasteDao
-import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.ui.base.AppImageIcon
 import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.base.favorite
@@ -73,7 +73,7 @@ fun PasteDetailInfoView(
     val current = LocalKoinApplication.current
     val iconStyle = current.koin.get<IconStyle>()
     val copywriter = current.koin.get<GlobalCopywriter>()
-    val pasteDao = current.koin.get<PasteDao>()
+    val pasteRealm = current.koin.get<PasteRealm>()
     val userDataPathProvider = current.koin.get<UserDataPathProvider>()
 
     Row(
@@ -95,7 +95,7 @@ fun PasteDetailInfoView(
         Icon(
             modifier =
                 Modifier.size(15.dp).onClick {
-                    pasteDao.setFavorite(pasteData.id, !pasteData.favorite)
+                    pasteRealm.setFavorite(pasteData.id, !pasteData.favorite)
                 },
             painter = if (pasteData.favorite) favorite() else noFavorite(),
             contentDescription = "Favorite",

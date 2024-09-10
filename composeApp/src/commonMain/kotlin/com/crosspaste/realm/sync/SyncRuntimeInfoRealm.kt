@@ -1,4 +1,4 @@
-package com.crosspaste.dao.sync
+package com.crosspaste.realm.sync
 
 import io.realm.kotlin.Realm
 import io.realm.kotlin.query.RealmResults
@@ -6,17 +6,17 @@ import io.realm.kotlin.query.Sort
 import io.realm.kotlin.types.RealmInstant
 import kotlin.reflect.KMutableProperty1
 
-class SyncRuntimeInfoRealm(private val realm: Realm) : SyncRuntimeInfoDao {
+class SyncRuntimeInfoRealm(private val realm: Realm) {
 
-    override fun getAllSyncRuntimeInfos(): RealmResults<SyncRuntimeInfo> {
+    fun getAllSyncRuntimeInfos(): RealmResults<SyncRuntimeInfo> {
         return realm.query(SyncRuntimeInfo::class).sort("createTime", Sort.DESCENDING).find()
     }
 
-    override fun getSyncRuntimeInfo(appInstanceId: String): SyncRuntimeInfo? {
+    fun getSyncRuntimeInfo(appInstanceId: String): SyncRuntimeInfo? {
         return realm.query(SyncRuntimeInfo::class, "appInstanceId == $0", appInstanceId).first().find()
     }
 
-    override fun update(
+    fun update(
         syncRuntimeInfo: SyncRuntimeInfo,
         block: SyncRuntimeInfo.() -> Unit,
     ): SyncRuntimeInfo? {
@@ -31,7 +31,7 @@ class SyncRuntimeInfoRealm(private val realm: Realm) : SyncRuntimeInfoDao {
         }
     }
 
-    override suspend fun suspendUpdate(
+    suspend fun suspendUpdate(
         syncRuntimeInfo: SyncRuntimeInfo,
         block: SyncRuntimeInfo.() -> Unit,
     ): SyncRuntimeInfo? {
@@ -100,7 +100,7 @@ class SyncRuntimeInfoRealm(private val realm: Realm) : SyncRuntimeInfoDao {
         }
     }
 
-    override fun insertOrUpdate(syncRuntimeInfo: SyncRuntimeInfo): ChangeType {
+    fun insertOrUpdate(syncRuntimeInfo: SyncRuntimeInfo): ChangeType {
         return try {
             realm.writeBlocking {
                 query(SyncRuntimeInfo::class, "appInstanceId == $0", syncRuntimeInfo.appInstanceId)
@@ -117,7 +117,7 @@ class SyncRuntimeInfoRealm(private val realm: Realm) : SyncRuntimeInfoDao {
         }
     }
 
-    override fun update(syncRuntimeInfos: List<SyncRuntimeInfo>): List<String> {
+    fun update(syncRuntimeInfos: List<SyncRuntimeInfo>): List<String> {
         return try {
             realm.writeBlocking {
                 val ids = mutableListOf<String>()
@@ -138,7 +138,7 @@ class SyncRuntimeInfoRealm(private val realm: Realm) : SyncRuntimeInfoDao {
         }
     }
 
-    override fun deleteSyncRuntimeInfo(appInstanceId: String) {
+    fun deleteSyncRuntimeInfo(appInstanceId: String) {
         realm.writeBlocking {
             query(SyncRuntimeInfo::class, "appInstanceId == $0", appInstanceId)
                 .first()
@@ -147,4 +147,11 @@ class SyncRuntimeInfoRealm(private val realm: Realm) : SyncRuntimeInfoDao {
                 }
         }
     }
+}
+
+enum class ChangeType {
+    NEW_INSTANCE,
+    NO_CHANGE,
+    NET_CHANGE,
+    INFO_CHANGE,
 }

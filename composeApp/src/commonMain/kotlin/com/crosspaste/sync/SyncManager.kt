@@ -6,17 +6,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.VersionCompatibilityChecker
-import com.crosspaste.dao.signal.SignalDao
-import com.crosspaste.dao.sync.ChangeType
-import com.crosspaste.dao.sync.SyncRuntimeInfo
-import com.crosspaste.dao.sync.SyncRuntimeInfoDao
-import com.crosspaste.dao.sync.SyncState
-import com.crosspaste.dao.sync.createSyncRuntimeInfo
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.SyncRefresher
 import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.clientapi.SyncClientApi
+import com.crosspaste.realm.signal.SignalRealm
+import com.crosspaste.realm.sync.ChangeType
+import com.crosspaste.realm.sync.SyncRuntimeInfo
+import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
+import com.crosspaste.realm.sync.SyncState
+import com.crosspaste.realm.sync.createSyncRuntimeInfo
 import com.crosspaste.signal.SessionBuilderFactory
 import com.crosspaste.signal.SignalProcessorCache
 import com.crosspaste.signal.SignalProtocolStoreInterface
@@ -44,8 +44,8 @@ class SyncManager(
     private val sessionBuilderFactory: SessionBuilderFactory,
     private val signalProtocolStore: SignalProtocolStoreInterface,
     private val signalProcessorCache: SignalProcessorCache,
-    private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
-    private val signalDao: SignalDao,
+    private val syncRuntimeInfoRealm: SyncRuntimeInfoRealm,
+    private val signalRealm: SignalRealm,
     lazyDeviceManager: Lazy<DeviceManager>,
 ) : SyncRefresher {
 
@@ -74,7 +74,7 @@ class SyncManager(
     init {
         syncManagerListenJob =
             realTimeSyncScope.launch(CoroutineName("SyncManagerListenChanger")) {
-                val syncRuntimeInfos = syncRuntimeInfoDao.getAllSyncRuntimeInfos()
+                val syncRuntimeInfos = syncRuntimeInfoRealm.getAllSyncRuntimeInfos()
                 internalSyncHandlers.putAll(
                     syncRuntimeInfos.map { syncRuntimeInfo ->
                         syncRuntimeInfo.appInstanceId to
@@ -89,8 +89,8 @@ class SyncManager(
                                 sessionBuilderFactory,
                                 signalProtocolStore,
                                 signalProcessorCache,
-                                syncRuntimeInfoDao,
-                                signalDao,
+                                syncRuntimeInfoRealm,
+                                signalRealm,
                                 realTimeSyncScope,
                             )
                     },
@@ -125,8 +125,8 @@ class SyncManager(
                                         sessionBuilderFactory,
                                         signalProtocolStore,
                                         signalProcessorCache,
-                                        syncRuntimeInfoDao,
-                                        signalDao,
+                                        syncRuntimeInfoRealm,
+                                        signalRealm,
                                         realTimeSyncScope,
                                     )
                             }
@@ -197,7 +197,7 @@ class SyncManager(
 
     fun removeSyncHandler(id: String) {
         realTimeSyncScope.launch(CoroutineName("RemoveSyncHandler")) {
-            syncRuntimeInfoDao.deleteSyncRuntimeInfo(id)
+            syncRuntimeInfoRealm.deleteSyncRuntimeInfo(id)
         }
     }
 
@@ -232,7 +232,7 @@ class SyncManager(
     fun updateSyncInfo(syncInfo: SyncInfo) {
         realTimeSyncScope.launch(CoroutineName("UpdateSyncInfo")) {
             val newSyncRuntimeInfo = createSyncRuntimeInfo(syncInfo)
-            if (syncRuntimeInfoDao.insertOrUpdate(newSyncRuntimeInfo) == ChangeType.NO_CHANGE) {
+            if (syncRuntimeInfoRealm.insertOrUpdate(newSyncRuntimeInfo) == ChangeType.NO_CHANGE) {
                 internalSyncHandlers[syncInfo.appInfo.appInstanceId]?.tryDirectUpdateConnected()
             }
         }

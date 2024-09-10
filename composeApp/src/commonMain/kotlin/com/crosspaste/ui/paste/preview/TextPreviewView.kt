@@ -15,8 +15,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.paste.item.PasteText
+import com.crosspaste.realm.paste.PasteData
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

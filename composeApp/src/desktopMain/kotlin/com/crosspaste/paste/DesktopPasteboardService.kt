@@ -2,12 +2,12 @@ package com.crosspaste.paste
 
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
-import com.crosspaste.dao.paste.PasteDao
 import com.crosspaste.platform.getPlatform
+import com.crosspaste.realm.paste.PasteRealm
 
 fun getDesktopPasteboardService(
     appWindowManager: DesktopAppWindowManager,
-    pasteDao: PasteDao,
+    pasteRealm: PasteRealm,
     configManager: ConfigManager,
     currentPaste: CurrentPaste,
     pasteConsumer: TransferableConsumer,
@@ -15,11 +15,11 @@ fun getDesktopPasteboardService(
 ): AbstractPasteboardService {
     val currentPlatform = getPlatform()
     return if (currentPlatform.isMacos()) {
-        MacosPasteboardService(appWindowManager, pasteDao, configManager, currentPaste, pasteConsumer, pasteProducer)
+        MacosPasteboardService(appWindowManager, pasteRealm, configManager, currentPaste, pasteConsumer, pasteProducer)
     } else if (currentPlatform.isWindows()) {
-        WindowsPasteboardService(appWindowManager, pasteDao, configManager, currentPaste, pasteConsumer, pasteProducer)
+        WindowsPasteboardService(appWindowManager, pasteRealm, configManager, currentPaste, pasteConsumer, pasteProducer)
     } else if (currentPlatform.isLinux()) {
-        LinuxPasteboardService(appWindowManager, pasteDao, configManager, currentPaste, pasteConsumer, pasteProducer)
+        LinuxPasteboardService(appWindowManager, pasteRealm, configManager, currentPaste, pasteConsumer, pasteProducer)
     } else {
         throw Exception("Unsupported platform: ${currentPlatform.name}")
     }

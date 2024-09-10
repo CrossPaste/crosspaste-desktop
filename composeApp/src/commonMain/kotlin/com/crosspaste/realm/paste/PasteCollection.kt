@@ -1,4 +1,4 @@
-package com.crosspaste.dao.paste
+package com.crosspaste.realm.paste
 
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.serializer.RealmAnyRealmListSerializer

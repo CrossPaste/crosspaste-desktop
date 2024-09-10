@@ -1,11 +1,11 @@
 package com.crosspaste.paste
 
-import com.crosspaste.dao.paste.PasteDao
 import com.crosspaste.dto.pull.PullFilesKey
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilesIndex
 import com.crosspaste.presist.FilesIndexBuilder
+import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.task.PullFileTaskExecutor
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getDateUtils
@@ -16,7 +16,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import java.util.concurrent.TimeUnit
 
 class CacheManagerImpl(
-    private val pasteDao: PasteDao,
+    private val pasteRealm: PasteRealm,
     private val userDataPathProvider: UserDataPathProvider,
 ) : CacheManager {
 
@@ -33,7 +33,7 @@ class CacheManagerImpl(
                     override fun load(key: PullFilesKey): FilesIndex {
                         val appInstanceId = key.appInstanceId
                         val pasteId = key.pasteId
-                        pasteDao.getPasteData(appInstanceId, pasteId)?.let { pasteData ->
+                        pasteRealm.getPasteData(appInstanceId, pasteId)?.let { pasteData ->
                             val dateString =
                                 dateUtils.getYYYYMMDD(
                                     dateUtils.convertRealmInstantToLocalDateTime(pasteData.createTime),

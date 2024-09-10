@@ -1,6 +1,6 @@
 package com.crosspaste.utils
 
-import com.crosspaste.dao.sync.HostInfo
+import com.crosspaste.realm.sync.HostInfo
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.net.Inet4Address
 import java.net.InetAddress

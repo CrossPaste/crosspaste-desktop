@@ -1,8 +1,8 @@
 package com.crosspaste.paste
 
 import com.crosspaste.app.AppWindowManager
-import com.crosspaste.dao.paste.PasteData
-import com.crosspaste.dao.paste.PasteItem
+import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteItem
 import org.mongodb.kbson.ObjectId
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.ClipboardOwner
@@ -76,19 +76,19 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
     }
 
     override suspend fun tryWriteRemotePasteboard(pasteData: PasteData) {
-        pasteDao.releaseRemotePasteData(pasteData) { storePasteData, filterFile ->
+        pasteRealm.releaseRemotePasteData(pasteData) { storePasteData, filterFile ->
             pasteboardChannel.trySend { tryWritePasteboard(storePasteData, localOnly = true, filterFile = filterFile) }
         }
     }
 
     override suspend fun tryWriteRemotePasteboardWithFile(pasteData: PasteData) {
-        pasteDao.releaseRemotePasteDataWithFile(pasteData.id) { storePasteData ->
+        pasteRealm.releaseRemotePasteDataWithFile(pasteData.id) { storePasteData ->
             pasteboardChannel.trySend { tryWritePasteboard(storePasteData, localOnly = true, filterFile = false) }
         }
     }
 
     override suspend fun clearRemotePasteboard(pasteData: PasteData) {
-        pasteDao.markDeletePasteData(pasteData.id)
+        pasteRealm.markDeletePasteData(pasteData.id)
     }
 
     @Synchronized

@@ -1,17 +1,17 @@
-package com.crosspaste.dao.signal
+package com.crosspaste.realm.signal
 
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
 
-class PasteIdentityKey : RealmObject {
+class PastePreKey : RealmObject {
     @PrimaryKey
-    var appInstanceId: String = ""
+    var id: Int = 0
     var serialized: ByteArray = ByteArray(0)
 
     constructor()
 
-    constructor(appInstanceId: String, serialized: ByteArray) {
-        this.appInstanceId = appInstanceId
+    constructor(id: Int, serialized: ByteArray) {
+        this.id = id
         this.serialized = serialized
     }
 }

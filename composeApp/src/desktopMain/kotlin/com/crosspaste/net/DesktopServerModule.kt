@@ -3,13 +3,13 @@ package com.crosspaste.net
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenService
 import com.crosspaste.app.EndpointInfoFactory
-import com.crosspaste.dao.signal.SignalDao
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.net.plugin.SignalServerDecryptionPluginFactory
 import com.crosspaste.net.plugin.SignalServerEncryptPluginFactory
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.realm.signal.SignalRealm
 import com.crosspaste.signal.PreKeyBundleCodecs
 import com.crosspaste.signal.PreKeySignalMessageFactory
 import com.crosspaste.signal.SignalProcessorCache
@@ -27,7 +27,7 @@ class DesktopServerModule(
     pasteboardService: PasteboardService,
     preKeyBundleCodecs: PreKeyBundleCodecs,
     preKeySignalMessageFactory: PreKeySignalMessageFactory,
-    signalDao: SignalDao,
+    signalRealm: SignalRealm,
     signalProtocolStore: SignalProtocolStoreInterface,
     signalProcessorCache: SignalProcessorCache,
     syncManager: SyncManager,
@@ -43,7 +43,7 @@ class DesktopServerModule(
         pasteboardService,
         preKeyBundleCodecs,
         preKeySignalMessageFactory,
-        signalDao,
+        signalRealm,
         signalProtocolStore,
         signalProcessorCache,
         syncManager,

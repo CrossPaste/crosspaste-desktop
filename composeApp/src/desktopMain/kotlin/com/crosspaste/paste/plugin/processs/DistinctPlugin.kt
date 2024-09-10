@@ -1,9 +1,9 @@
 package com.crosspaste.paste.plugin.processs
 
-import com.crosspaste.dao.paste.PasteItem
-import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.realm.paste.PasteItem
+import com.crosspaste.realm.paste.PasteType
 import io.realm.kotlin.MutableRealm
 
 class DistinctPlugin(userDataPathProvider: UserDataPathProvider) : PasteProcessPlugin {

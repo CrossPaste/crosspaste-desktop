@@ -37,8 +37,8 @@ import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.VersionCompatibilityChecker
-import com.crosspaste.dao.sync.SyncRuntimeInfo
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.PageViewContext
 import com.crosspaste.ui.WindowDecoration

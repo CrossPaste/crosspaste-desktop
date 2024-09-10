@@ -1,10 +1,9 @@
 package com.crosspaste.serializer
 
-import com.crosspaste.dao.paste.PasteCollection
-import com.crosspaste.dao.paste.PasteData
-import com.crosspaste.dao.paste.PasteLabel
-import com.crosspaste.dao.paste.PasteState
 import com.crosspaste.paste.item.PasteInit
+import com.crosspaste.realm.paste.PasteCollection
+import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteState
 import io.realm.kotlin.ext.realmSetOf
 import io.realm.kotlin.serializers.RealmAnyKSerializer
 import io.realm.kotlin.serializers.RealmSetKSerializer
@@ -34,7 +33,7 @@ object PasteDataSerializer : KSerializer<PasteData> {
             element<Long>("size")
             element<String>("hash")
             element<Boolean>("favorite")
-            element<RealmSet<PasteLabel>>("labels")
+            element<RealmSet<com.crosspaste.realm.paste.PasteLabel>>("labels")
         }
 
     @OptIn(ExperimentalSerializationApi::class)
@@ -50,7 +49,7 @@ object PasteDataSerializer : KSerializer<PasteData> {
         var size = 0L
         var hash = ""
         var favorite = false
-        var labels: RealmSet<PasteLabel> = realmSetOf()
+        var labels: RealmSet<com.crosspaste.realm.paste.PasteLabel> = realmSetOf()
         loop@ while (true) {
             when (val index = dec.decodeElementIndex(descriptor)) {
                 0 -> id = dec.decodeStringElement(descriptor, index)
@@ -63,7 +62,14 @@ object PasteDataSerializer : KSerializer<PasteData> {
                 7 -> size = dec.decodeLongElement(descriptor, index)
                 8 -> hash = dec.decodeStringElement(descriptor, index)
                 9 -> favorite = dec.decodeBooleanElement(descriptor, index)
-                10 -> labels = dec.decodeSerializableElement(descriptor, index, RealmSetKSerializer(PasteLabel.serializer()))
+                10 ->
+                    labels =
+                        dec.decodeSerializableElement(
+                            descriptor, index,
+                            RealmSetKSerializer(
+                                com.crosspaste.realm.paste.PasteLabel.serializer(),
+                            ),
+                        )
                 else -> break@loop
             }
         }
@@ -119,7 +125,12 @@ object PasteDataSerializer : KSerializer<PasteData> {
         compositeOutput.encodeLongElement(descriptor, 7, value.size)
         compositeOutput.encodeStringElement(descriptor, 8, value.hash)
         compositeOutput.encodeBooleanElement(descriptor, 9, value.favorite)
-        compositeOutput.encodeSerializableElement(descriptor, 10, RealmSetKSerializer(PasteLabel.serializer()), value.labels)
+        compositeOutput.encodeSerializableElement(
+            descriptor,
+            10,
+            RealmSetKSerializer(com.crosspaste.realm.paste.PasteLabel.serializer()),
+            value.labels,
+        )
         compositeOutput.endStructure(descriptor)
     }
 }

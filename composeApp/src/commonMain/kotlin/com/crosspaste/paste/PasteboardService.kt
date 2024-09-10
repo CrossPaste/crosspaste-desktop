@@ -1,9 +1,9 @@
 package com.crosspaste.paste
 
 import com.crosspaste.config.ConfigManager
-import com.crosspaste.dao.paste.PasteDao
-import com.crosspaste.dao.paste.PasteData
-import com.crosspaste.dao.paste.PasteItem
+import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteItem
+import com.crosspaste.realm.paste.PasteRealm
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.channels.Channel
 import org.mongodb.kbson.ObjectId
@@ -14,7 +14,7 @@ interface PasteboardService : PasteboardMonitor {
 
     var owner: Boolean
 
-    val pasteDao: PasteDao
+    val pasteRealm: PasteRealm
 
     val configManager: ConfigManager
 

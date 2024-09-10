@@ -55,9 +55,9 @@ import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.VersionCompatibilityChecker
-import com.crosspaste.dao.sync.SyncRuntimeInfo
-import com.crosspaste.dao.sync.SyncState
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.realm.sync.SyncRuntimeInfo
+import com.crosspaste.realm.sync.SyncState
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.PageViewContext
 import com.crosspaste.ui.PageViewType

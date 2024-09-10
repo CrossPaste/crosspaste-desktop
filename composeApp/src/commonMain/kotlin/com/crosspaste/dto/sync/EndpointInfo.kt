@@ -1,7 +1,7 @@
 package com.crosspaste.dto.sync
 
-import com.crosspaste.dao.sync.HostInfo
 import com.crosspaste.platform.Platform
+import com.crosspaste.realm.sync.HostInfo
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json

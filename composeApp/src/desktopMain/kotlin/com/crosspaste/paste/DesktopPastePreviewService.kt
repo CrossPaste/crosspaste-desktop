@@ -2,8 +2,8 @@ package com.crosspaste.paste
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
-import com.crosspaste.dao.paste.PasteDao
-import com.crosspaste.dao.paste.PasteData
+import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
 import io.realm.kotlin.notifications.ResultsChange
@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
 import org.mongodb.kbson.ObjectId
 
 class DesktopPastePreviewService(
-    private val pasteDao: PasteDao,
+    private val pasteRealm: PasteRealm,
 ) : PastePreviewService {
 
     private var loadJob: Job? = null
@@ -48,7 +48,7 @@ class DesktopPastePreviewService(
         if (loadJob == null || !(loadJob!!.isActive)) {
             loadJob =
                 ioScope.launch {
-                    val list = pasteDao.getPasteData(limit = limit)
+                    val list = pasteRealm.getPasteData(limit = limit)
                     existMore = list.size == limit
 
                     val listFlow = list.asFlow()

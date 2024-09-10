@@ -41,8 +41,8 @@ import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.clean.CleanTime
 import com.crosspaste.config.ConfigManager
-import com.crosspaste.dao.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.ui.base.Counter
 import com.crosspaste.ui.base.CustomRectangleSwitch
 import com.crosspaste.ui.base.CustomSwitch
@@ -66,7 +66,7 @@ fun StoreSettingsView() {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
     val configManager = current.koin.get<ConfigManager>()
-    val pasteDao = current.koin.get<PasteDao>()
+    val pasteRealm = current.koin.get<PasteRealm>()
     val copywriter = current.koin.get<GlobalCopywriter>()
 
     val fileUtils = getFileUtils()
@@ -92,7 +92,7 @@ fun StoreSettingsView() {
     var allOrFavorite by remember { mutableStateOf(true) }
 
     val refresh: (Boolean) -> Unit = {
-        val pasteResourceInfo = pasteDao.getPasteResourceInfo(it)
+        val pasteResourceInfo = pasteRealm.getPasteResourceInfo(it)
         pasteCount = pasteResourceInfo.pasteCount
         pasteFormatSize = fileUtils.formatBytes(pasteResourceInfo.pasteSize)
 

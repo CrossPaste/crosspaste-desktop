@@ -1,22 +1,20 @@
 package com.crosspaste.realm
 
 import com.crosspaste.app.AppFileType
-import com.crosspaste.dao.paste.PasteCollection
-import com.crosspaste.dao.paste.PasteData
-import com.crosspaste.dao.paste.PasteLabel
-import com.crosspaste.dao.signal.PasteIdentityKey
-import com.crosspaste.dao.signal.PastePreKey
-import com.crosspaste.dao.signal.PasteSession
-import com.crosspaste.dao.signal.PasteSignedPreKey
-import com.crosspaste.dao.sync.HostInfo
-import com.crosspaste.dao.sync.SyncRuntimeInfo
-import com.crosspaste.dao.task.PasteTask
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.realm.paste.PasteCollection
+import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.signal.PasteIdentityKey
+import com.crosspaste.realm.signal.PastePreKey
+import com.crosspaste.realm.signal.PasteSession
+import com.crosspaste.realm.signal.PasteSignedPreKey
+import com.crosspaste.realm.sync.HostInfo
+import com.crosspaste.realm.sync.SyncRuntimeInfo
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.Realm
 import io.realm.kotlin.RealmConfiguration
@@ -46,7 +44,7 @@ class RealmManager private constructor(private val config: RealmConfiguration) {
             setOf(
                 PasteData::class,
                 PasteCollection::class,
-                PasteLabel::class,
+                com.crosspaste.realm.paste.PasteLabel::class,
                 FilesPasteItem::class,
                 HtmlPasteItem::class,
                 ImagesPasteItem::class,
@@ -56,7 +54,7 @@ class RealmManager private constructor(private val config: RealmConfiguration) {
 
         private val TASK_TYPES: Set<KClass<out TypedRealmObject>> =
             setOf(
-                PasteTask::class,
+                com.crosspaste.realm.task.PasteTask::class,
             )
 
         private const val NAME = "crosspaste.realm"

@@ -1,6 +1,6 @@
 package com.crosspaste.net
 
-import com.crosspaste.dao.sync.HostInfo
+import com.crosspaste.realm.sync.HostInfo
 import com.crosspaste.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CompletableDeferred
