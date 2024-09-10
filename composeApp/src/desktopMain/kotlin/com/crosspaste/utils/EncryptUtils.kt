@@ -1,8 +1,8 @@
 package com.crosspaste.utils
 
-import com.crosspaste.dao.signal.PastePreKey
-import com.crosspaste.dao.signal.PasteSignedPreKey
-import com.crosspaste.dao.signal.SignalDao
+import com.crosspaste.realm.signal.PastePreKey
+import com.crosspaste.realm.signal.PasteSignedPreKey
+import com.crosspaste.realm.signal.SignalRealm
 import com.crosspaste.utils.DesktopCodecsUtils.base64Decode
 import com.crosspaste.utils.DesktopCodecsUtils.base64Encode
 import org.signal.libsignal.protocol.ecc.Curve
@@ -21,28 +21,28 @@ import javax.crypto.spec.SecretKeySpec
 object EncryptUtils {
 
     @Synchronized
-    fun generatePreKeyPair(signalDao: SignalDao): PastePreKey {
+    fun generatePreKeyPair(signalRealm: SignalRealm): PastePreKey {
         val preKeyPair = Curve.generateKeyPair()
         val random = Random()
         var preKeyId: Int
         do {
             preKeyId = random.nextInt(Medium.MAX_VALUE)
-        } while (signalDao.existPreKey(preKeyId))
+        } while (signalRealm.existPreKey(preKeyId))
         val preKeyRecord = PreKeyRecord(preKeyId, preKeyPair)
         val serialize = preKeyRecord.serialize()
-        signalDao.storePreKey(preKeyId, serialize)
+        signalRealm.storePreKey(preKeyId, serialize)
         return PastePreKey(preKeyId, serialize)
     }
 
     @Synchronized
     fun generatesSignedPreKeyPair(
-        signalDao: SignalDao,
+        signalRealm: SignalRealm,
         privateKey: ECPrivateKey,
     ): PasteSignedPreKey {
         val random = Random()
         val signedPreKeyId = random.nextInt(Medium.MAX_VALUE)
 
-        signalDao.getSignedPreKey(signedPreKeyId)?.let { signedPreKey ->
+        signalRealm.getSignedPreKey(signedPreKeyId)?.let { signedPreKey ->
             return signedPreKey
         } ?: run {
             val signedPreKeyPair = Curve.generateKeyPair()
@@ -55,7 +55,7 @@ object EncryptUtils {
                 SignedPreKeyRecord(
                     signedPreKeyId, System.currentTimeMillis(), signedPreKeyPair, signedPreKeySignature,
                 )
-            signalDao.storeSignedPreKey(signedPreKeyId, signedPreKeyRecord.serialize())
+            signalRealm.storeSignedPreKey(signedPreKeyId, signedPreKeyRecord.serialize())
             return PasteSignedPreKey(signedPreKeyId, signedPreKeyRecord.serialize())
         }
     }

@@ -22,8 +22,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.dao.sync.SyncRuntimeInfo
 import com.crosspaste.platform.Platform
+import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.ui.base.android
 import com.crosspaste.ui.base.ipad
 import com.crosspaste.ui.base.iphone

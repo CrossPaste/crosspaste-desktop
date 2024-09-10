@@ -1,13 +1,12 @@
 package com.crosspaste.task
 
-import com.crosspaste.dao.paste.PasteDao
-import com.crosspaste.dao.task.PasteTask
-import com.crosspaste.dao.task.TaskType
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.ClientApiResult
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SendPasteClientApi
 import com.crosspaste.net.clientapi.createFailureResult
+import com.crosspaste.realm.paste.PasteRealm
+import com.crosspaste.realm.task.TaskType
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.extra.SyncExtraInfo
 import com.crosspaste.utils.TaskUtils
@@ -22,7 +21,7 @@ import kotlinx.coroutines.async
 import kotlinx.serialization.encodeToString
 
 class SyncPasteTaskExecutor(
-    private val pasteDao: PasteDao,
+    private val pasteRealm: PasteRealm,
     private val sendPasteClientApi: SendPasteClientApi,
     private val syncManager: SyncManager,
 ) : SingleTypeTaskExecutor {
@@ -35,10 +34,10 @@ class SyncPasteTaskExecutor(
 
     override val taskType: Int = TaskType.SYNC_PASTE_TASK
 
-    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
+    override suspend fun doExecuteTask(pasteTask: com.crosspaste.realm.task.PasteTask): PasteTaskResult {
         val syncExtraInfo: SyncExtraInfo = TaskUtils.getExtraInfo(pasteTask, SyncExtraInfo::class)
         val mapResult =
-            pasteDao.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
+            pasteRealm.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
                 val deferredResults: MutableList<Deferred<Pair<String, ClientApiResult>>> = mutableListOf()
                 for (entryHandler in syncManager.getSyncHandlers()) {
                     if (entryHandler.value.syncRuntimeInfo.allowSend && entryHandler.value.compatibility) {

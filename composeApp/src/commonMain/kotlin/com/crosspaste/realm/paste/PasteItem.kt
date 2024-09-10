@@ -1,4 +1,4 @@
-package com.crosspaste.dao.paste
+package com.crosspaste.realm.paste
 
 import com.crosspaste.path.UserDataPathProvider
 import io.realm.kotlin.MutableRealm

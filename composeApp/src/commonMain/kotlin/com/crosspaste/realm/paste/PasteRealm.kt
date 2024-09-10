@@ -1,8 +1,7 @@
-package com.crosspaste.dao.paste
+package com.crosspaste.realm.paste
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.config.ConfigManager
-import com.crosspaste.dao.task.TaskType
 import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
@@ -11,6 +10,7 @@ import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.realm.task.TaskType
 import com.crosspaste.task.TaskExecutor
 import com.crosspaste.task.extra.SyncExtraInfo
 import com.crosspaste.utils.LoggerExtension.logExecutionTime
@@ -38,7 +38,7 @@ class PasteRealm(
     private val currentPaste: CurrentPaste,
     private val userDataPathProvider: UserDataPathProvider,
     private val lazyTaskExecutor: Lazy<TaskExecutor>,
-) : PasteDao {
+) {
 
     val logger = KotlinLogging.logger {}
 
@@ -50,11 +50,11 @@ class PasteRealm(
 
     private val taskExecutor by lazy { lazyTaskExecutor.value }
 
-    override fun getMaxPasteId(): Long {
+    fun getMaxPasteId(): Long {
         return realm.query(PasteData::class).sort("pasteId", Sort.DESCENDING).first().find()?.pasteId ?: 0L
     }
 
-    override fun setFavorite(
+    fun setFavorite(
         id: ObjectId,
         favorite: Boolean,
     ) {
@@ -68,7 +68,7 @@ class PasteRealm(
         }
     }
 
-    override suspend fun createPasteData(pasteData: PasteData): ObjectId {
+    suspend fun createPasteData(pasteData: PasteData): ObjectId {
         return logSuspendExecutionTime(logger, "createPasteData") {
             realm.write {
                 copyToRealm(pasteData)
@@ -77,7 +77,7 @@ class PasteRealm(
         }
     }
 
-    override suspend fun markAllDeleteExceptFavorite() {
+    suspend fun markAllDeleteExceptFavorite() {
         while (true) {
             val idList =
                 realm.write {
@@ -92,7 +92,7 @@ class PasteRealm(
         }
     }
 
-    override suspend fun markDeletePasteData(id: ObjectId) {
+    suspend fun markDeletePasteData(id: ObjectId) {
         taskExecutor.submitTasks(
             realm.write {
                 val markDeletePasteData =
@@ -135,13 +135,13 @@ class PasteRealm(
         return tasks
     }
 
-    override suspend fun deletePasteData(id: ObjectId) {
+    suspend fun deletePasteData(id: ObjectId) {
         doDeletePasteData {
             query(PasteData::class, "id == $0", id).first().find()?.let { listOf(it) } ?: emptyList()
         }
     }
 
-    override fun getSize(allOrFavorite: Boolean): Long {
+    fun getSize(allOrFavorite: Boolean = false): Long {
         return if (allOrFavorite) {
             realm.query(
                 PasteData::class,
@@ -161,7 +161,7 @@ class PasteRealm(
         }
     }
 
-    override fun getPasteResourceInfo(allOrFavorite: Boolean): PasteResourceInfo {
+    fun getPasteResourceInfo(allOrFavorite: Boolean = false): PasteResourceInfo {
         return if (allOrFavorite) {
             getAllPasteResourceInfo()
         } else {
@@ -169,7 +169,7 @@ class PasteRealm(
         }
     }
 
-    override fun getSizeByTimeLessThan(time: RealmInstant): Long {
+    fun getSizeByTimeLessThan(time: RealmInstant): Long {
         return realm.query(
             PasteData::class,
             "createTime < $0 AND pasteState != $1",
@@ -179,7 +179,7 @@ class PasteRealm(
             .sum<Long>("size").find()
     }
 
-    override fun getMinPasteDataCreateTime(): RealmInstant? {
+    fun getMinPasteDataCreateTime(): RealmInstant? {
         return realm.query(PasteData::class).min<RealmInstant>("createTime").find()
     }
 
@@ -299,8 +299,8 @@ class PasteRealm(
         }
     }
 
-    override fun getPasteData(
-        appInstanceId: String?,
+    fun getPasteData(
+        appInstanceId: String? = null,
         limit: Int,
     ): RealmResults<PasteData> {
         val query =
@@ -313,7 +313,7 @@ class PasteRealm(
         return query.sort("createTime", Sort.DESCENDING).limit(limit).find()
     }
 
-    override fun getPasteData(id: ObjectId): PasteData? {
+    fun getPasteData(id: ObjectId): PasteData? {
         return realm.query(
             PasteData::class,
             "id == $0 AND pasteState != $1",
@@ -322,7 +322,7 @@ class PasteRealm(
         ).first().find()
     }
 
-    override fun getPasteData(
+    fun getPasteData(
         appInstanceId: String,
         pasteId: Long,
     ): PasteData? {
@@ -335,7 +335,7 @@ class PasteRealm(
         ).first().find()
     }
 
-    override suspend fun releaseLocalPasteData(
+    suspend fun releaseLocalPasteData(
         id: ObjectId,
         pasteProcessPlugins: List<PasteProcessPlugin>,
     ) {
@@ -420,7 +420,7 @@ class PasteRealm(
         return firstItem.getSearchContent()
     }
 
-    override suspend fun releaseRemotePasteData(
+    suspend fun releaseRemotePasteData(
         pasteData: PasteData,
         tryWritePasteboard: (PasteData, Boolean) -> Unit,
     ) {
@@ -471,7 +471,7 @@ class PasteRealm(
         }
     }
 
-    override suspend fun releaseRemotePasteDataWithFile(
+    suspend fun releaseRemotePasteDataWithFile(
         id: ObjectId,
         tryWritePasteboard: (PasteData) -> Unit,
     ) {
@@ -488,20 +488,20 @@ class PasteRealm(
         taskExecutor.submitTasks(tasks)
     }
 
-    override fun update(update: (MutableRealm) -> Unit) {
+    fun update(update: (MutableRealm) -> Unit) {
         realm.writeBlocking {
             update(this)
         }
     }
 
-    override suspend fun suspendUpdate(update: (MutableRealm) -> Unit) {
+    suspend fun suspendUpdate(update: (MutableRealm) -> Unit) {
         realm.write {
             update(this)
         }
     }
 
-    override fun getPasteDataLessThan(
-        appInstanceId: String?,
+    fun getPasteDataLessThan(
+        appInstanceId: String? = null,
         limit: Int,
         createTime: RealmInstant,
     ): RealmResults<PasteData> {
@@ -518,9 +518,9 @@ class PasteRealm(
         return query.sort("createTime", Sort.DESCENDING).limit(limit).find()
     }
 
-    override suspend fun markDeleteByCleanTime(
+    suspend fun markDeleteByCleanTime(
         cleanTime: RealmInstant,
-        pasteType: Int?,
+        pasteType: Int? = null,
     ) {
         val taskIds =
             realm.write {
@@ -541,7 +541,7 @@ class PasteRealm(
         taskExecutor.submitTasks(taskIds)
     }
 
-    override suspend fun updateCreateTime(id: ObjectId) {
+    suspend fun updateCreateTime(id: ObjectId) {
         realm.write {
             query(PasteData::class, "id == $0", id).first().find()?.let {
                 it.createTime = RealmInstant.now()
@@ -549,12 +549,12 @@ class PasteRealm(
         }
     }
 
-    override fun searchPasteData(
+    fun searchPasteData(
         searchTerms: List<String>,
-        favorite: Boolean?,
-        appInstanceIdQuery: (RealmQuery<PasteData>) -> RealmQuery<PasteData>,
-        pasteType: Int?,
-        sort: Boolean,
+        favorite: Boolean? = null,
+        appInstanceIdQuery: (RealmQuery<PasteData>) -> RealmQuery<PasteData> = { it },
+        pasteType: Int? = null,
+        sort: Boolean = true,
         limit: Int,
     ): RealmResults<PasteData> {
         return logExecutionTime(logger, "searchPasteData") {

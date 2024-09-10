@@ -1,4 +1,4 @@
-package com.crosspaste.dao.paste
+package com.crosspaste.realm.paste
 
 data class PasteResourceInfo(
     val pasteCount: Long,

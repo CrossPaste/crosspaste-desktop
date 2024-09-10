@@ -24,8 +24,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
-import com.crosspaste.dao.paste.PasteData
-import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.ImageData
 import com.crosspaste.image.LoadingStateData
@@ -36,6 +34,8 @@ import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
 import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.utils.getDateUtils

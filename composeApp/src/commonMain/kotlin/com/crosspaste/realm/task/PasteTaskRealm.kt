@@ -1,21 +1,21 @@
-package com.crosspaste.dao.task
+package com.crosspaste.realm.task
 
 import io.realm.kotlin.Realm
 import io.realm.kotlin.query.RealmResults
 import org.mongodb.kbson.ObjectId
 
-class PasteTaskRealm(private val realm: Realm) : PasteTaskDao {
+class PasteTaskRealm(private val realm: Realm) {
 
-    override suspend fun createTask(pasteTask: PasteTask): ObjectId {
+    suspend fun createTask(pasteTask: PasteTask): ObjectId {
         realm.write {
             copyToRealm(pasteTask)
         }
         return pasteTask.taskId
     }
 
-    override suspend fun update(
+    suspend fun update(
         taskId: ObjectId,
-        copeFromRealm: Boolean,
+        copeFromRealm: Boolean = false,
         block: PasteTask.() -> Unit,
     ): PasteTask? {
         return realm.write {
@@ -26,7 +26,7 @@ class PasteTaskRealm(private val realm: Realm) : PasteTaskDao {
         }
     }
 
-    override fun getTask(pasteDataId: ObjectId): RealmResults<PasteTask> {
+    fun getTask(pasteDataId: ObjectId): RealmResults<PasteTask> {
         return realm.query(
             PasteTask::class,
             "pasteDataId = $0 AND taskType = $1",

@@ -30,12 +30,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
-import com.crosspaste.dao.sync.SyncRuntimeInfoDao
-import com.crosspaste.dao.sync.createSyncRuntimeInfo
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
+import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
+import com.crosspaste.realm.sync.createSyncRuntimeInfo
 import com.crosspaste.ui.base.DefaultTextField
 import com.crosspaste.ui.base.MessageType
 import com.crosspaste.ui.base.NotificationManager
@@ -62,7 +62,7 @@ fun AddDeviceManuallyForm() {
     val copywriter = current.koin.get<GlobalCopywriter>()
     val notificationManager = current.koin.get<NotificationManager>()
     val syncClientApi = current.koin.get<SyncClientApi>()
-    val syncRuntimeInfoDao = current.koin.get<SyncRuntimeInfoDao>()
+    val syncRuntimeInfoRealm = current.koin.get<SyncRuntimeInfoRealm>()
 
     Row(
         modifier =
@@ -170,7 +170,7 @@ fun AddDeviceManuallyForm() {
                             // add device
                             val syncInfo = result.getResult<SyncInfo>()
                             val newSyncRuntimeInfo = createSyncRuntimeInfo(syncInfo)
-                            syncRuntimeInfoDao.insertOrUpdate(newSyncRuntimeInfo)
+                            syncRuntimeInfoRealm.insertOrUpdate(newSyncRuntimeInfo)
                             ip = ""
                             port = ""
                         }

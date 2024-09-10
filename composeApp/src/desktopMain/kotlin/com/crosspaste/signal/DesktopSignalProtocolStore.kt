@@ -1,7 +1,7 @@
 package com.crosspaste.signal
 
-import com.crosspaste.dao.signal.SignalDao
 import com.crosspaste.dto.sync.RequestTrust
+import com.crosspaste.realm.signal.SignalRealm
 import com.crosspaste.utils.EncryptUtils
 import org.signal.libsignal.protocol.IdentityKey
 import org.signal.libsignal.protocol.IdentityKeyPair
@@ -80,14 +80,14 @@ class DesktopSignalProtocolStore(
         return loadSession(SignalProtocolAddress(address.name, address.deviceId)) != null
     }
 
-    override fun generatePreKeyBundle(signalDao: SignalDao): PreKeyBundleInterface {
+    override fun generatePreKeyBundle(signalRealm: SignalRealm): PreKeyBundleInterface {
         val deviceId = 1
-        val preKey = EncryptUtils.generatePreKeyPair(signalDao)
+        val preKey = EncryptUtils.generatePreKeyPair(signalRealm)
         val preKeyId = preKey.id
         val preKeyRecord = PreKeyRecord(preKey.serialized)
         val preKeyPairPublicKey = preKeyRecord.keyPair.publicKey
 
-        val signedPreKey = EncryptUtils.generatesSignedPreKeyPair(signalDao, identityKeyPair.privateKey)
+        val signedPreKey = EncryptUtils.generatesSignedPreKeyPair(signalRealm, identityKeyPair.privateKey)
         val signedPreKeyId = signedPreKey.id
         val signedPreKeyRecord = SignedPreKeyRecord(signedPreKey.serialized)
         val signedPreKeySignature = signedPreKeyRecord.signature

@@ -1,14 +1,13 @@
 package com.crosspaste.task
 
-import com.crosspaste.dao.paste.PasteDao
-import com.crosspaste.dao.task.PasteTask
-import com.crosspaste.dao.task.TaskType
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.html.ChromeService
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilePersist
+import com.crosspaste.realm.paste.PasteRealm
+import com.crosspaste.realm.task.TaskType
 import com.crosspaste.task.extra.BaseExtraInfo
 import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.getFileUtils
@@ -22,7 +21,7 @@ import kotlinx.coroutines.sync.withLock
 
 class Html2ImageTaskExecutor(
     private val lazyChromeService: Lazy<ChromeService>,
-    private val pasteDao: PasteDao,
+    private val pasteRealm: PasteRealm,
     private val filePersist: FilePersist,
     private val userDataPathProvider: UserDataPathProvider,
 ) : SingleTypeTaskExecutor {
@@ -40,11 +39,11 @@ class Html2ImageTaskExecutor(
             lazyChromeService.value
         }
 
-    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
+    override suspend fun doExecuteTask(pasteTask: com.crosspaste.realm.task.PasteTask): PasteTaskResult {
         mutex.withLock {
             val chromeService = chromeServiceDeferred.await()
             try {
-                pasteDao.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
+                pasteRealm.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
                     pasteData.getPasteItem()?.let { pasteItem ->
                         if (pasteItem is PasteHtml) {
                             val html2ImagePath = pasteItem.getHtmlImagePath(userDataPathProvider)

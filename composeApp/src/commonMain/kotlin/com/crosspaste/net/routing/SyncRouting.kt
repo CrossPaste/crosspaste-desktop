@@ -2,11 +2,11 @@ package com.crosspaste.net.routing
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenService
-import com.crosspaste.dao.signal.SignalDao
 import com.crosspaste.dto.sync.DataContent
 import com.crosspaste.dto.sync.RequestTrust
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.exception.StandardErrorCode
+import com.crosspaste.realm.signal.SignalRealm
 import com.crosspaste.signal.PreKeyBundleCodecs
 import com.crosspaste.signal.PreKeySignalMessageFactory
 import com.crosspaste.signal.SignalAddress
@@ -27,7 +27,7 @@ fun Routing.syncRouting(
     appTokenService: AppTokenService,
     preKeyBundleCodecs: PreKeyBundleCodecs,
     preKeySignalMessageFactory: PreKeySignalMessageFactory,
-    signalDao: SignalDao,
+    signalRealm: SignalRealm,
     signalProtocolStore: SignalProtocolStoreInterface,
     signalProcessorCache: SignalProcessorCache,
     syncManager: SyncManager,
@@ -48,7 +48,7 @@ fun Routing.syncRouting(
                 return@get
             }
 
-            val preKeyBundle = signalProtocolStore.generatePreKeyBundle(signalDao)
+            val preKeyBundle = signalProtocolStore.generatePreKeyBundle(signalRealm)
 
             val bytes = preKeyBundleCodecs.encodePreKeyBundle(preKeyBundle)
             logger.debug { "${appInfo.appInstanceId} create preKeyBundle for $appInstanceId:\n $preKeyBundle" }

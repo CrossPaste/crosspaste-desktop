@@ -1,7 +1,6 @@
 package com.crosspaste.task
 
-import com.crosspaste.dao.task.PasteTaskDao
-import com.crosspaste.dao.task.TaskStatus
+import com.crosspaste.realm.task.TaskStatus
 import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.cpuDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -17,7 +16,7 @@ import org.mongodb.kbson.ObjectId
 
 class TaskExecutor(
     singleTypeTaskExecutors: List<SingleTypeTaskExecutor>,
-    private val pasteTaskDao: PasteTaskDao,
+    private val pasteTaskRealm: com.crosspaste.realm.task.PasteTaskRealm,
 ) {
     private val logger = KotlinLogging.logger {}
 
@@ -47,13 +46,13 @@ class TaskExecutor(
 
     private suspend fun executeTask(taskId: ObjectId) {
         try {
-            pasteTaskDao.update(taskId, copeFromRealm = true) {
+            pasteTaskRealm.update(taskId, copeFromRealm = true) {
                 status = TaskStatus.EXECUTING
                 modifyTime = Clock.System.now().toEpochMilliseconds()
             }?.let { pasteTask ->
                 val executor = getExecutorImpl(pasteTask.taskType)
                 executor.executeTask(pasteTask, success = {
-                    pasteTaskDao.update(taskId) {
+                    pasteTaskRealm.update(taskId) {
                         status = TaskStatus.SUCCESS
                         modifyTime = Clock.System.now().toEpochMilliseconds()
                         it?.let { newExtraInfo ->
@@ -61,7 +60,7 @@ class TaskExecutor(
                         }
                     }
                 }, fail = { pasteTaskExtraInfo, needRetry ->
-                    pasteTaskDao.update(taskId) {
+                    pasteTaskRealm.update(taskId) {
                         status = if (needRetry) TaskStatus.PREPARING else TaskStatus.FAILURE
                         modifyTime = Clock.System.now().toEpochMilliseconds()
                         extraInfo = pasteTaskExtraInfo
@@ -72,7 +71,7 @@ class TaskExecutor(
             }
         } catch (e: Throwable) {
             logger.error(e) { "execute task error: $taskId" }
-            pasteTaskDao.update(taskId) {
+            pasteTaskRealm.update(taskId) {
                 status = TaskStatus.FAILURE
                 extraInfo = TaskUtils.createFailExtraInfo(this, e)
             }

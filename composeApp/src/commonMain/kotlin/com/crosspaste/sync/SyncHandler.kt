@@ -2,11 +2,6 @@ package com.crosspaste.sync
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.VersionCompatibilityChecker
-import com.crosspaste.dao.signal.SignalDao
-import com.crosspaste.dao.sync.HostInfo
-import com.crosspaste.dao.sync.SyncRuntimeInfo
-import com.crosspaste.dao.sync.SyncRuntimeInfoDao
-import com.crosspaste.dao.sync.SyncState
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.SyncInfoFactory
@@ -14,6 +9,11 @@ import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
+import com.crosspaste.realm.signal.SignalRealm
+import com.crosspaste.realm.sync.HostInfo
+import com.crosspaste.realm.sync.SyncRuntimeInfo
+import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
+import com.crosspaste.realm.sync.SyncState
 import com.crosspaste.signal.PreKeyBundleInterface
 import com.crosspaste.signal.SessionBuilderFactory
 import com.crosspaste.signal.SignalAddress
@@ -45,8 +45,8 @@ class SyncHandler(
     private val sessionBuilderFactory: SessionBuilderFactory,
     private val signalProtocolStore: SignalProtocolStoreInterface,
     private val signalProcessorCache: SignalProcessorCache,
-    private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
-    private val signalDao: SignalDao,
+    private val syncRuntimeInfoRealm: SyncRuntimeInfoRealm,
+    private val signalRealm: SignalRealm,
     scope: CoroutineScope,
 ) {
 
@@ -215,7 +215,7 @@ class SyncHandler(
     }
 
     suspend fun update(block: SyncRuntimeInfo.() -> Unit): SyncRuntimeInfo? {
-        syncRuntimeInfoDao.suspendUpdate(syncRuntimeInfo) {
+        syncRuntimeInfoRealm.suspendUpdate(syncRuntimeInfo) {
             block()
         }?. let {
             this.syncRuntimeInfo = it
@@ -497,8 +497,8 @@ class SyncHandler(
 
     suspend fun clearContext() {
         signalProcessorCache.removeSignalMessageProcessor(syncRuntimeInfo.appInstanceId)
-        signalDao.deleteSession(syncRuntimeInfo.appInstanceId)
-        signalDao.deleteIdentity(syncRuntimeInfo.appInstanceId)
+        signalRealm.deleteSession(syncRuntimeInfo.appInstanceId)
+        signalRealm.deleteIdentity(syncRuntimeInfo.appInstanceId)
         syncRuntimeInfo.connectHostAddress?.let { host ->
             syncClientApi.notifyRemove { urlBuilder ->
                 buildUrl(urlBuilder, host, syncRuntimeInfo.port)

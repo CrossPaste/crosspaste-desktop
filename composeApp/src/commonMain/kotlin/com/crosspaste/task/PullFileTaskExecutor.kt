@@ -1,9 +1,5 @@
 package com.crosspaste.task
 
-import com.crosspaste.dao.paste.PasteDao
-import com.crosspaste.dao.paste.PasteData
-import com.crosspaste.dao.task.PasteTask
-import com.crosspaste.dao.task.TaskType
 import com.crosspaste.dto.pull.PullFileRequest
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.ClientApiResult
@@ -17,6 +13,9 @@ import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilesIndex
 import com.crosspaste.presist.FilesIndexBuilder
+import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteRealm
+import com.crosspaste.realm.task.TaskType
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.extra.PullExtraInfo
 import com.crosspaste.utils.DateUtils
@@ -32,7 +31,7 @@ import kotlinx.datetime.Clock
 import org.mongodb.kbson.ObjectId
 
 class PullFileTaskExecutor(
-    private val pasteDao: PasteDao,
+    private val pasteRealm: PasteRealm,
     private val pullClientApi: PullClientApi,
     private val userDataPathProvider: UserDataPathProvider,
     private val syncManager: SyncManager,
@@ -53,10 +52,10 @@ class PullFileTaskExecutor(
 
     override val taskType: Int = TaskType.PULL_FILE_TASK
 
-    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
+    override suspend fun doExecuteTask(pasteTask: com.crosspaste.realm.task.PasteTask): PasteTaskResult {
         val pullExtraInfo: PullExtraInfo = TaskUtils.getExtraInfo(pasteTask, PullExtraInfo::class)
 
-        pasteDao.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
+        pasteRealm.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
             val fileItems = pasteData.getPasteAppearItems().filter { it is PasteFiles }
             val appInstanceId = pasteData.appInstanceId
             val dateString =

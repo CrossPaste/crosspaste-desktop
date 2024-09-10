@@ -3,7 +3,6 @@ package com.crosspaste.net
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenService
 import com.crosspaste.app.EndpointInfoFactory
-import com.crosspaste.dao.signal.SignalDao
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.net.plugin.SignalServerDecryptionPluginFactory
@@ -15,6 +14,7 @@ import com.crosspaste.net.routing.syncRouting
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.realm.signal.SignalRealm
 import com.crosspaste.signal.PreKeyBundleCodecs
 import com.crosspaste.signal.PreKeySignalMessageFactory
 import com.crosspaste.signal.SignalProcessorCache
@@ -39,7 +39,7 @@ open class DefaultServerModule(
     private val pasteboardService: PasteboardService,
     private val preKeyBundleCodecs: PreKeyBundleCodecs,
     private val preKeySignalMessageFactory: PreKeySignalMessageFactory,
-    private val signalDao: SignalDao,
+    private val signalRealm: SignalRealm,
     private val signalProtocolStore: SignalProtocolStoreInterface,
     private val signalProcessorCache: SignalProcessorCache,
     private val syncManager: SyncManager,
@@ -79,7 +79,7 @@ open class DefaultServerModule(
                     appTokenService,
                     preKeyBundleCodecs,
                     preKeySignalMessageFactory,
-                    signalDao,
+                    signalRealm,
                     signalProtocolStore,
                     signalProcessorCache,
                     syncManager,

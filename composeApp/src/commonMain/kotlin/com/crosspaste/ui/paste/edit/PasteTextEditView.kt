@@ -19,11 +19,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
-import com.crosspaste.dao.paste.PasteDao
-import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.paste.plugin.type.TextUpdater
+import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.ui.PageViewContext
 import com.crosspaste.ui.WindowDecoration
 import com.crosspaste.ui.base.PasteTooltipIconView
@@ -40,7 +40,7 @@ fun PasteTextEditView(currentPageViewContext: MutableState<PageViewContext>) {
 fun PasteTextEditContentView(pasteData: PasteData) {
     val current = LocalKoinApplication.current
     val copywriter = current.koin.get<GlobalCopywriter>()
-    val pasteDao = current.koin.get<PasteDao>()
+    val pasteRealm = current.koin.get<PasteRealm>()
     val textUpdater = current.koin.get<TextUpdater>()
     val codecsUtils = getCodecsUtils()
 
@@ -79,7 +79,7 @@ fun PasteTextEditContentView(pasteData: PasteData) {
                     if (text != (it as PasteText).text && text.isNotEmpty()) {
                         val textBytes = text.toByteArray()
                         val hash = codecsUtils.hash(textBytes)
-                        pasteDao.update { realm ->
+                        pasteRealm.update { realm ->
                             textUpdater.updateText(text, textBytes.size.toLong(), hash, it, realm)
                         }
                     }

@@ -5,8 +5,8 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.dao.paste.PasteDao
-import com.crosspaste.dao.paste.PasteData
+import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
 import io.realm.kotlin.notifications.InitialResults
@@ -21,7 +21,7 @@ import kotlinx.coroutines.withContext
 class DesktopPasteSearchService(
     private val appWindowManager: DesktopAppWindowManager,
     private val pasteboardService: PasteboardService,
-    private val pasteDao: PasteDao,
+    private val pasteRealm: PasteRealm,
 ) : PasteSearchService {
 
     private var searchJob: Job? = null
@@ -105,7 +105,7 @@ class DesktopPasteSearchService(
         searchJob =
             ioScope.launch {
                 val searchPasteData =
-                    pasteDao.searchPasteData(
+                    pasteRealm.searchPasteData(
                         searchTerms = searchTerms,
                         favorite = if (searchFavorite) searchFavorite else null,
                         sort = searchSort,

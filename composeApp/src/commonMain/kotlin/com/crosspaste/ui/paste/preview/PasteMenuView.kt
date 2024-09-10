@@ -48,11 +48,11 @@ import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.LocalPageViewContent
 import com.crosspaste.app.AppWindowManager
-import com.crosspaste.dao.paste.PasteDao
-import com.crosspaste.dao.paste.PasteData
-import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteboardService
+import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteRealm
+import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.ui.PageViewContext
 import com.crosspaste.ui.PageViewType
 import com.crosspaste.ui.base.MenuItem
@@ -83,7 +83,7 @@ fun PasteMenuView(
 ) {
     val current = LocalKoinApplication.current
     val density = LocalDensity.current
-    val pasteDao = current.koin.get<PasteDao>()
+    val pasteRealm = current.koin.get<PasteRealm>()
     val appWindowManager = current.koin.get<AppWindowManager>()
     val pasteboardService = current.koin.get<PasteboardService>()
     val copywriter = current.koin.get<GlobalCopywriter>()
@@ -324,7 +324,7 @@ fun PasteMenuView(
                     Icon(
                         modifier =
                             Modifier.size(16.dp).onClick {
-                                pasteDao.setFavorite(pasteData.id, !pasteData.favorite)
+                                pasteRealm.setFavorite(pasteData.id, !pasteData.favorite)
                             },
                         painter = if (pasteData.favorite) favorite() else noFavorite(),
                         contentDescription = "Favorite",
@@ -422,7 +422,7 @@ fun MoreMenuItems(
     val current = LocalKoinApplication.current
     val currentPage = LocalPageViewContent.current
     val copywriter = current.koin.get<GlobalCopywriter>()
-    val pasteDao = current.koin.get<PasteDao>()
+    val pasteRealm = current.koin.get<PasteRealm>()
     val uiSupport = current.koin.get<UISupport>()
     Box(
         modifier =
@@ -463,7 +463,7 @@ fun MoreMenuItems(
             }
             MenuItem(copywriter.getText("delete")) {
                 runBlocking {
-                    pasteDao.markDeletePasteData(pasteData.id)
+                    pasteRealm.markDeletePasteData(pasteData.id)
                 }
                 hideMore()
             }

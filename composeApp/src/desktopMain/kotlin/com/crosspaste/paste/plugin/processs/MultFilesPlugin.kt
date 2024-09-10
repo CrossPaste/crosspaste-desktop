@@ -1,9 +1,9 @@
 package com.crosspaste.paste.plugin.processs
 
-import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.utils.DesktopJsonUtils
 import com.crosspaste.utils.getCodecsUtils
 import io.realm.kotlin.MutableRealm

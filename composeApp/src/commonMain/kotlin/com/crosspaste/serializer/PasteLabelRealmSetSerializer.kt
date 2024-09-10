@@ -1,6 +1,6 @@
 package com.crosspaste.serializer
 
-import com.crosspaste.dao.paste.PasteLabel
+import com.crosspaste.realm.paste.PasteLabel
 import io.realm.kotlin.ext.realmSetOf
 import io.realm.kotlin.types.RealmSet
 import kotlinx.serialization.KSerializer

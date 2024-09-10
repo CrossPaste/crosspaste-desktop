@@ -1,4 +1,4 @@
-package com.crosspaste.dao.paste
+package com.crosspaste.realm.paste
 
 object PasteState {
     const val DELETED = -1

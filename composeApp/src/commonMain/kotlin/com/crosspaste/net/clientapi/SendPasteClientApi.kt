@@ -1,6 +1,6 @@
 package com.crosspaste.net.clientapi
 
-import com.crosspaste.dao.paste.PasteData
+import com.crosspaste.realm.paste.PasteData
 import io.ktor.http.*
 
 interface SendPasteClientApi {

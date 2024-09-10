@@ -3,8 +3,6 @@ package com.crosspaste.listen
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
-import com.crosspaste.dao.paste.PasteDao
-import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.HIDE_WINDOW
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_LOCAL_LAST
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_PLAIN_TEXT
@@ -19,6 +17,8 @@ import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.DesktopPasteSearchService
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.PasteText
+import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
 
 class DesktopShortKeysAction(
     private val appInfo: AppInfo,
-    private val pasteDao: PasteDao,
+    private val pasteRealm: PasteRealm,
     private val configManager: ConfigManager,
     private val currentPaste: CurrentPaste,
     private val appWindowManager: DesktopAppWindowManager,
@@ -129,7 +129,7 @@ class DesktopShortKeysAction(
             }
         mainCoroutineDispatcher.launch(CoroutineName("Paste")) {
             val result =
-                pasteDao.searchPasteData(
+                pasteRealm.searchPasteData(
                     searchTerms = listOf(),
                     favorite = null,
                     appInstanceIdQuery = appInstanceIdQuery,

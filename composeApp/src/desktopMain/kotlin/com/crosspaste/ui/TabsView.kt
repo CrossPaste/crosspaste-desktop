@@ -46,8 +46,8 @@ import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppEnv
 import com.crosspaste.app.AppWindowManager
-import com.crosspaste.dao.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.ui.base.MessageType
 import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.PasteTooltipIconView
@@ -110,7 +110,7 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
                     if (currentPageViewContext.value.pageViewType == PageViewType.PASTE_PREVIEW) {
                         val appWindowManager = current.koin.get<AppWindowManager>()
                         val notificationManager = current.koin.get<NotificationManager>()
-                        val pasteDao = current.koin.get<PasteDao>()
+                        val pasteRealm = current.koin.get<PasteRealm>()
                         val scope = rememberCoroutineScope()
                         PasteTooltipIconView(
                             painter = trash(),
@@ -119,7 +119,7 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
                         ) {
                             appWindowManager.setMainCursorWait()
                             scope.launch {
-                                pasteDao.markAllDeleteExceptFavorite()
+                                pasteRealm.markAllDeleteExceptFavorite()
                                 withContext(mainDispatcher) {
                                     appWindowManager.resetMainCursor()
                                     notificationManager.addNotification(

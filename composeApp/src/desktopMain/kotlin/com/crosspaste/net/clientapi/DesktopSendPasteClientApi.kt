@@ -1,9 +1,9 @@
 package com.crosspaste.net.clientapi
 
 import com.crosspaste.config.ConfigManager
-import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.PasteClient
+import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*

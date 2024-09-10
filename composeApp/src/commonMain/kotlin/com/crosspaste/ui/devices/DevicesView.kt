@@ -39,8 +39,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
-import com.crosspaste.dao.sync.SyncRuntimeInfo
-import com.crosspaste.dao.sync.SyncRuntimeInfoDao
+import com.crosspaste.realm.sync.SyncRuntimeInfo
+import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.PageViewContext
 import com.crosspaste.ui.base.DialogButtonsView
@@ -111,7 +111,7 @@ fun MyDevicesView(currentPageViewContext: MutableState<PageViewContext>) {
                     title = "input_note_name",
                     width = 260.dp,
                 ) {
-                    val syncRuntimeInfoDao = current.koin.get<SyncRuntimeInfoDao>()
+                    val syncRuntimeInfoRealm = current.koin.get<SyncRuntimeInfoRealm>()
                     var inputNoteName by remember { mutableStateOf("") }
                     var isError by remember { mutableStateOf(false) }
 
@@ -125,7 +125,7 @@ fun MyDevicesView(currentPageViewContext: MutableState<PageViewContext>) {
                         if (inputNoteName == "") {
                             isError = true
                         } else {
-                            syncRuntimeInfoDao.update(syncRuntimeInfo) {
+                            syncRuntimeInfoRealm.update(syncRuntimeInfo) {
                                 this.noteName = inputNoteName
                             }
                             dialogService.popDialog()

@@ -16,14 +16,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
-import com.crosspaste.dao.paste.PasteData
-import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.info.PasteInfos.DATE
 import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
 import com.crosspaste.paste.item.PasteUrl
+import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils

@@ -2,7 +2,7 @@ package com.crosspaste.ui.paste
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
-import com.crosspaste.dao.paste.PasteType
+import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.ui.base.file
 import com.crosspaste.ui.base.html
 import com.crosspaste.ui.base.image

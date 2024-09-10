@@ -32,8 +32,6 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.crosspaste.LocalKoinApplication
-import com.crosspaste.dao.paste.PasteData
-import com.crosspaste.dao.paste.PasteItem
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.FileExtImageLoader
 import com.crosspaste.image.ImageData
@@ -45,6 +43,8 @@ import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.chevronLeft

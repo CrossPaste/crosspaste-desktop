@@ -2,8 +2,8 @@ package com.crosspaste.net
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.EndpointInfoFactory
-import com.crosspaste.dao.sync.HostInfo
 import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.realm.sync.HostInfo
 
 class DesktopSyncInfoFactory(
     val appInfo: AppInfo,

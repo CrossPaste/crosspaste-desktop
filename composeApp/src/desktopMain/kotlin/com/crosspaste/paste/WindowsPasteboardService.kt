@@ -2,9 +2,9 @@ package com.crosspaste.paste
 
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
-import com.crosspaste.dao.paste.PasteDao
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.platform.windows.api.User32
+import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.utils.DesktopControlUtils.blockEnsureMinExecutionTime
 import com.crosspaste.utils.DesktopControlUtils.blockExponentialBackoffUntilValid
 import com.crosspaste.utils.cpuDispatcher
@@ -29,7 +29,7 @@ import java.awt.datatransfer.Transferable
 
 class WindowsPasteboardService(
     override val appWindowManager: DesktopAppWindowManager,
-    override val pasteDao: PasteDao,
+    override val pasteRealm: PasteRealm,
     override val configManager: ConfigManager,
     override val currentPaste: CurrentPaste,
     override val pasteConsumer: TransferableConsumer,

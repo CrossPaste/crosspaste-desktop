@@ -1,14 +1,14 @@
 package com.crosspaste.signal
 
-import com.crosspaste.dao.signal.SignalDao
+import com.crosspaste.realm.signal.SignalRealm
 import org.signal.libsignal.protocol.InvalidKeyIdException
 import org.signal.libsignal.protocol.state.PreKeyRecord
 import org.signal.libsignal.protocol.state.PreKeyStore
 
-class DesktopPreKeyStore(private val signalDao: SignalDao) : PreKeyStore {
+class DesktopPreKeyStore(private val signalRealm: SignalRealm) : PreKeyStore {
 
     override fun loadPreKey(preKeyId: Int): PreKeyRecord {
-        signalDao.loadPreKey(preKeyId)?.let {
+        signalRealm.loadPreKey(preKeyId)?.let {
             return PreKeyRecord(it)
         } ?: throw InvalidKeyIdException("No such preKeyId: $preKeyId")
     }
@@ -17,16 +17,16 @@ class DesktopPreKeyStore(private val signalDao: SignalDao) : PreKeyStore {
         preKeyId: Int,
         record: PreKeyRecord,
     ) {
-        signalDao.storePreKey(preKeyId, record.serialize())
+        signalRealm.storePreKey(preKeyId, record.serialize())
     }
 
     override fun containsPreKey(preKeyId: Int): Boolean {
-        signalDao.loadPreKey(preKeyId)?.let {
+        signalRealm.loadPreKey(preKeyId)?.let {
             return true
         } ?: return false
     }
 
     override fun removePreKey(keyId: Int) {
-        signalDao.removePreKey(keyId)
+        signalRealm.removePreKey(keyId)
     }
 }

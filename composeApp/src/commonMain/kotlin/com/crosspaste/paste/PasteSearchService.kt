@@ -1,6 +1,6 @@
 package com.crosspaste.paste
 
-import com.crosspaste.dao.paste.PasteData
+import com.crosspaste.realm.paste.PasteData
 
 interface PasteSearchService {
 

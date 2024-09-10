@@ -2,8 +2,8 @@ package com.crosspaste.paste
 
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
-import com.crosspaste.dao.paste.PasteDao
 import com.crosspaste.platform.macos.api.MacosApi
+import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.utils.DesktopControlUtils.ensureMinExecutionTime
 import com.crosspaste.utils.DesktopControlUtils.exponentialBackoffUntilValid
 import com.crosspaste.utils.cpuDispatcher
@@ -24,7 +24,7 @@ import java.awt.datatransfer.Transferable
 
 class MacosPasteboardService(
     override val appWindowManager: DesktopAppWindowManager,
-    override val pasteDao: PasteDao,
+    override val pasteRealm: PasteRealm,
     override val configManager: ConfigManager,
     override val currentPaste: CurrentPaste,
     override val pasteConsumer: TransferableConsumer,

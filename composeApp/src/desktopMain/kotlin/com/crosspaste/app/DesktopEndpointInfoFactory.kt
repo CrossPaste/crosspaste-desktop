@@ -1,11 +1,11 @@
 package com.crosspaste.app
 
-import com.crosspaste.dao.sync.HostInfo
 import com.crosspaste.dto.sync.EndpointInfo
 import com.crosspaste.net.PasteServer
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.platform.macos.MacDeviceUtils
+import com.crosspaste.realm.sync.HostInfo
 import com.crosspaste.utils.DesktopNetUtils
 import com.crosspaste.utils.getDeviceUtils
 import com.sun.jna.platform.win32.Kernel32Util

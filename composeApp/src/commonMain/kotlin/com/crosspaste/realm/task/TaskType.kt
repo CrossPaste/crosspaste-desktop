@@ -1,4 +1,4 @@
-package com.crosspaste.dao.task
+package com.crosspaste.realm.task
 
 object TaskType {
 

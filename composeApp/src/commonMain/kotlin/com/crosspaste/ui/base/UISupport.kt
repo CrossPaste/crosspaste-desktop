@@ -1,6 +1,6 @@
 package com.crosspaste.ui.base
 
-import com.crosspaste.dao.paste.PasteData
+import com.crosspaste.realm.paste.PasteData
 import okio.Path
 import org.mongodb.kbson.ObjectId
 

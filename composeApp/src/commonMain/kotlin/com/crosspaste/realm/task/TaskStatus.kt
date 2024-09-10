@@ -1,4 +1,4 @@
-package com.crosspaste.dao.task
+package com.crosspaste.realm.task
 
 object TaskStatus {
     const val PREPARING = 0

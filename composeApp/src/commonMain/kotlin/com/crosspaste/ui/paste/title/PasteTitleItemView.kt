@@ -1,13 +1,13 @@
 package com.crosspaste.ui.paste.title
 
-import com.crosspaste.dao.paste.PasteData
-import com.crosspaste.dao.paste.PasteState
-import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.paste.item.PasteUrl
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteState
+import com.crosspaste.realm.paste.PasteType
 
 fun getPasteTitle(
     pasteData: PasteData,

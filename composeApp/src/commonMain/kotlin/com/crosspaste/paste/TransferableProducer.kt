@@ -1,7 +1,7 @@
 package com.crosspaste.paste
 
-import com.crosspaste.dao.paste.PasteData
-import com.crosspaste.dao.paste.PasteItem
+import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteItem
 
 interface TransferableProducer {
 

@@ -1,8 +1,5 @@
 package com.crosspaste.utils
 
-import com.crosspaste.dao.paste.PasteCollection
-import com.crosspaste.dao.paste.PasteLabel
-import com.crosspaste.dao.task.PasteTaskExtraInfo
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
@@ -11,6 +8,8 @@ import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.presist.DirFileInfoTree
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.SingleFileInfoTree
+import com.crosspaste.realm.paste.PasteCollection
+import com.crosspaste.realm.task.PasteTaskExtraInfo
 import com.crosspaste.serializer.Base64ByteArraySerializer
 import com.crosspaste.serializer.PreKeyBundleSerializer
 import com.crosspaste.signal.PreKeyBundleInterface
@@ -51,7 +50,7 @@ object DesktopJsonUtils : JsonUtils {
                         subclass(ImagesPasteItem::class)
                         subclass(TextPasteItem::class)
                         subclass(UrlPasteItem::class)
-                        subclass(PasteLabel::class)
+                        subclass(com.crosspaste.realm.paste.PasteLabel::class)
                         subclass(PasteCollection::class)
                     }
 

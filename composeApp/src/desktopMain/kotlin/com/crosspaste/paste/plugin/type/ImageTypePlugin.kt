@@ -2,8 +2,6 @@ package com.crosspaste.paste.plugin.type
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
-import com.crosspaste.dao.paste.PasteItem
-import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.image.ImageService.writeImage
 import com.crosspaste.paste.DesktopPasteDataFlavor
 import com.crosspaste.paste.PasteCollector
@@ -16,6 +14,8 @@ import com.crosspaste.paste.plugin.type.HtmlTypePlugin.HtmlTypePlugin.HTML_ID
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.getPlatform
+import com.crosspaste.realm.paste.PasteItem
+import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.utils.DesktopFileUtils
 import com.crosspaste.utils.DesktopFileUtils.createPastePath
 import com.crosspaste.utils.DesktopFileUtils.createPasteRelativePath

@@ -1,6 +1,6 @@
 package com.crosspaste.utils
 
-import com.crosspaste.dao.sync.HostInfo
+import com.crosspaste.realm.sync.HostInfo
 
 expect fun getNetUtils(): NetUtils
 

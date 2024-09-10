@@ -15,8 +15,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppFileType
-import com.crosspaste.dao.paste.PasteData
-import com.crosspaste.dao.paste.PasteType
 import com.crosspaste.image.FaviconLoader
 import com.crosspaste.image.FileExtImageLoader
 import com.crosspaste.image.ImageData
@@ -24,6 +22,8 @@ import com.crosspaste.image.getImageDataLoader
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteUrl
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteType
 import okio.FileSystem
 
 @Composable

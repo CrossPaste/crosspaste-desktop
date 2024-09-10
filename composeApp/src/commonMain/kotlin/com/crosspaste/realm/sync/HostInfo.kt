@@ -1,4 +1,4 @@
-package com.crosspaste.dao.sync
+package com.crosspaste.realm.sync
 
 import io.realm.kotlin.types.EmbeddedRealmObject
 import kotlinx.serialization.Serializable

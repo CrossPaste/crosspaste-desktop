@@ -1,7 +1,7 @@
 package com.crosspaste.task.extra
 
-import com.crosspaste.dao.task.ExecutionHistory
-import com.crosspaste.dao.task.PasteTaskExtraInfo
+import com.crosspaste.realm.task.ExecutionHistory
+import com.crosspaste.realm.task.PasteTaskExtraInfo
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

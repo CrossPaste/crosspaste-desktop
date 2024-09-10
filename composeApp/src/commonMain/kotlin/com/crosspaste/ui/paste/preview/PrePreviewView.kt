@@ -29,9 +29,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
-import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.paste.PasteSingleProcess
 import com.crosspaste.paste.PasteSyncProcessManager
+import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.ui.base.PasteProgressbar
 import com.valentinilk.shimmer.shimmer
 import org.mongodb.kbson.ObjectId

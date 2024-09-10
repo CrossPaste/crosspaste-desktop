@@ -27,8 +27,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalKoinApplication
-import com.crosspaste.dao.paste.PasteData
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.ui.paste.title.getPasteTitle
 import com.crosspaste.ui.selectColor
 

@@ -1,6 +1,5 @@
-package com.crosspaste.dao.paste
+package com.crosspaste.realm.paste
 
-import com.crosspaste.dao.paste.PasteCollection.Companion.getPasteItem
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.serializer.PasteDataSerializer
@@ -84,7 +83,7 @@ class PasteData : RealmObject {
         userDataPathProvider: UserDataPathProvider,
         clearResource: Boolean = true,
     ) {
-        getPasteItem(pasteAppearItem)?.clear(realm, userDataPathProvider, clearResource)
+        PasteCollection.getPasteItem(pasteAppearItem)?.clear(realm, userDataPathProvider, clearResource)
         pasteCollection?.clear(realm, userDataPathProvider, clearResource)
         realm.delete(this)
     }
@@ -94,11 +93,11 @@ class PasteData : RealmObject {
     }
 
     fun getPasteAppearItems(): List<PasteItem> {
-        val appearItem: PasteItem? = getPasteItem(this.pasteAppearItem)
+        val appearItem: PasteItem? = PasteCollection.getPasteItem(this.pasteAppearItem)
 
         val otherAppearItems: List<PasteItem>? =
             this.pasteCollection?.pasteItems?.mapNotNull {
-                getPasteItem(it)
+                PasteCollection.getPasteItem(it)
             }
 
         val mutableList: MutableList<PasteItem> = mutableListOf()
@@ -137,7 +136,7 @@ class PasteData : RealmObject {
     }
 
     fun <T : Any> getPasteItem(kclass: KClass<T>): T? {
-        return getPasteItem(this.pasteAppearItem)?.let {
+        return PasteCollection.getPasteItem(this.pasteAppearItem)?.let {
             if (kclass.isInstance(it)) {
                 kclass.cast(it)
             } else {
@@ -147,7 +146,7 @@ class PasteData : RealmObject {
     }
 
     fun getPasteItem(): PasteItem? {
-        return getPasteItem(this.pasteAppearItem)
+        return PasteCollection.getPasteItem(this.pasteAppearItem)
     }
 }
 

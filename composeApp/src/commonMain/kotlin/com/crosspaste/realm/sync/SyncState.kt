@@ -1,4 +1,4 @@
-package com.crosspaste.dao.sync
+package com.crosspaste.realm.sync
 
 class SyncState {
 
