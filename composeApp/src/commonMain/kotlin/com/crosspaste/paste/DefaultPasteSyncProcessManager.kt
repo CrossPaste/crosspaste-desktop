@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.crosspaste.net.clientapi.ClientApiResult
 import com.crosspaste.net.clientapi.SuccessResult
+import com.crosspaste.utils.createPlatformLock
 import com.crosspaste.utils.ioDispatcher
 import io.ktor.util.collections.*
 import kotlinx.coroutines.CoroutineScope
@@ -14,13 +15,13 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import org.mongodb.kbson.ObjectId
 
-class DesktopPasteSyncProcessManager : PasteSyncProcessManager<ObjectId> {
+class DefaultPasteSyncProcessManager : PasteSyncProcessManager<ObjectId> {
 
     private val ioScope = CoroutineScope(ioDispatcher)
 
     private val semaphore = Semaphore(10)
 
-    override val processMap: MutableMap<ObjectId, PasteSingleProcess> = ConcurrentMap()
+    override val processMap: ConcurrentMap<ObjectId, PasteSingleProcess> = ConcurrentMap()
 
     override fun cleanProcess(key: ObjectId) {
         processMap.remove(key)
@@ -68,12 +69,18 @@ class PasteSingleProcessImpl(private val taskNum: Int) : PasteSingleProcess {
 
     private val tasks: MutableList<Boolean> = MutableList(taskNum) { false }
 
-    @Synchronized
+    private val platformLock = createPlatformLock()
+
     override fun success(index: Int) {
-        if (!tasks[index]) {
-            tasks[index] = true
-            successNum += 1
-            process = successNum / taskNum.toFloat()
+        platformLock.lock()
+        try {
+            if (!tasks[index]) {
+                tasks[index] = true
+                successNum += 1
+                process = successNum / taskNum.toFloat()
+            }
+        } finally {
+            platformLock.unlock()
         }
     }
 }
