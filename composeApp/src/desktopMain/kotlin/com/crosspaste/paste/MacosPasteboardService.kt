@@ -68,6 +68,7 @@ class MacosPasteboardService(
                         .let { currentChangeCount ->
                             if (changeCount != currentChangeCount) {
                                 logger.info { "currentChangeCount $currentChangeCount changeCount $changeCount" }
+                                val firstChange = changeCount == configManager.config.lastPasteboardChangeCount
                                 changeCount = currentChangeCount
                                 if (isCrossPaste.value != 0) {
                                     logger.debug { "Ignoring crosspaste change" }
@@ -80,7 +81,7 @@ class MacosPasteboardService(
                                     // https://github.com/CrossPaste/crosspaste-desktop/issues/1874
                                     // If it is the first time to read the pasteboard content and the source is CrossPaste
                                     // we should ignore its source
-                                    if (changeCount == configManager.config.lastPasteboardChangeCount && source == AppName) {
+                                    if (firstChange && source == AppName) {
                                         source = null
                                     }
 
