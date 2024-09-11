@@ -6,4 +6,6 @@ interface PlatformLock {
     fun lock()
 
     fun unlock()
+
+    fun withLock(action: () -> Unit)
 }

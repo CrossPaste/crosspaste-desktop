@@ -1,7 +1,7 @@
 package com.crosspaste.paste
 
-import co.touchlab.stately.concurrency.AtomicLong
 import com.crosspaste.realm.paste.PasteRealm
+import java.util.concurrent.atomic.AtomicLong
 
 class DesktopPasteIDGeneratorFactory(private val pasteRealm: PasteRealm) :
     PasteIDGeneratorFactory() {
