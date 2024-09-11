@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppFileType
 import com.crosspaste.image.FaviconLoader
 import com.crosspaste.image.FileExtImageLoader
@@ -25,6 +24,7 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteType
 import okio.FileSystem
+import org.koin.compose.koinInject
 
 @Composable
 fun PasteTypeIconView(
@@ -32,12 +32,11 @@ fun PasteTypeIconView(
     padding: Dp = 2.dp,
     size: Dp = 20.dp,
 ) {
-    val current = LocalKoinApplication.current
     val density = LocalDensity.current
-    val iconStyle = current.koin.get<IconStyle>()
-    val faviconLoader = current.koin.get<FaviconLoader>()
-    val fileExtLoader = current.koin.get<FileExtImageLoader>()
-    val userDataPathProvider = current.koin.get<UserDataPathProvider>()
+    val iconStyle = koinInject<IconStyle>()
+    val faviconLoader = koinInject<FaviconLoader>()
+    val fileExtLoader = koinInject<FileExtImageLoader>()
+    val userDataPathProvider = koinInject<UserDataPathProvider>()
 
     val imageDataLoader = getImageDataLoader()
 

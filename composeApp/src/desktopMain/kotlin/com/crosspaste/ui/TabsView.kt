@@ -43,7 +43,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppEnv
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
@@ -58,6 +57,7 @@ import com.crosspaste.ui.paste.preview.PastePreviewsView
 import com.crosspaste.utils.mainDispatcher
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.koin.compose.koinInject
 
 val tabTextStyle =
     TextStyle(
@@ -69,9 +69,8 @@ val tabTextStyle =
 
 @Composable
 fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
-    val current = LocalKoinApplication.current
-    val appEnv = current.koin.get<AppEnv>()
-    val copywriter = current.koin.get<GlobalCopywriter>()
+    val appEnv = koinInject<AppEnv>()
+    val copywriter = koinInject<GlobalCopywriter>()
 
     val textMeasurer = rememberTextMeasurer()
 
@@ -108,9 +107,9 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
                     }
                     Spacer(modifier = Modifier.weight(1f))
                     if (currentPageViewContext.value.pageViewType == PageViewType.PASTE_PREVIEW) {
-                        val appWindowManager = current.koin.get<AppWindowManager>()
-                        val notificationManager = current.koin.get<NotificationManager>()
-                        val pasteRealm = current.koin.get<PasteRealm>()
+                        val appWindowManager = koinInject<AppWindowManager>()
+                        val notificationManager = koinInject<NotificationManager>()
+                        val pasteRealm = koinInject<PasteRealm>()
                         val scope = rememberCoroutineScope()
                         PasteTooltipIconView(
                             painter = trash(),

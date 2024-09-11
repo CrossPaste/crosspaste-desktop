@@ -8,7 +8,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteSearchService
@@ -30,11 +29,11 @@ import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.koin.compose.koinInject
 
 @Composable
 fun DetialPasteDataView() {
-    val current = LocalKoinApplication.current
-    val pasteSearchService = current.koin.get<PasteSearchService>()
+    val pasteSearchService = koinInject<PasteSearchService>()
 
     val currentPasteData: PasteData? by remember(
         pasteSearchService.searchTime,
@@ -43,10 +42,10 @@ fun DetialPasteDataView() {
 
     currentPasteData?.let { pasteData ->
         pasteData.getPasteItem()?.let {
-            val appWindowManager = current.koin.get<AppWindowManager>()
-            val copywriter = current.koin.get<GlobalCopywriter>()
-            val pasteboardService = current.koin.get<PasteboardService>()
-            val notificationManager = current.koin.get<NotificationManager>()
+            val appWindowManager = koinInject<AppWindowManager>()
+            val copywriter = koinInject<GlobalCopywriter>()
+            val pasteboardService = koinInject<PasteboardService>()
+            val notificationManager = koinInject<NotificationManager>()
             val scope = rememberCoroutineScope()
             val onDoubleClick: () -> Unit = {
                 appWindowManager.setMainCursorWait()

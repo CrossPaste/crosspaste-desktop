@@ -34,7 +34,6 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.i18n.GlobalCopywriter
@@ -47,6 +46,7 @@ import com.crosspaste.ui.base.alertCircle
 import com.crosspaste.ui.connectedColor
 import com.crosspaste.ui.unmatchedColor
 import kotlinx.coroutines.runBlocking
+import org.koin.compose.koinInject
 
 @Composable
 fun DeviceDetailView(currentPageViewContext: MutableState<PageViewContext>) {
@@ -56,11 +56,10 @@ fun DeviceDetailView(currentPageViewContext: MutableState<PageViewContext>) {
 
 @Composable
 fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext>) {
-    val current = LocalKoinApplication.current
-    val appInfo = current.koin.get<AppInfo>()
-    val checker = current.koin.get<VersionCompatibilityChecker>()
-    val copywriter = current.koin.get<GlobalCopywriter>()
-    val syncManager = current.koin.get<SyncManager>()
+    val appInfo = koinInject<AppInfo>()
+    val checker = koinInject<VersionCompatibilityChecker>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val syncManager = koinInject<SyncManager>()
 
     var syncRuntimeInfo by remember { mutableStateOf(currentPageViewContext.value.context as SyncRuntimeInfo) }
 

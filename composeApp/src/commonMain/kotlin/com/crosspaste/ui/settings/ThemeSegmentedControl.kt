@@ -19,15 +19,14 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.ThemeDetector
+import org.koin.compose.koinInject
 
 @Composable
 fun ThemeSegmentedControl() {
-    val current = LocalKoinApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
-    val themeDetector = current.koin.get<ThemeDetector>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val themeDetector = koinInject<ThemeDetector>()
 
     Row(verticalAlignment = Alignment.CenterVertically) {
         // Light Button

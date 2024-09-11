@@ -6,7 +6,7 @@ import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import com.crosspaste.LocalKoinApplication
+import org.koin.compose.koinInject
 
 private val LightColorPalette =
     lightColors(
@@ -23,8 +23,7 @@ private val DarkColorPalette =
 
 @Composable
 fun CrossPasteTheme(content: @Composable () -> Unit) {
-    val current = LocalKoinApplication.current
-    val themeDetector = current.koin.get<ThemeDetector>()
+    val themeDetector = koinInject<ThemeDetector>()
 
     val colors =
         if (themeDetector.isFollowSystem()) {

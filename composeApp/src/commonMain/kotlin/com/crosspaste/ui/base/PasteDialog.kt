@@ -29,8 +29,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.i18n.GlobalCopywriter
+import org.koin.compose.koinInject
 
 class PasteDialog(
     val key: Any,
@@ -81,8 +81,7 @@ class PasteDialog(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            val current = LocalKoinApplication.current
-                            val copywriter = current.koin.get<GlobalCopywriter>()
+                            val copywriter = koinInject<GlobalCopywriter>()
                             Text(
                                 text = copywriter.getText(title),
                                 color = MaterialTheme.colors.onSurface,

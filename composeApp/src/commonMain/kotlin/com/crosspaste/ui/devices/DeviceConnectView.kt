@@ -52,7 +52,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.i18n.GlobalCopywriter
@@ -79,6 +78,7 @@ import com.crosspaste.ui.unmatchedColor
 import com.crosspaste.ui.unverifiedColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -88,13 +88,12 @@ fun DeviceConnectView(
     deviceInteractionEnabled: Boolean,
     onEdit: (SyncRuntimeInfo) -> Unit,
 ) {
-    val current = LocalKoinApplication.current
     val density = LocalDensity.current
-    val appInfo = current.koin.get<AppInfo>()
-    val checker = current.koin.get<VersionCompatibilityChecker>()
-    val copywriter = current.koin.get<GlobalCopywriter>()
-    val notificationManager = current.koin.get<NotificationManager>()
-    val syncManager = current.koin.get<SyncManager>()
+    val appInfo = koinInject<AppInfo>()
+    val checker = koinInject<VersionCompatibilityChecker>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val notificationManager = koinInject<NotificationManager>()
+    val syncManager = koinInject<SyncManager>()
 
     val scope = rememberCoroutineScope()
 

@@ -20,7 +20,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import com.crosspaste.LocalExitApplication
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.LocalPageViewContent
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.ExitMode
@@ -28,18 +27,18 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.getMenWidth
+import org.koin.compose.koinInject
 
 @Composable
 fun HomeMenuView(
     openMainWindow: () -> Unit = {},
     close: () -> Unit,
 ) {
-    val current = LocalKoinApplication.current
     val currentPage = LocalPageViewContent.current
     val applicationExit = LocalExitApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
-    val uiSupport = current.koin.get<UISupport>()
-    val appUpdateService = current.koin.get<AppUpdateService>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val uiSupport = koinInject<UISupport>()
+    val appUpdateService = koinInject<AppUpdateService>()
 
     val existNewVersion by remember { mutableStateOf(appUpdateService.existNewVersion()) }
 

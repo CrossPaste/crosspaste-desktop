@@ -26,11 +26,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.ui.paste.title.getPasteTitle
 import com.crosspaste.ui.selectColor
+import org.koin.compose.koinInject
 
 @Composable
 fun PasteTitleView(
@@ -38,8 +38,7 @@ fun PasteTitleView(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    val current = LocalKoinApplication.current
-    val userDataPathProvider = current.koin.get<UserDataPathProvider>()
+    val userDataPathProvider = koinInject<UserDataPathProvider>()
 
     val title by remember(pasteData.pasteState) {
         mutableStateOf(

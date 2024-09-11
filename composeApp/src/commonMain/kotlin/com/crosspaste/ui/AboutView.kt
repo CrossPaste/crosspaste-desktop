@@ -28,7 +28,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppInfoFactory
 import com.crosspaste.app.AppUrls
@@ -36,6 +35,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.Fonts.ROBOTO_FONT_FAMILY
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.chevronRight
+import org.koin.compose.koinInject
 
 @Composable
 fun AboutView(currentPageViewContext: MutableState<PageViewContext>) {
@@ -45,11 +45,10 @@ fun AboutView(currentPageViewContext: MutableState<PageViewContext>) {
 
 @Composable
 fun AboutContentView() {
-    val current = LocalKoinApplication.current
-    val appInfoFactory = current.koin.get<AppInfoFactory>()
-    val appInfo = current.koin.get<AppInfo>()
-    val appUrls = current.koin.get<AppUrls>()
-    val uiSupport = current.koin.get<UISupport>()
+    val appInfoFactory = koinInject<AppInfoFactory>()
+    val appInfo = koinInject<AppInfo>()
+    val appUrls = koinInject<AppUrls>()
+    val uiSupport = koinInject<UISupport>()
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -134,8 +133,7 @@ fun AboutInfoItem(
     title: String,
     onClick: () -> Unit,
 ) {
-    val current = LocalKoinApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
+    val copywriter = koinInject<GlobalCopywriter>()
     Row(
         modifier =
             Modifier.fillMaxWidth()

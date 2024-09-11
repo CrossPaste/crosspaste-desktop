@@ -25,19 +25,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.Counter
 import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.file
 import com.crosspaste.ui.base.sync
+import org.koin.compose.koinInject
 
 @Composable
 fun PasteboardSettingsView() {
-    val current = LocalKoinApplication.current
-    val configManager = current.koin.get<ConfigManager>()
-    val copywriter = current.koin.get<GlobalCopywriter>()
+    val configManager = koinInject<ConfigManager>()
+    val copywriter = koinInject<GlobalCopywriter>()
 
     Text(
         modifier =

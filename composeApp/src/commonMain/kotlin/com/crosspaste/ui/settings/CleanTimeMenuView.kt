@@ -14,19 +14,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.clean.CleanTime
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.getMenWidth
+import org.koin.compose.koinInject
 
 @Composable
 fun CleanTimeMenuView(
     selectIndex: Int,
     closeMenu: (Int) -> Unit,
 ) {
-    val current = LocalKoinApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
+    val copywriter = koinInject<GlobalCopywriter>()
 
     Box(
         modifier =

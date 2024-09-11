@@ -27,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.i18n.Copywriter
 import com.crosspaste.i18n.GlobalCopywriter
@@ -42,6 +41,7 @@ import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.koin.compose.koinInject
 
 @Composable
 fun PastePreviewItemView(
@@ -72,11 +72,10 @@ fun PasteSpecificPreviewView(pasteData: PasteData) {
     if (pasteData.pasteState == PasteState.LOADING) {
         PrePreviewView(pasteData)
     } else {
-        val current = LocalKoinApplication.current
-        val appWindowManager = current.koin.get<AppWindowManager>()
-        val copywriter = current.koin.get<GlobalCopywriter>()
-        val pasteboardService = current.koin.get<PasteboardService>()
-        val notificationManager = current.koin.get<NotificationManager>()
+        val appWindowManager = koinInject<AppWindowManager>()
+        val copywriter = koinInject<GlobalCopywriter>()
+        val pasteboardService = koinInject<PasteboardService>()
+        val notificationManager = koinInject<NotificationManager>()
         val scope = rememberCoroutineScope()
         val onDoubleClick: () -> Unit = {
             appWindowManager.setMainCursorWait()

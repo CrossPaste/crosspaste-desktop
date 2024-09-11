@@ -50,7 +50,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PastePreviewService
@@ -62,12 +61,12 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
 @Composable
 fun PastePreviewsView() {
-    val current = LocalKoinApplication.current
-    val pastePreviewService = current.koin.get<PastePreviewService>()
-    val appWindowManager = current.koin.get<DesktopAppWindowManager>()
+    val pastePreviewService = koinInject<PastePreviewService>()
+    val appWindowManager = koinInject<DesktopAppWindowManager>()
 
     val listState = rememberLazyListState()
     var isScrolling by remember { mutableStateOf(false) }
@@ -198,8 +197,7 @@ fun PastePreviewsView() {
 
 @Composable
 fun EmptyScreenView() {
-    val current = LocalKoinApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
+    val copywriter = koinInject<GlobalCopywriter>()
     Box(
         contentAlignment = Alignment.Center,
         modifier =
@@ -233,8 +231,7 @@ fun EmptyScreenView() {
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun ToTop(toTopAction: () -> Unit) {
-    val current = LocalKoinApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
+    val copywriter = koinInject<GlobalCopywriter>()
     Row(
         modifier =
             Modifier.fillMaxSize()

@@ -43,7 +43,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppTokenService
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.QRCodeGenerator
@@ -51,15 +50,15 @@ import com.crosspaste.ui.base.autoRenew
 import com.crosspaste.ui.base.scan
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.withContext
+import org.koin.compose.koinInject
 
 val qrSize: DpSize = DpSize(275.dp, 275.dp)
 
 @Composable
 fun bindingQRCode() {
-    val current = LocalKoinApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
-    val appTokenService = current.koin.get<AppTokenService>()
-    val qrCodeGenerator = current.koin.get<QRCodeGenerator>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val appTokenService = koinInject<AppTokenService>()
+    val qrCodeGenerator = koinInject<QRCodeGenerator>()
 
     val density = LocalDensity.current
 

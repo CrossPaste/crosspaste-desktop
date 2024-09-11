@@ -4,12 +4,6 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.crosspaste.app.ExitMode
 import com.crosspaste.ui.PageViewContext
-import org.koin.core.KoinApplication
-
-internal val LocalKoinApplication =
-    staticCompositionLocalOf<KoinApplication> {
-        noLocalProvidedFor("KoinApplication")
-    }
 
 internal val LocalExitApplication =
     staticCompositionLocalOf<(ExitMode) -> Unit> {

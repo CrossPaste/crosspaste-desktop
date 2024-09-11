@@ -58,7 +58,6 @@ import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Popup
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteboardService
@@ -82,6 +81,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import org.koin.compose.koinInject
 
 @Composable
 fun SettingsTextStyle() =
@@ -96,10 +96,9 @@ fun SettingsTextStyle() =
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
-    val current = LocalKoinApplication.current
-    val configManager = current.koin.get<ConfigManager>()
-    val copywriter = current.koin.get<GlobalCopywriter>()
-    val pasteboardService = current.koin.get<PasteboardService>()
+    val configManager = koinInject<ConfigManager>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val pasteboardService = koinInject<PasteboardService>()
     var hasBeenClicked by remember { mutableStateOf(false) }
     var showMoreLanguage by remember { mutableStateOf(false) }
 

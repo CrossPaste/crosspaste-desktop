@@ -38,7 +38,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
 import com.crosspaste.sync.SyncManager
@@ -47,12 +46,12 @@ import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.ExpandView
 import com.crosspaste.ui.base.PasteDialog
+import org.koin.compose.koinInject
 
 @Composable
 fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
-    val current = LocalKoinApplication.current
-    val syncManager = current.koin.get<SyncManager>()
-    val dialogService = current.koin.get<DialogService>()
+    val syncManager = koinInject<SyncManager>()
+    val dialogService = koinInject<DialogService>()
 
     LaunchedEffect(Unit) {
         syncManager.resolveSyncs()
@@ -101,8 +100,7 @@ fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
 
 @Composable
 fun MyDevicesView(currentPageViewContext: MutableState<PageViewContext>) {
-    val current = LocalKoinApplication.current
-    val dialogService = current.koin.get<DialogService>()
+    val dialogService = koinInject<DialogService>()
     Box(contentAlignment = Alignment.TopCenter) {
         DevicesListView(currentPageViewContext) { syncRuntimeInfo ->
             dialogService.pushDialog(
@@ -111,7 +109,7 @@ fun MyDevicesView(currentPageViewContext: MutableState<PageViewContext>) {
                     title = "input_note_name",
                     width = 260.dp,
                 ) {
-                    val syncRuntimeInfoRealm = current.koin.get<SyncRuntimeInfoRealm>()
+                    val syncRuntimeInfoRealm = koinInject<SyncRuntimeInfoRealm>()
                     var inputNoteName by remember { mutableStateOf("") }
                     var isError by remember { mutableStateOf(false) }
 
@@ -222,8 +220,7 @@ fun DevicesListView(
     currentPageViewContext: MutableState<PageViewContext>,
     onEdit: (SyncRuntimeInfo) -> Unit,
 ) {
-    val current = LocalKoinApplication.current
-    val syncManager = current.koin.get<SyncManager>()
+    val syncManager = koinInject<SyncManager>()
     val rememberSyncRuntimeInfos = remember { syncManager.realTimeSyncRuntimeInfos }
 
     Column(modifier = Modifier.fillMaxWidth()) {

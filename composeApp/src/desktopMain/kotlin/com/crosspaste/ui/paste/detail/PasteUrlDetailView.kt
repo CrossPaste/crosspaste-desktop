@@ -15,7 +15,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.info.PasteInfos.DATE
 import com.crosspaste.info.PasteInfos.REMOTE
@@ -27,6 +26,7 @@ import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -35,9 +35,8 @@ fun PasteUrlDetailView(
     pasteUrl: PasteUrl,
     onDoubleClick: () -> Unit,
 ) {
-    val current = LocalKoinApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
-    val uiSupport = current.koin.get<UISupport>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val uiSupport = koinInject<UISupport>()
     val dateUtils = getDateUtils()
     val fileUtils = getFileUtils()
     val url = pasteUrl.url

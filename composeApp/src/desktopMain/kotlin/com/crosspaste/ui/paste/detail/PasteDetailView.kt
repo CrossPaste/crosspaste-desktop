@@ -15,16 +15,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.DesktopAppWindowManager
+import org.koin.compose.koinInject
 
 @Composable
 fun PasteDetailView(
     detailView: @Composable () -> Unit,
     detailInfoView: @Composable () -> Unit,
 ) {
-    val current = LocalKoinApplication.current
-    val appWindowManager = current.koin.get<DesktopAppWindowManager>()
+    val appWindowManager = koinInject<DesktopAppWindowManager>()
 
     val dpSize by remember { mutableStateOf(appWindowManager.searchWindowDetailViewDpSize) }
     Column(modifier = Modifier.fillMaxSize()) {

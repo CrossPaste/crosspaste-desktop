@@ -29,7 +29,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.ImageData
 import com.crosspaste.image.ThumbnailLoader
@@ -45,15 +44,15 @@ import com.crosspaste.ui.base.imageSlash
 import com.crosspaste.utils.getFileUtils
 import okio.FileSystem
 import okio.Path
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SingleImagePreviewView(imagePath: Path) {
-    val current = LocalKoinApplication.current
     val density = LocalDensity.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
-    val uiSupport = current.koin.get<UISupport>()
-    val thumbnailLoader = current.koin.get<ThumbnailLoader>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val uiSupport = koinInject<UISupport>()
+    val thumbnailLoader = koinInject<ThumbnailLoader>()
 
     val fileUtils = getFileUtils()
     val imageDataLoader = getImageDataLoader()

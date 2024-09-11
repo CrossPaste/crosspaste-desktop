@@ -32,7 +32,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.paste.PasteSearchService
 import com.crosspaste.ui.base.PasteTitleView
@@ -41,12 +40,12 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
 @Composable
 fun SearchListView(setSelectedIndex: (Int) -> Unit) {
-    val current = LocalKoinApplication.current
-    val pasteSearchService = current.koin.get<PasteSearchService>()
-    val appWindowManager = current.koin.get<DesktopAppWindowManager>()
+    val pasteSearchService = koinInject<PasteSearchService>()
+    val appWindowManager = koinInject<DesktopAppWindowManager>()
     val searchListState = rememberLazyListState()
     val adapter = rememberScrollbarAdapter(scrollState = searchListState)
     var showScrollbar by remember { mutableStateOf(false) }

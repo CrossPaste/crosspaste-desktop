@@ -45,7 +45,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.LocalPageViewContent
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
@@ -74,6 +73,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -81,13 +81,12 @@ fun PasteMenuView(
     pasteData: PasteData,
     toShow: (Boolean) -> Unit,
 ) {
-    val current = LocalKoinApplication.current
     val density = LocalDensity.current
-    val pasteRealm = current.koin.get<PasteRealm>()
-    val appWindowManager = current.koin.get<AppWindowManager>()
-    val pasteboardService = current.koin.get<PasteboardService>()
-    val copywriter = current.koin.get<GlobalCopywriter>()
-    val notificationManager = current.koin.get<NotificationManager>()
+    val pasteRealm = koinInject<PasteRealm>()
+    val appWindowManager = koinInject<AppWindowManager>()
+    val pasteboardService = koinInject<PasteboardService>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val notificationManager = koinInject<NotificationManager>()
 
     var parentBounds by remember { mutableStateOf(Rect.Zero) }
     var cursorPosition by remember { mutableStateOf(Offset.Zero) }
@@ -419,11 +418,10 @@ fun MoreMenuItems(
     pasteData: PasteData,
     hideMore: () -> Unit,
 ) {
-    val current = LocalKoinApplication.current
     val currentPage = LocalPageViewContent.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
-    val pasteRealm = current.koin.get<PasteRealm>()
-    val uiSupport = current.koin.get<UISupport>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val pasteRealm = koinInject<PasteRealm>()
+    val uiSupport = koinInject<UISupport>()
     Box(
         modifier =
             Modifier

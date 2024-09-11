@@ -31,7 +31,6 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.FileExtImageLoader
 import com.crosspaste.image.ImageData
@@ -56,6 +55,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -64,14 +64,13 @@ fun PasteFilesDetailView(
     pasteFiles: PasteFiles,
     onDoubleClick: () -> Unit,
 ) {
-    val current = LocalKoinApplication.current
     val density = LocalDensity.current
-    val userDataPathProvider = current.koin.get<UserDataPathProvider>()
+    val userDataPathProvider = koinInject<UserDataPathProvider>()
 
     val showFileCount = pasteFiles.getFilePaths(userDataPathProvider).size
     if (showFileCount > 0) {
-        val copywriter = current.koin.get<GlobalCopywriter>()
-        val fileExtIconLoader = current.koin.get<FileExtImageLoader>()
+        val copywriter = koinInject<GlobalCopywriter>()
+        val fileExtIconLoader = koinInject<FileExtImageLoader>()
 
         val pasteItem = pasteFiles as PasteItem
 

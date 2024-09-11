@@ -28,7 +28,6 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.rememberWindowState
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.WinAppWindowManager
@@ -39,6 +38,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 import java.awt.GraphicsDevice
 import java.awt.GraphicsEnvironment
 import java.awt.Insets
@@ -54,11 +54,9 @@ object WindowsTrayView {
 
     @Composable
     fun Tray() {
-        val current = LocalKoinApplication.current
-
-        val appLaunchState = current.koin.get<AppLaunchState>()
-        val appWindowManager = current.koin.get<DesktopAppWindowManager>()
-        val notificationManager = current.koin.get<NotificationManager>() as DesktopNotificationManager
+        val appLaunchState = koinInject<AppLaunchState>()
+        val appWindowManager = koinInject<DesktopAppWindowManager>()
+        val notificationManager = koinInject<NotificationManager>() as DesktopNotificationManager
 
         val trayIcon = painterResource("icon/crosspaste.png")
 
@@ -143,8 +141,7 @@ object WindowsTrayView {
 
     @Composable
     fun WindowTrayMenu(hideMenu: () -> Unit) {
-        val current = LocalKoinApplication.current
-        val appWindowManager = current.koin.get<DesktopAppWindowManager>()
+        val appWindowManager = koinInject<DesktopAppWindowManager>()
 
         CrossPasteTheme {
             Box(

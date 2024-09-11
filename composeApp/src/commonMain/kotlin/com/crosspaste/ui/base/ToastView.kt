@@ -30,8 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.crosspaste.LocalKoinApplication
 import kotlinx.coroutines.delay
+import org.koin.compose.koinInject
 
 data class Toast(val messageType: MessageType, val message: String, val duration: Long = 3000)
 
@@ -40,9 +40,8 @@ fun ToastView(
     toast: Toast,
     onCancelTapped: () -> Unit,
 ) {
-    val current = LocalKoinApplication.current
     val density = LocalDensity.current
-    val toastManager = current.koin.get<ToastManager>()
+    val toastManager = koinInject<ToastManager>()
 
     val messageStyle by remember {
         mutableStateOf(toast.messageType.getMessageStyle())

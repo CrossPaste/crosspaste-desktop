@@ -36,9 +36,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.arrowBack
+import org.koin.compose.koinInject
 
 @Composable
 fun WindowDecoration(
@@ -62,8 +62,7 @@ fun DecorationUI(
     currentPageViewContext: MutableState<PageViewContext>,
     title: String,
 ) {
-    val current = LocalKoinApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
+    val copywriter = koinInject<GlobalCopywriter>()
 
     var hoverReturn by remember { mutableStateOf(false) }
 

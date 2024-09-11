@@ -17,7 +17,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.info.PasteInfos.DATE
 import com.crosspaste.info.PasteInfos.REMOTE
@@ -28,6 +27,7 @@ import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -36,8 +36,7 @@ fun PasteTextDetailView(
     pasteText: PasteText,
     onDoubleClick: () -> Unit,
 ) {
-    val current = LocalKoinApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
+    val copywriter = koinInject<GlobalCopywriter>()
     val dateUtils = getDateUtils()
     val fileUtils = getFileUtils()
     val text = pasteText.text

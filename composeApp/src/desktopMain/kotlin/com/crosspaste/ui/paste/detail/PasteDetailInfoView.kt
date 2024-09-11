@@ -45,7 +45,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppFileType
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.path.UserDataPathProvider
@@ -60,6 +59,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
 data class PasteDetailInfoItem(val key: String, val value: String)
 
@@ -70,11 +70,10 @@ fun PasteDetailInfoView(
     pasteData: PasteData,
     items: List<PasteDetailInfoItem>,
 ) {
-    val current = LocalKoinApplication.current
-    val iconStyle = current.koin.get<IconStyle>()
-    val copywriter = current.koin.get<GlobalCopywriter>()
-    val pasteRealm = current.koin.get<PasteRealm>()
-    val userDataPathProvider = current.koin.get<UserDataPathProvider>()
+    val iconStyle = koinInject<IconStyle>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val pasteRealm = koinInject<PasteRealm>()
+    val userDataPathProvider = koinInject<UserDataPathProvider>()
 
     Row(
         modifier = Modifier.fillMaxWidth().height(30.dp),

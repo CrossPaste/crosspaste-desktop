@@ -43,7 +43,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
@@ -58,11 +57,11 @@ import com.crosspaste.utils.getJsonUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
+import org.koin.compose.koinInject
 
 @Composable
 fun NearbyDevicesView() {
-    val current = LocalKoinApplication.current
-    val deviceManager = current.koin.get<DeviceManager>()
+    val deviceManager = koinInject<DeviceManager>()
 
     val nearbyDevicesList = remember { deviceManager.syncInfos }
 
@@ -84,8 +83,7 @@ fun NearbyDevicesView() {
 
 @Composable
 fun NotFoundNearByDevices() {
-    val current = LocalKoinApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
+    val copywriter = koinInject<GlobalCopywriter>()
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier.fillMaxSize(),
@@ -116,9 +114,8 @@ fun NotFoundNearByDevices() {
 
 @Composable
 fun SearchNearByDevices() {
-    val current = LocalKoinApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
-    val deviceManager = current.koin.get<DeviceManager>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val deviceManager = koinInject<DeviceManager>()
 
     val offsetX = remember { Animatable(0f) }
     val offsetY = remember { Animatable(0f) }
@@ -233,11 +230,10 @@ fun SyncDeviceView(
 
 @Composable
 fun NearbyDeviceView(syncInfo: SyncInfo) {
-    val current = LocalKoinApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
-    val deviceManager = current.koin.get<DeviceManager>()
-    val syncRuntimeInfoRealm = current.koin.get<SyncRuntimeInfoRealm>()
-    val configManager = current.koin.get<ConfigManager>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val deviceManager = koinInject<DeviceManager>()
+    val syncRuntimeInfoRealm = koinInject<SyncRuntimeInfoRealm>()
+    val configManager = koinInject<ConfigManager>()
     val jsonUtils = getJsonUtils()
     val scope = rememberCoroutineScope()
     SyncDeviceView(syncInfo = syncInfo) {

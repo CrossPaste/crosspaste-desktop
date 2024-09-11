@@ -75,6 +75,7 @@ kotlin {
             implementation(libs.jna.platform)
             implementation(libs.jnativehook)
             implementation(libs.jsoup)
+            implementation(libs.koin.compose)
             implementation(libs.koin.core)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.client.core)

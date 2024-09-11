@@ -39,7 +39,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalExitApplication
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppLock
 import com.crosspaste.app.AppRestartService
 import com.crosspaste.app.ExitMode
@@ -47,18 +46,18 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.CrossPasteTheme
 import com.crosspaste.ui.grantPermissionColor
 import kotlinx.coroutines.delay
+import org.koin.compose.koinInject
 
 @Composable
 fun CrossPasteGrantAccessibilityPermissions(
     checkAccessibilityPermissionsFun: () -> Boolean,
     setOnTop: (Boolean) -> Unit,
 ) {
-    val current = LocalKoinApplication.current
     val exitApplication = LocalExitApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
-    val appLock = current.koin.get<AppLock>()
-    val appRestartService = current.koin.get<AppRestartService>()
-    val uiSupport = current.koin.get<UISupport>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val appLock = koinInject<AppLock>()
+    val appRestartService = koinInject<AppRestartService>()
+    val uiSupport = koinInject<UISupport>()
 
     var toRestart by remember { mutableStateOf(false) }
 
