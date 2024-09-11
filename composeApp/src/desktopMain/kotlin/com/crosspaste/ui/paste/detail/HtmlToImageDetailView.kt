@@ -23,7 +23,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.ImageData
 import com.crosspaste.image.LoadingStateData
@@ -41,6 +40,7 @@ import com.crosspaste.ui.base.UISupport
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
 import kotlinx.coroutines.delay
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -49,11 +49,10 @@ fun HtmlToImageDetailView(
     pasteHtml: PasteHtml,
     onDoubleClick: () -> Unit,
 ) {
-    val current = LocalKoinApplication.current
     val density = LocalDensity.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
-    val uiSupport = current.koin.get<UISupport>()
-    val userDataPathProvider = current.koin.get<UserDataPathProvider>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val uiSupport = koinInject<UISupport>()
+    val userDataPathProvider = koinInject<UserDataPathProvider>()
     val pasteItem = pasteHtml as PasteItem
 
     val dateUtils = getDateUtils()

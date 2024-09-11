@@ -45,19 +45,18 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
 @Composable
 fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
-    val current = LocalKoinApplication.current
-    val syncManager = current.koin.get<SyncManager>()
-    val dialogService = current.koin.get<DialogService>()
+    val syncManager = koinInject<SyncManager>()
+    val dialogService = koinInject<DialogService>()
 
     val tokenCount = 6
     val tokens = remember { mutableStateListOf(*Array(tokenCount) { "" }) }

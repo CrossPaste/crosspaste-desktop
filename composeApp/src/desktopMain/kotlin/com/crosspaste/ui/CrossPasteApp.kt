@@ -21,7 +21,6 @@ import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.LocalPageViewContent
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.ui.base.DialogService
@@ -35,14 +34,14 @@ import com.crosspaste.ui.settings.ShortcutKeysView
 import com.crosspaste.utils.GlobalCoroutineScope
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
 @Composable
 fun CrossPasteMainWindowContent(hideWindow: suspend () -> Unit) {
-    val current = LocalKoinApplication.current
-    val appWindowManager = current.koin.get<DesktopAppWindowManager>()
-    val toastManager = current.koin.get<ToastManager>()
-    val dialogService = current.koin.get<DialogService>()
-    val globalCoroutineScope = current.koin.get<GlobalCoroutineScope>()
+    val appWindowManager = koinInject<DesktopAppWindowManager>()
+    val toastManager = koinInject<ToastManager>()
+    val dialogService = koinInject<DialogService>()
+    val globalCoroutineScope = koinInject<GlobalCoroutineScope>()
     val mainCoroutineDispatcher = globalCoroutineScope.mainCoroutineDispatcher
     val toast by toastManager.toast
 

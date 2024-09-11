@@ -29,7 +29,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.clientapi.SuccessResult
@@ -42,6 +41,7 @@ import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.connectedColor
 import com.crosspaste.utils.buildUrl
 import kotlinx.coroutines.runBlocking
+import org.koin.compose.koinInject
 
 @Composable
 fun AddDeviceManuallyView() {
@@ -58,11 +58,10 @@ fun AddDeviceManuallyView() {
 
 @Composable
 fun AddDeviceManuallyForm() {
-    val current = LocalKoinApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
-    val notificationManager = current.koin.get<NotificationManager>()
-    val syncClientApi = current.koin.get<SyncClientApi>()
-    val syncRuntimeInfoRealm = current.koin.get<SyncRuntimeInfoRealm>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val notificationManager = koinInject<NotificationManager>()
+    val syncClientApi = koinInject<SyncClientApi>()
+    val syncRuntimeInfoRealm = koinInject<SyncRuntimeInfoRealm>()
 
     Row(
         modifier =

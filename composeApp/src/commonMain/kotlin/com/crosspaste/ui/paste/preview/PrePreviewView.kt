@@ -28,18 +28,17 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.paste.PasteSingleProcess
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.ui.base.PasteProgressbar
 import com.valentinilk.shimmer.shimmer
+import org.koin.compose.koinInject
 import org.mongodb.kbson.ObjectId
 
 @Composable
 fun PrePreviewView(pasteData: PasteData) {
-    val current = LocalKoinApplication.current
-    val pasteSyncProcessManager = current.koin.get<PasteSyncProcessManager<ObjectId>>()
+    val pasteSyncProcessManager = koinInject<PasteSyncProcessManager<ObjectId>>()
 
     val singleProcess: PasteSingleProcess? by remember(pasteData.id) { mutableStateOf(pasteSyncProcessManager.getProcess(pasteData.id)) }
 

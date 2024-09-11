@@ -12,7 +12,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
 import com.crosspaste.LocalExitApplication
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.LocalPageViewContent
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.DesktopAppWindowManager
@@ -29,7 +28,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.koin.core.KoinApplication
+import org.koin.compose.koinInject
 import java.awt.Color
 import java.awt.GraphicsEnvironment
 import java.awt.MenuItem
@@ -45,23 +44,33 @@ object MacTrayView {
 
     @Composable
     fun Tray() {
-        val current = LocalKoinApplication.current
         val pageViewContext = LocalPageViewContent.current
         val applicationExit = LocalExitApplication.current
 
-        val appLaunchState = current.koin.get<AppLaunchState>()
-        val appWindowManager = current.koin.get<DesktopAppWindowManager>()
-        val notificationManager = current.koin.get<NotificationManager>() as DesktopNotificationManager
-        val copywriter = current.koin.get<GlobalCopywriter>()
+        val appLaunchState = koinInject<AppLaunchState>()
+        val appWindowManager = koinInject<DesktopAppWindowManager>()
+        val notificationManager = koinInject<NotificationManager>() as DesktopNotificationManager
+        val copywriter = koinInject<GlobalCopywriter>()
+        val uiSupport = koinInject<UISupport>()
 
         val trayIcon = painterResource("icon/crosspaste.tray.mac.png")
 
-        var menu by remember { mutableStateOf(createPopupMenu(current, pageViewContext, applicationExit)) }
+        var menu by remember {
+            mutableStateOf(
+                createPopupMenu(
+                    appWindowManager,
+                    copywriter,
+                    uiSupport,
+                    pageViewContext,
+                    applicationExit,
+                ),
+            )
+        }
         val frame by remember { mutableStateOf(TransparentFrame()) }
 
         DisposableEffect(copywriter.language()) {
             frame.removeAll()
-            menu = createPopupMenu(current, pageViewContext, applicationExit)
+            menu = createPopupMenu(appWindowManager, copywriter, uiSupport, pageViewContext, applicationExit)
             frame.add(menu)
             onDispose {
                 frame.dispose()
@@ -117,14 +126,12 @@ object MacTrayView {
     }
 
     fun createPopupMenu(
-        koinApplication: KoinApplication,
+        appWindowManager: DesktopAppWindowManager,
+        copywriter: GlobalCopywriter,
+        uiSupport: UISupport,
         currentPage: MutableState<PageViewContext>,
         applicationExit: (ExitMode) -> Unit,
     ): PopupMenu {
-        val copywriter = koinApplication.koin.get<GlobalCopywriter>()
-        val appWindowManager = koinApplication.koin.get<DesktopAppWindowManager>()
-        val uiSupport = koinApplication.koin.get<UISupport>()
-
         val popup = PopupMenu()
 
         popup.add(

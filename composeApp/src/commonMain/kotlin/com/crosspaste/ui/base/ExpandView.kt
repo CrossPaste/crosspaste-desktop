@@ -37,8 +37,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.i18n.GlobalCopywriter
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
@@ -47,8 +47,7 @@ fun ExpandView(
     defaultExpand: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val current = LocalKoinApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
+    val copywriter = koinInject<GlobalCopywriter>()
     var hover by remember { mutableStateOf(false) }
     var expand by remember { mutableStateOf(defaultExpand) }
 

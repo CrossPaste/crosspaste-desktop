@@ -38,7 +38,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.clean.CleanTime
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
@@ -60,14 +59,14 @@ import com.crosspaste.ui.base.trash
 import com.crosspaste.ui.devices.measureTextWidth
 import com.crosspaste.utils.Quadruple
 import com.crosspaste.utils.getFileUtils
+import org.koin.compose.koinInject
 
 @Composable
 fun StoreSettingsView() {
-    val current = LocalKoinApplication.current
     val density = LocalDensity.current
-    val configManager = current.koin.get<ConfigManager>()
-    val pasteRealm = current.koin.get<PasteRealm>()
-    val copywriter = current.koin.get<GlobalCopywriter>()
+    val configManager = koinInject<ConfigManager>()
+    val pasteRealm = koinInject<PasteRealm>()
+    val copywriter = koinInject<GlobalCopywriter>()
 
     val fileUtils = getFileUtils()
 

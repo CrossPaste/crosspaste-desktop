@@ -24,7 +24,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.image.ImageData
 import com.crosspaste.image.getImageDataLoader
 import com.crosspaste.paste.item.PasteHtml
@@ -32,6 +31,7 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.ui.base.AsyncView
 import kotlinx.coroutines.delay
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -40,9 +40,8 @@ fun HtmlToImagePreviewView(
     onDoubleClick: () -> Unit,
 ) {
     pasteData.getPasteItem()?.let {
-        val current = LocalKoinApplication.current
         val density = LocalDensity.current
-        val userDataPathProvider = current.koin.get<UserDataPathProvider>()
+        val userDataPathProvider = koinInject<UserDataPathProvider>()
         val imageDataLoader = getImageDataLoader()
 
         val pasteHtml = it as PasteHtml

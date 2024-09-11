@@ -9,7 +9,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
 import com.crosspaste.LocalExitApplication
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
@@ -21,6 +20,7 @@ import dorkbox.systemTray.SystemTray.TrayType
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 import java.awt.GraphicsEnvironment
 import java.awt.Toolkit
 
@@ -30,10 +30,9 @@ object LinuxTrayView {
 
     @Composable
     fun Tray() {
-        val current = LocalKoinApplication.current
         val applicationExit = LocalExitApplication.current
-        val appLaunchState = current.koin.get<AppLaunchState>()
-        val appWindowManager = current.koin.get<DesktopAppWindowManager>()
+        val appLaunchState = koinInject<AppLaunchState>()
+        val appWindowManager = koinInject<DesktopAppWindowManager>()
         val tray by remember {
             val trayType = getTrayType()
             if (trayType != TrayType.AutoDetect) {

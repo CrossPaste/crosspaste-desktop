@@ -520,7 +520,6 @@ class CrossPaste {
                 val currentPageViewContext = remember { mutableStateOf(PageViewContext(PageViewType.PASTE_PREVIEW)) }
 
                 CompositionLocalProvider(
-                    LocalKoinApplication provides koinApplication,
                     LocalExitApplication provides exitApplication,
                     LocalPageViewContent provides currentPageViewContext,
                 ) {

@@ -49,7 +49,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppWindowManager
@@ -64,6 +63,7 @@ import com.crosspaste.ui.base.search
 import com.crosspaste.ui.base.settings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
 @Composable
 fun HomeView(currentPageViewContext: MutableState<PageViewContext>) {
@@ -74,14 +74,13 @@ fun HomeView(currentPageViewContext: MutableState<PageViewContext>) {
 @Preview
 @Composable
 fun HomeWindowDecoration() {
-    val current = LocalKoinApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
-    val appLaunchState = current.koin.get<AppLaunchState>()
-    val appWindowManager = current.koin.get<DesktopAppWindowManager>()
-    val appUpdateService = current.koin.get<AppUpdateService>()
-    val pasteSearchService = current.koin.get<DesktopPasteSearchService>()
-    val configManager = current.koin.get<ConfigManager>()
-    val uiSupport = current.koin.get<UISupport>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val appLaunchState = koinInject<AppLaunchState>()
+    val appWindowManager = koinInject<DesktopAppWindowManager>()
+    val appUpdateService = koinInject<AppUpdateService>()
+    val pasteSearchService = koinInject<DesktopPasteSearchService>()
+    val configManager = koinInject<ConfigManager>()
+    val uiSupport = koinInject<UISupport>()
 
     val scope = rememberCoroutineScope()
 

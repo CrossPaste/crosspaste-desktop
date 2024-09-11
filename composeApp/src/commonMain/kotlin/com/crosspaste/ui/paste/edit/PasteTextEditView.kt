@@ -18,7 +18,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.paste.plugin.type.TextUpdater
@@ -29,6 +28,7 @@ import com.crosspaste.ui.WindowDecoration
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.save
 import com.crosspaste.utils.getCodecsUtils
+import org.koin.compose.koinInject
 
 @Composable
 fun PasteTextEditView(currentPageViewContext: MutableState<PageViewContext>) {
@@ -38,10 +38,9 @@ fun PasteTextEditView(currentPageViewContext: MutableState<PageViewContext>) {
 
 @Composable
 fun PasteTextEditContentView(pasteData: PasteData) {
-    val current = LocalKoinApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
-    val pasteRealm = current.koin.get<PasteRealm>()
-    val textUpdater = current.koin.get<TextUpdater>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val pasteRealm = koinInject<PasteRealm>()
+    val textUpdater = koinInject<TextUpdater>()
     val codecsUtils = getCodecsUtils()
 
     Box(

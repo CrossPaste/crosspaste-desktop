@@ -39,7 +39,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.listener.KeyboardKey
 import com.crosspaste.listener.ShortcutKeys
@@ -51,6 +50,7 @@ import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.KeyboardView
 import com.crosspaste.ui.base.PasteDialog
 import com.crosspaste.ui.base.edit
+import org.koin.compose.koinInject
 
 @Composable
 fun ShortcutKeysView(currentPageViewContext: MutableState<PageViewContext>) {
@@ -145,10 +145,9 @@ fun ShortcutKeysContentView() {
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ShortcutKeyRow(name: String) {
-    val current = LocalKoinApplication.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
-    val shortcutKeys = current.koin.get<ShortcutKeys>()
-    val dialogService = current.koin.get<DialogService>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val shortcutKeys = koinInject<ShortcutKeys>()
+    val dialogService = koinInject<DialogService>()
 
     var hover by remember { mutableStateOf(false) }
 
@@ -173,7 +172,7 @@ fun ShortcutKeyRow(name: String) {
         settingsText(copywriter.getText(name))
         Spacer(modifier = Modifier.weight(1f))
 
-        val shortcutKeysListener = current.koin.get<ShortcutKeysListener>()
+        val shortcutKeysListener = koinInject<ShortcutKeysListener>()
 
         Icon(
             modifier =

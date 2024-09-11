@@ -33,7 +33,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
@@ -49,13 +48,13 @@ import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.getNetUtils
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
+import org.koin.compose.koinInject
 
 @Composable
 fun NetSettingsView() {
-    val current = LocalKoinApplication.current
-    val configManager = current.koin.get<ConfigManager>()
-    val deviceManager = current.koin.get<DeviceManager>()
-    val copywriter = current.koin.get<GlobalCopywriter>()
+    val configManager = koinInject<ConfigManager>()
+    val deviceManager = koinInject<DeviceManager>()
+    val copywriter = koinInject<GlobalCopywriter>()
     val netUtils = getNetUtils()
     val jsonUtils = getJsonUtils()
 

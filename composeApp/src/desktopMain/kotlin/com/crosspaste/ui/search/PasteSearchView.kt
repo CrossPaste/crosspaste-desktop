@@ -65,7 +65,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppWindowManager
@@ -91,18 +90,18 @@ import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun CrossPasteSearchWindowContent() {
-    val current = LocalKoinApplication.current
     val density = LocalDensity.current
-    val appInfo = current.koin.get<AppInfo>()
-    val copywriter = current.koin.get<GlobalCopywriter>()
-    val appWindowManager = current.koin.get<DesktopAppWindowManager>()
-    val pasteSearchService = current.koin.get<PasteSearchService>()
-    val appUpdateService = current.koin.get<AppUpdateService>()
-    val logger = current.koin.get<KLogger>()
+    val appInfo = koinInject<AppInfo>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val appWindowManager = koinInject<DesktopAppWindowManager>()
+    val pasteSearchService = koinInject<PasteSearchService>()
+    val appUpdateService = koinInject<AppUpdateService>()
+    val logger = koinInject<KLogger>()
     val focusRequester = appWindowManager.searchFocusRequester
 
     val scope = rememberCoroutineScope()

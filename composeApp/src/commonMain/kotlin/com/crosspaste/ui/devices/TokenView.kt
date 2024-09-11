@@ -52,18 +52,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppTokenService
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.Fonts.ROBOTO_FONT_FAMILY
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun TokenView() {
-    val current = LocalKoinApplication.current
     val density = LocalDensity.current
-    val copywriter = current.koin.get<GlobalCopywriter>()
-    val appTokenService = current.koin.get<AppTokenService>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val appTokenService = koinInject<AppTokenService>()
 
     val offsetY =
         animateIntOffsetAsState(

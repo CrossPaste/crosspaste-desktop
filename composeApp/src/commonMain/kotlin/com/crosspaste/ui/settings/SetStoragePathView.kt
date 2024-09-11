@@ -33,7 +33,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.LocalExitApplication
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.app.AppExitService
 import com.crosspaste.app.AppRestartService
 import com.crosspaste.app.AppWindowManager
@@ -53,16 +52,16 @@ import com.crosspaste.ui.base.archive
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okio.Path
+import org.koin.compose.koinInject
 
 @Composable
 fun SetStoragePathView() {
-    val current = LocalKoinApplication.current
-    val appWindowManager = current.koin.get<AppWindowManager>()
-    val configManager = current.koin.get<ConfigManager>()
-    val copywriter = current.koin.get<GlobalCopywriter>()
-    val userDataPathProvider = current.koin.get<UserDataPathProvider>()
-    val notificationManager = current.koin.get<NotificationManager>()
-    val dialogService = current.koin.get<DialogService>()
+    val appWindowManager = koinInject<AppWindowManager>()
+    val configManager = koinInject<ConfigManager>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val userDataPathProvider = koinInject<UserDataPathProvider>()
+    val notificationManager = koinInject<NotificationManager>()
+    val dialogService = koinInject<DialogService>()
 
     Text(
         modifier =
@@ -164,13 +163,12 @@ fun SetStoragePathView() {
 
 @Composable
 fun SetStoragePathDialogView(path: Path) {
-    val current = LocalKoinApplication.current
     val exitApplication = LocalExitApplication.current
-    val dialogService = current.koin.get<DialogService>()
-    val userDataPathProvider = current.koin.get<UserDataPathProvider>()
-    val appExitService = current.koin.get<AppExitService>()
-    val appRestartService = current.koin.get<AppRestartService>()
-    val realmManager = current.koin.get<RealmManager>()
+    val dialogService = koinInject<DialogService>()
+    val userDataPathProvider = koinInject<UserDataPathProvider>()
+    val appExitService = koinInject<AppExitService>()
+    val appRestartService = koinInject<AppRestartService>()
+    val realmManager = koinInject<RealmManager>()
     var isError by remember { mutableStateOf(false) }
     var isMigration by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf(0.0f) }

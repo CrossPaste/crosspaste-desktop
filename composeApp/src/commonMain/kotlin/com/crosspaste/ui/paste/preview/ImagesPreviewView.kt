@@ -9,10 +9,10 @@ import androidx.compose.foundation.onClick
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.crosspaste.LocalKoinApplication
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -21,8 +21,7 @@ fun ImagesPreviewView(
     onDoubleClick: () -> Unit,
 ) {
     pasteData.getPasteItem()?.let {
-        val current = LocalKoinApplication.current
-        val userDataPathProvider = current.koin.get<UserDataPathProvider>()
+        val userDataPathProvider = koinInject<UserDataPathProvider>()
 
         val pasteFiles = it as PasteFiles
 
