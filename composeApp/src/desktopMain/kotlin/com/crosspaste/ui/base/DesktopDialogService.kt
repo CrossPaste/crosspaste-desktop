@@ -1,20 +1,17 @@
 package com.crosspaste.ui.base
 
 import androidx.compose.runtime.mutableStateListOf
-import co.touchlab.stately.concurrency.withLock
-import java.util.concurrent.locks.ReentrantLock
+import com.crosspaste.utils.createPlatformLock
 
 class DesktopDialogService : DialogService {
 
-    private val lock = ReentrantLock()
+    private val lock = createPlatformLock()
 
     override var dialogs: MutableList<PasteDialog> = mutableStateListOf()
 
     override fun pushDialog(dialog: PasteDialog) {
         lock.withLock {
-            if (dialogs.map { it.key }.contains(dialog.key)) {
-                return
-            } else {
+            if (!dialogs.map { it.key }.contains(dialog.key)) {
                 dialogs.add(dialog)
             }
         }
