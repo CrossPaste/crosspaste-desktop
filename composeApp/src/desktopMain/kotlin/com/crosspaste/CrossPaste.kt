@@ -86,11 +86,11 @@ import com.crosspaste.net.plugin.SignalServerEncryptPluginFactory
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.CacheManagerImpl
 import com.crosspaste.paste.CurrentPaste
+import com.crosspaste.paste.DefaultPasteSyncProcessManager
 import com.crosspaste.paste.DesktopCurrentPaste
 import com.crosspaste.paste.DesktopPasteIDGeneratorFactory
 import com.crosspaste.paste.DesktopPastePreviewService
 import com.crosspaste.paste.DesktopPasteSearchService
-import com.crosspaste.paste.DesktopPasteSyncProcessManager
 import com.crosspaste.paste.DesktopTransferableConsumer
 import com.crosspaste.paste.DesktopTransferableProducer
 import com.crosspaste.paste.PasteIDGenerator
@@ -322,7 +322,7 @@ class CrossPaste {
                     single<PasteboardService> { getDesktopPasteboardService(get(), get(), get(), get(), get(), get()) }
                     single<PastePreviewService> { DesktopPastePreviewService(get()) }
                     single<PasteSearchService> { get<DesktopPasteSearchService>() }
-                    single<PasteSyncProcessManager<ObjectId>> { DesktopPasteSyncProcessManager() }
+                    single<PasteSyncProcessManager<ObjectId>> { DefaultPasteSyncProcessManager() }
                     single<TaskExecutor> {
                         TaskExecutor(
                             listOf(
