@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.sp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.FileExtImageLoader
 import com.crosspaste.image.ImageData
-import com.crosspaste.image.getImageDataLoader
+import com.crosspaste.image.ImageDataLoader
 import com.crosspaste.info.PasteInfos.FILE_NAME
 import com.crosspaste.info.PasteInfos.MISSING_FILE
 import com.crosspaste.info.PasteInfos.SIZE
@@ -45,11 +45,11 @@ import org.koin.compose.koinInject
 fun SingleFilePreviewView(filePath: Path) {
     val density = LocalDensity.current
     val copywriter = koinInject<GlobalCopywriter>()
+    val imageDataLoader = koinInject<ImageDataLoader>()
     val uiSupport = koinInject<UISupport>()
     val fileExtIconLoader = koinInject<FileExtImageLoader>()
 
     val fileUtils = getFileUtils()
-    val imageDataLoader = getImageDataLoader()
 
     val existFile by remember { mutableStateOf(filePath.toFile().exists()) }
     val isFile by remember { mutableStateOf(if (existFile) filePath.toFile().isFile else null) }

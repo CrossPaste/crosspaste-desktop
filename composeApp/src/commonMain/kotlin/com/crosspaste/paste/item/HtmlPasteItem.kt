@@ -56,14 +56,10 @@ class HtmlPasteItem : RealmObject, PasteItem, PasteHtml {
         return userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
     }
 
-    override fun init(
-        appInstanceId: String,
-        pasteId: Long,
-    ) {
+    override fun bind(pasteCoordinate: PasteCoordinate) {
         relativePath =
             fileUtils.createPasteRelativePath(
-                appInstanceId = appInstanceId,
-                pasteId = pasteId,
+                pasteCoordinate = pasteCoordinate,
                 fileName = "html2Image.png",
             )
     }

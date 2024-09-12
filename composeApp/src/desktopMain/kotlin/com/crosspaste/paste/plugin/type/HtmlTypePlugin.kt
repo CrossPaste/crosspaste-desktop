@@ -5,13 +5,14 @@ import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.item.HtmlPasteItem
+import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.platform.windows.html.HTMLCodec
 import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.realm.paste.PasteType
-import com.crosspaste.utils.DesktopFileUtils
 import com.crosspaste.utils.getCodecsUtils
+import com.crosspaste.utils.getFileUtils
 import io.realm.kotlin.MutableRealm
 import java.awt.datatransfer.DataFlavor
 
@@ -23,6 +24,8 @@ class HtmlTypePlugin(private val appInfo: AppInfo) : PasteTypePlugin {
 
         private val codecsUtils = getCodecsUtils()
     }
+
+    private val fileUtils = getFileUtils()
 
     override fun getPasteType(): Int {
         return PasteType.HTML
@@ -60,9 +63,12 @@ class HtmlTypePlugin(private val appInfo: AppInfo) : PasteTypePlugin {
             val htmlBytes = html.toByteArray()
             val hash = codecsUtils.hash(htmlBytes)
             val relativePath =
-                DesktopFileUtils.createPasteRelativePath(
-                    appInstanceId = appInfo.appInstanceId,
-                    pasteId = pasteId,
+                fileUtils.createPasteRelativePath(
+                    pasteCoordinate =
+                        PasteCoordinate(
+                            appInstanceId = appInfo.appInstanceId,
+                            pasteId = pasteId,
+                        ),
                     fileName = "html2Image.png",
                 )
             val update: (PasteItem, MutableRealm) -> Unit = { pasteItem, realm ->

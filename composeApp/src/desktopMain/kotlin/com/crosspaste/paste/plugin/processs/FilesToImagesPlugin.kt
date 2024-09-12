@@ -26,11 +26,26 @@ class FilesToImagesPlugin(
         return pasteItems.map { pasteAppearItem ->
             if (pasteAppearItem is FilesPasteItem) {
                 if (pasteAppearItem.getFilePaths(userDataPathProvider).map { path -> path.extension }.all { canPreviewImage(it) }) {
-                    pasteAppearItem.relativePathList.map {
-                        val srcPath = userDataPathProvider.resolve(fileBasePath, it, autoCreate = false, isFile = true)
-                        val destPath = userDataPathProvider.resolve(imageBasePath, it, autoCreate = true, isFile = true)
-                        if (DesktopFileUtils.moveFile(srcPath, destPath).isFailure) {
-                            throw IllegalStateException("Failed to move file from $srcPath to $destPath")
+                    val basePath = pasteAppearItem.basePath
+                    if (basePath == null) {
+                        pasteAppearItem.relativePathList.map {
+                            val srcPath =
+                                userDataPathProvider.resolve(
+                                    fileBasePath,
+                                    it,
+                                    autoCreate = false,
+                                    isFile = true,
+                                )
+                            val destPath =
+                                userDataPathProvider.resolve(
+                                    imageBasePath,
+                                    it,
+                                    autoCreate = true,
+                                    isFile = true,
+                                )
+                            if (DesktopFileUtils.moveFile(srcPath, destPath).isFailure) {
+                                throw IllegalStateException("Failed to move file from $srcPath to $destPath")
+                            }
                         }
                     }
                     val identifierList = pasteAppearItem.getIdentifierList().toRealmList()
@@ -42,6 +57,7 @@ class FilesToImagesPlugin(
                     pasteAppearItem.clear(realm, userDataPathProvider, clearResource = false)
                     ImagesPasteItem().apply {
                         this.identifiers = identifierList
+                        this.basePath = basePath
                         this.relativePathList = relativePathList
                         this.fileInfoTree = fileInfoTree
                         this.count = count

@@ -41,7 +41,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.ImageData
-import com.crosspaste.image.getImageDataLoader
+import com.crosspaste.image.ImageDataLoader
 import com.crosspaste.info.PasteInfos.DATE
 import com.crosspaste.info.PasteInfos.DIMENSIONS
 import com.crosspaste.info.PasteInfos.FILE_NAME
@@ -79,11 +79,11 @@ fun PasteImagesDetailView(
     if (pasteFiles.count > 0) {
         val density = LocalDensity.current
         val copywriter = koinInject<GlobalCopywriter>()
+        val imageDataLoader = koinInject<ImageDataLoader>()
         val userDataPathProvider = koinInject<UserDataPathProvider>()
 
         val dateUtils = getDateUtils()
         val fileUtils = getFileUtils()
-        val imageDataLoader = getImageDataLoader()
 
         var index by remember(pasteData.id) { mutableStateOf(0) }
 

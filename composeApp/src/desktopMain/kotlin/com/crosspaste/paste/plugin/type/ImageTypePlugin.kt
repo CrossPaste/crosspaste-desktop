@@ -9,6 +9,7 @@ import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteDataFlavors
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.item.ImagesPasteItem
+import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.plugin.type.FilesTypePlugin.FilesTypePlugin.FILE_LIST_ID
 import com.crosspaste.paste.plugin.type.HtmlTypePlugin.HtmlTypePlugin.HTML_ID
 import com.crosspaste.paste.toPasteDataFlavor
@@ -16,12 +17,8 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.realm.paste.PasteType
-import com.crosspaste.utils.DesktopFileUtils
-import com.crosspaste.utils.DesktopFileUtils.createPastePath
-import com.crosspaste.utils.DesktopFileUtils.createPasteRelativePath
-import com.crosspaste.utils.DesktopFileUtils.createRandomFileName
-import com.crosspaste.utils.DesktopFileUtils.getExtFromFileName
-import com.crosspaste.utils.DesktopJsonUtils
+import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.getJsonUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
@@ -47,6 +44,10 @@ class ImageTypePlugin(
     }
 
     private val logger = KotlinLogging.logger {}
+
+    private val fileUtils = getFileUtils()
+
+    private val jsonUtils = getJsonUtils()
 
     override fun getPasteType(): Int {
         return PasteType.IMAGE
@@ -87,29 +88,34 @@ class ImageTypePlugin(
         }
         if (transferData is Image) {
             val image: BufferedImage = toBufferedImage(transferData)
-            var name = tryGetImageName(dataFlavorMap, pasteTransferable) ?: createRandomFileName(ext = "png")
+            var name =
+                tryGetImageName(dataFlavorMap, pasteTransferable)
+                    ?: fileUtils.createRandomFileName(ext = "png")
             val ext =
-                getExtFromFileName(name) ?: run {
+                fileUtils.getExtFromFileName(name) ?: run {
                     name += ".png"
                     "png"
                 }
             val relativePath =
-                createPasteRelativePath(
-                    appInstanceId = appInfo.appInstanceId,
-                    pasteId = pasteId,
+                fileUtils.createPasteRelativePath(
+                    pasteCoordinate =
+                        PasteCoordinate(
+                            appInstanceId = appInfo.appInstanceId,
+                            pasteId = pasteId,
+                        ),
                     fileName = name,
                 )
             val imagePath =
-                createPastePath(
+                fileUtils.createPastePath(
                     relativePath,
                     isFile = true,
                     AppFileType.IMAGE,
                     userDataPathProvider,
                 )
             if (writeImage(image, ext, imagePath.toNioPath())) {
-                val fileTree = DesktopFileUtils.getFileInfoTree(imagePath)
+                val fileTree = fileUtils.getFileInfoTree(imagePath)
 
-                val fileInfoTreeJsonString = DesktopJsonUtils.JSON.encodeToString(mapOf(name to fileTree))
+                val fileInfoTreeJsonString = jsonUtils.JSON.encodeToString(mapOf(name to fileTree))
                 val count = fileTree.getCount()
                 val size = fileTree.size
                 val hash = fileTree.hash

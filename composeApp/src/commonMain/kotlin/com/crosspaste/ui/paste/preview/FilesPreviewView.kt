@@ -9,6 +9,7 @@ import androidx.compose.foundation.onClick
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
@@ -39,7 +40,12 @@ fun FilesPreviewView(
                     items(pasteFilePaths.size) { index ->
                         val filepath = pasteFilePaths[index]
                         if (canPreviewImage(filepath.extension)) {
-                            SingleImagePreviewView(filepath)
+                            val pasteFileCoordinate =
+                                PasteFileCoordinate(
+                                    pasteData.getPasteCoordinate(),
+                                    filepath,
+                                )
+                            SingleImagePreviewView(pasteFileCoordinate)
                         } else {
                             SingleFilePreviewView(filepath)
                         }

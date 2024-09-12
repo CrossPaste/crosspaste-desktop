@@ -1,6 +1,6 @@
 package com.crosspaste.serializer
 
-import com.crosspaste.paste.item.PasteInit
+import com.crosspaste.paste.item.PasteCoordinateBinder
 import com.crosspaste.realm.paste.PasteCollection
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteState
@@ -97,8 +97,8 @@ object PasteDataSerializer : KSerializer<PasteData> {
                 this.labels = labels
             }
 
-        for (pasteInit in pasteData.getPasteAppearItems().filterIsInstance<PasteInit>()) {
-            pasteInit.init(pasteData.appInstanceId, pasteData.pasteId)
+        for (pasteInit in pasteData.getPasteAppearItems().filterIsInstance<PasteCoordinateBinder>()) {
+            pasteInit.bind(pasteData.getPasteCoordinate())
         }
 
         return pasteData

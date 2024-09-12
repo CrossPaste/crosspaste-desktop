@@ -14,22 +14,22 @@ import com.crosspaste.info.PasteInfos.DIMENSIONS
 import com.crosspaste.info.PasteInfos.FILE_NAME
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.createPasteInfoWithoutConverter
+import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.ui.paste.PasteTypeIconBaseView
 import okio.Path
 import org.xml.sax.InputSource
 import java.io.InputStream
 
-actual fun getImageDataLoader(): ImageDataLoader {
-    return DesktopImageDataLoader
-}
-
-object DesktopImageDataLoader : ImageDataLoader {
+class DesktopImageDataLoader(
+    private val thumbnailLoader: ThumbnailLoader,
+) : ImageDataLoader {
 
     override fun loadImageData(
-        path: Path,
+        pasteFileCoordinate: PasteFileCoordinate,
         density: Density,
-        thumbnailLoader: ThumbnailLoader?,
+        createThumbnail: Boolean,
     ): LoadStateData {
+        val path = pasteFileCoordinate.filePath
         return try {
             val builder = ImageInfoBuilder()
             builder.add(createPasteInfoWithoutConverter(FILE_NAME, path.name))
@@ -38,10 +38,10 @@ object DesktopImageDataLoader : ImageDataLoader {
                 "svg" -> SvgData(path, readSvgPainter(path, density), builder.build())
                 "xml" -> ImageVectorData(path, readImageVector(path, density), builder.build())
                 else -> {
-                    thumbnailLoader?.let {
-                        it.load(path)?.let { thumbnailPath ->
-                            it.readOriginMeta(path, builder)
-                            ImageBitmapData(path, readImageBitmap(thumbnailPath), builder.build(), true)
+                    createThumbnail.takeIf { it }?.let {
+                        thumbnailLoader.load(pasteFileCoordinate)?.let { thumbnailPath ->
+                            thumbnailLoader.readOriginMeta(pasteFileCoordinate, builder)
+                            ImageBitmapData(thumbnailPath, readImageBitmap(thumbnailPath), builder.build(), true)
                         }
                     } ?: run {
                         val imageBitmap = readImageBitmap(path)
@@ -52,6 +52,33 @@ object DesktopImageDataLoader : ImageDataLoader {
                         )
                         ImageBitmapData(path, readImageBitmap(path), builder.build())
                     }
+                }
+            }
+        } catch (e: Exception) {
+            ErrorStateData(e)
+        }
+    }
+
+    override fun loadImageData(
+        path: Path,
+        density: Density,
+    ): LoadStateData {
+        return try {
+            val builder = ImageInfoBuilder()
+            builder.add(createPasteInfoWithoutConverter(FILE_NAME, path.name))
+            builder.add(createPasteInfoWithoutConverter(SIZE, "${path.toFile().length()}"))
+            when (path.name.substringAfterLast(".")) {
+                "svg" -> SvgData(path, readSvgPainter(path, density), builder.build())
+                "xml" -> ImageVectorData(path, readImageVector(path, density), builder.build())
+                else -> {
+                    val imageBitmap = readImageBitmap(path)
+                    builder.add(
+                        createPasteInfoWithoutConverter(
+                            DIMENSIONS,
+                            "${imageBitmap.width} x ${imageBitmap.height}",
+                        ),
+                    )
+                    ImageBitmapData(path, readImageBitmap(path), builder.build())
                 }
             }
         } catch (e: Exception) {

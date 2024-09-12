@@ -17,7 +17,8 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.image.FaviconLoader
 import com.crosspaste.image.FileExtImageLoader
 import com.crosspaste.image.ImageData
-import com.crosspaste.image.getImageDataLoader
+import com.crosspaste.image.ImageDataLoader
+import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteUrl
 import com.crosspaste.path.UserDataPathProvider
@@ -34,11 +35,10 @@ fun PasteTypeIconView(
 ) {
     val density = LocalDensity.current
     val iconStyle = koinInject<IconStyle>()
+    val imageDataLoader = koinInject<ImageDataLoader>()
     val faviconLoader = koinInject<FaviconLoader>()
     val fileExtLoader = koinInject<FileExtImageLoader>()
     val userDataPathProvider = koinInject<UserDataPathProvider>()
-
-    val imageDataLoader = getImageDataLoader()
 
     val loadIconData = imageDataLoader.loadPasteType(pasteData.pasteType)
 
@@ -51,7 +51,8 @@ fun PasteTypeIconView(
                     it as PasteUrl
                     try {
                         faviconLoader.load(it.url)?.let { path ->
-                            return@AsyncView imageDataLoader.loadImageData(path, density)
+                            val pasteFileCoordinate = PasteFileCoordinate(pasteData.getPasteCoordinate(), path)
+                            return@AsyncView imageDataLoader.loadImageData(pasteFileCoordinate, density)
                         }
                     } catch (ignore: Exception) {
                     }
@@ -87,7 +88,8 @@ fun PasteTypeIconView(
                         val files = it.getPasteFiles(userDataPathProvider)
                         if (files.isNotEmpty()) {
                             fileExtLoader.load(files[0].getFilePath())?.let { path ->
-                                return@AsyncView imageDataLoader.loadImageData(path, density)
+                                val pasteFileCoordinate = PasteFileCoordinate(pasteData.getPasteCoordinate(), path)
+                                return@AsyncView imageDataLoader.loadImageData(pasteFileCoordinate, density)
                             }
                         }
                     } catch (ignore: Exception) {
@@ -125,7 +127,7 @@ fun PasteTypeIconView(
             val path = userDataPathProvider.resolve("$it.png", AppFileType.ICON)
             if (FileSystem.SYSTEM.exists(path)) {
                 val isMacStyleIcon by remember(it) { mutableStateOf(iconStyle.isMacStyleIcon(it)) }
-                AppImageIcon(path = path, isMacStyleIcon = isMacStyleIcon, size = size + 2.dp)
+                AppImageIcon(path, isMacStyleIcon = isMacStyleIcon, size = size + 2.dp)
             } else {
                 Icon(
                     painter = loadIconData.readPainter(),
