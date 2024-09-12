@@ -26,10 +26,7 @@ interface PasteFiles {
     fun getPasteFiles(userDataPathProvider: UserDataPathProvider): List<PasteFile>
 
     // use to adapt relative paths when relative is no storage in crossPaste
-    fun adaptRelativePaths(
-        appInstanceId: String,
-        pasteId: Long,
-    ) {
+    fun adaptRelativePaths(pasteCoordinate: PasteCoordinate) {
         val noStorageInCrossPaste = relativePathList.any { it.toPath().segments.size == 1 }
         if (noStorageInCrossPaste) {
             val fileUtils = getFileUtils()
@@ -38,8 +35,7 @@ interface PasteFiles {
                     val path = relativePath.toPath()
                     val fileName = path.name
                     fileUtils.createPasteRelativePath(
-                        appInstanceId = appInstanceId,
-                        pasteId = pasteId,
+                        pasteCoordinate = pasteCoordinate,
                         fileName = fileName,
                     )
                 }.toRealmList()

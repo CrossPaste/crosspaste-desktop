@@ -45,9 +45,11 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.i18n.GlobalCopywriterImpl
 import com.crosspaste.image.DesktopFaviconLoader
 import com.crosspaste.image.DesktopFileExtLoader
+import com.crosspaste.image.DesktopImageDataLoader
 import com.crosspaste.image.DesktopThumbnailLoader
 import com.crosspaste.image.FaviconLoader
 import com.crosspaste.image.FileExtImageLoader
+import com.crosspaste.image.ImageDataLoader
 import com.crosspaste.image.ThumbnailLoader
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listen.DesktopGlobalListener
@@ -247,7 +249,7 @@ class CrossPaste {
                     single<PasteIDGenerator> { DesktopPasteIDGeneratorFactory(get()).createIDGenerator() }
                     single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
                     single<SyncInfoFactory> { SyncInfoFactory(get(), get()) }
-                    single<ThumbnailLoader> { DesktopThumbnailLoader }
+                    single<ThumbnailLoader> { DesktopThumbnailLoader(get()) }
                     single<UserDataPathProvider> { UserDataPathProvider(get(), getPlatformPathProvider()) }
                     single<VersionCompatibilityChecker> {
                         get<AppInfoFactory>().createVersionCompatibilityChecker()
@@ -318,6 +320,7 @@ class CrossPaste {
                     single<DesktopPasteSearchService> { DesktopPasteSearchService(get(), get(), get()) }
                     single<FilesTypePlugin> { FilesTypePlugin(get(), get(), get()) }
                     single<HtmlTypePlugin> { HtmlTypePlugin(get()) }
+                    single<ImageDataLoader> { DesktopImageDataLoader(get()) }
                     single<ImageTypePlugin> { ImageTypePlugin(get(), get()) }
                     single<PasteboardService> { getDesktopPasteboardService(get(), get(), get(), get(), get(), get()) }
                     single<PastePreviewService> { DesktopPastePreviewService(get()) }
@@ -382,7 +385,7 @@ class CrossPaste {
                     single<DialogService> { DesktopDialogService() }
                     single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
                     single<GlobalListener> { DesktopGlobalListener(get(), get(), get(), get(), get()) }
-                    single<IconStyle> { DesktopIconStyle(get()) }
+                    single<IconStyle> { DesktopIconStyle(get(), get()) }
                     single<NativeKeyListener> { get<DesktopShortcutKeysListener>() }
                     single<NativeMouseListener> { get<DesktopMouseListener>() }
                     single<NotificationManager> { DesktopNotificationManager(get(), get()) }

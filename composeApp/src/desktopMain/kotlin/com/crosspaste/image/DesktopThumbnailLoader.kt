@@ -1,10 +1,14 @@
 package com.crosspaste.image
 
+import com.crosspaste.app.AppFileType
 import com.crosspaste.info.PasteInfos.DIMENSIONS
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.createPasteInfoWithoutConverter
+import com.crosspaste.paste.item.PasteFileCoordinate
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.PlatformLock
 import com.crosspaste.utils.fileNameRemoveExtension
+import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.collections.*
 import okio.Path
@@ -17,59 +21,81 @@ import kotlin.io.path.outputStream
 import kotlin.io.path.readBytes
 import kotlin.io.path.writeBytes
 
-object DesktopThumbnailLoader : ConcurrentLoader<Path, Path>, ThumbnailLoader {
+class DesktopThumbnailLoader(
+    private val userDataPathProvider: UserDataPathProvider,
+) : ConcurrentLoader<PasteFileCoordinate, Path>, ThumbnailLoader {
 
     private val logger = KotlinLogging.logger {}
 
     override val lockMap: ConcurrentMap<String, PlatformLock> = ConcurrentMap()
 
+    private val fileUtils = getFileUtils()
+
+    private val basePath = userDataPathProvider.resolve(appFileType = AppFileType.IMAGE)
+
     override fun resolve(
         key: String,
-        value: Path,
+        value: PasteFileCoordinate,
     ): Path {
         return getThumbnailPath(value)
     }
 
-    override fun getThumbnailPath(path: Path): Path {
-        return path
+    override fun getThumbnailPath(pasteFileCoordinate: PasteFileCoordinate): Path {
+        val relativePath =
+            fileUtils.createPasteRelativePath(
+                pasteFileCoordinate.toPasteCoordinate(),
+                pasteFileCoordinate.filePath.name,
+            )
+
+        val thumbnailName = "thumbnail_${pasteFileCoordinate.filePath.fileNameRemoveExtension}.png"
+
+        return userDataPathProvider.resolve(basePath, relativePath, autoCreate = true, isFile = true)
             .toNioPath()
-            .resolveSibling("thumbnail_${path.fileNameRemoveExtension}.png")
+            .resolveSibling(thumbnailName)
             .toOkioPath()
     }
 
-    override fun getOriginMetaPath(path: Path): Path {
-        return path
+    override fun getOriginMetaPath(pasteFileCoordinate: PasteFileCoordinate): Path {
+        val relativePath =
+            fileUtils.createPasteRelativePath(
+                pasteFileCoordinate.toPasteCoordinate(),
+                pasteFileCoordinate.filePath.name,
+            )
+
+        val metaProperties = "meta_${pasteFileCoordinate.filePath.fileNameRemoveExtension}.properties"
+
+        return userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
             .toNioPath()
-            .resolveSibling("meta_${path.fileNameRemoveExtension}.properties")
+            .resolveSibling(metaProperties)
             .toOkioPath()
     }
 
     override fun readOriginMeta(
-        path: Path,
+        pasteFileCoordinate: PasteFileCoordinate,
         imageInfoBuilder: ImageInfoBuilder,
     ) {
         try {
             val properties = Properties()
-            properties.load(getOriginMetaPath(path).toNioPath().inputStream().buffered())
+            properties.load(getOriginMetaPath(pasteFileCoordinate).toNioPath().inputStream().buffered())
             properties.getProperty(DIMENSIONS)?.let {
                 imageInfoBuilder.add(createPasteInfoWithoutConverter(DIMENSIONS, it))
             }
         } catch (e: Exception) {
-            logger.warn { "Failed to read meta data for file: $path" }
+            logger.warn { "Failed to read meta data for file: ${pasteFileCoordinate.filePath}" }
         }
     }
 
-    override fun convertToKey(value: Path): String {
+    override fun convertToKey(value: PasteFileCoordinate): String {
         return value.toString()
     }
 
     override fun save(
         key: String,
-        value: Path,
+        value: PasteFileCoordinate,
         result: Path,
     ) {
         // Decode the image from the file path
-        val bytes = value.toNioPath().readBytes()
+        val bytes = value.filePath.toNioPath().readBytes()
         val fileSize = bytes.size
         val originalImage = Image.makeFromEncoded(bytes)
 
@@ -129,7 +155,7 @@ object DesktopThumbnailLoader : ConcurrentLoader<Path, Path>, ThumbnailLoader {
     }
 
     override fun loggerWarning(
-        value: Path,
+        value: PasteFileCoordinate,
         e: Exception,
     ) {
         logger.warn { "Failed to create thumbnail for file: $value" }

@@ -450,7 +450,7 @@ class PasteRealm(
                 }
             } else {
                 val pullFileTask = TaskUtils.createTask(pasteData.id, TaskType.PULL_FILE_TASK)
-                pasteData.adaptRelativePaths(pasteData.appInstanceId, pasteData.pasteId)
+                pasteData.adaptRelativePaths(pasteData.getPasteCoordinate())
                 copyToRealm(pasteData)
                 copyToRealm(pullFileTask)
                 tasks.add(pullFileTask.taskId)

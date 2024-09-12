@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.dp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.FileExtImageLoader
 import com.crosspaste.image.ImageData
-import com.crosspaste.image.getImageDataLoader
+import com.crosspaste.image.ImageDataLoader
 import com.crosspaste.info.PasteInfos.DATE
 import com.crosspaste.info.PasteInfos.FILE_NAME
 import com.crosspaste.info.PasteInfos.REMOTE
@@ -70,13 +70,13 @@ fun PasteFilesDetailView(
     val showFileCount = pasteFiles.getFilePaths(userDataPathProvider).size
     if (showFileCount > 0) {
         val copywriter = koinInject<GlobalCopywriter>()
+        val imageDataLoader = koinInject<ImageDataLoader>()
         val fileExtIconLoader = koinInject<FileExtImageLoader>()
 
         val pasteItem = pasteFiles as PasteItem
 
         val dateUtils = getDateUtils()
         val fileUtils = getFileUtils()
-        val imageDataLoader = getImageDataLoader()
 
         var index by remember(pasteData.id) { mutableStateOf(0) }
 

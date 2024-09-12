@@ -1,5 +1,6 @@
 package com.crosspaste.utils
 
+import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.FileInfoTreeBuilder
 import com.crosspaste.presist.FilesChunk
@@ -7,7 +8,6 @@ import com.crosspaste.presist.SingleFileInfoTree
 import com.google.common.hash.Hashing
 import com.google.common.io.Files
 import io.ktor.utils.io.*
-import kotlinx.datetime.LocalDateTime
 import okio.Path
 import okio.Path.Companion.toOkioPath
 import java.io.File
@@ -46,13 +46,19 @@ object DesktopFileUtils : FileUtils {
     }
 
     override fun createPasteRelativePath(
-        appInstanceId: String,
-        date: LocalDateTime,
-        pasteId: Long,
+        pasteCoordinate: PasteCoordinate,
         fileName: String,
     ): String {
-        val dateYYYYMMDD = dateUtils.getYYYYMMDD(date)
-        return Paths.get(appInstanceId, dateYYYYMMDD, pasteId.toString(), fileName).pathString
+        val dateYYYYMMDD =
+            dateUtils.getYYYYMMDD(
+                dateUtils.convertRealmInstantToLocalDateTime(pasteCoordinate.createTime),
+            )
+        return Paths.get(
+            pasteCoordinate.appInstanceId,
+            dateYYYYMMDD,
+            pasteCoordinate.pasteId.toString(),
+            fileName,
+        ).pathString
     }
 
     override fun getFileInfoTree(path: Path): FileInfoTree {

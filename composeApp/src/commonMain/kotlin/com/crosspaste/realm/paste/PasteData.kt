@@ -1,5 +1,6 @@
 package com.crosspaste.realm.paste
 
+import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.serializer.PasteDataSerializer
@@ -117,13 +118,10 @@ class PasteData : RealmObject {
         return getPasteAppearItems().any { it is PasteFiles }
     }
 
-    fun adaptRelativePaths(
-        appInstanceId: String,
-        pasteId: Long,
-    ) {
+    fun adaptRelativePaths(pasteCoordinate: PasteCoordinate) {
         for (pasteAppearItem in this.getPasteAppearItems()) {
             if (pasteAppearItem is PasteFiles) {
-                pasteAppearItem.adaptRelativePaths(appInstanceId, pasteId)
+                pasteAppearItem.adaptRelativePaths(pasteCoordinate)
             }
         }
     }
@@ -147,6 +145,10 @@ class PasteData : RealmObject {
 
     fun getPasteItem(): PasteItem? {
         return PasteCollection.getPasteItem(this.pasteAppearItem)
+    }
+
+    fun getPasteCoordinate(): PasteCoordinate {
+        return PasteCoordinate(appInstanceId, pasteId, createTime)
     }
 }
 

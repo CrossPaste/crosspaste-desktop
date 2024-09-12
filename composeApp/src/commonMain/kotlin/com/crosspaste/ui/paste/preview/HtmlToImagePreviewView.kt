@@ -25,7 +25,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.image.ImageData
-import com.crosspaste.image.getImageDataLoader
+import com.crosspaste.image.ImageDataLoader
 import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
@@ -42,7 +42,7 @@ fun HtmlToImagePreviewView(
     pasteData.getPasteItem()?.let {
         val density = LocalDensity.current
         val userDataPathProvider = koinInject<UserDataPathProvider>()
-        val imageDataLoader = getImageDataLoader()
+        val imageDataLoader = koinInject<ImageDataLoader>()
 
         val pasteHtml = it as PasteHtml
 

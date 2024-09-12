@@ -9,6 +9,7 @@ import androidx.compose.foundation.onClick
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
@@ -28,6 +29,7 @@ fun ImagesPreviewView(
         PasteSpecificPreviewContentView(
             pasteMainContent = {
                 val imagePaths = pasteFiles.getFilePaths(userDataPathProvider)
+                val pasteCoordinate = pasteData.getPasteCoordinate()
                 LazyRow(
                     modifier =
                         Modifier.fillMaxSize()
@@ -37,7 +39,8 @@ fun ImagesPreviewView(
                             ),
                 ) {
                     items(imagePaths.size) { index ->
-                        SingleImagePreviewView(imagePaths[index])
+                        val pasteFileCoordinate = PasteFileCoordinate(pasteCoordinate, imagePaths[index])
+                        SingleImagePreviewView(pasteFileCoordinate)
                         if (index != imagePaths.size - 1) {
                             Spacer(modifier = Modifier.size(10.dp))
                         }

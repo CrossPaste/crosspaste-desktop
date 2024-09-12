@@ -4,13 +4,19 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toPixelMap
 import com.crosspaste.app.AppFileType
 import com.crosspaste.image.DesktopImageDataLoader
+import com.crosspaste.image.ImageDataLoader
 import com.crosspaste.path.UserDataPathProvider
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
 import okio.FileSystem
 
-class DesktopIconStyle(userDataPathProvider: UserDataPathProvider) : IconStyle {
+class DesktopIconStyle(
+    userDataPathProvider: UserDataPathProvider,
+    imageDataLoader: ImageDataLoader,
+) : IconStyle {
+
+    private val desktopImageDataLoader = imageDataLoader as DesktopImageDataLoader
 
     private val iconStyleCache: LoadingCache<String, Boolean> =
         CacheBuilder.newBuilder()
@@ -20,7 +26,7 @@ class DesktopIconStyle(userDataPathProvider: UserDataPathProvider) : IconStyle {
                     override fun load(key: String): Boolean {
                         val iconPath = userDataPathProvider.resolve("$key.png", AppFileType.ICON)
                         if (FileSystem.SYSTEM.exists(iconPath)) {
-                            val imageBitmap = DesktopImageDataLoader.readImageBitmap(iconPath)
+                            val imageBitmap = desktopImageDataLoader.readImageBitmap(iconPath)
                             return checkMacStyleIcon(imageBitmap)
                         } else {
                             return false

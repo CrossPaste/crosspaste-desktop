@@ -25,8 +25,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.ImageData
+import com.crosspaste.image.ImageDataLoader
 import com.crosspaste.image.LoadingStateData
-import com.crosspaste.image.getImageDataLoader
 import com.crosspaste.info.PasteInfos.DATE
 import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
@@ -51,13 +51,13 @@ fun HtmlToImageDetailView(
 ) {
     val density = LocalDensity.current
     val copywriter = koinInject<GlobalCopywriter>()
+    val imageDataLoader = koinInject<ImageDataLoader>()
     val uiSupport = koinInject<UISupport>()
     val userDataPathProvider = koinInject<UserDataPathProvider>()
     val pasteItem = pasteHtml as PasteItem
 
     val dateUtils = getDateUtils()
     val fileUtils = getFileUtils()
-    val imageDataLoader = getImageDataLoader()
 
     val filePath by remember(pasteData.id) {
         mutableStateOf(

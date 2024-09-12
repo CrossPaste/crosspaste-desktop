@@ -4,7 +4,7 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getHtmlUtils
 import okio.Path
 
-interface PasteHtml : PasteInit {
+interface PasteHtml : PasteCoordinateBinder {
 
     var html: String
 

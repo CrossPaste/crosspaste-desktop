@@ -1,11 +1,11 @@
 package com.crosspaste.utils
 
 import com.crosspaste.app.AppFileType
+import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.FilesChunk
 import io.ktor.utils.io.*
-import kotlinx.datetime.LocalDateTime
 import okio.FileSystem
 import okio.Path
 
@@ -50,9 +50,7 @@ interface FileUtils {
     }
 
     fun createPasteRelativePath(
-        appInstanceId: String,
-        date: LocalDateTime = dateUtils.now(),
-        pasteId: Long,
+        pasteCoordinate: PasteCoordinate,
         fileName: String,
     ): String
 

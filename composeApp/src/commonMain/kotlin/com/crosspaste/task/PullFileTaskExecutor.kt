@@ -15,6 +15,7 @@ import com.crosspaste.presist.FilesIndex
 import com.crosspaste.presist.FilesIndexBuilder
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteRealm
+import com.crosspaste.realm.task.PasteTask
 import com.crosspaste.realm.task.TaskType
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.extra.PullExtraInfo
@@ -52,7 +53,7 @@ class PullFileTaskExecutor(
 
     override val taskType: Int = TaskType.PULL_FILE_TASK
 
-    override suspend fun doExecuteTask(pasteTask: com.crosspaste.realm.task.PasteTask): PasteTaskResult {
+    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         val pullExtraInfo: PullExtraInfo = TaskUtils.getExtraInfo(pasteTask, PullExtraInfo::class)
 
         pasteRealm.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->

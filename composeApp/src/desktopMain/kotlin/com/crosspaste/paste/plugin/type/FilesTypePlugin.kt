@@ -8,18 +8,16 @@ import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteDataFlavors
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.item.FilesPasteItem
+import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.realm.paste.PasteType
-import com.crosspaste.utils.DesktopFileUtils
-import com.crosspaste.utils.DesktopFileUtils.copyPath
-import com.crosspaste.utils.DesktopFileUtils.createPasteRelativePath
-import com.crosspaste.utils.DesktopJsonUtils
 import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.noOptionParent
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmListOf
@@ -44,6 +42,8 @@ class FilesTypePlugin(
     }
 
     private val fileUtils = getFileUtils()
+
+    private val jsonUtils = getJsonUtils()
 
     override fun getPasteType(): Int {
         return PasteType.FILE
@@ -110,24 +110,27 @@ class FilesTypePlugin(
                 if (useRefCopyFiles) {
                     val relativePath = path.name
                     relativePathList.add(relativePath)
-                    fileInfoTrees[file.name] = DesktopFileUtils.getFileInfoTree(path)
+                    fileInfoTrees[file.name] = fileUtils.getFileInfoTree(path)
                 } else {
                     val relativePath =
-                        createPasteRelativePath(
-                            appInstanceId = appInfo.appInstanceId,
-                            pasteId = pasteId,
+                        fileUtils.createPasteRelativePath(
+                            pasteCoordinate =
+                                PasteCoordinate(
+                                    appInstanceId = appInfo.appInstanceId,
+                                    pasteId = pasteId,
+                                ),
                             fileName = fileName,
                         )
                     relativePathList.add(relativePath)
                     val filePath =
-                        DesktopFileUtils.createPastePath(
+                        fileUtils.createPastePath(
                             relativePath,
                             isFile = true,
                             AppFileType.FILE,
                             userDataPathProvider,
                         )
-                    if (copyPath(path, filePath).isSuccess) {
-                        fileInfoTrees[file.name] = DesktopFileUtils.getFileInfoTree(filePath)
+                    if (fileUtils.copyPath(path, filePath).isSuccess) {
+                        fileInfoTrees[file.name] = fileUtils.getFileInfoTree(filePath)
                     } else {
                         throw IllegalStateException("Failed to copy file")
                     }
@@ -135,7 +138,7 @@ class FilesTypePlugin(
             }
 
             val relativePathRealmList = relativePathList.toRealmList()
-            val fileInfoTreeJsonString = DesktopJsonUtils.JSON.encodeToString(fileInfoTrees)
+            val fileInfoTreeJsonString = jsonUtils.JSON.encodeToString(fileInfoTrees)
             val hash = codecsUtils.hashByArray(files.mapNotNull { fileInfoTrees[it.name]?.hash }.toTypedArray())
             val count = fileInfoTrees.map { it.value.getCount() }.sum()
             val size = fileInfoTrees.map { it.value.size }.sum()

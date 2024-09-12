@@ -20,8 +20,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.crosspaste.image.ImageData
-import com.crosspaste.image.getImageDataLoader
+import com.crosspaste.image.ImageDataLoader
 import okio.Path
+import org.koin.compose.koinInject
 
 @Composable
 fun PasteIconButton(
@@ -56,11 +57,12 @@ fun AppImageIcon(
     isMacStyleIcon: Boolean,
     size: Dp = 24.dp,
 ) {
+    val imageDataLoader = koinInject<ImageDataLoader>()
     val density = LocalDensity.current
     AsyncView(
         key = path,
         load = {
-            getImageDataLoader().loadImageData(path, density)
+            imageDataLoader.loadImageData(path, density)
         },
         loadFor = { loadData ->
             if (loadData.isSuccess() && loadData is ImageData<*>) {

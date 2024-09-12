@@ -31,44 +31,46 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.ImageData
-import com.crosspaste.image.ThumbnailLoader
-import com.crosspaste.image.getImageDataLoader
+import com.crosspaste.image.ImageDataLoader
 import com.crosspaste.info.PasteInfos.DIMENSIONS
 import com.crosspaste.info.PasteInfos.FILE_NAME
 import com.crosspaste.info.PasteInfos.MISSING_FILE
 import com.crosspaste.info.PasteInfos.SIZE
+import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.TransparentBackground
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.imageSlash
 import com.crosspaste.utils.getFileUtils
 import okio.FileSystem
-import okio.Path
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SingleImagePreviewView(imagePath: Path) {
+fun SingleImagePreviewView(pasteFileCoordinate: PasteFileCoordinate) {
     val density = LocalDensity.current
     val copywriter = koinInject<GlobalCopywriter>()
+    val imageDataLoader = koinInject<ImageDataLoader>()
     val uiSupport = koinInject<UISupport>()
-    val thumbnailLoader = koinInject<ThumbnailLoader>()
 
     val fileUtils = getFileUtils()
-    val imageDataLoader = getImageDataLoader()
 
-    val existFile by remember { mutableStateOf(FileSystem.SYSTEM.exists(imagePath)) }
+    val existFile by remember {
+        mutableStateOf(
+            FileSystem.SYSTEM.exists(pasteFileCoordinate.filePath),
+        )
+    }
 
     Row(
         modifier =
             Modifier.onClick {
-                uiSupport.openImage(imagePath)
+                uiSupport.openImage(pasteFileCoordinate.filePath)
             },
     ) {
         AsyncView(
-            key = imagePath,
+            key = pasteFileCoordinate.filePath,
             load = {
-                imageDataLoader.loadImageData(imagePath, density, thumbnailLoader)
+                imageDataLoader.loadImageData(pasteFileCoordinate, density, true)
             },
             loadFor = { loadData ->
                 Box {
@@ -79,7 +81,7 @@ fun SingleImagePreviewView(imagePath: Path) {
                     if (loadData.isSuccess() && loadData is ImageData<*>) {
                         ShowImageView(
                             painter = loadData.readPainter(),
-                            contentDescription = imagePath.name,
+                            contentDescription = pasteFileCoordinate.filePath.name,
                         )
                     } else if (loadData.isLoading()) {
                         CircularProgressIndicator(
@@ -88,7 +90,7 @@ fun SingleImagePreviewView(imagePath: Path) {
                     } else {
                         ShowImageView(
                             painter = imageSlash(),
-                            contentDescription = imagePath.name,
+                            contentDescription = pasteFileCoordinate.filePath.name,
                         )
                     }
                 }
@@ -102,7 +104,7 @@ fun SingleImagePreviewView(imagePath: Path) {
                     verticalArrangement = Arrangement.Bottom,
                 ) {
                     Text(
-                        text = "${copywriter.getText(FILE_NAME)}: ${imagePath.name}",
+                        text = "${copywriter.getText(FILE_NAME)}: ${pasteFileCoordinate.filePath.name}",
                         color = MaterialTheme.colors.onBackground,
                         style =
                             TextStyle(
@@ -128,8 +130,8 @@ fun SingleImagePreviewView(imagePath: Path) {
 
                     if (existFile) {
                         val imageSize =
-                            remember(imagePath) {
-                                fileUtils.formatBytes(fileUtils.getFileSize(imagePath))
+                            remember(pasteFileCoordinate.filePath) {
+                                fileUtils.formatBytes(fileUtils.getFileSize(pasteFileCoordinate.filePath))
                             }
 
                         Text(

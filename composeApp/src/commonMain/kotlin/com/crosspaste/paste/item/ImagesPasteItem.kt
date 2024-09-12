@@ -50,6 +50,7 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
 
     override var count: Long = 0L
 
+    @Transient
     override var basePath: String? = null
 
     override var size: Long = 0L
@@ -67,7 +68,7 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
     }
 
     override fun getFilePaths(userDataPathProvider: UserDataPathProvider): List<Path> {
-        val basePath = userDataPathProvider.resolve(appFileType = getAppFileType())
+        val basePath = basePath?.toPath() ?: userDataPathProvider.resolve(appFileType = getAppFileType())
         return relativePathList.map { relativePath ->
             userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
         }
