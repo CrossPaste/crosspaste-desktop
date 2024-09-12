@@ -1,5 +1,6 @@
 package com.crosspaste.paste
 
+import com.crosspaste.app.AppName
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.platform.macos.api.MacosApi
@@ -67,14 +68,22 @@ class MacosPasteboardService(
                         .let { currentChangeCount ->
                             if (changeCount != currentChangeCount) {
                                 logger.info { "currentChangeCount $currentChangeCount changeCount $changeCount" }
+                                val firstChange = changeCount == configManager.config.lastPasteboardChangeCount
                                 changeCount = currentChangeCount
                                 if (isCrossPaste.value != 0) {
                                     logger.debug { "Ignoring crosspaste change" }
                                 } else {
-                                    val source =
+                                    var source: String? =
                                         controlUtils.ensureMinExecutionTime(delayTime = 20) {
                                             appWindowManager.getCurrentActiveAppName()
                                         }
+
+                                    // https://github.com/CrossPaste/crosspaste-desktop/issues/1874
+                                    // If it is the first time to read the pasteboard content and the source is CrossPaste
+                                    // we should ignore its source
+                                    if (firstChange && source == AppName) {
+                                        source = null
+                                    }
 
                                     val contents =
                                         controlUtils.exponentialBackoffUntilValid(
