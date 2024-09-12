@@ -70,6 +70,12 @@ class MacosPasteboardService(
                                 logger.info { "currentChangeCount $currentChangeCount changeCount $changeCount" }
                                 val firstChange = changeCount == configManager.config.lastPasteboardChangeCount
                                 changeCount = currentChangeCount
+
+                                if (firstChange && configManager.config.enableSkipPriorPasteboardContent) {
+                                    logger.debug { "Ignoring prior pasteboard" }
+                                    return@let
+                                }
+
                                 if (isCrossPaste.value != 0) {
                                     logger.debug { "Ignoring crosspaste change" }
                                 } else {

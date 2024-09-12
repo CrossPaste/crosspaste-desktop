@@ -123,3 +123,8 @@ fun circle(): Painter {
 fun archive(): Painter {
     return painterResource("icon/base/archive.svg")
 }
+
+@Composable
+fun skipForward(): Painter {
+    return painterResource("icon/base/skip-forward.svg")
+}

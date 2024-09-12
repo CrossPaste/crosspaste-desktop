@@ -66,6 +66,12 @@ class LinuxPasteboardService(
 
     private fun run(): Job {
         return serviceScope.launch(CoroutineName("LinuxPasteboardService")) {
+            val firstChange = changeCount == configManager.config.lastPasteboardChangeCount
+
+            if (firstChange && !configManager.config.enableSkipPriorPasteboardContent) {
+                onChange(this, true)
+            }
+
             val x11 = X11Api.INSTANCE
             x11.XOpenDisplay(null)?.let { display ->
                 try {
@@ -106,29 +112,7 @@ class LinuxPasteboardService(
                                 if (selectionNotify.selection?.toLong() == clipboardAtom.toLong()) {
                                     logger.info { "notify change event" }
                                     changeCount++
-
-                                    val source =
-                                        controlUtils.ensureMinExecutionTime(delayTime = 20) {
-                                            appWindowManager.getCurrentActiveAppName()
-                                        }
-
-                                    val contents =
-                                        controlUtils.exponentialBackoffUntilValid(
-                                            initTime = 20L,
-                                            maxTime = 1000L,
-                                            isValidResult = ::isValidContents,
-                                        ) {
-                                            getPasteboardContentsBySafe()
-                                        }
-                                    if (contents != ownerTransferable) {
-                                        contents?.let {
-                                            ownerTransferable = it
-                                            launch(CoroutineName("LinuxPasteboardServiceConsumer")) {
-                                                val pasteTransferable = DesktopReadTransferable(it)
-                                                pasteConsumer.consume(pasteTransferable, source, remote = false)
-                                            }
-                                        }
-                                    }
+                                    onChange(this)
                                 }
                                 selectionNotify.clear()
                             }
@@ -138,6 +122,38 @@ class LinuxPasteboardService(
                     }
                 } finally {
                     x11.XCloseDisplay(display)
+                }
+            }
+        }
+    }
+
+    private suspend fun onChange(
+        scope: CoroutineScope,
+        firstChange: Boolean = false,
+    ) {
+        val source =
+            if (firstChange) {
+                null
+            } else {
+                controlUtils.ensureMinExecutionTime(delayTime = 20) {
+                    appWindowManager.getCurrentActiveAppName()
+                }
+            }
+
+        val contents =
+            controlUtils.exponentialBackoffUntilValid(
+                initTime = 20L,
+                maxTime = 1000L,
+                isValidResult = ::isValidContents,
+            ) {
+                getPasteboardContentsBySafe()
+            }
+        if (contents != ownerTransferable) {
+            contents?.let {
+                ownerTransferable = it
+                scope.launch(CoroutineName("LinuxPasteboardServiceConsumer")) {
+                    val pasteTransferable = DesktopReadTransferable(it)
+                    pasteConsumer.consume(pasteTransferable, source, remote = false)
                 }
             }
         }

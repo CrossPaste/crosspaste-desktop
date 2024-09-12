@@ -144,6 +144,10 @@ class WindowsPasteboardService(
         if (job?.isActive != true) {
             job =
                 serviceScope.launch(CoroutineName("WindowsPasteboardService")) {
+                    val firstChange = changeCount == configManager.config.lastPasteboardChangeCount
+                    if (firstChange && !configManager.config.enableSkipPriorPasteboardContent) {
+                        onChange(true)
+                    }
                     run()
                 }
         }
@@ -155,11 +159,15 @@ class WindowsPasteboardService(
         configManager.updateConfig("lastPasteboardChangeCount", changeCount)
     }
 
-    private fun onChange() {
+    private fun onChange(firstChange: Boolean = false) {
         try {
             val source =
-                controlUtils.blockEnsureMinExecutionTime(delayTime = 20) {
-                    appWindowManager.getCurrentActiveAppName()
+                if (firstChange) {
+                    null
+                } else {
+                    controlUtils.blockEnsureMinExecutionTime(delayTime = 20) {
+                        appWindowManager.getCurrentActiveAppName()
+                    }
                 }
 
             val contents =
