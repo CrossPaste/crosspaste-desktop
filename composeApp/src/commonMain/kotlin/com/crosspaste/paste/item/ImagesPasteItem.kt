@@ -50,6 +50,7 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
 
     override var count: Long = 0L
 
+    @Transient
     override var basePath: String? = null
 
     override var size: Long = 0L

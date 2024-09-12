@@ -3,6 +3,7 @@ package com.crosspaste.serializer
 import com.crosspaste.paste.item.PasteCoordinateBinder
 import com.crosspaste.realm.paste.PasteCollection
 import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteLabel
 import com.crosspaste.realm.paste.PasteState
 import io.realm.kotlin.ext.realmSetOf
 import io.realm.kotlin.serializers.RealmAnyKSerializer
@@ -33,7 +34,7 @@ object PasteDataSerializer : KSerializer<PasteData> {
             element<Long>("size")
             element<String>("hash")
             element<Boolean>("favorite")
-            element<RealmSet<com.crosspaste.realm.paste.PasteLabel>>("labels")
+            element<RealmSet<PasteLabel>>("labels")
         }
 
     @OptIn(ExperimentalSerializationApi::class)
@@ -49,7 +50,7 @@ object PasteDataSerializer : KSerializer<PasteData> {
         var size = 0L
         var hash = ""
         var favorite = false
-        var labels: RealmSet<com.crosspaste.realm.paste.PasteLabel> = realmSetOf()
+        var labels: RealmSet<PasteLabel> = realmSetOf()
         loop@ while (true) {
             when (val index = dec.decodeElementIndex(descriptor)) {
                 0 -> id = dec.decodeStringElement(descriptor, index)
@@ -67,7 +68,7 @@ object PasteDataSerializer : KSerializer<PasteData> {
                         dec.decodeSerializableElement(
                             descriptor, index,
                             RealmSetKSerializer(
-                                com.crosspaste.realm.paste.PasteLabel.serializer(),
+                                PasteLabel.serializer(),
                             ),
                         )
                 else -> break@loop
@@ -97,8 +98,8 @@ object PasteDataSerializer : KSerializer<PasteData> {
                 this.labels = labels
             }
 
-        for (pasteInit in pasteData.getPasteAppearItems().filterIsInstance<PasteCoordinateBinder>()) {
-            pasteInit.bind(pasteData.getPasteCoordinate())
+        for (pasteBinder in pasteData.getPasteAppearItems().filterIsInstance<PasteCoordinateBinder>()) {
+            pasteBinder.bind(pasteData.getPasteCoordinate())
         }
 
         return pasteData
@@ -128,7 +129,7 @@ object PasteDataSerializer : KSerializer<PasteData> {
         compositeOutput.encodeSerializableElement(
             descriptor,
             10,
-            RealmSetKSerializer(com.crosspaste.realm.paste.PasteLabel.serializer()),
+            RealmSetKSerializer(PasteLabel.serializer()),
             value.labels,
         )
         compositeOutput.endStructure(descriptor)
