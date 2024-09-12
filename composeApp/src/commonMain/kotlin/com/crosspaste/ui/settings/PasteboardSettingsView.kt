@@ -30,6 +30,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.Counter
 import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.file
+import com.crosspaste.ui.base.skipForward
 import com.crosspaste.ui.base.sync
 import org.koin.compose.koinInject
 
@@ -57,6 +58,31 @@ fun PasteboardSettingsView() {
                 .background(MaterialTheme.colors.background),
     ) {
         SettingItemView(
+            painter = skipForward(),
+            text = "skip_prior_pasteboard_content",
+            tint = Color(0xFFFF885B),
+        ) {
+            var enableSkipPriorPasteboardContent by remember {
+                mutableStateOf(
+                    configManager.config.enableSkipPriorPasteboardContent,
+                )
+            }
+
+            CustomSwitch(
+                modifier =
+                    Modifier.width(32.dp)
+                        .height(20.dp),
+                checked = enableSkipPriorPasteboardContent,
+                onCheckedChange = { newEnableSkipPriorPasteboardContent ->
+                    configManager.updateConfig("enableSkipPriorPasteboardContent", newEnableSkipPriorPasteboardContent)
+                    enableSkipPriorPasteboardContent = configManager.config.enableSkipPriorPasteboardContent
+                },
+            )
+        }
+
+        Divider(modifier = Modifier.padding(start = 35.dp))
+
+        SettingItemView(
             painter = file(),
             text = "max_back_up_file_size",
             tint = Color(0xFF41B06E),
@@ -81,7 +107,7 @@ fun PasteboardSettingsView() {
         SettingItemView(
             painter = sync(),
             text = "sync_file_size_limit",
-            tint = MaterialTheme.colors.onBackground,
+            tint = Color(0xFF825B32),
         ) {
             var enabledSyncFileSizeLimit by remember {
                 mutableStateOf(
