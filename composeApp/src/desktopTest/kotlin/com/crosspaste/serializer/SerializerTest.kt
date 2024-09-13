@@ -6,8 +6,8 @@ import com.crosspaste.realm.paste.PasteCollection
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteState
 import com.crosspaste.realm.paste.PasteType
-import com.crosspaste.utils.DesktopJsonUtils
 import com.crosspaste.utils.getCodecsUtils
+import com.crosspaste.utils.getJsonUtils
 import io.realm.kotlin.ext.realmListOf
 import io.realm.kotlin.types.RealmAny
 import io.realm.kotlin.types.RealmInstant
@@ -19,6 +19,8 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class SerializerTest {
+
+    private val jsonUtils = getJsonUtils()
 
     @Test
     fun testPasteData() {
@@ -46,9 +48,9 @@ class SerializerTest {
                 this.appInstanceId = UUID.randomUUID().toString()
             }
 
-        val json = DesktopJsonUtils.JSON.encodeToString(pasteData)
+        val json = jsonUtils.JSON.encodeToString(pasteData)
         println(json)
-        val newPasteData: PasteData = DesktopJsonUtils.JSON.decodeFromString(json)
+        val newPasteData: PasteData = jsonUtils.JSON.decodeFromString(json)
         assertEquals(pasteData.pasteId, newPasteData.pasteId)
         val newTextPasteItem = PasteCollection.getPasteItem(newPasteData.pasteAppearItem)
         assertTrue(newTextPasteItem is TextPasteItem)

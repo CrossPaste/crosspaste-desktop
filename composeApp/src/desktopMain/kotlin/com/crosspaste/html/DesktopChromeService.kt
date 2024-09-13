@@ -12,9 +12,9 @@ import com.crosspaste.platform.getPlatform
 import com.crosspaste.platform.windows.WinProcessUtils
 import com.crosspaste.platform.windows.WinProcessUtils.killProcessSet
 import com.crosspaste.platform.windows.WindowDpiHelper
-import com.crosspaste.utils.DesktopHtmlUtils.dataUrl
 import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.Retry
+import com.crosspaste.utils.getHtmlUtils
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
@@ -35,6 +35,8 @@ class DesktopChromeService(
 ) : ChromeService {
 
     private val logger = KotlinLogging.logger {}
+
+    private val htmlUtils = getHtmlUtils()
 
     private val currentPlatform = getPlatform()
 
@@ -230,7 +232,7 @@ class DesktopChromeService(
     @Suppress("UNCHECKED_CAST")
     private fun doHtml2Image(html: String): ByteArray? {
         chromeDriver?.let { driver ->
-            driver.get(dataUrl(html))
+            driver.get(htmlUtils.dataUrl(html))
             driver.manage().window().size = windowDimension
             val dimensions: List<Long> = driver.executeScript(JsCode.CODE) as List<Long>
             val pageWidth = max(dimensions[0].toInt(), windowDimension.width)

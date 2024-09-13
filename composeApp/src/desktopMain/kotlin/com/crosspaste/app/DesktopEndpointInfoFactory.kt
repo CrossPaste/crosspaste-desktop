@@ -6,8 +6,8 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.platform.macos.MacDeviceUtils
 import com.crosspaste.realm.sync.HostInfo
-import com.crosspaste.utils.DesktopNetUtils
 import com.crosspaste.utils.getDeviceUtils
+import com.crosspaste.utils.getNetUtils
 import com.sun.jna.platform.win32.Kernel32Util
 import java.io.BufferedReader
 import java.io.IOException
@@ -42,7 +42,7 @@ private fun getMacEndpointInfo(
         deviceId = deviceId,
         deviceName = deviceName,
         platform = platform,
-        hostInfoList = DesktopNetUtils.getHostInfoList(hostInfoFilter),
+        hostInfoList = getNetUtils().getHostInfoList(hostInfoFilter),
         port = port,
     )
 }
@@ -58,7 +58,7 @@ private fun getWindowEndpointInfo(
         deviceId = deviceId,
         deviceName = deviceName,
         platform = platform,
-        hostInfoList = DesktopNetUtils.getHostInfoList(hostInfoFilter),
+        hostInfoList = getNetUtils().getHostInfoList(hostInfoFilter),
         port = port,
     )
 }
@@ -99,7 +99,7 @@ fun getLinuxEndpointInfo(
         deviceId = deviceId,
         deviceName = deviceName,
         platform = platform,
-        hostInfoList = DesktopNetUtils.getHostInfoList(hostInfoFilter),
+        hostInfoList = getNetUtils().getHostInfoList(hostInfoFilter),
         port = port,
     )
 }
