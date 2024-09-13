@@ -58,8 +58,8 @@ fun DetialPasteDataView() {
                     withContext(mainDispatcher) {
                         appWindowManager.resetMainCursor()
                         notificationManager.addNotification(
-                            copywriter.getText("copy_successful"),
-                            MessageType.Success,
+                            message = copywriter.getText("copy_successful"),
+                            messageType = MessageType.Success,
                         )
                     }
                 }
