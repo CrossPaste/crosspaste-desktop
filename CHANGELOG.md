@@ -2,7 +2,77 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.0.8] - 2024-09-04
+# [1.0.9] - 2024-09-13
+
+Extensive refactoring has been done to make commonMain reusable across multiple platforms, preparing for mobile implementation
+
+## Bug Fixes
+* 🐛 [Win] Fix mouse cursor displacement to bottom-right when invoking search window by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1816
+* 🐛 Fix bug where app reads pasteboard on first launch to get CrossPaste source by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1875
+* 🐛 Failure to copy images exceeding backup file threshold by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1879
+
+## New Features
+* ✨ Add a switch to control whether to read pasteboard content set before application startup by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1877
+
+## UI Improvements
+* 💄 Hide tray immediately on application exit by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1810
+
+## Optimizations
+* ⚡ Prioritize matching pasteboard when searching and pasting by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1815
+
+## Refactor & Code Style
+* 🔨 Refactor atomic operations for cross-platform reuse by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1796
+* 🔨 Remove endpoint package and refactor code by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1798
+* 🔨 Internationalize project by converting Chinese comments to English by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1800
+* 🔨 Move Realm storage initialization to commonMain by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1802
+* 🔨 refactor UserDataPathProvider: use cross-platform APIs by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1804
+* 🔨 standardize logger creation within respective classes by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1806
+
+<details>
+<summary>Click to expand detailed Refactor & Code Style notes</summary>
+
+* 🔨 Refactor TxtRecordUtils for multi-platform support by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1809
+* 🔨 Refactor Ktor plugin and client code for multi-platform support by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1812
+* 🔨 Extract cross-platform logic into BaseSyncRouting for iOS/Android reuse by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1818
+* 🔨 Move PasteRouting and PullRouting to commonMain for code reuse by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1820
+* 🔨 Move AppPathProvider interface to desktopMain for desktop-specific impl by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1824
+* 🔨 Merge os package into platform package and rename currentPlatform to getPlatform by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1826
+* 🔨 Refactor file persistence to multiplatform impl by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1828
+* 🔨 Refactor DesktopDeviceManager to DeviceManager for multi-platform support by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1832
+* 🔨 Refactor SyncManager and SyncHandler for multi-platform reuse in iOS and Android by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1834
+* 🔨 Refactor DesktopPasteServer for multi-platform support by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1836
+* 🔨 Refactor QR code generation to support multiplatform by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1847
+* 🔨 Refactor task module for multi-platform impl by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1849
+* 🔨 Convert TaskUtils to multiplatform impl by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1851
+* 🔨 Move Realm query impl to commonMain by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1853
+* 🔨 Migrate clientApi impl to commonMain by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1855
+* 🔨 Migrate SyncInfoFactory to commonMain by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1859
+* 🔨 Adopt Ktor's multiplatform concurrent map by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1857
+* 🔨 Abstract AbstractFileExtImageLoader for multi-platform reuse by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1864
+* 🔨 Categorize and sort dependency injection items by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1865
+* 🔨 Rename PlatformUtils to DispatcherUtils for better accuracy by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1867
+* 🔨 Refactor DesktopPasteSyncProcessManager to commonMain for multi-platform reuse by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1869
+* 🔨 Optimize lock usage and replace AtomicLock by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1871
+* 🔨 Refactor Compose dependency injection to use official Koin methods by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1873
+* 🔨 Remove unused implementation of PasteResourceLoader by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1882
+* 🔨 Standardize using 'get' method to obtain utils classes by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1884
+* 🔨 Merge two interfaces of NotificationManager, no need for repetition by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1886
+</details>
+
+## Documentation
+* 📝 Add Frequently Asked Questions (FAQ) document by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1794
+
+## Dependencies
+* ⬆️ Bump ch.qos.logback:logback-classic from 1.5.7 to 1.5.8 by @dependabot in https://github.com/CrossPaste/crosspaste-desktop/pull/1840
+* ⬆️ Bump dev.hydraulic.conveyor from 1.10 to 1.11 by @dependabot in https://github.com/CrossPaste/crosspaste-desktop/pull/1839
+* ⬆️ Bump compose from 1.6.8 to 1.7.0 by @dependabot in https://github.com/CrossPaste/crosspaste-desktop/pull/1837
+
+## New Contributors
+* @sunxiang0918 Thanks for providing multiple detailed bug reproduction processes
+
+**Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/1.0.8.925...1.0.9.974
+
+# [1.0.8] - 2024-09-04
 
 ## Bug Fixes
 * 🐛 Resolve bug in application version check by @guiyanakuang in [#1726](https://github.com/CrossPaste/crosspaste-desktop/pull/1726)
@@ -50,7 +120,7 @@ All notable changes to this project will be documented in this file.
 
 **Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/1.0.7.891...1.0.8.925
 
-## [1.0.7] - 2024-08-23
+# [1.0.7] - 2024-08-23
 
 **📦 Reduced installation package size by 50% through optimizations**
 
@@ -92,7 +162,7 @@ All notable changes to this project will be documented in this file.
 
 **Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/1.0.6.862...1.0.7.891
 
-## [1.0.6] - 2024-08-11
+# [1.0.6] - 2024-08-11
 
 ## Bug Fixes
 * 🐛 Resolve delayed PrevAppName refresh in search UI by @guiyanakuang in [#1649](https://github.com/CrossPaste/crosspaste-desktop/pull/1649)
@@ -124,7 +194,7 @@ All notable changes to this project will be documented in this file.
 **Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/1.0.5.838...1.0.6.862
 
 
-## [1.0.5] - 2024-08-05
+# [1.0.5] - 2024-08-05
 
 ### Bug Fixes
 * 🐛 [Microsoft Store] Fix bug preventing control over startup settings for apps installed from Microsoft Store by @guiyanakuang in [#1604](https://github.com/CrossPaste/crosspaste-desktop/pull/1604)
@@ -145,7 +215,7 @@ All notable changes to this project will be documented in this file.
 
 **Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/v1.0.2...v1.0.5
 
-## [1.0.2] - 2024-08-01
+# [1.0.2] - 2024-08-01
 
 ### Bug Fixes
 * 🐛 On Linux, We Should Retrieve the Distribution Version Instead of the Kernel Version by @guiyanakuang in [#1548](https://github.com/CrossPaste/crosspaste-desktop/pull/1548)
@@ -182,7 +252,7 @@ All notable changes to this project will be documented in this file.
 
 **Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/v1.0.1...v1.0.2
 
-## [1.0.1] - 2024-07-24
+# [1.0.1] - 2024-07-24
 
 ### Bug Fixes
 * :bug: Fix the issue in build-release.yml where the Alibaba Cloud OSS version path was not set correctly by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1491
@@ -214,7 +284,7 @@ All notable changes to this project will be documented in this file.
 
 **Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/v1.0.0...v1.0.1
 
-## [1.0.0] - 2024-07-12
+# [1.0.0] - 2024-07-12
 
 ### Release Notes
 CrossPaste is a cross-platform pasteboard synchronization tool that supports macOS, Windows, and Linux. This tool provides seamless pasteboard sharing between different devices and operating systems, ensuring immediate data updates and consistency. Since the inception of the project, we have made over 700 commits, dedicated to creating a secure, efficient, and user-friendly pasteboard tool.
