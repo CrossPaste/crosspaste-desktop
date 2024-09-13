@@ -171,8 +171,6 @@ import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.ToastManager
 import com.crosspaste.ui.base.UISupport
-import com.crosspaste.ui.resource.DesktopAbsolutePasteResourceLoader
-import com.crosspaste.ui.resource.PasteResourceLoader
 import com.crosspaste.utils.GlobalCoroutineScope
 import com.crosspaste.utils.GlobalCoroutineScopeImpl
 import com.crosspaste.utils.ioDispatcher
@@ -389,7 +387,6 @@ class CrossPaste {
                     single<NativeKeyListener> { get<DesktopShortcutKeysListener>() }
                     single<NativeMouseListener> { get<DesktopMouseListener>() }
                     single<NotificationManager> { DesktopNotificationManager(get(), get()) }
-                    single<PasteResourceLoader> { DesktopAbsolutePasteResourceLoader }
                     single<ShortcutKeys> { DesktopShortcutKeys(get()) }
                     single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get(), get()) }
                     single<ShortcutKeysListener> { get<DesktopShortcutKeysListener>() }
