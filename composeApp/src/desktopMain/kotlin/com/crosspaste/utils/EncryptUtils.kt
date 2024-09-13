@@ -3,8 +3,6 @@ package com.crosspaste.utils
 import com.crosspaste.realm.signal.PastePreKey
 import com.crosspaste.realm.signal.PasteSignedPreKey
 import com.crosspaste.realm.signal.SignalRealm
-import com.crosspaste.utils.DesktopCodecsUtils.base64Decode
-import com.crosspaste.utils.DesktopCodecsUtils.base64Encode
 import org.signal.libsignal.protocol.ecc.Curve
 import org.signal.libsignal.protocol.ecc.ECPrivateKey
 import org.signal.libsignal.protocol.state.PreKeyRecord
@@ -19,6 +17,8 @@ import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 object EncryptUtils {
+
+    private val codecsUtils = getCodecsUtils()
 
     @Synchronized
     fun generatePreKeyPair(signalRealm: SignalRealm): PastePreKey {
@@ -68,11 +68,11 @@ object EncryptUtils {
 
     fun secretKeyToString(secretKey: SecretKey): String {
         val encodedKey = secretKey.encoded
-        return base64Encode(encodedKey)
+        return codecsUtils.base64Encode(encodedKey)
     }
 
     fun stringToSecretKey(encodedKey: String): SecretKey {
-        val decodedKey = base64Decode(encodedKey)
+        val decodedKey = codecsUtils.base64Decode(encodedKey)
         return SecretKeySpec(decodedKey, 0, decodedKey.size, "AES")
     }
 

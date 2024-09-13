@@ -6,15 +6,17 @@ import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteItem
-import com.crosspaste.utils.DesktopFileUtils
 import com.crosspaste.utils.FileExtUtils.canPreviewImage
 import com.crosspaste.utils.extension
+import com.crosspaste.utils.getFileUtils
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.toRealmList
 
 class FilesToImagesPlugin(
     private val userDataPathProvider: UserDataPathProvider,
 ) : PasteProcessPlugin {
+
+    private val fileUtils = getFileUtils()
 
     private val fileBasePath = userDataPathProvider.resolve(appFileType = AppFileType.FILE)
     private val imageBasePath = userDataPathProvider.resolve(appFileType = AppFileType.IMAGE)
@@ -43,7 +45,7 @@ class FilesToImagesPlugin(
                                     autoCreate = true,
                                     isFile = true,
                                 )
-                            if (DesktopFileUtils.moveFile(srcPath, destPath).isFailure) {
+                            if (fileUtils.moveFile(srcPath, destPath).isFailure) {
                                 throw IllegalStateException("Failed to move file from $srcPath to $destPath")
                             }
                         }
