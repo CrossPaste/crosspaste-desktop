@@ -16,6 +16,7 @@ class DesktopNotificationManager(
     val trayState = CrossPasteTrayState()
 
     override fun addNotification(
+        title: String?,
         message: String,
         messageType: MessageType,
         duration: Long,
@@ -25,22 +26,7 @@ class DesktopNotificationManager(
         } else if (platform.isLinux()) {
             sendNotification(AppName, message)
         } else {
-            notifyTray(AppName, message, messageType)
-        }
-    }
-
-    override fun addNotification(
-        title: String,
-        message: String,
-        messageType: MessageType,
-        duration: Long,
-    ) {
-        if (appWindowManager.showMainWindow) {
-            notifyToast(message, messageType, duration)
-        } else if (platform.isLinux()) {
-            sendNotification(AppName, message)
-        } else {
-            notifyTray(title, message, messageType)
+            notifyTray(title ?: AppName, message, messageType)
         }
     }
 

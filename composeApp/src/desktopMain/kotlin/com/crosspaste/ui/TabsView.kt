@@ -122,8 +122,8 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
                                 withContext(mainDispatcher) {
                                     appWindowManager.resetMainCursor()
                                     notificationManager.addNotification(
-                                        copywriter.getText("clean_successful"),
-                                        MessageType.Success,
+                                        message = copywriter.getText("clean_successful"),
+                                        messageType = MessageType.Success,
                                     )
                                 }
                             }
