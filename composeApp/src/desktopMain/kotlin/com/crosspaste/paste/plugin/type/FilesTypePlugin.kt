@@ -34,7 +34,7 @@ class FilesTypePlugin(
     private val userDataPathProvider: UserDataPathProvider,
 ) : PasteTypePlugin {
 
-    companion object FilesTypePlugin {
+    companion object {
 
         const val FILE_LIST_ID = "application/x-java-file-list"
 

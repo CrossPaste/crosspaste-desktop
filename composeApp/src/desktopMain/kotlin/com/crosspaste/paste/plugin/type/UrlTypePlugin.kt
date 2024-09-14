@@ -16,7 +16,7 @@ import java.net.URL
 
 class UrlTypePlugin : PasteTypePlugin {
 
-    companion object UrlTypePlugin {
+    companion object {
         const val URL = "application/x-java-url"
 
         private val codecsUtils = getCodecsUtils()
