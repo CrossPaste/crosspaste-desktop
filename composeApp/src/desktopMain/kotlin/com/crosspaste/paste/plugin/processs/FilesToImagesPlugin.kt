@@ -6,7 +6,6 @@ import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteItem
-import com.crosspaste.utils.FileExtUtils.canPreviewImage
 import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
 import io.realm.kotlin.MutableRealm
@@ -27,7 +26,10 @@ class FilesToImagesPlugin(
     ): List<PasteItem> {
         return pasteItems.map { pasteAppearItem ->
             if (pasteAppearItem is FilesPasteItem) {
-                if (pasteAppearItem.getFilePaths(userDataPathProvider).map { path -> path.extension }.all { canPreviewImage(it) }) {
+                if (pasteAppearItem.getFilePaths(userDataPathProvider)
+                        .map { path -> path.extension }
+                        .all { fileUtils.canPreviewImage(it) }
+                ) {
                     val basePath = pasteAppearItem.basePath
                     if (basePath == null) {
                         pasteAppearItem.relativePathList.map {

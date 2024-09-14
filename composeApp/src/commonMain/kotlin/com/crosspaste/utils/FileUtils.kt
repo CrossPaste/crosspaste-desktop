@@ -38,6 +38,8 @@ interface FileUtils {
         }
     }
 
+    fun canPreviewImage(ext: String): Boolean
+
     fun createRandomFileName(ext: String): String
 
     fun getExtFromFileName(fileName: String): String? {

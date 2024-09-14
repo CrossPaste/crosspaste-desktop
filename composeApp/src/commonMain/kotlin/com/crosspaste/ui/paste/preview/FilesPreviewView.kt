@@ -13,8 +13,8 @@ import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
-import com.crosspaste.utils.FileExtUtils.canPreviewImage
 import com.crosspaste.utils.extension
+import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -26,6 +26,8 @@ fun FilesPreviewView(
     pasteData.getPasteItem()?.let {
         val userDataPathProvider = koinInject<UserDataPathProvider>()
         val pasteFilePaths = (it as PasteFiles).getFilePaths(userDataPathProvider)
+
+        val fileUtils = getFileUtils()
 
         PasteSpecificPreviewContentView(
             pasteMainContent = {
@@ -39,7 +41,7 @@ fun FilesPreviewView(
                 ) {
                     items(pasteFilePaths.size) { index ->
                         val filepath = pasteFilePaths[index]
-                        if (canPreviewImage(filepath.extension)) {
+                        if (fileUtils.canPreviewImage(filepath.extension)) {
                             val pasteFileCoordinate =
                                 PasteFileCoordinate(
                                     pasteData.getPasteCoordinate(),

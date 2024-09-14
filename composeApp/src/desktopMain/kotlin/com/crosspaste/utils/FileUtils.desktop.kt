@@ -30,6 +30,11 @@ object DesktopFileUtils : FileUtils {
     private val units = arrayOf(B, KB, MB, GB, TB)
     private val decimalFormat = DecimalFormat("###0.#")
 
+    private val canPreviewImageMap =
+        setOf(
+            "png", "jpg", "jpeg", "gif", "bmp", "webp", "heic", "heif", "tiff", "svg",
+        )
+
     override fun formatBytes(bytesSize: Long): String {
         if (bytesSize < 1024) return "$bytesSize B"
         var value = bytesSize.toDouble()
@@ -40,6 +45,8 @@ object DesktopFileUtils : FileUtils {
         }
         return "${decimalFormat.format(value)} ${units[unitIndex]}"
     }
+
+    override fun canPreviewImage(ext: String): Boolean = canPreviewImageMap.contains(ext.lowercase())
 
     override fun createRandomFileName(ext: String): String {
         return "${UUID.randomUUID()}.$ext"
