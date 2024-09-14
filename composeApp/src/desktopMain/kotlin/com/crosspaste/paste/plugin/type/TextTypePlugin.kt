@@ -13,7 +13,7 @@ import java.awt.datatransfer.DataFlavor
 
 class TextTypePlugin : PasteTypePlugin, TextUpdater {
 
-    companion object TextItemService {
+    companion object {
 
         const val UNICODE_STRING = "Unicode String"
         const val TEXT = "text/plain"

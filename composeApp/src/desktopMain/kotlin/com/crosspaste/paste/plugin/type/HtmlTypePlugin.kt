@@ -18,7 +18,7 @@ import java.awt.datatransfer.DataFlavor
 
 class HtmlTypePlugin(private val appInfo: AppInfo) : PasteTypePlugin {
 
-    companion object HtmlTypePlugin {
+    companion object {
 
         const val HTML_ID = "text/html"
 
