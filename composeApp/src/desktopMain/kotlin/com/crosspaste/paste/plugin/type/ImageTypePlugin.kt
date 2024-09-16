@@ -2,7 +2,7 @@ package com.crosspaste.paste.plugin.type
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
-import com.crosspaste.image.ImageService.writeImage
+import com.crosspaste.image.ImageWriter
 import com.crosspaste.paste.DesktopPasteDataFlavor
 import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
@@ -36,6 +36,7 @@ import javax.imageio.ImageIO
 
 class ImageTypePlugin(
     private val appInfo: AppInfo,
+    private val imageWriter: ImageWriter<BufferedImage>,
     private val userDataPathProvider: UserDataPathProvider,
 ) : PasteTypePlugin {
 
@@ -112,7 +113,7 @@ class ImageTypePlugin(
                     AppFileType.IMAGE,
                     userDataPathProvider,
                 )
-            if (writeImage(image, ext, imagePath.toNioPath())) {
+            if (imageWriter.writeImage(image, ext, imagePath.toNioPath())) {
                 val fileTree = fileUtils.getFileInfoTree(imagePath)
 
                 val fileInfoTreeJsonString = jsonUtils.JSON.encodeToString(mapOf(name to fileTree))

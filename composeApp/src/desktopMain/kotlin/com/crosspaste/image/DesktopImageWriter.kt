@@ -4,9 +4,9 @@ import java.awt.image.BufferedImage
 import java.nio.file.Path
 import javax.imageio.ImageIO
 
-object ImageService : ImageWriter {
+object DesktopImageWriter : ImageWriter<BufferedImage> {
 
-    private val specialFormatWriteMap: Map<String, ImageWriter> =
+    private val specialFormatWriteMap: Map<String, ImageWriter<BufferedImage>> =
         mapOf(
             "webp" to WebpImageWriter(),
         )
@@ -33,13 +33,4 @@ object ImageService : ImageWriter {
             return true
         }
     }
-}
-
-interface ImageWriter {
-
-    fun writeImage(
-        image: BufferedImage,
-        formatName: String,
-        imagePath: Path,
-    ): Boolean
 }

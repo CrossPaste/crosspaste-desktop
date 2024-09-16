@@ -6,8 +6,10 @@ import com.crosspaste.platform.linux.FreedesktopUtils.saveExtIcon
 import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.platform.windows.JIconExtract
 import okio.Path
+import java.awt.image.BufferedImage
 
 class DesktopFileExtLoader(
+    imageWriter: ImageWriter<BufferedImage>,
     userDataPathProvider: UserDataPathProvider,
 ) : AbstractFileExtImageLoader(userDataPathProvider) {
 
@@ -17,7 +19,7 @@ class DesktopFileExtLoader(
         if (platform.isMacos()) {
             { key, _, result -> macSaveExtIcon(key, result) }
         } else if (platform.isWindows()) {
-            { _, value, result -> windowsSaveExtIcon(value, result) }
+            { _, value, result -> windowsSaveExtIcon(value, result, imageWriter) }
         } else if (platform.isLinux()) {
             { key, _, result -> linuxSaveExtIcon(key, result) }
         } else {
@@ -43,9 +45,10 @@ private fun macSaveExtIcon(
 private fun windowsSaveExtIcon(
     filePath: Path,
     savePath: Path,
+    imageWriter: ImageWriter<BufferedImage>,
 ) {
     JIconExtract.getIconForFile(512, 512, filePath.toFile())?.let { icon ->
-        ImageService.writeImage(icon, "png", savePath.toNioPath())
+        imageWriter.writeImage(icon, "png", savePath.toNioPath())
     }
 }
 

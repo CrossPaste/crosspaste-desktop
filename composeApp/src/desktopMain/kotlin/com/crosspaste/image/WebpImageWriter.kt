@@ -11,7 +11,7 @@ import javax.imageio.IIOImage
 import javax.imageio.ImageIO
 import javax.imageio.stream.FileImageOutputStream
 
-class WebpImageWriter : ImageWriter {
+class WebpImageWriter : ImageWriter<BufferedImage> {
 
     private val logger: KLogger = KotlinLogging.logger {}
 
