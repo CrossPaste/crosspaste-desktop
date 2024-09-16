@@ -5,8 +5,6 @@ import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.FileInfoTreeBuilder
 import com.crosspaste.presist.FilesChunk
 import com.crosspaste.presist.SingleFileInfoTree
-import com.google.common.hash.Hashing
-import com.google.common.io.Files
 import io.ktor.utils.io.*
 import okio.Path
 import okio.Path.Companion.toOkioPath
@@ -23,7 +21,9 @@ actual fun getFileUtils(): FileUtils {
 
 object DesktopFileUtils : FileUtils {
 
-    override val dateUtils = getDateUtils()
+    private val codecsUtils = getCodecsUtils()
+
+    private val dateUtils = getDateUtils()
 
     override val separator: String = File.separator
 
@@ -98,10 +98,7 @@ object DesktopFileUtils : FileUtils {
     }
 
     override fun getFileHash(path: Path): String {
-        val file: File = path.toFile()
-        val byteSource = Files.asByteSource(file)
-        val hc = byteSource.hash(Hashing.goodFastHash(128))
-        return hc.toString()
+        return codecsUtils.hash(path)
     }
 
     override fun createEmptyPasteFile(

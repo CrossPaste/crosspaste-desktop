@@ -19,8 +19,6 @@ const val TB = "TB"
 
 interface FileUtils {
 
-    val dateUtils: DateUtils
-
     val separator: String
 
     fun formatBytes(bytesSize: Long): String

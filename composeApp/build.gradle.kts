@@ -112,7 +112,6 @@ kotlin {
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.material.desktop)
-            implementation(libs.murmurhash)
             implementation(libs.okio)
             implementation(libs.realm.kotlin.base)
             implementation(libs.semver)
