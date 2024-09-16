@@ -26,7 +26,7 @@ body:
       label: How important is this improvement for you?
       options:
         - -- select --
-        - Dealbreaker
+        - Deal breaker
         - Would be a major improvement
         - I would like to have it but have a workaround
         - Fairly niche but nice to have anyway
