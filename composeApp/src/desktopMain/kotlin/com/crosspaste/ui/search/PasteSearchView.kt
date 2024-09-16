@@ -541,7 +541,7 @@ fun CrossPasteSearchWindowContent() {
                             modifier = Modifier.fillMaxHeight().width(1.dp),
                             thickness = 2.dp,
                         )
-                        DetialPasteDataView()
+                        DetailPasteDataView()
                     }
 
                     Row(

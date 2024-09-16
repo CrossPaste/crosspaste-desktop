@@ -32,7 +32,7 @@ import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 
 @Composable
-fun DetialPasteDataView() {
+fun DetailPasteDataView() {
     val pasteSearchService = koinInject<PasteSearchService>()
 
     val currentPasteData: PasteData? by remember(

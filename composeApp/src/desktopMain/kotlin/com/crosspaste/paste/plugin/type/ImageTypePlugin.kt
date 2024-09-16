@@ -181,15 +181,20 @@ class ImageTypePlugin(
         }
 
         // Create a buffered image with transparency
-        val bimage = BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB)
+        val bufferedImage =
+            BufferedImage(
+                img.getWidth(null),
+                img.getHeight(null),
+                BufferedImage.TYPE_INT_ARGB,
+            )
 
         // Draw the image on to the buffered image
-        val bGr = bimage.createGraphics()
+        val bGr = bufferedImage.createGraphics()
         bGr.drawImage(img, 0, 0, null)
         bGr.dispose()
 
         // Return the buffered image
-        return bimage
+        return bufferedImage
     }
 
     override fun buildTransferable(
