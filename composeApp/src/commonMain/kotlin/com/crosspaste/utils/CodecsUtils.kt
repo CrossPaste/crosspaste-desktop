@@ -1,13 +1,14 @@
 package com.crosspaste.utils
 
-import com.goncalossilva.murmurhash.MurmurHash3
 import okio.Path
 
 expect fun getCodecsUtils(): CodecsUtils
 
 val HEX_DIGITS: CharArray = "0123456789abcdef".toCharArray()
 
-val CROSSPASTE_HASH: MurmurHash3 = MurmurHash3(13043025u)
+val CROSS_PASTE_SEED = 13043025u
+
+val CROSSPASTE_HASH = MurmurHash3(CROSS_PASTE_SEED)
 
 interface CodecsUtils {
 
@@ -27,6 +28,8 @@ interface CodecsUtils {
         }
     }
 
+    fun hash(path: Path): String
+
     fun hashByString(string: String): String {
         return hash(string.toByteArray())
     }
@@ -35,7 +38,7 @@ interface CodecsUtils {
 
     fun sha256(path: Path): String
 
-    private fun StringBuilder.appendHex(value: ULong) {
+    fun StringBuilder.appendHex(value: ULong) {
         for (i in 0 until 8) {
             val byte = (value shr i * 8).toByte()
             append(HEX_DIGITS[(byte.toInt() shr 4) and 0xf])
