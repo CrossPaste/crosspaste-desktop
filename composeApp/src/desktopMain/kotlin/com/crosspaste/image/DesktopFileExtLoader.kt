@@ -48,7 +48,7 @@ private fun windowsSaveExtIcon(
     imageWriter: ImageWriter<BufferedImage>,
 ) {
     JIconExtract.getIconForFile(512, 512, filePath.toFile())?.let { icon ->
-        imageWriter.writeImage(icon, "png", savePath.toNioPath())
+        imageWriter.writeImage(icon, "png", savePath)
     }
 }
 

@@ -113,7 +113,7 @@ class ImageTypePlugin(
                     AppFileType.IMAGE,
                     userDataPathProvider,
                 )
-            if (imageWriter.writeImage(image, ext, imagePath.toNioPath())) {
+            if (imageWriter.writeImage(image, ext, imagePath)) {
                 val fileTree = fileUtils.getFileInfoTree(imagePath)
 
                 val fileInfoTreeJsonString = jsonUtils.JSON.encodeToString(mapOf(name to fileTree))

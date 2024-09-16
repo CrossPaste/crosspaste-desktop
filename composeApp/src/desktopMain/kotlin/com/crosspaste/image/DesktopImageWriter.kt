@@ -1,7 +1,7 @@
 package com.crosspaste.image
 
+import okio.Path
 import java.awt.image.BufferedImage
-import java.nio.file.Path
 import javax.imageio.ImageIO
 
 object DesktopImageWriter : ImageWriter<BufferedImage> {

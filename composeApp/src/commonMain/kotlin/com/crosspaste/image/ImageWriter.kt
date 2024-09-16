@@ -1,6 +1,6 @@
 package com.crosspaste.image
 
-import java.nio.file.Path
+import okio.Path
 
 interface ImageWriter<Image> {
 
