@@ -46,10 +46,12 @@ import com.crosspaste.i18n.GlobalCopywriterImpl
 import com.crosspaste.image.DesktopFaviconLoader
 import com.crosspaste.image.DesktopFileExtLoader
 import com.crosspaste.image.DesktopImageDataLoader
+import com.crosspaste.image.DesktopImageWriter
 import com.crosspaste.image.DesktopThumbnailLoader
 import com.crosspaste.image.FaviconLoader
 import com.crosspaste.image.FileExtImageLoader
 import com.crosspaste.image.ImageDataLoader
+import com.crosspaste.image.ImageWriter
 import com.crosspaste.image.ThumbnailLoader
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listen.DesktopGlobalListener
@@ -195,6 +197,7 @@ import org.signal.libsignal.protocol.state.IdentityKeyStore
 import org.signal.libsignal.protocol.state.PreKeyStore
 import org.signal.libsignal.protocol.state.SessionStore
 import org.signal.libsignal.protocol.state.SignedPreKeyStore
+import java.awt.image.BufferedImage
 import kotlin.system.exitProcess
 
 class CrossPaste {
@@ -240,8 +243,9 @@ class CrossPaste {
                     single<ConfigManager> { configManager }
                     single<CrossPasteLogger> { crossPasteLogger }
                     single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<PasteServer<*, *>>() }) }
-                    single<FileExtImageLoader> { DesktopFileExtLoader(get()) }
+                    single<FileExtImageLoader> { DesktopFileExtLoader(get(), get()) }
                     single<FilePersist> { FilePersist }
+                    single<ImageWriter<BufferedImage>> { DesktopImageWriter }
                     single<GlobalCoroutineScope> { GlobalCoroutineScopeImpl }
                     single<KLogger> { CrossPaste.logger }
                     single<PasteIDGenerator> { DesktopPasteIDGeneratorFactory(get()).createIDGenerator() }
@@ -319,7 +323,7 @@ class CrossPaste {
                     single<FilesTypePlugin> { FilesTypePlugin(get(), get(), get()) }
                     single<HtmlTypePlugin> { HtmlTypePlugin(get()) }
                     single<ImageDataLoader> { DesktopImageDataLoader(get()) }
-                    single<ImageTypePlugin> { ImageTypePlugin(get(), get()) }
+                    single<ImageTypePlugin> { ImageTypePlugin(get(), get(), get()) }
                     single<PasteboardService> { getDesktopPasteboardService(get(), get(), get(), get(), get(), get()) }
                     single<PastePreviewService> { DesktopPastePreviewService(get()) }
                     single<PasteSearchService> { get<DesktopPasteSearchService>() }

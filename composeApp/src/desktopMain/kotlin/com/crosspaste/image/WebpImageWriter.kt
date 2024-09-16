@@ -4,14 +4,14 @@ import com.luciad.imageio.webp.CompressionType
 import com.luciad.imageio.webp.WebPWriteParam
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
+import okio.Path
 import java.awt.image.BufferedImage
 import java.io.IOException
-import java.nio.file.Path
 import javax.imageio.IIOImage
 import javax.imageio.ImageIO
 import javax.imageio.stream.FileImageOutputStream
 
-class WebpImageWriter : ImageWriter {
+class WebpImageWriter : ImageWriter<BufferedImage> {
 
     private val logger: KLogger = KotlinLogging.logger {}
 
