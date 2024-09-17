@@ -1,6 +1,5 @@
 package com.crosspaste.utils
 
-import io.ktor.utils.io.charsets.*
 import io.ktor.utils.io.core.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -16,7 +15,7 @@ object TxtRecordUtils {
         val jsonString = getJsonUtils().JSON.encodeToString(obj)
 
         // Convert the JSON string to a base64 encoded string
-        val base64Encoded = getCodecsUtils().base64Encode(jsonString.toByteArray(Charsets.UTF_8))
+        val base64Encoded = getCodecsUtils().base64Encode(jsonString.toByteArray())
 
         // Prepare a dictionary to store the split data
         val txtRecordDict = mutableMapOf<String, String>()
