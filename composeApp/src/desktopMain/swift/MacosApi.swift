@@ -1,6 +1,8 @@
 import AppKit
 import ApplicationServices
 import Cocoa
+import CoreGraphics
+import ImageIO
 import Security
 
 @_cdecl("getPasteboardChangeCount")
@@ -372,4 +374,84 @@ public func saveIconByExt(ext: UnsafePointer<CChar>, path: UnsafePointer<CChar>)
             }
         }
     }
+}
+
+@_cdecl("createThumbnail")
+public func createThumbnail(
+    originalImagePath: UnsafePointer<CChar>,
+    thumbnailImagePath: UnsafePointer<CChar>,
+    metadataPath: UnsafePointer<CChar>
+) -> Bool {
+    let originalImagePathString = String(cString: originalImagePath)
+    let thumbnailImagePathString = String(cString: thumbnailImagePath)
+    let metadataPathString = String(cString: metadataPath)
+
+    guard let imageSource = CGImageSourceCreateWithURL(URL(fileURLWithPath: originalImagePathString) as CFURL, nil),
+          let originalImage = CGImageSourceCreateImageAtIndex(imageSource, 0, nil) else {
+        return false
+    }
+
+    let originalWidth = originalImage.width
+    let originalHeight = originalImage.height
+
+    // Check if the file size can be obtained, return false if it can't
+    guard let fileSize = try? FileManager.default.attributesOfItem(atPath: originalImagePathString)[.size] as? Int64 else {
+        return false
+    }
+
+    let thumbnailWidth: Int
+    let thumbnailHeight: Int
+
+    if originalWidth <= originalHeight {
+        thumbnailWidth = 200
+        thumbnailHeight = 200 * originalHeight / originalWidth
+    } else {
+        thumbnailWidth = 200 * originalWidth / originalHeight
+        thumbnailHeight = 200
+    }
+
+    let thumbnailRect = CGRect(x: 0, y: 0, width: thumbnailWidth, height: thumbnailHeight)
+
+    guard let colorSpace = originalImage.colorSpace,
+          let context = CGContext(data: nil,
+                                  width: thumbnailWidth,
+                                  height: thumbnailHeight,
+                                  bitsPerComponent: 8,
+                                  bytesPerRow: 0,
+                                  space: colorSpace,
+                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
+        return false
+    }
+
+    context.interpolationQuality = .high
+    context.draw(originalImage, in: thumbnailRect)
+
+    guard let thumbnailImage = context.makeImage() else {
+        return false
+    }
+
+    let thumbnailUrl = URL(fileURLWithPath: thumbnailImagePathString)
+    guard let destination = CGImageDestinationCreateWithURL(thumbnailUrl as CFURL, kUTTypePNG, 1, nil) else {
+        return false
+    }
+
+    CGImageDestinationAddImage(destination, thumbnailImage, nil)
+
+    guard CGImageDestinationFinalize(destination) else {
+        return false
+    }
+
+    // Save metadata
+    let metadata = """
+    SIZE=\(fileSize)
+    DIMENSIONS=\(originalWidth) x \(originalHeight)
+    """
+
+    do {
+        try metadata.write(toFile: metadataPathString, atomically: true, encoding: .utf8)
+    } catch {
+        return false
+    }
+
+    return true
 }

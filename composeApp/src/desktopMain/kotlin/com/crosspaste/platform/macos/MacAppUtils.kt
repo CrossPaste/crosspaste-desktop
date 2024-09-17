@@ -47,6 +47,14 @@ object MacAppUtils {
         INSTANCE.saveIconByExt(ext, path)
     }
 
+    fun createThumbnail(
+        originalImagePath: String,
+        thumbnailImagePath: String,
+        metadataPath: String,
+    ): Boolean {
+        return INSTANCE.createThumbnail(originalImagePath, thumbnailImagePath, metadataPath)
+    }
+
     fun getTrayWindowInfos(pid: Long): List<WindowInfo> {
         return INSTANCE.getTrayWindowInfos(pid)?.let {
             val windowInfoArray = WindowInfoArray(it)

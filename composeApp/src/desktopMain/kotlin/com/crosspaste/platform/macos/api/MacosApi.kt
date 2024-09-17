@@ -73,6 +73,12 @@ interface MacosApi : Library {
         path: String,
     )
 
+    fun createThumbnail(
+        originalImagePath: String,
+        thumbnailImagePath: String,
+        metadataPath: String,
+    ): Boolean
+
     companion object {
         val INSTANCE: MacosApi = Native.load("MacosApi", MacosApi::class.java)
 
