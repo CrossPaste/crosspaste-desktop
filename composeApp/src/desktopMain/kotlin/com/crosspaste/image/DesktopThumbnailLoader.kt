@@ -6,6 +6,9 @@ import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.createPasteInfoWithoutConverter
 import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.macos.MacAppUtils
+import com.crosspaste.utils.LoggerExtension.logExecutionTime
 import com.crosspaste.utils.PlatformLock
 import com.crosspaste.utils.fileNameRemoveExtension
 import com.crosspaste.utils.getFileUtils
@@ -30,6 +33,8 @@ class DesktopThumbnailLoader(
     override val lockMap: ConcurrentMap<String, PlatformLock> = ConcurrentMap()
 
     private val fileUtils = getFileUtils()
+
+    private val platform = getPlatform()
 
     private val basePath = userDataPathProvider.resolve(appFileType = AppFileType.IMAGE)
 
@@ -90,6 +95,30 @@ class DesktopThumbnailLoader(
     }
 
     override fun save(
+        key: String,
+        value: PasteFileCoordinate,
+        result: Path,
+    ) {
+        if (platform.isMacos()) {
+            val metadataPath = getOriginMetaPath(value)
+            logExecutionTime(logger, "Create thumbnail by mac api for file: ${value.filePath}") {
+                if (!MacAppUtils.createThumbnail(
+                        value.filePath.toString(),
+                        result.toString(),
+                        metadataPath.toString(),
+                    )
+                ) {
+                    defaultSave(key, value, result)
+                }
+            }
+        } else {
+            logExecutionTime(logger, "Create thumbnail by default api for file: ${value.filePath}") {
+                defaultSave(key, value, result)
+            }
+        }
+    }
+
+    private fun defaultSave(
         key: String,
         value: PasteFileCoordinate,
         result: Path,
