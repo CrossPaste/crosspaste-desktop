@@ -60,6 +60,7 @@ class MacosPasteboardService(
 
     private fun run(): Job {
         return serviceScope.launch(CoroutineName("MacPasteboardService")) {
+            var firstRead = true
             while (isActive) {
                 try {
                     val remote = IntByReference()
@@ -68,7 +69,7 @@ class MacosPasteboardService(
                         .let { currentChangeCount ->
                             if (changeCount != currentChangeCount) {
                                 logger.info { "currentChangeCount $currentChangeCount changeCount $changeCount" }
-                                val firstChange = changeCount == configManager.config.lastPasteboardChangeCount
+                                val firstChange = firstRead && changeCount == configManager.config.lastPasteboardChangeCount
                                 changeCount = currentChangeCount
 
                                 if (firstChange && configManager.config.enableSkipPriorPasteboardContent) {
@@ -111,6 +112,7 @@ class MacosPasteboardService(
                                 }
                             }
                         }
+                    firstRead = false
                 } catch (e: Exception) {
                     logger.error(e) { "Failed to consume transferable" }
                 }
