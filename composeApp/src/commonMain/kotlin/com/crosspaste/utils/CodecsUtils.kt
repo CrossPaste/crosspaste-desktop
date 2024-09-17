@@ -1,5 +1,6 @@
 package com.crosspaste.utils
 
+import io.ktor.utils.io.core.toByteArray
 import okio.Path
 
 expect fun getCodecsUtils(): CodecsUtils

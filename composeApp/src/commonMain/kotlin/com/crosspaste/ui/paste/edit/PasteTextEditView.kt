@@ -28,6 +28,7 @@ import com.crosspaste.ui.WindowDecoration
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.save
 import com.crosspaste.utils.getCodecsUtils
+import io.ktor.utils.io.core.toByteArray
 import org.koin.compose.koinInject
 
 @Composable

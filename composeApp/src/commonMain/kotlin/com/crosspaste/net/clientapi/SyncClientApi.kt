@@ -13,6 +13,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.*
 import io.ktor.http.*
 import io.ktor.util.reflect.*
+import io.ktor.utils.io.core.toByteArray
 import kotlinx.serialization.encodeToString
 
 class SyncClientApi(

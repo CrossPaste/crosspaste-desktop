@@ -5,6 +5,7 @@ import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.image.PlatformImage
 import com.crosspaste.utils.getCodecsUtils
+import io.ktor.utils.io.core.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -32,7 +33,7 @@ abstract class QRCodeGenerator(
         token: CharArray,
     ): String {
         val syncInfoJson = Json.encodeToString(syncInfo)
-        val syncInfoBytes = syncInfoJson.encodeToByteArray()
+        val syncInfoBytes = syncInfoJson.toByteArray()
         return encodeSyncInfo(syncInfoBytes, token.concatToString().toInt())
     }
 
