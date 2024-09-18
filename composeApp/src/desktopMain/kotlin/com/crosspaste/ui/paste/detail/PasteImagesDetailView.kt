@@ -20,9 +20,9 @@ import androidx.compose.foundation.onClick
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -191,7 +191,7 @@ fun PasteImagesDetailView(
                                             painter = imageSlash(),
                                             contentDescription = imagePath.name,
                                             modifier = Modifier.fillMaxSize(),
-                                            tint = MaterialTheme.colors.onBackground,
+                                            tint = MaterialTheme.colorScheme.onBackground,
                                         )
                                     }
                                 }
@@ -221,7 +221,7 @@ fun PasteImagesDetailView(
                                                 modifier = Modifier.size(18.dp),
                                                 painter = chevronLeft(),
                                                 contentDescription = "chevronLeft",
-                                                tint = MaterialTheme.colors.onBackground,
+                                                tint = MaterialTheme.colorScheme.onBackground,
                                             )
                                         }
                                         Spacer(modifier = Modifier.weight(1f))
@@ -248,7 +248,7 @@ fun PasteImagesDetailView(
                                                 modifier = Modifier.size(18.dp),
                                                 painter = chevronRight(),
                                                 contentDescription = "chevronRight",
-                                                tint = MaterialTheme.colors.onBackground,
+                                                tint = MaterialTheme.colorScheme.onBackground,
                                             )
                                         }
                                     }
@@ -262,7 +262,7 @@ fun PasteImagesDetailView(
                                             Box(
                                                 modifier =
                                                     Modifier.size(30.dp).background(
-                                                        color = MaterialTheme.colors.background.copy(alpha = 0.5f),
+                                                        color = MaterialTheme.colorScheme.background.copy(alpha = 0.5f),
                                                     ),
                                                 contentAlignment = Alignment.Center,
                                             ) {
@@ -274,7 +274,7 @@ fun PasteImagesDetailView(
                                                         },
                                                     painter = if (showMode) imageCompress() else imageExpand(),
                                                     contentDescription = "expand or compress image",
-                                                    tint = MaterialTheme.colors.onBackground,
+                                                    tint = MaterialTheme.colorScheme.onBackground,
                                                 )
                                             }
                                         }

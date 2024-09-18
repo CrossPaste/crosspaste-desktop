@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,7 +57,13 @@ fun PasteTitleView(
                         .fillMaxHeight()
                         .padding(horizontal = 10.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(if (selected) MaterialTheme.colors.selectColor() else MaterialTheme.colors.background)
+                        .background(
+                            if (selected) {
+                                MaterialTheme.colorScheme.selectColor()
+                            } else {
+                                MaterialTheme.colorScheme.background
+                            },
+                        )
                         .clickable { onClick() },
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically,
@@ -74,7 +80,7 @@ fun PasteTitleView(
                         text = it,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colors.onBackground,
+                        color = MaterialTheme.colorScheme.onBackground,
                         style =
                             TextStyle(
                                 textAlign = TextAlign.Start,

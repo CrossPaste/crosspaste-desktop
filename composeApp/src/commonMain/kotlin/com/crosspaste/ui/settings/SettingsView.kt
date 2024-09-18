@@ -26,9 +26,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Divider
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -90,7 +90,7 @@ fun SettingsTextStyle() =
         fontWeight = FontWeight.Light,
         fontSize = 14.sp,
         fontFamily = FontFamily.SansSerif,
-        color = MaterialTheme.colors.onBackground,
+        color = MaterialTheme.colorScheme.onBackground,
     )
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -163,12 +163,12 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                     Modifier.wrapContentSize()
                         .padding(horizontal = 16.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colors.background),
+                        .background(MaterialTheme.colorScheme.background),
             ) {
                 SettingItemView(
                     painter = language(),
                     text = "language",
-                    tint = MaterialTheme.colors.primary,
+                    tint = MaterialTheme.colorScheme.primary,
                 ) {
                     Row(
                         modifier =
@@ -198,7 +198,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                                     .size(15.dp),
                             painter = languageArrow,
                             contentDescription = null,
-                            tint = MaterialTheme.colors.onBackground,
+                            tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
 
@@ -236,7 +236,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                                             .width(maxWidth)
                                             .wrapContentHeight()
                                             .clip(RoundedCornerShape(5.dp))
-                                            .background(MaterialTheme.colors.surface),
+                                            .background(MaterialTheme.colorScheme.surface),
                                 ) {
                                     val allLanguages = copywriter.getAllLanguages()
                                     allLanguages.forEachIndexed { _, language ->
@@ -251,7 +251,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                     }
                 }
 
-                Divider(modifier = Modifier.padding(start = 35.dp))
+                HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
 
                 SettingItemView(
                     painter = palette(),
@@ -261,7 +261,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                     ThemeSegmentedControl()
                 }
 
-                Divider(modifier = Modifier.padding(start = 35.dp))
+                HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
 
                 SettingItemView(
                     painter = clipboard(),
@@ -283,7 +283,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                     )
                 }
 
-                Divider(modifier = Modifier.padding(start = 35.dp))
+                HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
 
                 SettingItemView(
                     painter = shield(),
@@ -305,7 +305,7 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                     )
                 }
 
-                Divider(modifier = Modifier.padding(start = 35.dp))
+                HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
 
                 SettingItemView(
                     painter = bolt(),
@@ -364,8 +364,13 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                     thickness = 8.dp,
                     shape = RoundedCornerShape(4.dp),
                     hoverDurationMillis = 300,
-                    unhoverColor = if (isScrolling) MaterialTheme.colors.onBackground.copy(alpha = 0.48f) else Color.Transparent,
-                    hoverColor = MaterialTheme.colors.onBackground,
+                    unhoverColor =
+                        if (isScrolling) {
+                            MaterialTheme.colorScheme.onBackground.copy(alpha = 0.48f)
+                        } else {
+                            Color.Transparent
+                        },
+                    hoverColor = MaterialTheme.colorScheme.onBackground,
                 ),
         )
     }

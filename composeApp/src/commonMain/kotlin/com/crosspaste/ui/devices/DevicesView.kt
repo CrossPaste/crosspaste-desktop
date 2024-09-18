@@ -3,6 +3,7 @@ package com.crosspaste.ui.devices
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,11 +13,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Divider
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
-import androidx.compose.material.TextFieldDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -42,6 +42,7 @@ import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.PageViewContext
+import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.ExpandView
@@ -76,7 +77,7 @@ fun DevicesView(currentPageViewContext: MutableState<PageViewContext>) {
             Modifier.fillMaxSize()
                 .padding(8.dp)
                 .clip(RoundedCornerShape(5.dp))
-                .background(MaterialTheme.colors.surface.copy(0.64f)),
+                .background(MaterialTheme.colorScheme.surface.copy(0.64f)),
         contentAlignment = Alignment.TopCenter,
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -140,9 +141,10 @@ fun MyDevicesView(currentPageViewContext: MutableState<PageViewContext>) {
                                 .wrapContentHeight(),
                     ) {
                         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp)) {
-                            TextField(
+                            CustomTextField(
                                 modifier =
-                                    Modifier.wrapContentSize()
+                                    Modifier.fillMaxWidth()
+                                        .height(40.dp)
                                         .focusRequester(focusRequester)
                                         .onKeyEvent {
                                             when (it.key) {
@@ -168,7 +170,7 @@ fun MyDevicesView(currentPageViewContext: MutableState<PageViewContext>) {
                                         style =
                                             TextStyle(
                                                 fontWeight = FontWeight.Light,
-                                                color = MaterialTheme.colors.onBackground.copy(alpha = 0.5f),
+                                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                                                 fontSize = 15.sp,
                                             ),
                                         maxLines = 1,
@@ -178,23 +180,34 @@ fun MyDevicesView(currentPageViewContext: MutableState<PageViewContext>) {
                                 isError = isError,
                                 singleLine = true,
                                 colors =
-                                    TextFieldDefaults.textFieldColors(
-                                        textColor = MaterialTheme.colors.onBackground,
+                                    TextFieldDefaults.colors(
+                                        focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                                        unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
                                         disabledTextColor = Color.Transparent,
-                                        backgroundColor = Color.Transparent,
-                                        cursorColor = MaterialTheme.colors.primary,
+                                        errorTextColor = MaterialTheme.colorScheme.error,
+                                        cursorColor = MaterialTheme.colorScheme.primary,
                                         errorCursorColor = Color.Red,
-                                        focusedIndicatorColor = MaterialTheme.colors.primary,
-                                        unfocusedIndicatorColor = MaterialTheme.colors.secondaryVariant,
+                                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                        unfocusedIndicatorColor = MaterialTheme.colorScheme.secondary,
                                         disabledIndicatorColor = Color.Transparent,
+                                        errorIndicatorColor = MaterialTheme.colorScheme.error,
+                                        focusedContainerColor = Color.Transparent,
+                                        unfocusedContainerColor = Color.Transparent,
+                                        disabledContainerColor = Color.Transparent,
+                                        errorContainerColor = Color.Transparent,
+                                        focusedPlaceholderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                                        unfocusedPlaceholderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                                        disabledPlaceholderColor = Color.Transparent,
+                                        errorPlaceholderColor = MaterialTheme.colorScheme.error.copy(alpha = 0.5f),
                                     ),
                                 textStyle =
                                     TextStyle(
                                         fontWeight = FontWeight.Light,
-                                        color = MaterialTheme.colors.onBackground,
+                                        color = MaterialTheme.colorScheme.onBackground,
                                         fontSize = 15.sp,
                                         lineHeight = 5.sp,
                                     ),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
                             )
                         }
 
@@ -227,7 +240,7 @@ fun DevicesListView(
         for ((index, syncRuntimeInfo) in rememberSyncRuntimeInfos.withIndex()) {
             DeviceConnectView(syncRuntimeInfo, currentPageViewContext, true, onEdit)
             if (index != rememberSyncRuntimeInfos.size - 1) {
-                Divider(modifier = Modifier.fillMaxWidth())
+                HorizontalDivider(modifier = Modifier.fillMaxWidth())
             }
         }
     }

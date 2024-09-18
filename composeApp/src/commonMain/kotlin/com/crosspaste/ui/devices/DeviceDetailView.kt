@@ -12,10 +12,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Divider
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -81,7 +81,7 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
                 modifier =
                     Modifier.wrapContentSize()
                         .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colors.background),
+                        .background(MaterialTheme.colorScheme.background),
             ) {
                 Row(
                     modifier =
@@ -121,8 +121,8 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
                 Modifier.wrapContentSize()
                     .padding(start = 15.dp, bottom = 5.dp),
             text = copywriter.getText("sync_control"),
-            color = MaterialTheme.colors.onBackground,
-            style = MaterialTheme.typography.h6,
+            color = MaterialTheme.colorScheme.onBackground,
+            style = MaterialTheme.typography.headlineSmall,
             fontFamily = FontFamily.SansSerif,
             fontSize = 12.sp,
         )
@@ -130,7 +130,7 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
             modifier =
                 Modifier.wrapContentSize()
                     .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colors.background),
+                    .background(MaterialTheme.colorScheme.background),
         ) {
             Row(
                 modifier =
@@ -140,7 +140,7 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
             ) {
                 Text(
                     text = "${copywriter.getText("allow_send_to")} ${syncRuntimeInfo.getDeviceDisplayName()}",
-                    color = MaterialTheme.colors.onBackground,
+                    color = MaterialTheme.colorScheme.onBackground,
                     style = TextStyle(fontWeight = FontWeight.Light),
                     fontFamily = FontFamily.SansSerif,
                     fontSize = 14.sp,
@@ -166,7 +166,7 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
                 )
             }
 
-            Divider(modifier = Modifier.padding(start = 15.dp), color = Color.Gray)
+            HorizontalDivider(modifier = Modifier.padding(start = 15.dp), color = Color.Gray)
 
             Row(
                 modifier =
@@ -176,7 +176,7 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
             ) {
                 Text(
                     text = "${copywriter.getText("allow_receive_from")} ${syncRuntimeInfo.getDeviceDisplayName()}",
-                    color = MaterialTheme.colors.onBackground,
+                    color = MaterialTheme.colorScheme.onBackground,
                     style = TextStyle(fontWeight = FontWeight.Light),
                     fontFamily = FontFamily.SansSerif,
                     fontSize = 14.sp,
@@ -234,9 +234,9 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
                 Modifier.wrapContentSize()
                     .padding(start = 15.dp, bottom = 5.dp),
             text = copywriter.getText("base_info"),
-            color = MaterialTheme.colors.onBackground,
+            color = MaterialTheme.colorScheme.onBackground,
             fontFamily = FontFamily.SansSerif,
-            style = MaterialTheme.typography.h6,
+            style = MaterialTheme.typography.headlineSmall,
             fontSize = 12.sp,
         )
 
@@ -244,7 +244,7 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
             modifier =
                 Modifier.wrapContentSize()
                     .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colors.background),
+                    .background(MaterialTheme.colorScheme.background),
         ) {
             properties.forEachIndexed { index, pair ->
                 Row(
@@ -258,19 +258,19 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
                         text = copywriter.getText(pair.first),
                         style = TextStyle(fontWeight = FontWeight.Light),
                         fontFamily = FontFamily.SansSerif,
-                        color = MaterialTheme.colors.onBackground,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 14.sp,
                     )
                     Text(
                         text = pair.second,
                         style = TextStyle(fontWeight = FontWeight.Light),
                         fontFamily = FontFamily.SansSerif,
-                        color = MaterialTheme.colors.onBackground,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 12.sp,
                     )
                 }
                 if (index < properties.size - 1) {
-                    Divider(modifier = Modifier.padding(start = 15.dp), color = Color.Gray)
+                    HorizontalDivider(modifier = Modifier.padding(start = 15.dp), color = Color.Gray)
                 }
             }
         }

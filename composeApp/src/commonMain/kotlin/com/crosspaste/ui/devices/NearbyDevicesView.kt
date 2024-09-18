@@ -19,12 +19,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.Divider
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -74,7 +74,7 @@ fun NearbyDevicesView() {
             for ((index, syncInfo) in nearbyDevicesList.withIndex()) {
                 NearbyDeviceView(syncInfo)
                 if (index != nearbyDevicesList.size - 1) {
-                    Divider(modifier = Modifier.fillMaxWidth())
+                    HorizontalDivider(modifier = Modifier.fillMaxWidth())
                 }
             }
         }
@@ -103,7 +103,7 @@ fun NotFoundNearByDevices() {
                     TextStyle(
                         fontFamily = FontFamily.SansSerif,
                         fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colors.onBackground,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 20.sp,
                         lineHeight = 24.sp,
                     ),
@@ -156,7 +156,7 @@ fun SearchNearByDevices() {
             Icon(
                 painter = magnifying(),
                 contentDescription = "Searching",
-                tint = MaterialTheme.colors.primary,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(70.dp),
             )
         }
@@ -172,7 +172,7 @@ fun SearchNearByDevices() {
                         .fillMaxWidth(0.8f),
                 textAlign = TextAlign.Center,
                 text = copywriter.getText("searching_for_nearby_devices"),
-                color = MaterialTheme.colors.onBackground,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 28.sp,
                 maxLines = 3,
                 lineHeight = 32.sp,
@@ -192,9 +192,9 @@ fun SyncDeviceView(
     var hover by remember { mutableStateOf(false) }
     val backgroundColor =
         if (hover) {
-            MaterialTheme.colors.selectColor()
+            MaterialTheme.colorScheme.selectColor()
         } else {
-            MaterialTheme.colors.background
+            MaterialTheme.colorScheme.background
         }
 
     DeviceBarView(
@@ -246,9 +246,9 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
             shape = RoundedCornerShape(4.dp),
             border = BorderStroke(1.dp, connectedColor()),
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-            colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.background),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background),
             elevation =
-                ButtonDefaults.elevation(
+                ButtonDefaults.elevatedButtonElevation(
                     defaultElevation = 0.dp,
                     pressedElevation = 0.dp,
                     hoveredElevation = 0.dp,
@@ -288,9 +288,9 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
             shape = RoundedCornerShape(4.dp),
             border = BorderStroke(1.dp, disconnectedColor()),
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-            colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.background),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background),
             elevation =
-                ButtonDefaults.elevation(
+                ButtonDefaults.elevatedButtonElevation(
                     defaultElevation = 0.dp,
                     pressedElevation = 0.dp,
                     hoveredElevation = 0.dp,

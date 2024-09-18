@@ -21,8 +21,8 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -92,7 +92,7 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
                         .fillMaxWidth()
                         .height(40.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colors.surface.copy(0.64f)),
+                        .background(MaterialTheme.colorScheme.surface.copy(0.64f)),
             ) {}
 
             Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
@@ -174,7 +174,7 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
                                 .width(width)
                                 .height(5.dp)
                                 .clip(RoundedCornerShape(2.dp))
-                                .background(MaterialTheme.colors.primary),
+                                .background(MaterialTheme.colorScheme.primary),
                     )
                 }
             }
@@ -241,7 +241,7 @@ fun SingleTabView(
         ) {
             Text(
                 text = title,
-                color = MaterialTheme.colors.onBackground,
+                color = MaterialTheme.colorScheme.onBackground,
                 style = tabTextStyle,
             )
         }

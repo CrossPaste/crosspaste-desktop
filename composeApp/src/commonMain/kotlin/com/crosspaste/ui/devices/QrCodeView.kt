@@ -20,9 +20,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -91,7 +91,7 @@ fun bindingQRCode() {
             Modifier.fillMaxSize()
                 .padding(8.dp)
                 .clip(RoundedCornerShape(5.dp))
-                .background(MaterialTheme.colors.surface.copy(0.64f)),
+                .background(MaterialTheme.colorScheme.surface.copy(0.64f)),
         contentAlignment = Alignment.Center,
     ) {
         Box(
@@ -109,7 +109,7 @@ fun bindingQRCode() {
                         Modifier.align(Alignment.CenterHorizontally)
                             .width(275.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(MaterialTheme.colors.background),
+                            .background(MaterialTheme.colorScheme.background),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -125,7 +125,7 @@ fun bindingQRCode() {
                             TextStyle(
                                 fontFamily = FontFamily.SansSerif,
                                 fontWeight = FontWeight.Light,
-                                color = MaterialTheme.colors.onBackground,
+                                color = MaterialTheme.colorScheme.onBackground,
                                 fontSize = 20.sp,
                                 lineHeight = 24.sp,
                             ),
@@ -135,7 +135,7 @@ fun bindingQRCode() {
                         painter = scan(),
                         contentDescription = "Scan",
                         modifier = Modifier.size(28.dp),
-                        tint = MaterialTheme.colors.primary,
+                        tint = MaterialTheme.colorScheme.primary,
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                 }
@@ -170,7 +170,7 @@ fun bindingQRCode() {
                                     .graphicsLayer(rotationZ = rotation),
                             painter = autoRenew(),
                             contentDescription = "QR Code",
-                            tint = MaterialTheme.colors.onBackground,
+                            tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
                 }

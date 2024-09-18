@@ -14,8 +14,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,13 +60,13 @@ class PasteDialog(
                 modifier =
                     Modifier.shadow(5.dp, RoundedCornerShape(10.dp))
                         .wrapContentSize()
-                        .border(1.dp, MaterialTheme.colors.onSurface.copy(alpha = 0.12f), RoundedCornerShape(10.dp)),
+                        .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 Column(
                     modifier =
                         Modifier.wrapContentSize()
-                            .background(MaterialTheme.colors.background),
+                            .background(MaterialTheme.colorScheme.background),
                 ) {
                     Column(
                         modifier =
@@ -77,14 +77,14 @@ class PasteDialog(
                             modifier =
                                 Modifier.fillMaxWidth()
                                     .height(40.dp)
-                                    .background(MaterialTheme.colors.surface),
+                                    .background(MaterialTheme.colorScheme.surface),
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             val copywriter = koinInject<GlobalCopywriter>()
                             Text(
                                 text = copywriter.getText(title),
-                                color = MaterialTheme.colors.onSurface,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 fontSize = 15.sp,
@@ -96,7 +96,7 @@ class PasteDialog(
                             modifier =
                                 Modifier.fillMaxWidth()
                                     .wrapContentHeight()
-                                    .background(MaterialTheme.colors.background),
+                                    .background(MaterialTheme.colorScheme.background),
                         ) {
                             dynamicContent()
                         }

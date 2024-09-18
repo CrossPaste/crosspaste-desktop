@@ -16,13 +16,10 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.MoreVert
-import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -68,6 +65,7 @@ import com.crosspaste.ui.base.allowReceive
 import com.crosspaste.ui.base.allowSend
 import com.crosspaste.ui.base.block
 import com.crosspaste.ui.base.getMenWidth
+import com.crosspaste.ui.base.moreVertical
 import com.crosspaste.ui.base.sync
 import com.crosspaste.ui.base.unverified
 import com.crosspaste.ui.connectedColor
@@ -112,9 +110,9 @@ fun DeviceConnectView(
     var hover by remember { mutableStateOf(false) }
     val backgroundColor =
         if (hover) {
-            MaterialTheme.colors.selectColor()
+            MaterialTheme.colorScheme.selectColor()
         } else {
-            MaterialTheme.colors.background
+            MaterialTheme.colorScheme.background
         }
 
     var modifier =
@@ -186,7 +184,7 @@ fun DeviceConnectView(
                                 .padding(end = 8.dp),
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.Refresh,
+                            painter = com.crosspaste.ui.base.refresh(),
                             contentDescription = "refresh",
                             modifier = Modifier.size(18.dp),
                             tint = connectColor,
@@ -238,10 +236,10 @@ fun DeviceConnectView(
                             }.padding(horizontal = 8.dp),
                 ) {
                     Icon(
-                        Icons.Outlined.MoreVert,
+                        painter = moreVertical(),
                         contentDescription = "info",
                         modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colors.primary,
+                        tint = MaterialTheme.colorScheme.primary,
                     )
                 }
 
@@ -286,7 +284,7 @@ fun DeviceConnectView(
                                         .width(maxWidth)
                                         .wrapContentHeight()
                                         .clip(RoundedCornerShape(5.dp))
-                                        .background(MaterialTheme.colors.surface),
+                                        .background(MaterialTheme.colorScheme.surface),
                             ) {
                                 MenuItem(copywriter.getText("add_note")) {
                                     onEdit(syncRuntimeInfo)

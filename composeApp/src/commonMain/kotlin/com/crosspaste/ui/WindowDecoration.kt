@@ -15,9 +15,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -50,7 +50,7 @@ fun WindowDecoration(
             Modifier
                 .fillMaxWidth()
                 .height(60.dp)
-                .background(MaterialTheme.colors.background.copy(0.64f)),
+                .background(MaterialTheme.colorScheme.background.copy(0.64f)),
     ) {
         DecorationUI(currentPageViewContext, title)
     }
@@ -82,7 +82,7 @@ fun DecorationUI(
                             .clip(RoundedCornerShape(6.dp))
                             .background(
                                 if (hoverReturn) {
-                                    MaterialTheme.colors.background
+                                    MaterialTheme.colorScheme.background
                                 } else {
                                     Color.Transparent
                                 },
@@ -107,7 +107,7 @@ fun DecorationUI(
                         painter = arrowBack(),
                         contentDescription = "return",
                         modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colors.primary,
+                        tint = MaterialTheme.colorScheme.primary,
                     )
 
                     Text(
@@ -115,7 +115,7 @@ fun DecorationUI(
                         style =
                             TextStyle(
                                 fontWeight = FontWeight.Light,
-                                color = MaterialTheme.colors.primary,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontFamily = FontFamily.SansSerif,
                                 fontSize = 22.sp,
                             ),
@@ -128,7 +128,7 @@ fun DecorationUI(
                 Text(
                     modifier = Modifier,
                     text = copywriter.getText(title),
-                    color = MaterialTheme.colors.onBackground,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 22.sp,
                     style = TextStyle(fontWeight = FontWeight.Bold),
                     fontFamily = FontFamily.SansSerif,

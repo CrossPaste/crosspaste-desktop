@@ -16,9 +16,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,7 +53,7 @@ fun ExpandView(
 
     val backgroundColor =
         if (hover) {
-            MaterialTheme.colors.surface
+            MaterialTheme.colorScheme.surface
         } else {
             Color.Transparent
         }
@@ -118,12 +118,12 @@ fun ExpandView(
                         modifier = Modifier.size(15.dp),
                         painter = languageArrow,
                         contentDescription = null,
-                        tint = MaterialTheme.colors.onBackground,
+                        tint = MaterialTheme.colorScheme.onBackground,
                     )
                     Spacer(modifier = Modifier.width(5.dp))
                     Text(
                         text = copywriter.getText(title),
-                        color = MaterialTheme.colors.onBackground,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 14.sp,
                         fontFamily = FontFamily.SansSerif,
                         style = TextStyle(fontWeight = FontWeight.Light),

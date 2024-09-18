@@ -1,21 +1,22 @@
 package com.crosspaste.ui
 
-import androidx.compose.material.Colors
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.darkColors
-import androidx.compose.material.lightColors
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import org.koin.compose.koinInject
 
-private val LightColorPalette =
-    lightColors(
+private val LightColorScheme =
+    lightColorScheme(
         primary = Color(0xFF167DFF),
         surface = Color(0xFFF0F0F0),
     )
 
-private val DarkColorPalette =
-    darkColors(
+private val DarkColorScheme =
+    darkColorScheme(
         primary = Color(0xFFBB86FC),
         background = Color(0xFF23272A),
         surface = Color(0xFF323232),
@@ -25,22 +26,22 @@ private val DarkColorPalette =
 fun CrossPasteTheme(content: @Composable () -> Unit) {
     val themeDetector = koinInject<ThemeDetector>()
 
-    val colors =
+    val colorScheme =
         if (themeDetector.isFollowSystem()) {
             if (themeDetector.isSystemInDark()) {
-                DarkColorPalette
+                DarkColorScheme
             } else {
-                LightColorPalette
+                LightColorScheme
             }
         } else {
             if (themeDetector.isUserInDark()) {
-                DarkColorPalette
+                DarkColorScheme
             } else {
-                LightColorPalette
+                LightColorScheme
             }
         }
     MaterialTheme(
-        colors = colors,
+        colorScheme = colorScheme,
         content = content,
     )
 }
@@ -80,12 +81,18 @@ fun favoriteColor(): Color {
     return Color(0xFFFFCE34)
 }
 
-fun Colors.selectColor(): Color {
-    return if (isLight) {
+@Composable
+fun ColorScheme.selectColor(): Color {
+    return if (isLight()) {
         Color(0xFFEBF6FF)
     } else {
         Color(0xFF2F446F)
     }
+}
+
+@Composable
+fun ColorScheme.isLight(): Boolean {
+    return surface.luminance() > 0.5
 }
 
 fun connectedColor(): Color {

@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -139,7 +139,7 @@ fun getDetailInfo(
 
 @Composable
 fun PasteSpecificPreviewContentView(
-    backgroundColor: Color = MaterialTheme.colors.background,
+    backgroundColor: Color = MaterialTheme.colorScheme.background,
     pasteMainContent: @Composable () -> Unit,
     pasteRightInfo: @Composable ((Boolean) -> Unit) -> Unit,
 ) {
@@ -157,7 +157,7 @@ fun PasteSpecificPreviewContentView(
                         .fillMaxHeight()
                         .width(width.value)
                         .clip(RoundedCornerShape(5.dp))
-                        .border(1.dp, MaterialTheme.colors.onSurface.copy(alpha = 0.12f), RoundedCornerShape(5.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), RoundedCornerShape(5.dp))
                         .background(color = backgroundColor),
             ) {
                 pasteMainContent()

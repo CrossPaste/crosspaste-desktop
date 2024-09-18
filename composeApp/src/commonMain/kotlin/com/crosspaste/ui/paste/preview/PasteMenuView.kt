@@ -15,10 +15,8 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -64,6 +62,7 @@ import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.clipboard
 import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.getMenWidth
+import com.crosspaste.ui.base.moreVertical
 import com.crosspaste.ui.base.noFavorite
 import com.crosspaste.ui.devices.measureTextWidth
 import com.crosspaste.ui.favoriteColor
@@ -145,7 +144,7 @@ fun PasteMenuView(
                     hideIfNotHovered(parentBounds.topLeft + it.position)
                 }
                 .clip(RoundedCornerShape(5.dp))
-                .background(if (showMenu) MaterialTheme.colors.surface.copy(0.72f) else Color.Transparent),
+                .background(if (showMenu) MaterialTheme.colorScheme.surface.copy(0.72f) else Color.Transparent),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -186,21 +185,21 @@ fun PasteMenuView(
                             .clip(RoundedCornerShape(6.dp))
                             .background(
                                 if (hoverMenu) {
-                                    MaterialTheme.colors.background
+                                    MaterialTheme.colorScheme.background
                                 } else {
                                     Color.Transparent
                                 },
                             ),
                 ) {}
                 Icon(
-                    Icons.Outlined.MoreVert,
+                    painter = moreVertical(),
                     contentDescription = "info",
                     modifier =
                         Modifier.size(18.dp)
                             .onClick {
                                 showPopup = !showPopup
                             },
-                    tint = MaterialTheme.colors.primary,
+                    tint = MaterialTheme.colorScheme.primary,
                 )
             }
         }
@@ -243,7 +242,7 @@ fun PasteMenuView(
                                 .clip(RoundedCornerShape(6.dp))
                                 .background(
                                     if (hoverCopy) {
-                                        MaterialTheme.colors.background
+                                        MaterialTheme.colorScheme.background
                                     } else {
                                         Color.Transparent
                                     },
@@ -271,7 +270,7 @@ fun PasteMenuView(
                             },
                         painter = clipboard(),
                         contentDescription = "Copy",
-                        tint = MaterialTheme.colors.primary,
+                        tint = MaterialTheme.colorScheme.primary,
                     )
                 }
             }
@@ -313,7 +312,7 @@ fun PasteMenuView(
                                 .clip(RoundedCornerShape(6.dp))
                                 .background(
                                     if (hoverFavorite) {
-                                        MaterialTheme.colors.background
+                                        MaterialTheme.colorScheme.background
                                     } else {
                                         Color.Transparent
                                     },
@@ -368,7 +367,7 @@ fun PasteMenuView(
                                 .clip(RoundedCornerShape(6.dp))
                                 .background(
                                     if (hoverSource) {
-                                        MaterialTheme.colors.background
+                                        MaterialTheme.colorScheme.background
                                     } else {
                                         Color.Transparent
                                     },
@@ -443,7 +442,7 @@ fun MoreMenuItems(
                     .width(maxWidth)
                     .wrapContentHeight()
                     .clip(RoundedCornerShape(5.dp))
-                    .background(MaterialTheme.colors.surface),
+                    .background(MaterialTheme.colorScheme.surface),
         ) {
             MenuItem(copywriter.getText("open")) {
                 if (pasteData.pasteType == PasteType.TEXT) {

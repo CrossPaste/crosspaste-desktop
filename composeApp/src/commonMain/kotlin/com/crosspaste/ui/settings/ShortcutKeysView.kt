@@ -18,10 +18,10 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Divider
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.MutableState
@@ -78,7 +78,7 @@ fun ShortcutKeysContentView() {
                     Modifier.fillMaxSize()
                         .padding(horizontal = 16.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colors.background),
+                        .background(MaterialTheme.colorScheme.background),
             ) {
                 ShortcutKeyRow("paste")
             }
@@ -90,19 +90,19 @@ fun ShortcutKeysContentView() {
                     Modifier.fillMaxSize()
                         .padding(horizontal = 16.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colors.background),
+                        .background(MaterialTheme.colorScheme.background),
             ) {
                 ShortcutKeyRow("paste_plain_text")
 
-                Divider(modifier = Modifier.padding(start = 15.dp))
+                HorizontalDivider(modifier = Modifier.padding(start = 15.dp))
 
                 ShortcutKeyRow("paste_primary_type")
 
-                Divider(modifier = Modifier.padding(start = 15.dp))
+                HorizontalDivider(modifier = Modifier.padding(start = 15.dp))
 
                 ShortcutKeyRow("paste_local_last")
 
-                Divider(modifier = Modifier.padding(start = 15.dp))
+                HorizontalDivider(modifier = Modifier.padding(start = 15.dp))
 
                 ShortcutKeyRow("paste_remote_last")
             }
@@ -114,11 +114,11 @@ fun ShortcutKeysContentView() {
                     Modifier.fillMaxSize()
                         .padding(horizontal = 16.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colors.background),
+                        .background(MaterialTheme.colorScheme.background),
             ) {
                 ShortcutKeyRow("show_main")
 
-                Divider(modifier = Modifier.padding(start = 15.dp))
+                HorizontalDivider(modifier = Modifier.padding(start = 15.dp))
 
                 ShortcutKeyRow("show_search")
             }
@@ -130,11 +130,11 @@ fun ShortcutKeysContentView() {
                     Modifier.fillMaxSize()
                         .padding(horizontal = 16.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colors.background),
+                        .background(MaterialTheme.colorScheme.background),
             ) {
                 ShortcutKeyRow("switch_monitor_pasteboard")
 
-                Divider(modifier = Modifier.padding(start = 35.dp))
+                HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
 
                 ShortcutKeyRow("switch_encrypt")
             }
@@ -201,7 +201,7 @@ fun ShortcutKeyRow(name: String) {
                                             Modifier.fillMaxWidth()
                                                 .height(60.dp)
                                                 .padding(15.dp)
-                                                .border(1.dp, MaterialTheme.colors.onSurface, RoundedCornerShape(5.dp)),
+                                                .border(1.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(5.dp)),
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
                                         Row(
@@ -213,7 +213,7 @@ fun ShortcutKeyRow(name: String) {
                                                     Modifier.size(16.dp),
                                                 painter = edit(),
                                                 contentDescription = "edit shortcut key",
-                                                tint = MaterialTheme.colors.primary,
+                                                tint = MaterialTheme.colorScheme.primary,
                                             )
                                             Spacer(modifier = Modifier.weight(1f))
                                             ShortcutKeyItemView(shortcutKeysListener.currentKeys)
@@ -237,7 +237,12 @@ fun ShortcutKeyRow(name: String) {
                     },
             painter = edit(),
             contentDescription = "edit shortcut key",
-            tint = if (hover) MaterialTheme.colors.primary else MaterialTheme.colors.onSurface,
+            tint =
+                if (hover) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
         )
 
         Spacer(modifier = Modifier.width(10.dp))
@@ -253,17 +258,17 @@ fun ShortcutKeyItemView(keys: List<KeyboardKey>) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         keys.forEachIndexed { index, info ->
-            KeyboardView(keyboardValue = info.name, backgroundColor = MaterialTheme.colors.surface)
+            KeyboardView(keyboardValue = info.name, backgroundColor = MaterialTheme.colorScheme.surface)
             if (index != keys.size - 1) {
                 Spacer(modifier = Modifier.width(5.dp))
                 Text(
                     text = "+",
-                    color = MaterialTheme.colors.onBackground,
+                    color = MaterialTheme.colorScheme.onBackground,
                     style =
                         TextStyle(
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Light,
-                            fontFamily = MaterialTheme.typography.body1.fontFamily,
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         ),
                 )
                 Spacer(modifier = Modifier.width(5.dp))

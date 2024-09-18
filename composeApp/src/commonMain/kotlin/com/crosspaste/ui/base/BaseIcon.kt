@@ -128,3 +128,18 @@ fun archive(): Painter {
 fun skipForward(): Painter {
     return painterResource("icon/base/skip-forward.svg")
 }
+
+@Composable
+fun refresh(): Painter {
+    return painterResource("icon/base/refresh.svg")
+}
+
+@Composable
+fun moreVertical(): Painter {
+    return painterResource("icon/base/more-vertical.svg")
+}
+
+@Composable
+fun close(): Painter {
+    return painterResource("icon/base/close.svg")
+}
