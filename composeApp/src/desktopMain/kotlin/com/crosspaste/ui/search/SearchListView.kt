@@ -19,7 +19,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -154,8 +154,13 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
                     thickness = 8.dp,
                     shape = RoundedCornerShape(4.dp),
                     hoverDurationMillis = 300,
-                    unhoverColor = if (showScrollbar) MaterialTheme.colors.onBackground.copy(alpha = 0.48f) else Color.Transparent,
-                    hoverColor = MaterialTheme.colors.onBackground,
+                    unhoverColor =
+                        if (showScrollbar) {
+                            MaterialTheme.colorScheme.onBackground.copy(alpha = 0.48f)
+                        } else {
+                            Color.Transparent
+                        },
+                    hoverColor = MaterialTheme.colorScheme.onBackground,
                 ),
         )
     }

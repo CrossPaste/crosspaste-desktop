@@ -15,8 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -61,7 +61,12 @@ fun MenuItem(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
-    val backgroundColor = if (enabledInteraction && isHovered) MaterialTheme.colors.selectColor() else Color.Transparent
+    val backgroundColor =
+        if (enabledInteraction && isHovered) {
+            MaterialTheme.colorScheme.selectColor()
+        } else {
+            Color.Transparent
+        }
 
     var modifier =
         Modifier
@@ -81,7 +86,7 @@ fun MenuItem(
     ) {
         Text(
             text = text,
-            color = MaterialTheme.colors.onBackground,
+            color = MaterialTheme.colorScheme.onBackground,
             style = textStyle,
         )
         if (reminder) {

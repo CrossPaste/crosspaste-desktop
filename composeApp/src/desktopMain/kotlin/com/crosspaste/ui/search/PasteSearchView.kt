@@ -23,12 +23,13 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.Divider
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
-import androidx.compose.material.TextFieldDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -176,8 +177,8 @@ fun CrossPasteSearchWindowContent() {
                     Modifier
                         .shadow(5.dp, RoundedCornerShape(10.dp))
                         .size(appWindowManager.searchWindowState.size.minus(DpSize(20.dp, 20.dp)))
-                        .background(MaterialTheme.colors.background)
-                        .border(1.dp, MaterialTheme.colors.onSurface.copy(alpha = 0.12f), RoundedCornerShape(10.dp)),
+                        .background(MaterialTheme.colorScheme.background)
+                        .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 Column {
@@ -212,7 +213,7 @@ fun CrossPasteSearchWindowContent() {
                                         style =
                                             TextStyle(
                                                 fontWeight = FontWeight.Light,
-                                                color = MaterialTheme.colors.onBackground.copy(alpha = 0.5f),
+                                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                                                 fontSize = 15.sp,
                                             ),
                                         maxLines = 1,
@@ -222,19 +223,30 @@ fun CrossPasteSearchWindowContent() {
                                 isError = false,
                                 singleLine = true,
                                 colors =
-                                    TextFieldDefaults.textFieldColors(
-                                        textColor = MaterialTheme.colors.onBackground,
+                                    TextFieldDefaults.colors(
+                                        focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                                        unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
                                         disabledTextColor = Color.Transparent,
-                                        backgroundColor = Color.Transparent,
-                                        cursorColor = MaterialTheme.colors.primary,
+                                        errorTextColor = MaterialTheme.colorScheme.error,
+                                        cursorColor = MaterialTheme.colorScheme.primary,
                                         errorCursorColor = Color.Red,
-                                        focusedIndicatorColor = MaterialTheme.colors.primary,
+                                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                        unfocusedIndicatorColor = MaterialTheme.colorScheme.secondary,
                                         disabledIndicatorColor = Color.Transparent,
+                                        errorIndicatorColor = MaterialTheme.colorScheme.error,
+                                        focusedContainerColor = Color.Transparent,
+                                        unfocusedContainerColor = Color.Transparent,
+                                        disabledContainerColor = Color.Transparent,
+                                        errorContainerColor = Color.Transparent,
+                                        focusedPlaceholderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                                        unfocusedPlaceholderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                                        disabledPlaceholderColor = Color.Transparent,
+                                        errorPlaceholderColor = MaterialTheme.colorScheme.error.copy(alpha = 0.5f),
                                     ),
                                 textStyle =
                                     TextStyle(
                                         fontWeight = FontWeight.Light,
-                                        color = MaterialTheme.colors.onBackground,
+                                        color = MaterialTheme.colorScheme.onBackground,
                                         fontSize = 15.sp,
                                         lineHeight = 5.sp,
                                     ),
@@ -244,7 +256,7 @@ fun CrossPasteSearchWindowContent() {
                                 TextStyle(
                                     fontWeight = FontWeight.Light,
                                     fontFamily = FontFamily.SansSerif,
-                                    color = MaterialTheme.colors.onBackground,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     fontSize = 15.sp,
                                 )
 
@@ -307,7 +319,7 @@ fun CrossPasteSearchWindowContent() {
                                                         .clip(RoundedCornerShape(6.dp))
                                                         .background(
                                                             if (hoverSortIcon) {
-                                                                MaterialTheme.colors.surface.copy(0.64f)
+                                                                MaterialTheme.colorScheme.surface.copy(0.64f)
                                                             } else {
                                                                 Color.Transparent
                                                             },
@@ -328,7 +340,7 @@ fun CrossPasteSearchWindowContent() {
                                                     modifier = Modifier.size(20.dp),
                                                     painter = if (pasteSearchService.searchSort) descSort() else ascSort(),
                                                     contentDescription = "Sort by creation time",
-                                                    tint = MaterialTheme.colors.primary,
+                                                    tint = MaterialTheme.colorScheme.primary,
                                                 )
                                             }
                                         }
@@ -361,7 +373,7 @@ fun CrossPasteSearchWindowContent() {
                                                         .clip(RoundedCornerShape(6.dp))
                                                         .background(
                                                             if (hoverFavoritesIcon) {
-                                                                MaterialTheme.colors.surface.copy(0.64f)
+                                                                MaterialTheme.colorScheme.surface.copy(0.64f)
                                                             } else {
                                                                 Color.Transparent
                                                             },
@@ -386,7 +398,7 @@ fun CrossPasteSearchWindowContent() {
                                                         if (pasteSearchService.searchFavorite) {
                                                             favoriteColor()
                                                         } else {
-                                                            MaterialTheme.colors.primary
+                                                            MaterialTheme.colorScheme.primary
                                                         },
                                                 )
                                             }
@@ -399,7 +411,7 @@ fun CrossPasteSearchWindowContent() {
                                             Modifier.fillMaxWidth().height(32.dp)
                                                 .border(
                                                     1.dp,
-                                                    MaterialTheme.colors.onBackground.copy(alpha = 0.12f),
+                                                    MaterialTheme.colorScheme.onBackground.copy(alpha = 0.12f),
                                                     RoundedCornerShape(5.dp),
                                                 )
                                                 .clickable {
@@ -416,7 +428,7 @@ fun CrossPasteSearchWindowContent() {
                                                 TextStyle(
                                                     fontWeight = FontWeight.Light,
                                                     fontFamily = FontFamily.SansSerif,
-                                                    color = MaterialTheme.colors.onBackground,
+                                                    color = MaterialTheme.colorScheme.onBackground,
                                                     fontSize = 15.sp,
                                                 ),
                                         )
@@ -455,7 +467,7 @@ fun CrossPasteSearchWindowContent() {
                                                             .width(maxWidth)
                                                             .wrapContentHeight()
                                                             .clip(RoundedCornerShape(5.dp))
-                                                            .background(MaterialTheme.colors.surface),
+                                                            .background(MaterialTheme.colorScheme.surface),
                                                 ) {
                                                     if (pasteSearchService.searchPasteType != null) {
                                                         MenuItem(copywriter.getText("all_types"), textStyle, paddingValues) {
@@ -464,7 +476,7 @@ fun CrossPasteSearchWindowContent() {
                                                             showTypes = false
                                                             focusRequester.requestFocus()
                                                         }
-                                                        Divider()
+                                                        HorizontalDivider()
                                                     }
 
                                                     if (currentType != "text") {
@@ -537,7 +549,7 @@ fun CrossPasteSearchWindowContent() {
                             pasteSearchService.clickSetSelectedIndex(it)
                             focusRequester.requestFocus()
                         }
-                        Divider(
+                        VerticalDivider(
                             modifier = Modifier.fillMaxHeight().width(1.dp),
                             thickness = 2.dp,
                         )
@@ -548,7 +560,7 @@ fun CrossPasteSearchWindowContent() {
                         modifier =
                             Modifier.height(40.dp)
                                 .fillMaxWidth()
-                                .background(MaterialTheme.colors.surface.darken(0.1f))
+                                .background(MaterialTheme.colorScheme.surface.darken(0.1f))
                                 .padding(horizontal = 10.dp),
                         horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically,
@@ -569,7 +581,7 @@ fun CrossPasteSearchWindowContent() {
                                 TextStyle(
                                     fontWeight = FontWeight.Normal,
                                     fontFamily = FontFamily.SansSerif,
-                                    color = MaterialTheme.colors.onBackground,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     fontSize = 14.sp,
                                 ),
                         )
@@ -605,7 +617,7 @@ fun CrossPasteSearchWindowContent() {
                                     TextStyle(
                                         fontWeight = FontWeight.Normal,
                                         fontFamily = FontFamily.SansSerif,
-                                        color = MaterialTheme.colors.onBackground,
+                                        color = MaterialTheme.colorScheme.onBackground,
                                         fontSize = 14.sp,
                                     ),
                             )

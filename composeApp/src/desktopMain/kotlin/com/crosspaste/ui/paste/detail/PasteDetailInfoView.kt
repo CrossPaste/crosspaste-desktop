@@ -25,10 +25,10 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.onClick
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Divider
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -86,7 +86,7 @@ fun PasteDetailInfoView(
                 TextStyle(
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.SansSerif,
-                    color = MaterialTheme.colors.onBackground,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 14.sp,
                 ),
         )
@@ -98,7 +98,12 @@ fun PasteDetailInfoView(
                 },
             painter = if (pasteData.favorite) favorite() else noFavorite(),
             contentDescription = "Favorite",
-            tint = if (pasteData.favorite) Color(0xFFFFCE34) else MaterialTheme.colors.onSurface,
+            tint =
+                if (pasteData.favorite) {
+                    Color(0xFFFFCE34)
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
         )
         Spacer(modifier = Modifier.weight(1f))
         pasteData.source?.let { source ->
@@ -126,7 +131,7 @@ fun PasteDetailInfoView(
                     TextStyle(
                         fontWeight = FontWeight.Light,
                         fontFamily = FontFamily.SansSerif,
-                        color = MaterialTheme.colors.onBackground,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 12.sp,
                     ),
             )
@@ -174,7 +179,7 @@ fun PasteDetailInfoView(
                             TextStyle(
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = FontFamily.SansSerif,
-                                color = MaterialTheme.colors.onBackground.copy(alpha = 0.7f),
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                                 fontSize = 12.sp,
                             ),
                     )
@@ -185,13 +190,13 @@ fun PasteDetailInfoView(
                             TextStyle(
                                 fontWeight = FontWeight.Normal,
                                 fontFamily = FontFamily.Monospace,
-                                color = MaterialTheme.colors.onBackground,
+                                color = MaterialTheme.colorScheme.onBackground,
                                 fontSize = 12.sp,
                             ),
                     )
                 }
                 if (index != items.size - 1) {
-                    Divider(
+                    HorizontalDivider(
                         modifier = Modifier.fillMaxWidth().height(1.dp),
                         thickness = 2.dp,
                     )
@@ -219,8 +224,13 @@ fun PasteDetailInfoView(
                     thickness = 8.dp,
                     shape = RoundedCornerShape(4.dp),
                     hoverDurationMillis = 300,
-                    unhoverColor = if (isScrolling) MaterialTheme.colors.onBackground.copy(alpha = 0.48f) else Color.Transparent,
-                    hoverColor = MaterialTheme.colors.onBackground,
+                    unhoverColor =
+                        if (isScrolling) {
+                            MaterialTheme.colorScheme.onBackground.copy(alpha = 0.48f)
+                        } else {
+                            Color.Transparent
+                        },
+                    hoverColor = MaterialTheme.colorScheme.onBackground,
                 ),
         )
     }

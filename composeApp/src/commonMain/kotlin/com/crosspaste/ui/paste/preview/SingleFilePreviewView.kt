@@ -12,9 +12,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -83,7 +83,7 @@ fun SingleFilePreviewView(filePath: Path) {
                                 modifier = Modifier.size(100.dp),
                                 painter = loadData.readPainter(),
                                 contentDescription = "fileType",
-                                tint = MaterialTheme.colors.onBackground,
+                                tint = MaterialTheme.colorScheme.onBackground,
                             )
                         }
                     } else if (loadData.isError()) {
@@ -91,7 +91,7 @@ fun SingleFilePreviewView(filePath: Path) {
                             modifier = Modifier.size(100.dp),
                             painter = fileSlash(),
                             contentDescription = "fileType",
-                            tint = MaterialTheme.colors.onBackground,
+                            tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
                 },
@@ -108,11 +108,11 @@ fun SingleFilePreviewView(filePath: Path) {
         ) {
             Text(
                 text = "${copywriter.getText(FILE_NAME)}: ${filePath.name}",
-                color = MaterialTheme.colors.onBackground,
+                color = MaterialTheme.colorScheme.onBackground,
                 style =
                     TextStyle(
                         fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colors.onBackground,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 10.sp,
                     ),
             )
@@ -125,18 +125,18 @@ fun SingleFilePreviewView(filePath: Path) {
 
                 Text(
                     text = "${copywriter.getText(SIZE)}: $fileSize",
-                    color = MaterialTheme.colors.onBackground,
+                    color = MaterialTheme.colorScheme.onBackground,
                     style =
                         TextStyle(
                             fontWeight = FontWeight.Light,
-                            color = MaterialTheme.colors.onBackground,
+                            color = MaterialTheme.colorScheme.onBackground,
                             fontSize = 10.sp,
                         ),
                 )
             } else {
                 Text(
                     text = copywriter.getText(MISSING_FILE),
-                    color = MaterialTheme.colors.error,
+                    color = MaterialTheme.colorScheme.error,
                     style =
                         TextStyle(
                             fontWeight = FontWeight.Normal,

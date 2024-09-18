@@ -3,7 +3,7 @@ package com.crosspaste.ui
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -11,17 +11,17 @@ import androidx.compose.ui.graphics.Color
 
 @Composable
 fun ThemeBackground() {
-    val backgroundColor = MaterialTheme.colors.surface
+    val backgroundColor = MaterialTheme.colorScheme.surface
 
     val rightColor =
-        if (MaterialTheme.colors.isLight) {
+        if (MaterialTheme.colorScheme.isLight()) {
             Color(0xFF492355).copy(alpha = 0.12f)
         } else {
             Color(0xFF492355).copy(alpha = 0.64f)
         }
 
     val leftColor =
-        if (MaterialTheme.colors.isLight) {
+        if (MaterialTheme.colorScheme.isLight()) {
             Color(0xFF78243F).copy(alpha = 0.12f)
         } else {
             Color(0xFF78243F).copy(alpha = 0.64f)

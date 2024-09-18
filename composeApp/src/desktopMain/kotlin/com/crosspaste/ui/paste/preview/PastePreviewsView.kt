@@ -25,9 +25,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -180,8 +180,13 @@ fun PastePreviewsView() {
                     thickness = 6.dp,
                     shape = RoundedCornerShape(4.dp),
                     hoverDurationMillis = 300,
-                    unhoverColor = if (isScrolling) MaterialTheme.colors.onBackground.copy(alpha = 0.48f) else Color.Transparent,
-                    hoverColor = MaterialTheme.colors.onBackground,
+                    unhoverColor =
+                        if (isScrolling) {
+                            MaterialTheme.colorScheme.onBackground.copy(alpha = 0.48f)
+                        } else {
+                            Color.Transparent
+                        },
+                    hoverColor = MaterialTheme.colorScheme.onBackground,
                 ),
         )
 
@@ -202,7 +207,7 @@ fun EmptyScreenView() {
         contentAlignment = Alignment.Center,
         modifier =
             Modifier.fillMaxSize()
-                .background(MaterialTheme.colors.surface.copy(0.64f)),
+                .background(MaterialTheme.colorScheme.surface.copy(0.64f)),
     ) {
         Box(
             modifier = Modifier.wrapContentSize(),
@@ -219,7 +224,7 @@ fun EmptyScreenView() {
                     TextStyle(
                         fontFamily = FontFamily.SansSerif,
                         fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colors.onBackground,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 20.sp,
                         lineHeight = 24.sp,
                     ),
@@ -252,7 +257,7 @@ fun ToTop(toTopAction: () -> Unit) {
                 },
                 modifier =
                     Modifier
-                        .background(MaterialTheme.colors.surface.copy(alpha = transparency), CircleShape)
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = transparency), CircleShape)
                         .onPointerEvent(
                             eventType = PointerEventType.Enter,
                             onEvent = {
@@ -270,7 +275,7 @@ fun ToTop(toTopAction: () -> Unit) {
                     painter = toTop(),
                     contentDescription = "To Top",
                     modifier = Modifier.size(30.dp),
-                    tint = MaterialTheme.colors.primary.copy(alpha = transparency),
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = transparency),
                 )
             }
         }

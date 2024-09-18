@@ -9,9 +9,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -72,7 +72,7 @@ fun ToastView(
             Row(
                 modifier =
                     Modifier
-                        .background(MaterialTheme.colors.surface, shape = RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(8.dp))
                         .padding(all = 8.dp)
                         .width(280.dp)
                         .padding(horizontal = 12.dp),
@@ -89,7 +89,7 @@ fun ToastView(
                     style =
                         TextStyle(
                             fontWeight = FontWeight.Light,
-                            color = MaterialTheme.colors.onSurface,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 16.sp,
                         ),
                 )

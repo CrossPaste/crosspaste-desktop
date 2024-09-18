@@ -14,8 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -159,7 +159,7 @@ fun PasteFilesDetailView(
                                             modifier = Modifier.size(150.dp),
                                             painter = loadData.readPainter(),
                                             contentDescription = filePath.name,
-                                            tint = MaterialTheme.colors.onBackground,
+                                            tint = MaterialTheme.colorScheme.onBackground,
                                         )
                                     }
                                 } else if (loadData.isError()) {
@@ -167,7 +167,7 @@ fun PasteFilesDetailView(
                                         modifier = Modifier.size(150.dp),
                                         painter = fileSlash(),
                                         contentDescription = "fileType",
-                                        tint = MaterialTheme.colors.onBackground,
+                                        tint = MaterialTheme.colorScheme.onBackground,
                                     )
                                 }
                             },
@@ -198,7 +198,7 @@ fun PasteFilesDetailView(
                                         modifier = Modifier.size(18.dp),
                                         painter = chevronLeft(),
                                         contentDescription = "chevronLeft",
-                                        tint = MaterialTheme.colors.onBackground,
+                                        tint = MaterialTheme.colorScheme.onBackground,
                                     )
                                 }
                                 Spacer(modifier = Modifier.weight(1f))
@@ -225,7 +225,7 @@ fun PasteFilesDetailView(
                                         modifier = Modifier.size(18.dp),
                                         painter = chevronRight(),
                                         contentDescription = "chevronRight",
-                                        tint = MaterialTheme.colors.onBackground,
+                                        tint = MaterialTheme.colorScheme.onBackground,
                                     )
                                 }
                             }

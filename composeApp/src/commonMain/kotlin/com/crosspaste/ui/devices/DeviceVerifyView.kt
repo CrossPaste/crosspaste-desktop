@@ -17,10 +17,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.material.TextFieldDefaults
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -89,7 +89,7 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
     Box(
         Modifier.fillMaxWidth()
             .wrapContentHeight()
-            .background(MaterialTheme.colors.background),
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center,
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -112,7 +112,7 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
                                 fontWeight = FontWeight.Light,
                                 fontFamily = FontFamily.SansSerif,
                             ),
-                        color = MaterialTheme.colors.onBackground,
+                        color = MaterialTheme.colorScheme.onBackground,
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                 }
@@ -125,13 +125,13 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
                                 Modifier
                                     .width(40.dp)
                                     .height(50.dp)
-                                    .background(MaterialTheme.colors.background, RoundedCornerShape(4.dp))
+                                    .background(MaterialTheme.colorScheme.background, RoundedCornerShape(4.dp))
                                     .border(
                                         1.dp,
                                         if (isError && token.length != 1) {
-                                            MaterialTheme.colors.error
+                                            MaterialTheme.colorScheme.error
                                         } else {
-                                            MaterialTheme.colors.primary
+                                            MaterialTheme.colorScheme.primary
                                         },
                                         RoundedCornerShape(4.dp),
                                     ),
@@ -151,7 +151,7 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
                                 textStyle =
                                     LocalTextStyle.current.copy(
                                         textAlign = TextAlign.Center,
-                                        color = MaterialTheme.colors.primary,
+                                        color = MaterialTheme.colorScheme.primary,
                                         fontSize = 24.sp,
                                         fontWeight = FontWeight.Bold,
                                         fontFamily = FontFamily.Monospace,
@@ -180,12 +180,16 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
                                             }
                                         },
                                 colors =
-                                    TextFieldDefaults.textFieldColors(
-                                        textColor = MaterialTheme.colors.onBackground,
+                                    TextFieldDefaults.colors(
+                                        focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                                        unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
                                         disabledTextColor = Color.Transparent,
-                                        backgroundColor = Color.Transparent,
-                                        cursorColor = MaterialTheme.colors.primary,
-                                        focusedIndicatorColor = MaterialTheme.colors.primary,
+                                        focusedContainerColor = Color.Transparent,
+                                        unfocusedContainerColor = Color.Transparent,
+                                        disabledContainerColor = Color.Transparent,
+                                        cursorColor = MaterialTheme.colorScheme.primary,
+                                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                        unfocusedIndicatorColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f),
                                         disabledIndicatorColor = Color.Transparent,
                                     ),
                                 contentPadding = PaddingValues(4.dp, 10.dp, 4.dp, 10.dp),

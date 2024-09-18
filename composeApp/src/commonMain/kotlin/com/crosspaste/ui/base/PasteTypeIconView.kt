@@ -3,8 +3,8 @@ package com.crosspaste.ui.base
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -66,7 +66,7 @@ fun PasteTypeIconView(
                         painter = loadData.readPainter(),
                         contentDescription = "Paste Icon",
                         modifier = Modifier.padding(padding).size(size),
-                        tint = MaterialTheme.colors.primary,
+                        tint = MaterialTheme.colorScheme.primary,
                     )
                 } else {
                     Image(
@@ -104,7 +104,7 @@ fun PasteTypeIconView(
                         painter = loadData.readPainter(),
                         contentDescription = "Paste Icon",
                         modifier = Modifier.padding(padding).size(size),
-                        tint = MaterialTheme.colors.primary,
+                        tint = MaterialTheme.colorScheme.primary,
                     )
                 } else {
                     Image(
@@ -120,7 +120,7 @@ fun PasteTypeIconView(
             painter = loadIconData.readPainter(),
             contentDescription = "Paste Icon",
             modifier = Modifier.padding(padding).size(size),
-            tint = MaterialTheme.colors.primary,
+            tint = MaterialTheme.colorScheme.primary,
         )
     } else {
         pasteData.source?.let {
@@ -133,7 +133,7 @@ fun PasteTypeIconView(
                     painter = loadIconData.readPainter(),
                     contentDescription = "Paste Icon",
                     modifier = Modifier.padding(padding).size(size),
-                    tint = MaterialTheme.colors.primary,
+                    tint = MaterialTheme.colorScheme.primary,
                 )
             }
         } ?: run {
@@ -141,7 +141,7 @@ fun PasteTypeIconView(
                 painter = loadIconData.readPainter(),
                 contentDescription = "Paste Icon",
                 modifier = Modifier.padding(padding).size(size),
-                tint = MaterialTheme.colors.primary,
+                tint = MaterialTheme.colorScheme.primary,
             )
         }
     }

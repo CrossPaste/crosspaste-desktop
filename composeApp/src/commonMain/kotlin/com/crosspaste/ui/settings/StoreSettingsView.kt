@@ -14,11 +14,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Divider
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -120,8 +120,8 @@ fun StoreSettingsView() {
             Modifier.wrapContentSize()
                 .padding(start = 32.dp, top = 5.dp, bottom = 5.dp),
         text = copywriter.getText("store_info"),
-        color = MaterialTheme.colors.onBackground,
-        style = MaterialTheme.typography.h6,
+        color = MaterialTheme.colorScheme.onBackground,
+        style = MaterialTheme.typography.headlineSmall,
         fontFamily = FontFamily.SansSerif,
         fontSize = 12.sp,
     )
@@ -154,7 +154,7 @@ fun StoreSettingsView() {
             Modifier.wrapContentSize()
                 .padding(horizontal = 16.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colors.background),
+                .background(MaterialTheme.colorScheme.background),
     ) {
         Row(
             modifier =
@@ -201,7 +201,7 @@ fun StoreSettingsView() {
             }
         }
 
-        Divider(modifier = Modifier.padding(start = 35.dp))
+        HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
 
         pasteTypes.forEachIndexed { index, quadruple ->
             Row(
@@ -215,7 +215,7 @@ fun StoreSettingsView() {
                     modifier = Modifier.size(15.dp),
                     painter = quadruple.second,
                     contentDescription = "pasteboard",
-                    tint = MaterialTheme.colors.onBackground,
+                    tint = MaterialTheme.colorScheme.onBackground,
                 )
                 Spacer(modifier = Modifier.width(8.dp))
 
@@ -248,7 +248,7 @@ fun StoreSettingsView() {
             }
 
             if (index != pasteTypes.size - 1) {
-                Divider(modifier = Modifier.padding(start = 35.dp))
+                HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
             }
         }
     }
@@ -260,8 +260,8 @@ fun StoreSettingsView() {
             Modifier.wrapContentSize()
                 .padding(start = 32.dp, top = 5.dp, bottom = 5.dp),
         text = copywriter.getText("auto_cleanup_settings"),
-        color = MaterialTheme.colors.onBackground,
-        style = MaterialTheme.typography.h6,
+        color = MaterialTheme.colorScheme.onBackground,
+        style = MaterialTheme.typography.headlineSmall,
         fontFamily = FontFamily.SansSerif,
         fontSize = 12.sp,
     )
@@ -271,12 +271,12 @@ fun StoreSettingsView() {
             Modifier.wrapContentSize()
                 .padding(horizontal = 16.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colors.background),
+                .background(MaterialTheme.colorScheme.background),
     ) {
         SettingItemView(
             painter = trash(),
             text = "expiration_cleanup",
-            tint = MaterialTheme.colors.onBackground,
+            tint = MaterialTheme.colorScheme.onBackground,
         ) {
             var isExpirationCleanup by remember { mutableStateOf(configManager.config.isExpirationCleanup) }
 
@@ -292,12 +292,12 @@ fun StoreSettingsView() {
             )
         }
 
-        Divider(modifier = Modifier.padding(start = 35.dp))
+        HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
 
         SettingItemView(
             painter = clock(),
             text = "image_expiry_period",
-            tint = MaterialTheme.colors.onBackground,
+            tint = MaterialTheme.colorScheme.onBackground,
         ) {
             var selectImageCleanTimeIndex by remember { mutableStateOf(configManager.config.imageCleanTimeIndex) }
 
@@ -330,7 +330,7 @@ fun StoreSettingsView() {
                     modifier = Modifier.size(15.dp),
                     painter = anglesUpDown(),
                     contentDescription = "Image expiration time",
-                    tint = MaterialTheme.colors.onBackground,
+                    tint = MaterialTheme.colorScheme.onBackground,
                 )
             }
 
@@ -366,12 +366,12 @@ fun StoreSettingsView() {
             }
         }
 
-        Divider(modifier = Modifier.padding(start = 35.dp))
+        HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
 
         SettingItemView(
             painter = file(),
             text = "file_expiry_period",
-            tint = MaterialTheme.colors.onBackground,
+            tint = MaterialTheme.colorScheme.onBackground,
         ) {
             var selectFileCleanTimeIndex by remember { mutableStateOf(configManager.config.fileCleanTimeIndex) }
 
@@ -404,7 +404,7 @@ fun StoreSettingsView() {
                     modifier = Modifier.size(15.dp),
                     painter = anglesUpDown(),
                     contentDescription = "File Expiry Period",
-                    tint = MaterialTheme.colors.onBackground,
+                    tint = MaterialTheme.colorScheme.onBackground,
                 )
             }
 
@@ -448,12 +448,12 @@ fun StoreSettingsView() {
             Modifier.wrapContentSize()
                 .padding(horizontal = 16.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colors.background),
+                .background(MaterialTheme.colorScheme.background),
     ) {
         SettingItemView(
             painter = trash(),
             text = "threshold_cleanup",
-            tint = MaterialTheme.colors.onBackground,
+            tint = MaterialTheme.colorScheme.onBackground,
         ) {
             var isThresholdCleanup by remember { mutableStateOf(configManager.config.isThresholdCleanup) }
 
@@ -469,12 +469,12 @@ fun StoreSettingsView() {
             )
         }
 
-        Divider(modifier = Modifier.padding(start = 35.dp))
+        HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
 
         SettingItemView(
             painter = database(),
             text = "maximum_storage",
-            tint = MaterialTheme.colors.onBackground,
+            tint = MaterialTheme.colorScheme.onBackground,
         ) {
             val maxStorage by remember { mutableStateOf(configManager.config.maxStorage) }
 
@@ -492,12 +492,12 @@ fun StoreSettingsView() {
             }
         }
 
-        Divider(modifier = Modifier.padding(start = 35.dp))
+        HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
 
         SettingItemView(
             painter = percent(),
             text = "cleanup_percentage",
-            tint = MaterialTheme.colors.onBackground,
+            tint = MaterialTheme.colorScheme.onBackground,
         ) {
             val cleanupPercentage by remember { mutableStateOf(configManager.config.cleanupPercentage) }
 

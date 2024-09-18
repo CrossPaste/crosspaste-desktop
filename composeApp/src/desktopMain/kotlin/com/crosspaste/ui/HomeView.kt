@@ -25,8 +25,8 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -123,7 +123,7 @@ fun HomeWindowDecoration() {
                 ) {
                     Text(
                         text = "Compile Future",
-                        color = MaterialTheme.colors.onBackground,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 10.sp,
                         style =
                             TextStyle(
@@ -134,7 +134,7 @@ fun HomeWindowDecoration() {
                     Box {
                         Text(
                             text = "CrossPaste",
-                            color = MaterialTheme.colors.onBackground,
+                            color = MaterialTheme.colorScheme.onBackground,
                             fontSize = 23.sp,
                             style =
                                 TextStyle(
@@ -193,7 +193,7 @@ fun HomeWindowDecoration() {
                                 .wrapContentWidth()
                                 .height(20.dp)
                                 .clip(RoundedCornerShape(4.dp))
-                                .background(MaterialTheme.colors.primary)
+                                .background(MaterialTheme.colorScheme.primary)
                                 .clickable {
                                     uiSupport.openCrossPasteWebInBrowser("tutorial/pasteboard")
                                     configManager.updateConfig("showTutorial", false)

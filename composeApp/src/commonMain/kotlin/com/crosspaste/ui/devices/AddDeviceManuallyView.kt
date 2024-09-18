@@ -13,10 +13,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -77,8 +77,8 @@ fun AddDeviceManuallyForm() {
 
         Text(
             text = "IP:",
-            color = MaterialTheme.colors.onBackground,
-            style = MaterialTheme.typography.h6,
+            color = MaterialTheme.colorScheme.onBackground,
+            style = MaterialTheme.typography.headlineSmall,
             fontFamily = FontFamily.SansSerif,
             fontSize = 12.sp,
         )
@@ -115,8 +115,8 @@ fun AddDeviceManuallyForm() {
 
         Text(
             text = "Port",
-            color = MaterialTheme.colors.onBackground,
-            style = MaterialTheme.typography.h6,
+            color = MaterialTheme.colorScheme.onBackground,
+            style = MaterialTheme.typography.headlineSmall,
             fontFamily = FontFamily.SansSerif,
             fontSize = 12.sp,
         )
@@ -191,9 +191,9 @@ fun AddDeviceManuallyForm() {
             shape = RoundedCornerShape(4.dp),
             border = BorderStroke(1.dp, connectedColor()),
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-            colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.background),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background),
             elevation =
-                ButtonDefaults.elevation(
+                ButtonDefaults.elevatedButtonElevation(
                     defaultElevation = 0.dp,
                     pressedElevation = 0.dp,
                     hoveredElevation = 0.dp,

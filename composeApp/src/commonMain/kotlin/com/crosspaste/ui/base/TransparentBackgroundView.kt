@@ -1,7 +1,7 @@
 package com.crosspaste.ui.base
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun TransparentBackground(modifier: Modifier = Modifier) {
-    val background = MaterialTheme.colors.background
+    val background = MaterialTheme.colorScheme.background
     Canvas(modifier = modifier) {
         val stepSize = 5.dp.toPx()
         val columns = (size.width / stepSize).toInt()

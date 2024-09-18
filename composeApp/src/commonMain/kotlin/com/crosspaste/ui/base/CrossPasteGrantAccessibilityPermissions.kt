@@ -16,11 +16,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -79,7 +79,7 @@ fun CrossPasteGrantAccessibilityPermissions(
         Column(
             modifier =
                 Modifier.fillMaxSize()
-                    .background(MaterialTheme.colors.background),
+                    .background(MaterialTheme.colorScheme.background),
         ) {
             Spacer(modifier = Modifier.height(24.dp))
             Row(
@@ -104,9 +104,9 @@ fun CrossPasteGrantAccessibilityPermissions(
                     style =
                         TextStyle(
                             fontSize = 25.sp,
-                            fontWeight = MaterialTheme.typography.h1.fontWeight,
+                            fontWeight = MaterialTheme.typography.displayLarge.fontWeight,
                             fontFamily = FontFamily.SansSerif,
-                            color = MaterialTheme.colors.onBackground,
+                            color = MaterialTheme.colorScheme.onBackground,
                         ),
                 )
             }
@@ -125,7 +125,7 @@ fun CrossPasteGrantAccessibilityPermissions(
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.SansSerif,
-                            color = MaterialTheme.colors.onBackground,
+                            color = MaterialTheme.colorScheme.onBackground,
                             textDecoration = TextDecoration.Underline,
                         ),
                 )
@@ -141,7 +141,7 @@ fun CrossPasteGrantAccessibilityPermissions(
                         Modifier.fillMaxWidth()
                             .wrapContentHeight()
                             .clip(RoundedCornerShape(5.dp))
-                            .background(MaterialTheme.colors.surface),
+                            .background(MaterialTheme.colorScheme.surface),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
@@ -153,7 +153,7 @@ fun CrossPasteGrantAccessibilityPermissions(
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = FontFamily.SansSerif,
-                                color = MaterialTheme.colors.onBackground,
+                                color = MaterialTheme.colorScheme.onBackground,
                                 textDecoration = TextDecoration.Underline,
                             ),
                     )
@@ -165,7 +165,7 @@ fun CrossPasteGrantAccessibilityPermissions(
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Light,
                                 fontFamily = FontFamily.SansSerif,
-                                color = MaterialTheme.colors.onBackground,
+                                color = MaterialTheme.colorScheme.onBackground,
                             ),
                     )
                     Spacer(modifier = Modifier.height(6.dp))
@@ -179,9 +179,9 @@ fun CrossPasteGrantAccessibilityPermissions(
                             shape = RoundedCornerShape(4.dp),
                             border = BorderStroke(1.dp, grantPermissionColor()),
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                            colors = ButtonDefaults.buttonColors(backgroundColor = grantPermissionColor()),
+                            colors = ButtonDefaults.buttonColors(containerColor = grantPermissionColor()),
                             elevation =
-                                ButtonDefaults.elevation(
+                                ButtonDefaults.elevatedButtonElevation(
                                     defaultElevation = 0.dp,
                                     pressedElevation = 0.dp,
                                     hoveredElevation = 0.dp,
@@ -213,11 +213,11 @@ fun CrossPasteGrantAccessibilityPermissions(
                                     }
                                 },
                                 shape = RoundedCornerShape(4.dp),
-                                border = BorderStroke(1.dp, MaterialTheme.colors.primary),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                                colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                                 elevation =
-                                    ButtonDefaults.elevation(
+                                    ButtonDefaults.elevatedButtonElevation(
                                         defaultElevation = 0.dp,
                                         pressedElevation = 0.dp,
                                         hoveredElevation = 0.dp,

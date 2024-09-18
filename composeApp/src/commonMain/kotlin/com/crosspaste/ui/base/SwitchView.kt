@@ -7,8 +7,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -30,8 +30,8 @@ fun CustomSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    checkedThumbColor: Color = MaterialTheme.colors.primary,
-    uncheckedThumbColor: Color = MaterialTheme.colors.background,
+    checkedThumbColor: Color = MaterialTheme.colorScheme.primary,
+    uncheckedThumbColor: Color = MaterialTheme.colorScheme.background,
 ) {
     val trackColor = if (checked) checkedThumbColor else Color(0xFFAFCBE1)
 
@@ -70,9 +70,9 @@ fun CustomRectangleSwitch(
     checkedText: String = "ON",
     uncheckedText: String = "OFF",
 ) {
-    val checkedThumbColor = MaterialTheme.colors.primary
+    val checkedThumbColor = MaterialTheme.colorScheme.primary
 
-    val uncheckedThumbColor = MaterialTheme.colors.background
+    val uncheckedThumbColor = MaterialTheme.colorScheme.background
 
     val maxWidth = max(measureTextWidth(checkedText, textStyle), measureTextWidth(uncheckedText, textStyle))
 

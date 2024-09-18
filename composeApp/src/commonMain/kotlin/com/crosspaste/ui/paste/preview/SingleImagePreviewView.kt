@@ -12,9 +12,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -105,7 +105,7 @@ fun SingleImagePreviewView(pasteFileCoordinate: PasteFileCoordinate) {
                 ) {
                     Text(
                         text = "${copywriter.getText(FILE_NAME)}: ${pasteFileCoordinate.filePath.name}",
-                        color = MaterialTheme.colors.onBackground,
+                        color = MaterialTheme.colorScheme.onBackground,
                         style =
                             TextStyle(
                                 fontWeight = FontWeight.Light,
@@ -118,7 +118,7 @@ fun SingleImagePreviewView(pasteFileCoordinate: PasteFileCoordinate) {
                         imageInfo.map[DIMENSIONS]?.let {
                             Text(
                                 text = "${copywriter.getText(DIMENSIONS)}: ${it.getTextByCopyWriter(copywriter)}",
-                                color = MaterialTheme.colors.onBackground,
+                                color = MaterialTheme.colorScheme.onBackground,
                                 style =
                                     TextStyle(
                                         fontWeight = FontWeight.Light,
@@ -136,7 +136,7 @@ fun SingleImagePreviewView(pasteFileCoordinate: PasteFileCoordinate) {
 
                         Text(
                             text = "${copywriter.getText(SIZE)}: $imageSize",
-                            color = MaterialTheme.colors.onBackground,
+                            color = MaterialTheme.colorScheme.onBackground,
                             style =
                                 TextStyle(
                                     fontWeight = FontWeight.Light,
@@ -146,7 +146,7 @@ fun SingleImagePreviewView(pasteFileCoordinate: PasteFileCoordinate) {
                     } else {
                         Text(
                             text = copywriter.getText(MISSING_FILE),
-                            color = MaterialTheme.colors.error,
+                            color = MaterialTheme.colorScheme.error,
                             style =
                                 TextStyle(
                                     fontWeight = FontWeight.Normal,

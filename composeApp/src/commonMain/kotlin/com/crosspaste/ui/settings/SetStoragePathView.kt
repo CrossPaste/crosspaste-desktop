@@ -12,11 +12,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.LinearProgressIndicator
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.material.TextFieldDefaults
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -68,8 +68,8 @@ fun SetStoragePathView() {
             Modifier.wrapContentSize()
                 .padding(start = 32.dp, top = 5.dp, bottom = 5.dp),
         text = copywriter.getText("storage_path"),
-        color = MaterialTheme.colors.onBackground,
-        style = MaterialTheme.typography.h6,
+        color = MaterialTheme.colorScheme.onBackground,
+        style = MaterialTheme.typography.headlineSmall,
         fontFamily = FontFamily.SansSerif,
         fontSize = 12.sp,
     )
@@ -79,7 +79,7 @@ fun SetStoragePathView() {
             Modifier.wrapContentSize()
                 .padding(horizontal = 16.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colors.background),
+                .background(MaterialTheme.colorScheme.background),
     ) {
         var useDefaultStoragePath by remember { mutableStateOf(configManager.config.useDefaultStoragePath) }
 
@@ -144,15 +144,20 @@ fun SetStoragePathView() {
                 textStyle =
                     LocalTextStyle.current.copy(
                         textAlign = TextAlign.Start,
-                        color = if (!useDefaultStoragePath) MaterialTheme.colors.primary else Color.LightGray,
+                        color =
+                            if (!useDefaultStoragePath) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                Color.LightGray
+                            },
                         fontSize = if (!useDefaultStoragePath) 12.sp else 14.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.Monospace,
                         lineHeight = 14.sp,
                     ),
                 colors =
-                    TextFieldDefaults.textFieldColors(
-                        focusedIndicatorColor = MaterialTheme.colors.primary,
+                    TextFieldDefaults.colors(
+                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
                         unfocusedIndicatorColor = Color.Transparent,
                     ),
                 contentPadding = PaddingValues(horizontal = 8.dp),
@@ -225,15 +230,15 @@ fun SetStoragePathDialogView(path: Path) {
                 textStyle =
                     LocalTextStyle.current.copy(
                         textAlign = TextAlign.Start,
-                        color = MaterialTheme.colors.primary,
+                        color = MaterialTheme.colorScheme.primary,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.Monospace,
                         lineHeight = 14.sp,
                     ),
                 colors =
-                    TextFieldDefaults.textFieldColors(
-                        focusedIndicatorColor = MaterialTheme.colors.primary,
+                    TextFieldDefaults.colors(
+                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
                         unfocusedIndicatorColor = Color.Transparent,
                     ),
                 contentPadding = PaddingValues(horizontal = 8.dp),
@@ -244,7 +249,7 @@ fun SetStoragePathDialogView(path: Path) {
             if (isMigration) {
                 LinearProgressIndicator(
                     modifier = Modifier.fillMaxWidth().height(5.dp),
-                    progress = progress,
+                    progress = { progress },
                 )
             } else {
                 DialogButtonsView(

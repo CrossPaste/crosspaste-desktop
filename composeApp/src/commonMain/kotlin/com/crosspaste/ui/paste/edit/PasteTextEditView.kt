@@ -3,8 +3,7 @@ package com.crosspaste.ui.paste.edit
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.TextField
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -25,10 +24,11 @@ import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.ui.PageViewContext
 import com.crosspaste.ui.WindowDecoration
+import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.save
 import com.crosspaste.utils.getCodecsUtils
-import io.ktor.utils.io.core.toByteArray
+import io.ktor.utils.io.core.*
 import org.koin.compose.koinInject
 
 @Composable
@@ -51,7 +51,7 @@ fun PasteTextEditContentView(pasteData: PasteData) {
         pasteData.getPasteItem()?.let {
             var text by remember { mutableStateOf((it as PasteText).text) }
 
-            TextField(
+            CustomTextField(
                 modifier = Modifier.fillMaxSize(),
                 value = text,
                 onValueChange = {
@@ -61,7 +61,7 @@ fun PasteTextEditContentView(pasteData: PasteData) {
                     TextStyle(
                         fontFamily = FontFamily.SansSerif,
                         fontWeight = FontWeight.Normal,
-                        color = MaterialTheme.colors.onBackground,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 14.sp,
                     ),
             )

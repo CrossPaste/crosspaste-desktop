@@ -22,12 +22,10 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Icon
-import androidx.compose.material.LinearProgressIndicator
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -55,6 +53,7 @@ import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.app.AppTokenService
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.Fonts.ROBOTO_FONT_FAMILY
+import com.crosspaste.ui.base.close
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
@@ -119,7 +118,7 @@ fun TokenView() {
                         .wrapContentSize()
                         .clip(RoundedCornerShape(5.dp))
                         .align(Alignment.Center)
-                        .background(MaterialTheme.colors.surface),
+                        .background(MaterialTheme.colorScheme.surface),
             ) {
                 Box(
                     modifier =
@@ -130,7 +129,7 @@ fun TokenView() {
                     Text(
                         modifier = Modifier.align(Alignment.Center),
                         text = copywriter.getText("token"),
-                        color = MaterialTheme.colors.onBackground,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 25.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = ROBOTO_FONT_FAMILY,
@@ -162,7 +161,7 @@ fun TokenView() {
                                     .clip(RoundedCornerShape(16.dp))
                                     .background(
                                         if (hoverIcon) {
-                                            MaterialTheme.colors.onSurface.copy(0.16f)
+                                            MaterialTheme.colorScheme.onSurface.copy(0.16f)
                                         } else {
                                             Color.Transparent
                                         },
@@ -172,10 +171,10 @@ fun TokenView() {
                         ) {}
 
                         Icon(
-                            imageVector = Icons.Filled.Close,
+                            painter = close(),
                             contentDescription = "Close",
                             modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colors.onBackground,
+                            tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
                 }
@@ -200,13 +199,13 @@ fun OTPCodeBox(appTokenService: AppTokenService) {
                     contentAlignment = Alignment.Center,
                     modifier =
                         Modifier
-                            .background(MaterialTheme.colors.background, RoundedCornerShape(4.dp))
-                            .border(1.dp, MaterialTheme.colors.primary, RoundedCornerShape(4.dp))
+                            .background(MaterialTheme.colorScheme.background, RoundedCornerShape(4.dp))
+                            .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp))
                             .padding(vertical = 8.dp, horizontal = 12.dp),
                 ) {
                     Text(
                         text = char.toString(),
-                        color = MaterialTheme.colors.primary,
+                        color = MaterialTheme.colorScheme.primary,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.Monospace,
@@ -218,7 +217,7 @@ fun OTPCodeBox(appTokenService: AppTokenService) {
         Row(modifier = Modifier.width(300.dp).wrapContentHeight()) {
             LinearProgressIndicator(
                 modifier = Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(1.5.dp)),
-                progress = appTokenService.showTokenProgress,
+                progress = { appTokenService.showTokenProgress },
             )
         }
     }

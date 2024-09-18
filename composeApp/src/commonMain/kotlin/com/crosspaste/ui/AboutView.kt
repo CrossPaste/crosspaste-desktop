@@ -14,10 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Divider
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
@@ -79,7 +79,7 @@ fun AboutContentView() {
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
                         ),
-                    color = MaterialTheme.colors.onBackground,
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -92,7 +92,7 @@ fun AboutContentView() {
                             fontWeight = FontWeight.Normal,
                             fontSize = 15.sp,
                         ),
-                    color = MaterialTheme.colors.onBackground,
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
                 Spacer(modifier = Modifier.height(30.dp))
 
@@ -100,25 +100,25 @@ fun AboutContentView() {
                     uiSupport.openCrossPasteWebInBrowser()
                 }
 
-                Divider(modifier = Modifier.padding(horizontal = 80.dp))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 80.dp))
 
                 AboutInfoItem("newbie_tutorial") {
                     uiSupport.openCrossPasteWebInBrowser("tutorial/pasteboard")
                 }
 
-                Divider(modifier = Modifier.padding(horizontal = 80.dp))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 80.dp))
 
                 AboutInfoItem("change_log") {
                     uiSupport.openUrlInBrowser(appUrls.changeLogUrl)
                 }
 
-                Divider(modifier = Modifier.padding(horizontal = 80.dp))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 80.dp))
 
                 AboutInfoItem("feedback") {
                     uiSupport.openUrlInBrowser(appUrls.issueTrackerUrl)
                 }
 
-                Divider(modifier = Modifier.padding(horizontal = 80.dp))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 80.dp))
 
                 AboutInfoItem("contact_us") {
                     uiSupport.openEmailClient("compile.future@gmail.com")
@@ -148,8 +148,8 @@ fun AboutInfoItem(
         Text(
             modifier = Modifier.wrapContentSize().padding(start = 5.dp),
             text = copywriter.getText(title),
-            style = MaterialTheme.typography.body1,
-            color = MaterialTheme.colors.onBackground,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground,
             fontSize = 15.sp,
         )
 
@@ -158,7 +158,7 @@ fun AboutInfoItem(
         Icon(
             painter = chevronRight(),
             contentDescription = "chevron right",
-            tint = MaterialTheme.colors.onBackground,
+            tint = MaterialTheme.colorScheme.onBackground,
         )
     }
 }

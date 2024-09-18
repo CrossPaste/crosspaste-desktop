@@ -11,9 +11,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material.Divider
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,7 +44,7 @@ fun DialogButtonsView(
         modifier = Modifier.wrapContentSize(),
         verticalArrangement = Arrangement.Center,
     ) {
-        Divider(modifier = Modifier.fillMaxWidth().width(1.dp))
+        HorizontalDivider(modifier = Modifier.fillMaxWidth().width(1.dp))
         Row(
             modifier = Modifier.fillMaxWidth().height(height),
             verticalAlignment = Alignment.CenterVertically,
@@ -53,7 +54,7 @@ fun DialogButtonsView(
                 onClick = cancelAction,
                 modifier = Modifier.weight(0.5f).height(height),
             )
-            Divider(modifier = Modifier.fillMaxHeight().width(1.dp))
+            VerticalDivider(modifier = Modifier.fillMaxHeight().width(1.dp))
             AdaptiveTextButton(
                 text = copywriter.getText(confirmTitle),
                 onClick = confirmAction,
@@ -82,7 +83,7 @@ fun AdaptiveTextButton(
     ) {
         Text(
             text = text,
-            color = MaterialTheme.colors.primary,
+            color = MaterialTheme.colorScheme.primary,
             fontSize = fontSize,
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Monospace,

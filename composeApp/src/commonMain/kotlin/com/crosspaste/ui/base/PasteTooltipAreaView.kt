@@ -11,10 +11,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -71,7 +71,8 @@ fun PasteTooltipAreaView(
                     modifier =
                         Modifier
                             .clip(RoundedCornerShape(5.dp)),
-                    elevation = 6.dp,
+                    tonalElevation = 6.dp,
+                    shadowElevation = 6.dp,
                 ) {
                     Text(
                         text = text,
@@ -123,7 +124,7 @@ fun PasteTooltipIconView(
                         .clip(RoundedCornerShape(6.dp))
                         .background(
                             if (hoverIcon) {
-                                MaterialTheme.colors.surface.copy(0.64f)
+                                MaterialTheme.colorScheme.surface.copy(0.64f)
                             } else {
                                 Color.Transparent
                             },
@@ -136,7 +137,7 @@ fun PasteTooltipIconView(
                 painter = painter,
                 contentDescription = contentDescription,
                 modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colors.onBackground,
+                tint = MaterialTheme.colorScheme.onBackground,
             )
         }
     }

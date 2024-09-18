@@ -13,11 +13,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Divider
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -73,8 +73,8 @@ fun NetSettingsView() {
             Modifier.wrapContentSize()
                 .padding(start = 32.dp, top = 5.dp, bottom = 5.dp),
         text = copywriter.getText("network_info"),
-        color = MaterialTheme.colors.onBackground,
-        style = MaterialTheme.typography.h6,
+        color = MaterialTheme.colorScheme.onBackground,
+        style = MaterialTheme.typography.headlineSmall,
         fontFamily = FontFamily.SansSerif,
         fontSize = 12.sp,
     )
@@ -84,12 +84,12 @@ fun NetSettingsView() {
             Modifier.wrapContentSize()
                 .padding(horizontal = 16.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colors.background),
+                .background(MaterialTheme.colorScheme.background),
     ) {
         SettingItemView(
             painter = network(),
             text = "ip_address",
-            tint = MaterialTheme.colors.onBackground,
+            tint = MaterialTheme.colorScheme.onBackground,
         ) {
             if (ip != null) {
                 settingsText(ip!!)
@@ -98,12 +98,12 @@ fun NetSettingsView() {
             }
         }
 
-        Divider(modifier = Modifier.padding(start = 35.dp))
+        HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
 
         SettingItemView(
             painter = link(),
             text = "port",
-            tint = MaterialTheme.colors.onBackground,
+            tint = MaterialTheme.colorScheme.onBackground,
         ) {
             if (port != null) {
                 settingsText(port!!)
@@ -118,8 +118,8 @@ fun NetSettingsView() {
             Modifier.wrapContentSize()
                 .padding(start = 32.dp, top = 5.dp, bottom = 5.dp),
         text = copywriter.getText("service_discovery"),
-        color = MaterialTheme.colors.onBackground,
-        style = MaterialTheme.typography.h6,
+        color = MaterialTheme.colorScheme.onBackground,
+        style = MaterialTheme.typography.headlineSmall,
         fontFamily = FontFamily.SansSerif,
         fontSize = 12.sp,
     )
@@ -129,12 +129,12 @@ fun NetSettingsView() {
             Modifier.wrapContentSize()
                 .padding(horizontal = 16.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colors.background),
+                .background(MaterialTheme.colorScheme.background),
     ) {
         SettingItemView(
             painter = wifi(),
             text = "allow_discovery_by_new_devices",
-            tint = MaterialTheme.colors.onBackground,
+            tint = MaterialTheme.colorScheme.onBackground,
         ) {
             var isAllowDiscovery by remember { mutableStateOf(configManager.config.isAllowDiscovery) }
 
@@ -156,8 +156,8 @@ fun NetSettingsView() {
             Modifier.wrapContentSize()
                 .padding(start = 32.dp, top = 5.dp, bottom = 5.dp),
         text = copywriter.getText("blacklist"),
-        color = MaterialTheme.colors.onBackground,
-        style = MaterialTheme.typography.h6,
+        color = MaterialTheme.colorScheme.onBackground,
+        style = MaterialTheme.typography.headlineSmall,
         fontFamily = FontFamily.SansSerif,
         fontSize = 12.sp,
     )
@@ -167,7 +167,7 @@ fun NetSettingsView() {
             Modifier.wrapContentSize()
                 .padding(horizontal = 16.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colors.background),
+                .background(MaterialTheme.colorScheme.background),
     ) {
         Row(
             modifier =
@@ -201,7 +201,7 @@ fun NetSettingsView() {
                             }
                         }
                         if (index != blacklist.size - 1) {
-                            Divider(modifier = Modifier.fillMaxWidth())
+                            HorizontalDivider(modifier = Modifier.fillMaxWidth())
                         }
                     }
                 }

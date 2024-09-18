@@ -10,9 +10,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -79,7 +79,7 @@ fun DeviceBarView(
                 modifier = Modifier.padding(12.dp).size(36.dp),
                 painter = PlatformPainter(syncRuntimeInfo),
                 contentDescription = "OS Icon",
-                tint = MaterialTheme.colors.onBackground,
+                tint = MaterialTheme.colorScheme.onBackground,
             )
 
             Column(
@@ -100,7 +100,7 @@ fun DeviceBarView(
                         style =
                             TextStyle(
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colors.onBackground,
+                                color = MaterialTheme.colorScheme.onBackground,
                                 fontSize = 13.sp,
                             ),
                     )
@@ -112,7 +112,7 @@ fun DeviceBarView(
                         style =
                             TextStyle(
                                 fontWeight = FontWeight.Light,
-                                color = MaterialTheme.colors.onBackground,
+                                color = MaterialTheme.colorScheme.onBackground,
                                 fontSize = 11.sp,
                             ),
                     )
@@ -125,7 +125,7 @@ fun DeviceBarView(
                     style =
                         TextStyle(
                             fontWeight = FontWeight.Light,
-                            color = MaterialTheme.colors.onBackground.copy(alpha = 0.5f),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                             fontSize = 11.sp,
                         ),
                     overflow = TextOverflow.Ellipsis,
