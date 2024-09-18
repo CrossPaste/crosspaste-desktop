@@ -2,44 +2,27 @@ package com.crosspaste.ui.base
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
 
 @Composable
-fun text(): Painter {
-    return painterResource("icon/paste/text.svg")
-}
+expect fun file(): Painter
 
 @Composable
-fun link(): Painter {
-    return painterResource("icon/paste/link.svg")
-}
+expect fun fileSlash(): Painter
 
 @Composable
-fun html(): Painter {
-    return painterResource("icon/paste/html.svg")
-}
+expect fun folder(): Painter
 
 @Composable
-fun image(): Painter {
-    return painterResource("icon/paste/image.svg")
-}
+expect fun html(): Painter
 
 @Composable
-fun file(): Painter {
-    return painterResource("icon/paste/file.svg")
-}
+expect fun image(): Painter
 
 @Composable
-fun folder(): Painter {
-    return painterResource("icon/paste/folder.svg")
-}
+expect fun imageSlash(): Painter
 
 @Composable
-fun fileSlash(): Painter {
-    return painterResource("icon/paste/file-slash.svg")
-}
+expect fun link(): Painter
 
 @Composable
-fun imageSlash(): Painter {
-    return painterResource("icon/paste/image-slash.svg")
-}
+expect fun text(): Painter

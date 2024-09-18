@@ -2,144 +2,87 @@ package com.crosspaste.ui.base
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
 
 @Composable
-fun alertCircle(): Painter {
-    return painterResource("icon/base/alert_circle.svg")
-}
+expect fun add(): Painter
 
 @Composable
-fun settings(): Painter {
-    return painterResource("icon/base/settings.svg")
-}
+expect fun alertCircle(): Painter
 
 @Composable
-fun search(): Painter {
-    return painterResource("icon/base/search.svg")
-}
+expect fun archive(): Painter
 
 @Composable
-fun save(): Painter {
-    return painterResource("icon/base/save.svg")
-}
+expect fun arrowBack(): Painter
 
 @Composable
-fun question(): Painter {
-    return painterResource("icon/base/question.svg")
-}
+expect fun ascSort(): Painter
 
 @Composable
-fun autoRenew(): Painter {
-    return painterResource("icon/base/autorenew.svg")
-}
+expect fun autoRenew(): Painter
 
 @Composable
-fun arrowBack(): Painter {
-    return painterResource("icon/base/arrow_back.svg")
-}
+expect fun circle(): Painter
 
 @Composable
-fun magnifying(): Painter {
-    return painterResource("icon/base/magnifying.svg")
-}
+expect fun clipboard(): Painter
 
 @Composable
-fun scan(): Painter {
-    return painterResource("icon/base/scan.svg")
-}
+expect fun close(): Painter
 
 @Composable
-fun add(): Painter {
-    return painterResource("icon/base/add.svg")
-}
+expect fun database(): Painter
 
 @Composable
-fun remove(): Painter {
-    return painterResource("icon/base/remove.svg")
-}
+expect fun descSort(): Painter
 
 @Composable
-fun database(): Painter {
-    return painterResource("icon/base/database.svg")
-}
+expect fun edit(): Painter
 
 @Composable
-fun percent(): Painter {
-    return painterResource("icon/base/percent.svg")
-}
+expect fun favorite(): Painter
 
 @Composable
-fun descSort(): Painter {
-    return painterResource("icon/base/sort-desc.svg")
-}
+expect fun imageCompress(): Painter
 
 @Composable
-fun ascSort(): Painter {
-    return painterResource("icon/base/sort-asc.svg")
-}
+expect fun imageExpand(): Painter
 
 @Composable
-fun clipboard(): Painter {
-    return painterResource("icon/base/clipboard.svg")
-}
+expect fun magnifying(): Painter
 
 @Composable
-fun imageExpand(): Painter {
-    return painterResource("icon/base/image_expand.svg")
-}
+expect fun moreVertical(): Painter
 
 @Composable
-fun imageCompress(): Painter {
-    return painterResource("icon/base/image_compress.svg")
-}
+expect fun noFavorite(): Painter
 
 @Composable
-fun edit(): Painter {
-    return painterResource("icon/base/edit.svg")
-}
+expect fun percent(): Painter
 
 @Composable
-fun toTop(): Painter {
-    return painterResource("icon/base/to-top.svg")
-}
+expect fun question(): Painter
 
 @Composable
-fun noFavorite(): Painter {
-    return painterResource("icon/base/no_favorite.svg")
-}
+expect fun refresh(): Painter
 
 @Composable
-fun favorite(): Painter {
-    return painterResource("icon/base/favorite.svg")
-}
+expect fun remove(): Painter
 
 @Composable
-fun circle(): Painter {
-    return painterResource("icon/base/circle.svg")
-}
+expect fun save(): Painter
 
 @Composable
-fun archive(): Painter {
-    return painterResource("icon/base/archive.svg")
-}
+expect fun scan(): Painter
 
 @Composable
-fun skipForward(): Painter {
-    return painterResource("icon/base/skip-forward.svg")
-}
+expect fun search(): Painter
 
 @Composable
-fun refresh(): Painter {
-    return painterResource("icon/base/refresh.svg")
-}
+expect fun settings(): Painter
 
 @Composable
-fun moreVertical(): Painter {
-    return painterResource("icon/base/more-vertical.svg")
-}
+expect fun skipForward(): Painter
 
 @Composable
-fun close(): Painter {
-    return painterResource("icon/base/close.svg")
-}
+expect fun toTop(): Painter
