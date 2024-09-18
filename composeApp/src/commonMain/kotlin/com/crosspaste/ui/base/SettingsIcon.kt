@@ -2,79 +2,48 @@ package com.crosspaste.ui.base
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
 
 @Composable
-fun arrowLeft(): Painter {
-    return chevronLeft()
-}
+expect fun anglesUpDown(): Painter
 
 @Composable
-fun arrowRight(): Painter {
-    return chevronRight()
-}
+expect fun arrowDown(): Painter
 
 @Composable
-fun arrowUp(): Painter {
-    return expandLess()
-}
+expect fun arrowLeft(): Painter
 
 @Composable
-fun arrowDown(): Painter {
-    return expandMore()
-}
+expect fun arrowRight(): Painter
 
 @Composable
-fun hashtag(): Painter {
-    return painterResource("icon/base/hashtag.svg")
-}
+expect fun arrowUp(): Painter
 
 @Composable
-fun clock(): Painter {
-    return painterResource("icon/base/clock.svg")
-}
+expect fun bolt(): Painter
 
 @Composable
-fun trash(): Painter {
-    return painterResource("icon/base/trash.svg")
-}
+expect fun clock(): Painter
 
 @Composable
-fun anglesUpDown(): Painter {
-    return painterResource("icon/base/angles_up_down.svg")
-}
+expect fun hashtag(): Painter
 
 @Composable
-fun network(): Painter {
-    return painterResource("icon/base/network.svg")
-}
+expect fun language(): Painter
 
 @Composable
-fun wifi(): Painter {
-    return painterResource("icon/base/wifi.svg")
-}
+expect fun network(): Painter
 
 @Composable
-fun language(): Painter {
-    return painterResource("icon/base/language.svg")
-}
+expect fun palette(): Painter
 
 @Composable
-fun palette(): Painter {
-    return painterResource("icon/base/palette.svg")
-}
+expect fun rocket(): Painter
 
 @Composable
-fun shield(): Painter {
-    return painterResource("icon/base/shield.svg")
-}
+expect fun shield(): Painter
 
 @Composable
-fun bolt(): Painter {
-    return painterResource("icon/base/bolt.svg")
-}
+expect fun trash(): Painter
 
 @Composable
-fun rocket(): Painter {
-    return painterResource("icon/base/rocket.svg")
-}
+expect fun wifi(): Painter
