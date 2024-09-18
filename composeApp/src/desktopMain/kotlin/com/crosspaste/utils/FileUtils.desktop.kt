@@ -48,8 +48,13 @@ object DesktopFileUtils : FileUtils {
 
     override fun canPreviewImage(ext: String): Boolean = canPreviewImageMap.contains(ext.lowercase())
 
-    override fun createRandomFileName(ext: String): String {
-        return "${UUID.randomUUID()}.$ext"
+    override fun createRandomFileName(ext: String?): String {
+        val uuid = UUID.randomUUID().toString()
+        return if (ext != null) {
+            "$uuid.$ext"
+        } else {
+            uuid
+        }
     }
 
     override fun createPasteRelativePath(

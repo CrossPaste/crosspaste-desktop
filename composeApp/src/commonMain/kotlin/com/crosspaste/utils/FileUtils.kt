@@ -38,7 +38,7 @@ interface FileUtils {
 
     fun canPreviewImage(ext: String): Boolean
 
-    fun createRandomFileName(ext: String): String
+    fun createRandomFileName(ext: String? = null): String
 
     fun getExtFromFileName(fileName: String): String? {
         val index = fileName.lastIndexOf(".")
