@@ -19,7 +19,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,8 +37,8 @@ import com.crosspaste.ui.base.chevronRight
 import org.koin.compose.koinInject
 
 @Composable
-fun AboutView(currentPageViewContext: MutableState<PageViewContext>) {
-    WindowDecoration(currentPageViewContext, "about")
+fun AboutScreen() {
+    WindowDecoration("about")
     AboutContentView()
 }
 

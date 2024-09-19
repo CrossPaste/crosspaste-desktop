@@ -55,8 +55,8 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.realm.sync.SyncState
 import com.crosspaste.sync.SyncManager
-import com.crosspaste.ui.PageViewContext
-import com.crosspaste.ui.PageViewType
+import com.crosspaste.ui.ScreenContext
+import com.crosspaste.ui.ScreenType
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.MessageType
 import com.crosspaste.ui.base.NotificationManager
@@ -82,7 +82,7 @@ import org.koin.compose.koinInject
 @Composable
 fun DeviceConnectView(
     syncRuntimeInfo: SyncRuntimeInfo,
-    currentPageViewContext: MutableState<PageViewContext>,
+    currentScreenContext: MutableState<ScreenContext>,
     deviceInteractionEnabled: Boolean,
     onEdit: (SyncRuntimeInfo) -> Unit,
 ) {
@@ -137,10 +137,10 @@ fun DeviceConnectView(
                 if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
                     syncManager.toVerify(syncRuntimeInfo.appInstanceId)
                 } else {
-                    currentPageViewContext.value =
-                        PageViewContext(
-                            PageViewType.DEVICE_DETAIL,
-                            currentPageViewContext.value,
+                    currentScreenContext.value =
+                        ScreenContext(
+                            ScreenType.DEVICE_DETAIL,
+                            currentScreenContext.value,
                             syncRuntimeInfo,
                         )
                 }

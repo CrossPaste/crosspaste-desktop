@@ -38,12 +38,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalExitApplication
 import com.crosspaste.app.AppLock
 import com.crosspaste.app.AppRestartService
 import com.crosspaste.app.ExitMode
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.CrossPasteTheme
+import com.crosspaste.ui.LocalExitApplication
 import com.crosspaste.ui.grantPermissionColor
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject

@@ -19,7 +19,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,10 +40,7 @@ import com.crosspaste.ui.base.arrowBack
 import org.koin.compose.koinInject
 
 @Composable
-fun WindowDecoration(
-    currentPageViewContext: MutableState<PageViewContext>,
-    title: String,
-) {
+fun WindowDecoration(title: String) {
     Row(
         modifier =
             Modifier
@@ -52,16 +48,15 @@ fun WindowDecoration(
                 .height(60.dp)
                 .background(MaterialTheme.colorScheme.background.copy(0.64f)),
     ) {
-        DecorationUI(currentPageViewContext, title)
+        DecorationUI(title)
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
-fun DecorationUI(
-    currentPageViewContext: MutableState<PageViewContext>,
-    title: String,
-) {
+fun DecorationUI(title: String) {
+    val currentScreenContext = LocalPageViewContent.current
+
     val copywriter = koinInject<GlobalCopywriter>()
 
     var hoverReturn by remember { mutableStateOf(false) }
@@ -99,7 +94,7 @@ fun DecorationUI(
                                     hoverReturn = false
                                 },
                             )
-                            .onClick { currentPageViewContext.value = currentPageViewContext.value.returnNext() },
+                            .onClick { currentScreenContext.value = currentScreenContext.value.returnNext() },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Spacer(modifier = Modifier.width(10.dp).height(40.dp))

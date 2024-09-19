@@ -19,8 +19,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
-import com.crosspaste.LocalExitApplication
-import com.crosspaste.LocalPageViewContent
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.ExitMode
 import com.crosspaste.i18n.GlobalCopywriter
@@ -81,12 +79,12 @@ fun HomeMenuView(
         ) {
             MenuItem(copywriter.getText("settings")) {
                 openMainWindow()
-                currentPage.value = PageViewContext(PageViewType.SETTINGS, currentPage.value)
+                currentPage.value = ScreenContext(ScreenType.SETTINGS, currentPage.value)
                 close()
             }
             MenuItem(copywriter.getText("shortcut_keys")) {
                 openMainWindow()
-                currentPage.value = PageViewContext(PageViewType.SHORTCUT_KEYS, currentPage.value)
+                currentPage.value = ScreenContext(ScreenType.SHORTCUT_KEYS, currentPage.value)
                 close()
             }
             MenuItem(copywriter.getText("check_for_updates"), reminder = existNewVersion) {
@@ -95,7 +93,7 @@ fun HomeMenuView(
             }
             MenuItem(copywriter.getText("about")) {
                 openMainWindow()
-                currentPage.value = PageViewContext(PageViewType.ABOUT, currentPage.value)
+                currentPage.value = ScreenContext(ScreenType.ABOUT, currentPage.value)
                 close()
             }
             MenuItem(copywriter.getText("fqa")) {

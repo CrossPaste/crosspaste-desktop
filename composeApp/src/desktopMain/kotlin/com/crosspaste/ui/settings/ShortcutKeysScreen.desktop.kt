@@ -24,7 +24,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,7 +42,6 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.listener.KeyboardKey
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysListener
-import com.crosspaste.ui.PageViewContext
 import com.crosspaste.ui.WindowDecoration
 import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
@@ -53,8 +51,8 @@ import com.crosspaste.ui.base.edit
 import org.koin.compose.koinInject
 
 @Composable
-fun ShortcutKeysView(currentPageViewContext: MutableState<PageViewContext>) {
-    WindowDecoration(currentPageViewContext, "shortcut_keys")
+fun ShortcutKeysScreen() {
+    WindowDecoration("shortcut_keys")
     ShortcutKeysContentView()
 }
 

@@ -51,9 +51,9 @@ import com.crosspaste.ui.base.MessageType
 import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.trash
-import com.crosspaste.ui.devices.DevicesView
-import com.crosspaste.ui.devices.bindingQRCode
-import com.crosspaste.ui.paste.preview.PastePreviewsView
+import com.crosspaste.ui.devices.DevicesScreen
+import com.crosspaste.ui.devices.QRScreen
+import com.crosspaste.ui.paste.PasteboardScreen
 import com.crosspaste.utils.mainDispatcher
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -68,7 +68,8 @@ val tabTextStyle =
     )
 
 @Composable
-fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
+fun TabsView() {
+    val currentScreenContext = LocalPageViewContent.current
     val appEnv = koinInject<AppEnv>()
     val copywriter = koinInject<GlobalCopywriter>()
 
@@ -77,10 +78,10 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
     val tabs =
         remember {
             listOfNotNull(
-                Pair(listOf(PageViewType.PASTE_PREVIEW), "pasteboard"),
-                Pair(listOf(PageViewType.DEVICES), "devices"),
-                Pair(listOf(PageViewType.QR_CODE), "scan"),
-                if (appEnv == AppEnv.DEVELOPMENT) Pair(listOf(PageViewType.DEBUG), "debug") else null,
+                Pair(listOf(ScreenType.PASTE_PREVIEW), "pasteboard"),
+                Pair(listOf(ScreenType.DEVICES), "devices"),
+                Pair(listOf(ScreenType.QR_CODE), "scan"),
+                if (appEnv == AppEnv.DEVELOPMENT) Pair(listOf(ScreenType.DEBUG), "debug") else null,
             )
         }
 
@@ -103,10 +104,10 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     tabs.forEach { pair ->
-                        TabView(currentPageViewContext, pair.first, copywriter.getText(pair.second))
+                        TabView(currentScreenContext, pair.first, copywriter.getText(pair.second))
                     }
                     Spacer(modifier = Modifier.weight(1f))
-                    if (currentPageViewContext.value.pageViewType == PageViewType.PASTE_PREVIEW) {
+                    if (currentScreenContext.value.screenType == ScreenType.PASTE_PREVIEW) {
                         val appWindowManager = koinInject<AppWindowManager>()
                         val notificationManager = koinInject<NotificationManager>()
                         val pasteRealm = koinInject<PasteRealm>()
@@ -139,9 +140,9 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
                         ).size.width
                     }
 
-                val selectedIndex by remember(currentPageViewContext.value.pageViewType) {
+                val selectedIndex by remember(currentScreenContext.value.screenType) {
                     mutableStateOf(
-                        tabs.indexOfFirst { it.first.contains(currentPageViewContext.value.pageViewType) },
+                        tabs.indexOfFirst { it.first.contains(currentScreenContext.value.screenType) },
                     )
                 }
 
@@ -180,26 +181,26 @@ fun TabsView(currentPageViewContext: MutableState<PageViewContext>) {
             }
         }
 
-        when (currentPageViewContext.value.pageViewType) {
-            PageViewType.PASTE_PREVIEW -> PastePreviewsView()
-            PageViewType.DEVICES -> DevicesView(currentPageViewContext)
-            PageViewType.QR_CODE -> bindingQRCode()
-            PageViewType.DEBUG -> DebugView()
-            else -> PastePreviewsView()
+        when (currentScreenContext.value.screenType) {
+            ScreenType.PASTE_PREVIEW -> PasteboardScreen()
+            ScreenType.DEVICES -> DevicesScreen()
+            ScreenType.QR_CODE -> QRScreen()
+            ScreenType.DEBUG -> DebugScreen()
+            else -> PasteboardScreen()
         }
     }
 }
 
 @Composable
 fun TabView(
-    currentPageViewContext: MutableState<PageViewContext>,
-    pageViewTypes: List<PageViewType>,
+    currentScreenContext: MutableState<ScreenContext>,
+    screenTypes: List<ScreenType>,
     title: String,
 ) {
     SingleTabView(
         title,
     ) {
-        currentPageViewContext.value = PageViewContext(pageViewTypes[0])
+        currentScreenContext.value = ScreenContext(screenTypes[0])
     }
 }
 
