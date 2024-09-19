@@ -27,7 +27,6 @@ import com.sun.jna.platform.win32.WinNT
 import com.sun.jna.platform.win32.WinNT.HANDLE
 import com.sun.jna.platform.win32.WinUser
 import com.sun.jna.platform.win32.WinUser.INPUT
-import com.sun.jna.platform.win32.WinUser.SW_HIDE
 import com.sun.jna.platform.win32.WinUser.SW_RESTORE
 import com.sun.jna.ptr.IntByReference
 import com.sun.jna.ptr.PointerByReference
@@ -64,21 +63,6 @@ interface User32 : com.sun.jna.platform.win32.User32 {
         proc: WNDPROC?,
     ): Int
 
-    fun CreateWindowEx(
-        styleEx: Int,
-        className: String?,
-        windowName: String?,
-        style: Int,
-        x: Int,
-        y: Int,
-        width: Int,
-        height: Int,
-        hndParent: HWND?,
-        hndMenu: Int,
-        hndInst: Int,
-        param: Any?,
-    ): HWND?
-
     fun SetClipboardViewer(hWndNewViewer: HWND?): HWND?
 
     fun ChangeClipboardChain(
@@ -111,17 +95,9 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                 User32::class.java,
                 DEFAULT_OPTIONS,
             ) as User32
-        const val GWL_EXSTYLE = -20
-        const val GWL_STYLE = -16
+        const val WS_POPUP = 2147483648L.toInt()
+        const val SW_HIDE = 0
         const val GWL_WNDPROC = -4
-        const val GWL_HINSTANCE = -6
-        const val GWL_ID = -12
-        const val GWL_USERDATA = -21
-        const val DWL_DLGPROC = 4
-        const val DWL_MSGRESULT = 0
-        const val DWL_USER = 8
-        const val WS_EX_COMPOSITED = 0x20000000
-        const val WS_EX_LAYERED = 0x80000
         const val WS_EX_TRANSPARENT = 32
         const val WM_DESTROY = 0x0002
         const val WM_CHANGECBCHAIN = 0x030D

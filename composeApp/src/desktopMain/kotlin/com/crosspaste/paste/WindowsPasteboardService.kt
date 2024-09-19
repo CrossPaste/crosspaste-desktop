@@ -4,6 +4,8 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.platform.windows.api.User32
+import com.crosspaste.platform.windows.api.User32.Companion.SW_HIDE
+import com.crosspaste.platform.windows.api.User32.Companion.WS_POPUP
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.utils.cpuDispatcher
 import com.crosspaste.utils.getControlUtils
@@ -79,9 +81,12 @@ class WindowsPasteboardService(
     private fun run() {
         viewer =
             User32.INSTANCE.CreateWindowEx(
-                0, "STATIC", "", 0, 0, 0, 0, 0,
-                null, 0, 0, null,
+                User32.WS_EX_TRANSPARENT,
+                "STATIC", "",
+                WS_POPUP, 0, 0, 1, 1,
+                null, null, null, null,
             )
+        User32.INSTANCE.ShowWindow(viewer, SW_HIDE)
         nextViewer = User32.INSTANCE.SetClipboardViewer(viewer)
         val currentPlatform = getPlatform()
         if (currentPlatform.is64bit()) {
