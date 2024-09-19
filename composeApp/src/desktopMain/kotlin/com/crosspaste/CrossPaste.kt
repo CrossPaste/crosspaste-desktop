@@ -158,9 +158,11 @@ import com.crosspaste.ui.CrossPasteSearchWindow
 import com.crosspaste.ui.DesktopThemeDetector
 import com.crosspaste.ui.GrantAccessibilityPermissionsWindow
 import com.crosspaste.ui.LinuxTrayView
+import com.crosspaste.ui.LocalExitApplication
+import com.crosspaste.ui.LocalPageViewContent
 import com.crosspaste.ui.MacTrayView
-import com.crosspaste.ui.PageViewContext
-import com.crosspaste.ui.PageViewType
+import com.crosspaste.ui.ScreenContext
+import com.crosspaste.ui.ScreenType
 import com.crosspaste.ui.ThemeDetector
 import com.crosspaste.ui.WindowsTrayView
 import com.crosspaste.ui.base.DesktopDialogService
@@ -521,11 +523,11 @@ class CrossPaste {
                     }
                 }
 
-                val currentPageViewContext = remember { mutableStateOf(PageViewContext(PageViewType.PASTE_PREVIEW)) }
+                val currentScreenContext = remember { mutableStateOf(ScreenContext(ScreenType.PASTE_PREVIEW)) }
 
                 CompositionLocalProvider(
                     LocalExitApplication provides exitApplication,
-                    LocalPageViewContent provides currentPageViewContext,
+                    LocalPageViewContent provides currentScreenContext,
                 ) {
                     val windowIcon: Painter? =
                         if (platform.isMacos()) {

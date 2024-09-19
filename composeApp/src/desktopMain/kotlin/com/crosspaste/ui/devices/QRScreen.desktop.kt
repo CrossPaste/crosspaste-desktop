@@ -40,7 +40,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppTokenService
@@ -52,18 +51,16 @@ import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 
-val qrSize: DpSize = DpSize(275.dp, 275.dp)
-
 @Composable
-fun bindingQRCode() {
+actual fun QRScreen() {
     val copywriter = koinInject<GlobalCopywriter>()
     val appTokenService = koinInject<AppTokenService>()
     val qrCodeGenerator = koinInject<QRCodeGenerator>()
 
     val density = LocalDensity.current
 
-    val width = with(density) { qrSize.width.roundToPx() }
-    val height = with(density) { qrSize.height.roundToPx() }
+    val width = with(density) { qrCodeGenerator.qrSize.width.roundToPx() }
+    val height = with(density) { qrCodeGenerator.qrSize.height.roundToPx() }
 
     var qrImage: ImageBitmap? by remember { mutableStateOf(null) }
 
@@ -143,7 +140,7 @@ fun bindingQRCode() {
                 qrImage?.let {
                     Image(
                         modifier =
-                            Modifier.size(qrSize.width)
+                            Modifier.size(qrCodeGenerator.qrSize.width)
                                 .clip(RoundedCornerShape(10.dp)),
                         bitmap = it,
                         contentDescription = "QR Code",
@@ -161,7 +158,7 @@ fun bindingQRCode() {
                     )
 
                     Box(
-                        modifier = Modifier.size(qrSize.width),
+                        modifier = Modifier.size(qrCodeGenerator.qrSize),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(

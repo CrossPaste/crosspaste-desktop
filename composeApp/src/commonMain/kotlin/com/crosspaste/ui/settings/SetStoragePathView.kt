@@ -32,7 +32,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.LocalExitApplication
 import com.crosspaste.app.AppExitService
 import com.crosspaste.app.AppRestartService
 import com.crosspaste.app.AppWindowManager
@@ -41,6 +40,7 @@ import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.RealmManager
+import com.crosspaste.ui.LocalExitApplication
 import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.DialogButtonsView

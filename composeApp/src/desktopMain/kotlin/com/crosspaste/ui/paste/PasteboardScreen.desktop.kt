@@ -1,4 +1,4 @@
-package com.crosspaste.ui.paste.preview
+package com.crosspaste.ui.paste
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollbarStyle
@@ -56,6 +56,8 @@ import com.crosspaste.paste.PastePreviewService
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.toTop
+import com.crosspaste.ui.paste.preview.PastePreviewItemView
+import com.crosspaste.ui.paste.preview.PasteSpecificPreviewView
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -64,7 +66,7 @@ import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
-fun PastePreviewsView() {
+actual fun PasteboardScreen() {
     val pastePreviewService = koinInject<PastePreviewService>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
 

@@ -8,7 +8,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
-import com.crosspaste.LocalExitApplication
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode

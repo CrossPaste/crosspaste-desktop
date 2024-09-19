@@ -11,8 +11,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
-import com.crosspaste.LocalExitApplication
-import com.crosspaste.LocalPageViewContent
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
@@ -129,7 +127,7 @@ object MacTrayView {
         appWindowManager: DesktopAppWindowManager,
         copywriter: GlobalCopywriter,
         uiSupport: UISupport,
-        currentPage: MutableState<PageViewContext>,
+        currentPage: MutableState<ScreenContext>,
         applicationExit: (ExitMode) -> Unit,
     ): PopupMenu {
         val popup = PopupMenu()
@@ -138,7 +136,7 @@ object MacTrayView {
             createMenuItem(copywriter.getText("settings")) {
                 mainCoroutineDispatcher.launch(CoroutineName("Open settings")) {
                     appWindowManager.activeMainWindow()
-                    currentPage.value = PageViewContext(PageViewType.SETTINGS, currentPage.value)
+                    currentPage.value = ScreenContext(ScreenType.SETTINGS, currentPage.value)
                 }
             },
         )
@@ -147,7 +145,7 @@ object MacTrayView {
             createMenuItem(copywriter.getText("shortcut_keys")) {
                 mainCoroutineDispatcher.launch(CoroutineName("Open shortcut keys")) {
                     appWindowManager.activeMainWindow()
-                    currentPage.value = PageViewContext(PageViewType.SHORTCUT_KEYS, currentPage.value)
+                    currentPage.value = ScreenContext(ScreenType.SHORTCUT_KEYS, currentPage.value)
                 }
             },
         )
@@ -156,7 +154,7 @@ object MacTrayView {
             createMenuItem(copywriter.getText("about")) {
                 mainCoroutineDispatcher.launch(CoroutineName("Open about")) {
                     appWindowManager.activeMainWindow()
-                    currentPage.value = PageViewContext(PageViewType.ABOUT, currentPage.value)
+                    currentPage.value = ScreenContext(ScreenType.ABOUT, currentPage.value)
                 }
             },
         )

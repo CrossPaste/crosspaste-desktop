@@ -1,9 +1,8 @@
-package com.crosspaste
+package com.crosspaste.ui
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.crosspaste.app.ExitMode
-import com.crosspaste.ui.PageViewContext
 
 internal val LocalExitApplication =
     staticCompositionLocalOf<(ExitMode) -> Unit> {
@@ -11,8 +10,8 @@ internal val LocalExitApplication =
     }
 
 internal val LocalPageViewContent =
-    staticCompositionLocalOf<MutableState<PageViewContext>> {
-        noLocalProvidedFor("PageViewContext")
+    staticCompositionLocalOf<MutableState<ScreenContext>> {
+        noLocalProvidedFor("ScreenContext")
     }
 
 private fun noLocalProvidedFor(name: String): Nothing {

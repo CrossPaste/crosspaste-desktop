@@ -31,7 +31,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,8 +60,6 @@ import androidx.compose.ui.window.Popup
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteboardService
-import com.crosspaste.ui.PageViewContext
-import com.crosspaste.ui.WindowDecoration
 import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.ExpandView
 import com.crosspaste.ui.base.MenuItem
@@ -95,7 +92,7 @@ fun SettingsTextStyle() =
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
+fun SettingsContentView() {
     val configManager = koinInject<ConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteboardService = koinInject<PasteboardService>()
@@ -144,8 +141,6 @@ fun SettingsView(currentPageViewContext: MutableState<PageViewContext>) {
                 }
         }
     }
-
-    WindowDecoration(currentPageViewContext, "settings")
 
     Box(
         modifier =

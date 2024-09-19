@@ -1,7 +1,6 @@
-package com.crosspaste.ui
+package com.crosspaste.ui.devices
 
 import androidx.compose.runtime.Composable
 
 @Composable
-fun DebugView() {
-}
+expect fun QRScreen()

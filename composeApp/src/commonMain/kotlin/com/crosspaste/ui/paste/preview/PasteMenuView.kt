@@ -43,15 +43,15 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.crosspaste.LocalPageViewContent
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.realm.paste.PasteType
-import com.crosspaste.ui.PageViewContext
-import com.crosspaste.ui.PageViewType
+import com.crosspaste.ui.LocalPageViewContent
+import com.crosspaste.ui.ScreenContext
+import com.crosspaste.ui.ScreenType
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.MessageType
 import com.crosspaste.ui.base.NotificationManager
@@ -448,8 +448,8 @@ fun MoreMenuItems(
                 if (pasteData.pasteType == PasteType.TEXT) {
                     hideMore()
                     currentPage.value =
-                        PageViewContext(
-                            PageViewType.PASTE_TEXT_EDIT,
+                        ScreenContext(
+                            ScreenType.PASTE_TEXT_EDIT,
                             currentPage.value,
                             pasteData,
                         )

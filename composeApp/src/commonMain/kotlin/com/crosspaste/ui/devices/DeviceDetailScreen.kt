@@ -17,7 +17,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,7 +38,7 @@ import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.sync.SyncManager
-import com.crosspaste.ui.PageViewContext
+import com.crosspaste.ui.LocalPageViewContent
 import com.crosspaste.ui.WindowDecoration
 import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.alertCircle
@@ -49,19 +48,21 @@ import kotlinx.coroutines.runBlocking
 import org.koin.compose.koinInject
 
 @Composable
-fun DeviceDetailView(currentPageViewContext: MutableState<PageViewContext>) {
-    WindowDecoration(currentPageViewContext, "device_detail")
-    DeviceDetailContentView(currentPageViewContext)
+fun DeviceDetailScreen() {
+    WindowDecoration("device_detail")
+    DeviceDetailContentView()
 }
 
 @Composable
-fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext>) {
+fun DeviceDetailContentView() {
+    val currentScreenContext = LocalPageViewContent.current
+
     val appInfo = koinInject<AppInfo>()
     val checker = koinInject<VersionCompatibilityChecker>()
     val copywriter = koinInject<GlobalCopywriter>()
     val syncManager = koinInject<SyncManager>()
 
-    var syncRuntimeInfo by remember { mutableStateOf(currentPageViewContext.value.context as SyncRuntimeInfo) }
+    var syncRuntimeInfo by remember { mutableStateOf(currentScreenContext.value.context as SyncRuntimeInfo) }
 
     val compatibility by remember {
         mutableStateOf(
@@ -69,7 +70,7 @@ fun DeviceDetailContentView(currentPageViewContext: MutableState<PageViewContext
         )
     }
 
-    DeviceConnectView(syncRuntimeInfo, currentPageViewContext, false) { }
+    DeviceConnectView(syncRuntimeInfo, currentScreenContext, false) { }
 
     Column(
         modifier =
