@@ -32,6 +32,7 @@ interface ModuleLoader : Loader<ModuleLoaderConfig, Boolean> {
      * Install module from path to path
      */
     fun installModule(
+        fileName: String,
         downloadPath: Path,
         installPath: Path,
     ): Boolean
@@ -77,7 +78,7 @@ interface ModuleLoader : Loader<ModuleLoaderConfig, Boolean> {
                             return@retry null
                         }
 
-                        if (installModule(downTempPath, installPath)) {
+                        if (installModule(moduleItem.downloadFileName, downTempPath, installPath)) {
                             return@retry true
                         } else {
                             return@retry null
