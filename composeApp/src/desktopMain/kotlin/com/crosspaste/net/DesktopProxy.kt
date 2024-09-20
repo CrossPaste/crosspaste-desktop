@@ -4,6 +4,7 @@ import com.crosspaste.utils.getSystemProperty
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.IOException
+import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Proxy
 import java.net.ProxySelector
@@ -54,14 +55,16 @@ object DesktopProxy {
         }
     }
 
-    fun isProxyWorking(address: InetSocketAddress): Boolean {
+    private fun isProxyWorking(address: InetSocketAddress): Boolean {
         return try {
             Socket().use { socket ->
-                socket.connect(address, 5000) // 5 seconds timeout
+                val inetAddress = InetAddress.getByName(address.hostName)
+                val validAddress = InetSocketAddress(inetAddress, address.port)
+                socket.connect(validAddress, 5000)
                 true
             }
         } catch (e: IOException) {
-            logger.warn { "Proxy test failed: ${e.message}" }
+            logger.warn(e) { "Proxy test failed" }
             false
         }
     }
