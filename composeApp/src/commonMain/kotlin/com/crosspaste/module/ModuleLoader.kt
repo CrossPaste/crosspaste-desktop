@@ -54,42 +54,52 @@ interface ModuleLoader : Loader<ModuleLoaderConfig, Boolean> {
 
     override fun load(value: ModuleLoaderConfig): Boolean {
         val installPath = value.installPath
-        for (moduleItem in value.moduleItems) {
-            val urls = moduleItem.getUrls()
-            val installResult: Boolean? =
-                retryUtils.retry(value.retryNumber) {
-                    val downTempPath = userDataPathProvider.resolve(moduleItem.downloadFileName, AppFileType.TEMP)
-                    if (!fileUtils.existFile(downTempPath)) {
-                        if (!downloadModule(urls[it], downTempPath)) {
+
+        if (!installed(installPath)) {
+            for (moduleItem in value.moduleItems) {
+                val urls = moduleItem.getUrls()
+                val installResult: Boolean? =
+                    retryUtils.retry(value.retryNumber) {
+                        val downTempPath =
+                            userDataPathProvider.resolve(
+                                moduleItem.downloadFileName,
+                                AppFileType.TEMP,
+                            )
+                        if (!fileUtils.existFile(downTempPath)) {
+                            if (!downloadModule(urls[it], downTempPath)) {
+                                fileUtils.deleteFile(downTempPath)
+                                return@retry null
+                            }
+                        }
+
+                        if (!verifyInstall(downTempPath, moduleItem.sha256)) {
                             fileUtils.deleteFile(downTempPath)
+                            return@retry null
+                        }
+
+                        if (installModule(downTempPath, installPath)) {
+                            return@retry true
+                        } else {
                             return@retry null
                         }
                     }
 
-                    if (!verifyInstall(downTempPath, moduleItem.sha256)) {
-                        fileUtils.deleteFile(downTempPath)
-                        return@retry null
-                    }
-
-                    if (installModule(downTempPath, installPath)) {
-                        return@retry true
-                    } else {
-                        return@retry null
-                    }
+                if (installResult != true) {
+                    return false
                 }
-
-            if (installResult != true) {
-                return false
             }
+            makeInstalled(installPath)
         }
 
-        makeInstalled(installPath)
-
-        for (moduleItem in value.moduleItems) {
-            val downTempPath = userDataPathProvider.resolve(moduleItem.downloadFileName, AppFileType.TEMP)
-            fileUtils.deleteFile(downTempPath)
+        if (installed(installPath)) {
+            for (moduleItem in value.moduleItems) {
+                val downTempPath =
+                    userDataPathProvider.resolve(moduleItem.downloadFileName, AppFileType.TEMP)
+                fileUtils.deleteFile(downTempPath)
+            }
+            return true
+        } else {
+            return false
         }
-
-        return true
     }
 }

@@ -99,20 +99,8 @@ class DesktopChromeService(
         val chromeServiceModule = ChromeServiceServiceModule(chromeDriverProperties)
 
         val optLoaderConfig = chromeServiceModule.getModuleLoaderConfig()
-        optLoaderConfig?.let { loaderConfig ->
-            if (chromeModuleLoader.installed(loaderConfig.installPath)) {
-                startByLoaderModule(loaderConfig)
-                startSuccess = true
-                return
-            }
-        }
 
         try {
-            chromeDriverService = ChromeDriverService.createDefaultService()
-            chromeDriver = ChromeDriver(chromeDriverService, options)
-            startSuccess = true
-        } catch (e: Exception) {
-            logger.error(e) { "chromeDriver auto init fail" }
             optLoaderConfig?.let { loaderConfig ->
                 if (chromeModuleLoader.load(loaderConfig)) {
                     startByLoaderModule(loaderConfig)
@@ -120,6 +108,7 @@ class DesktopChromeService(
                     return
                 }
             }
+        } catch (e: Exception) {
             startSuccess = false
             return
         }
