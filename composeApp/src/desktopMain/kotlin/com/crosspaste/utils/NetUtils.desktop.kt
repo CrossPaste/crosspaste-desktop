@@ -20,48 +20,40 @@ object DesktopNetUtils : NetUtils {
 
     private val preferredLocalIPAddress = ValueProvider<String?>()
 
-    // Check if the given address is a private IP address
-    private fun isPrivateAddress(
-        address: InetAddress,
-        prefixLength: Short,
-    ): Boolean {
-        if (address !is Inet4Address) return false
-        val ip = address.address
-        return when {
-            prefixLength >= 8 &&
-                ip[0] == 10.toByte() -> true // 10.0.0.0/8
-            prefixLength >= 12 &&
-                ip[0] == 172.toByte() &&
-                ip[1].toInt() and 0xFF in 16..31 -> true // 172.16.0.0/12
-            prefixLength >= 16 &&
-                ip[0] == 192.toByte() &&
-                ip[1] == 168.toByte() -> true // 192.168.0.0/16
-            // Add other special-use addresses if needed
-            else -> false
-        }
-    }
-
     // Get all potential local IP addresses
     private fun getAllLocalAddresses(): Sequence<Pair<HostInfo, String>> {
-        return Collections.list(NetworkInterface.getNetworkInterfaces())
+        val networkInterfaces = Collections.list(NetworkInterface.getNetworkInterfaces())
+
+        networkInterfaces.forEach { nic ->
+            logger.info { "Network interface: ${nic.name}" }
+            nic.interfaceAddresses.forEach { addr ->
+                logger.info { "\t\tInterface address: ${addr.address.hostAddress}" }
+            }
+        }
+
+        return networkInterfaces
             .asSequence()
             .filter { it.isUp && !it.isLoopback && !it.isVirtual }
             .flatMap { nic ->
                 nic.interfaceAddresses.asSequence().map { Pair(it, nic.name) }
             }
-            .filter { (addr, _) -> addr.address is Inet4Address && addr.address.hostAddress != null }
+            .filter { (addr, _) ->
+                val address = addr.address
+                if (address is Inet4Address) {
+                    val hostAddress = address.hostAddress
+                    hostAddress != null &&
+                        !hostAddress.endsWith(".0") &&
+                        !hostAddress.endsWith(".1") &&
+                        !hostAddress.endsWith(".255")
+                } else {
+                    false
+                }
+            }
             .map { (addr, nicName) ->
                 HostInfo().apply {
                     networkPrefixLength = addr.networkPrefixLength
                     hostAddress = addr.address.hostAddress!!
                 } to nicName
-            }
-            .filter { (hostInfo, _) ->
-                val address = InetAddress.getByName(hostInfo.hostAddress)
-                isPrivateAddress(address, hostInfo.networkPrefixLength) &&
-                    !hostInfo.hostAddress.endsWith(".0") &&
-                    !hostInfo.hostAddress.endsWith(".1") &&
-                    !hostInfo.hostAddress.endsWith(".255")
             }
     }
 
