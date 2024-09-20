@@ -15,21 +15,23 @@ class ChromeModuleLoader(
     override val logger: KLogger = KotlinLogging.logger {}
 
     override fun installModule(
+        fileName: String,
         downloadPath: Path,
         installPath: Path,
     ): Boolean {
         if (!downloadPath.toString().lowercase().endsWith(".zip")) {
-            logger.error { "Error: Downloaded file is not a zip archive" }
+            logger.error { "Error: Downloaded $fileName is not a zip archive" }
             return false
         }
 
         try {
-            // Decompress the downloaded file to installPath, this function needs to be idempotent and can be executed repeatedly
+            // Decompress the downloaded file to installPath,
+            // this function needs to be idempotent and can be executed repeatedly
             unzipFile(downloadPath, installPath)
-            logger.info { "Module installed successfully" }
+            logger.info { "$fileName installed successfully" }
             return true
         } catch (e: Exception) {
-            logger.error { "Error during module installation: ${e.message}" }
+            logger.error { "Error during $fileName installation: ${e.message}" }
             return false
         }
     }
