@@ -24,7 +24,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
-import com.crosspaste.CrossPaste.Companion.koinApplication
+import com.crosspaste.app.AppTokenService
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
 import com.crosspaste.app.ExitMode
@@ -46,8 +46,8 @@ fun CrossPasteMainWindow(
     exitApplication: (ExitMode) -> Unit,
     windowIcon: Painter?,
 ) {
-    val appWindowManager = koinApplication.koin.get<DesktopAppWindowManager>()
-    val globalListener = koinApplication.koin.get<GlobalListener>()
+    val appWindowManager = koinInject<DesktopAppWindowManager>()
+    val globalListener = koinInject<GlobalListener>()
 
     Window(
         onCloseRequest = { exitApplication(ExitMode.EXIT) },
@@ -97,6 +97,7 @@ fun CrossPasteMainWindow(
 @Composable
 fun CrossPasteMainWindowContent(hideWindow: suspend () -> Unit) {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
+    val appTokenService = koinInject<AppTokenService>()
     val toastManager = koinInject<ToastManager>()
     val dialogService = koinInject<DialogService>()
     val globalCoroutineScope = koinInject<GlobalCoroutineScope>()
@@ -169,7 +170,10 @@ fun CrossPasteMainWindowContent(hideWindow: suspend () -> Unit) {
                 }
 
                 dialogService.dialogs.firstOrNull()?.content()
-                TokenView()
+
+                if (appTokenService.showToken) {
+                    TokenView()
+                }
             }
         }
     }
