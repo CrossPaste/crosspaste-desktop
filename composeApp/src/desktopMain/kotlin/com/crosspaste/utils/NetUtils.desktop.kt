@@ -74,17 +74,15 @@ object DesktopNetUtils : NetUtils {
     }
 
     override fun getHostInfoList(hostInfoFilter: (HostInfo) -> Boolean): List<HostInfo> {
-        return hostListProvider.getValue {
-            val list =
+        val list =
+            hostListProvider.getValue {
                 sortAddresses(getAllLocalAddresses())
                     .map { it.first }
-                    .filter(hostInfoFilter)
                     .toList()
-            for (hostInfo in list) {
-                logger.info { "Local IP address: ${hostInfo.hostAddress}" }
-            }
-            list
-        } ?: listOf()
+            } ?: listOf()
+        val hostInfoList = list.filter(hostInfoFilter)
+        logger.info { "getHostInfoList: $hostInfoList" }
+        return hostInfoList
     }
 
     override fun hostPreFixMatch(
