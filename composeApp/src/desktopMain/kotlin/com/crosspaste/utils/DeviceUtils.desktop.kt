@@ -2,6 +2,7 @@ package com.crosspaste.utils
 
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.platform.macos.MacDeviceUtils
+import com.sun.jna.platform.win32.Kernel32Util
 import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
@@ -14,22 +15,33 @@ actual fun getDeviceUtils(): DeviceUtils {
 
 object DesktopDeviceUtils : DeviceUtils {
 
-    override fun createAppInstanceId(): String {
-        return if (getPlatform().isWindows()) {
-            WindowsDeviceUtils.createAppInstanceId()
+    private val deviceUtils =
+        if (getPlatform().isWindows()) {
+            WindowsDeviceUtils
         } else if (getPlatform().isMacos()) {
-            MacosDeviceUtils.createAppInstanceId()
+            MacosDeviceUtils
         } else if (getPlatform().isLinux()) {
-            LinuxDeviceUtils.createAppInstanceId()
+            LinuxDeviceUtils
         } else {
             throw IllegalStateException("Unknown platform: ${getPlatform().name}")
         }
+
+    override fun createAppInstanceId(): String {
+        return deviceUtils.createAppInstanceId()
+    }
+
+    override fun getDeviceId(): String {
+        return deviceUtils.getDeviceId()
+    }
+
+    override fun getDeviceName(): String {
+        return deviceUtils.getDeviceName()
     }
 }
 
 object WindowsDeviceUtils : DeviceUtils {
 
-    override fun createAppInstanceId(): String {
+    private fun getProductUUID(): String? {
         try {
             val command = "wmic csproduct get UUID"
             val process = Runtime.getRuntime().exec(command)
@@ -43,7 +55,19 @@ object WindowsDeviceUtils : DeviceUtils {
         } catch (e: IOException) {
             e.printStackTrace()
         }
-        return UUID.randomUUID().toString()
+        return null
+    }
+
+    override fun createAppInstanceId(): String {
+        return getProductUUID() ?: UUID.randomUUID().toString()
+    }
+
+    override fun getDeviceId(): String {
+        return getProductUUID() ?: "Unknown"
+    }
+
+    override fun getDeviceName(): String {
+        return Kernel32Util.getComputerName()
     }
 }
 
@@ -52,16 +76,40 @@ object MacosDeviceUtils : DeviceUtils {
     override fun createAppInstanceId(): String {
         return MacDeviceUtils.getHardwareUUID() ?: UUID.randomUUID().toString()
     }
+
+    override fun getDeviceId(): String {
+        return MacDeviceUtils.getHardwareUUID() ?: "Unknown"
+    }
+
+    override fun getDeviceName(): String {
+        return MacDeviceUtils.getComputerName() ?: "Unknown"
+    }
 }
 
 object LinuxDeviceUtils : DeviceUtils {
 
-    override fun createAppInstanceId(): String {
+    private fun getMachineId(): String? {
         val file = File("/etc/machine-id")
         return if (file.exists()) {
             file.readText().trim()
         } else {
-            UUID.randomUUID().toString()
+            null
         }
+    }
+
+    override fun createAppInstanceId(): String {
+        return getMachineId() ?: UUID.randomUUID().toString()
+    }
+
+    override fun getDeviceId(): String {
+        return getMachineId() ?: "Unknown"
+    }
+
+    override fun getDeviceName(): String {
+        val process = Runtime.getRuntime().exec("hostname")
+        val reader = BufferedReader(InputStreamReader(process.inputStream))
+        val hostName = reader.readLine()
+        reader.close()
+        return hostName
     }
 }
