@@ -21,31 +21,30 @@ object DesktopNetUtils : NetUtils {
     private val preferredLocalIPAddress = ValueProvider<String?>()
 
     // Get all potential local IP addresses
-    private fun getAllLocalAddresses(): Sequence<Pair<HostInfo, String>> {
-        val networkInterfaces = Collections.list(NetworkInterface.getNetworkInterfaces())
-
-        networkInterfaces.forEach { nic ->
-            logger.info { "Network interface: ${nic.name}" }
-            nic.interfaceAddresses.forEach { addr ->
-                logger.info { "\t\tInterface address: ${addr.address.hostAddress}" }
-            }
-        }
-
-        return networkInterfaces
+    fun getAllLocalAddresses(): Sequence<Pair<HostInfo, String>> {
+        return Collections.list(NetworkInterface.getNetworkInterfaces())
             .asSequence()
             .filter { it.isUp && !it.isLoopback && !it.isVirtual }
             .flatMap { nic ->
                 nic.interfaceAddresses.asSequence().map { Pair(it, nic.name) }
             }
-            .filter { (addr, _) ->
+            .filter { (addr, nicName) ->
                 val address = addr.address
                 if (address is Inet4Address) {
                     val hostAddress = address.hostAddress
-                    hostAddress != null &&
-                        !hostAddress.endsWith(".0") &&
-                        !hostAddress.endsWith(".1") &&
-                        !hostAddress.endsWith(".255")
+                    val networkPrefixLength = addr.networkPrefixLength
+                    val isLocalAddress =
+                        hostAddress != null &&
+                            !hostAddress.endsWith(".0") &&
+                            !hostAddress.endsWith(".1") &&
+                            !hostAddress.endsWith(".255")
+                    logger.info {
+                        "get local address, Network interface: $nicName " +
+                            "address: $hostAddress networkPrefixLength: $networkPrefixLength"
+                    }
+                    isLocalAddress
                 } else {
+                    logger.info { "Network interface: $nicName is not local address" }
                     false
                 }
             }
@@ -121,5 +120,10 @@ object DesktopNetUtils : NetUtils {
                 null
             }
         }
+    }
+
+    override fun clearProviderCache() {
+        hostListProvider.clear()
+        preferredLocalIPAddress.clear()
     }
 }
