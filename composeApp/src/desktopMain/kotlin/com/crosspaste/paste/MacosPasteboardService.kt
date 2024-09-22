@@ -5,6 +5,7 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.platform.macos.api.MacosApi
 import com.crosspaste.realm.paste.PasteRealm
+import com.crosspaste.sound.SoundService
 import com.crosspaste.utils.cpuDispatcher
 import com.crosspaste.utils.getControlUtils
 import com.sun.jna.ptr.IntByReference
@@ -29,6 +30,7 @@ class MacosPasteboardService(
     override val currentPaste: CurrentPaste,
     override val pasteConsumer: TransferableConsumer,
     override val pasteProducer: TransferableProducer,
+    override val soundService: SoundService,
 ) : AbstractPasteboardService() {
     override val logger: KLogger = KotlinLogging.logger {}
 

@@ -17,6 +17,7 @@ import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.realm.task.PasteTask
 import com.crosspaste.realm.task.TaskType
+import com.crosspaste.sound.SoundService
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.extra.PullExtraInfo
 import com.crosspaste.utils.DateUtils
@@ -35,9 +36,10 @@ class PullFileTaskExecutor(
     private val pasteRealm: PasteRealm,
     private val pullClientApi: PullClientApi,
     private val userDataPathProvider: UserDataPathProvider,
-    private val syncManager: SyncManager,
     private val pasteSyncProcessManager: PasteSyncProcessManager<ObjectId>,
     private val pasteboardService: PasteboardService,
+    private val soundService: SoundService,
+    private val syncManager: SyncManager,
 ) : SingleTypeTaskExecutor {
 
     companion object PullFileTaskExecutor {
@@ -177,6 +179,7 @@ class PullFileTaskExecutor(
         } else {
             pasteSyncProcessManager.cleanProcess(pasteData.id)
             pasteboardService.tryWriteRemotePasteboardWithFile(pasteData)
+            soundService.successSound()
             SuccessPasteTaskResult()
         }
     }
@@ -192,6 +195,7 @@ class PullFileTaskExecutor(
         if (!needRetry) {
             logger.error { "exist pull chunk fail" }
             pasteboardService.clearRemotePasteboard(pasteData)
+            soundService.errorSound()
         }
 
         return TaskUtils.createFailurePasteTaskResult(

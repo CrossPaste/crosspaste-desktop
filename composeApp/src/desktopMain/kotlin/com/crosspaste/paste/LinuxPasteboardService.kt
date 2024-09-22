@@ -6,6 +6,7 @@ import com.crosspaste.platform.linux.api.X11Api
 import com.crosspaste.platform.linux.api.XFixes
 import com.crosspaste.platform.linux.api.XFixesSelectionNotifyEvent
 import com.crosspaste.realm.paste.PasteRealm
+import com.crosspaste.sound.SoundService
 import com.crosspaste.utils.cpuDispatcher
 import com.crosspaste.utils.getControlUtils
 import com.sun.jna.NativeLong
@@ -32,6 +33,7 @@ class LinuxPasteboardService(
     override val currentPaste: CurrentPaste,
     override val pasteConsumer: TransferableConsumer,
     override val pasteProducer: TransferableProducer,
+    override val soundService: SoundService,
 ) : AbstractPasteboardService() {
 
     companion object {

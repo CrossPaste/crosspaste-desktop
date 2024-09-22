@@ -3,6 +3,7 @@ package com.crosspaste.paste
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteItem
+import com.crosspaste.sound.SoundService
 import org.mongodb.kbson.ObjectId
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.ClipboardOwner
@@ -19,6 +20,8 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
     abstract val pasteConsumer: TransferableConsumer
 
     abstract val pasteProducer: TransferableProducer
+
+    abstract val soundService: SoundService
 
     abstract val currentPaste: CurrentPaste
 
@@ -96,8 +99,10 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
         val enablePasteboardListening = configManager.config.enablePasteboardListening
         if (enablePasteboardListening) {
             stop()
+            soundService.disablePasteboardListening()
         } else {
             start()
+            soundService.enablePasteboardListening()
         }
         configManager.updateConfig("enablePasteboardListening", !enablePasteboardListening)
     }

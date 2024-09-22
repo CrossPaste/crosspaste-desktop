@@ -5,6 +5,7 @@ import com.crosspaste.config.ConfigManager
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.platform.windows.api.User32
 import com.crosspaste.realm.paste.PasteRealm
+import com.crosspaste.sound.SoundService
 import com.crosspaste.utils.cpuDispatcher
 import com.crosspaste.utils.getControlUtils
 import com.crosspaste.utils.ioDispatcher
@@ -33,6 +34,7 @@ class WindowsPasteboardService(
     override val currentPaste: CurrentPaste,
     override val pasteConsumer: TransferableConsumer,
     override val pasteProducer: TransferableProducer,
+    override val soundService: SoundService,
 ) : AbstractPasteboardService(), User32.WNDPROC {
     override val logger: KLogger = KotlinLogging.logger {}
 
