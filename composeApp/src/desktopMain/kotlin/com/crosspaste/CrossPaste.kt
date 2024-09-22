@@ -141,6 +141,8 @@ import com.crosspaste.signal.SignalProcessorCache
 import com.crosspaste.signal.SignalProcessorCacheImpl
 import com.crosspaste.signal.SignalProtocolStoreInterface
 import com.crosspaste.signal.getPasteIdentityKeyStoreFactory
+import com.crosspaste.sound.DesktopSoundService
+import com.crosspaste.sound.SoundService
 import com.crosspaste.sync.DesktopQRCodeGenerator
 import com.crosspaste.sync.DeviceListener
 import com.crosspaste.sync.DeviceManager
@@ -326,7 +328,9 @@ class CrossPaste {
                     single<HtmlTypePlugin> { HtmlTypePlugin(get()) }
                     single<ImageDataLoader> { DesktopImageDataLoader(get()) }
                     single<ImageTypePlugin> { ImageTypePlugin(get(), get(), get()) }
-                    single<PasteboardService> { getDesktopPasteboardService(get(), get(), get(), get(), get(), get()) }
+                    single<PasteboardService> {
+                        getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get())
+                    }
                     single<PastePreviewService> { DesktopPastePreviewService(get()) }
                     single<PasteSearchService> { get<DesktopPasteSearchService>() }
                     single<PasteSyncProcessManager<ObjectId>> { DefaultPasteSyncProcessManager() }
@@ -335,7 +339,7 @@ class CrossPaste {
                             listOf(
                                 SyncPasteTaskExecutor(get(), get(), get()),
                                 DeletePasteTaskExecutor(get()),
-                                PullFileTaskExecutor(get(), get(), get(), get(), get(), get()),
+                                PullFileTaskExecutor(get(), get(), get(), get(), get(), get(), get()),
                                 CleanPasteTaskExecutor(get(), get()),
                                 Html2ImageTaskExecutor(lazy { get() }, get(), get(), get()),
                                 PullIconTaskExecutor(get(), get(), get(), get()),
@@ -392,11 +396,12 @@ class CrossPaste {
                     single<IconStyle> { DesktopIconStyle(get(), get()) }
                     single<NativeKeyListener> { get<DesktopShortcutKeysListener>() }
                     single<NativeMouseListener> { get<DesktopMouseListener>() }
-                    single<NotificationManager> { DesktopNotificationManager(get(), get()) }
+                    single<NotificationManager> { DesktopNotificationManager(get(), get(), get()) }
                     single<ShortcutKeys> { DesktopShortcutKeys(get()) }
                     single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get(), get()) }
                     single<ShortcutKeysListener> { get<DesktopShortcutKeysListener>() }
                     single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get()) }
+                    single<SoundService> { DesktopSoundService }
                     single<ThemeDetector> { DesktopThemeDetector(get()) }
                     single<ToastManager> { DesktopToastManager() }
                     single<UISupport> { DesktopUISupport(get(), get(), get(), get()) }

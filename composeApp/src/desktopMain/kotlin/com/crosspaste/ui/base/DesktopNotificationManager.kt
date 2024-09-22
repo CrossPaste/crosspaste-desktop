@@ -5,9 +5,11 @@ import com.crosspaste.app.AppName
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.platform.linux.api.NotificationSender.sendNotification
+import com.crosspaste.sound.SoundService
 
 class DesktopNotificationManager(
     private val appWindowManager: DesktopAppWindowManager,
+    private val soundService: SoundService,
     private val toastManager: ToastManager,
 ) : NotificationManager {
 
@@ -27,6 +29,9 @@ class DesktopNotificationManager(
             sendNotification(AppName, message)
         } else {
             notifyTray(title ?: AppName, message, messageType)
+        }
+        if (messageType == MessageType.Error) {
+            soundService.errorSound()
         }
     }
 
