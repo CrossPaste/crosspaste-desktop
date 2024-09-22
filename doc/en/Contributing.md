@@ -31,6 +31,7 @@ To ensure high-quality code, we have the following pull request guidelines:
 - Ensure your code follows the project's coding style (you can run `gradle ktlintFormat` to automatically fix some code style issues)
 - Provide adequate test coverage
 - Describe your changes in detail in the pull request description
+- Use the project's [commit message style](CommitMessage.md)
 
 ## Contact Information
 If you have any questions or need further assistance, please contact us:
