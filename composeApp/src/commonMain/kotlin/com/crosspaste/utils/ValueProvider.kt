@@ -14,4 +14,8 @@ class ValueProvider<T> {
             lastSuccessfulValue
         }
     }
+
+    fun clear() {
+        lastSuccessfulValue = null
+    }
 }

@@ -379,6 +379,12 @@ tasks.withType<Test> {
         showCauses = true
         showStackTraces = true
     }
+    jvmArgs(
+        "--add-opens",
+        "java.base/java.net=ALL-UNNAMED",
+        "--add-opens",
+        "java.base/java.lang.reflect=ALL-UNNAMED",
+    )
 }
 
 // region Work around temporary Compose bugs.

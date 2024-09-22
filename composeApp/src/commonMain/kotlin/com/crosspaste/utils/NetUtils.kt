@@ -15,4 +15,6 @@ interface NetUtils {
     ): Boolean
 
     fun getPreferredLocalIPAddress(): String?
+
+    fun clearProviderCache()
 }
