@@ -4,7 +4,7 @@ interface SoundService {
 
     fun errorSound()
 
-    fun syncFileCompleteSound()
+    fun successSound()
 
     fun enablePasteboardListening()
 

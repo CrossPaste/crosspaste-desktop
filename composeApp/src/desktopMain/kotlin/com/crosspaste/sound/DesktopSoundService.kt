@@ -23,13 +23,13 @@ object DesktopSoundService : SoundService {
 
     private const val ERROR_SOUND_PATH = "sound/Basso.wav"
 
-    private const val SYNC_FILE_COMPLETE_SOUND_PATH = "sound/Blow.wav"
+    private const val SUCCESS_SOUND_PATH = "sound/Blow.wav"
 
     private const val ENABLE_PASTEBOARD_LISTENING_SOUND_PATH = "sound/Glass.wav"
 
     private const val DISABLE_PASTEBOARD_LISTENING_SOUND_PATH = "sound/Pop.wav"
 
-    fun playSound(filePath: String) {
+    private fun playSound(filePath: String) {
         scope.launch {
             try {
                 withContext(ioDispatcher) {
@@ -69,8 +69,8 @@ object DesktopSoundService : SoundService {
         playSound(ERROR_SOUND_PATH)
     }
 
-    override fun syncFileCompleteSound() {
-        playSound(SYNC_FILE_COMPLETE_SOUND_PATH)
+    override fun successSound() {
+        playSound(SUCCESS_SOUND_PATH)
     }
 
     override fun enablePasteboardListening() {

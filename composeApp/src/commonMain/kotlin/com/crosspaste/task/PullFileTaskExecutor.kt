@@ -179,7 +179,7 @@ class PullFileTaskExecutor(
         } else {
             pasteSyncProcessManager.cleanProcess(pasteData.id)
             pasteboardService.tryWriteRemotePasteboardWithFile(pasteData)
-            soundService.syncFileCompleteSound()
+            soundService.successSound()
             SuccessPasteTaskResult()
         }
     }

@@ -32,6 +32,8 @@ class DesktopNotificationManager(
         }
         if (messageType == MessageType.Error) {
             soundService.errorSound()
+        } else if (messageType == MessageType.Success) {
+            soundService.successSound()
         }
     }
 
