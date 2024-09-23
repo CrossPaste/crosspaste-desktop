@@ -100,10 +100,14 @@ object DesktopNetUtils : NetUtils {
                 hostInfo.networkPrefixLength
             }.thenByDescending { (hostInfo, _) ->
                 // Then sort by the last octet of the IP address
-                hostInfo.hostAddress.split(".").last().toIntOrNull() ?: 0
+                hostInfo.hostAddress.split(".").lastOrNull()?.toIntOrNull() ?: Int.MIN_VALUE
             }.thenBy { (_, nicName) ->
                 // Prefer network interfaces named eth* or en*
-                if (nicName.startsWith("eth") || nicName.startsWith("en")) 0 else 1
+                when {
+                    nicName.startsWith("eth") -> 0
+                    nicName.startsWith("en") -> 1
+                    else -> 2
+                }
             },
         )
     }
