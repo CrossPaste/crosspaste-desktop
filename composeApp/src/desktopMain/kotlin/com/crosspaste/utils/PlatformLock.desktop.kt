@@ -10,8 +10,8 @@ actual fun createPlatformLock(): PlatformLock {
 class DesktopPlatformLock : PlatformLock {
     private val lock = ReentrantLock()
 
-    override fun withLock(action: () -> Unit) {
-        lock.withLock(action)
+    override fun <T> withLock(action: () -> T): T {
+        return lock.withLock(action)
     }
 
     override fun lock() {

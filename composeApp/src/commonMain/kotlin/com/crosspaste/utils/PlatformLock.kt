@@ -7,5 +7,5 @@ interface PlatformLock {
 
     fun unlock()
 
-    fun withLock(action: () -> Unit)
+    fun <T> withLock(action: () -> T): T
 }

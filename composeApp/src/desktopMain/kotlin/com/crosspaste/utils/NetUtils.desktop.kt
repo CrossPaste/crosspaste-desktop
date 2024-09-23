@@ -4,7 +4,9 @@ import com.crosspaste.realm.sync.HostInfo
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.net.Inet4Address
 import java.net.InetAddress
+import java.net.InterfaceAddress
 import java.net.NetworkInterface
+import java.net.SocketException
 import java.nio.ByteBuffer
 import java.util.Collections
 
@@ -16,44 +18,78 @@ object DesktopNetUtils : NetUtils {
 
     private val logger = KotlinLogging.logger {}
 
+    private const val INVALID_END_OCTET_0 = ".0"
+    private const val INVALID_END_OCTET_1 = ".1"
+    private const val INVALID_END_OCTET_255 = ".255"
+
     private val hostListProvider = ValueProvider<List<HostInfo>>()
 
     private val preferredLocalIPAddress = ValueProvider<String?>()
+
+    private fun isValidLocalAddress(hostAddress: String): Boolean =
+        hostAddress.isNotEmpty() &&
+            !hostAddress.endsWith(INVALID_END_OCTET_0) &&
+            !hostAddress.endsWith(INVALID_END_OCTET_1) &&
+            !hostAddress.endsWith(INVALID_END_OCTET_255)
 
     // Get all potential local IP addresses
     fun getAllLocalAddresses(): Sequence<Pair<HostInfo, String>> {
         return Collections.list(NetworkInterface.getNetworkInterfaces())
             .asSequence()
-            .filter { it.isUp && !it.isLoopback && !it.isVirtual }
+            .mapNotNull { nic ->
+                try {
+                    if (!nic.isUp || nic.isLoopback || nic.isVirtual) {
+                        null
+                    } else {
+                        nic
+                    }
+                } catch (e: SocketException) {
+                    logger.warn(e) { "Failed to check network interface status: ${nic.name}" }
+                    null
+                }
+            }
             .flatMap { nic ->
                 nic.interfaceAddresses.asSequence().map { Pair(it, nic.name) }
             }
-            .filter { (addr, nicName) ->
-                val address = addr.address
-                if (address is Inet4Address) {
-                    val hostAddress = address.hostAddress
-                    val networkPrefixLength = addr.networkPrefixLength
-                    val isLocalAddress =
-                        hostAddress != null &&
-                            !hostAddress.endsWith(".0") &&
-                            !hostAddress.endsWith(".1") &&
-                            !hostAddress.endsWith(".255")
-                    logger.info {
-                        "get local address, Network interface: $nicName " +
-                            "address: $hostAddress networkPrefixLength: $networkPrefixLength"
-                    }
-                    isLocalAddress
-                } else {
-                    logger.info { "Network interface: $nicName is not local address" }
-                    false
+            .mapNotNull { (addr, nicName) ->
+                try {
+                    processAddress(addr, nicName)
+                } catch (e: Exception) {
+                    logger.warn(e) { "Failed to process address for interface: $nicName" }
+                    null
                 }
             }
-            .map { (addr, nicName) ->
-                HostInfo().apply {
-                    networkPrefixLength = addr.networkPrefixLength
-                    hostAddress = addr.address.hostAddress!!
-                } to nicName
+    }
+
+    private fun processAddress(
+        addr: InterfaceAddress,
+        nicName: String,
+    ): Pair<HostInfo, String>? {
+        val address = addr.address
+        if (address !is Inet4Address) {
+            return null
+        }
+
+        val hostAddress = address.hostAddress ?: return null
+        val networkPrefixLength = addr.networkPrefixLength
+
+        if (!isValidLocalAddress(hostAddress)) {
+            logger.debug {
+                "Not a local address, Network interface: $nicName " +
+                    "address: $hostAddress networkPrefixLength: $networkPrefixLength"
             }
+            return null
+        }
+
+        logger.info {
+            "Local address found, Network interface: $nicName " +
+                "address: $hostAddress networkPrefixLength: $networkPrefixLength"
+        }
+
+        return HostInfo().apply {
+            this.networkPrefixLength = networkPrefixLength
+            this.hostAddress = hostAddress
+        } to nicName
     }
 
     // Sort the addresses based on preference
@@ -64,10 +100,14 @@ object DesktopNetUtils : NetUtils {
                 hostInfo.networkPrefixLength
             }.thenByDescending { (hostInfo, _) ->
                 // Then sort by the last octet of the IP address
-                hostInfo.hostAddress.split(".").last().toIntOrNull() ?: 0
+                hostInfo.hostAddress.split(".").lastOrNull()?.toIntOrNull() ?: Int.MIN_VALUE
             }.thenBy { (_, nicName) ->
                 // Prefer network interfaces named eth* or en*
-                if (nicName.startsWith("eth") || nicName.startsWith("en")) 0 else 1
+                when {
+                    nicName.startsWith("eth") -> 0
+                    nicName.startsWith("en") -> 1
+                    else -> 2
+                }
             },
         )
     }
