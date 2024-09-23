@@ -129,6 +129,7 @@ fun Routing.syncRouting(
             if (!sameToken) {
                 logger.error { "token invalid: ${requestTrust.token}" }
                 failResponse(call, StandardErrorCode.TOKEN_INVALID.toErrorCode())
+                return@let
             }
 
             val signalAddress = SignalAddress(appInstanceId, 1)
