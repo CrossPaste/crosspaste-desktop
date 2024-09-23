@@ -58,34 +58,36 @@ fun Routing.syncRouting(
 
     post("/sync/createSession") {
         getAppInstanceId(call)?.let { appInstanceId ->
-            val dataContent = call.receive(DataContent::class)
-            val bytes = dataContent.data
-            signalProcessorCache.removeSignalMessageProcessor(appInstanceId)
-            val processor = signalProcessorCache.getSignalMessageProcessor(appInstanceId)
-            val preKeySignalMessage = preKeySignalMessageFactory.createPreKeySignalMessage(bytes)
+            try {
+                val dataContent = call.receive(DataContent::class)
+                val bytes = dataContent.data
+                signalProcessorCache.removeSignalMessageProcessor(appInstanceId)
+                val processor = signalProcessorCache.getSignalMessageProcessor(appInstanceId)
+                val preKeySignalMessage =
+                    preKeySignalMessageFactory.createPreKeySignalMessage(bytes)
 
-            val signedPreKeyId = preKeySignalMessage.getSignedPreKeyId()
+                val signedPreKeyId = preKeySignalMessage.getSignedPreKeyId()
+                val containsSignedPreKey = signalProtocolStore.containsSignedPreKey(signedPreKeyId)
 
-            if (signalProtocolStore.containsSignedPreKey(signedPreKeyId)) {
+                if (!containsSignedPreKey) {
+                    logger.error { "$appInstanceId createSession to ${appInfo.appInstanceId}, not contain signedPreKeyId" }
+                    failResponse(call, StandardErrorCode.SIGNAL_INVALID_KEY_ID.toErrorCode())
+                    return@let
+                }
+
                 signalProtocolStore.saveIdentity(
                     processor.getSignalAddress(),
                     preKeySignalMessage,
                 )
                 val decrypt = processor.decryptPreKeySignalMessage(preKeySignalMessage)
-
-                try {
-                    val syncInfo = jsonUtils.JSON.decodeFromString<SyncInfo>(decrypt.decodeToString())
-                    syncManager.updateSyncInfo(syncInfo)
-                    logger.info { "$appInstanceId createSession to ${appInfo.appInstanceId} success" }
-                    successResponse(call)
-                } catch (e: Exception) {
-                    logger.error(e) { "$appInstanceId createSession to ${appInfo.appInstanceId} fail" }
-                    failResponse(call, StandardErrorCode.SIGNAL_EXCHANGE_FAIL.toErrorCode())
-                }
-            } else {
-                logger.error { "$appInstanceId createSession to ${appInfo.appInstanceId}, not contain signedPreKeyId" }
-                failResponse(call, StandardErrorCode.SIGNAL_INVALID_KEY_ID.toErrorCode())
-                return@let
+                val syncInfo =
+                    jsonUtils.JSON.decodeFromString<SyncInfo>(decrypt.decodeToString())
+                syncManager.updateSyncInfo(syncInfo)
+                logger.info { "$appInstanceId createSession to ${appInfo.appInstanceId} success" }
+                successResponse(call)
+            } catch (e: Exception) {
+                logger.error(e) { "$appInstanceId createSession to ${appInfo.appInstanceId} fail" }
+                failResponse(call, StandardErrorCode.SIGNAL_EXCHANGE_FAIL.toErrorCode())
             }
         }
     }
@@ -104,33 +106,40 @@ fun Routing.syncRouting(
                 failResponse(call, StandardErrorCode.SYNC_NOT_MATCH_APP_INSTANCE_ID.toErrorCode())
                 return@let
             }
+
             val signalAddress = SignalAddress(appInstanceId, 1)
-            if (signalProtocolStore.existIdentity(signalAddress)) {
-                logger.debug { "${appInfo.appInstanceId} isTrust $appInstanceId" }
-                successResponse(call)
-            } else {
+            val existIdentity = signalProtocolStore.existIdentity(signalAddress)
+
+            if (!existIdentity) {
                 logger.debug { "${appInfo.appInstanceId} not trust $appInstanceId in /sync/isTrust api" }
                 failResponse(call, StandardErrorCode.SIGNAL_UNTRUSTED_IDENTITY.toErrorCode(), "not trust $appInstanceId")
+                return@let
             }
+
+            logger.debug { "${appInfo.appInstanceId} isTrust $appInstanceId" }
+            successResponse(call)
         }
     }
 
     post("/sync/trust") {
         getAppInstanceId(call)?.let { appInstanceId ->
             val requestTrust = call.receive(RequestTrust::class)
-            if (requestTrust.token == appTokenService.token.concatToString().toInt()) {
-                val signalAddress = SignalAddress(appInstanceId, 1)
-                signalProtocolStore.saveIdentity(
-                    signalAddress,
-                    requestTrust,
-                )
-                appTokenService.showToken = false
-                logger.debug { "${appInfo.appInstanceId} to trust $appInstanceId" }
-                successResponse(call)
-            } else {
+            val sameToken = requestTrust.token == appTokenService.token.concatToString().toInt()
+
+            if (!sameToken) {
                 logger.error { "token invalid: ${requestTrust.token}" }
                 failResponse(call, StandardErrorCode.TOKEN_INVALID.toErrorCode())
+                return@let
             }
+
+            val signalAddress = SignalAddress(appInstanceId, 1)
+            signalProtocolStore.saveIdentity(
+                signalAddress,
+                requestTrust,
+            )
+            appTokenService.showToken = false
+            logger.debug { "${appInfo.appInstanceId} to trust $appInstanceId" }
+            successResponse(call)
         }
     }
 }

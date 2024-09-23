@@ -42,13 +42,14 @@ fun Routing.baseSyncRouting(
                 failResponse(call, StandardErrorCode.SYNC_NOT_MATCH_APP_INSTANCE_ID.toErrorCode())
                 return@let
             }
-            val dataContent = call.receive(DataContent::class)
-            val bytes = dataContent.data
-            val processor = signalProcessorCache.getSignalMessageProcessor(appInstanceId)
-            val decrypted = processor.decryptSignalMessage(bytes)
 
             try {
-                val syncInfo = getJsonUtils().JSON.decodeFromString<SyncInfo>(decrypted.decodeToString())
+                val dataContent = call.receive(DataContent::class)
+                val bytes = dataContent.data
+                val processor = signalProcessorCache.getSignalMessageProcessor(appInstanceId)
+                val decrypted = processor.decryptSignalMessage(bytes)
+                val syncInfo =
+                    getJsonUtils().JSON.decodeFromString<SyncInfo>(decrypted.decodeToString())
                 // todo check diff time to update
                 syncManager.updateSyncInfo(syncInfo)
                 logger.debug { "$appInstanceId heartbeat to ${appInfo.appInstanceId} success" }
