@@ -33,36 +33,44 @@ fun Routing.pullRouting(
             val appInstanceId = pullFileRequest.appInstanceId
             val pasteId = pullFileRequest.pasteId
 
-            syncManager.getSyncHandlers()[fromAppInstanceId]?.let {
-                if (!it.syncRuntimeInfo.allowSend) {
-                    logger.debug { "sync handler ($fromAppInstanceId) not allow send" }
-                    failResponse(call, StandardErrorCode.SYNC_NOT_ALLOW_SEND.toErrorCode())
-                    return@post
+            val syncHandler =
+                syncManager.getSyncHandlers()[fromAppInstanceId] ?: run {
+                    logger.error { "not found appInstance id: $fromAppInstanceId" }
+                    failResponse(call, StandardErrorCode.NOT_FOUND_APP_INSTANCE_ID.toErrorCode())
+                    return@let
                 }
-            } ?: run {
-                logger.error { "not found appInstance id: $fromAppInstanceId" }
-                failResponse(call, StandardErrorCode.NOT_FOUND_APP_INSTANCE_ID.toErrorCode())
-                return@post
+
+            if (!syncHandler.syncRuntimeInfo.allowSend) {
+                logger.debug { "sync handler ($fromAppInstanceId) not allow send" }
+                failResponse(call, StandardErrorCode.SYNC_NOT_ALLOW_SEND.toErrorCode())
+                return@let
             }
 
-            cacheManager.getFilesIndex(PullFilesKey(appInstanceId, pasteId))?.let { filesIndex ->
-                filesIndex.getChunk(pullFileRequest.chunkIndex)?.let { chunk ->
-                    logger.info { "filesIndex ${pullFileRequest.chunkIndex} $chunk" }
-                    val producer: suspend ByteWriteChannel.() -> Unit = {
-                        fileUtils.readFilesChunk(chunk, this)
+            val filesIndex =
+                cacheManager.getFilesIndex(PullFilesKey(appInstanceId, pasteId)) ?: run {
+                    logger.error { "$fromAppInstanceId get $appInstanceId filesIndex not found" }
+                    failResponse(call, StandardErrorCode.NOT_FOUND_FILES_INDEX.toErrorCode())
+                    return@let
+                }
+
+            val chunk =
+                filesIndex.getChunk(pullFileRequest.chunkIndex) ?: run {
+                    logger.error {
+                        "$fromAppInstanceId get $appInstanceId chunk out range: " +
+                            "${pullFileRequest.chunkIndex}"
                     }
-                    successResponse(call, producer)
-                } ?: run {
-                    logger.error { "$fromAppInstanceId get $appInstanceId chunk out range: ${pullFileRequest.chunkIndex}" }
                     failResponse(
                         call, StandardErrorCode.OUT_RANGE_CHUNK_INDEX.toErrorCode(),
                         "out range chunk index ${pullFileRequest.chunkIndex}",
                     )
+                    return@let
                 }
-            } ?: run {
-                logger.error { "$fromAppInstanceId get $appInstanceId filesIndex not found" }
-                failResponse(call, StandardErrorCode.NOT_FOUND_FILES_INDEX.toErrorCode())
+
+            logger.info { "filesIndex ${pullFileRequest.chunkIndex} $chunk" }
+            val producer: suspend ByteWriteChannel.() -> Unit = {
+                fileUtils.readFilesChunk(chunk, this)
             }
+            successResponse(call, producer)
         }
     }
 
