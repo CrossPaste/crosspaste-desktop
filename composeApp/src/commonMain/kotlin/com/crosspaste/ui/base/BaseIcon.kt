@@ -34,6 +34,9 @@ expect fun close(): Painter
 expect fun database(): Painter
 
 @Composable
+expect fun debug(): Painter
+
+@Composable
 expect fun descSort(): Painter
 
 @Composable

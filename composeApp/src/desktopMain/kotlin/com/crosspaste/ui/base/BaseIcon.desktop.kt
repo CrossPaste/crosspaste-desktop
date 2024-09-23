@@ -55,6 +55,11 @@ actual fun database(): Painter {
 }
 
 @Composable
+actual fun debug(): Painter {
+    return painterResource("icon/base/debug.svg")
+}
+
+@Composable
 actual fun descSort(): Painter {
     return painterResource("icon/base/sort-desc.svg")
 }
