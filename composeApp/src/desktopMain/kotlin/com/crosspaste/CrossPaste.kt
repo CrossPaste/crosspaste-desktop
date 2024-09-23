@@ -66,7 +66,7 @@ import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.log.CrossPasteLogger
-import com.crosspaste.log.initLogger
+import com.crosspaste.log.DesktopCrossPasteLogger
 import com.crosspaste.net.DesktopPasteBonjourService
 import com.crosspaste.net.DesktopServerFactory
 import com.crosspaste.net.DesktopServerModule
@@ -220,8 +220,9 @@ class CrossPaste {
             )
 
         private val crossPasteLogger =
-            initLogger(
+            DesktopCrossPasteLogger(
                 appPathProvider.resolve("crosspaste.log", AppFileType.LOG).toString(),
+                configManager,
             )
 
         private val logger: KLogger = KotlinLogging.logger {}

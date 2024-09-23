@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Popup
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.log.CrossPasteLogger
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.ExpandView
@@ -69,6 +70,7 @@ import com.crosspaste.ui.base.arrowRight
 import com.crosspaste.ui.base.arrowUp
 import com.crosspaste.ui.base.bolt
 import com.crosspaste.ui.base.clipboard
+import com.crosspaste.ui.base.debug
 import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.language
 import com.crosspaste.ui.base.palette
@@ -95,6 +97,7 @@ fun SettingsTextStyle() =
 fun SettingsContentView() {
     val configManager = koinInject<ConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
+    val crossPasteLogger = koinInject<CrossPasteLogger>()
     val pasteboardService = koinInject<PasteboardService>()
     var hasBeenClicked by remember { mutableStateOf(false) }
     var showMoreLanguage by remember { mutableStateOf(false) }
@@ -317,6 +320,29 @@ fun SettingsContentView() {
                         onCheckedChange = { changeEnableAutoStartUp ->
                             configManager.updateConfig("enableAutoStartUp", changeEnableAutoStartUp)
                             enableAutoStartUp = configManager.config.enableAutoStartUp
+                        },
+                    )
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
+
+                SettingItemView(
+                    painter = debug(),
+                    text = "debug_mode",
+                    tint = Color(0xFFFCCD2A),
+                ) {
+                    var enableDebugMode by remember { mutableStateOf(configManager.config.enableDebugMode) }
+
+                    CustomSwitch(
+                        modifier =
+                            Modifier.width(32.dp)
+                                .height(20.dp),
+                        checked = enableDebugMode,
+                        onCheckedChange = { changeEnableDebugMode ->
+                            crossPasteLogger.updateRootLogLevel(
+                                if (changeEnableDebugMode) "debug" else "info",
+                            )
+                            enableDebugMode = configManager.config.enableDebugMode
                         },
                     )
                 }
