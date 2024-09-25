@@ -39,6 +39,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
+import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_LOCAL_LAST
+import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_PLAIN_TEXT
+import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_PRIMARY_TYPE
+import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_REMOTE_LAST
+import com.crosspaste.listen.DesktopShortcutKeys.Companion.SHOW_MAIN
+import com.crosspaste.listen.DesktopShortcutKeys.Companion.SHOW_SEARCH
+import com.crosspaste.listen.DesktopShortcutKeys.Companion.SWITCH_ENCRYPT
+import com.crosspaste.listen.DesktopShortcutKeys.Companion.SWITCH_MONITOR_PASTEBOARD
 import com.crosspaste.listener.KeyboardKey
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysListener
@@ -78,7 +87,7 @@ fun ShortcutKeysContentView() {
                         .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colorScheme.background),
             ) {
-                ShortcutKeyRow("paste")
+                ShortcutKeyRow(PASTE)
             }
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -90,19 +99,19 @@ fun ShortcutKeysContentView() {
                         .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colorScheme.background),
             ) {
-                ShortcutKeyRow("paste_plain_text")
+                ShortcutKeyRow(PASTE_PLAIN_TEXT)
 
                 HorizontalDivider(modifier = Modifier.padding(start = 15.dp))
 
-                ShortcutKeyRow("paste_primary_type")
+                ShortcutKeyRow(PASTE_PRIMARY_TYPE)
 
                 HorizontalDivider(modifier = Modifier.padding(start = 15.dp))
 
-                ShortcutKeyRow("paste_local_last")
+                ShortcutKeyRow(PASTE_LOCAL_LAST)
 
                 HorizontalDivider(modifier = Modifier.padding(start = 15.dp))
 
-                ShortcutKeyRow("paste_remote_last")
+                ShortcutKeyRow(PASTE_REMOTE_LAST)
             }
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -114,11 +123,11 @@ fun ShortcutKeysContentView() {
                         .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colorScheme.background),
             ) {
-                ShortcutKeyRow("show_main")
+                ShortcutKeyRow(SHOW_MAIN)
 
                 HorizontalDivider(modifier = Modifier.padding(start = 15.dp))
 
-                ShortcutKeyRow("show_search")
+                ShortcutKeyRow(SHOW_SEARCH)
             }
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -130,11 +139,11 @@ fun ShortcutKeysContentView() {
                         .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colorScheme.background),
             ) {
-                ShortcutKeyRow("switch_monitor_pasteboard")
+                ShortcutKeyRow(SWITCH_MONITOR_PASTEBOARD)
 
-                HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
+                HorizontalDivider(modifier = Modifier.padding(start = 15.dp))
 
-                ShortcutKeyRow("switch_encrypt")
+                ShortcutKeyRow(SWITCH_ENCRYPT)
             }
         }
     }
@@ -185,6 +194,7 @@ fun ShortcutKeyRow(name: String) {
                                 DisposableEffect(Unit) {
                                     shortcutKeysListener.editShortcutKeysMode = true
                                     onDispose {
+                                        shortcutKeysListener.currentKeys.clear()
                                         shortcutKeysListener.editShortcutKeysMode = false
                                     }
                                 }
@@ -223,7 +233,9 @@ fun ShortcutKeyRow(name: String) {
                                                 dialogService.popDialog()
                                             },
                                             confirmAction = {
-                                                shortcutKeys.update(name, shortcutKeysListener.currentKeys)
+                                                if (name != PASTE || shortcutKeysListener.currentKeys.isNotEmpty()) {
+                                                    shortcutKeys.update(name, shortcutKeysListener.currentKeys)
+                                                }
                                                 shortcutKeysListener.currentKeys.clear()
                                                 dialogService.popDialog()
                                             },
@@ -245,7 +257,20 @@ fun ShortcutKeyRow(name: String) {
 
         Spacer(modifier = Modifier.width(10.dp))
 
-        ShortcutKeyItemView(shortcutKeys.shortcutKeysCore.keys[name] ?: listOf())
+        shortcutKeys.shortcutKeysCore.keys[name]?.let { keys ->
+            ShortcutKeyItemView(keys)
+        } ?: run {
+            Text(
+                text = copywriter.getText("unassigned"),
+                color = MaterialTheme.colorScheme.onSurface,
+                style =
+                    TextStyle(
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Light,
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                    ),
+            )
+        }
     }
 }
 

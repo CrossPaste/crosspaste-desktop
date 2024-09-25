@@ -70,13 +70,19 @@ class DesktopShortcutKeysLoader(
     }
 
     private fun loadKeys(properties: Properties): TreeMap<String, List<KeyboardKey>> {
-        return properties.map { it.key.toString() to parseKeys(it.value.toString()) }.toMap(TreeMap())
+        return properties.map { it.key.toString() to parseKeys(it.value.toString()) }
+            .filter { it.second.isNotEmpty() }
+            .toMap(TreeMap())
     }
 
     private fun parseKeys(define: String): List<KeyboardKey> {
-        return define.split("+").mapNotNull {
-            val code = it.toInt()
-            map[code]
-        }
+        return define.split("+").filter { it != "" }.mapNotNull {
+            try {
+                val code = it.toInt()
+                map[code]
+            } catch (e: NumberFormatException) {
+                null
+            }
+        }.sortedByDescending { it.name }
     }
 }
