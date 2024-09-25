@@ -315,20 +315,6 @@ class PasteRealm(
         return query.sort("createTime", Sort.DESCENDING).limit(limit).asFlow()
     }
 
-    fun getPasteData(
-        appInstanceId: String? = null,
-        limit: Int,
-    ): RealmResults<PasteData> {
-        val query =
-            appInstanceId?.let {
-                realm.query(
-                    PasteData::class, "appInstanceId == $0 AND pasteState != $1", appInstanceId,
-                    PasteState.DELETED,
-                )
-            } ?: realm.query(PasteData::class, "pasteState != $0", PasteState.DELETED)
-        return query.sort("createTime", Sort.DESCENDING).limit(limit).find()
-    }
-
     fun getPasteData(id: ObjectId): PasteData? {
         return realm.query(
             PasteData::class,
