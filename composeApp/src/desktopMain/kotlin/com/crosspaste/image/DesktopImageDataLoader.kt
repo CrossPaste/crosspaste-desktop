@@ -78,7 +78,7 @@ class DesktopImageDataLoader(
                             "${imageBitmap.width} x ${imageBitmap.height}",
                         ),
                     )
-                    ImageBitmapData(path, readImageBitmap(path), builder.build())
+                    ImageBitmapData(path, imageBitmap, builder.build())
                 }
             }
         } catch (e: Exception) {
