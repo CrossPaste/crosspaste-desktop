@@ -29,8 +29,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,10 +52,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.paste.PastePreviewService
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.toTop
+import com.crosspaste.ui.model.PasteDataViewModel
 import com.crosspaste.ui.paste.preview.PastePreviewItemView
 import com.crosspaste.ui.paste.preview.PasteSpecificPreviewView
 import kotlinx.coroutines.CoroutineName
@@ -64,32 +64,22 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 actual fun PasteboardScreen() {
-    val pastePreviewService = koinInject<PastePreviewService>()
+    val pasteDataViewModel = koinViewModel<PasteDataViewModel>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
 
     val listState = rememberLazyListState()
     var isScrolling by remember { mutableStateOf(false) }
     var scrollJob: Job? by remember { mutableStateOf(null) }
     val coroutineScope = rememberCoroutineScope()
-    val rememberPasteDataList = remember(pastePreviewService.refreshTime) { pastePreviewService.pasteDataList }
-
+    val rememberPasteDataList by pasteDataViewModel.pasteDatas.collectAsState()
     var showToTop by remember { mutableStateOf(false) }
 
-    DisposableEffect(Unit) {
-        coroutineScope.launch {
-            pastePreviewService.loadPastePreviewList(false)
-        }
-        onDispose {
-            coroutineScope.launch {
-                pastePreviewService.clearData()
-            }
-        }
-    }
-
     LaunchedEffect(Unit) {
+        pasteDataViewModel.initList()
         if (rememberPasteDataList.isNotEmpty()) {
             listState.scrollToItem(0)
         }
@@ -97,6 +87,7 @@ actual fun PasteboardScreen() {
 
     LaunchedEffect(appWindowManager.showMainWindow) {
         if (appWindowManager.showMainWindow) {
+            pasteDataViewModel.initList()
             if (rememberPasteDataList.isNotEmpty()) {
                 listState.scrollToItem(0)
             }
@@ -111,7 +102,7 @@ actual fun PasteboardScreen() {
             val visibleItems = listState.layoutInfo.visibleItemsInfo
             if (visibleItems.isNotEmpty()) {
                 if (visibleItems.last().index == rememberPasteDataList.size - 1) {
-                    pastePreviewService.loadPastePreviewList(force = true, toLoadMore = true)
+                    pasteDataViewModel.loadMore()
                 }
                 showToTop = visibleItems.last().index >= 30
             }

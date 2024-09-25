@@ -21,6 +21,7 @@ import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.Realm
+import io.realm.kotlin.notifications.ResultsChange
 import io.realm.kotlin.query.RealmQuery
 import io.realm.kotlin.query.RealmResults
 import io.realm.kotlin.query.Sort
@@ -29,6 +30,7 @@ import io.realm.kotlin.query.sum
 import io.realm.kotlin.types.RealmAny
 import io.realm.kotlin.types.RealmInstant
 import io.realm.kotlin.types.RealmObject
+import kotlinx.coroutines.flow.Flow
 import okio.FileSystem
 import org.mongodb.kbson.ObjectId
 
@@ -299,10 +301,10 @@ class PasteRealm(
         }
     }
 
-    fun getPasteData(
+    fun getPasteDataFlow(
         appInstanceId: String? = null,
         limit: Int,
-    ): RealmResults<PasteData> {
+    ): Flow<ResultsChange<PasteData>> {
         val query =
             appInstanceId?.let {
                 realm.query(
@@ -310,7 +312,7 @@ class PasteRealm(
                     PasteState.DELETED,
                 )
             } ?: realm.query(PasteData::class, "pasteState != $0", PasteState.DELETED)
-        return query.sort("createTime", Sort.DESCENDING).limit(limit).find()
+        return query.sort("createTime", Sort.DESCENDING).limit(limit).asFlow()
     }
 
     fun getPasteData(id: ObjectId): PasteData? {
