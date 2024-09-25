@@ -93,12 +93,10 @@ import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.DefaultPasteSyncProcessManager
 import com.crosspaste.paste.DesktopCurrentPaste
 import com.crosspaste.paste.DesktopPasteIDGeneratorFactory
-import com.crosspaste.paste.DesktopPastePreviewService
 import com.crosspaste.paste.DesktopPasteSearchService
 import com.crosspaste.paste.DesktopTransferableConsumer
 import com.crosspaste.paste.DesktopTransferableProducer
 import com.crosspaste.paste.PasteIDGenerator
-import com.crosspaste.paste.PastePreviewService
 import com.crosspaste.paste.PasteSearchService
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.paste.PasteboardService
@@ -177,6 +175,7 @@ import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.ToastManager
 import com.crosspaste.ui.base.UISupport
+import com.crosspaste.ui.model.PasteDataViewModel
 import com.crosspaste.utils.GlobalCoroutineScope
 import com.crosspaste.utils.GlobalCoroutineScopeImpl
 import com.crosspaste.utils.ioDispatcher
@@ -195,6 +194,7 @@ import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 import org.koin.core.KoinApplication
 import org.koin.core.context.GlobalContext
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 import org.mongodb.kbson.ObjectId
 import org.signal.libsignal.protocol.state.IdentityKeyStore
@@ -332,7 +332,6 @@ class CrossPaste {
                     single<PasteboardService> {
                         getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get())
                     }
-                    single<PastePreviewService> { DesktopPastePreviewService(get()) }
                     single<PasteSearchService> { get<DesktopPasteSearchService>() }
                     single<PasteSyncProcessManager<ObjectId>> { DefaultPasteSyncProcessManager() }
                     single<TaskExecutor> {
@@ -406,6 +405,9 @@ class CrossPaste {
                     single<ThemeDetector> { DesktopThemeDetector(get()) }
                     single<ToastManager> { DesktopToastManager() }
                     single<UISupport> { DesktopUISupport(get(), get(), get(), get()) }
+
+                    // view model
+                    viewModel { PasteDataViewModel(get()) }
                 }
             return GlobalContext.startKoin {
                 modules(appModule)
