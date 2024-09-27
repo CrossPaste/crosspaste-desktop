@@ -1,30 +1,31 @@
 package com.crosspaste.ui.base
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import coil3.PlatformContext
+import coil3.compose.AsyncImagePainter
+import coil3.compose.SubcomposeAsyncImage
+import coil3.compose.SubcomposeAsyncImageContent
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.crosspaste.app.AppFileType
-import com.crosspaste.image.FaviconLoader
-import com.crosspaste.image.FileExtImageLoader
-import com.crosspaste.image.ImageData
-import com.crosspaste.image.ImageDataLoader
-import com.crosspaste.paste.item.PasteFileCoordinate
-import com.crosspaste.paste.item.PasteFiles
-import com.crosspaste.paste.item.PasteUrl
+import com.crosspaste.image.coil.ImageLoaders
+import com.crosspaste.image.coil.PasteDataItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteType
-import okio.FileSystem
+import com.crosspaste.ui.paste.PasteTypeIconBaseView
 import org.koin.compose.koinInject
 
 @Composable
@@ -33,112 +34,111 @@ fun PasteTypeIconView(
     padding: Dp = 2.dp,
     size: Dp = 20.dp,
 ) {
-    val density = LocalDensity.current
     val iconStyle = koinInject<IconStyle>()
-    val imageDataLoader = koinInject<ImageDataLoader>()
-    val faviconLoader = koinInject<FaviconLoader>()
-    val fileExtLoader = koinInject<FileExtImageLoader>()
     val userDataPathProvider = koinInject<UserDataPathProvider>()
-
-    val loadIconData = imageDataLoader.loadPasteType(pasteData.pasteType)
+    val imageLoaders = koinInject<ImageLoaders>()
 
     if (pasteData.pasteType == PasteType.URL) {
-        AsyncView(
-            key = pasteData.id,
-            defaultValue = loadIconData,
-            load = {
-                pasteData.getPasteItem()?.let {
-                    it as PasteUrl
-                    try {
-                        faviconLoader.load(it.url)?.let { path ->
-                            val pasteFileCoordinate = PasteFileCoordinate(pasteData.getPasteCoordinate(), path)
-                            return@AsyncView imageDataLoader.loadImageData(pasteFileCoordinate, density)
-                        }
-                    } catch (ignore: Exception) {
+        SubcomposeAsyncImage(
+            modifier = Modifier.padding(padding).size(size),
+            model =
+                ImageRequest.Builder(PlatformContext.INSTANCE)
+                    .data(PasteDataItem(pasteData))
+                    .crossfade(false)
+                    .build(),
+            imageLoader = imageLoaders.faviconImageLoader,
+            contentDescription = "Paste Icon",
+            content = {
+                when (this.painter.state.collectAsState().value) {
+                    is AsyncImagePainter.State.Loading,
+                    is AsyncImagePainter.State.Error,
+                    -> {
+                        Icon(
+                            painter = link(),
+                            contentDescription = "Paste Icon",
+                            modifier = Modifier.padding(padding).size(size),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    else -> {
+                        SubcomposeAsyncImageContent()
                     }
                 }
-                loadIconData
             },
-        ) { loadData ->
-            if (loadData.isSuccess() && loadData is ImageData<*>) {
-                if (loadData.isIcon) {
-                    Icon(
-                        painter = loadData.readPainter(),
-                        contentDescription = "Paste Icon",
-                        modifier = Modifier.padding(padding).size(size),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                } else {
-                    Image(
-                        painter = loadData.readPainter(),
-                        contentDescription = "Paste Icon",
-                        modifier = Modifier.padding(padding).size(size),
-                    )
-                }
-            }
-        }
+        )
     } else if (pasteData.pasteType == PasteType.FILE) {
-        AsyncView(
-            key = pasteData.id,
-            defaultValue = loadIconData,
-            load = {
-                pasteData.getPasteItem()?.let {
-                    it as PasteFiles
-                    try {
-                        val files = it.getPasteFiles(userDataPathProvider)
-                        if (files.isNotEmpty()) {
-                            fileExtLoader.load(files[0].getFilePath())?.let { path ->
-                                val pasteFileCoordinate = PasteFileCoordinate(pasteData.getPasteCoordinate(), path)
-                                return@AsyncView imageDataLoader.loadImageData(pasteFileCoordinate, density)
-                            }
-                        }
-                    } catch (ignore: Exception) {
+        SubcomposeAsyncImage(
+            modifier = Modifier.padding(padding).size(size),
+            model =
+                ImageRequest.Builder(PlatformContext.INSTANCE)
+                    .data(PasteDataItem(pasteData))
+                    .crossfade(false)
+                    .build(),
+            imageLoader = imageLoaders.fileExtImageLoader,
+            contentDescription = "Paste Icon",
+            content = {
+                when (this.painter.state.collectAsState().value) {
+                    is AsyncImagePainter.State.Loading,
+                    is AsyncImagePainter.State.Error,
+                    -> {
+                        Icon(
+                            painter = file(),
+                            contentDescription = "Paste Icon",
+                            modifier = Modifier.padding(padding).size(size),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    else -> {
+                        SubcomposeAsyncImageContent()
                     }
                 }
-                loadIconData
             },
-        ) { loadData ->
-            if (loadData.isSuccess() && loadData is ImageData<*>) {
-                if (loadData.isIcon) {
-                    Icon(
-                        painter = loadData.readPainter(),
-                        contentDescription = "Paste Icon",
-                        modifier = Modifier.padding(padding).size(size),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                } else {
-                    Image(
-                        painter = loadData.readPainter(),
-                        contentDescription = "Paste Icon",
-                        modifier = Modifier.padding(padding).size(size),
-                    )
-                }
-            }
-        }
+        )
     } else if (pasteData.pasteType != PasteType.HTML) {
         Icon(
-            painter = loadIconData.readPainter(),
+            painter = PasteTypeIconBaseView(pasteType = pasteData.pasteType),
             contentDescription = "Paste Icon",
             modifier = Modifier.padding(padding).size(size),
             tint = MaterialTheme.colorScheme.primary,
         )
     } else {
         pasteData.source?.let {
+            val isMacStyleIcon by remember(it) { mutableStateOf(iconStyle.isMacStyleIcon(it)) }
+            var imageSize by remember(it) { mutableStateOf(if (isMacStyleIcon) size + 2.dp else (size + 2.dp) / 24 * 20) }
+            var imagePaddingSize by remember(it) { mutableStateOf(if (isMacStyleIcon) 0.dp else (size + 2.dp) / 24 * 2) }
+
             val path = userDataPathProvider.resolve("$it.png", AppFileType.ICON)
-            if (FileSystem.SYSTEM.exists(path)) {
-                val isMacStyleIcon by remember(it) { mutableStateOf(iconStyle.isMacStyleIcon(it)) }
-                AppImageIcon(path, isMacStyleIcon = isMacStyleIcon, size = size + 2.dp)
-            } else {
-                Icon(
-                    painter = loadIconData.readPainter(),
-                    contentDescription = "Paste Icon",
-                    modifier = Modifier.padding(padding).size(size),
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            }
+
+            SubcomposeAsyncImage(
+                modifier = Modifier.padding(imagePaddingSize).size(imageSize),
+                model =
+                    ImageRequest.Builder(PlatformContext.INSTANCE)
+                        .data(path)
+                        .crossfade(false)
+                        .build(),
+                imageLoader = imageLoaders.appSourceLoader,
+                contentDescription = "Paste Icon",
+                content = {
+                    when (this.painter.state.collectAsState().value) {
+                        is AsyncImagePainter.State.Error -> {
+                            imageSize = (size + 2.dp) / 24 * 20
+                            imagePaddingSize = (size + 2.dp) / 24 * 2
+                            Icon(
+                                painter = html(),
+                                contentDescription = "Paste Icon",
+                                modifier = Modifier.padding(imagePaddingSize).size(imageSize),
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        else -> {
+                            SubcomposeAsyncImageContent()
+                        }
+                    }
+                },
+            )
         } ?: run {
             Icon(
-                painter = loadIconData.readPainter(),
+                painter = html(),
                 contentDescription = "Paste Icon",
                 modifier = Modifier.padding(padding).size(size),
                 tint = MaterialTheme.colorScheme.primary,

@@ -55,7 +55,7 @@ import com.crosspaste.image.ImageCreator
 import com.crosspaste.image.ImageDataLoader
 import com.crosspaste.image.ImageWriter
 import com.crosspaste.image.ThumbnailLoader
-import com.crosspaste.image.coil.load.Html2ImageLoaderFactory
+import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listen.DesktopGlobalListener
 import com.crosspaste.listen.DesktopMouseListener
@@ -253,8 +253,8 @@ class CrossPaste {
                     single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<PasteServer<*, *>>() }) }
                     single<FileExtImageLoader> { DesktopFileExtLoader(get(), get()) }
                     single<FilePersist> { FilePersist }
-                    single<Html2ImageLoaderFactory> { Html2ImageLoaderFactory(get()) }
                     single<ImageCreator> { DesktopImageCreator() }
+                    single<ImageLoaders> { ImageLoaders(get(), get(), get(), get()) }
                     single<ImageWriter<BufferedImage>> { DesktopImageWriter }
                     single<GlobalCoroutineScope> { GlobalCoroutineScopeImpl }
                     single<KLogger> { CrossPaste.logger }
