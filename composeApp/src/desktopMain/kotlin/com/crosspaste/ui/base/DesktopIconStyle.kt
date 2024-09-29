@@ -1,10 +1,10 @@
 package com.crosspaste.ui.base
 
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asComposeImageBitmap
 import androidx.compose.ui.graphics.toPixelMap
 import com.crosspaste.app.AppFileType
-import com.crosspaste.image.DesktopImageDataLoader
-import com.crosspaste.image.ImageDataLoader
+import com.crosspaste.image.ImageCreator
 import com.crosspaste.path.UserDataPathProvider
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
@@ -13,10 +13,8 @@ import okio.FileSystem
 
 class DesktopIconStyle(
     userDataPathProvider: UserDataPathProvider,
-    imageDataLoader: ImageDataLoader,
+    imageCreator: ImageCreator,
 ) : IconStyle {
-
-    private val desktopImageDataLoader = imageDataLoader as DesktopImageDataLoader
 
     private val iconStyleCache: LoadingCache<String, Boolean> =
         CacheBuilder.newBuilder()
@@ -26,7 +24,9 @@ class DesktopIconStyle(
                     override fun load(key: String): Boolean {
                         val iconPath = userDataPathProvider.resolve("$key.png", AppFileType.ICON)
                         if (FileSystem.SYSTEM.exists(iconPath)) {
-                            val imageBitmap = desktopImageDataLoader.readImageBitmap(iconPath)
+                            val imageBitmap =
+                                imageCreator.createBitmap(iconPath)
+                                    .asComposeImageBitmap()
                             return checkMacStyleIcon(imageBitmap)
                         } else {
                             return false

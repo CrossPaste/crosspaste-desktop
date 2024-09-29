@@ -1,7 +1,6 @@
 package com.crosspaste.ui.paste.detail
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,12 +29,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import coil3.PlatformContext
+import coil3.compose.AsyncImagePainter
+import coil3.compose.SubcomposeAsyncImage
+import coil3.compose.SubcomposeAsyncImageContent
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.image.FileExtImageLoader
-import com.crosspaste.image.ImageData
-import com.crosspaste.image.ImageDataLoader
+import com.crosspaste.image.coil.FileExtItem
+import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.info.PasteInfos.DATE
 import com.crosspaste.info.PasteInfos.FILE_NAME
 import com.crosspaste.info.PasteInfos.REMOTE
@@ -44,11 +48,12 @@ import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteItem
-import com.crosspaste.ui.base.AsyncView
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.chevronLeft
 import com.crosspaste.ui.base.chevronRight
+import com.crosspaste.ui.base.file
 import com.crosspaste.ui.base.fileSlash
+import com.crosspaste.ui.base.folder
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
 import kotlinx.coroutines.delay
@@ -64,14 +69,12 @@ fun PasteFilesDetailView(
     pasteFiles: PasteFiles,
     onDoubleClick: () -> Unit,
 ) {
-    val density = LocalDensity.current
     val userDataPathProvider = koinInject<UserDataPathProvider>()
 
     val showFileCount = pasteFiles.getFilePaths(userDataPathProvider).size
     if (showFileCount > 0) {
         val copywriter = koinInject<GlobalCopywriter>()
-        val imageDataLoader = koinInject<ImageDataLoader>()
-        val fileExtIconLoader = koinInject<FileExtImageLoader>()
+        val imageLoaders = koinInject<ImageLoaders>()
 
         val pasteItem = pasteFiles as PasteItem
 
@@ -139,36 +142,30 @@ fun PasteFilesDetailView(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center,
                     ) {
-                        AsyncView(
-                            key = filePath,
-                            load = {
-                                fileExtIconLoader.load(filePath)?.let {
-                                    imageDataLoader.loadImageData(it, density)
-                                } ?: imageDataLoader.loadIconData(isFile, density)
-                            },
-                            loadFor = { loadData ->
-                                if (loadData.isSuccess() && loadData is ImageData<*>) {
-                                    if (!loadData.isIcon) {
-                                        Image(
-                                            modifier = Modifier.size(150.dp),
-                                            painter = loadData.readPainter(),
-                                            contentDescription = filePath.name,
-                                        )
-                                    } else {
+                        SubcomposeAsyncImage(
+                            modifier = Modifier.size(150.dp),
+                            model =
+                                ImageRequest.Builder(PlatformContext.INSTANCE)
+                                    .data(FileExtItem(filePath))
+                                    .crossfade(true)
+                                    .build(),
+                            imageLoader = imageLoaders.fileExtImageLoader,
+                            contentDescription = "fileType",
+                            content = {
+                                when (this.painter.state.collectAsState().value) {
+                                    is AsyncImagePainter.State.Loading,
+                                    is AsyncImagePainter.State.Error,
+                                    -> {
                                         Icon(
                                             modifier = Modifier.size(150.dp),
-                                            painter = loadData.readPainter(),
-                                            contentDescription = filePath.name,
+                                            painter = isFile?.let { if (it) file() else folder() } ?: fileSlash(),
+                                            contentDescription = "fileType",
                                             tint = MaterialTheme.colorScheme.onBackground,
                                         )
                                     }
-                                } else if (loadData.isError()) {
-                                    Icon(
-                                        modifier = Modifier.size(150.dp),
-                                        painter = fileSlash(),
-                                        contentDescription = "fileType",
-                                        tint = MaterialTheme.colorScheme.onBackground,
-                                    )
+                                    else -> {
+                                        SubcomposeAsyncImageContent()
+                                    }
                                 }
                             },
                         )

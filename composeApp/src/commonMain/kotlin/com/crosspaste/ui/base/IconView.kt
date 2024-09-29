@@ -1,6 +1,5 @@
 package com.crosspaste.ui.base
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -10,16 +9,22 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.crosspaste.image.ImageData
-import com.crosspaste.image.ImageDataLoader
+import coil3.PlatformContext
+import coil3.compose.AsyncImagePainter
+import coil3.compose.SubcomposeAsyncImage
+import coil3.compose.SubcomposeAsyncImageContent
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import okio.Path
-import org.koin.compose.koinInject
 
 @Composable
 fun PasteIconButton(
@@ -67,38 +72,31 @@ fun AppImageIcon(
     isMacStyleIcon: Boolean,
     size: Dp = 24.dp,
 ) {
-    val imageDataLoader = koinInject<ImageDataLoader>()
-    val density = LocalDensity.current
-    AsyncView(
-        key = path,
-        load = {
-            imageDataLoader.loadImageData(path, density)
-        },
-        loadFor = { loadData ->
-            if (loadData.isSuccess() && loadData is ImageData<*>) {
-                if (isMacStyleIcon) {
-                    Image(
-                        painter = loadData.readPainter(),
+    var imageSize by remember(path) { mutableStateOf(if (isMacStyleIcon) size else (size / 24) * 20) }
+    var imagePaddingSize by remember(path) { mutableStateOf(if (isMacStyleIcon) 0.dp else (size / 24) * 2) }
+
+    SubcomposeAsyncImage(
+        modifier = Modifier.padding(imagePaddingSize).size(imageSize),
+        model =
+            ImageRequest.Builder(PlatformContext.INSTANCE)
+                .data(path)
+                .crossfade(false)
+                .build(),
+        contentDescription = "Paste Icon",
+        content = {
+            when (this.painter.state.collectAsState().value) {
+                is AsyncImagePainter.State.Error -> {
+                    imageSize = (size / 24) * 20
+                    imagePaddingSize = (size / 24) * 2
+                    Icon(
+                        painter = imageSlash(),
                         contentDescription = "Paste Icon",
-                        modifier = Modifier.size(size),
-                    )
-                } else {
-                    val mainSize = (size / 24) * 20
-                    val paddingSize = (size / 24) * 2
-                    Image(
-                        painter = loadData.readPainter(),
-                        contentDescription = "Paste Icon",
-                        modifier = Modifier.padding(paddingSize).size(mainSize),
+                        modifier = Modifier.padding(imagePaddingSize).size(imageSize),
                     )
                 }
-            } else if (loadData.isError()) {
-                val mainSize = (size / 24) * 20
-                val paddingSize = (size / 24) * 2
-                Icon(
-                    painter = imageSlash(),
-                    contentDescription = "Paste Icon",
-                    modifier = Modifier.padding(paddingSize).size(mainSize),
-                )
+                else -> {
+                    SubcomposeAsyncImageContent()
+                }
             }
         },
     )
