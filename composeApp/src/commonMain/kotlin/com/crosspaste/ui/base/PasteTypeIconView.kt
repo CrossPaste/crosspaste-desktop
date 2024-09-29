@@ -20,8 +20,10 @@ import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.crosspaste.app.AppFileType
+import com.crosspaste.image.coil.FileExtItem
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.image.coil.PasteDataItem
+import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteType
@@ -67,33 +69,39 @@ fun PasteTypeIconView(
             },
         )
     } else if (pasteData.pasteType == PasteType.FILE) {
-        SubcomposeAsyncImage(
-            modifier = Modifier.padding(padding).size(size),
-            model =
-                ImageRequest.Builder(PlatformContext.INSTANCE)
-                    .data(PasteDataItem(pasteData))
-                    .crossfade(false)
-                    .build(),
-            imageLoader = imageLoaders.fileExtImageLoader,
-            contentDescription = "Paste Icon",
-            content = {
-                when (this.painter.state.collectAsState().value) {
-                    is AsyncImagePainter.State.Loading,
-                    is AsyncImagePainter.State.Error,
-                    -> {
-                        Icon(
-                            painter = file(),
-                            contentDescription = "Paste Icon",
-                            modifier = Modifier.padding(padding).size(size),
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                    else -> {
-                        SubcomposeAsyncImageContent()
-                    }
-                }
-            },
-        )
+        pasteData.getPasteItem()?.let {
+            it as PasteFiles
+            val paths = it.getFilePaths(userDataPathProvider)
+            if (paths.isNotEmpty()) {
+                SubcomposeAsyncImage(
+                    modifier = Modifier.padding(padding).size(size),
+                    model =
+                        ImageRequest.Builder(PlatformContext.INSTANCE)
+                            .data(FileExtItem(paths[0]))
+                            .crossfade(false)
+                            .build(),
+                    imageLoader = imageLoaders.fileExtImageLoader,
+                    contentDescription = "Paste Icon",
+                    content = {
+                        when (this.painter.state.collectAsState().value) {
+                            is AsyncImagePainter.State.Loading,
+                            is AsyncImagePainter.State.Error,
+                            -> {
+                                Icon(
+                                    painter = file(),
+                                    contentDescription = "Paste Icon",
+                                    modifier = Modifier.padding(padding).size(size),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                            else -> {
+                                SubcomposeAsyncImageContent()
+                            }
+                        }
+                    },
+                )
+            }
+        }
     } else if (pasteData.pasteType != PasteType.HTML) {
         Icon(
             painter = PasteTypeIconBaseView(pasteType = pasteData.pasteType),
@@ -119,8 +127,11 @@ fun PasteTypeIconView(
                 imageLoader = imageLoaders.appSourceLoader,
                 contentDescription = "Paste Icon",
                 content = {
-                    when (this.painter.state.collectAsState().value) {
-                        is AsyncImagePainter.State.Error -> {
+                    val state = this.painter.state.collectAsState().value
+                    when (state) {
+                        is AsyncImagePainter.State.Loading,
+                        is AsyncImagePainter.State.Error,
+                        -> {
                             imageSize = (size + 2.dp) / 24 * 20
                             imagePaddingSize = (size + 2.dp) / 24 * 2
                             Icon(

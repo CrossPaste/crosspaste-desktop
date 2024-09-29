@@ -8,12 +8,14 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.image.FaviconLoader
 import com.crosspaste.image.FileExtImageLoader
 import com.crosspaste.image.ImageCreator
+import com.crosspaste.image.ThumbnailLoader
 import com.crosspaste.path.UserDataPathProvider
 
 class ImageLoaders(
     private val faviconLoader: FaviconLoader,
     private val fileExtLoader: FileExtImageLoader,
     private val imageCreator: ImageCreator,
+    private val thumbnailLoader: ThumbnailLoader,
     userDataPathProvider: UserDataPathProvider,
 ) {
 
@@ -35,7 +37,7 @@ class ImageLoaders(
     private val memoryCache =
         MemoryCache.Builder()
             .strongReferencesEnabled(false)
-            .maxSizeBytes(32L * 1024L * 1024L)
+            .maxSizeBytes(48L * 1024L * 1024L)
             .build()
 
     private val htmlDiskCache =
@@ -81,8 +83,8 @@ class ImageLoaders(
     val fileExtImageLoader =
         ImageLoader.Builder(PlatformContext.INSTANCE)
             .components {
-                add(FileExtFactory(fileExtLoader, imageCreator, userDataPathProvider))
-                    .add(PasteDataKeyer())
+                add(FileExtFactory(fileExtLoader, imageCreator))
+                    .add(FileExtKeyer())
             }
             .memoryCache {
                 memoryCache
@@ -97,6 +99,20 @@ class ImageLoaders(
             .components {
                 add(AppSourceFactory(imageCreator, userDataPathProvider))
                     .add(PasteDataKeyer())
+            }
+            .memoryCache {
+                memoryCache
+            }
+            .diskCache {
+                baseDiskCache
+            }
+            .build()
+
+    val userImageLoader =
+        ImageLoader.Builder(PlatformContext.INSTANCE)
+            .components {
+                add(UserImageFactory(thumbnailLoader, imageCreator))
+                    .add(ImageKeyer())
             }
             .memoryCache {
                 memoryCache

@@ -26,17 +26,25 @@ class Html2ImageFetcher(
             var waitTime = 0
             while (waitTime < 10000) {
                 val path = item.path
+                val preview = item.preview
                 val density = item.density
                 if (fileUtils.existFile(path)) {
-                    return@withContext ImageFetchResult(
-                        dataSource = DataSource.MEMORY_CACHE,
-                        isSampled = false,
-                        image =
+                    val image =
+                        if (preview) {
+                            // todo not use hardcoded values
                             imageCreator.createBitmap(
                                 path,
                                 with(density) { 424.dp.toPx() }.toInt(),
                                 with(density) { 100.dp.toPx() }.toInt(),
-                            ).asImage(shareable = true),
+                            )
+                        } else {
+                            imageCreator.createBitmap(path)
+                        }.asImage(shareable = true)
+
+                    return@withContext ImageFetchResult(
+                        dataSource = DataSource.MEMORY_CACHE,
+                        isSampled = false,
+                        image = image,
                     )
                 } else {
                     delay(100)

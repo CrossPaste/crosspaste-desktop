@@ -443,8 +443,8 @@ public func createThumbnail(
 
     // Save metadata
     let metadata = """
-    SIZE=\(fileSize)
-    DIMENSIONS=\(originalWidth) x \(originalHeight)
+    size=\(fileSize)
+    dimensions=\(originalWidth) x \(originalHeight)
     """
 
     do {
