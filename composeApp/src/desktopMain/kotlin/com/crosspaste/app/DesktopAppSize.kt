@@ -32,7 +32,7 @@ object DesktopAppSize : AppSize {
             bottom = mainBottomShadowPadding,
         )
 
-    // Windows OS
+    // Windows OS start
     val menuWindowDpSize = DpSize(170.dp, 204.dp)
 
     val menuRoundedCornerShape = RoundedCornerShape(5.dp)
@@ -44,13 +44,19 @@ object DesktopAppSize : AppSize {
     val edgePadding = 12.dp
 
     val menuWindowXOffset = 32.dp
+    // Windows OS end
 
-    // Mac OS
+    // Mac OS start
     val mainWindowTopMargin = 30.dp
+    // Mac OS end
 
     private val searchPaddingDpSize = DpSize(20.dp, 20.dp)
 
-    fun searchWindowContentSize(): DpSize {
-        return searchWindowSize.minus(searchPaddingDpSize)
-    }
+    val searchWindowContentSize = searchWindowSize.minus(searchPaddingDpSize)
+
+    val searchDetailRoundedCornerShape = RoundedCornerShape(5.dp)
+
+    val searchDetailPaddingValues = PaddingValues(10.dp)
+
+    val searchInfoPaddingValues = PaddingValues(10.dp)
 }

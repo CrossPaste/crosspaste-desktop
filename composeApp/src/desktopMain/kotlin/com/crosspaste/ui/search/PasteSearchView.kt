@@ -178,7 +178,7 @@ fun CrossPasteSearchWindowContent() {
                 modifier =
                     Modifier
                         .shadow(5.dp, RoundedCornerShape(10.dp))
-                        .size(appSize.searchWindowContentSize())
+                        .size(appSize.searchWindowContentSize)
                         .background(MaterialTheme.colorScheme.background)
                         .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center,
@@ -546,7 +546,7 @@ fun CrossPasteSearchWindowContent() {
                         }
                     }
 
-                    Row(modifier = Modifier.size(appSize.searchWindowContentSize())) {
+                    Row(modifier = Modifier.size(appSize.searchWindowContentSize)) {
                         SearchListView {
                             pasteSearchService.clickSetSelectedIndex(it)
                             focusRequester.requestFocus()
