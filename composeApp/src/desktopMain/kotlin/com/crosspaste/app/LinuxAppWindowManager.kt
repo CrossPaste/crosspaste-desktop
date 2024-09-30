@@ -3,6 +3,7 @@ package com.crosspaste.app
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.window.WindowState
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
@@ -13,10 +14,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class LinuxAppWindowManager(
+    appSize: AppSize,
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val activeGraphicsDevice: ActiveGraphicsDevice,
     private val userDataPathProvider: UserDataPathProvider,
-) : DesktopAppWindowManager() {
+) : DesktopAppWindowManager(appSize) {
 
     private var prevLinuxAppInfo: LinuxAppInfo? by mutableStateOf(null)
 
@@ -58,7 +60,7 @@ class LinuxAppWindowManager(
 
     override suspend fun activeMainWindow() {
         logger.info { "active main window" }
-        showMainWindow = true
+        setShowMainWindow(true)
         prevLinuxAppInfo = X11Api.bringToFront(MAIN_WINDOW_TITLE)
         delay(500)
         mainFocusRequester.requestFocus()
@@ -67,16 +69,21 @@ class LinuxAppWindowManager(
     override suspend fun unActiveMainWindow() {
         logger.info { "unActive main window" }
         X11Api.bringToBack(prevLinuxAppInfo)
-        showMainWindow = false
+        setShowMainWindow(false)
         mainFocusRequester.freeFocus()
     }
 
     override suspend fun activeSearchWindow() {
         logger.info { "active search window" }
-        showSearchWindow = true
+        setShowSearchWindow(true)
 
         activeGraphicsDevice.getGraphicsDevice()?.let { graphicsDevice ->
-            searchWindowState.position = calPosition(graphicsDevice.defaultConfiguration.bounds)
+            setSearchWindowState(
+                WindowState(
+                    size = appSize.searchWindowSize,
+                    position = calPosition(graphicsDevice.defaultConfiguration.bounds),
+                ),
+            )
         }
 
         prevLinuxAppInfo = X11Api.bringToFront(SEARCH_WINDOW_TITLE)
@@ -93,7 +100,7 @@ class LinuxAppWindowManager(
                 it.map { key -> key.rawCode }
             } ?: listOf()
         X11Api.bringToBack(prevLinuxAppInfo, toPaste, keyCodes)
-        showSearchWindow = false
+        setShowSearchWindow(false)
         searchFocusRequester.freeFocus()
     }
 

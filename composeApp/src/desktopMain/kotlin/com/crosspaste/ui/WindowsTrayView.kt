@@ -22,13 +22,15 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
+import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.rememberWindowState
 import com.crosspaste.app.AppLaunchState
+import com.crosspaste.app.AppSize
+import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.WinAppWindowManager
 import com.crosspaste.ui.base.DesktopNotificationManager
@@ -54,6 +56,7 @@ object WindowsTrayView {
 
     @Composable
     fun Tray() {
+        val appSize = koinInject<AppSize>() as DesktopAppSize
         val appLaunchState = koinInject<AppLaunchState>()
         val appWindowManager = koinInject<DesktopAppWindowManager>()
         val notificationManager = koinInject<NotificationManager>() as DesktopNotificationManager
@@ -65,15 +68,15 @@ object WindowsTrayView {
         val menuWindowState =
             rememberWindowState(
                 placement = WindowPlacement.Floating,
-                size = DpSize(170.dp, 204.dp),
+                size = appSize.menuWindowDpSize,
             )
 
         LaunchedEffect(Unit) {
-            if (appLaunchState.firstLaunch && !appWindowManager.hasCompletedFirstLaunchShow) {
-                delay(1000)
-                refreshWindowPosition(appWindowManager, null) { _, _, _ -> }
-                appWindowManager.showMainWindow = true
-                appWindowManager.hasCompletedFirstLaunchShow = true
+            delay(1000)
+            refreshWindowPosition(appWindowManager, null) { _, _, _ -> }
+            if (appLaunchState.firstLaunch && !appWindowManager.getFirstLaunchCompleted()) {
+                appWindowManager.setShowMainWindow(true)
+                appWindowManager.setFirstLaunchCompleted(true)
             }
         }
 
@@ -93,8 +96,8 @@ object WindowsTrayView {
                         val density: Float = gd.displayMode.width.toFloat() / bounds.width
                         menuWindowState.position =
                             WindowPosition(
-                                x = ((event.x / density) - insets.left).dp - 32.dp,
-                                y = (bounds.height - insets.bottom).dp - 204.dp,
+                                x = ((event.x / density) - insets.left).dp - appSize.menuWindowXOffset,
+                                y = (bounds.height - insets.bottom).dp - appSize.menuWindowDpSize.height,
                             )
                     }
                 },
@@ -141,6 +144,7 @@ object WindowsTrayView {
 
     @Composable
     fun WindowTrayMenu(hideMenu: () -> Unit) {
+        val appSize = koinInject<AppSize>() as DesktopAppSize
         val appWindowManager = koinInject<DesktopAppWindowManager>()
 
         CrossPasteTheme {
@@ -162,17 +166,21 @@ object WindowsTrayView {
                                 onPress = {},
                             )
                         }
-                        .clip(RoundedCornerShape(5.dp))
+                        .clip(appSize.menuRoundedCornerShape)
                         .fillMaxSize()
-                        .padding(10.dp, 0.dp, 10.dp, 10.dp),
+                        .padding(appSize.menuShadowPaddingValues),
                 contentAlignment = Alignment.Center,
             ) {
                 Box(
                     modifier =
                         Modifier
-                            .shadow(5.dp, RoundedCornerShape(5.dp), false)
+                            .shadow(appSize.menuShadowSize, appSize.menuRoundedCornerShape, false)
                             .fillMaxSize()
-                            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), RoundedCornerShape(5.dp))
+                            .border(
+                                appSize.appBorderSize,
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                                RoundedCornerShape(5.dp),
+                            )
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onDoubleTap = {},
@@ -209,15 +217,28 @@ object WindowsTrayView {
         val usableWidth = bounds.width - insets.right
         val usableHeight = bounds.height - insets.bottom
 
-        val windowWidth = appWindowManager.mainWindowState.size.width
-        val windowHeight = appWindowManager.mainWindowState.size.height
+        val appSize = appWindowManager.appSize as DesktopAppSize
 
-        appWindowManager.mainWindowState.position =
+        val windowWidth = appSize.mainWindowSize.width
+        val windowHeight = appSize.mainWindowSize.height
+
+        val xOffset = appSize.mainHorizontalShadowPadding - appSize.edgePadding
+        val yOffset = appSize.mainBottomShadowPadding - appSize.edgePadding
+
+        val windowPosition =
             WindowPosition.Absolute(
-                x = usableWidth.dp - windowWidth + 8.dp,
-                y = usableHeight.dp - windowHeight + 8.dp,
+                x = usableWidth.dp - windowWidth + xOffset,
+                y = usableHeight.dp - windowHeight + yOffset,
             )
-        logger.debug { "main position: ${appWindowManager.mainWindowState.position}" }
+
+        appWindowManager.setMainWindowState(
+            WindowState(
+                size = appWindowManager.appSize.mainWindowSize,
+                position = windowPosition,
+            ),
+        )
+
+        logger.debug { "main position: $windowPosition" }
     }
 
     class WindowsTrayMouseClicked(

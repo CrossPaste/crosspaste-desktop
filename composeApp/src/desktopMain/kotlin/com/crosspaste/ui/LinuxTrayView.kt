@@ -8,7 +8,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
+import androidx.compose.ui.window.WindowState
 import com.crosspaste.app.AppLaunchState
+import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
 import com.crosspaste.utils.DesktopResourceUtils
@@ -67,9 +69,9 @@ object LinuxTrayView {
 
             refreshWindowPosition(appWindowManager)
 
-            if (appLaunchState.firstLaunch && !appWindowManager.hasCompletedFirstLaunchShow) {
-                appWindowManager.showMainWindow = true
-                appWindowManager.hasCompletedFirstLaunchShow = true
+            if (appLaunchState.firstLaunch && !appWindowManager.getFirstLaunchCompleted()) {
+                appWindowManager.setShowMainWindow(true)
+                appWindowManager.setFirstLaunchCompleted(true)
             }
         }
 
@@ -80,28 +82,38 @@ object LinuxTrayView {
         }
     }
 
-    fun refreshWindowPosition(appWindowManager: DesktopAppWindowManager) {
+    private fun refreshWindowPosition(appWindowManager: DesktopAppWindowManager) {
         val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
         val bounds = gd.defaultConfiguration.bounds
         val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
 
-        val windowWidth = appWindowManager.mainWindowState.size.width
+        val appSize = appWindowManager.appSize as DesktopAppSize
 
-        appWindowManager.mainWindowState.position =
+        val windowWidth = appSize.mainWindowSize.width
+
+        val windowPosition =
             WindowPosition.Absolute(
-                x = (bounds.x + bounds.width).dp - windowWidth + 20.dp,
+                x = (bounds.x + bounds.width).dp - windowWidth + appSize.mainHorizontalShadowPadding,
                 y = (bounds.y + insets.top).dp,
             )
-        logger.debug { "main position: ${appWindowManager.mainWindowState.position}" }
+
+        appWindowManager.setMainWindowState(
+            WindowState(
+                size = appWindowManager.appSize.mainWindowSize,
+                position = windowPosition,
+            ),
+        )
+
+        logger.debug { "main position: $windowPosition" }
     }
 
-    fun getTrayType(): TrayType {
+    private fun getTrayType(): TrayType {
         return System.getProperty("linux.force.trayType")?.let {
             safeFromString(it)
         } ?: TrayType.AutoDetect
     }
 
-    fun safeFromString(trayName: String): TrayType {
+    private fun safeFromString(trayName: String): TrayType {
         return try {
             TrayType.valueOf(trayName)
         } catch (e: Exception) {

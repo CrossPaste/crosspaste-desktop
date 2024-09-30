@@ -30,7 +30,7 @@ class DesktopAppTokenService(
     override var token by mutableStateOf(charArrayOf('0', '0', '0', '0', '0', '0'))
 
     override fun toShowToken() {
-        appWindowManager.showMainWindow = true
+        appWindowManager.setShowMainWindow(true)
         showToken = true
     }
 

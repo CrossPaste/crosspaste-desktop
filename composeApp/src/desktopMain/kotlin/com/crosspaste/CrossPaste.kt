@@ -17,6 +17,7 @@ import com.crosspaste.app.AppInfoFactory
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.AppLock
 import com.crosspaste.app.AppRestartService
+import com.crosspaste.app.AppSize
 import com.crosspaste.app.AppStartUpService
 import com.crosspaste.app.AppTokenService
 import com.crosspaste.app.AppUpdateService
@@ -26,6 +27,7 @@ import com.crosspaste.app.DesktopAppExitService
 import com.crosspaste.app.DesktopAppInfoFactory
 import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppRestartService
+import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppStartUpService
 import com.crosspaste.app.DesktopAppTokenService
 import com.crosspaste.app.DesktopAppUpdateService
@@ -387,9 +389,10 @@ class CrossPaste {
 
                     // ui component
                     single<ActiveGraphicsDevice> { get<DesktopMouseListener>() }
+                    single<AppSize> { DesktopAppSize }
                     single<AppTokenService> { DesktopAppTokenService(get()) }
                     single<AppWindowManager> { get<DesktopAppWindowManager>() }
-                    single<DesktopAppWindowManager> { getDesktopAppWindowManager(lazy { get() }, get(), get()) }
+                    single<DesktopAppWindowManager> { getDesktopAppWindowManager(get(), lazy { get() }, get(), get()) }
                     single<DesktopMouseListener> { DesktopMouseListener }
                     single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get()) }
                     single<DialogService> { DesktopDialogService() }
@@ -462,7 +465,7 @@ class CrossPaste {
             logger.info { "AppLock release completed" }
             if (exitMode == ExitMode.MIGRATION) {
                 val appWindowManager = koin.get<DesktopAppWindowManager>()
-                appWindowManager.showMainWindow = false
+                appWindowManager.setShowMainWindow(false)
             }
             exitApplication()
         }
@@ -524,10 +527,10 @@ class CrossPaste {
 
                 val exitApplication: (ExitMode) -> Unit = { mode ->
                     if (mode == ExitMode.EXIT || mode == ExitMode.RESTART) {
-                        appWindowManager.showMainWindow = false
+                        appWindowManager.setShowMainWindow(false)
                     }
                     exiting = true
-                    appWindowManager.showSearchWindow = false
+                    appWindowManager.setShowSearchWindow(false)
                     ioScope.launch {
                         exitCrossPasteApplication(mode, ioScope) { exitApplication() }
                     }

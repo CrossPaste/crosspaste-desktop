@@ -11,7 +11,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
+import androidx.compose.ui.window.WindowState
 import com.crosspaste.app.AppLaunchState
+import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
 import com.crosspaste.i18n.GlobalCopywriter
@@ -76,23 +78,19 @@ object MacTrayView {
         }
 
         LaunchedEffect(Unit) {
-            if (appLaunchState.firstLaunch && !appWindowManager.hasCompletedFirstLaunchShow) {
-                delay(1000)
-                val windowInfos = MacAppUtils.getTrayWindowInfos(appLaunchState.pid)
-                windowInfos.useAll {
-                    val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
-                    val screenDevice = ge.defaultScreenDevice
+            // wait for the app to be launched
+            delay(1000)
+            val windowInfos = MacAppUtils.getTrayWindowInfos(appLaunchState.pid)
+            windowInfos.useAll {
+                val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                val screenDevice = ge.defaultScreenDevice
 
-                    (windowInfos.firstOrNull { it.contained(screenDevice) } ?: windowInfos.firstOrNull())?.let {
-                        logger.debug { "windowInfo: $it" }
-                        appWindowManager.mainWindowState.position =
-                            WindowPosition.Absolute(
-                                x = it.x.dp + (it.width.dp / 2) - (appWindowManager.mainWindowState.size.width / 2),
-                                y = it.y.dp + 30.dp,
-                            )
-                        logger.debug { "main position: ${appWindowManager.mainWindowState.position}" }
-                        appWindowManager.showMainWindow = true
-                        appWindowManager.hasCompletedFirstLaunchShow = true
+                (windowInfos.firstOrNull { it.contained(screenDevice) } ?: windowInfos.firstOrNull())?.let {
+                    logger.debug { "windowInfo: $it" }
+                    refreshWindowPosition(appWindowManager, it)
+                    if (appLaunchState.firstLaunch && !appWindowManager.getFirstLaunchCompleted()) {
+                        appWindowManager.setShowMainWindow(true)
+                        appWindowManager.setFirstLaunchCompleted(true)
                     }
                 }
             }
@@ -111,7 +109,7 @@ object MacTrayView {
                         }
                     } else {
                         mainCoroutineDispatcher.launch(CoroutineName("Hide CrossPaste")) {
-                            if (appWindowManager.showMainWindow) {
+                            if (appWindowManager.getShowMainWindow()) {
                                 appWindowManager.unActiveMainWindow()
                             }
                         }
@@ -186,6 +184,25 @@ object MacTrayView {
         return menuItem
     }
 
+    private fun refreshWindowPosition(
+        appWindowManager: DesktopAppWindowManager,
+        windowInfo: WindowInfo,
+    ) {
+        val appSize = appWindowManager.appSize as DesktopAppSize
+        val windowPosition =
+            WindowPosition.Absolute(
+                x = windowInfo.x.dp + (windowInfo.width.dp / 2) - (appSize.mainWindowSize.width / 2),
+                y = windowInfo.y.dp + appSize.mainWindowTopMargin,
+            )
+        appWindowManager.setMainWindowState(
+            WindowState(
+                size = appWindowManager.appSize.mainWindowSize,
+                position = windowPosition,
+            ),
+        )
+        logger.debug { "main position: $windowPosition" }
+    }
+
     class MacTrayMouseClicked(
         private val appWindowManager: DesktopAppWindowManager,
         private val appLaunchState: AppLaunchState,
@@ -197,12 +214,7 @@ object MacTrayView {
             windowInfos.useAll {
                 windowInfos.first { it.contains(e.xOnScreen, e.yOnScreen) }.let {
                     mouseClickedAction(e, it)
-                    appWindowManager.mainWindowState.position =
-                        WindowPosition.Absolute(
-                            x = it.x.dp + (it.width.dp / 2) - (appWindowManager.mainWindowState.size.width / 2),
-                            y = it.y.dp + 30.dp,
-                        )
-                    logger.debug { "main position: ${appWindowManager.mainWindowState.position}" }
+                    refreshWindowPosition(appWindowManager, it)
                 }
             }
         }

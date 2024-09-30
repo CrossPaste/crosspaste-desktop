@@ -2,6 +2,8 @@ package com.crosspaste.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.Window
@@ -16,10 +18,13 @@ import java.awt.event.WindowEvent
 fun ApplicationScope.CrossPasteSearchWindow(windowIcon: Painter?) {
     val appWindowManager = koinApplication.koin.get<DesktopAppWindowManager>()
 
+    val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
+    val currentSearchWindowState by appWindowManager.searchWindowState.collectAsState()
+
     Window(
         onCloseRequest = ::exitApplication,
-        visible = appWindowManager.showSearchWindow,
-        state = appWindowManager.searchWindowState,
+        visible = showSearchWindow,
+        state = currentSearchWindowState,
         title = SEARCH_WINDOW_TITLE,
         icon = windowIcon,
         alwaysOnTop = true,
@@ -33,11 +38,11 @@ fun ApplicationScope.CrossPasteSearchWindow(windowIcon: Painter?) {
             val windowListener =
                 object : WindowAdapter() {
                     override fun windowGainedFocus(e: WindowEvent?) {
-                        appWindowManager.showSearchWindow = true
+                        appWindowManager.setShowSearchWindow(true)
                     }
 
                     override fun windowLostFocus(e: WindowEvent?) {
-                        appWindowManager.showSearchWindow = false
+                        appWindowManager.setShowSearchWindow(false)
                     }
                 }
 

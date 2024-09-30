@@ -23,7 +23,7 @@ class DesktopNotificationManager(
         messageType: MessageType,
         duration: Long,
     ) {
-        if (appWindowManager.showMainWindow) {
+        if (appWindowManager.getShowMainWindow()) {
             notifyToast(message, messageType, duration)
         } else if (platform.isLinux()) {
             sendNotification(AppName, message)

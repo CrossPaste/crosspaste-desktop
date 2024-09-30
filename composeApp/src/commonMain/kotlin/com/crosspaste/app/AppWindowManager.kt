@@ -1,14 +1,15 @@
 package com.crosspaste.app
 
+import kotlinx.coroutines.flow.StateFlow
 import okio.Path
 
 interface AppWindowManager {
 
-    var hasCompletedFirstLaunchShow: Boolean
+    val firstLaunchCompleted: StateFlow<Boolean>
 
-    var showMainDialog: Boolean
+    val showMainDialog: StateFlow<Boolean>
 
-    var showFileDialog: Boolean
+    val showFileDialog: StateFlow<Boolean>
 
     fun setMainCursorWait()
 

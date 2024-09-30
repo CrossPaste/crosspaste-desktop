@@ -140,7 +140,6 @@ fun SingleImagePreviewView(pasteFileCoordinate: PasteFileCoordinate) {
                             val builder = ImageInfoBuilder()
                             thumbnailLoader.readOriginMeta(pasteFileCoordinate, builder)
                             val imageInfo = builder.build()
-                            println("test Dim: $imageInfo")
                             imageInfo.map[DIMENSIONS]?.let {
                                 Text(
                                     text = "${copywriter.getText(DIMENSIONS)}: ${it.getTextByCopyWriter(copywriter)}",
