@@ -21,7 +21,7 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.ui.base.UISupport
-import com.crosspaste.ui.paste.preview.HtmlToImageView
+import com.crosspaste.ui.paste.HtmlToImageView
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject

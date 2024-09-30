@@ -1,10 +1,12 @@
-package com.crosspaste.ui.paste.preview
+package com.crosspaste.ui.paste
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -28,6 +30,8 @@ fun HtmlToImageView(
     html2ImagePath: Path,
     htmlText: String,
     preview: Boolean,
+    alignment: Alignment = Alignment.Center,
+    contentScale: ContentScale = ContentScale.Fit,
 ) {
     val density = LocalDensity.current
     val imageLoaders = koinInject<ImageLoaders>()
@@ -40,6 +44,8 @@ fun HtmlToImageView(
                 .crossfade(true)
                 .build(),
         imageLoader = imageLoaders.html2ImageLoader,
+        alignment = alignment,
+        contentScale = contentScale,
         contentDescription = "Html 2 Image",
         content = {
             when (this.painter.state.collectAsState().value) {
