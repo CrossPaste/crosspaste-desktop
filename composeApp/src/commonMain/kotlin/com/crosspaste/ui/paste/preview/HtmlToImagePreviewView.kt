@@ -10,12 +10,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.ui.paste.HtmlToImageView
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -53,6 +56,8 @@ fun HtmlToImagePreviewView(
                             html2ImagePath = filePath,
                             htmlText = pasteHtml.getText(),
                             preview = true,
+                            alignment = Alignment.TopStart,
+                            contentScale = ContentScale.None,
                         )
                     }
                 }
