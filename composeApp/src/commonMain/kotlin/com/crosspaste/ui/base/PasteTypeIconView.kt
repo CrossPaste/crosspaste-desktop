@@ -19,7 +19,6 @@ import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.crosspaste.app.AppFileType
 import com.crosspaste.image.coil.FileExtItem
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.image.coil.PasteDataItem
@@ -115,13 +114,11 @@ fun PasteTypeIconView(
             var imageSize by remember(it) { mutableStateOf(if (isMacStyleIcon) size + 2.dp else (size + 2.dp) / 24 * 20) }
             var imagePaddingSize by remember(it) { mutableStateOf(if (isMacStyleIcon) 0.dp else (size + 2.dp) / 24 * 2) }
 
-            val path = userDataPathProvider.resolve("$it.png", AppFileType.ICON)
-
             SubcomposeAsyncImage(
                 modifier = Modifier.padding(imagePaddingSize).size(imageSize),
                 model =
                     ImageRequest.Builder(PlatformContext.INSTANCE)
-                        .data(path)
+                        .data(PasteDataItem(pasteData))
                         .crossfade(false)
                         .build(),
                 imageLoader = imageLoaders.appSourceLoader,
