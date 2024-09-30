@@ -1,12 +1,8 @@
 package com.crosspaste.app
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
@@ -21,6 +17,8 @@ import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import okio.Path
 import okio.Path.Companion.toOkioPath
 import java.awt.Cursor
@@ -29,23 +27,41 @@ import java.io.File
 import javax.swing.JFileChooser
 
 fun getDesktopAppWindowManager(
+    appSize: AppSize,
     lazyShortcutKeys: Lazy<ShortcutKeys>,
     activeGraphicsDevice: ActiveGraphicsDevice,
     userDataPathProvider: UserDataPathProvider,
 ): DesktopAppWindowManager {
     val platform = getPlatform()
     return if (platform.isMacos()) {
-        MacAppWindowManager(lazyShortcutKeys, activeGraphicsDevice, userDataPathProvider)
+        MacAppWindowManager(
+            appSize,
+            lazyShortcutKeys,
+            activeGraphicsDevice,
+            userDataPathProvider,
+        )
     } else if (platform.isWindows()) {
-        WinAppWindowManager(lazyShortcutKeys, activeGraphicsDevice, userDataPathProvider)
+        WinAppWindowManager(
+            appSize,
+            lazyShortcutKeys,
+            activeGraphicsDevice,
+            userDataPathProvider,
+        )
     } else if (platform.isLinux()) {
-        LinuxAppWindowManager(lazyShortcutKeys, activeGraphicsDevice, userDataPathProvider)
+        LinuxAppWindowManager(
+            appSize,
+            lazyShortcutKeys,
+            activeGraphicsDevice,
+            userDataPathProvider,
+        )
     } else {
         throw IllegalStateException("Unsupported platform: $platform")
     }
 }
 
-abstract class DesktopAppWindowManager : AppWindowManager {
+abstract class DesktopAppWindowManager(
+    val appSize: AppSize,
+) : AppWindowManager {
 
     companion object {
         const val MAIN_WINDOW_TITLE: String = "CrossPaste"
@@ -60,50 +76,105 @@ abstract class DesktopAppWindowManager : AppWindowManager {
 
     protected val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
-    override var hasCompletedFirstLaunchShow by mutableStateOf(false)
+    private val _firstLaunchCompleted = MutableStateFlow(false)
+    override var firstLaunchCompleted: StateFlow<Boolean> = _firstLaunchCompleted
 
-    var showMainWindow by mutableStateOf(false)
+    private val _showMainWindow = MutableStateFlow(false)
+    val showMainWindow: StateFlow<Boolean> = _showMainWindow
 
-    var mainWindowState: WindowState by mutableStateOf(
-        WindowState(
-            placement = WindowPlacement.Floating,
-            position = WindowPosition.PlatformDefault,
-            size = DpSize(width = 480.dp, height = 740.dp),
-        ),
-    )
+    private val _mainWindowState =
+        MutableStateFlow(
+            WindowState(
+                placement = WindowPlacement.Floating,
+                position = WindowPosition.PlatformDefault,
+                size = appSize.mainWindowSize,
+            ),
+        )
+    val mainWindowState: StateFlow<WindowState> = _mainWindowState
 
-    var mainComposeWindow: ComposeWindow? by mutableStateOf(null)
+    var mainComposeWindow: ComposeWindow? = null
 
-    var mainFocusRequester = FocusRequester()
+    val mainFocusRequester = FocusRequester()
 
-    override var showMainDialog by mutableStateOf(false)
+    private val _showMainDialog = MutableStateFlow(false)
+    override val showMainDialog: StateFlow<Boolean> = _showMainDialog
 
-    override var showFileDialog by mutableStateOf(false)
+    private val _showFileDialog = MutableStateFlow(false)
+    override val showFileDialog: StateFlow<Boolean> = _showFileDialog
 
-    var showSearchWindow by mutableStateOf(false)
+    private val _showSearchWindow = MutableStateFlow(false)
+    var showSearchWindow: StateFlow<Boolean> = _showSearchWindow
 
-    var searchWindowState: WindowState by mutableStateOf(
-        WindowState(
-            placement = WindowPlacement.Floating,
-            position = WindowPosition.Aligned(Alignment.Center),
-            size = DpSize(width = 800.dp, height = 540.dp),
-        ),
-    )
+    private val _searchWindowState =
+        MutableStateFlow(
+            WindowState(
+                placement = WindowPlacement.Floating,
+                position = WindowPosition.Aligned(Alignment.Center),
+                size = appSize.searchWindowSize,
+            ),
+        )
+    val searchWindowState: StateFlow<WindowState> = _searchWindowState
 
-    var searchComposeWindow: ComposeWindow? by mutableStateOf(null)
+    var searchComposeWindow: ComposeWindow? = null
 
-    var searchFocusRequester = FocusRequester()
-
-    val searchWindowDetailViewDpSize = DpSize(width = 500.dp, height = 240.dp)
+    val searchFocusRequester = FocusRequester()
 
     protected val calPosition: (Rectangle) -> WindowPosition =
         Memoize.memoize { bounds ->
-            val windowSize = searchWindowState.size
+            val windowSize = appSize.searchWindowSize
             WindowPosition(
                 x = (bounds.x.dp + ((bounds.width.dp - windowSize.width) / 2)),
                 y = (bounds.y.dp + ((bounds.height.dp - windowSize.height) / 2)),
             )
         }
+
+    fun setFirstLaunchCompleted(firstLaunchCompleted: Boolean) {
+        _firstLaunchCompleted.value = firstLaunchCompleted
+    }
+
+    fun getFirstLaunchCompleted(): Boolean {
+        return firstLaunchCompleted.value
+    }
+
+    fun setShowMainWindow(showMainWindow: Boolean) {
+        _showMainWindow.value = showMainWindow
+    }
+
+    fun getShowMainWindow(): Boolean {
+        return showMainWindow.value
+    }
+
+    fun setShowSearchWindow(showSearchWindow: Boolean) {
+        _showSearchWindow.value = showSearchWindow
+    }
+
+    fun getShowSearchWindow(): Boolean {
+        return showSearchWindow.value
+    }
+
+    fun setMainWindowState(windowState: WindowState) {
+        _mainWindowState.value = windowState
+    }
+
+    fun getMainWindowState(): WindowState {
+        return mainWindowState.value
+    }
+
+    fun setSearchWindowState(windowState: WindowState) {
+        _searchWindowState.value = windowState
+    }
+
+    fun getSearchWindowState(): WindowState {
+        return searchWindowState.value
+    }
+
+    fun getShowMainDialog(): Boolean {
+        return showMainDialog.value
+    }
+
+    fun getShowFileDialog(): Boolean {
+        return showFileDialog.value
+    }
 
     override fun resetMainCursor() {
         mainComposeWindow?.cursor = Cursor.getDefaultCursor()
@@ -128,7 +199,7 @@ abstract class DesktopAppWindowManager : AppWindowManager {
         errorAction: (String) -> Unit,
     ) {
         mainComposeWindow?.let {
-            showFileDialog = true
+            _showFileDialog.value = true
             JFileChooser().apply {
                 fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
                 dialogTitle = fileChooserTitle
@@ -152,7 +223,7 @@ abstract class DesktopAppWindowManager : AppWindowManager {
                     }
                 }
             }
-            showFileDialog = false
+            _showFileDialog.value = false
         }
     }
 
@@ -163,7 +234,7 @@ abstract class DesktopAppWindowManager : AppWindowManager {
     abstract suspend fun unActiveMainWindow()
 
     suspend fun switchMainWindow() {
-        if (showMainWindow) {
+        if (showMainWindow.value) {
             unActiveMainWindow()
         } else {
             activeMainWindow()

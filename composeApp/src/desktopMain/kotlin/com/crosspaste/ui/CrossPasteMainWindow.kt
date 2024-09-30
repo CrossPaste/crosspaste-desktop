@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,7 +25,9 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
+import com.crosspaste.app.AppSize
 import com.crosspaste.app.AppTokenService
+import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
 import com.crosspaste.app.ExitMode
@@ -49,10 +52,13 @@ fun CrossPasteMainWindow(
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val globalListener = koinInject<GlobalListener>()
 
+    val showMainWindow by appWindowManager.showMainWindow.collectAsState()
+    val currentMainWindowState by appWindowManager.mainWindowState.collectAsState()
+
     Window(
         onCloseRequest = { exitApplication(ExitMode.EXIT) },
-        visible = appWindowManager.showMainWindow,
-        state = appWindowManager.mainWindowState,
+        visible = showMainWindow,
+        state = currentMainWindowState,
         title = MAIN_WINDOW_TITLE,
         icon = windowIcon,
         alwaysOnTop = true,
@@ -68,14 +74,14 @@ fun CrossPasteMainWindow(
             val windowListener =
                 object : WindowAdapter() {
                     override fun windowGainedFocus(e: WindowEvent?) {
-                        appWindowManager.showMainWindow = true
+                        appWindowManager.setShowMainWindow(true)
                     }
 
                     override fun windowLostFocus(e: WindowEvent?) {
                         mainCoroutineDispatcher.launch(CoroutineName("Hide CrossPaste")) {
-                            if (appWindowManager.showMainWindow &&
-                                !appWindowManager.showMainDialog &&
-                                !appWindowManager.showFileDialog
+                            if (appWindowManager.getShowMainWindow() &&
+                                !appWindowManager.getShowMainDialog() &&
+                                !appWindowManager.getShowMainDialog()
                             ) {
                                 appWindowManager.unActiveMainWindow()
                             }
@@ -96,6 +102,7 @@ fun CrossPasteMainWindow(
 
 @Composable
 fun CrossPasteMainWindowContent(hideWindow: suspend () -> Unit) {
+    val appSize = koinInject<AppSize>() as DesktopAppSize
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val appTokenService = koinInject<AppTokenService>()
     val toastManager = koinInject<ToastManager>()
@@ -129,15 +136,15 @@ fun CrossPasteMainWindowContent(hideWindow: suspend () -> Unit) {
                             onPress = {},
                         )
                     }
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(appSize.mainShadowSize))
                     .fillMaxSize()
-                    .padding(20.dp, 0.dp, 20.dp, 30.dp),
+                    .padding(appSize.mainShadowPaddingValues),
             contentAlignment = Alignment.Center,
         ) {
             Box(
                 modifier =
                     Modifier
-                        .shadow(10.dp, RoundedCornerShape(10.dp))
+                        .shadow(appSize.mainShadowSize, appSize.appRoundedCornerShape)
                         .fillMaxSize()
                         .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), RoundedCornerShape(10.dp))
                         .pointerInput(Unit) {
@@ -154,7 +161,7 @@ fun CrossPasteMainWindowContent(hideWindow: suspend () -> Unit) {
 
                 Column(
                     Modifier
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(appSize.appRoundedCornerShape)
                         .fillMaxWidth()
                         .focusTarget()
                         .focusRequester(appWindowManager.mainFocusRequester),

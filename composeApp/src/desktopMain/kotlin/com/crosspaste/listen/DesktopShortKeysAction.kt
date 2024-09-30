@@ -69,14 +69,14 @@ class DesktopShortKeysAction(
     private fun hideWindow() {
         logger.info { "Hide window" }
         mainCoroutineDispatcher.launch(CoroutineName("HideWindow")) {
-            if (appWindowManager.showMainWindow &&
-                !appWindowManager.showMainDialog &&
-                !appWindowManager.showFileDialog
+            if (appWindowManager.getShowMainWindow() &&
+                !appWindowManager.getShowMainDialog() &&
+                !appWindowManager.getShowFileDialog()
             ) {
                 appWindowManager.unActiveMainWindow()
             }
 
-            if (appWindowManager.showSearchWindow) {
+            if (appWindowManager.getShowSearchWindow()) {
                 pasteSearchService.unActiveWindow()
             }
         }

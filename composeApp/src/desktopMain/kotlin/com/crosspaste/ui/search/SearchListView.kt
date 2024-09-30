@@ -56,7 +56,7 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
     val searchResult = remember(pasteSearchService.searchTime) { pasteSearchService.searchResult }
 
     LaunchedEffect(appWindowManager.showSearchWindow) {
-        if (appWindowManager.showSearchWindow) {
+        if (appWindowManager.getShowSearchWindow()) {
             if (pasteSearchService.searchResult.size > 0) {
                 pasteSearchService.selectedIndex = 0
                 searchListState.scrollToItem(0)
@@ -65,7 +65,7 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
     }
 
     LaunchedEffect(pasteSearchService.selectedIndex, appWindowManager.showSearchWindow) {
-        if (appWindowManager.showSearchWindow) {
+        if (appWindowManager.getShowSearchWindow()) {
             val visibleItems = searchListState.layoutInfo.visibleItemsInfo
             if (visibleItems.isNotEmpty()) {
                 val lastIndex = visibleItems.last().index

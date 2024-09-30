@@ -5,8 +5,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
 class TestWindowManager(
+    appSize: AppSize,
     private val mockOS: MockOS,
-) : DesktopAppWindowManager() {
+) : DesktopAppWindowManager(appSize) {
 
     var prevApp: String? by mutableStateOf(null)
 
@@ -23,25 +24,24 @@ class TestWindowManager(
     }
 
     override suspend fun activeMainWindow() {
-        showMainWindow = true
+        setShowMainWindow(true)
         bringToFront(MAIN_WINDOW_TITLE)
     }
 
     override suspend fun unActiveMainWindow() {
         bringToBack(MAIN_WINDOW_TITLE, false)
-        showMainWindow = false
+        setShowMainWindow(false)
     }
 
     override suspend fun activeSearchWindow() {
-        showSearchWindow = true
-
+        setShowSearchWindow(true)
         bringToFront(SEARCH_WINDOW_TITLE)
     }
 
     override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
         val toPaste = preparePaste()
         bringToBack(SEARCH_WINDOW_TITLE, toPaste)
-        showSearchWindow = false
+        setShowSearchWindow(false)
     }
 
     private fun bringToFront(windowTitle: String) {

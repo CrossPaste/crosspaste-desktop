@@ -10,7 +10,7 @@ class AppWindowManagerTest {
     @Test
     fun testMockTestAppWindowManager() {
         val mockOS = MockOS()
-        val testAppWindowManager = TestWindowManager(mockOS)
+        val testAppWindowManager = TestWindowManager(DesktopAppSize, mockOS)
         assertNull(testAppWindowManager.getPrevAppName())
         runBlocking { testAppWindowManager.toPaste() }
         assertEquals(1, testAppWindowManager.pasterId)

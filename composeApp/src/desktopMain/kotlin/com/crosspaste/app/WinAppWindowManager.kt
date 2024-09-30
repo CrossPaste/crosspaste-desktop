@@ -3,6 +3,7 @@ package com.crosspaste.app
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.window.WindowState
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
@@ -16,10 +17,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class WinAppWindowManager(
+    appSize: AppSize,
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val activeGraphicsDevice: ActiveGraphicsDevice,
     private val userDataPathProvider: UserDataPathProvider,
-) : DesktopAppWindowManager() {
+) : DesktopAppWindowManager(appSize) {
 
     private var prevWinAppInfo: WinAppInfo? by mutableStateOf(null)
 
@@ -80,7 +82,7 @@ class WinAppWindowManager(
             prevWinAppInfo = it.first
         }
 
-        showMainWindow = true
+        setShowMainWindow(true)
         delay(500)
         mainFocusRequester.requestFocus()
     }
@@ -99,7 +101,7 @@ class WinAppWindowManager(
             false,
             keyCodes,
         )
-        showMainWindow = false
+        setShowMainWindow(false)
         mainFocusRequester.freeFocus()
     }
 
@@ -113,10 +115,14 @@ class WinAppWindowManager(
         }
 
         activeGraphicsDevice.getGraphicsDevice()?.let { graphicsDevice ->
-            searchWindowState.position = calPosition(graphicsDevice.defaultConfiguration.bounds)
+            setSearchWindowState(
+                WindowState(
+                    size = appSize.searchWindowSize,
+                    position = calPosition(graphicsDevice.defaultConfiguration.bounds),
+                ),
+            )
         }
-
-        showSearchWindow = true
+        setShowSearchWindow(true)
 
         // Wait for the window to be ready, otherwise bringToFront may cause the window to fail to get focus
         delay(500)
@@ -142,7 +148,7 @@ class WinAppWindowManager(
             toPaste,
             keyCodes,
         )
-        showSearchWindow = false
+        setShowSearchWindow(false)
         searchFocusRequester.freeFocus()
     }
 

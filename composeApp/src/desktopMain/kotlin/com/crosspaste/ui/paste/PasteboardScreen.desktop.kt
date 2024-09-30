@@ -86,7 +86,7 @@ actual fun PasteboardScreen() {
     }
 
     LaunchedEffect(appWindowManager.showMainWindow) {
-        if (appWindowManager.showMainWindow) {
+        if (appWindowManager.getShowMainWindow()) {
             pasteDataViewModel.initList()
             if (rememberPasteDataList.isNotEmpty()) {
                 listState.scrollToItem(0)

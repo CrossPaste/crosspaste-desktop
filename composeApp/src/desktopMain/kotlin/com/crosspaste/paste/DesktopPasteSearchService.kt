@@ -168,7 +168,7 @@ class DesktopPasteSearchService(
     private fun updateSearchResult(searchResult: List<PasteData>) {
         this.searchResult.clear()
         this.searchResult.addAll(searchResult)
-        if (appWindowManager.showSearchWindow) {
+        if (appWindowManager.getShowSearchWindow()) {
             currentPasteData?.id?.let { id ->
                 val newSelectedIndex = searchResult.indexOfFirst { it.id == id }
                 if (newSelectedIndex >= 0) {

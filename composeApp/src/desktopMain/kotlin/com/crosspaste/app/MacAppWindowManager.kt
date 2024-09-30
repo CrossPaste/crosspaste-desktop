@@ -3,6 +3,7 @@ package com.crosspaste.app
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.window.WindowState
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.path.UserDataPathProvider
@@ -13,10 +14,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class MacAppWindowManager(
+    appSize: AppSize,
     lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val activeGraphicsDevice: ActiveGraphicsDevice,
     private val userDataPathProvider: UserDataPathProvider,
-) : DesktopAppWindowManager() {
+) : DesktopAppWindowManager(appSize) {
 
     private val crosspasteBundleID = getSystemProperty().get("mac.bundleID")
 
@@ -67,7 +69,7 @@ class MacAppWindowManager(
 
     override suspend fun activeMainWindow() {
         logger.info { "active main window" }
-        showMainWindow = true
+        setShowMainWindow(true)
         MacAppUtils.bringToFront(MAIN_WINDOW_TITLE).let {
             createMacAppInfo(it)?.let { macAppInfo ->
                 if (macAppInfo.bundleIdentifier != crosspasteBundleID) {
@@ -85,17 +87,22 @@ class MacAppWindowManager(
         MacAppUtils.mainToBack(
             prevMacAppInfo?.bundleIdentifier ?: "",
         )
-        showMainWindow = false
+        setShowMainWindow(false)
         delay(500)
         mainFocusRequester.freeFocus()
     }
 
     override suspend fun activeSearchWindow() {
         logger.info { "active search window" }
-        showSearchWindow = true
+        setShowSearchWindow(true)
 
         activeGraphicsDevice.getGraphicsDevice()?.let { graphicsDevice ->
-            searchWindowState.position = calPosition(graphicsDevice.defaultConfiguration.bounds)
+            setSearchWindowState(
+                WindowState(
+                    size = appSize.searchWindowSize,
+                    position = calPosition(graphicsDevice.defaultConfiguration.bounds),
+                ),
+            )
         }
 
         MacAppUtils.bringToFront(SEARCH_WINDOW_TITLE).let {
@@ -121,7 +128,7 @@ class MacAppWindowManager(
             pair.first,
             pair.second,
         )
-        showSearchWindow = false
+        setShowSearchWindow(false)
         searchFocusRequester.freeFocus()
     }
 
