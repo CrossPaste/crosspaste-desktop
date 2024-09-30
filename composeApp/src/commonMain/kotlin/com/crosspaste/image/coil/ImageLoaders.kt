@@ -98,7 +98,7 @@ class ImageLoaders(
         ImageLoader.Builder(PlatformContext.INSTANCE)
             .components {
                 add(AppSourceFactory(imageCreator, userDataPathProvider))
-                    .add(PasteDataKeyer())
+                    .add(PasteDataSourceKeyer())
             }
             .memoryCache {
                 memoryCache

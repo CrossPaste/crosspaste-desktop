@@ -29,6 +29,15 @@ class PasteDataKeyer : Keyer<PasteDataItem> {
     }
 }
 
+class PasteDataSourceKeyer : Keyer<PasteDataItem> {
+    override fun key(
+        data: PasteDataItem,
+        options: Options,
+    ): String {
+        return data.pasteData.source ?: ""
+    }
+}
+
 data class FileExtItem(val path: Path)
 
 class FileExtKeyer : Keyer<FileExtItem> {
