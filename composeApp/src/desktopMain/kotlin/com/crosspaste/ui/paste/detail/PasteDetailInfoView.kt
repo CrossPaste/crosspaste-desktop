@@ -1,10 +1,10 @@
 package com.crosspaste.ui.paste.detail
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollbarStyle
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.gestures.scrollBy
@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.onClick
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
@@ -40,6 +39,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -63,7 +63,6 @@ import org.koin.compose.koinInject
 
 data class PasteDetailInfoItem(val key: String, val value: String)
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PasteDetailInfoView(
     indexInfo: String? = null,
@@ -93,9 +92,14 @@ fun PasteDetailInfoView(
         Spacer(modifier = Modifier.width(8.dp))
         Icon(
             modifier =
-                Modifier.size(15.dp).onClick {
-                    pasteRealm.setFavorite(pasteData.id, !pasteData.favorite)
-                },
+                Modifier.size(15.dp)
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onTap = {
+                                pasteRealm.setFavorite(pasteData.id, !pasteData.favorite)
+                            },
+                        )
+                    },
             painter = if (pasteData.favorite) favorite() else noFavorite(),
             contentDescription = "Favorite",
             tint =

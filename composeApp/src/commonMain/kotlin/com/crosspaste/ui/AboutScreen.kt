@@ -139,9 +139,7 @@ fun AboutInfoItem(
                 .height(40.dp)
                 .padding(horizontal = 80.dp, vertical = 5.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .clickable {
-                    onClick()
-                },
+                .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(

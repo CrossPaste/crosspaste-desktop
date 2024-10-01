@@ -80,7 +80,9 @@ fun CustomRectangleSwitch(
         Canvas(
             modifier =
                 modifier
-                    .clickable(onClick = { onCheckedChange(!checked) })
+                    .clickable {
+                        onCheckedChange(!checked)
+                    }
                     .padding(horizontal = 4.dp),
         ) {
             val trackHeight = size.height

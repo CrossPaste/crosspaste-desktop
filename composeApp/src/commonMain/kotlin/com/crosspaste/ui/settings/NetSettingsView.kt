@@ -218,9 +218,7 @@ fun BlackListDeviceView(
     SyncDeviceView(syncInfo = syncInfo) {
         PasteIconButton(
             size = 20.dp,
-            onClick = {
-                clickable()
-            },
+            onClick = clickable,
             modifier =
                 Modifier
                     .background(Color.Transparent, CircleShape),
