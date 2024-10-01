@@ -285,12 +285,6 @@ compose.desktop {
                 }
             }
 
-            val seleniumManagerJar: File =
-                configurations.detachedConfiguration(dependencies.create("org.seleniumhq.selenium:selenium-manager:4.25.0"))
-                    .resolve().first()
-
-            extract(seleniumManagerJar, appResourcesRootDir.get().asFile)
-
             // Add download info of jbr on all platforms
             val jbrYamlFile = project.projectDir.toPath().resolve("jbr.yaml").toFile()
             val jbrReleases = loadJbrReleases(jbrYamlFile)
@@ -500,52 +494,3 @@ data class JbrDetails(
     var url: String = "",
     var sha512: String = "",
 )
-
-fun extract(
-    jar: File,
-    outDir: File,
-) {
-    ZipFile(jar).use { zip ->
-        zip.entries().asSequence().forEach { entry ->
-            when (entry.name) {
-                "org/openqa/selenium/manager/linux/selenium-manager" -> {
-                    extractFile(zip, entry, outDir.resolve("linux-x64"))
-                }
-                "org/openqa/selenium/manager/macos/selenium-manager" -> {
-                    extractFile(zip, entry, outDir.resolve("macos-x64"))
-                    extractFile(zip, entry, outDir.resolve("macos-arm64"))
-                }
-                "org/openqa/selenium/manager/windows/selenium-manager.exe" -> {
-                    extractFile(zip, entry, outDir.resolve("windows-x64"))
-                }
-            }
-        }
-    }
-}
-
-fun extractFile(
-    zip: ZipFile,
-    entry: java.util.zip.ZipEntry,
-    targetDir: File,
-) {
-    val fileName = entry.name.substringAfterLast("/")
-    val targetFileName =
-        if (fileName.endsWith(".exe", ignoreCase = true)) {
-            fileName.substringBeforeLast(".", "")
-        } else {
-            fileName
-        }
-    val targetFile = targetDir.resolve(targetFileName)
-    targetFile.parentFile.mkdirs()
-    if (!targetFile.exists() || targetFile.lastModified() < entry.lastModifiedTime.toMillis()) {
-        zip.getInputStream(entry).use { input ->
-            targetFile.outputStream().use { output ->
-                input.copyTo(output)
-            }
-        }
-        targetFile.setExecutable(true, false)
-        println("Extracted: ${targetFile.absolutePath}")
-    } else {
-        println("Skipped (up to date): ${targetFile.absolutePath}")
-    }
-}
