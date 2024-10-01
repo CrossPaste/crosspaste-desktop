@@ -1,6 +1,6 @@
 package com.crosspaste.ui.paste.preview
 
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -24,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -52,7 +52,6 @@ import com.crosspaste.utils.getFileUtils
 import okio.FileSystem
 import org.koin.compose.koinInject
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SingleImagePreviewView(pasteFileCoordinate: PasteFileCoordinate) {
     val copywriter = koinInject<GlobalCopywriter>()
@@ -70,8 +69,12 @@ fun SingleImagePreviewView(pasteFileCoordinate: PasteFileCoordinate) {
 
     Row(
         modifier =
-            Modifier.onClick {
-                uiSupport.openImage(pasteFileCoordinate.filePath)
+            Modifier.pointerInput(Unit) {
+                detectTapGestures(
+                    onDoubleTap = {
+                        uiSupport.openImage(pasteFileCoordinate.filePath)
+                    },
+                )
             },
     ) {
         SubcomposeAsyncImage(

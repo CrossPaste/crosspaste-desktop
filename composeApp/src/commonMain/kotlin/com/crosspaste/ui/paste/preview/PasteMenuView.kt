@@ -3,6 +3,7 @@ package com.crosspaste.ui.paste.preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.TooltipPlacement
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.onClick
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -35,6 +35,7 @@ import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.areAnyPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
@@ -196,8 +197,12 @@ fun PasteMenuView(
                     contentDescription = "info",
                     modifier =
                         Modifier.size(18.dp)
-                            .onClick {
-                                showPopup = !showPopup
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onTap = {
+                                        showPopup = !showPopup
+                                    },
+                                )
                             },
                     tint = MaterialTheme.colorScheme.primary,
                 )
@@ -251,23 +256,28 @@ fun PasteMenuView(
 
                     Icon(
                         modifier =
-                            Modifier.size(16.dp).onClick {
-                                appWindowManager.setMainCursorWait()
-                                scope.launch(ioDispatcher) {
-                                    pasteboardService.tryWritePasteboard(
-                                        pasteData,
-                                        localOnly = true,
-                                        filterFile = false,
+                            Modifier.size(16.dp)
+                                .pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onTap = {
+                                            appWindowManager.setMainCursorWait()
+                                            scope.launch(ioDispatcher) {
+                                                pasteboardService.tryWritePasteboard(
+                                                    pasteData,
+                                                    localOnly = true,
+                                                    filterFile = false,
+                                                )
+                                                withContext(mainDispatcher) {
+                                                    appWindowManager.resetMainCursor()
+                                                    notificationManager.addNotification(
+                                                        message = copywriter.getText("copy_successful"),
+                                                        messageType = MessageType.Success,
+                                                    )
+                                                }
+                                            }
+                                        },
                                     )
-                                    withContext(mainDispatcher) {
-                                        appWindowManager.resetMainCursor()
-                                        notificationManager.addNotification(
-                                            message = copywriter.getText("copy_successful"),
-                                            messageType = MessageType.Success,
-                                        )
-                                    }
-                                }
-                            },
+                                },
                         painter = clipboard(),
                         contentDescription = "Copy",
                         tint = MaterialTheme.colorScheme.primary,
@@ -321,9 +331,14 @@ fun PasteMenuView(
 
                     Icon(
                         modifier =
-                            Modifier.size(16.dp).onClick {
-                                pasteRealm.setFavorite(pasteData.id, !pasteData.favorite)
-                            },
+                            Modifier.size(16.dp)
+                                .pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onTap = {
+                                            pasteRealm.setFavorite(pasteData.id, !pasteData.favorite)
+                                        },
+                                    )
+                                },
                         painter = if (pasteData.favorite) favorite() else noFavorite(),
                         contentDescription = "Favorite",
                         tint = favoriteColor(),

@@ -1,14 +1,14 @@
 package com.crosspaste.ui.paste.detail
 
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.onClick
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -28,7 +28,6 @@ import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PasteUrlDetailView(
     pasteData: PasteData,
@@ -47,12 +46,16 @@ fun PasteUrlDetailView(
             Row(
                 modifier =
                     Modifier.fillMaxSize()
-                        .onClick(
-                            onDoubleClick = onDoubleClick,
-                            onClick = {
-                                uiSupport.openUrlInBrowser(pasteUrl.url)
-                            },
-                        )
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onTap = {
+                                    uiSupport.openUrlInBrowser(pasteUrl.url)
+                                },
+                                onDoubleTap = {
+                                    onDoubleClick()
+                                },
+                            )
+                        }
                         .padding(10.dp),
             ) {
                 Text(

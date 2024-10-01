@@ -1,6 +1,6 @@
 package com.crosspaste.ui.paste.preview
 
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.onClick
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -20,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -44,7 +44,6 @@ import com.crosspaste.utils.getFileUtils
 import okio.Path
 import org.koin.compose.koinInject
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SingleFilePreviewView(filePath: Path) {
     val copywriter = koinInject<GlobalCopywriter>()
@@ -58,8 +57,12 @@ fun SingleFilePreviewView(filePath: Path) {
 
     Row(
         modifier =
-            Modifier.onClick {
-                uiSupport.browseFile(filePath)
+            Modifier.pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = {
+                        uiSupport.browseFile(filePath)
+                    },
+                )
             },
     ) {
         Box(modifier = Modifier.size(100.dp)) {

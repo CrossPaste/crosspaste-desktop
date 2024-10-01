@@ -64,7 +64,7 @@ fun PasteTitleView(
                                 MaterialTheme.colorScheme.background
                             },
                         )
-                        .clickable { onClick() },
+                        .clickable(onClick = onClick),
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically,
             ) {

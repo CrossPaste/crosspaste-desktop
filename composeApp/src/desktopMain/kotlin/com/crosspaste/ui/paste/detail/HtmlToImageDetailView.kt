@@ -1,9 +1,8 @@
 package com.crosspaste.ui.paste.detail
 
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.onClick
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -11,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.info.PasteInfos.DATE
 import com.crosspaste.info.PasteInfos.REMOTE
@@ -26,7 +26,6 @@ import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HtmlToImageDetailView(
     pasteData: PasteData,
@@ -56,12 +55,16 @@ fun HtmlToImageDetailView(
                     Modifier.fillMaxSize()
                         .horizontalScroll(horizontalScrollState)
                         .verticalScroll(verticalScrollState)
-                        .onClick(
-                            onDoubleClick = onDoubleClick,
-                            onClick = {
-                                uiSupport.openHtml(pasteData.id, pasteHtml.html)
-                            },
-                        ),
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onTap = {
+                                    uiSupport.openHtml(pasteData.id, pasteHtml.html)
+                                },
+                                onDoubleTap = {
+                                    onDoubleClick()
+                                },
+                            )
+                        },
                 html2ImagePath = filePath,
                 htmlText = pasteHtml.getText(),
                 preview = false,
