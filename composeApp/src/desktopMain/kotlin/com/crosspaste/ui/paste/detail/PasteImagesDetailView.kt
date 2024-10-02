@@ -1,6 +1,5 @@
 package com.crosspaste.ui.paste.detail
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -40,7 +39,6 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
@@ -70,6 +68,7 @@ import com.crosspaste.ui.base.imageExpand
 import com.crosspaste.ui.base.imageSlash
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.FileUtils
+import com.crosspaste.utils.getCoilUtils
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
 import kotlinx.coroutines.delay
@@ -79,7 +78,7 @@ import kotlinx.coroutines.sync.withLock
 import okio.Path
 import org.koin.compose.koinInject
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun PasteImagesDetailView(
     pasteData: PasteData,
@@ -91,6 +90,7 @@ fun PasteImagesDetailView(
         val imageLoaders = koinInject<ImageLoaders>()
         val userDataPathProvider = koinInject<UserDataPathProvider>()
 
+        val coilUtils = getCoilUtils()
         val dateUtils = getDateUtils()
         val fileUtils = getFileUtils()
 
@@ -166,7 +166,7 @@ fun PasteImagesDetailView(
                             SubcomposeAsyncImage(
                                 modifier = Modifier.fillMaxSize(),
                                 model =
-                                    ImageRequest.Builder(PlatformContext.INSTANCE)
+                                    ImageRequest.Builder(coilUtils.getCoilContext())
                                         .data(ImageItem(pasteFileCoordinate, false))
                                         .crossfade(true)
                                         .build(),

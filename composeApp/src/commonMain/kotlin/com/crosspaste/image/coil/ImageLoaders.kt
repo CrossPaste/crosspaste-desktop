@@ -1,7 +1,6 @@
 package com.crosspaste.image.coil
 
 import coil3.ImageLoader
-import coil3.PlatformContext
 import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import com.crosspaste.app.AppFileType
@@ -10,6 +9,7 @@ import com.crosspaste.image.FileExtImageLoader
 import com.crosspaste.image.ImageCreator
 import com.crosspaste.image.ThumbnailLoader
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.utils.getCoilUtils
 
 class ImageLoaders(
     private val faviconLoader: FaviconLoader,
@@ -18,6 +18,7 @@ class ImageLoaders(
     private val thumbnailLoader: ThumbnailLoader,
     userDataPathProvider: UserDataPathProvider,
 ) {
+    private val coilUtils = getCoilUtils()
 
     private val html2ImageCache = "html2ImageCache"
     private val baseCache = "baseCache"
@@ -53,7 +54,7 @@ class ImageLoaders(
             .build()
 
     val html2ImageLoader =
-        ImageLoader.Builder(PlatformContext.INSTANCE)
+        ImageLoader.Builder(coilUtils.getCoilContext())
             .components {
                 add(Html2ImageFactory(imageCreator))
                     .add(Html2ImageKeyer())
@@ -67,7 +68,7 @@ class ImageLoaders(
             .build()
 
     val faviconImageLoader =
-        ImageLoader.Builder(PlatformContext.INSTANCE)
+        ImageLoader.Builder(coilUtils.getCoilContext())
             .components {
                 add(FaviconFactory(faviconLoader, imageCreator))
                     .add(PasteDataKeyer())
@@ -81,7 +82,7 @@ class ImageLoaders(
             .build()
 
     val fileExtImageLoader =
-        ImageLoader.Builder(PlatformContext.INSTANCE)
+        ImageLoader.Builder(coilUtils.getCoilContext())
             .components {
                 add(FileExtFactory(fileExtLoader, imageCreator))
                     .add(FileExtKeyer())
@@ -95,7 +96,7 @@ class ImageLoaders(
             .build()
 
     val appSourceLoader =
-        ImageLoader.Builder(PlatformContext.INSTANCE)
+        ImageLoader.Builder(coilUtils.getCoilContext())
             .components {
                 add(AppSourceFactory(imageCreator, userDataPathProvider))
                     .add(PasteDataSourceKeyer())
@@ -109,7 +110,7 @@ class ImageLoaders(
             .build()
 
     val userImageLoader =
-        ImageLoader.Builder(PlatformContext.INSTANCE)
+        ImageLoader.Builder(coilUtils.getCoilContext())
             .components {
                 add(UserImageFactory(thumbnailLoader, imageCreator))
                     .add(ImageKeyer())

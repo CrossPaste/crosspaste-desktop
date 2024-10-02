@@ -13,7 +13,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
-import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
@@ -21,6 +20,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.crosspaste.image.coil.Html2ImageItem
 import com.crosspaste.image.coil.ImageLoaders
+import com.crosspaste.utils.getCoilUtils
 import okio.Path
 import org.koin.compose.koinInject
 
@@ -36,10 +36,12 @@ fun HtmlToImageView(
     val density = LocalDensity.current
     val imageLoaders = koinInject<ImageLoaders>()
 
+    val coilUtils = getCoilUtils()
+
     SubcomposeAsyncImage(
         modifier = modifier,
         model =
-            ImageRequest.Builder(PlatformContext.INSTANCE)
+            ImageRequest.Builder(coilUtils.getCoilContext())
                 .data(Html2ImageItem(html2ImagePath, preview, density))
                 .crossfade(true)
                 .build(),
