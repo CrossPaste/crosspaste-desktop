@@ -21,7 +21,6 @@ import io.ktor.utils.io.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
-import okio.FileSystem
 import okio.Path
 
 class PullIconTaskExecutor(
@@ -51,7 +50,7 @@ class PullIconTaskExecutor(
                         val appInstanceId = pasteData.appInstanceId
 
                         val iconPath = userDataPathProvider.resolve("$source.png", AppFileType.ICON)
-                        if (!FileSystem.SYSTEM.exists(iconPath)) {
+                        if (!fileUtils.existFile(iconPath)) {
                             syncManager.getSyncHandlers()[appInstanceId]?.let {
                                 val port = it.syncRuntimeInfo.port
                                 it.getConnectHostAddress()?.let { host ->

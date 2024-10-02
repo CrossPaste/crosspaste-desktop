@@ -13,9 +13,9 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteType
+import com.crosspaste.utils.getFileUtils
 import com.google.common.io.Files
 import io.github.oshai.kotlinlogging.KotlinLogging
-import okio.FileSystem
 import okio.Path
 import okio.Path.Companion.toPath
 import org.mongodb.kbson.ObjectId
@@ -31,6 +31,8 @@ class DesktopUISupport(
 ) : UISupport {
 
     private val logger = KotlinLogging.logger {}
+
+    private val fileUtils = getFileUtils()
 
     override fun openUrlInBrowser(url: String) {
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
@@ -87,7 +89,7 @@ class DesktopUISupport(
     }
 
     override fun browseFile(filePath: Path) {
-        if (FileSystem.SYSTEM.exists(filePath)) {
+        if (fileUtils.existFile(filePath)) {
             if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE_FILE_DIR)) {
                 val desktop = Desktop.getDesktop()
                 desktop.browseFileDirectory(filePath.toFile())
@@ -121,7 +123,7 @@ class DesktopUISupport(
     }
 
     override fun openImage(imagePath: Path) {
-        if (FileSystem.SYSTEM.exists(imagePath)) {
+        if (fileUtils.existFile(imagePath)) {
             if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
                 Desktop.getDesktop().open(imagePath.toFile())
             } else {

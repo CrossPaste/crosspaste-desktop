@@ -31,7 +31,6 @@ import io.realm.kotlin.types.RealmAny
 import io.realm.kotlin.types.RealmInstant
 import io.realm.kotlin.types.RealmObject
 import kotlinx.coroutines.flow.Flow
-import okio.FileSystem
 import org.mongodb.kbson.ObjectId
 
 class PasteRealm(
@@ -430,7 +429,7 @@ class PasteRealm(
         val existFile = pasteData.existFileResource()
         val existIconFile: Boolean? =
             pasteData.source?.let {
-                FileSystem.SYSTEM.exists(userDataPathProvider.resolve("$it.png", AppFileType.ICON))
+                fileUtils.existFile(userDataPathProvider.resolve("$it.png", AppFileType.ICON))
             }
 
         realm.write(block = {

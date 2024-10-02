@@ -19,6 +19,8 @@ const val TB = "TB"
 
 interface FileUtils {
 
+    val fileSystem: FileSystem
+
     val separator: String
 
     fun formatBytes(bytesSize: Long): String
@@ -71,12 +73,12 @@ interface FileUtils {
     fun getFileHash(path: Path): String
 
     fun existFile(path: Path): Boolean {
-        return FileSystem.SYSTEM.exists(path)
+        return fileSystem.exists(path)
     }
 
     fun deleteFile(path: Path): Result<Unit> =
         runCatching {
-            FileSystem.SYSTEM.delete(path)
+            fileSystem.delete(path)
         }
 
     fun createFile(
@@ -84,7 +86,7 @@ interface FileUtils {
         mustCreate: Boolean = false,
     ): Result<Unit> =
         runCatching {
-            FileSystem.SYSTEM.write(path, mustCreate = mustCreate) {
+            fileSystem.write(path, mustCreate = mustCreate) {
                 // Create an empty file
             }
         }
@@ -94,7 +96,7 @@ interface FileUtils {
         mustCreate: Boolean = false,
     ): Result<Unit> =
         runCatching {
-            FileSystem.SYSTEM.createDirectories(path, mustCreate = mustCreate)
+            fileSystem.createDirectories(path, mustCreate = mustCreate)
         }
 
     fun copyPath(
@@ -102,10 +104,10 @@ interface FileUtils {
         dest: Path,
     ): Result<Unit> =
         runCatching {
-            if (FileSystem.SYSTEM.metadata(src).isDirectory) {
+            if (fileSystem.metadata(src).isDirectory) {
                 copyDirectory(src, dest)
             } else {
-                FileSystem.SYSTEM.copy(src, dest)
+                fileSystem.copy(src, dest)
             }
         }
 
@@ -113,14 +115,14 @@ interface FileUtils {
         src: Path,
         dest: Path,
     ) {
-        FileSystem.SYSTEM.createDirectory(dest)
-        FileSystem.SYSTEM.list(src).forEach { item ->
+        fileSystem.createDirectory(dest)
+        fileSystem.list(src).forEach { item ->
             val newSrc = src / item.name
             val newDest = dest / item.name
-            if (FileSystem.SYSTEM.metadata(newSrc).isDirectory) {
+            if (fileSystem.metadata(newSrc).isDirectory) {
                 copyDirectory(newSrc, newDest)
             } else {
-                FileSystem.SYSTEM.copy(newSrc, newDest)
+                fileSystem.copy(newSrc, newDest)
             }
         }
     }
@@ -130,7 +132,7 @@ interface FileUtils {
         dest: Path,
     ): Result<Unit> =
         runCatching {
-            FileSystem.SYSTEM.atomicMove(src, dest)
+            fileSystem.atomicMove(src, dest)
         }
 
     fun createEmptyPasteFile(

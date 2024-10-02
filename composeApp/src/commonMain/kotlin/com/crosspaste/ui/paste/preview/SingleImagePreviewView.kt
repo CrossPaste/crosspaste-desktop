@@ -49,7 +49,6 @@ import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.imageSlash
 import com.crosspaste.utils.getCoilUtils
 import com.crosspaste.utils.getFileUtils
-import okio.FileSystem
 import org.koin.compose.koinInject
 
 @Composable
@@ -64,7 +63,7 @@ fun SingleImagePreviewView(pasteFileCoordinate: PasteFileCoordinate) {
 
     val existFile by remember {
         mutableStateOf(
-            FileSystem.SYSTEM.exists(pasteFileCoordinate.filePath),
+            fileUtils.existFile(pasteFileCoordinate.filePath),
         )
     }
 
