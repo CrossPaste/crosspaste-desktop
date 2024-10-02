@@ -22,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
@@ -79,7 +78,7 @@ fun ToastView(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
-                    painter = painterResource(messageStyle.iconFileName),
+                    painter = getMessagePainter(messageStyle),
                     contentDescription = "toast icon",
                     tint = messageStyle.messageColor,
                 )
@@ -96,7 +95,7 @@ fun ToastView(
                 Spacer(Modifier.weight(1f))
                 Icon(
                     modifier = Modifier.clickable { onCancelTapped() },
-                    painter = painterResource("icon/toast/close.svg"),
+                    painter = close(),
                     contentDescription = "Cancel",
                     tint = messageStyle.messageColor,
                 )

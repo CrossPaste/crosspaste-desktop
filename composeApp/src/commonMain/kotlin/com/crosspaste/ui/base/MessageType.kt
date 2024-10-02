@@ -1,6 +1,12 @@
 package com.crosspaste.ui.base
 
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import com.crosspaste.ui.base.MessageStyle.Error
+import com.crosspaste.ui.base.MessageStyle.Info
+import com.crosspaste.ui.base.MessageStyle.Success
+import com.crosspaste.ui.base.MessageStyle.Warning
 
 enum class MessageType {
     Error,
@@ -19,9 +25,19 @@ enum class MessageType {
     }
 }
 
-enum class MessageStyle(val iconFileName: String, val messageColor: Color) {
-    Error("icon/toast/error.svg", Color.Red),
-    Info("icon/toast/info.svg", Color.Blue),
-    Success("icon/toast/success.svg", Color.Green),
-    Warning("icon/toast/warning.svg", Color.Yellow),
+enum class MessageStyle(val messageColor: Color) {
+    Error(Color.Red),
+    Info(Color.Blue),
+    Success(Color.Green),
+    Warning(Color.Yellow),
+}
+
+@Composable
+fun getMessagePainter(messageStyle: MessageStyle): Painter {
+    return when (messageStyle) {
+        Error -> error()
+        Info -> info()
+        Success -> success()
+        Warning -> warning()
+    }
 }
