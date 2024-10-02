@@ -13,7 +13,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
@@ -27,6 +26,7 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.ui.paste.PasteTypeIconBaseView
+import com.crosspaste.utils.getCoilUtils
 import org.koin.compose.koinInject
 
 @Composable
@@ -39,11 +39,13 @@ fun PasteTypeIconView(
     val userDataPathProvider = koinInject<UserDataPathProvider>()
     val imageLoaders = koinInject<ImageLoaders>()
 
+    val coilUtils = getCoilUtils()
+
     if (pasteData.pasteType == PasteType.URL) {
         SubcomposeAsyncImage(
             modifier = Modifier.padding(padding).size(size),
             model =
-                ImageRequest.Builder(PlatformContext.INSTANCE)
+                ImageRequest.Builder(coilUtils.getCoilContext())
                     .data(PasteDataItem(pasteData))
                     .crossfade(false)
                     .build(),
@@ -75,7 +77,7 @@ fun PasteTypeIconView(
                 SubcomposeAsyncImage(
                     modifier = Modifier.padding(padding).size(size),
                     model =
-                        ImageRequest.Builder(PlatformContext.INSTANCE)
+                        ImageRequest.Builder(coilUtils.getCoilContext())
                             .data(FileExtItem(paths[0]))
                             .crossfade(false)
                             .build(),
@@ -117,7 +119,7 @@ fun PasteTypeIconView(
             SubcomposeAsyncImage(
                 modifier = Modifier.padding(imagePaddingSize).size(imageSize),
                 model =
-                    ImageRequest.Builder(PlatformContext.INSTANCE)
+                    ImageRequest.Builder(coilUtils.getCoilContext())
                         .data(PasteDataItem(pasteData))
                         .crossfade(false)
                         .build(),

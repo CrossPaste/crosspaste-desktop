@@ -1,6 +1,5 @@
 package com.crosspaste.ui.paste.detail
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -31,7 +30,6 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
@@ -55,6 +53,7 @@ import com.crosspaste.ui.base.chevronRight
 import com.crosspaste.ui.base.file
 import com.crosspaste.ui.base.fileSlash
 import com.crosspaste.ui.base.folder
+import com.crosspaste.utils.getCoilUtils
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
 import kotlinx.coroutines.delay
@@ -63,7 +62,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.koin.compose.koinInject
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun PasteFilesDetailView(
     pasteData: PasteData,
@@ -79,6 +78,7 @@ fun PasteFilesDetailView(
 
         val pasteItem = pasteFiles as PasteItem
 
+        val coilUtils = getCoilUtils()
         val dateUtils = getDateUtils()
         val fileUtils = getFileUtils()
 
@@ -149,7 +149,7 @@ fun PasteFilesDetailView(
                         SubcomposeAsyncImage(
                             modifier = Modifier.size(150.dp),
                             model =
-                                ImageRequest.Builder(PlatformContext.INSTANCE)
+                                ImageRequest.Builder(coilUtils.getCoilContext())
                                     .data(FileExtItem(filePath))
                                     .crossfade(true)
                                     .build(),
