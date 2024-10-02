@@ -6,6 +6,7 @@ import com.crosspaste.presist.FileInfoTreeBuilder
 import com.crosspaste.presist.FilesChunk
 import com.crosspaste.presist.SingleFileInfoTree
 import io.ktor.utils.io.*
+import okio.FileSystem
 import okio.Path
 import okio.Path.Companion.toOkioPath
 import java.io.File
@@ -24,6 +25,8 @@ object DesktopFileUtils : FileUtils {
     private val codecsUtils = getCodecsUtils()
 
     private val dateUtils = getDateUtils()
+
+    override val fileSystem: FileSystem = FileSystem.SYSTEM
 
     override val separator: String = File.separator
 

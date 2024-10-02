@@ -1,6 +1,5 @@
 package com.crosspaste.utils
 
-import okio.FileSystem
 import okio.Path
 
 val Path.fileNameRemoveExtension: String
@@ -31,7 +30,7 @@ val Path.extension: String
 
 val Path.isDirectory: Boolean
     get() {
-        val metadata = FileSystem.SYSTEM.metadata(this)
+        val metadata = getFileUtils().fileSystem.metadata(this)
         return metadata.isDirectory
     }
 

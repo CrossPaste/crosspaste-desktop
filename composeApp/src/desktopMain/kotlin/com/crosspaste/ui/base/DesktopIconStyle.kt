@@ -6,15 +6,17 @@ import androidx.compose.ui.graphics.toPixelMap
 import com.crosspaste.app.AppFileType
 import com.crosspaste.image.ImageCreator
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.utils.getFileUtils
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
-import okio.FileSystem
 
 class DesktopIconStyle(
     userDataPathProvider: UserDataPathProvider,
     imageCreator: ImageCreator,
 ) : IconStyle {
+
+    private val fileUtils = getFileUtils()
 
     private val iconStyleCache: LoadingCache<String, Boolean> =
         CacheBuilder.newBuilder()
@@ -23,7 +25,7 @@ class DesktopIconStyle(
                 object : CacheLoader<String, Boolean>() {
                     override fun load(key: String): Boolean {
                         val iconPath = userDataPathProvider.resolve("$key.png", AppFileType.ICON)
-                        if (FileSystem.SYSTEM.exists(iconPath)) {
+                        if (fileUtils.existFile(iconPath)) {
                             val imageBitmap =
                                 imageCreator.createBitmap(iconPath)
                                     .asComposeImageBitmap()

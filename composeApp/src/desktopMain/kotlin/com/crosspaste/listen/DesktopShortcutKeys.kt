@@ -10,9 +10,9 @@ import com.crosspaste.listener.ShortcutKeysCore
 import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.utils.DesktopResourceUtils
+import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
-import okio.FileSystem
 import okio.Path
 import okio.Path.Companion.toOkioPath
 import java.io.FileOutputStream
@@ -43,6 +43,8 @@ class DesktopShortcutKeys(
 
     private val platform = getPlatform()
 
+    private val fileUtils = getFileUtils()
+
     override var shortcutKeysCore by mutableStateOf(defaultKeysCore())
 
     init {
@@ -70,7 +72,7 @@ class DesktopShortcutKeys(
                     "shortcut_keys/${platform.name}.properties",
                 )
 
-            if (!FileSystem.SYSTEM.exists(shortcutKeysPropertiesPath)) {
+            if (!fileUtils.existFile(shortcutKeysPropertiesPath)) {
                 writeProperties(platformProperties, shortcutKeysPropertiesPath)
             } else {
                 val properties = Properties()

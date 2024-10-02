@@ -11,15 +11,18 @@ import coil3.fetch.SourceFetchResult
 import coil3.request.Options
 import com.crosspaste.image.ImageCreator
 import com.crosspaste.image.ThumbnailLoader
+import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.withContext
-import okio.FileSystem
 
 class UserImageFetcher(
     private val data: ImageItem,
     private val thumbnailLoader: ThumbnailLoader,
     private val imageCreator: ImageCreator,
 ) : Fetcher {
+
+    private val fileUtils = getFileUtils()
+
     override suspend fun fetch(): FetchResult? {
         return withContext(ioDispatcher) {
             val pasteFileCoordinate = data.pasteFileCoordinate
@@ -32,7 +35,7 @@ class UserImageFetcher(
                             source =
                                 ImageSource(
                                     pasteFileCoordinate.filePath,
-                                    FileSystem.SYSTEM,
+                                    fileUtils.fileSystem,
                                 ),
                             mimeType = "image/svg+xml",
                         )

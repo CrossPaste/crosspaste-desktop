@@ -16,7 +16,6 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.utils.io.*
-import okio.FileSystem
 
 fun Routing.pullRouting(
     cacheManager: CacheManager,
@@ -83,7 +82,7 @@ fun Routing.pullRouting(
             }
 
         val iconPath = userDataPathProvider.resolve("$source.png", AppFileType.ICON)
-        if (!FileSystem.SYSTEM.exists(iconPath)) {
+        if (!fileUtils.existFile(iconPath)) {
             logger.error { "icon not found: $source" }
             failResponse(call, StandardErrorCode.NOT_FOUND_ICON.toErrorCode())
             return@get

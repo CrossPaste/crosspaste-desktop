@@ -1,10 +1,10 @@
 package com.crosspaste.presist
 
+import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getJsonUtils
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
-import okio.FileSystem
 import okio.Path
 import kotlin.reflect.KClass
 
@@ -12,7 +12,7 @@ import kotlin.reflect.KClass
 class OneFilePersist(val path: Path) {
 
     private val jsonUtils = getJsonUtils()
-    private val fileSystem = FileSystem.SYSTEM
+    private val fileSystem = getFileUtils().fileSystem
 
     @OptIn(InternalSerializationApi::class)
     fun <T : Any> read(clazz: KClass<T>): T? {

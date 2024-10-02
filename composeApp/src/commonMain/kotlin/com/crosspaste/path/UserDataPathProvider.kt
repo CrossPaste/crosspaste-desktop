@@ -10,7 +10,6 @@ import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.FilesIndexBuilder
 import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.getFileUtils
-import okio.FileSystem
 import okio.Path
 import okio.Path.Companion.toPath
 
@@ -75,7 +74,6 @@ class UserDataPathProvider(
         realmMigrationAction: (Path) -> Unit,
     ) {
         try {
-            val fileSystem = FileSystem.SYSTEM
             for (type in types) {
                 if (type == AppFileType.DATA) {
                     continue
@@ -95,7 +93,7 @@ class UserDataPathProvider(
             try {
                 for (type in types) {
                     val originTypePath = resolve(appFileType = type)
-                    fileSystem.deleteRecursively(originTypePath)
+                    fileUtils.fileSystem.deleteRecursively(originTypePath)
                 }
             } catch (ignore: Exception) {
             }
@@ -105,7 +103,7 @@ class UserDataPathProvider(
             )
         } catch (e: Exception) {
             try {
-                val fileSystem = FileSystem.SYSTEM
+                val fileSystem = fileUtils.fileSystem
                 fileSystem.list(migrationPath).forEach { subPath ->
                     if (fileSystem.metadata(subPath).isDirectory) {
                         fileSystem.deleteRecursively(subPath)
@@ -121,9 +119,8 @@ class UserDataPathProvider(
 
     fun cleanTemp() {
         try {
-            val fileSystem = FileSystem.SYSTEM
             val tempPath = resolve(appFileType = AppFileType.TEMP)
-            fileSystem.deleteRecursively(tempPath)
+            fileUtils.fileSystem.deleteRecursively(tempPath)
         } catch (ignore: Exception) {
         }
     }
