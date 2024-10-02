@@ -2,29 +2,35 @@ package com.crosspaste.ui.base
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
+import com.crosspaste.composeapp.generated.resources.Res
+import com.crosspaste.composeapp.generated.resources.allow_receive
+import com.crosspaste.composeapp.generated.resources.allow_send
+import com.crosspaste.composeapp.generated.resources.block
+import com.crosspaste.composeapp.generated.resources.sync
+import com.crosspaste.composeapp.generated.resources.unverified
+import org.jetbrains.compose.resources.painterResource
 
 @Composable
 actual fun block(): Painter {
-    return painterResource("icon/device/block.svg")
+    return painterResource(Res.drawable.block)
 }
 
 @Composable
 actual fun allowReceive(): Painter {
-    return painterResource("icon/device/allow-receive.svg")
+    return painterResource(Res.drawable.allow_receive)
 }
 
 @Composable
 actual fun allowSend(): Painter {
-    return painterResource("icon/device/allow-send.svg")
+    return painterResource(Res.drawable.allow_send)
 }
 
 @Composable
 actual fun sync(): Painter {
-    return painterResource("icon/device/sync.svg")
+    return painterResource(Res.drawable.sync)
 }
 
 @Composable
 actual fun unverified(): Painter {
-    return painterResource("icon/device/unverified.svg")
+    return painterResource(Res.drawable.unverified)
 }

@@ -2,24 +2,29 @@ package com.crosspaste.ui.base
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
+import com.crosspaste.composeapp.generated.resources.Res
+import com.crosspaste.composeapp.generated.resources.chevron_left
+import com.crosspaste.composeapp.generated.resources.chevron_right
+import com.crosspaste.composeapp.generated.resources.expand_less
+import com.crosspaste.composeapp.generated.resources.expand_more
+import org.jetbrains.compose.resources.painterResource
 
 @Composable
 actual fun chevronLeft(): Painter {
-    return painterResource("icon/base/chevron_left.svg")
+    return painterResource(Res.drawable.chevron_left)
 }
 
 @Composable
 actual fun chevronRight(): Painter {
-    return painterResource("icon/base/chevron_right.svg")
+    return painterResource(Res.drawable.chevron_right)
 }
 
 @Composable
 actual fun expandLess(): Painter {
-    return painterResource("icon/base/expand_less.svg")
+    return painterResource(Res.drawable.expand_less)
 }
 
 @Composable
 actual fun expandMore(): Painter {
-    return painterResource("icon/base/expand_more.svg")
+    return painterResource(Res.drawable.expand_more)
 }
