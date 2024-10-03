@@ -7,18 +7,20 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.presist.OneFilePersist
 import com.crosspaste.ui.base.MessageType
 import com.crosspaste.ui.base.NotificationManager
+import com.crosspaste.utils.LocaleUtils
 import com.crosspaste.utils.getDeviceUtils
 
 class DefaultConfigManager(
     private val configFilePersist: OneFilePersist,
+    private val localeUtils: LocaleUtils,
 ) : ConfigManager {
     override val deviceUtils = getDeviceUtils()
 
     override var config by mutableStateOf(
         try {
-            loadConfig() ?: AppConfig(deviceUtils.createAppInstanceId())
+            loadConfig() ?: createDefaultAppConfig()
         } catch (e: Exception) {
-            AppConfig(deviceUtils.createAppInstanceId())
+            createDefaultAppConfig()
         },
     )
 
@@ -28,6 +30,13 @@ class DefaultConfigManager(
 
     override fun loadConfig(): AppConfig? {
         return configFilePersist.read(AppConfig::class)
+    }
+
+    private fun createDefaultAppConfig(): AppConfig {
+        return AppConfig(
+            appInstanceId = deviceUtils.createAppInstanceId(),
+            language = localeUtils.getLanguage(),
+        )
     }
 
     @Synchronized

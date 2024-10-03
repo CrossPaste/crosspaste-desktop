@@ -178,8 +178,10 @@ import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.ToastManager
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.model.PasteDataViewModel
+import com.crosspaste.utils.DesktopLocaleUtils
 import com.crosspaste.utils.GlobalCoroutineScope
 import com.crosspaste.utils.GlobalCoroutineScopeImpl
+import com.crosspaste.utils.LocaleUtils
 import com.crosspaste.utils.ioDispatcher
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
 import com.github.kwhat.jnativehook.mouse.NativeMouseListener
@@ -214,11 +216,14 @@ class CrossPaste {
 
         private val appPathProvider = DesktopAppPathProvider
 
+        private val localeUtils = DesktopLocaleUtils
+
         private val configManager =
             DefaultConfigManager(
                 FilePersist.createOneFilePersist(
                     appPathProvider.resolve("appConfig.json", AppFileType.USER),
                 ),
+                localeUtils,
             )
 
         private val crossPasteLogger =
@@ -252,10 +257,11 @@ class CrossPaste {
                     single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<PasteServer<*, *>>() }) }
                     single<FileExtImageLoader> { DesktopFileExtLoader(get(), get()) }
                     single<FilePersist> { FilePersist }
+                    single<GlobalCoroutineScope> { GlobalCoroutineScopeImpl }
                     single<ImageLoaders> { ImageLoaders(get(), get(), get(), get(), get()) }
                     single<ImageWriter<BufferedImage>> { DesktopImageWriter }
-                    single<GlobalCoroutineScope> { GlobalCoroutineScopeImpl }
                     single<KLogger> { CrossPaste.logger }
+                    single<LocaleUtils> { DesktopLocaleUtils }
                     single<PasteIDGenerator> { DesktopPasteIDGeneratorFactory(get()).createIDGenerator() }
                     single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
                     single<SyncInfoFactory> { SyncInfoFactory(get(), get()) }

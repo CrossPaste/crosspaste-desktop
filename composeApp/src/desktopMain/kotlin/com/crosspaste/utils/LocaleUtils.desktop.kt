@@ -1,13 +1,20 @@
 package com.crosspaste.utils
 
-import java.util.*
-
-actual fun getLocaleUtils(): LocaleUtils {
-    return DesktopLocaleUtils
-}
+import java.util.Locale
 
 object DesktopLocaleUtils : LocaleUtils {
-    override fun getCurrentLocale(): String {
-        return Locale.getDefault().language
+
+    private val locale = Locale.getDefault()
+
+    override fun getCountry(): String {
+        return locale.country
+    }
+
+    override fun getLanguage(): String {
+        return locale.language
+    }
+
+    override fun getDisplayName(): String {
+        return locale.displayName
     }
 }
