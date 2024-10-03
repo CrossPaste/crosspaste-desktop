@@ -2,6 +2,7 @@ package com.crosspaste.ui.base
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -16,10 +17,10 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
-import com.crosspaste.ui.devices.measureTextWidth
 
 @Composable
 fun CustomSwitch(
@@ -33,10 +34,13 @@ fun CustomSwitch(
 
     Canvas(
         modifier =
-            modifier
-                .clickable {
-                    onCheckedChange(!checked)
-                },
+            modifier.pointerInput(checked) {
+                detectTapGestures(
+                    onPress = {
+                        onCheckedChange(!checked)
+                    },
+                )
+            },
     ) {
         // Draw the track
         drawRoundRect(

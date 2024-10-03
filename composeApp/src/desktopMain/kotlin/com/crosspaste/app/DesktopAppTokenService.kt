@@ -25,7 +25,7 @@ class DesktopAppTokenService(
     private val scope = CoroutineScope(Dispatchers.IO)
     override var showTokenProgress: Float by mutableStateOf(0.0f)
 
-    override var showToken by mutableStateOf(false)
+    override var showToken by mutableStateOf(true)
 
     override var token by mutableStateOf(charArrayOf('0', '0', '0', '0', '0', '0'))
 

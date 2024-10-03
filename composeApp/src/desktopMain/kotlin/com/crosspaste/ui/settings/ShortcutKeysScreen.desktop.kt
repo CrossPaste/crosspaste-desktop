@@ -176,7 +176,7 @@ fun ShortcutKeyRow(name: String) {
                 .padding(horizontal = 12.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        settingsText(copywriter.getText(name))
+        SettingsText(copywriter.getText(name))
         Spacer(modifier = Modifier.weight(1f))
 
         val shortcutKeysListener = koinInject<ShortcutKeysListener>()

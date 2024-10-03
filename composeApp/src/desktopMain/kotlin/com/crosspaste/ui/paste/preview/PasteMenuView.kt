@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.app.AppWindowManager
+import com.crosspaste.i18n.Copywriter
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.realm.paste.PasteData
@@ -63,10 +64,11 @@ import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.clipboard
 import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.getMenWidth
+import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.base.moreVertical
 import com.crosspaste.ui.base.noFavorite
-import com.crosspaste.ui.devices.measureTextWidth
 import com.crosspaste.ui.favoriteColor
+import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
 import kotlinx.coroutines.Job
@@ -481,4 +483,37 @@ fun MoreMenuItems(
             }
         }
     }
+}
+
+fun getDetailInfo(
+    copywriter: Copywriter,
+    pasteData: PasteData,
+): String {
+    val infos = mutableListOf<String>()
+    pasteData.source?.let {
+        infos.add(
+            "${copywriter.getText("source")}: $it",
+        )
+    }
+    val typeText =
+        when (pasteData.pasteType) {
+            PasteType.TEXT -> "text"
+            PasteType.URL -> "link"
+            PasteType.HTML -> "html"
+            PasteType.IMAGE -> "image"
+            PasteType.FILE -> "file"
+            else -> "unknown"
+        }
+    infos.add(
+        "${copywriter.getText("type")}: ${copywriter.getText(typeText)}",
+    )
+    pasteData.createTime.let {
+        infos.add(
+            "${copywriter.getText("create_time")}: ${copywriter.getDate(
+                getDateUtils().convertRealmInstantToLocalDateTime(it),
+                true,
+            )}",
+        )
+    }
+    return infos.joinToString("\n")
 }

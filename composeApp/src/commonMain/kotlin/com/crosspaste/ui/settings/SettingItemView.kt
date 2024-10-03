@@ -13,18 +13,12 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.crosspaste.i18n.GlobalCopywriter
 import org.koin.compose.koinInject
 
@@ -57,30 +51,10 @@ fun SettingItemView(
                 Modifier.wrapContentWidth()
                     .horizontalScroll(rememberScrollState()),
         ) {
-            settingsText(copywriter.getText(text))
+            SettingsText(copywriter.getText(text))
         }
         Spacer(modifier = Modifier.weight(1f).widthIn(min = 8.dp))
 
         content()
     }
-}
-
-@Composable
-fun settingsText(
-    text: String,
-    modifier: Modifier = Modifier,
-) {
-    Text(
-        modifier = modifier,
-        text = text,
-        color = MaterialTheme.colorScheme.onBackground,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        style =
-            TextStyle(
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Light,
-                fontFamily = FontFamily.SansSerif,
-            ),
-    )
 }

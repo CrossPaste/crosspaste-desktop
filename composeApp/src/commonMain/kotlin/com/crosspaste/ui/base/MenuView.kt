@@ -32,7 +32,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.ui.devices.measureTextWidth
 import com.crosspaste.ui.selectColor
 
 val menuItemTextStyle =

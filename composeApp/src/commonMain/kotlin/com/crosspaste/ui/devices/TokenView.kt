@@ -6,7 +6,7 @@ import androidx.compose.animation.core.animateIntOffsetAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,19 +29,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -56,7 +49,6 @@ import com.crosspaste.ui.base.close
 import com.crosspaste.ui.base.robotoFontFamily
 import org.koin.compose.koinInject
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun TokenView() {
     val density = LocalDensity.current
@@ -135,52 +127,28 @@ fun TokenView() {
                         fontFamily = robotoFontFamily(),
                     )
 
-                    var hoverIcon by remember { mutableStateOf(false) }
-
                     Box(
                         modifier =
                             Modifier.size(32.dp)
-                                .align(Alignment.TopEnd)
-                                .onPointerEvent(
-                                    eventType = PointerEventType.Enter,
-                                    onEvent = {
-                                        hoverIcon = true
-                                    },
-                                )
-                                .onPointerEvent(
-                                    eventType = PointerEventType.Exit,
-                                    onEvent = {
-                                        hoverIcon = false
-                                    },
-                                ),
+                                .align(Alignment.TopEnd),
                         contentAlignment = Alignment.Center,
                     ) {
                         Box(
                             modifier =
                                 Modifier.fillMaxSize()
                                     .clip(RoundedCornerShape(16.dp))
-                                    .background(
-                                        if (hoverIcon) {
-                                            MaterialTheme.colorScheme.onSurface.copy(0.16f)
-                                        } else {
-                                            Color.Transparent
-                                        },
-                                    )
-                                    .pointerInput(Unit) {
-                                        detectTapGestures(
-                                            onTap = {
-                                                appTokenService.showToken = false
-                                            },
-                                        )
+                                    .clickable {
+                                        appTokenService.showToken = false
                                     },
-                        ) {}
-
-                        Icon(
-                            painter = close(),
-                            contentDescription = "Close",
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.onBackground,
-                        )
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                painter = close(),
+                                contentDescription = "Close",
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onBackground,
+                            )
+                        }
                     }
                 }
                 Row(
