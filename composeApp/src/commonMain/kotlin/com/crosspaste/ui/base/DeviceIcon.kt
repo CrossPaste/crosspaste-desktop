@@ -13,6 +13,9 @@ expect fun allowReceive(): Painter
 expect fun allowSend(): Painter
 
 @Composable
+expect fun devices(): Painter
+
+@Composable
 expect fun sync(): Painter
 
 @Composable

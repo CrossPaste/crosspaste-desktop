@@ -94,7 +94,7 @@ fun ToastView(
                 )
                 Spacer(Modifier.weight(1f))
                 Icon(
-                    modifier = Modifier.clickable { onCancelTapped() },
+                    modifier = Modifier.clickable(onClick = onCancelTapped),
                     painter = close(),
                     contentDescription = "Cancel",
                     tint = messageStyle.messageColor,

@@ -6,6 +6,7 @@ import com.crosspaste.composeapp.generated.resources.Res
 import com.crosspaste.composeapp.generated.resources.allow_receive
 import com.crosspaste.composeapp.generated.resources.allow_send
 import com.crosspaste.composeapp.generated.resources.block
+import com.crosspaste.composeapp.generated.resources.devices
 import com.crosspaste.composeapp.generated.resources.sync
 import com.crosspaste.composeapp.generated.resources.unverified
 import org.jetbrains.compose.resources.painterResource
@@ -23,6 +24,11 @@ actual fun allowReceive(): Painter {
 @Composable
 actual fun allowSend(): Painter {
     return painterResource(Res.drawable.allow_send)
+}
+
+@Composable
+actual fun devices(): Painter {
+    return painterResource(Res.drawable.devices)
 }
 
 @Composable
