@@ -53,11 +53,11 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.DesktopPasteSearchService
-import com.crosspaste.ui.base.Fonts.ROBOTO_FONT_FAMILY
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.crosspasteIcon
 import com.crosspaste.ui.base.menuItemReminderTextStyle
+import com.crosspaste.ui.base.robotoFontFamily
 import com.crosspaste.ui.base.search
 import com.crosspaste.ui.base.settings
 import kotlinx.coroutines.delay
@@ -137,7 +137,7 @@ fun HomeWindowDecoration() {
                             fontSize = 23.sp,
                             style =
                                 TextStyle(
-                                    fontFamily = ROBOTO_FONT_FAMILY,
+                                    fontFamily = robotoFontFamily(),
                                     fontWeight = FontWeight.Bold,
                                 ),
                         )

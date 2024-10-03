@@ -52,8 +52,8 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.app.AppTokenService
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.ui.base.Fonts.ROBOTO_FONT_FAMILY
 import com.crosspaste.ui.base.close
+import com.crosspaste.ui.base.robotoFontFamily
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -132,7 +132,7 @@ fun TokenView() {
                         color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 25.sp,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = ROBOTO_FONT_FAMILY,
+                        fontFamily = robotoFontFamily(),
                     )
 
                     var hoverIcon by remember { mutableStateOf(false) }
