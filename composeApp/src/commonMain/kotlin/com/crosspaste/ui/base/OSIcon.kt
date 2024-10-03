@@ -2,34 +2,21 @@ package com.crosspaste.ui.base
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
 
 @Composable
-fun macos(): Painter {
-    return painterResource("icon/device/macos.svg")
-}
+expect fun android(): Painter
 
 @Composable
-fun windows(): Painter {
-    return painterResource("icon/device/windows.svg")
-}
+expect fun ipad(): Painter
 
 @Composable
-fun linux(): Painter {
-    return painterResource("icon/device/linux.svg")
-}
+expect fun iphone(): Painter
 
 @Composable
-fun iphone(): Painter {
-    return painterResource("icon/device/iphone.svg")
-}
+expect fun linux(): Painter
 
 @Composable
-fun ipad(): Painter {
-    return painterResource("icon/device/ipad.svg")
-}
+expect fun macos(): Painter
 
 @Composable
-fun android(): Painter {
-    return painterResource("icon/device/android.svg")
-}
+expect fun windows(): Painter

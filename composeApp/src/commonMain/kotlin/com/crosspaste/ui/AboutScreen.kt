@@ -22,7 +22,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -34,6 +33,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.Fonts.ROBOTO_FONT_FAMILY
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.chevronRight
+import com.crosspaste.ui.base.crosspasteIcon
 import org.koin.compose.koinInject
 
 @Composable
@@ -66,7 +66,7 @@ fun AboutContentView() {
                     modifier =
                         Modifier.clip(RoundedCornerShape(6.dp))
                             .size(72.dp),
-                    painter = painterResource("crosspaste_icon.png"),
+                    painter = crosspasteIcon(),
                     contentDescription = "crosspaste icon",
                 )
                 Spacer(modifier = Modifier.height(14.dp))

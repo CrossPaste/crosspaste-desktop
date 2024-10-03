@@ -11,20 +11,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import com.crosspaste.ui.devices.measureTextWidth
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun CustomSwitch(
     checked: Boolean,
@@ -38,7 +34,7 @@ fun CustomSwitch(
     Canvas(
         modifier =
             modifier
-                .onPointerEvent(PointerEventType.Press) {
+                .clickable {
                     onCheckedChange(!checked)
                 },
     ) {

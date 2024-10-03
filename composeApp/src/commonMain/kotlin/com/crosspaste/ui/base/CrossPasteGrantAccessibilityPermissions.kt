@@ -31,7 +31,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -95,7 +94,7 @@ fun CrossPasteGrantAccessibilityPermissions(
                             .align(Alignment.CenterVertically)
                             .clip(RoundedCornerShape(6.dp))
                             .size(36.dp),
-                    painter = painterResource("crosspaste_icon.png"),
+                    painter = crosspasteIcon(),
                     contentDescription = "crosspaste icon",
                 )
                 Spacer(modifier = Modifier.width(8.dp))

@@ -54,7 +54,6 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -79,6 +78,7 @@ import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.ascSort
+import com.crosspaste.ui.base.crosspasteIcon
 import com.crosspaste.ui.base.descSort
 import com.crosspaste.ui.base.enter
 import com.crosspaste.ui.base.favorite
@@ -568,7 +568,7 @@ fun CrossPasteSearchWindowContent() {
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Image(
-                            painter = painterResource("crosspaste_icon.png"),
+                            painter = crosspasteIcon(),
                             contentDescription = "CrossPaste",
                             modifier =
                                 Modifier.size(25.dp)

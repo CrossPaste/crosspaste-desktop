@@ -39,7 +39,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -57,6 +56,7 @@ import com.crosspaste.paste.DesktopPasteSearchService
 import com.crosspaste.ui.base.Fonts.ROBOTO_FONT_FAMILY
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.UISupport
+import com.crosspaste.ui.base.crosspasteIcon
 import com.crosspaste.ui.base.menuItemReminderTextStyle
 import com.crosspaste.ui.base.search
 import com.crosspaste.ui.base.settings
@@ -112,7 +112,7 @@ fun HomeWindowDecoration() {
                             .align(Alignment.CenterVertically)
                             .clip(RoundedCornerShape(3.dp))
                             .size(36.dp),
-                    painter = painterResource("crosspaste_icon.png"),
+                    painter = crosspasteIcon(),
                     contentDescription = "crosspaste icon",
                 )
                 Column(
