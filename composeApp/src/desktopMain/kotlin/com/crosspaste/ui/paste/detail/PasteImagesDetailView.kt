@@ -39,6 +39,7 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
@@ -68,7 +69,6 @@ import com.crosspaste.ui.base.imageExpand
 import com.crosspaste.ui.base.imageSlash
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.FileUtils
-import com.crosspaste.utils.getCoilUtils
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
 import kotlinx.coroutines.delay
@@ -88,9 +88,9 @@ fun PasteImagesDetailView(
     if (pasteFiles.count > 0) {
         val copywriter = koinInject<GlobalCopywriter>()
         val imageLoaders = koinInject<ImageLoaders>()
+        val platformContext = koinInject<PlatformContext>()
         val userDataPathProvider = koinInject<UserDataPathProvider>()
 
-        val coilUtils = getCoilUtils()
         val dateUtils = getDateUtils()
         val fileUtils = getFileUtils()
 
@@ -166,7 +166,7 @@ fun PasteImagesDetailView(
                             SubcomposeAsyncImage(
                                 modifier = Modifier.fillMaxSize(),
                                 model =
-                                    ImageRequest.Builder(coilUtils.getCoilContext())
+                                    ImageRequest.Builder(platformContext)
                                         .data(ImageItem(pasteFileCoordinate, false))
                                         .crossfade(true)
                                         .build(),

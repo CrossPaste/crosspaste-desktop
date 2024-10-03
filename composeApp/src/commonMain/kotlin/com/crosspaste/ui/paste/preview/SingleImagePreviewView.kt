@@ -29,6 +29,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
@@ -47,18 +48,17 @@ import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.ui.base.TransparentBackground
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.imageSlash
-import com.crosspaste.utils.getCoilUtils
 import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
 
 @Composable
 fun SingleImagePreviewView(pasteFileCoordinate: PasteFileCoordinate) {
     val copywriter = koinInject<GlobalCopywriter>()
+    val imageLoaders = koinInject<ImageLoaders>()
+    val platformContext = koinInject<PlatformContext>()
     val thumbnailLoader = koinInject<ThumbnailLoader>()
     val uiSupport = koinInject<UISupport>()
-    val imageLoaders = koinInject<ImageLoaders>()
 
-    val coilUtils = getCoilUtils()
     val fileUtils = getFileUtils()
 
     val existFile by remember {
@@ -80,7 +80,7 @@ fun SingleImagePreviewView(pasteFileCoordinate: PasteFileCoordinate) {
         SubcomposeAsyncImage(
             modifier = Modifier.fillMaxSize(),
             model =
-                ImageRequest.Builder(coilUtils.getCoilContext())
+                ImageRequest.Builder(platformContext)
                     .data(ImageItem(pasteFileCoordinate, true))
                     .crossfade(true)
                     .build(),

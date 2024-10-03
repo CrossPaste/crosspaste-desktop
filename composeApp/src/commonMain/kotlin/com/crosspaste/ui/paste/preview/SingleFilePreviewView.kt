@@ -24,6 +24,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
@@ -39,7 +40,6 @@ import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.file
 import com.crosspaste.ui.base.fileSlash
 import com.crosspaste.ui.base.folder
-import com.crosspaste.utils.getCoilUtils
 import com.crosspaste.utils.getFileUtils
 import okio.Path
 import org.koin.compose.koinInject
@@ -47,10 +47,10 @@ import org.koin.compose.koinInject
 @Composable
 fun SingleFilePreviewView(filePath: Path) {
     val copywriter = koinInject<GlobalCopywriter>()
-    val uiSupport = koinInject<UISupport>()
     val imageLoaders = koinInject<ImageLoaders>()
+    val platformContext = koinInject<PlatformContext>()
+    val uiSupport = koinInject<UISupport>()
 
-    val coilUtils = getCoilUtils()
     val fileUtils = getFileUtils()
 
     val existFile by remember { mutableStateOf(filePath.toFile().exists()) }
@@ -70,7 +70,7 @@ fun SingleFilePreviewView(filePath: Path) {
             SubcomposeAsyncImage(
                 modifier = Modifier.fillMaxSize(),
                 model =
-                    ImageRequest.Builder(coilUtils.getCoilContext())
+                    ImageRequest.Builder(platformContext)
                         .data(FileExtItem(filePath))
                         .crossfade(true)
                         .build(),

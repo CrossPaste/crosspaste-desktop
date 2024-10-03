@@ -18,13 +18,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.crosspaste.utils.getCoilUtils
 import okio.Path
+import org.koin.compose.koinInject
 
 @Composable
 fun PasteIconButton(
@@ -72,15 +73,15 @@ fun AppImageIcon(
     isMacStyleIcon: Boolean,
     size: Dp = 24.dp,
 ) {
+    val platformContext = koinInject<PlatformContext>()
+
     var imageSize by remember(path) { mutableStateOf(if (isMacStyleIcon) size else (size / 24) * 20) }
     var imagePaddingSize by remember(path) { mutableStateOf(if (isMacStyleIcon) 0.dp else (size / 24) * 2) }
-
-    val coilUtils = getCoilUtils()
 
     SubcomposeAsyncImage(
         modifier = Modifier.padding(imagePaddingSize).size(imageSize),
         model =
-            ImageRequest.Builder(coilUtils.getCoilContext())
+            ImageRequest.Builder(platformContext)
                 .data(path)
                 .crossfade(false)
                 .build(),
