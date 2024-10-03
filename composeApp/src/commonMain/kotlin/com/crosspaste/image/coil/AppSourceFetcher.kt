@@ -1,25 +1,24 @@
 package com.crosspaste.image.coil
 
 import coil3.ImageLoader
-import coil3.asImage
 import coil3.decode.DataSource
 import coil3.fetch.FetchResult
 import coil3.fetch.Fetcher
 import coil3.fetch.ImageFetchResult
 import coil3.request.Options
 import com.crosspaste.app.AppFileType
-import com.crosspaste.image.ImageCreator
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.utils.getCoilUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.withContext
 
 class AppSourceFetcher(
     private val data: PasteDataItem,
-    private val imageCreator: ImageCreator,
     private val userDataPathProvider: UserDataPathProvider,
 ) : Fetcher {
 
+    private val coilUtils = getCoilUtils()
     private val fileUtils = getFileUtils()
 
     override suspend fun fetch(): FetchResult? {
@@ -31,7 +30,7 @@ class AppSourceFetcher(
                     return@withContext ImageFetchResult(
                         dataSource = DataSource.MEMORY_CACHE,
                         isSampled = false,
-                        image = imageCreator.createBitmap(path).asImage(shareable = true),
+                        image = coilUtils.createImage(path),
                     )
                 }
             }
@@ -41,7 +40,6 @@ class AppSourceFetcher(
 }
 
 class AppSourceFactory(
-    private val imageCreator: ImageCreator,
     private val userDataPathProvider: UserDataPathProvider,
 ) : Fetcher.Factory<PasteDataItem> {
     override fun create(
@@ -49,6 +47,6 @@ class AppSourceFactory(
         options: Options,
         imageLoader: ImageLoader,
     ): Fetcher {
-        return AppSourceFetcher(data, imageCreator, userDataPathProvider)
+        return AppSourceFetcher(data, userDataPathProvider)
     }
 }

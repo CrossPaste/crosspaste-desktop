@@ -1,7 +1,6 @@
 package com.crosspaste.image.coil
 
 import coil3.ImageLoader
-import coil3.asImage
 import coil3.decode.DataSource
 import coil3.decode.ImageSource
 import coil3.fetch.FetchResult
@@ -9,8 +8,8 @@ import coil3.fetch.Fetcher
 import coil3.fetch.ImageFetchResult
 import coil3.fetch.SourceFetchResult
 import coil3.request.Options
-import com.crosspaste.image.ImageCreator
 import com.crosspaste.image.ThumbnailLoader
+import com.crosspaste.utils.getCoilUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.withContext
@@ -18,9 +17,9 @@ import kotlinx.coroutines.withContext
 class UserImageFetcher(
     private val data: ImageItem,
     private val thumbnailLoader: ThumbnailLoader,
-    private val imageCreator: ImageCreator,
 ) : Fetcher {
 
+    private val coilUtils = getCoilUtils()
     private val fileUtils = getFileUtils()
 
     override suspend fun fetch(): FetchResult? {
@@ -46,7 +45,7 @@ class UserImageFetcher(
                                 return@withContext ImageFetchResult(
                                     dataSource = DataSource.MEMORY_CACHE,
                                     isSampled = false,
-                                    image = imageCreator.createBitmap(it).asImage(shareable = true),
+                                    image = coilUtils.createImage(it),
                                 )
                             }
                         } else {
@@ -54,7 +53,7 @@ class UserImageFetcher(
                             return@withContext ImageFetchResult(
                                 dataSource = DataSource.MEMORY_CACHE,
                                 isSampled = false,
-                                image = imageCreator.createBitmap(path).asImage(shareable = true),
+                                image = coilUtils.createImage(path),
                             )
                         }
                     }
@@ -68,13 +67,12 @@ class UserImageFetcher(
 
 class UserImageFactory(
     private val thumbnailLoader: ThumbnailLoader,
-    private val imageCreator: ImageCreator,
 ) : Fetcher.Factory<ImageItem> {
     override fun create(
         data: ImageItem,
         options: Options,
         imageLoader: ImageLoader,
     ): Fetcher {
-        return UserImageFetcher(data, thumbnailLoader, imageCreator)
+        return UserImageFetcher(data, thumbnailLoader)
     }
 }

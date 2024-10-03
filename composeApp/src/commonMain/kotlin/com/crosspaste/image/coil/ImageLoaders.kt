@@ -1,25 +1,22 @@
 package com.crosspaste.image.coil
 
 import coil3.ImageLoader
+import coil3.PlatformContext
 import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import com.crosspaste.app.AppFileType
 import com.crosspaste.image.FaviconLoader
 import com.crosspaste.image.FileExtImageLoader
-import com.crosspaste.image.ImageCreator
 import com.crosspaste.image.ThumbnailLoader
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.utils.getCoilUtils
 
 class ImageLoaders(
     private val faviconLoader: FaviconLoader,
     private val fileExtLoader: FileExtImageLoader,
-    private val imageCreator: ImageCreator,
     private val thumbnailLoader: ThumbnailLoader,
+    platformContext: PlatformContext,
     userDataPathProvider: UserDataPathProvider,
 ) {
-    private val coilUtils = getCoilUtils()
-
     private val html2ImageCache = "html2ImageCache"
     private val baseCache = "baseCache"
 
@@ -54,9 +51,9 @@ class ImageLoaders(
             .build()
 
     val html2ImageLoader =
-        ImageLoader.Builder(coilUtils.getCoilContext())
+        ImageLoader.Builder(platformContext)
             .components {
-                add(Html2ImageFactory(imageCreator))
+                add(Html2ImageFactory())
                     .add(Html2ImageKeyer())
             }
             .memoryCache {
@@ -68,9 +65,9 @@ class ImageLoaders(
             .build()
 
     val faviconImageLoader =
-        ImageLoader.Builder(coilUtils.getCoilContext())
+        ImageLoader.Builder(platformContext)
             .components {
-                add(FaviconFactory(faviconLoader, imageCreator))
+                add(FaviconFactory(faviconLoader))
                     .add(PasteDataKeyer())
             }
             .memoryCache {
@@ -82,9 +79,9 @@ class ImageLoaders(
             .build()
 
     val fileExtImageLoader =
-        ImageLoader.Builder(coilUtils.getCoilContext())
+        ImageLoader.Builder(platformContext)
             .components {
-                add(FileExtFactory(fileExtLoader, imageCreator))
+                add(FileExtFactory(fileExtLoader))
                     .add(FileExtKeyer())
             }
             .memoryCache {
@@ -96,9 +93,9 @@ class ImageLoaders(
             .build()
 
     val appSourceLoader =
-        ImageLoader.Builder(coilUtils.getCoilContext())
+        ImageLoader.Builder(platformContext)
             .components {
-                add(AppSourceFactory(imageCreator, userDataPathProvider))
+                add(AppSourceFactory(userDataPathProvider))
                     .add(PasteDataSourceKeyer())
             }
             .memoryCache {
@@ -110,9 +107,9 @@ class ImageLoaders(
             .build()
 
     val userImageLoader =
-        ImageLoader.Builder(coilUtils.getCoilContext())
+        ImageLoader.Builder(platformContext)
             .components {
-                add(UserImageFactory(thumbnailLoader, imageCreator))
+                add(UserImageFactory(thumbnailLoader))
                     .add(ImageKeyer())
             }
             .memoryCache {

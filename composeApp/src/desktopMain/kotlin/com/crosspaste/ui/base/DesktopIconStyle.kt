@@ -4,8 +4,8 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asComposeImageBitmap
 import androidx.compose.ui.graphics.toPixelMap
 import com.crosspaste.app.AppFileType
-import com.crosspaste.image.ImageCreator
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.utils.getCoilUtils
 import com.crosspaste.utils.getFileUtils
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
@@ -13,9 +13,9 @@ import com.google.common.cache.LoadingCache
 
 class DesktopIconStyle(
     userDataPathProvider: UserDataPathProvider,
-    imageCreator: ImageCreator,
 ) : IconStyle {
 
+    private val coilUtils = getCoilUtils()
     private val fileUtils = getFileUtils()
 
     private val iconStyleCache: LoadingCache<String, Boolean> =
@@ -27,7 +27,7 @@ class DesktopIconStyle(
                         val iconPath = userDataPathProvider.resolve("$key.png", AppFileType.ICON)
                         if (fileUtils.existFile(iconPath)) {
                             val imageBitmap =
-                                imageCreator.createBitmap(iconPath)
+                                coilUtils.createBitmap(iconPath)
                                     .asComposeImageBitmap()
                             return checkMacStyleIcon(imageBitmap)
                         } else {
