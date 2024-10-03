@@ -30,10 +30,10 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppInfoFactory
 import com.crosspaste.app.AppUrls
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.ui.base.Fonts.ROBOTO_FONT_FAMILY
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.chevronRight
 import com.crosspaste.ui.base.crosspasteIcon
+import com.crosspaste.ui.base.robotoFontFamily
 import org.koin.compose.koinInject
 
 @Composable
@@ -74,7 +74,7 @@ fun AboutContentView() {
                     text = "CrossPaste",
                     style =
                         TextStyle(
-                            fontFamily = ROBOTO_FONT_FAMILY,
+                            fontFamily = robotoFontFamily(),
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
                         ),
@@ -87,7 +87,7 @@ fun AboutContentView() {
                     text = "version: ${appInfo.appVersion}$revision",
                     style =
                         TextStyle(
-                            fontFamily = ROBOTO_FONT_FAMILY,
+                            fontFamily = robotoFontFamily(),
                             fontWeight = FontWeight.Normal,
                             fontSize = 15.sp,
                         ),
