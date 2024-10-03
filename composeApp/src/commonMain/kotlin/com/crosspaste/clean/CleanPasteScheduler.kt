@@ -25,7 +25,7 @@ class CleanPasteScheduler(
     fun start() {
         coroutineScope.launch {
             while (isActive) {
-                if (configManager.config.isExpirationCleanup) {
+                if (configManager.config.enableExpirationCleanup) {
                     val taskId = taskDao.createTask(TaskUtils.createTask(null, TaskType.CLEAN_PASTE_TASK))
                     taskExecutor.submitTask(taskId)
                     logger.info { "submit clean paste task: $taskId" }

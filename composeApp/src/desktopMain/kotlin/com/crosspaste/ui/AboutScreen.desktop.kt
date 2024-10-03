@@ -3,4 +3,7 @@ package com.crosspaste.ui
 import androidx.compose.runtime.Composable
 
 @Composable
-expect fun AboutScreen()
+actual fun AboutScreen() {
+    WindowDecoration("about")
+    AboutContentView()
+}

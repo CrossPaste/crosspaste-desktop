@@ -30,7 +30,7 @@ class CleanPasteTaskExecutor(
     private val cleanLock = Mutex()
 
     override suspend fun doExecuteTask(pasteTask: com.crosspaste.realm.task.PasteTask): PasteTaskResult {
-        if (configManager.config.isThresholdCleanup) {
+        if (configManager.config.enableThresholdCleanup) {
             try {
                 cleanLock.withLock {
                     val imageCleanTime = CleanTime.entries[configManager.config.imageCleanTimeIndex]
@@ -53,7 +53,7 @@ class CleanPasteTaskExecutor(
             }
         }
 
-        if (configManager.config.isThresholdCleanup) {
+        if (configManager.config.enableThresholdCleanup) {
             try {
                 cleanLock.withLock {
                     val allSize = pasteRealm.getSize(true)

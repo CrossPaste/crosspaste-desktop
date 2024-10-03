@@ -28,7 +28,7 @@ class PullClientApi(
                 message = pullFileRequest,
                 messageType = typeInfo<PullFileRequest>(),
                 targetAppInstanceId = pullFileRequest.appInstanceId,
-                encrypt = configManager.config.isEncryptSync,
+                encrypt = configManager.config.enableEncryptSync,
                 // pull file timeout is 50s
                 timeout = 50000L,
                 urlBuilder = {
