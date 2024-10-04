@@ -182,6 +182,7 @@ import com.crosspaste.utils.DesktopLocaleUtils
 import com.crosspaste.utils.GlobalCoroutineScope
 import com.crosspaste.utils.GlobalCoroutineScopeImpl
 import com.crosspaste.utils.LocaleUtils
+import com.crosspaste.utils.getAppEnvUtils
 import com.crosspaste.utils.ioDispatcher
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
 import com.github.kwhat.jnativehook.mouse.NativeMouseListener
@@ -212,7 +213,9 @@ class CrossPaste {
 
     companion object {
 
-        private val appEnv = AppEnv.CURRENT
+        private val appEnvUtils = getAppEnvUtils()
+
+        private val appEnv = appEnvUtils.getCurrentAppEnv()
 
         private val appPathProvider = DesktopAppPathProvider
 

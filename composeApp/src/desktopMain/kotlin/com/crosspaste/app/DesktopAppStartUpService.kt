@@ -4,6 +4,7 @@ import com.crosspaste.config.ConfigManager
 import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.presist.FilePersist
+import com.crosspaste.utils.getAppEnvUtils
 import com.crosspaste.utils.getSystemProperty
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -15,9 +16,11 @@ class DesktopAppStartUpService(
     configManager: ConfigManager,
 ) : AppStartUpService {
 
+    private val appEnvUtils = getAppEnvUtils()
+
     private val currentPlatform = getPlatform()
 
-    private val isProduction = AppEnv.CURRENT.isProduction()
+    private val isProduction = appEnvUtils.isProduction()
 
     private val appStartUpService: AppStartUpService =
         if (currentPlatform.isMacos()) {

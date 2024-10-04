@@ -1,6 +1,5 @@
 package com.crosspaste.signal
 
-import com.crosspaste.app.AppEnv
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
 import com.crosspaste.path.DesktopAppPathProvider
@@ -10,6 +9,7 @@ import com.crosspaste.platform.windows.WindowDapiHelper
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.realm.signal.SignalRealm
 import com.crosspaste.utils.EncryptUtils
+import com.crosspaste.utils.getAppEnvUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.signal.libsignal.protocol.IdentityKey
 import org.signal.libsignal.protocol.IdentityKeyPair
@@ -113,13 +113,15 @@ class MacosIdentityKeyStoreFactory(
 
     private val logger = KotlinLogging.logger {}
 
+    private val appEnvUtils = getAppEnvUtils()
+
     private val filePersist =
         FilePersist.createOneFilePersist(
             DesktopAppPathProvider.resolve("signal.data", AppFileType.ENCRYPT),
         )
 
     override fun createIdentityKeyStore(): IdentityKeyStore {
-        val service = "crosspaste-${AppEnv.CURRENT.name}-${appInfo.appInstanceId}"
+        val service = "crosspaste-${appEnvUtils.getCurrentAppEnv().name}-${appInfo.appInstanceId}"
         val file = filePersist.path.toFile()
         if (file.exists()) {
             logger.info { "Found identityKey encrypt file" }

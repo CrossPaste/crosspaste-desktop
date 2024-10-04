@@ -2,10 +2,13 @@ package com.crosspaste.app
 
 import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.platform.getPlatform
+import com.crosspaste.utils.getAppEnvUtils
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 object DesktopAppRestartService : AppRestartService {
+
+    private val appEnvUtils = getAppEnvUtils()
 
     private val currentPlatform = getPlatform()
 
@@ -21,7 +24,7 @@ object DesktopAppRestartService : AppRestartService {
         }
 
     override fun restart(exitApplication: () -> Unit) {
-        if (AppEnv.CURRENT.isProduction()) {
+        if (appEnvUtils.isProduction()) {
             appRestartService.restart(exitApplication)
         } else {
             exitApplication()

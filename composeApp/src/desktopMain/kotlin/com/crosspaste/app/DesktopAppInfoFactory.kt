@@ -1,6 +1,7 @@
 package com.crosspaste.app
 
 import com.crosspaste.config.ConfigManager
+import com.crosspaste.utils.getAppEnvUtils
 import com.crosspaste.utils.getSystemProperty
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.IOException
@@ -39,7 +40,7 @@ class DesktopAppInfoFactory(private val configManager: ConfigManager) : AppInfoF
     }
 
     override fun getVersion(): String {
-        return getVersion(AppEnv.CURRENT, properties)
+        return getVersion(appEnvUtils.getCurrentAppEnv(), properties)
     }
 
     override fun getRevision(): String {
@@ -63,6 +64,8 @@ class DesktopAppInfoFactory(private val configManager: ConfigManager) : AppInfoF
 
     companion object {
 
+        private val appEnvUtils = getAppEnvUtils()
+
         fun getVersion(
             appEnv: AppEnv = AppEnv.PRODUCTION,
             properties: Properties?,
@@ -70,17 +73,21 @@ class DesktopAppInfoFactory(private val configManager: ConfigManager) : AppInfoF
             return properties?.let {
                 val version = properties.getProperty("version", "Unknown")
 
-                if (appEnv.isDevelopment()) {
-                    "$version-dev"
-                } else if (appEnv.isTest()) {
-                    "$version-test"
-                } else {
-                    val prerelease: String? = properties.getProperty("prerelease")
-                    val prereleaseSuffix =
-                        prerelease?.let {
-                            "-$prerelease"
-                        } ?: ""
-                    "$version$prereleaseSuffix"
+                when (appEnv) {
+                    AppEnv.DEVELOPMENT -> {
+                        "$version-dev"
+                    }
+                    AppEnv.TEST -> {
+                        "$version-test"
+                    }
+                    else -> {
+                        val prerelease: String? = properties.getProperty("prerelease")
+                        val prereleaseSuffix =
+                            prerelease?.let {
+                                "-$prerelease"
+                            } ?: ""
+                        "$version$prereleaseSuffix"
+                    }
                 }
             } ?: "Unknown"
         }

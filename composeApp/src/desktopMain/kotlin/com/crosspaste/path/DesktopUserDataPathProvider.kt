@@ -1,8 +1,8 @@
 package com.crosspaste.path
 
-import com.crosspaste.app.AppEnv
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.utils.DesktopResourceUtils
+import com.crosspaste.utils.getAppEnvUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getSystemProperty
 import okio.Path
@@ -11,9 +11,10 @@ import okio.Path.Companion.toPath
 import kotlin.io.path.createTempDirectory
 
 fun getPlatformPathProvider(): PlatformUserDataPathProvider {
-    return if (AppEnv.CURRENT.isDevelopment()) {
+    val appEnvUtils = getAppEnvUtils()
+    return if (appEnvUtils.isDevelopment()) {
         DevelopmentPlatformUserDataPathProvider()
-    } else if (AppEnv.CURRENT.isTest()) {
+    } else if (appEnvUtils.isTest()) {
         // In the test environment, DesktopPathProvider will be mocked
         TestPlatformUserDataPathProvider()
     } else {
