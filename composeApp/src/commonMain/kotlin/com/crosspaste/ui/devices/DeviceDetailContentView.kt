@@ -24,7 +24,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -158,7 +157,7 @@ fun DeviceDetailContentView() {
                 )
             }
 
-            HorizontalDivider(modifier = Modifier.padding(start = 15.dp), color = Color.Gray)
+            HorizontalDivider(modifier = Modifier.padding(start = 15.dp))
 
             Row(
                 modifier =
@@ -262,7 +261,7 @@ fun DeviceDetailContentView() {
                     )
                 }
                 if (index < properties.size - 1) {
-                    HorizontalDivider(modifier = Modifier.padding(start = 15.dp), color = Color.Gray)
+                    HorizontalDivider(modifier = Modifier.padding(start = 15.dp))
                 }
             }
         }

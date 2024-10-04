@@ -93,25 +93,37 @@ fun AboutContentView() {
                     uiSupport.openCrossPasteWebInBrowser()
                 }
 
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 80.dp))
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 80.dp),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                )
 
                 AboutInfoItem("newbie_tutorial") {
                     uiSupport.openCrossPasteWebInBrowser("tutorial/pasteboard")
                 }
 
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 80.dp))
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 80.dp),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                )
 
                 AboutInfoItem("change_log") {
                     uiSupport.openUrlInBrowser(appUrls.changeLogUrl)
                 }
 
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 80.dp))
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 80.dp),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                )
 
                 AboutInfoItem("feedback") {
                     uiSupport.openUrlInBrowser(appUrls.issueTrackerUrl)
                 }
 
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 80.dp))
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 80.dp),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                )
 
                 AboutInfoItem("contact_us") {
                     uiSupport.openEmailClient("compile.future@gmail.com")

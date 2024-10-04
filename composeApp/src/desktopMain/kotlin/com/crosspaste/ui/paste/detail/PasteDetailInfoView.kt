@@ -200,10 +200,7 @@ fun PasteDetailInfoView(
                     )
                 }
                 if (index != items.size - 1) {
-                    HorizontalDivider(
-                        modifier = Modifier.fillMaxWidth().height(1.dp),
-                        thickness = 2.dp,
-                    )
+                    HorizontalDivider(thickness = 1.5.dp)
                 }
             }
         }
