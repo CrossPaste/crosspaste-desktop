@@ -1,12 +1,11 @@
 package com.crosspaste.config
 
-import com.crosspaste.utils.getLocaleUtils
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class AppConfig(
     val appInstanceId: String,
-    val language: String = getLocaleUtils().getCurrentLocale(),
+    val language: String,
     val enableAutoStartUp: Boolean = true,
     val enableDebugMode: Boolean = false,
     val isFollowSystemTheme: Boolean = true,

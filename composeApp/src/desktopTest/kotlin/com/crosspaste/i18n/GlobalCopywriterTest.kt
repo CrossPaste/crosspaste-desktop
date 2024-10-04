@@ -3,6 +3,7 @@ package com.crosspaste.i18n
 import com.crosspaste.config.DefaultConfigManager
 import com.crosspaste.i18n.GlobalCopywriterImpl.Companion.EN
 import com.crosspaste.presist.OneFilePersist
+import com.crosspaste.utils.DesktopLocaleUtils
 import okio.Path.Companion.toOkioPath
 import java.nio.file.Files
 import kotlin.test.Test
@@ -21,6 +22,7 @@ class GlobalCopywriterTest {
         configManager =
             DefaultConfigManager(
                 OneFilePersist(configPath),
+                DesktopLocaleUtils,
             )
 
         configManager.updateConfig("language", "")
