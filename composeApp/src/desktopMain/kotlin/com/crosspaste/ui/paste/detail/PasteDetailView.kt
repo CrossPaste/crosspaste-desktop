@@ -3,7 +3,6 @@ package com.crosspaste.ui.paste.detail
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.HorizontalDivider
@@ -32,10 +31,7 @@ fun PasteDetailView(
             detailView()
         }
 
-        HorizontalDivider(
-            modifier = Modifier.fillMaxWidth().height(1.dp),
-            thickness = 2.dp,
-        )
+        HorizontalDivider(thickness = 2.dp)
 
         Column(
             modifier =

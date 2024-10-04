@@ -184,7 +184,7 @@ fun DevicesListView(
         for ((index, syncRuntimeInfo) in rememberSyncRuntimeInfos.withIndex()) {
             DeviceConnectView(syncRuntimeInfo, currentScreenContext, true, onEdit)
             if (index != rememberSyncRuntimeInfos.size - 1) {
-                HorizontalDivider(modifier = Modifier.fillMaxWidth())
+                HorizontalDivider()
             }
         }
     }

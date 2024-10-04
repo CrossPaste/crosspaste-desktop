@@ -2,7 +2,6 @@ package com.crosspaste.ui.devices
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -25,7 +24,7 @@ fun NearbyDevicesView() {
             for ((index, syncInfo) in nearbyDevicesList.withIndex()) {
                 NearbyDeviceView(syncInfo)
                 if (index != nearbyDevicesList.size - 1) {
-                    HorizontalDivider(modifier = Modifier.fillMaxWidth())
+                    HorizontalDivider()
                 }
             }
         }
