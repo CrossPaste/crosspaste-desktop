@@ -1,9 +1,9 @@
 package com.crosspaste.path
 
-import com.crosspaste.app.AppEnv
 import com.crosspaste.app.AppFileType
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.utils.DesktopResourceUtils
+import com.crosspaste.utils.getAppEnvUtils
 import com.crosspaste.utils.getSystemProperty
 import com.crosspaste.utils.noOptionParent
 import okio.Path
@@ -26,6 +26,8 @@ interface AppPathProvider {
 }
 
 object DesktopAppPathProvider : AppPathProvider, PathProvider {
+
+    private val appEnvUtils = getAppEnvUtils()
 
     private val appPathProvider = getAppPathProvider()
 
@@ -61,9 +63,9 @@ object DesktopAppPathProvider : AppPathProvider, PathProvider {
     }
 
     private fun getAppPathProvider(): AppPathProvider {
-        return if (AppEnv.CURRENT.isDevelopment()) {
+        return if (appEnvUtils.isDevelopment()) {
             DevelopmentAppPathProvider()
-        } else if (AppEnv.CURRENT.isTest()) {
+        } else if (appEnvUtils.isTest()) {
             // In the test environment, DesktopAppPathProvider will be mocked
             this
         } else {
