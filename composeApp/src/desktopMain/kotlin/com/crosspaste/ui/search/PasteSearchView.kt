@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -546,15 +545,12 @@ fun CrossPasteSearchWindowContent() {
                         }
                     }
 
-                    Row(modifier = Modifier.size(appSize.searchWindowContentSize)) {
+                    Row(modifier = Modifier.size(appSize.searchCoreContentSize)) {
                         SearchListView {
                             pasteSearchService.clickSetSelectedIndex(it)
                             focusRequester.requestFocus()
                         }
-                        VerticalDivider(
-                            modifier = Modifier.fillMaxHeight().width(1.dp),
-                            thickness = 2.dp,
-                        )
+                        VerticalDivider(thickness = 2.dp)
                         DetailPasteDataView()
                     }
 
