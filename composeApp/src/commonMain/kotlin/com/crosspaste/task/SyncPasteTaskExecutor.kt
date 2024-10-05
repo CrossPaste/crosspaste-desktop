@@ -6,6 +6,7 @@ import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SendPasteClientApi
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.realm.paste.PasteRealm
+import com.crosspaste.realm.task.PasteTask
 import com.crosspaste.realm.task.TaskType
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.extra.SyncExtraInfo
@@ -34,7 +35,7 @@ class SyncPasteTaskExecutor(
 
     override val taskType: Int = TaskType.SYNC_PASTE_TASK
 
-    override suspend fun doExecuteTask(pasteTask: com.crosspaste.realm.task.PasteTask): PasteTaskResult {
+    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         val syncExtraInfo: SyncExtraInfo = TaskUtils.getExtraInfo(pasteTask, SyncExtraInfo::class)
         val mapResult =
             pasteRealm.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->

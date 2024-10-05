@@ -1,6 +1,7 @@
 package com.crosspaste.clean
 
 import com.crosspaste.config.ConfigManager
+import com.crosspaste.realm.task.PasteTaskRealm
 import com.crosspaste.realm.task.TaskType
 import com.crosspaste.task.TaskExecutor
 import com.crosspaste.utils.TaskUtils
@@ -13,7 +14,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class CleanPasteScheduler(
-    private val taskDao: com.crosspaste.realm.task.PasteTaskRealm,
+    private val taskDao: PasteTaskRealm,
     private val taskExecutor: TaskExecutor,
     private val configManager: ConfigManager,
 ) {

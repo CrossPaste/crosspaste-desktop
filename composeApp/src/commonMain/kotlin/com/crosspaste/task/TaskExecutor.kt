@@ -1,5 +1,6 @@
 package com.crosspaste.task
 
+import com.crosspaste.realm.task.PasteTaskRealm
 import com.crosspaste.realm.task.TaskStatus
 import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.cpuDispatcher
@@ -16,7 +17,7 @@ import org.mongodb.kbson.ObjectId
 
 class TaskExecutor(
     singleTypeTaskExecutors: List<SingleTypeTaskExecutor>,
-    private val pasteTaskRealm: com.crosspaste.realm.task.PasteTaskRealm,
+    private val pasteTaskRealm: PasteTaskRealm,
 ) {
     private val logger = KotlinLogging.logger {}
 
