@@ -7,14 +7,14 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.presist.OneFilePersist
 import com.crosspaste.ui.base.MessageType
 import com.crosspaste.ui.base.NotificationManager
+import com.crosspaste.utils.DeviceUtils
 import com.crosspaste.utils.LocaleUtils
-import com.crosspaste.utils.getDeviceUtils
 
 class DefaultConfigManager(
     private val configFilePersist: OneFilePersist,
+    override val deviceUtils: DeviceUtils,
     private val localeUtils: LocaleUtils,
 ) : ConfigManager {
-    override val deviceUtils = getDeviceUtils()
 
     override var config by mutableStateOf(
         try {

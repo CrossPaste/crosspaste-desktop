@@ -51,7 +51,7 @@ import com.crosspaste.paste.PasteboardService
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.realm.paste.PasteType
-import com.crosspaste.ui.LocalPageViewContent
+import com.crosspaste.ui.LocalScreenContent
 import com.crosspaste.ui.ScreenContext
 import com.crosspaste.ui.ScreenType
 import com.crosspaste.ui.base.MenuItem
@@ -434,7 +434,7 @@ fun MoreMenuItems(
     pasteData: PasteData,
     hideMore: () -> Unit,
 ) {
-    val currentPage = LocalPageViewContent.current
+    val currentPage = LocalScreenContent.current
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteRealm = koinInject<PasteRealm>()
     val uiSupport = koinInject<UISupport>()

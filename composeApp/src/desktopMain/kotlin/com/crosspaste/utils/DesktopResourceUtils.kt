@@ -7,12 +7,8 @@ import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
 import java.util.Properties
 
-actual fun getResourceUtils(): ResourceUtils {
-    return DesktopResourceUtils
-}
-
 @OptIn(ExperimentalComposeUiApi::class)
-object DesktopResourceUtils : ResourceUtils {
+object DesktopResourceUtils {
 
     private val loader = ResourceLoader.Default
 
@@ -28,7 +24,7 @@ object DesktopResourceUtils : ResourceUtils {
         return properties
     }
 
-    override fun readResourceBytes(fileName: String): ByteArray {
+    fun readResourceBytes(fileName: String): ByteArray {
         loader.load(fileName).use { stream ->
             return stream.readBytes()
         }

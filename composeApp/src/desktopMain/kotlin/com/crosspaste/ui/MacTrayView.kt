@@ -44,7 +44,7 @@ object MacTrayView {
 
     @Composable
     fun Tray() {
-        val pageViewContext = LocalPageViewContent.current
+        val pageViewContext = LocalScreenContent.current
         val applicationExit = LocalExitApplication.current
 
         val appLaunchState = koinInject<AppLaunchState>()

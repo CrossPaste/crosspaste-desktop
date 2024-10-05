@@ -41,6 +41,7 @@ import com.crosspaste.ui.base.file
 import com.crosspaste.ui.base.fileSlash
 import com.crosspaste.ui.base.folder
 import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.isDirectory
 import okio.Path
 import org.koin.compose.koinInject
 
@@ -53,8 +54,8 @@ fun SingleFilePreviewView(filePath: Path) {
 
     val fileUtils = getFileUtils()
 
-    val existFile by remember { mutableStateOf(filePath.toFile().exists()) }
-    val isFile by remember { mutableStateOf(if (existFile) filePath.toFile().isFile else null) }
+    val existFile by remember { mutableStateOf(fileUtils.existFile(filePath)) }
+    val isFile by remember { mutableStateOf(if (existFile) !filePath.isDirectory else null) }
 
     Row(
         modifier =

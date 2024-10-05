@@ -69,7 +69,7 @@ val tabTextStyle =
 
 @Composable
 fun TabsView() {
-    val currentScreenContext = LocalPageViewContent.current
+    val currentScreenContext = LocalScreenContent.current
     val appEnv = koinInject<AppEnv>()
     val copywriter = koinInject<GlobalCopywriter>()
 

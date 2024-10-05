@@ -161,7 +161,7 @@ import com.crosspaste.ui.DesktopThemeDetector
 import com.crosspaste.ui.GrantAccessibilityPermissionsWindow
 import com.crosspaste.ui.LinuxTrayView
 import com.crosspaste.ui.LocalExitApplication
-import com.crosspaste.ui.LocalPageViewContent
+import com.crosspaste.ui.LocalScreenContent
 import com.crosspaste.ui.MacTrayView
 import com.crosspaste.ui.ScreenContext
 import com.crosspaste.ui.ScreenType
@@ -178,7 +178,9 @@ import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.ToastManager
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.model.PasteDataViewModel
+import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DesktopLocaleUtils
+import com.crosspaste.utils.DeviceUtils
 import com.crosspaste.utils.GlobalCoroutineScope
 import com.crosspaste.utils.GlobalCoroutineScopeImpl
 import com.crosspaste.utils.LocaleUtils
@@ -219,6 +221,8 @@ class CrossPaste {
 
         private val appPathProvider = DesktopAppPathProvider
 
+        private val deviceUtils = DesktopDeviceUtils
+
         private val localeUtils = DesktopLocaleUtils
 
         private val configManager =
@@ -226,6 +230,7 @@ class CrossPaste {
                 FilePersist.createOneFilePersist(
                     appPathProvider.resolve("appConfig.json", AppFileType.USER),
                 ),
+                deviceUtils,
                 localeUtils,
             )
 
@@ -257,7 +262,8 @@ class CrossPaste {
                     single<CacheManager> { CacheManagerImpl(get(), get()) }
                     single<ConfigManager> { configManager }
                     single<CrossPasteLogger> { crossPasteLogger }
-                    single<EndpointInfoFactory> { DesktopEndpointInfoFactory(lazy { get<PasteServer<*, *>>() }) }
+                    single<DeviceUtils> { DesktopDeviceUtils }
+                    single<EndpointInfoFactory> { DesktopEndpointInfoFactory(get(), lazy { get<PasteServer<*, *>>() }) }
                     single<FileExtImageLoader> { DesktopFileExtLoader(get(), get()) }
                     single<FilePersist> { FilePersist }
                     single<GlobalCoroutineScope> { GlobalCoroutineScopeImpl }
@@ -548,7 +554,7 @@ class CrossPaste {
 
                 CompositionLocalProvider(
                     LocalExitApplication provides exitApplication,
-                    LocalPageViewContent provides currentScreenContext,
+                    LocalScreenContent provides currentScreenContext,
                 ) {
                     val windowIcon: Painter? =
                         if (platform.isMacos()) {
