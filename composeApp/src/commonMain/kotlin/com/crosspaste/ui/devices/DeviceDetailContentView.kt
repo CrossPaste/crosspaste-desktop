@@ -34,7 +34,7 @@ import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.sync.SyncManager
-import com.crosspaste.ui.LocalPageViewContent
+import com.crosspaste.ui.LocalScreenContent
 import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.alertCircle
 import com.crosspaste.ui.base.measureTextWidth
@@ -45,7 +45,7 @@ import org.koin.compose.koinInject
 
 @Composable
 fun DeviceDetailContentView() {
-    val currentScreenContext = LocalPageViewContent.current
+    val currentScreenContext = LocalScreenContent.current
 
     val appInfo = koinInject<AppInfo>()
     val checker = koinInject<VersionCompatibilityChecker>()

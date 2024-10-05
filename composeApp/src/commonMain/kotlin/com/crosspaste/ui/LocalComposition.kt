@@ -9,7 +9,7 @@ internal val LocalExitApplication =
         noLocalProvidedFor("ExitApplication")
     }
 
-internal val LocalPageViewContent =
+val LocalScreenContent =
     staticCompositionLocalOf<MutableState<ScreenContext>> {
         noLocalProvidedFor("ScreenContext")
     }

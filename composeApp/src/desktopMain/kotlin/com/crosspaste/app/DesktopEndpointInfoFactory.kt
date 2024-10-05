@@ -4,14 +4,13 @@ import com.crosspaste.dto.sync.EndpointInfo
 import com.crosspaste.net.PasteServer
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.realm.sync.HostInfo
-import com.crosspaste.utils.getDeviceUtils
+import com.crosspaste.utils.DeviceUtils
 import com.crosspaste.utils.getNetUtils
 
 class DesktopEndpointInfoFactory(
+    private val deviceUtils: DeviceUtils,
     private val pasteServer: Lazy<PasteServer<*, *>>,
 ) : EndpointInfoFactory {
-
-    private val deviceUtils = getDeviceUtils()
 
     private val netUtils = getNetUtils()
 

@@ -16,7 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.crosspaste.sync.SyncManager
-import com.crosspaste.ui.LocalPageViewContent
+import com.crosspaste.ui.LocalScreenContent
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.ExpandView
 import com.crosspaste.ui.base.PasteDialog
@@ -24,7 +24,7 @@ import org.koin.compose.koinInject
 
 @Composable
 actual fun DevicesScreen() {
-    val currentScreenContext = LocalPageViewContent.current
+    val currentScreenContext = LocalScreenContent.current
 
     val syncManager = koinInject<SyncManager>()
     val dialogService = koinInject<DialogService>()

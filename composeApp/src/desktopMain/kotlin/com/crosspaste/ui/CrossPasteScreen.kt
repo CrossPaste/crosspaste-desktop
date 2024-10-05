@@ -8,7 +8,7 @@ import com.crosspaste.ui.settings.ShortcutKeysScreen
 
 @Composable
 fun CrossPasteScreen() {
-    val currentScreenContext = LocalPageViewContent.current
+    val currentScreenContext = LocalScreenContent.current
 
     when (currentScreenContext.value.screenType) {
         ScreenType.PASTE_PREVIEW,

@@ -32,7 +32,7 @@ fun HomeMenuView(
     openMainWindow: () -> Unit = {},
     close: () -> Unit,
 ) {
-    val currentPage = LocalPageViewContent.current
+    val currentPage = LocalScreenContent.current
     val applicationExit = LocalExitApplication.current
     val copywriter = koinInject<GlobalCopywriter>()
     val uiSupport = koinInject<UISupport>()

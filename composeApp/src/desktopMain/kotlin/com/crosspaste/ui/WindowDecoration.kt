@@ -55,7 +55,7 @@ fun WindowDecoration(title: String) {
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun DecorationUI(title: String) {
-    val currentScreenContext = LocalPageViewContent.current
+    val currentScreenContext = LocalScreenContent.current
 
     val copywriter = koinInject<GlobalCopywriter>()
 

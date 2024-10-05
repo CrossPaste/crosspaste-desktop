@@ -21,7 +21,7 @@ import com.crosspaste.paste.item.PasteText
 import com.crosspaste.paste.plugin.type.TextUpdater
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteRealm
-import com.crosspaste.ui.LocalPageViewContent
+import com.crosspaste.ui.LocalScreenContent
 import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.save
@@ -31,7 +31,7 @@ import org.koin.compose.koinInject
 
 @Composable
 fun PasteTextEditContentView() {
-    val currentScreenContext = LocalPageViewContent.current
+    val currentScreenContext = LocalScreenContent.current
 
     val pasteData = currentScreenContext.value.context as PasteData
     val copywriter = koinInject<GlobalCopywriter>()
