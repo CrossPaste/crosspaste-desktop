@@ -1,12 +1,8 @@
 package com.crosspaste.image
 
-import com.crosspaste.app.AppFileType
 import com.crosspaste.net.DesktopProxy
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.utils.PlatformLock
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.http.*
-import io.ktor.util.collections.*
 import okio.Path
 import java.io.FileOutputStream
 import java.net.InetSocketAddress
@@ -18,22 +14,12 @@ import java.net.http.HttpResponse
 import java.time.Duration
 
 class DesktopFaviconLoader(
-    private val userDataPathProvider: UserDataPathProvider,
-) : ConcurrentLoader<String, Path>, FaviconLoader {
+    userDataPathProvider: UserDataPathProvider,
+) : AbstractFaviconLoader(userDataPathProvider) {
 
-    private val logger = KotlinLogging.logger {}
+    override val logger = KotlinLogging.logger {}
 
-    override val lockMap: ConcurrentMap<String, PlatformLock> = ConcurrentMap()
-
-    private fun getGoogleIconUrl(host: String): String {
-        return "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://$host&size=32"
-    }
-
-    private fun getDefaultIcoUrl(host: String): String {
-        return "https://$host/favicon.ico"
-    }
-
-    private fun saveIco(
+    override fun saveIco(
         url: String,
         path: Path,
     ): Path? {
@@ -72,39 +58,5 @@ class DesktopFaviconLoader(
             logger.warn(e) { "Failed to save favicon for $url" }
         }
         return null
-    }
-
-    override fun resolve(
-        key: String,
-        value: String,
-    ): Path {
-        return userDataPathProvider.resolve("$key.ico", AppFileType.FAVICON)
-    }
-
-    override fun exist(result: Path): Boolean {
-        return result.toFile().exists()
-    }
-
-    override fun loggerWarning(
-        value: String,
-        e: Exception,
-    ) {
-        logger.warn(e) { "Failed to get favicon for $value" }
-    }
-
-    override fun save(
-        key: String,
-        value: String,
-        result: Path,
-    ) {
-        saveIco(getDefaultIcoUrl(key), result)?.let {
-            return
-        } ?: run {
-            saveIco(getGoogleIconUrl(key), result)
-        }
-    }
-
-    override fun convertToKey(value: String): String {
-        return Url(value).host
     }
 }

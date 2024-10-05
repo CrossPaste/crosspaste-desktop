@@ -1,6 +1,5 @@
 package com.crosspaste.image
 
-import com.crosspaste.app.AppFileType
 import com.crosspaste.info.PasteInfos.DIMENSIONS
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.createPasteInfoWithoutConverter
@@ -9,13 +8,8 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.utils.LoggerExtension.logExecutionTime
-import com.crosspaste.utils.PlatformLock
-import com.crosspaste.utils.fileNameRemoveExtension
-import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.util.collections.*
 import okio.Path
-import okio.Path.Companion.toOkioPath
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.Surface
 import java.util.Properties
@@ -25,55 +19,14 @@ import kotlin.io.path.readBytes
 import kotlin.io.path.writeBytes
 
 class DesktopThumbnailLoader(
-    private val userDataPathProvider: UserDataPathProvider,
-) : ConcurrentLoader<PasteFileCoordinate, Path>, ThumbnailLoader {
+    userDataPathProvider: UserDataPathProvider,
+) : AbstractThumbnailLoader(userDataPathProvider) {
 
-    private val logger = KotlinLogging.logger {}
-
-    override val lockMap: ConcurrentMap<String, PlatformLock> = ConcurrentMap()
-
-    private val fileUtils = getFileUtils()
+    override val logger = KotlinLogging.logger {}
 
     private val platform = getPlatform()
 
-    private val basePath = userDataPathProvider.resolve(appFileType = AppFileType.IMAGE)
-
-    override fun resolve(
-        key: String,
-        value: PasteFileCoordinate,
-    ): Path {
-        return getThumbnailPath(value)
-    }
-
-    override fun getThumbnailPath(pasteFileCoordinate: PasteFileCoordinate): Path {
-        val relativePath =
-            fileUtils.createPasteRelativePath(
-                pasteFileCoordinate.toPasteCoordinate(),
-                pasteFileCoordinate.filePath.name,
-            )
-
-        val thumbnailName = "thumbnail_${pasteFileCoordinate.filePath.fileNameRemoveExtension}.png"
-
-        return userDataPathProvider.resolve(basePath, relativePath, autoCreate = true, isFile = true)
-            .toNioPath()
-            .resolveSibling(thumbnailName)
-            .toOkioPath()
-    }
-
-    override fun getOriginMetaPath(pasteFileCoordinate: PasteFileCoordinate): Path {
-        val relativePath =
-            fileUtils.createPasteRelativePath(
-                pasteFileCoordinate.toPasteCoordinate(),
-                pasteFileCoordinate.filePath.name,
-            )
-
-        val metaProperties = "meta_${pasteFileCoordinate.filePath.fileNameRemoveExtension}.properties"
-
-        return userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
-            .toNioPath()
-            .resolveSibling(metaProperties)
-            .toOkioPath()
-    }
+    override val thumbnailSize = 200
 
     override fun readOriginMeta(
         pasteFileCoordinate: PasteFileCoordinate,
@@ -88,10 +41,6 @@ class DesktopThumbnailLoader(
         } catch (e: Exception) {
             logger.warn { "Failed to read meta data for file: ${pasteFileCoordinate.filePath}" }
         }
-    }
-
-    override fun convertToKey(value: PasteFileCoordinate): String {
-        return value.toString()
     }
 
     override fun save(
@@ -138,12 +87,12 @@ class DesktopThumbnailLoader(
         // Determine thumbnail dimensions maintaining the aspect ratio
         if (originalWidth <= originalHeight) {
             // For vertical (portrait) images
-            thumbnailWidth = 200
-            thumbnailHeight = 200 * originalHeight / originalWidth
+            thumbnailWidth = thumbnailSize
+            thumbnailHeight = thumbnailSize * originalHeight / originalWidth
         } else {
             // For horizontal (landscape) images
-            thumbnailWidth = 200 * originalWidth / originalHeight
-            thumbnailHeight = 200
+            thumbnailWidth = thumbnailSize * originalWidth / originalHeight
+            thumbnailHeight = thumbnailSize
         }
 
         // Create a new Surface for drawing the thumbnail
@@ -177,16 +126,5 @@ class DesktopThumbnailLoader(
             properties.setProperty(DIMENSIONS, "$originalWidth x $originalHeight")
             properties.store(getOriginMetaPath(value).toNioPath().outputStream().buffered(), null)
         }
-    }
-
-    override fun exist(result: Path): Boolean {
-        return result.toFile().exists()
-    }
-
-    override fun loggerWarning(
-        value: PasteFileCoordinate,
-        e: Exception,
-    ) {
-        logger.warn { "Failed to create thumbnail for file: $value" }
     }
 }
