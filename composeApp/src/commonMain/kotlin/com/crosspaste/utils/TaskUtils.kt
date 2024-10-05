@@ -2,6 +2,7 @@ package com.crosspaste.utils
 
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.realm.task.ExecutionHistory
+import com.crosspaste.realm.task.PasteTask
 import com.crosspaste.realm.task.PasteTaskExtraInfo
 import com.crosspaste.realm.task.TaskStatus
 import com.crosspaste.task.FailurePasteTaskResult
@@ -25,8 +26,8 @@ object TaskUtils {
         pasteDataId: ObjectId?,
         taskType: Int,
         extraInfo: PasteTaskExtraInfo = BaseExtraInfo(),
-    ): com.crosspaste.realm.task.PasteTask {
-        return com.crosspaste.realm.task.PasteTask().apply {
+    ): PasteTask {
+        return PasteTask().apply {
             this.pasteDataId = pasteDataId
             this.taskType = taskType
             this.status = TaskStatus.PREPARING
@@ -38,7 +39,7 @@ object TaskUtils {
 
     @OptIn(InternalSerializationApi::class)
     fun <T : PasteTaskExtraInfo> getExtraInfo(
-        pasteTask: com.crosspaste.realm.task.PasteTask,
+        pasteTask: PasteTask,
         kclass: KClass<T>,
     ): T {
         val serializer = kclass.serializer()
@@ -46,7 +47,7 @@ object TaskUtils {
     }
 
     fun createFailExtraInfo(
-        pasteTask: com.crosspaste.realm.task.PasteTask,
+        pasteTask: PasteTask,
         throwable: Throwable,
     ): String {
         val currentTime = Clock.System.now().toEpochMilliseconds()

@@ -7,6 +7,7 @@ import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.realm.paste.PasteRealm
+import com.crosspaste.realm.task.PasteTask
 import com.crosspaste.realm.task.TaskType
 import com.crosspaste.task.extra.BaseExtraInfo
 import com.crosspaste.utils.TaskUtils
@@ -39,7 +40,7 @@ class Html2ImageTaskExecutor(
             lazyChromeService.value
         }
 
-    override suspend fun doExecuteTask(pasteTask: com.crosspaste.realm.task.PasteTask): PasteTaskResult {
+    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         mutex.withLock {
             val chromeService = chromeServiceDeferred.await()
             try {

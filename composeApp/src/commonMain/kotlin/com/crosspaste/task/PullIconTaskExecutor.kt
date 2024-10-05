@@ -7,6 +7,7 @@ import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteRealm
+import com.crosspaste.realm.task.PasteTask
 import com.crosspaste.realm.task.TaskType
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.extra.BaseExtraInfo
@@ -40,7 +41,7 @@ class PullIconTaskExecutor(
 
     private val locks: MutableMap<String, Mutex> = ConcurrentMap()
 
-    override suspend fun doExecuteTask(pasteTask: com.crosspaste.realm.task.PasteTask): PasteTaskResult {
+    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         val baseExtraInfo: BaseExtraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class)
 
         pasteRealm.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->

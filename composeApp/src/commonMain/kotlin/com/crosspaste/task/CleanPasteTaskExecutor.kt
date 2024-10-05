@@ -6,6 +6,7 @@ import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.realm.paste.PasteType
+import com.crosspaste.realm.task.PasteTask
 import com.crosspaste.realm.task.TaskType
 import com.crosspaste.task.extra.BaseExtraInfo
 import com.crosspaste.utils.TaskUtils
@@ -29,7 +30,7 @@ class CleanPasteTaskExecutor(
 
     private val cleanLock = Mutex()
 
-    override suspend fun doExecuteTask(pasteTask: com.crosspaste.realm.task.PasteTask): PasteTaskResult {
+    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         if (configManager.config.enableThresholdCleanup) {
             try {
                 cleanLock.withLock {

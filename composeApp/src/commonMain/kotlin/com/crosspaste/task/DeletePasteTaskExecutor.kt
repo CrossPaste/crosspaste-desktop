@@ -3,6 +3,7 @@ package com.crosspaste.task
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.realm.paste.PasteRealm
+import com.crosspaste.realm.task.PasteTask
 import com.crosspaste.realm.task.TaskType
 import com.crosspaste.task.extra.BaseExtraInfo
 import com.crosspaste.utils.TaskUtils
@@ -14,7 +15,7 @@ class DeletePasteTaskExecutor(private val pasteRealm: PasteRealm) : SingleTypeTa
 
     override val taskType: Int = TaskType.DELETE_PASTE_TASK
 
-    override suspend fun doExecuteTask(pasteTask: com.crosspaste.realm.task.PasteTask): PasteTaskResult {
+    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         try {
             pasteRealm.deletePasteData(pasteTask.pasteDataId!!)
             return SuccessPasteTaskResult()
