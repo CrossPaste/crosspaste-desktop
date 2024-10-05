@@ -52,7 +52,11 @@ object DesktopAppSize : AppSize {
 
     private val searchPaddingDpSize = DpSize(20.dp, 20.dp)
 
+    private val searchCorePaddingDpSize = DpSize(20.dp, 120.dp)
+
     val searchWindowContentSize = searchWindowSize.minus(searchPaddingDpSize)
+
+    val searchCoreContentSize = searchWindowSize.minus(searchCorePaddingDpSize)
 
     val searchDetailRoundedCornerShape = RoundedCornerShape(5.dp)
 
