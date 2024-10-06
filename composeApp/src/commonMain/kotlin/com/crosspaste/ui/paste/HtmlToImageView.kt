@@ -1,5 +1,8 @@
 package com.crosspaste.ui.paste
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -12,6 +15,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
@@ -53,19 +57,25 @@ fun HtmlToImageView(
                 is AsyncImagePainter.State.Loading,
                 is AsyncImagePainter.State.Error,
                 -> {
-                    Text(
-                        text = htmlText,
-                        fontFamily = FontFamily.SansSerif,
-                        maxLines = 4,
-                        softWrap = true,
-                        overflow = TextOverflow.Ellipsis,
-                        style =
-                            TextStyle(
-                                fontWeight = FontWeight.Normal,
-                                color = MaterialTheme.colorScheme.onBackground,
-                                fontSize = 14.sp,
-                            ),
-                    )
+                    Row(
+                        modifier =
+                            Modifier.fillMaxSize()
+                                .padding(10.dp),
+                    ) {
+                        Text(
+                            text = htmlText,
+                            fontFamily = FontFamily.SansSerif,
+                            maxLines = 4,
+                            softWrap = true,
+                            overflow = TextOverflow.Ellipsis,
+                            style =
+                                TextStyle(
+                                    fontWeight = FontWeight.Normal,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    fontSize = 14.sp,
+                                ),
+                        )
+                    }
                 }
 
                 else -> {
