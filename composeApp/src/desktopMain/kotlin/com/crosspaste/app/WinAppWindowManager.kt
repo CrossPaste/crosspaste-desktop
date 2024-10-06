@@ -87,20 +87,9 @@ class WinAppWindowManager(
         mainFocusRequester.requestFocus()
     }
 
-    override suspend fun unActiveMainWindow() {
+    override suspend fun unActiveMainWindow(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive main window" }
-        val keyCodes =
-            lazyShortcutKeys.value.shortcutKeysCore.keys[PASTE]?.let {
-                it.map { key -> key.rawCode }
-            } ?: listOf()
-        User32.bringToBack(
-            MAIN_WINDOW_TITLE,
-            mainHWND,
-            searchHWND,
-            prevWinAppInfo?.hwnd,
-            false,
-            keyCodes,
-        )
+        bringToBack(preparePaste(), mainHWND)
         setShowMainWindow(false)
         mainFocusRequester.freeFocus()
     }
@@ -135,21 +124,28 @@ class WinAppWindowManager(
 
     override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive search window" }
-        val toPaste = preparePaste()
-        val keyCodes =
-            lazyShortcutKeys.value.shortcutKeysCore.keys[PASTE]?.let {
-                it.map { key -> key.rawCode }
-            } ?: listOf()
-        User32.bringToBack(
-            SEARCH_WINDOW_TITLE,
-            mainHWND,
-            searchHWND,
-            prevWinAppInfo?.hwnd,
-            toPaste,
-            keyCodes,
-        )
+        bringToBack(preparePaste(), searchHWND)
         setShowSearchWindow(false)
         searchFocusRequester.freeFocus()
+    }
+
+    private fun bringToBack(
+        toPaste: Boolean,
+        backHWND: HWND?,
+    ) {
+        if (toPaste) {
+            User32.backToBack(backHWND, prevWinAppInfo?.hwnd)
+        } else {
+            val keyCodes =
+                lazyShortcutKeys.value.shortcutKeysCore.keys[PASTE]?.let {
+                    it.map { key -> key.rawCode }
+                } ?: listOf()
+            User32.bringToBackAndPaste(
+                backHWND,
+                prevWinAppInfo?.hwnd,
+                keyCodes,
+            )
+        }
     }
 
     override suspend fun toPaste() {

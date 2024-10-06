@@ -1,6 +1,5 @@
 package com.crosspaste.platform.windows.api
 
-import com.crosspaste.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
 import com.crosspaste.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.crosspaste.app.WinAppInfo
 import com.crosspaste.path.DesktopAppPathProvider
@@ -419,36 +418,27 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             }
         }
 
-        fun bringToBack(
-            windowTitle: String,
-            mainWindow: HWND?,
-            searchWindow: HWND?,
+        fun backToBack(
+            backWindow: HWND?,
             previousHwnd: HWND?,
-            toPaste: Boolean,
-            keyCodes: List<Int>,
         ) {
-            when (windowTitle) {
-                MAIN_WINDOW_TITLE -> {
-                    mainWindow?.let { hwnd ->
-                        INSTANCE.ShowWindow(hwnd, SW_HIDE)
-                    }
-                }
-
-                SEARCH_WINDOW_TITLE -> {
-                    searchWindow?.let { hwnd ->
-                        INSTANCE.ShowWindow(hwnd, SW_HIDE)
-                    }
-                }
+            backWindow?.let { hwnd ->
+                INSTANCE.ShowWindow(hwnd, SW_HIDE)
             }
 
             previousHwnd?.let { hwnd ->
                 INSTANCE.ShowWindow(hwnd, WinUser.SW_SHOW)
                 INSTANCE.SetForegroundWindow(hwnd)
             }
+        }
 
-            if (toPaste) {
-                paste(keyCodes)
-            }
+        fun bringToBackAndPaste(
+            backWindow: HWND?,
+            previousHwnd: HWND?,
+            keyCodes: List<Int>,
+        ) {
+            backToBack(backWindow, previousHwnd)
+            paste(keyCodes)
         }
 
         @Suppress("UNCHECKED_CAST")

@@ -231,7 +231,7 @@ abstract class DesktopAppWindowManager(
 
     abstract suspend fun activeMainWindow()
 
-    abstract suspend fun unActiveMainWindow()
+    abstract suspend fun unActiveMainWindow(preparePaste: suspend () -> Boolean = { false })
 
     suspend fun switchMainWindow() {
         if (showMainWindow.value) {
@@ -243,7 +243,7 @@ abstract class DesktopAppWindowManager(
 
     abstract suspend fun activeSearchWindow()
 
-    abstract suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean)
+    abstract suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean = { false })
 
     abstract fun getPrevAppName(): String?
 }

@@ -209,7 +209,7 @@ class DesktopPasteSearchService(
     }
 
     suspend fun unActiveWindow() {
-        appWindowManager.unActiveSearchWindow { false }
+        appWindowManager.unActiveSearchWindow()
         innerSetSelectedIndex(0)
     }
 

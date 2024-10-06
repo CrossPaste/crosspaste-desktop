@@ -82,11 +82,20 @@ class MacAppWindowManager(
         mainFocusRequester.requestFocus()
     }
 
-    override suspend fun unActiveMainWindow() {
+    override suspend fun unActiveMainWindow(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive main window" }
-        MacAppUtils.mainToBack(
-            prevMacAppInfo?.bundleIdentifier ?: "",
-        )
+        val toPaste = preparePaste()
+        val prevAppId = prevMacAppInfo?.bundleIdentifier ?: ""
+        if (toPaste) {
+            val pair = macPasteUtils.getPasteMemory()
+            MacAppUtils.mainToBackAndPaste(
+                prevAppId,
+                pair.first,
+                pair.second,
+            )
+        } else {
+            MacAppUtils.mainToBack(prevAppId)
+        }
         setShowMainWindow(false)
         delay(500)
         mainFocusRequester.freeFocus()
@@ -121,13 +130,17 @@ class MacAppWindowManager(
     override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive search window" }
         val toPaste = preparePaste()
-        val pair = macPasteUtils.getPasteMemory()
-        MacAppUtils.searchToBack(
-            prevMacAppInfo?.bundleIdentifier ?: "",
-            toPaste = toPaste,
-            pair.first,
-            pair.second,
-        )
+        val prevAppId = prevMacAppInfo?.bundleIdentifier ?: ""
+        if (toPaste) {
+            val pair = macPasteUtils.getPasteMemory()
+            MacAppUtils.searchToBackAndPaste(
+                prevAppId,
+                pair.first,
+                pair.second,
+            )
+        } else {
+            MacAppUtils.searchToBack(prevAppId)
+        }
         setShowSearchWindow(false)
         searchFocusRequester.freeFocus()
     }

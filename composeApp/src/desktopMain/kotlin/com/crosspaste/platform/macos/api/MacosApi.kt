@@ -52,9 +52,16 @@ interface MacosApi : Library {
 
     fun mainToBack(appName: String)
 
-    fun searchToBack(
+    fun mainToBackAndPaste(
         appName: String,
-        toPaste: Boolean,
+        array: Pointer,
+        count: Int,
+    )
+
+    fun searchToBack(appName: String)
+
+    fun searchToBackAndPaste(
+        appName: String,
         array: Pointer,
         count: Int,
     )

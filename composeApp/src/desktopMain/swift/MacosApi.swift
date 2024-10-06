@@ -240,49 +240,68 @@ public func mainToBack(
     appName: UnsafePointer<CChar>
 ) {
     DispatchQueue.main.async {
-        let windows = NSApplication.shared.windows
-        for window in windows {
-            if window.title == "CrossPaste" {
-                if (NSApp.isActive) {
-                    window.orderBack(nil)
-                    NSApp.hide(nil)
-                }
-                break
-            }
-        }
-
         let appNameString = String(cString: appName)
-        let apps = NSRunningApplication.runningApplications(withBundleIdentifier: appNameString)
-        if let app = apps.first {
-            app.activate(options: [.activateIgnoringOtherApps])
+        hideWindowAndActivateApp(hideTitle: "CrossPaste", appName: appNameString)
+    }
+}
+
+@_cdecl("mainToBackAndPaste")
+public func mainToBack(
+    appName: UnsafePointer<CChar>,
+    keyCodesPointer: UnsafePointer<Int32>,
+    count: Int
+) {
+    DispatchQueue.main.async {
+        let appNameString = String(cString: appName)
+        hideWindowAndActivateApp(hideTitle: "CrossPaste", appName: appNameString)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            simulatePasteCommand(keyCodesPointer: keyCodesPointer, count: count)
         }
     }
 }
 
 @_cdecl("searchToBack")
 public func searchToBack(
+    appName: UnsafePointer<CChar>
+) {
+    DispatchQueue.main.async {
+        let appNameString = String(cString: appName)
+        hideWindowAndActivateApp(hideTitle: "CrossPaste Search", appName: appNameString)
+    }
+}
+
+@_cdecl("searchToBackAndPaste")
+public func searchToBackAndPaste(
     appName: UnsafePointer<CChar>,
-    toPaste: Bool,
     keyCodesPointer: UnsafePointer<Int32>,
     count: Int
 ) {
     DispatchQueue.main.async {
-        let windows = NSApplication.shared.windows
-        for window in windows {
-            if window.title == "CrossPaste Search" {
-                if (NSApp.isActive) {
-                    window.orderBack(nil)
-                    NSApp.hide(nil)
-                }
-                break
-            }
-        }
+        let appNameString = String(cString: appName)
+        hideWindowAndActivateApp(hideTitle: "CrossPaste Search", appName: appNameString)
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            if (toPaste) {
-                simulatePasteCommand(keyCodesPointer: keyCodesPointer, count: count)
-            }
+            simulatePasteCommand(keyCodesPointer: keyCodesPointer, count: count)
         }
+    }
+}
+
+private func hideWindowAndActivateApp(hideTitle: String, appName: String) {
+    let windows = NSApplication.shared.windows
+    for window in windows {
+        if window.title == hideTitle {
+            if NSApp.isActive {
+                window.orderBack(nil)
+                NSApp.hide(nil)
+            }
+            break
+        }
+    }
+
+    let apps = NSRunningApplication.runningApplications(withBundleIdentifier: appName)
+    if let app = apps.first {
+        app.activate(options: [.activateIgnoringOtherApps])
     }
 }
 

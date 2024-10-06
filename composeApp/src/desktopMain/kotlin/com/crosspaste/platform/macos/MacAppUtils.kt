@@ -23,13 +23,24 @@ object MacAppUtils {
         INSTANCE.mainToBack(appName)
     }
 
-    fun searchToBack(
+    fun mainToBackAndPaste(
         appName: String,
-        toPaste: Boolean,
         array: Pointer,
         count: Int,
     ) {
-        INSTANCE.searchToBack(appName, toPaste, array, count)
+        INSTANCE.mainToBackAndPaste(appName, array, count)
+    }
+
+    fun searchToBack(appName: String) {
+        INSTANCE.searchToBack(appName)
+    }
+
+    fun searchToBackAndPaste(
+        appName: String,
+        array: Pointer,
+        count: Int,
+    ) {
+        INSTANCE.searchToBackAndPaste(appName, array, count)
     }
 
     fun bringToFront(appName: String): String {
