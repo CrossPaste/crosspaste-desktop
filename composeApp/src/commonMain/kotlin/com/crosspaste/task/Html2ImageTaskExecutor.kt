@@ -1,7 +1,7 @@
 package com.crosspaste.task
 
 import com.crosspaste.exception.StandardErrorCode
-import com.crosspaste.html.ChromeService
+import com.crosspaste.html.HtmlRenderingService
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.path.UserDataPathProvider
@@ -21,7 +21,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 class Html2ImageTaskExecutor(
-    private val lazyChromeService: Lazy<ChromeService>,
+    private val lazyHtmlRenderingService: Lazy<HtmlRenderingService>,
     private val pasteRealm: PasteRealm,
     private val filePersist: FilePersist,
     private val userDataPathProvider: UserDataPathProvider,
@@ -35,21 +35,21 @@ class Html2ImageTaskExecutor(
 
     private val mutex = Mutex()
 
-    private val chromeServiceDeferred: Deferred<ChromeService> =
+    private val htmlRenderingServiceDeferred: Deferred<HtmlRenderingService> =
         CoroutineScope(ioDispatcher).async {
-            lazyChromeService.value
+            lazyHtmlRenderingService.value
         }
 
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         mutex.withLock {
-            val chromeService = chromeServiceDeferred.await()
+            val htmlRenderingService = htmlRenderingServiceDeferred.await()
             try {
                 pasteRealm.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
                     pasteData.getPasteItem()?.let { pasteItem ->
                         if (pasteItem is PasteHtml) {
                             val html2ImagePath = pasteItem.getHtmlImagePath(userDataPathProvider)
                             if (!fileUtils.existFile(html2ImagePath)) {
-                                chromeService.html2Image(pasteItem.html)?.let { bytes ->
+                                htmlRenderingService.html2Image(pasteItem.html)?.let { bytes ->
                                     filePersist.createOneFilePersist(html2ImagePath).saveBytes(bytes)
                                 }
                             }

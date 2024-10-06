@@ -29,10 +29,10 @@ import org.openqa.selenium.chrome.ChromeDriverService
 import org.openqa.selenium.chrome.ChromeOptions
 import kotlin.math.max
 
-class DesktopChromeService(
+class DesktopHtmlRenderingService(
     private val appSize: AppSize,
     private val userDataPathProvider: UserDataPathProvider,
-) : ChromeService {
+) : HtmlRenderingService {
 
     private val logger = KotlinLogging.logger {}
 
