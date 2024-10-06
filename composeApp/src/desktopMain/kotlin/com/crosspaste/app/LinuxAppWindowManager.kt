@@ -66,9 +66,9 @@ class LinuxAppWindowManager(
         mainFocusRequester.requestFocus()
     }
 
-    override suspend fun unActiveMainWindow() {
+    override suspend fun unActiveMainWindow(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive main window" }
-        X11Api.bringToBack(prevLinuxAppInfo)
+        bringToBack(preparePaste())
         setShowMainWindow(false)
         mainFocusRequester.freeFocus()
     }
@@ -94,14 +94,21 @@ class LinuxAppWindowManager(
 
     override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive search window" }
-        val toPaste = preparePaste()
-        val keyCodes =
-            lazyShortcutKeys.value.shortcutKeysCore.keys[PASTE]?.let {
-                it.map { key -> key.rawCode }
-            } ?: listOf()
-        X11Api.bringToBack(prevLinuxAppInfo, toPaste, keyCodes)
+        bringToBack(preparePaste())
         setShowSearchWindow(false)
         searchFocusRequester.freeFocus()
+    }
+
+    private suspend fun bringToBack(toPaste: Boolean) {
+        if (toPaste) {
+            val keyCodes =
+                lazyShortcutKeys.value.shortcutKeysCore.keys[PASTE]?.let {
+                    it.map { key -> key.rawCode }
+                } ?: listOf()
+            X11Api.bringToBack(prevLinuxAppInfo, keyCodes)
+        } else {
+            X11Api.bringToBack(prevLinuxAppInfo)
+        }
     }
 
     override suspend fun toPaste() {

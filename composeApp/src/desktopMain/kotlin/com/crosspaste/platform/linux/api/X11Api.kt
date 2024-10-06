@@ -79,15 +79,12 @@ interface X11Api : X11 {
 
         suspend fun bringToBack(
             prevLinuxAppInfo: LinuxAppInfo?,
-            toPaste: Boolean,
             keyCodes: List<Int>,
         ) {
             INSTANCE.XOpenDisplay(null)?.let { display ->
                 prevLinuxAppInfo?.let {
                     WMCtrl.activeWindow(display, it.window)
-                    if (toPaste) {
-                        toPaste(display, keyCodes)
-                    }
+                    toPaste(display, keyCodes)
                 }
                 INSTANCE.XCloseDisplay(display)
             }

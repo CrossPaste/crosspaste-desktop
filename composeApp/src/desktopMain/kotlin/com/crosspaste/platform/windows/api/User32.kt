@@ -1,6 +1,5 @@
 package com.crosspaste.platform.windows.api
 
-import com.crosspaste.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
 import com.crosspaste.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.crosspaste.app.WinAppInfo
 import com.crosspaste.path.DesktopAppPathProvider
@@ -96,13 +95,16 @@ interface User32 : com.sun.jna.platform.win32.User32 {
 
     fun GetClipboardSequenceNumber(): Int
 
-    fun mouse_event(
-        dwFlags: DWORD,
-        dx: DWORD,
-        dy: DWORD,
-        dwData: DWORD,
-        dwExtraInfo: ULONG_PTR,
-    )
+    fun EnumWindows(
+        lpEnumFunc: WndEnumProc,
+        lParam: Pointer?,
+    ): Boolean
+
+    fun GetWindowTextA(
+        hWnd: HWND,
+        lpString: ByteArray,
+        nMaxCount: Int,
+    ): Int
 
     companion object {
         val INSTANCE =
@@ -111,18 +113,7 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                 User32::class.java,
                 DEFAULT_OPTIONS,
             ) as User32
-        const val GWL_EXSTYLE = -20
-        const val GWL_STYLE = -16
         const val GWL_WNDPROC = -4
-        const val GWL_HINSTANCE = -6
-        const val GWL_ID = -12
-        const val GWL_USERDATA = -21
-        const val DWL_DLGPROC = 4
-        const val DWL_MSGRESULT = 0
-        const val DWL_USER = 8
-        const val WS_EX_COMPOSITED = 0x20000000
-        const val WS_EX_LAYERED = 0x80000
-        const val WS_EX_TRANSPARENT = 32
         const val WM_DESTROY = 0x0002
         const val WM_CHANGECBCHAIN = 0x030D
         const val WM_DRAWCLIPBOARD = 0x0308
@@ -277,7 +268,7 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             }
         }
 
-        fun hiconToImage(hicon: HICON): BufferedImage? {
+        private fun hiconToImage(hicon: HICON): BufferedImage? {
             var bitmapHandle: HBITMAP? = null
             val user32 = INSTANCE
             val gdi32 = GDI32.INSTANCE
@@ -341,11 +332,11 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             return null
         }
 
-        fun getCurrentWindowAppInfoAndPid(
+        fun getForegroundWindowAppInfoAndPid(
             mainWindow: HWND?,
             searchWindow: HWND?,
         ): Pair<WinAppInfo, Int>? {
-            INSTANCE.GetForegroundWindow()?.let { previousHwnd ->
+            getForegroundWindow()?.let { previousHwnd ->
 
                 if (previousHwnd.pointer != mainWindow?.pointer &&
                     previousHwnd.pointer != searchWindow?.pointer
@@ -385,6 +376,31 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             return null
         }
 
+        private fun getForegroundWindow(): HWND? {
+            var foregroundHwnd: HWND? = null
+            INSTANCE.EnumWindows(
+                object : WndEnumProc {
+                    override fun callback(
+                        hWnd: HWND,
+                        lParam: Pointer?,
+                    ): Boolean {
+                        if (INSTANCE.IsWindowVisible(hWnd)) {
+                            val buffer = ByteArray(1024)
+                            INSTANCE.GetWindowTextA(hWnd, buffer, 1024)
+                            val title = Native.toString(buffer).trim()
+                            if (title.isNotEmpty()) {
+                                foregroundHwnd = hWnd
+                                return false
+                            }
+                        }
+                        return true
+                    }
+                },
+                null,
+            )
+            return foregroundHwnd
+        }
+
         @Synchronized
         fun bringToFront(
             windowTitle: String,
@@ -419,36 +435,27 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             }
         }
 
-        fun bringToBack(
-            windowTitle: String,
-            mainWindow: HWND?,
-            searchWindow: HWND?,
+        fun backToBack(
+            backWindow: HWND?,
             previousHwnd: HWND?,
-            toPaste: Boolean,
-            keyCodes: List<Int>,
         ) {
-            when (windowTitle) {
-                MAIN_WINDOW_TITLE -> {
-                    mainWindow?.let { hwnd ->
-                        INSTANCE.ShowWindow(hwnd, SW_HIDE)
-                    }
-                }
-
-                SEARCH_WINDOW_TITLE -> {
-                    searchWindow?.let { hwnd ->
-                        INSTANCE.ShowWindow(hwnd, SW_HIDE)
-                    }
-                }
+            backWindow?.let { hwnd ->
+                INSTANCE.ShowWindow(hwnd, SW_HIDE)
             }
 
             previousHwnd?.let { hwnd ->
                 INSTANCE.ShowWindow(hwnd, WinUser.SW_SHOW)
                 INSTANCE.SetForegroundWindow(hwnd)
             }
+        }
 
-            if (toPaste) {
-                paste(keyCodes)
-            }
+        fun bringToBackAndPaste(
+            backWindow: HWND?,
+            previousHwnd: HWND?,
+            keyCodes: List<Int>,
+        ) {
+            backToBack(backWindow, previousHwnd)
+            paste(keyCodes)
         }
 
         @Suppress("UNCHECKED_CAST")
