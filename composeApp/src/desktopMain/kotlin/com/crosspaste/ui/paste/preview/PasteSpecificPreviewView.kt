@@ -4,13 +4,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteState
 import com.crosspaste.realm.paste.PasteType
-import com.crosspaste.ui.base.MessageType
-import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -22,13 +19,10 @@ fun PasteSpecificPreviewView(pasteData: PasteData) {
         PrePreviewView(pasteData)
     } else {
         val appWindowManager = koinInject<AppWindowManager>() as DesktopAppWindowManager
-        val copywriter = koinInject<GlobalCopywriter>()
         val pasteboardService = koinInject<PasteboardService>()
-        val notificationManager = koinInject<NotificationManager>()
         val scope = rememberCoroutineScope()
         val onDoubleClick: () -> Unit = {
             scope.launch {
-                appWindowManager.setMainCursorWait()
                 appWindowManager.unActiveMainWindow {
                     withContext(ioDispatcher) {
                         pasteboardService.tryWritePasteboard(
@@ -39,11 +33,6 @@ fun PasteSpecificPreviewView(pasteData: PasteData) {
                         true
                     }
                 }
-                appWindowManager.resetMainCursor()
-                notificationManager.addNotification(
-                    message = copywriter.getText("copy_successful"),
-                    messageType = MessageType.Success,
-                )
             }
         }
         when (pasteData.pasteType) {

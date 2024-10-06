@@ -134,8 +134,6 @@ class WinAppWindowManager(
         backHWND: HWND?,
     ) {
         if (toPaste) {
-            User32.backToBack(backHWND, prevWinAppInfo?.hwnd)
-        } else {
             val keyCodes =
                 lazyShortcutKeys.value.shortcutKeysCore.keys[PASTE]?.let {
                     it.map { key -> key.rawCode }
@@ -145,6 +143,8 @@ class WinAppWindowManager(
                 prevWinAppInfo?.hwnd,
                 keyCodes,
             )
+        } else {
+            User32.backToBack(backHWND, prevWinAppInfo?.hwnd)
         }
     }
 
