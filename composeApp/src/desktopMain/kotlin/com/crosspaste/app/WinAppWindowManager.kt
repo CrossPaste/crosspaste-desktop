@@ -73,13 +73,15 @@ class WinAppWindowManager(
         }
     }
 
-    override suspend fun activeMainWindow() {
+    override suspend fun activeMainWindow(savePrev: Boolean) {
         logger.info { "active main window" }
 
-        val pair = User32.getCurrentWindowAppInfoAndPid(mainHWND, searchHWND)
+        if (savePrev) {
+            val pair = User32.getCurrentWindowAppInfoAndPid(mainHWND, searchHWND)
 
-        pair?.let {
-            prevWinAppInfo = it.first
+            pair?.let {
+                prevWinAppInfo = it.first
+            }
         }
 
         setShowMainWindow(true)
