@@ -156,6 +156,40 @@ interface KeyboardKeys {
     val groupModifierKeys: Map<Boolean, Map<Int, KeyboardKeyDefine>>
         get() = initGroupModifierKeys()
 
+    fun getComparator(): Comparator<KeyboardKeyDefine> {
+        return Comparator { o1, o2 ->
+            val v1 = getSortValue(o1.code)
+            val v2 = getSortValue(o2.code)
+            v1 - v2
+        }
+    }
+
+    fun getSortValue(code: Int): Int {
+        return when (code) {
+            CTRL.code -> {
+                -6
+            }
+            ALT.code -> {
+                -5
+            }
+            SHIFT.code -> {
+                -4
+            }
+            COMMAND.code -> {
+                -3
+            }
+            ENTER.code -> {
+                -2
+            }
+            ESC.code -> {
+                -1
+            }
+            else -> {
+                code
+            }
+        }
+    }
+
     fun initAllMap(): Map<Int, KeyboardKeyDefine> {
         return this::class.memberProperties
             .filter { it.returnType.toString() == "com.crosspaste.listen.KeyboardKeyDefine" }

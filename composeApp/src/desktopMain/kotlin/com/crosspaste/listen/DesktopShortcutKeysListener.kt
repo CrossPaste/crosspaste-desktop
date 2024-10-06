@@ -13,6 +13,8 @@ class DesktopShortcutKeysListener(
 
     private val keyboardKeys = getDesktopKeyboardKeys()
 
+    private val comparator = keyboardKeys.getComparator()
+
     private val groupKeys = keyboardKeys.groupModifierKeys
 
     @Volatile
@@ -38,7 +40,7 @@ class DesktopShortcutKeysListener(
             }
 
             currentKeys.clear()
-            currentKeys.addAll(list)
+            currentKeys.addAll(list.sortedWith(comparator))
         }
     }
 }
