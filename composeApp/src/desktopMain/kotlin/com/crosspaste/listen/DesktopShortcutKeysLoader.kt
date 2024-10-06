@@ -18,6 +18,8 @@ class DesktopShortcutKeysLoader(
 ) : ShortcutKeysLoader {
     private val keyboardKeys = getDesktopKeyboardKeys()
 
+    private val comparator = keyboardKeys.getComparator()
+
     private val map: Map<Int, KeyboardKeyDefine> =
         keyboardKeys.allKeys
 
@@ -83,6 +85,6 @@ class DesktopShortcutKeysLoader(
             } catch (e: NumberFormatException) {
                 null
             }
-        }.sortedByDescending { it.name }
+        }.sortedWith(comparator)
     }
 }
