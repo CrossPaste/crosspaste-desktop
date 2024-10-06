@@ -95,14 +95,6 @@ interface User32 : com.sun.jna.platform.win32.User32 {
 
     fun GetClipboardSequenceNumber(): Int
 
-    fun mouse_event(
-        dwFlags: DWORD,
-        dx: DWORD,
-        dy: DWORD,
-        dwData: DWORD,
-        dwExtraInfo: ULONG_PTR,
-    )
-
     fun EnumWindows(
         lpEnumFunc: WndEnumProc,
         lParam: Pointer?,
@@ -121,18 +113,7 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                 User32::class.java,
                 DEFAULT_OPTIONS,
             ) as User32
-        const val GWL_EXSTYLE = -20
-        const val GWL_STYLE = -16
         const val GWL_WNDPROC = -4
-        const val GWL_HINSTANCE = -6
-        const val GWL_ID = -12
-        const val GWL_USERDATA = -21
-        const val DWL_DLGPROC = 4
-        const val DWL_MSGRESULT = 0
-        const val DWL_USER = 8
-        const val WS_EX_COMPOSITED = 0x20000000
-        const val WS_EX_LAYERED = 0x80000
-        const val WS_EX_TRANSPARENT = 32
         const val WM_DESTROY = 0x0002
         const val WM_CHANGECBCHAIN = 0x030D
         const val WM_DRAWCLIPBOARD = 0x0308
@@ -287,7 +268,7 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             }
         }
 
-        fun hiconToImage(hicon: HICON): BufferedImage? {
+        private fun hiconToImage(hicon: HICON): BufferedImage? {
             var bitmapHandle: HBITMAP? = null
             val user32 = INSTANCE
             val gdi32 = GDI32.INSTANCE
@@ -351,11 +332,11 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             return null
         }
 
-        fun getCurrentWindowAppInfoAndPid(
+        fun getForegroundWindowAppInfoAndPid(
             mainWindow: HWND?,
             searchWindow: HWND?,
         ): Pair<WinAppInfo, Int>? {
-            GetNewForegroundWindow()?.let { previousHwnd ->
+            getForegroundWindow()?.let { previousHwnd ->
 
                 if (previousHwnd.pointer != mainWindow?.pointer &&
                     previousHwnd.pointer != searchWindow?.pointer
@@ -395,30 +376,8 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             return null
         }
 
-        fun GetNewForegroundWindow(): HWND? {
+        private fun getForegroundWindow(): HWND? {
             var foregroundHwnd: HWND? = null
-            INSTANCE.EnumWindows(
-                object : WndEnumProc {
-                    override fun callback(
-                        hWnd: HWND,
-                        lParam: Pointer?,
-                    ): Boolean {
-                        if (INSTANCE.IsWindowVisible(hWnd)) {
-                            foregroundHwnd = hWnd
-                            return false
-                        } else {
-                            return true
-                        }
-                    }
-                },
-                null,
-            )
-            return foregroundHwnd
-        }
-
-        fun getWindowStack(): List<String> {
-            val windowTitles = mutableListOf<String>()
-
             INSTANCE.EnumWindows(
                 object : WndEnumProc {
                     override fun callback(
@@ -430,7 +389,8 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                             INSTANCE.GetWindowTextA(hWnd, buffer, 1024)
                             val title = Native.toString(buffer).trim()
                             if (title.isNotEmpty()) {
-                                windowTitles.add(title)
+                                foregroundHwnd = hWnd
+                                return false
                             }
                         }
                         return true
@@ -438,8 +398,7 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                 },
                 null,
             )
-
-            return windowTitles
+            return foregroundHwnd
         }
 
         @Synchronized

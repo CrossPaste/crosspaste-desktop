@@ -67,16 +67,14 @@ class MacAppWindowManager(
         }
     }
 
-    override suspend fun activeMainWindow(savePrev: Boolean) {
+    override suspend fun activeMainWindow() {
         logger.info { "active main window" }
         setShowMainWindow(true)
         MacAppUtils.bringToFront(MAIN_WINDOW_TITLE).let {
-            if (savePrev) {
-                createMacAppInfo(it)?.let { macAppInfo ->
-                    if (macAppInfo.bundleIdentifier != crosspasteBundleID) {
-                        prevMacAppInfo = macAppInfo
-                        logger.info { "save prevAppName $macAppInfo" }
-                    }
+            createMacAppInfo(it)?.let { macAppInfo ->
+                if (macAppInfo.bundleIdentifier != crosspasteBundleID) {
+                    prevMacAppInfo = macAppInfo
+                    logger.info { "save prevAppName $macAppInfo" }
                 }
             }
         }

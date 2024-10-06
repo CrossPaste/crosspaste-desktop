@@ -229,7 +229,7 @@ abstract class DesktopAppWindowManager(
 
     abstract fun getCurrentActiveAppName(): String?
 
-    abstract suspend fun activeMainWindow(savePrev: Boolean = false)
+    abstract suspend fun activeMainWindow()
 
     abstract suspend fun unActiveMainWindow(preparePaste: suspend () -> Boolean = { false })
 

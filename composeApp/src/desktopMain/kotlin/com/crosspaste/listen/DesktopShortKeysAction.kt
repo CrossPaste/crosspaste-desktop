@@ -55,7 +55,7 @@ class DesktopShortKeysAction(
     private fun showMainWindow() {
         logger.info { "Open main window" }
         mainCoroutineDispatcher.launch(CoroutineName("OpenMainWindow")) {
-            appWindowManager.activeMainWindow(savePrev = true)
+            appWindowManager.activeMainWindow()
         }
     }
 

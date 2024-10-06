@@ -73,19 +73,13 @@ class WinAppWindowManager(
         }
     }
 
-    override suspend fun activeMainWindow(savePrev: Boolean) {
+    override suspend fun activeMainWindow() {
         logger.info { "active main window" }
 
-        User32.getWindowStack().forEach {
-            logger.info { "window stack: $it" }
-        }
+        val pair = User32.getForegroundWindowAppInfoAndPid(mainHWND, searchHWND)
 
-        if (savePrev) {
-            val pair = User32.getCurrentWindowAppInfoAndPid(mainHWND, searchHWND)
-
-            pair?.let {
-                prevWinAppInfo = it.first
-            }
+        pair?.let {
+            prevWinAppInfo = it.first
         }
 
         setShowMainWindow(true)
@@ -103,7 +97,7 @@ class WinAppWindowManager(
     override suspend fun activeSearchWindow() {
         logger.info { "active search window" }
 
-        val pair = User32.getCurrentWindowAppInfoAndPid(mainHWND, searchHWND)
+        val pair = User32.getForegroundWindowAppInfoAndPid(mainHWND, searchHWND)
 
         pair?.let {
             prevWinAppInfo = it.first
