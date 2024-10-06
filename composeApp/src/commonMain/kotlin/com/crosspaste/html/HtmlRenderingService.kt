@@ -1,6 +1,6 @@
 package com.crosspaste.html
 
-interface ChromeService {
+interface HtmlRenderingService {
 
     var startSuccess: Boolean
 

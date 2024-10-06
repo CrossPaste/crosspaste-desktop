@@ -42,8 +42,8 @@ import com.crosspaste.app.getDesktopAppWindowManager
 import com.crosspaste.clean.CleanPasteScheduler
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.config.DefaultConfigManager
-import com.crosspaste.html.ChromeService
-import com.crosspaste.html.DesktopChromeService
+import com.crosspaste.html.DesktopHtmlRenderingService
+import com.crosspaste.html.HtmlRenderingService
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.i18n.GlobalCopywriterImpl
 import com.crosspaste.image.DesktopFaviconLoader
@@ -339,7 +339,7 @@ class CrossPaste {
                     single<SignedPreKeyStore> { DesktopSignedPreKeyStore(get()) }
 
                     // paste component
-                    single<ChromeService> { DesktopChromeService(get(), get()) }
+                    single<HtmlRenderingService> { DesktopHtmlRenderingService(get(), get()) }
                     single<CleanPasteScheduler> { CleanPasteScheduler(get(), get(), get()) }
                     single<CurrentPaste> { DesktopCurrentPaste(lazy { get() }) }
                     single<DesktopPasteSearchService> { DesktopPasteSearchService(get(), get(), get()) }
@@ -489,7 +489,7 @@ class CrossPaste {
                 val jobs =
                     listOf(
                         async { stopService<AppUpdateService>("AppUpdateService") { it.stop() } },
-                        async { stopService<ChromeService>("ChromeService") { it.quit() } },
+                        async { stopService<HtmlRenderingService>("HtmlRenderingService") { it.quit() } },
                         async { stopService<PasteboardService>("PasteboardService") { it.stop() } },
                         async { stopService<PasteBonjourService>("PasteBonjourService") { it.unregisterService() } },
                         async { stopService<PasteServer<*, *>>("PasteServer") { it.stop() } },
