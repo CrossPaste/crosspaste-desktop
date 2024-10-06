@@ -103,6 +103,17 @@ interface User32 : com.sun.jna.platform.win32.User32 {
         dwExtraInfo: ULONG_PTR,
     )
 
+    fun EnumWindows(
+        lpEnumFunc: WndEnumProc,
+        lParam: Pointer?,
+    ): Boolean
+
+    fun GetWindowTextA(
+        hWnd: HWND,
+        lpString: ByteArray,
+        nMaxCount: Int,
+    ): Int
+
     companion object {
         val INSTANCE =
             Native.load(
@@ -382,6 +393,32 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                 }
             }
             return null
+        }
+
+        fun getWindowStack(): List<String> {
+            val windowTitles = mutableListOf<String>()
+
+            INSTANCE.EnumWindows(
+                object : WndEnumProc {
+                    override fun callback(
+                        hWnd: HWND,
+                        lParam: Pointer?,
+                    ): Boolean {
+                        if (INSTANCE.IsWindowVisible(hWnd)) {
+                            val buffer = ByteArray(1024)
+                            INSTANCE.GetWindowTextA(hWnd, buffer, 1024)
+                            val title = Native.toString(buffer).trim()
+                            if (title.isNotEmpty()) {
+                                windowTitles.add(title)
+                            }
+                        }
+                        return true
+                    }
+                },
+                null,
+            )
+
+            return windowTitles
         }
 
         @Synchronized

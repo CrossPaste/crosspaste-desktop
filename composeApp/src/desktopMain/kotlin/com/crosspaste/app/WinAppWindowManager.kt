@@ -76,6 +76,10 @@ class WinAppWindowManager(
     override suspend fun activeMainWindow(savePrev: Boolean) {
         logger.info { "active main window" }
 
+        User32.getWindowStack().forEach {
+            logger.info { "window stack: $it" }
+        }
+
         if (savePrev) {
             val pair = User32.getCurrentWindowAppInfoAndPid(mainHWND, searchHWND)
 
