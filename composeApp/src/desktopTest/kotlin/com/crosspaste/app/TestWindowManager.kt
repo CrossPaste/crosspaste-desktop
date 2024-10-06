@@ -28,8 +28,9 @@ class TestWindowManager(
         bringToFront(MAIN_WINDOW_TITLE)
     }
 
-    override suspend fun unActiveMainWindow() {
-        bringToBack(MAIN_WINDOW_TITLE, false)
+    override suspend fun unActiveMainWindow(preparePaste: suspend () -> Boolean) {
+        val toPaste = preparePaste()
+        bringToBack(MAIN_WINDOW_TITLE, toPaste)
         setShowMainWindow(false)
     }
 
