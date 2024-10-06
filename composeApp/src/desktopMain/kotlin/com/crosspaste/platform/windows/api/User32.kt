@@ -355,7 +355,7 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             mainWindow: HWND?,
             searchWindow: HWND?,
         ): Pair<WinAppInfo, Int>? {
-            INSTANCE.GetForegroundWindow()?.let { previousHwnd ->
+            GetNewForegroundWindow()?.let { previousHwnd ->
 
                 if (previousHwnd.pointer != mainWindow?.pointer &&
                     previousHwnd.pointer != searchWindow?.pointer
@@ -393,6 +393,27 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                 }
             }
             return null
+        }
+
+        fun GetNewForegroundWindow(): HWND? {
+            var foregroundHwnd: HWND? = null
+            INSTANCE.EnumWindows(
+                object : WndEnumProc {
+                    override fun callback(
+                        hWnd: HWND,
+                        lParam: Pointer?,
+                    ): Boolean {
+                        if (INSTANCE.IsWindowVisible(hWnd)) {
+                            foregroundHwnd = hWnd
+                            return false
+                        } else {
+                            return true
+                        }
+                    }
+                },
+                null,
+            )
+            return foregroundHwnd
         }
 
         fun getWindowStack(): List<String> {
