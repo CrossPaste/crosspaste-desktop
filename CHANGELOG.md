@@ -2,6 +2,70 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.0.11] - 2024-10-04
+
+## Bug Fixes
+* :bug: Improve network interface handling and error management by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1956
+* :bug: Fix repeated reading of ImageBitmap by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1965
+* :bug: Fix issue with appSourceFetcher retrieving application icons by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1974
+* :bug: Fix alignment of HTML preview pasteboard by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1976
+* :bug: Fix UI issue where the bottom bar was not displayed in the search window by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2014
+* :bug: Fix issue where shortcut key order affects simulated paste by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2025
+
+## New Features
+* :sparkles: implement voice prompt functionality by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1945
+* :sparkles: Add support for debug mode by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1954
+* :sparkles: Add support for unassigned shortcuts by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1961
+* :sparkles: Support cross-application paste by double-clicking pasteboard item in main window by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2021
+
+## Performance & UI Improvements
+* :heavy_plus_sign: Support lifecycle for better control of memory and resource usage by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1959
+* :zap: Use Coil for asynchronous image loading by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1967
+* :lipstick: Unified Divider Style by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2009
+* :lipstick: Add proper padding when displaying text due to HTML rendering failure by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2020
+
+## Refactor & Code Style
+* :hammer: Refactor routing impl for early returns and reduced nesting by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1953
+* :hammer: Refactor pasteboard preview UI using ViewModel by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1963
+* :hammer: Refactor application window implementation by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1972
+* :hammer: Replace desktop click methods with pointerInput for multiplatform support by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1980
+* :hammer: Refactor PlatformContext retrieval for multi-platform compatibility by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1982
+* :hammer: Use official method to load drawable resources for multiplatform reuse by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1984
+* :hammer: Use expect/actual for FileSystem to support multiple platforms by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1986
+* :hammer: Fix UI multiplatform reuse issues by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1988
+* :hammer: Use official method to load fonts for multiplatform reuse by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1990
+* :hammer: Refactor Coil implementation and introduce dependency injection by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1992
+* :hammer: Refactor UI components, move desktop-related component UI abstractions to desktopMain by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1994
+* :hammer: Use dependency injection to obtain LocaleUtils, facilitating multiplatform implementation by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1996
+* :hammer: Abstract PasteShimmer to allow independent impl of shimmer effects on different platforms by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1998
+* :hammer: Provide AppEnvUtils to allow multiple platforms to impl equivalent functionality by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2000
+* :hammer: Replace unnecessary BoxWithConstraints with Box by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2002
+* :hammer: Refactor commonMain for multiplatform compatibility by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2011
+* :hammer: Abstract AbstractFaviconLoader and AbstractThumbnailLoader to allow maximum reuse across multiple platforms by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2016
+* :hammer: Use direct import instead of referencing through package by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2018
+* :hammer: Rename ChromeService to HtmlRenderingService by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2023
+
+## Dependencies
+* ⬆️ Bump org.jetbrains.kotlinx:kotlinx-serialization-json from 1.7.2 to 1.7.3 by @dependabot in https://github.com/CrossPaste/crosspaste-desktop/pull/1950
+* ⬆️ Bump io.insert-koin:koin-compose from 4.0.0-RC2 to 4.0.0 by @dependabot in https://github.com/CrossPaste/crosspaste-desktop/pull/1949
+* ⬆️ Bump io.insert-koin:koin-core from 3.5.6 to 4.0.0 by @dependabot in https://github.com/CrossPaste/crosspaste-desktop/pull/1946
+* ⬆️ Bump compose from 1.7.1 to 1.7.2 by @dependabot in https://github.com/CrossPaste/crosspaste-desktop/pull/1948
+* ⬆️ Bump org.seleniumhq.selenium:selenium-manager from 4.24.0 to 4.25.0 by @dependabot in https://github.com/CrossPaste/crosspaste-desktop/pull/1947
+* ⬆️ Bump com.google.guava:guava from 33.3.0-jre to 33.3.1-jre by @dependabot in https://github.com/CrossPaste/crosspaste-desktop/pull/1969
+
+## Build System
+* :construction_worker: Remove the task for extracting selenium-manager, as it is no longer used by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1978
+
+## Documentation
+* :memo: Update changelog / download to 1.0.10 by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1939
+* :memo: Commit Message Guide with Emojis by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1944
+
+## Testing
+* :white_check_mark: Add unit tests for NetworkUtils by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/1941
+
+**Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/1.0.10.1001...1.0.11.1037
+**Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/1.0.11.1037...1.0.11.1046
+
 # [1.0.10] - 2024-09-21
 
 ## Bug Fixes
