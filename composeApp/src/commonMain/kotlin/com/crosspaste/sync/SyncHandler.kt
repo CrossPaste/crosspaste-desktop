@@ -63,9 +63,9 @@ class SyncHandler(
 
     private val appInstanceId: String = syncRuntimeInfo.appInstanceId
 
-    val signalProcessor = signalProcessorCache.getSignalMessageProcessor(syncRuntimeInfo.appInstanceId)
+    private val signalProcessor = signalProcessorCache.getSignalMessageProcessor(syncRuntimeInfo.appInstanceId)
 
-    var recommendedRefreshTime: Long = 0L
+    private var recommendedRefreshTime: Long = 0L
 
     private var failTime = 0
 

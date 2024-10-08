@@ -77,16 +77,27 @@ object DesktopControlUtils : ControlUtils {
         return result
     }
 
+    private fun createDebouncedCheck(delay: Long): () -> Boolean {
+        val lastExecutionTime = AtomicLong(0)
+        return {
+            val currentTime = System.currentTimeMillis()
+            val previousTime = lastExecutionTime.get()
+            if (currentTime - previousTime > delay || previousTime == 0L) {
+                lastExecutionTime.set(currentTime)
+                true
+            } else {
+                false
+            }
+        }
+    }
+
     override fun blockDebounce(
         delay: Long,
         action: () -> Unit,
     ): () -> Unit {
-        val long = AtomicLong(0)
+        val shouldExecute = createDebouncedCheck(delay)
         return {
-            val currentTime = System.currentTimeMillis()
-            val previousTime = long.get()
-            if (currentTime - previousTime > delay || previousTime == 0L) {
-                long.set(currentTime)
+            if (shouldExecute()) {
                 action()
             }
         }
@@ -96,12 +107,9 @@ object DesktopControlUtils : ControlUtils {
         delay: Long,
         action: suspend () -> Unit,
     ): suspend () -> Unit {
-        val long = AtomicLong(0)
+        val shouldExecute = createDebouncedCheck(delay)
         return {
-            val currentTime = System.currentTimeMillis()
-            val previousTime = long.get()
-            if (currentTime - previousTime > delay || previousTime == 0L) {
-                long.set(currentTime)
+            if (shouldExecute()) {
                 action()
             }
         }

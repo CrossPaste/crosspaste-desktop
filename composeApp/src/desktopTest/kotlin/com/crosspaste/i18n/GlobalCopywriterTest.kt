@@ -18,9 +18,7 @@ class GlobalCopywriterTest {
         configDirPath.toFile().deleteOnExit()
         val configPath = configDirPath.resolve("appConfig.json")
 
-        lateinit var configManager: DefaultConfigManager
-
-        configManager =
+        val configManager =
             DefaultConfigManager(
                 OneFilePersist(configPath),
                 DesktopDeviceUtils,

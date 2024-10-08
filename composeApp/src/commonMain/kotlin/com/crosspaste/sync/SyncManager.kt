@@ -150,7 +150,7 @@ class SyncManager(
             }
     }
 
-    fun refreshWaitToVerifySyncRuntimeInfo() {
+    private fun refreshWaitToVerifySyncRuntimeInfo() {
         waitToVerifySyncRuntimeInfo =
             realTimeSyncRuntimeInfos
                 .filter { !ignoreVerifySet.contains(it.appInstanceId) }

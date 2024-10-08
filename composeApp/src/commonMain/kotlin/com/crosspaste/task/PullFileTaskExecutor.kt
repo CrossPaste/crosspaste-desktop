@@ -184,7 +184,7 @@ class PullFileTaskExecutor(
         }
     }
 
-    suspend fun doFailure(
+    private suspend fun doFailure(
         pasteData: PasteData,
         pullExtraInfo: PullExtraInfo,
         fails: Collection<FailureResult>,

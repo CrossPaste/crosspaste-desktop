@@ -15,7 +15,7 @@ class IShellItemImageFactory(pvInstance: Pointer) : Unknown(pvInstance) {
     ): HRESULT {
         return _invokeNativeObject(
             3,
-            arrayOf<Any>(this.getPointer(), size, flags, bitmap),
+            arrayOf<Any>(this.pointer, size, flags, bitmap),
             HRESULT::class.java,
         ) as HRESULT
     }

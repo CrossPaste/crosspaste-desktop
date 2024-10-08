@@ -146,15 +146,7 @@ fun CrossPasteMainWindowContent(hideWindow: suspend () -> Unit) {
                     Modifier
                         .shadow(appSize.mainShadowSize, appSize.appRoundedCornerShape)
                         .fillMaxSize()
-                        .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), RoundedCornerShape(10.dp))
-                        .pointerInput(Unit) {
-                            detectTapGestures(
-                                onDoubleTap = {},
-                                onTap = {},
-                                onLongPress = {},
-                                onPress = {},
-                            )
-                        },
+                        .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 ThemeBackground()

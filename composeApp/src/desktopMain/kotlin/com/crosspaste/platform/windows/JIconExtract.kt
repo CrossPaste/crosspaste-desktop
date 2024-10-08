@@ -59,7 +59,7 @@ object JIconExtract {
      * @param fileName Path given by String to the requested file
      * @return BufferedImage for the given File
      */
-    fun getIconForFile(
+    private fun getIconForFile(
         width: Int,
         height: Int,
         fileName: String?,
@@ -98,7 +98,7 @@ object JIconExtract {
 
                 bitmapinfo.read()
 
-                val lpPixels: Memory = Memory(bitmapinfo.bmiHeader.biSizeImage.toLong())
+                val lpPixels = Memory(bitmapinfo.bmiHeader.biSizeImage.toLong())
 
                 bitmapinfo.bmiHeader.biCompression = WinGDI.BI_RGB
                 bitmapinfo.bmiHeader.biHeight = -h
@@ -137,7 +137,7 @@ object JIconExtract {
      * @param fileName HBITMAP for the given File
      * @return Windows Native Implementation of HBITMAP (should not be used directly)
      */
-    fun getHBITMAPForFile(
+    private fun getHBITMAPForFile(
         width: Int,
         height: Int,
         fileName: String?,

@@ -11,7 +11,7 @@ class SignalMessageProcessorImpl(
     signalProtocolStore: SignalProtocolStoreInterface,
 ) : SignalMessageProcessor {
 
-    val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
+    private val signalProtocolAddress = SignalProtocolAddress(appInstanceId, 1)
 
     private val sessionCipher =
         SessionCipher(

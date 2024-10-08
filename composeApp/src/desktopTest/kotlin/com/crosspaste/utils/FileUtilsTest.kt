@@ -22,7 +22,7 @@ class FileUtilsTest {
 
     private lateinit var fileUtils: FileUtils
 
-    lateinit var tempDir: Path
+    private lateinit var tempDir: Path
 
     @BeforeAll
     fun setup() {
