@@ -557,9 +557,9 @@ class CrossPaste {
                     LocalScreenContent provides currentScreenContext,
                 ) {
                     val windowIcon: Painter? =
-                        if (platform.isMacos()) {
+                        if (isMacos) {
                             painterResource("icon/crosspaste.mac.png")
-                        } else if (platform.isWindows() || platform.isLinux()) {
+                        } else if (isWindows || isLinux) {
                             painterResource("icon/crosspaste.png")
                         } else {
                             null

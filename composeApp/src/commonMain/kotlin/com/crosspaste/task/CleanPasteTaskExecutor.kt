@@ -81,7 +81,7 @@ class CleanPasteTaskExecutor(
         return SuccessPasteTaskResult()
     }
 
-    suspend fun deleteStorageOfApproximateSize(
+    private suspend fun deleteStorageOfApproximateSize(
         minSize: Long,
         totalSize: Long,
     ) {

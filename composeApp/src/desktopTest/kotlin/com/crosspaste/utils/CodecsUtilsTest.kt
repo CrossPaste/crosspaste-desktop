@@ -6,7 +6,7 @@ import kotlin.test.assertEquals
 
 class CodecsUtilsTest {
 
-    val codecsUtils = getCodecsUtils()
+    private val codecsUtils = getCodecsUtils()
 
     @Test
     fun testHash() {

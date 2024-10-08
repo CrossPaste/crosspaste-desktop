@@ -165,7 +165,7 @@ class ImageTypePlugin(
     private fun getLastPathSegment(urlString: String): String? {
         try {
             val url = URL(urlString)
-            var path: String = url.getPath()
+            var path: String = url.path
             // Remove trailing slash from the path (if it exists)
             path = if (path.endsWith("/")) path.substring(0, path.length - 1) else path
             // Get the last path segment

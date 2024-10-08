@@ -5,7 +5,7 @@ import com.crosspaste.app.AppName
 
 class TestNotificationManager : NotificationManager {
 
-    val notifications = mutableListOf<Notification>()
+    private val notifications = mutableListOf<Notification>()
 
     override fun addNotification(
         title: String?,

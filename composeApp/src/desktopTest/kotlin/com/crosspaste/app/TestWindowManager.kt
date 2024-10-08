@@ -9,11 +9,11 @@ class TestWindowManager(
     private val mockOS: MockOS,
 ) : DesktopAppWindowManager(appSize) {
 
-    var prevApp: String? by mutableStateOf(null)
+    private var prevApp: String? by mutableStateOf(null)
 
     var pasterId: Int = 0
 
-    var currentTitle: String? by mutableStateOf(null)
+    private var currentTitle: String? by mutableStateOf(null)
 
     override fun getPrevAppName(): String? {
         return prevApp

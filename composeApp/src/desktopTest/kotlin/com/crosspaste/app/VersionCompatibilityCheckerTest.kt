@@ -8,12 +8,42 @@ class VersionCompatibilityCheckerTest {
 
     private val versionInfos =
         mapOf(
-            "0.0.9" to AppVersionInfo("0.0.9", false, false),
-            "1.0.0" to AppVersionInfo("1.0.0", false, false),
-            "1.1.0" to AppVersionInfo("1.1.0", false, true),
-            "1.2.0" to AppVersionInfo("1.2.0", false, false),
-            "1.3.0" to AppVersionInfo("1.3.0", false, false),
-            "2.0.0" to AppVersionInfo("2.0.0", true, true),
+            "0.0.9" to
+                AppVersionInfo(
+                    "0.0.9",
+                    hasStorageChanges = false,
+                    hasApiCompatibilityChanges = false,
+                ),
+            "1.0.0" to
+                AppVersionInfo(
+                    "1.0.0",
+                    hasStorageChanges = false,
+                    hasApiCompatibilityChanges = false,
+                ),
+            "1.1.0" to
+                AppVersionInfo(
+                    "1.1.0",
+                    hasStorageChanges = false,
+                    hasApiCompatibilityChanges = true,
+                ),
+            "1.2.0" to
+                AppVersionInfo(
+                    "1.2.0",
+                    hasStorageChanges = false,
+                    hasApiCompatibilityChanges = false,
+                ),
+            "1.3.0" to
+                AppVersionInfo(
+                    "1.3.0",
+                    hasStorageChanges = false,
+                    hasApiCompatibilityChanges = false,
+                ),
+            "2.0.0" to
+                AppVersionInfo(
+                    "2.0.0",
+                    hasStorageChanges = true,
+                    hasApiCompatibilityChanges = true,
+                ),
         )
 
     private val checker = VersionCompatibilityChecker(versionInfos)

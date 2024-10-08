@@ -121,7 +121,7 @@ object MacTrayView {
         )
     }
 
-    fun createPopupMenu(
+    private fun createPopupMenu(
         appWindowManager: DesktopAppWindowManager,
         copywriter: GlobalCopywriter,
         uiSupport: UISupport,
@@ -173,7 +173,7 @@ object MacTrayView {
         return popup
     }
 
-    fun createMenuItem(
+    private fun createMenuItem(
         text: String,
         action: () -> Unit,
     ): MenuItem {

@@ -109,11 +109,11 @@ class DesktopSignalProtocolStore(
     // desktop jvm impl
 
     override fun getIdentityKeyPair(): IdentityKeyPair {
-        return identityKeyStore.getIdentityKeyPair()
+        return identityKeyStore.identityKeyPair
     }
 
     override fun getLocalRegistrationId(): Int {
-        return identityKeyStore.getLocalRegistrationId()
+        return identityKeyStore.localRegistrationId
     }
 
     override fun saveIdentity(

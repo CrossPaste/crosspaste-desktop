@@ -41,11 +41,7 @@ enum class StandardErrorCode(code: Int, errorType: ErrorType) : ErrorCodeSupplie
     CANT_GET_SYNC_ADDRESS(4002, ErrorType.USER_ERROR),
     ;
 
-    private val errorCode: ErrorCode
-
-    init {
-        errorCode = ErrorCode(code, name, errorType)
-    }
+    private val errorCode: ErrorCode = ErrorCode(code, name, errorType)
 
     override fun toErrorCode(): ErrorCode {
         return errorCode

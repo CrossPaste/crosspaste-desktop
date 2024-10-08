@@ -190,7 +190,7 @@ class SeleniumManager private constructor() {
                     if (name.startsWith(SE_ENV_PREFIX)) {
                         // read property with 'default' value due to concurrency
                         val value = properties.getProperty(name, "")
-                        if (!value.isEmpty()) {
+                        if (value.isNotEmpty()) {
                             processBuilder.environment(name, value)
                         }
                     }

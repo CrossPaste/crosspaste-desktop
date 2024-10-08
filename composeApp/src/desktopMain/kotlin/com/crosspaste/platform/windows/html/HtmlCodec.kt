@@ -34,12 +34,13 @@ internal enum class EHTMLReadMode {
 }
 
 internal class HTMLCodec(
-    _bytestream: InputStream?,
-    _readMode: EHTMLReadMode,
+    byteStream: InputStream,
+    private val readMode: EHTMLReadMode,
 ) : InputStream() {
     // //////////////////////////////////
     // decoder instance data and methods:
-    private val bufferedStream: BufferedInputStream
+    private val bufferedStream: BufferedInputStream =
+        BufferedInputStream(byteStream, BYTE_BUFFER_LEN)
     private var descriptionParsed = false
     private var closed = false
 
@@ -57,13 +58,6 @@ internal class HTMLCodec(
     private var iStartOffset: Long = 0
     private var iEndOffset: Long = 0
     private var iReadCount: Long = 0
-
-    private val readMode: EHTMLReadMode
-
-    init {
-        bufferedStream = BufferedInputStream(_bytestream, BYTE_BUFFER_LEN)
-        readMode = _readMode
-    }
 
     @get:Throws(IOException::class)
     @get:Synchronized
@@ -233,27 +227,27 @@ internal class HTMLCodec(
 
     companion object {
         // static section
-        val ENCODING: String = "UTF-8"
+        const val ENCODING: String = "UTF-8"
 
-        val VERSION: String = "Version:"
-        val START_HTML: String = "StartHTML:"
-        val END_HTML: String = "EndHTML:"
-        val START_FRAGMENT: String = "StartFragment:"
-        val END_FRAGMENT: String = "EndFragment:"
-        val START_SELECTION: String = "StartSelection:" // optional
-        val END_SELECTION: String = "EndSelection:" // optional
+        const val VERSION: String = "Version:"
+        const val START_HTML: String = "StartHTML:"
+        const val END_HTML: String = "EndHTML:"
+        const val START_FRAGMENT: String = "StartFragment:"
+        const val END_FRAGMENT: String = "EndFragment:"
+        const val START_SELECTION: String = "StartSelection:" // optional
+        const val END_SELECTION: String = "EndSelection:" // optional
 
-        val START_FRAGMENT_CMT: String = "<!--StartFragment-->"
-        val END_FRAGMENT_CMT: String = "<!--EndFragment-->"
-        val SOURCE_URL: String = "SourceURL:"
-        val DEF_SOURCE_URL: String = "about:blank"
+        private const val START_FRAGMENT_CMT: String = "<!--StartFragment-->"
+        private const val END_FRAGMENT_CMT: String = "<!--EndFragment-->"
+        const val SOURCE_URL: String = "SourceURL:"
+        private const val DEF_SOURCE_URL: String = "about:blank"
 
-        val EOLN: String = "\r\n"
+        const val EOLN: String = "\r\n"
 
-        private val VERSION_NUM = "1.0"
-        private val PADDED_WIDTH = 10
+        private const val VERSION_NUM = "1.0"
+        private const val PADDED_WIDTH = 10
 
-        fun kmpSearch(
+        private fun kmpSearch(
             textBytes: ByteArray,
             patternBytes: ByteArray,
         ): Int {
@@ -280,7 +274,7 @@ internal class HTMLCodec(
         }
 
         // Function to compute the LPS (Longest Prefix which is also Suffix) array
-        fun computeLPSArray(patternBytes: ByteArray): IntArray {
+        private fun computeLPSArray(patternBytes: ByteArray): IntArray {
             val lps = IntArray(patternBytes.size)
             var length = 0
             var i = 1
@@ -305,7 +299,7 @@ internal class HTMLCodec(
 
         private fun toPaddedString(
             n: Int,
-            width: Int,
+            width: Int = PADDED_WIDTH,
         ): String {
             var string = "" + n
             val len = string.length
@@ -317,11 +311,11 @@ internal class HTMLCodec(
             return string
         }
 
-        fun replaceFromIndex(
+        private fun replaceFromIndex(
             input: String,
             index: Int,
-            oldValue: String,
-            newValue: String,
+            oldValue: String = "\n",
+            newValue: String = "",
         ): String {
             // Check if the index is within the string's range
             if (index !in 0..input.length) {
@@ -380,12 +374,12 @@ internal class HTMLCodec(
                 htmlPrefix = "<HTML>"
                 htmlSuffix = "</HTML>"
                 if (-1 == stUpContext.indexOf("<BODY")) {
-                    htmlPrefix = htmlPrefix + "<BODY>"
-                    htmlSuffix = "</BODY>" + htmlSuffix
+                    htmlPrefix += "<BODY>"
+                    htmlSuffix = "</BODY>$htmlSuffix"
                 }
             } else {
                 // Eliminate line breaks in html to avoid lag in word copy
-                stContext = replaceFromIndex(stContext, htmlIndex, "\n", "")
+                stContext = replaceFromIndex(stContext, htmlIndex)
             }
 
             val bytes = stContext.toByteArray()
@@ -433,19 +427,19 @@ internal class HTMLCodec(
             header.append(EOLN)
 
             header.append(START_HTML)
-            header.append(toPaddedString(nStartHTML, PADDED_WIDTH))
+            header.append(toPaddedString(nStartHTML))
             header.append(EOLN)
 
             header.append(END_HTML)
-            header.append(toPaddedString(nEndHTML, PADDED_WIDTH))
+            header.append(toPaddedString(nEndHTML))
             header.append(EOLN)
 
             header.append(START_FRAGMENT)
-            header.append(toPaddedString(nStartFragment, PADDED_WIDTH))
+            header.append(toPaddedString(nStartFragment))
             header.append(EOLN)
 
             header.append(END_FRAGMENT)
-            header.append(toPaddedString(nEndFragment, PADDED_WIDTH))
+            header.append(toPaddedString(nEndFragment))
             header.append(EOLN)
 
             header.append(SOURCE_URL)
@@ -461,7 +455,7 @@ internal class HTMLCodec(
             try {
                 headerBytes = header.toString().toByteArray(charset(ENCODING))
                 trailerBytes = htmlSuffix.toByteArray(charset(ENCODING))
-            } catch (cannotHappen: UnsupportedEncodingException) {
+            } catch (_: UnsupportedEncodingException) {
             }
 
             val retval =
@@ -493,13 +487,13 @@ internal class HTMLCodec(
         }
 
         // InputStreamReader uses an 8K buffer. The size is not customizable.
-        val BYTE_BUFFER_LEN: Int = 8192
+        const val BYTE_BUFFER_LEN: Int = 8192
 
         // CharToByteUTF8.getMaxBytesPerChar returns 3, so we should not buffer
         // more chars than 3 times the number of bytes we can buffer.
-        val CHAR_BUFFER_LEN: Int = BYTE_BUFFER_LEN / 3
+        const val CHAR_BUFFER_LEN: Int = BYTE_BUFFER_LEN / 3
 
-        private val FAILURE_MSG = "Unable to parse HTML description: "
-        private val INVALID_MSG = " invalid"
+        private const val FAILURE_MSG = "Unable to parse HTML description: "
+        private const val INVALID_MSG = " invalid"
     }
 }

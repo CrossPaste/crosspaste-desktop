@@ -26,7 +26,7 @@ object FreedesktopUtils {
         }
     }
 
-    fun getCurrentTheme(): String {
+    private fun getCurrentTheme(): String {
         val commands =
             listOf(
                 // GNOME
@@ -54,7 +54,7 @@ object FreedesktopUtils {
         return "hicolor"
     }
 
-    fun findLargeIcon(iconName: String): File? {
+    private fun findLargeIcon(iconName: String): File? {
         val sizes = listOf(512, 256, 128)
         val homeDir = System.getProperty("user.home")
 

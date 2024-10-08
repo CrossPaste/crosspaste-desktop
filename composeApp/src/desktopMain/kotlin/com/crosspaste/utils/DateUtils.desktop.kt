@@ -15,14 +15,30 @@ actual fun getDateUtils(): DateUtils {
 
 object DesktopDateUtils : DateUtils {
 
-    val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
-    fun kotlinx.datetime.LocalDateTime.toJavaLocalDateTime(): LocalDateTime {
-        return LocalDateTime.of(this.year, this.monthNumber, this.dayOfMonth, this.hour, this.minute, this.second, this.nanosecond)
+    private fun kotlinx.datetime.LocalDateTime.toJavaLocalDateTime(): LocalDateTime {
+        return LocalDateTime.of(
+            this.year,
+            this.monthNumber,
+            this.dayOfMonth,
+            this.hour,
+            this.minute,
+            this.second,
+            this.nanosecond,
+        )
     }
 
-    fun LocalDateTime.toKotlinLocalDateTime(): kotlinx.datetime.LocalDateTime {
-        return kotlinx.datetime.LocalDateTime(this.year, this.monthValue, this.dayOfMonth, this.hour, this.minute, this.second, this.nano)
+    private fun LocalDateTime.toKotlinLocalDateTime(): kotlinx.datetime.LocalDateTime {
+        return kotlinx.datetime.LocalDateTime(
+            this.year,
+            this.monthValue,
+            this.dayOfMonth,
+            this.hour,
+            this.minute,
+            this.second,
+            this.nano,
+        )
     }
 
     override fun getPrevDay(): RealmInstant {

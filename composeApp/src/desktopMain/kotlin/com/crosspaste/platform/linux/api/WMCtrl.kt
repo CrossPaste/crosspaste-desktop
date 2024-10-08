@@ -174,7 +174,7 @@ object WMCtrl {
         return windowToDesktop(display, win, -1)
     }
 
-    fun windowToDesktop(
+    private fun windowToDesktop(
         display: X11.Display,
         win: X11.Window,
         desktop: Int,
@@ -193,7 +193,7 @@ object WMCtrl {
         return clientMsg(display, win, "_NET_WM_DESKTOP", currentDesktop.toLong(), 0, 0, 0, 0)
     }
 
-    fun getCurrentDesktop(display: X11.Display): Int {
+    private fun getCurrentDesktop(display: X11.Display): Int {
         val root: X11.Window = x11.XDefaultRootWindow(display)
         var curDesktop: Int?
         if ((
@@ -294,7 +294,7 @@ object WMCtrl {
         } ?: -1
     }
 
-    fun getWindowId(win: X11.Window): Long {
+    private fun getWindowId(win: X11.Window): Long {
         return win.toLong()
     }
 
@@ -304,7 +304,7 @@ object WMCtrl {
         } ?: -1
     }
 
-    fun getWindowPid(
+    private fun getWindowPid(
         display: X11.Display,
         win: X11.Window,
     ): Int {
