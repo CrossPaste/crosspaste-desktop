@@ -339,11 +339,11 @@ class CrossPaste {
                     single<SignedPreKeyStore> { DesktopSignedPreKeyStore(get()) }
 
                     // paste component
-                    single<HtmlRenderingService> { DesktopHtmlRenderingService(get(), get()) }
                     single<CleanPasteScheduler> { CleanPasteScheduler(get(), get(), get()) }
                     single<CurrentPaste> { DesktopCurrentPaste(lazy { get() }) }
                     single<DesktopPasteSearchService> { DesktopPasteSearchService(get(), get(), get()) }
                     single<FilesTypePlugin> { FilesTypePlugin(get(), get(), get()) }
+                    single<HtmlRenderingService> { DesktopHtmlRenderingService(get(), get(), get()) }
                     single<HtmlTypePlugin> { HtmlTypePlugin(get()) }
                     single<ImageTypePlugin> { ImageTypePlugin(get(), get(), get()) }
                     single<PasteboardService> {
@@ -358,7 +358,7 @@ class CrossPaste {
                                 DeletePasteTaskExecutor(get()),
                                 PullFileTaskExecutor(get(), get(), get(), get(), get(), get(), get()),
                                 CleanPasteTaskExecutor(get(), get()),
-                                Html2ImageTaskExecutor(lazy { get() }, get(), get(), get()),
+                                Html2ImageTaskExecutor(lazy { get() }, get(), get()),
                                 PullIconTaskExecutor(get(), get(), get(), get()),
                             ),
                             get(),
