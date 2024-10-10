@@ -8,5 +8,6 @@ interface PasteProcessPlugin {
     fun process(
         pasteItems: List<PasteItem>,
         realm: MutableRealm,
+        source: String?,
     ): List<PasteItem>
 }

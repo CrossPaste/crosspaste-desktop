@@ -363,7 +363,7 @@ class PasteRealm(
                     assert(pasteAppearItems.isNotEmpty())
                     pasteCollection.pasteItems.clear()
                     for (pastePlugin in pasteProcessPlugins) {
-                        pasteAppearItems = pastePlugin.process(pasteAppearItems, this)
+                        pasteAppearItems = pastePlugin.process(pasteAppearItems, this, pasteData.source)
                     }
 
                     val size = pasteAppearItems.sumOf { it.size }

@@ -22,10 +22,11 @@ class DistinctPlugin(userDataPathProvider: UserDataPathProvider) : PasteProcessP
     override fun process(
         pasteItems: List<PasteItem>,
         realm: MutableRealm,
+        source: String?,
     ): List<PasteItem> {
         return pasteItems.groupBy { it.getPasteType() }.map { (pasteType, items) ->
             val plugin = childPlugins[pasteType]
-            plugin?.process(items, realm) ?: items
+            plugin?.process(items, realm, source) ?: items
         }.flatten()
     }
 }
@@ -34,6 +35,7 @@ class FirstPlugin(private val userDataPathProvider: UserDataPathProvider) : Past
     override fun process(
         pasteItems: List<PasteItem>,
         realm: MutableRealm,
+        source: String?,
     ): List<PasteItem> {
         return if (pasteItems.isEmpty()) {
             listOf()

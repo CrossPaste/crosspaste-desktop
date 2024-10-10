@@ -20,6 +20,7 @@ object SortPlugin : PasteProcessPlugin {
     override fun process(
         pasteItems: List<PasteItem>,
         realm: MutableRealm,
+        source: String?,
     ): List<PasteItem> {
         return pasteItems.sortedByDescending { itemPriorityMap[it.getPasteType()]!! }
     }

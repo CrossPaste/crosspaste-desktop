@@ -13,6 +13,7 @@ object GenerateUrlPlugin : PasteProcessPlugin {
     override fun process(
         pasteItems: List<PasteItem>,
         realm: MutableRealm,
+        source: String?,
     ): List<PasteItem> {
         if (pasteItems.all { it !is UrlPasteItem }) {
             pasteItems.filterIsInstance<TextPasteItem>().firstOrNull()?.let {

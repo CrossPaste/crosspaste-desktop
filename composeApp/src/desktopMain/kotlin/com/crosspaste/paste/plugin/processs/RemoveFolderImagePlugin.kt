@@ -14,6 +14,7 @@ class RemoveFolderImagePlugin(
     override fun process(
         pasteItems: List<PasteItem>,
         realm: MutableRealm,
+        source: String?,
     ): List<PasteItem> {
         pasteItems.firstOrNull { it.getPasteType() == PasteType.IMAGE }?.let { imageItem ->
             val files = imageItem as PasteFiles
