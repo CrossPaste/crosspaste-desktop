@@ -1,7 +1,7 @@
 package com.crosspaste.serializer
 
 import com.crosspaste.paste.item.TextPasteItem
-import com.crosspaste.paste.plugin.type.TextTypePlugin
+import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
 import com.crosspaste.realm.paste.PasteCollection
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteState
@@ -27,7 +27,7 @@ class SerializerTest {
         val codecsUtils = getCodecsUtils()
         val textPasteItem =
             TextPasteItem().apply {
-                this.identifier = TextTypePlugin.TEXT
+                this.identifier = DesktopTextTypePlugin.TEXT
                 this.text = "testPasteData"
                 this.hash = codecsUtils.hashByString(this.text)
             }

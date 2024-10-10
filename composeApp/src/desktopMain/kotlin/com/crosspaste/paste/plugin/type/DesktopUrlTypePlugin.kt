@@ -14,7 +14,7 @@ import io.realm.kotlin.MutableRealm
 import java.net.MalformedURLException
 import java.net.URL
 
-class UrlTypePlugin : PasteTypePlugin {
+class DesktopUrlTypePlugin : UrlTypePlugin {
 
     companion object {
         const val URL = "application/x-java-url"

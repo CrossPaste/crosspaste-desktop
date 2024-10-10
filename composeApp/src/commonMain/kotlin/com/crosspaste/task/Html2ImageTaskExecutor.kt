@@ -4,6 +4,7 @@ import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.html.HtmlRenderingService
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.paste.item.PasteHtml
+import com.crosspaste.paste.plugin.type.HtmlTypePlugin
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.realm.task.PasteTask
@@ -22,6 +23,7 @@ import kotlinx.coroutines.sync.withLock
 class Html2ImageTaskExecutor(
     private val lazyHtmlRenderingService: Lazy<HtmlRenderingService>,
     private val pasteRealm: PasteRealm,
+    private val htmlTypePlugin: HtmlTypePlugin,
     private val userDataPathProvider: UserDataPathProvider,
 ) : SingleTypeTaskExecutor {
 
@@ -47,7 +49,8 @@ class Html2ImageTaskExecutor(
                         if (pasteItem is PasteHtml) {
                             val html2ImagePath = pasteItem.getHtmlImagePath(userDataPathProvider)
                             if (!fileUtils.existFile(html2ImagePath)) {
-                                htmlRenderingService.saveRenderImage(pasteItem.html, html2ImagePath)
+                                val normalizeHtml = htmlTypePlugin.normalizeHtml(pasteItem.html, pasteData.source)
+                                htmlRenderingService.saveRenderImage(normalizeHtml, html2ImagePath)
                             }
                         }
                     }

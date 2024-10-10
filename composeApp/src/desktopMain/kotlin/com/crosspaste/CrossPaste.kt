@@ -110,11 +110,15 @@ import com.crosspaste.paste.plugin.processs.FilesToImagesPlugin
 import com.crosspaste.paste.plugin.processs.GenerateUrlPlugin
 import com.crosspaste.paste.plugin.processs.RemoveFolderImagePlugin
 import com.crosspaste.paste.plugin.processs.SortPlugin
+import com.crosspaste.paste.plugin.type.DesktopFilesTypePlugin
+import com.crosspaste.paste.plugin.type.DesktopHtmlTypePlugin
+import com.crosspaste.paste.plugin.type.DesktopImageTypePlugin
+import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
+import com.crosspaste.paste.plugin.type.DesktopUrlTypePlugin
 import com.crosspaste.paste.plugin.type.FilesTypePlugin
 import com.crosspaste.paste.plugin.type.HtmlTypePlugin
 import com.crosspaste.paste.plugin.type.ImageTypePlugin
 import com.crosspaste.paste.plugin.type.TextTypePlugin
-import com.crosspaste.paste.plugin.type.TextUpdater
 import com.crosspaste.paste.plugin.type.UrlTypePlugin
 import com.crosspaste.path.AppPathProvider
 import com.crosspaste.path.DesktopAppPathProvider
@@ -342,10 +346,15 @@ class CrossPaste {
                     single<CleanPasteScheduler> { CleanPasteScheduler(get(), get(), get()) }
                     single<CurrentPaste> { DesktopCurrentPaste(lazy { get() }) }
                     single<DesktopPasteSearchService> { DesktopPasteSearchService(get(), get(), get()) }
-                    single<FilesTypePlugin> { FilesTypePlugin(get(), get(), get()) }
+                    single<DesktopFilesTypePlugin> { DesktopFilesTypePlugin(get(), get(), get()) }
+                    single<DesktopHtmlTypePlugin> { DesktopHtmlTypePlugin(get()) }
+                    single<DesktopImageTypePlugin> { DesktopImageTypePlugin(get(), get(), get()) }
+                    single<DesktopTextTypePlugin> { DesktopTextTypePlugin() }
+                    single<DesktopUrlTypePlugin> { DesktopUrlTypePlugin() }
+                    single<FilesTypePlugin> { get<DesktopFilesTypePlugin>() }
                     single<HtmlRenderingService> { DesktopHtmlRenderingService(get(), get(), get()) }
-                    single<HtmlTypePlugin> { HtmlTypePlugin(get()) }
-                    single<ImageTypePlugin> { ImageTypePlugin(get(), get(), get()) }
+                    single<HtmlTypePlugin> { get<DesktopHtmlTypePlugin>() }
+                    single<ImageTypePlugin> { get<DesktopImageTypePlugin>() }
                     single<PasteboardService> {
                         getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get())
                     }
@@ -358,14 +367,13 @@ class CrossPaste {
                                 DeletePasteTaskExecutor(get()),
                                 PullFileTaskExecutor(get(), get(), get(), get(), get(), get(), get()),
                                 CleanPasteTaskExecutor(get(), get()),
-                                Html2ImageTaskExecutor(lazy { get() }, get(), get()),
+                                Html2ImageTaskExecutor(lazy { get() }, get(), get(), get()),
                                 PullIconTaskExecutor(get(), get(), get(), get()),
                             ),
                             get(),
                         )
                     }
-                    single<TextTypePlugin> { TextTypePlugin() }
-                    single<TextUpdater> { get<TextTypePlugin>() }
+                    single<TextTypePlugin> { get<DesktopTextTypePlugin>() }
                     single<TransferableConsumer> {
                         DesktopTransferableConsumer(
                             get(),
@@ -379,26 +387,26 @@ class CrossPaste {
                                 SortPlugin,
                             ),
                             listOf(
-                                get<FilesTypePlugin>(),
-                                get<HtmlTypePlugin>(),
-                                get<ImageTypePlugin>(),
-                                get<TextTypePlugin>(),
-                                get<UrlTypePlugin>(),
+                                get<DesktopFilesTypePlugin>(),
+                                get<DesktopHtmlTypePlugin>(),
+                                get<DesktopImageTypePlugin>(),
+                                get<DesktopTextTypePlugin>(),
+                                get<DesktopUrlTypePlugin>(),
                             ),
                         )
                     }
                     single<TransferableProducer> {
                         DesktopTransferableProducer(
                             listOf(
-                                get<FilesTypePlugin>(),
-                                get<HtmlTypePlugin>(),
-                                get<ImageTypePlugin>(),
-                                get<TextTypePlugin>(),
-                                get<UrlTypePlugin>(),
+                                get<DesktopFilesTypePlugin>(),
+                                get<DesktopHtmlTypePlugin>(),
+                                get<DesktopImageTypePlugin>(),
+                                get<DesktopTextTypePlugin>(),
+                                get<DesktopUrlTypePlugin>(),
                             ),
                         )
                     }
-                    single<UrlTypePlugin> { UrlTypePlugin() }
+                    single<UrlTypePlugin> { get<DesktopUrlTypePlugin>() }
 
                     // ui component
                     single<ActiveGraphicsDevice> { get<DesktopMouseListener>() }

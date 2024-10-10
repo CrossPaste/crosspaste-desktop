@@ -9,6 +9,7 @@ import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.platform.windows.html.HTMLCodec
+import com.crosspaste.plugin.office.OfficeHtmlPlugin
 import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.utils.getCodecsUtils
@@ -16,7 +17,9 @@ import com.crosspaste.utils.getFileUtils
 import io.realm.kotlin.MutableRealm
 import java.awt.datatransfer.DataFlavor
 
-class HtmlTypePlugin(private val appInfo: AppInfo) : PasteTypePlugin {
+class DesktopHtmlTypePlugin(
+    private val appInfo: AppInfo,
+) : HtmlTypePlugin {
 
     companion object {
 
@@ -26,6 +29,8 @@ class HtmlTypePlugin(private val appInfo: AppInfo) : PasteTypePlugin {
     }
 
     private val fileUtils = getFileUtils()
+
+    private val officeHtmlPlugin = OfficeHtmlPlugin()
 
     override fun getPasteType(): Int {
         return PasteType.HTML
@@ -115,5 +120,18 @@ class HtmlTypePlugin(private val appInfo: AppInfo) : PasteTypePlugin {
         } else {
             inputStr
         }
+    }
+
+    override fun normalizeHtml(
+        html: String,
+        source: String?,
+    ): String {
+        return source?.let {
+            if (officeHtmlPlugin.match(source)) {
+                officeHtmlPlugin.officeNormalizationHTML(html)
+            } else {
+                html
+            }
+        } ?: html
     }
 }
