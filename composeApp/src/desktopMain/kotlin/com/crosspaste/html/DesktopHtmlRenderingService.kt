@@ -12,6 +12,7 @@ import com.crosspaste.platform.getPlatform
 import com.crosspaste.platform.windows.WinProcessUtils
 import com.crosspaste.platform.windows.WinProcessUtils.killProcessSet
 import com.crosspaste.platform.windows.WindowDpiHelper
+import com.crosspaste.presist.FilePersist
 import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.Retry
 import com.crosspaste.utils.getHtmlUtils
@@ -22,6 +23,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
+import okio.Path
 import org.openqa.selenium.Dimension
 import org.openqa.selenium.OutputType
 import org.openqa.selenium.chrome.ChromeDriver
@@ -31,6 +33,7 @@ import kotlin.math.max
 
 class DesktopHtmlRenderingService(
     private val appSize: AppSize,
+    private val filePersist: FilePersist,
     private val userDataPathProvider: UserDataPathProvider,
 ) : HtmlRenderingService {
 
@@ -143,9 +146,14 @@ class DesktopHtmlRenderingService(
     }
 
     @Synchronized
-    override fun html2Image(html: String): ByteArray? {
+    override fun saveRenderImage(
+        html: String,
+        savePath: Path,
+    ) {
         return Retry.retry(1, {
-            doHtml2Image(html)
+            html2Image(html)?.let { bytes ->
+                filePersist.createOneFilePersist(savePath).saveBytes(bytes)
+            }
         }) {
             quit()
             initChromeDriver()
@@ -219,7 +227,7 @@ class DesktopHtmlRenderingService(
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun doHtml2Image(html: String): ByteArray? {
+    private fun html2Image(html: String): ByteArray? {
         chromeDriver?.let { driver ->
             driver.get(htmlUtils.dataUrl(html))
             driver.manage().window().size = windowDimension
