@@ -11,7 +11,7 @@ import com.crosspaste.utils.getCodecsUtils
 import io.realm.kotlin.MutableRealm
 import java.awt.datatransfer.DataFlavor
 
-class TextTypePlugin : PasteTypePlugin, TextUpdater {
+class DesktopTextTypePlugin : TextTypePlugin {
 
     companion object {
 

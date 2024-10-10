@@ -10,8 +10,8 @@ import com.crosspaste.paste.PasteDataFlavors
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteCoordinate
-import com.crosspaste.paste.plugin.type.FilesTypePlugin.Companion.FILE_LIST_ID
-import com.crosspaste.paste.plugin.type.HtmlTypePlugin.Companion.HTML_ID
+import com.crosspaste.paste.plugin.type.DesktopFilesTypePlugin.Companion.FILE_LIST_ID
+import com.crosspaste.paste.plugin.type.DesktopHtmlTypePlugin.Companion.HTML_ID
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.getPlatform
@@ -34,11 +34,11 @@ import java.net.URL
 import java.nio.charset.StandardCharsets
 import javax.imageio.ImageIO
 
-class ImageTypePlugin(
+class DesktopImageTypePlugin(
     private val appInfo: AppInfo,
     private val imageWriter: ImageWriter<BufferedImage>,
     private val userDataPathProvider: UserDataPathProvider,
-) : PasteTypePlugin {
+) : ImageTypePlugin {
 
     companion object {
         const val IMAGE_ID = "image/x-java-image"
