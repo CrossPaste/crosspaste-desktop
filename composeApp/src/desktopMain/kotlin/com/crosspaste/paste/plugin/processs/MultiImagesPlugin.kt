@@ -20,6 +20,7 @@ class MultiImagesPlugin(private val userDataPathProvider: UserDataPathProvider) 
     override fun process(
         pasteItems: List<PasteItem>,
         realm: MutableRealm,
+        source: String?,
     ): List<PasteItem> {
         if (pasteItems.size <= 1) {
             return pasteItems
