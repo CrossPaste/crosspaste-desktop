@@ -7,6 +7,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.realm.paste.PasteRealm
+import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.ui.base.MessageType
 import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.UISupport
@@ -72,7 +73,9 @@ class PasteMenuService(
         index: Int = 0,
     ) {
         uiSupport.openPasteData(pasteData, index)
-        desktopAppWindowManager.setShowMainWindow(false)
+        if (pasteData.pasteType != PasteType.TEXT) {
+            desktopAppWindowManager.setShowMainWindow(false)
+        }
     }
 
     fun deletePasteData(pasteData: PasteData) {

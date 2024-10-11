@@ -50,9 +50,6 @@ import com.crosspaste.paste.PasteMenuService
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.realm.paste.PasteType
-import com.crosspaste.ui.LocalScreenContent
-import com.crosspaste.ui.ScreenContext
-import com.crosspaste.ui.ScreenType
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.PasteTypeIconView
@@ -372,6 +369,7 @@ fun PasteMenuView(
                                         Color.Transparent
                                     },
                                 ),
+                        contentAlignment = Alignment.Center,
                     ) {
                         PasteTypeIconView(pasteData, size = 16.dp)
                     }
@@ -418,7 +416,6 @@ fun MoreMenuItems(
     pasteData: PasteData,
     hideMore: () -> Unit,
 ) {
-    val currentPage = LocalScreenContent.current
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteMenuService = koinInject<PasteMenuService>()
     Box(
@@ -445,18 +442,8 @@ fun MoreMenuItems(
                     .background(MaterialTheme.colorScheme.surface),
         ) {
             MenuItem(copywriter.getText("open")) {
-                if (pasteData.pasteType == PasteType.TEXT) {
-                    hideMore()
-                    currentPage.value =
-                        ScreenContext(
-                            ScreenType.PASTE_TEXT_EDIT,
-                            currentPage.value,
-                            pasteData,
-                        )
-                } else {
-                    pasteMenuService.openPasteData(pasteData)
-                    hideMore()
-                }
+                pasteMenuService.openPasteData(pasteData)
+                hideMore()
             }
             MenuItem(copywriter.getText("delete")) {
                 pasteMenuService.deletePasteData(pasteData)

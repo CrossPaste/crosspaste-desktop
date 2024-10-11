@@ -3,7 +3,6 @@ package com.crosspaste.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,7 +43,6 @@ object MacTrayView {
 
     @Composable
     fun Tray() {
-        val pageViewContext = LocalScreenContent.current
         val applicationExit = LocalExitApplication.current
 
         val appLaunchState = koinInject<AppLaunchState>()
@@ -61,7 +59,6 @@ object MacTrayView {
                     appWindowManager,
                     copywriter,
                     uiSupport,
-                    pageViewContext,
                     applicationExit,
                 ),
             )
@@ -70,7 +67,7 @@ object MacTrayView {
 
         DisposableEffect(copywriter.language()) {
             frame.removeAll()
-            menu = createPopupMenu(appWindowManager, copywriter, uiSupport, pageViewContext, applicationExit)
+            menu = createPopupMenu(appWindowManager, copywriter, uiSupport, applicationExit)
             frame.add(menu)
             onDispose {
                 frame.dispose()
@@ -125,7 +122,6 @@ object MacTrayView {
         appWindowManager: DesktopAppWindowManager,
         copywriter: GlobalCopywriter,
         uiSupport: UISupport,
-        currentPage: MutableState<ScreenContext>,
         applicationExit: (ExitMode) -> Unit,
     ): PopupMenu {
         val popup = PopupMenu()
@@ -134,7 +130,7 @@ object MacTrayView {
             createMenuItem(copywriter.getText("settings")) {
                 mainCoroutineDispatcher.launch(CoroutineName("Open settings")) {
                     appWindowManager.activeMainWindow()
-                    currentPage.value = ScreenContext(ScreenType.SETTINGS, currentPage.value)
+                    appWindowManager.toScreen(ScreenType.SETTINGS)
                 }
             },
         )
@@ -143,7 +139,7 @@ object MacTrayView {
             createMenuItem(copywriter.getText("shortcut_keys")) {
                 mainCoroutineDispatcher.launch(CoroutineName("Open shortcut keys")) {
                     appWindowManager.activeMainWindow()
-                    currentPage.value = ScreenContext(ScreenType.SHORTCUT_KEYS, currentPage.value)
+                    appWindowManager.toScreen(ScreenType.SHORTCUT_KEYS)
                 }
             },
         )
@@ -152,7 +148,7 @@ object MacTrayView {
             createMenuItem(copywriter.getText("about")) {
                 mainCoroutineDispatcher.launch(CoroutineName("Open about")) {
                     appWindowManager.activeMainWindow()
-                    currentPage.value = ScreenContext(ScreenType.ABOUT, currentPage.value)
+                    appWindowManager.toScreen(ScreenType.ABOUT)
                 }
             },
         )

@@ -21,7 +21,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,12 +48,12 @@ import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.app.AppInfo
+import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.realm.sync.SyncState
 import com.crosspaste.sync.SyncManager
-import com.crosspaste.ui.ScreenContext
 import com.crosspaste.ui.ScreenType
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.MessageType
@@ -71,12 +70,12 @@ import org.koin.compose.koinInject
 @Composable
 actual fun DeviceConnectView(
     syncRuntimeInfo: SyncRuntimeInfo,
-    currentScreenContext: MutableState<ScreenContext>,
     deviceInteractionEnabled: Boolean,
     onEdit: (SyncRuntimeInfo) -> Unit,
 ) {
     val density = LocalDensity.current
     val appInfo = koinInject<AppInfo>()
+    val appWindowManager = koinInject<AppWindowManager>()
     val checker = koinInject<VersionCompatibilityChecker>()
     val copywriter = koinInject<GlobalCopywriter>()
     val notificationManager = koinInject<NotificationManager>()
@@ -126,12 +125,7 @@ actual fun DeviceConnectView(
                 if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
                     syncManager.toVerify(syncRuntimeInfo.appInstanceId)
                 } else {
-                    currentScreenContext.value =
-                        ScreenContext(
-                            ScreenType.DEVICE_DETAIL,
-                            currentScreenContext.value,
-                            syncRuntimeInfo,
-                        )
+                    appWindowManager.toScreen(ScreenType.DEVICE_DETAIL, syncRuntimeInfo)
                 }
             }
     }

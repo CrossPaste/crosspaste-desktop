@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import com.crosspaste.app.AppUpdateService
+import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.ExitMode
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.MenuItem
@@ -32,8 +33,8 @@ fun HomeMenuView(
     openMainWindow: () -> Unit = {},
     close: () -> Unit,
 ) {
-    val currentPage = LocalScreenContent.current
     val applicationExit = LocalExitApplication.current
+    val appWindowManager = koinInject<AppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val uiSupport = koinInject<UISupport>()
     val appUpdateService = koinInject<AppUpdateService>()
@@ -79,12 +80,12 @@ fun HomeMenuView(
         ) {
             MenuItem(copywriter.getText("settings")) {
                 openMainWindow()
-                currentPage.value = ScreenContext(ScreenType.SETTINGS, currentPage.value)
+                appWindowManager.toScreen(ScreenType.SETTINGS)
                 close()
             }
             MenuItem(copywriter.getText("shortcut_keys")) {
                 openMainWindow()
-                currentPage.value = ScreenContext(ScreenType.SHORTCUT_KEYS, currentPage.value)
+                appWindowManager.toScreen(ScreenType.SHORTCUT_KEYS)
                 close()
             }
             MenuItem(copywriter.getText("check_for_updates"), reminder = existNewVersion) {
@@ -93,7 +94,7 @@ fun HomeMenuView(
             }
             MenuItem(copywriter.getText("about")) {
                 openMainWindow()
-                currentPage.value = ScreenContext(ScreenType.ABOUT, currentPage.value)
+                appWindowManager.toScreen(ScreenType.ABOUT)
                 close()
             }
             MenuItem(copywriter.getText("fqa")) {
