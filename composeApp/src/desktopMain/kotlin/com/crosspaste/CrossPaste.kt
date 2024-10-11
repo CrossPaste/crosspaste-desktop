@@ -1,5 +1,6 @@
 package com.crosspaste
 
+import androidx.compose.foundation.LocalContextMenuRepresentation
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -99,6 +100,7 @@ import com.crosspaste.paste.DesktopPasteSearchService
 import com.crosspaste.paste.DesktopTransferableConsumer
 import com.crosspaste.paste.DesktopTransferableProducer
 import com.crosspaste.paste.PasteIDGenerator
+import com.crosspaste.paste.PasteMenuService
 import com.crosspaste.paste.PasteSearchService
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.paste.PasteboardService
@@ -180,6 +182,7 @@ import com.crosspaste.ui.base.DesktopUISupport
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.base.NotificationManager
+import com.crosspaste.ui.base.PasteContextMenuRepresentation
 import com.crosspaste.ui.base.ToastManager
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.model.PasteDataViewModel
@@ -356,6 +359,7 @@ class CrossPaste {
                     single<HtmlRenderingService> { DesktopHtmlRenderingService(get(), get(), get()) }
                     single<HtmlTypePlugin> { get<DesktopHtmlTypePlugin>() }
                     single<ImageTypePlugin> { get<DesktopImageTypePlugin>() }
+                    single<PasteMenuService> { PasteMenuService(get(), get(), get(), get(), get(), get()) }
                     single<PasteboardService> {
                         getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get())
                     }
@@ -562,9 +566,12 @@ class CrossPaste {
 
                 val currentScreenContext = remember { mutableStateOf(ScreenContext(ScreenType.PASTE_PREVIEW)) }
 
+                val contextMenuRepresentation = remember { PasteContextMenuRepresentation() }
+
                 CompositionLocalProvider(
                     LocalExitApplication provides exitApplication,
                     LocalScreenContent provides currentScreenContext,
+                    LocalContextMenuRepresentation provides contextMenuRepresentation,
                 ) {
                     val windowIcon: Painter? =
                         if (isMacos) {

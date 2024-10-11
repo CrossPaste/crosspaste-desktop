@@ -25,10 +25,6 @@ import com.crosspaste.ui.paste.detail.PasteFilesDetailView
 import com.crosspaste.ui.paste.detail.PasteImagesDetailView
 import com.crosspaste.ui.paste.detail.PasteTextDetailView
 import com.crosspaste.ui.paste.detail.PasteUrlDetailView
-import com.crosspaste.utils.ioDispatcher
-import com.crosspaste.utils.mainDispatcher
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 
 @Composable
@@ -48,21 +44,22 @@ fun DetailPasteDataView() {
             val notificationManager = koinInject<NotificationManager>()
             val scope = rememberCoroutineScope()
             val onDoubleClick: () -> Unit = {
-                appWindowManager.setMainCursorWait()
-                scope.launch(ioDispatcher) {
-                    pasteboardService.tryWritePasteboard(
-                        pasteData,
-                        localOnly = true,
-                        filterFile = false,
-                    )
-                    withContext(mainDispatcher) {
-                        appWindowManager.resetMainCursor()
+                appWindowManager.doLongTaskInMain(
+                    scope = scope,
+                    task = {
+                        pasteboardService.tryWritePasteboard(
+                            pasteData,
+                            localOnly = true,
+                            filterFile = false,
+                        )
+                    },
+                    success = {
                         notificationManager.addNotification(
                             message = copywriter.getText("copy_successful"),
                             messageType = MessageType.Success,
                         )
-                    }
-                }
+                    },
+                )
             }
 
             when (pasteData.pasteType) {

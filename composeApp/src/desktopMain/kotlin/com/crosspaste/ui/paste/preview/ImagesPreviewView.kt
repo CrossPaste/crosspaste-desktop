@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import com.crosspaste.paste.PasteMenuService
 import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
@@ -21,6 +22,7 @@ fun ImagesPreviewView(
     onDoubleClick: () -> Unit,
 ) {
     pasteData.getPasteItem()?.let {
+        val pasteMenuService = koinInject<PasteMenuService>()
         val userDataPathProvider = koinInject<UserDataPathProvider>()
 
         val pasteFiles = it as PasteFiles
@@ -42,7 +44,16 @@ fun ImagesPreviewView(
                 ) {
                     items(imagePaths.size) { index ->
                         val pasteFileCoordinate = PasteFileCoordinate(pasteCoordinate, imagePaths[index])
-                        SingleImagePreviewView(pasteFileCoordinate)
+                        PasteContextMenuView(
+                            items =
+                                pasteMenuService.fileMenuItemsProvider(
+                                    pasteData = pasteData,
+                                    pasteItem = it,
+                                    index = index,
+                                ),
+                        ) {
+                            SingleImagePreviewView(pasteFileCoordinate)
+                        }
                         if (index != imagePaths.size - 1) {
                             Spacer(modifier = Modifier.size(10.dp))
                         }

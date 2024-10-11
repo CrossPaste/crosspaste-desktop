@@ -18,8 +18,10 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.crosspaste.paste.PasteMenuService
 import com.crosspaste.paste.item.PasteUrl
 import com.crosspaste.realm.paste.PasteData
+import org.koin.compose.koinInject
 
 @Composable
 fun UrlPreviewView(
@@ -27,6 +29,8 @@ fun UrlPreviewView(
     onDoubleClick: () -> Unit,
 ) {
     pasteData.getPasteItem()?.let {
+        val pasteMenuService = koinInject<PasteMenuService>()
+
         val pasteUrl = it as PasteUrl
         PasteSpecificPreviewContentView(
             pasteMainContent = {
@@ -42,22 +46,26 @@ fun UrlPreviewView(
                             }
                             .padding(10.dp),
                 ) {
-                    Text(
-                        modifier =
-                            Modifier.fillMaxSize()
-                                .verticalScroll(rememberScrollState()),
-                        text = pasteUrl.url,
-                        textDecoration = TextDecoration.Underline,
-                        fontFamily = FontFamily.SansSerif,
-                        maxLines = 4,
-                        overflow = TextOverflow.Ellipsis,
-                        style =
-                            TextStyle(
-                                fontWeight = FontWeight.Normal,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontSize = 14.sp,
-                            ),
-                    )
+                    PasteContextMenuView(
+                        items = pasteMenuService.pasteMenuItemsProvider(pasteData),
+                    ) {
+                        Text(
+                            modifier =
+                                Modifier.fillMaxSize()
+                                    .verticalScroll(rememberScrollState()),
+                            text = pasteUrl.url,
+                            textDecoration = TextDecoration.Underline,
+                            fontFamily = FontFamily.SansSerif,
+                            maxLines = 4,
+                            overflow = TextOverflow.Ellipsis,
+                            style =
+                                TextStyle(
+                                    fontWeight = FontWeight.Normal,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontSize = 14.sp,
+                                ),
+                        )
+                    }
                 }
             },
             pasteRightInfo = { toShow ->
