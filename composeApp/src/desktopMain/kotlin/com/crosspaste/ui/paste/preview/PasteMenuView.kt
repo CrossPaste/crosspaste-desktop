@@ -44,10 +44,9 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.crosspaste.app.AppWindowManager
 import com.crosspaste.i18n.Copywriter
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.paste.PasteboardService
+import com.crosspaste.paste.PasteMenuService
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.realm.paste.PasteType
@@ -55,12 +54,9 @@ import com.crosspaste.ui.LocalScreenContent
 import com.crosspaste.ui.ScreenContext
 import com.crosspaste.ui.ScreenType
 import com.crosspaste.ui.base.MenuItem
-import com.crosspaste.ui.base.MessageType
-import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.PasteTypeIconView
 import com.crosspaste.ui.base.TOOLTIP_TEXT_STYLE
-import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.clipboard
 import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.getMenWidth
@@ -69,12 +65,8 @@ import com.crosspaste.ui.base.moreVertical
 import com.crosspaste.ui.base.noFavorite
 import com.crosspaste.ui.favoriteColor
 import com.crosspaste.utils.getDateUtils
-import com.crosspaste.utils.ioDispatcher
-import com.crosspaste.utils.mainDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
@@ -85,10 +77,8 @@ fun PasteMenuView(
 ) {
     val density = LocalDensity.current
     val pasteRealm = koinInject<PasteRealm>()
-    val appWindowManager = koinInject<AppWindowManager>()
-    val pasteboardService = koinInject<PasteboardService>()
+    val pasteMenuService = koinInject<PasteMenuService>()
     val copywriter = koinInject<GlobalCopywriter>()
-    val notificationManager = koinInject<NotificationManager>()
 
     var parentBounds by remember { mutableStateOf(Rect.Zero) }
     var cursorPosition by remember { mutableStateOf(Offset.Zero) }
@@ -193,21 +183,23 @@ fun PasteMenuView(
                                     Color.Transparent
                                 },
                             ),
-                ) {}
-                Icon(
-                    painter = moreVertical(),
-                    contentDescription = "info",
-                    modifier =
-                        Modifier.size(18.dp)
-                            .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onTap = {
-                                        showPopup = !showPopup
-                                    },
-                                )
-                            },
-                    tint = MaterialTheme.colorScheme.primary,
-                )
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        painter = moreVertical(),
+                        contentDescription = "info",
+                        modifier =
+                            Modifier.size(18.dp)
+                                .pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onTap = {
+                                            showPopup = !showPopup
+                                        },
+                                    )
+                                },
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
         }
 
@@ -254,36 +246,23 @@ fun PasteMenuView(
                                         Color.Transparent
                                     },
                                 ),
-                    ) {}
-
-                    Icon(
-                        modifier =
-                            Modifier.size(16.dp)
-                                .pointerInput(Unit) {
-                                    detectTapGestures(
-                                        onTap = {
-                                            appWindowManager.setMainCursorWait()
-                                            scope.launch(ioDispatcher) {
-                                                pasteboardService.tryWritePasteboard(
-                                                    pasteData,
-                                                    localOnly = true,
-                                                    filterFile = false,
-                                                )
-                                                withContext(mainDispatcher) {
-                                                    appWindowManager.resetMainCursor()
-                                                    notificationManager.addNotification(
-                                                        message = copywriter.getText("copy_successful"),
-                                                        messageType = MessageType.Success,
-                                                    )
-                                                }
-                                            }
-                                        },
-                                    )
-                                },
-                        painter = clipboard(),
-                        contentDescription = "Copy",
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            modifier =
+                                Modifier.size(16.dp)
+                                    .pointerInput(Unit) {
+                                        detectTapGestures(
+                                            onTap = {
+                                                pasteMenuService.copyPasteData(pasteData)
+                                            },
+                                        )
+                                    },
+                            painter = clipboard(),
+                            contentDescription = "Copy",
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                 }
             }
 
@@ -329,22 +308,26 @@ fun PasteMenuView(
                                         Color.Transparent
                                     },
                                 ),
-                    ) {}
-
-                    Icon(
-                        modifier =
-                            Modifier.size(16.dp)
-                                .pointerInput(Unit) {
-                                    detectTapGestures(
-                                        onTap = {
-                                            pasteRealm.setFavorite(pasteData.id, !pasteData.favorite)
-                                        },
-                                    )
-                                },
-                        painter = if (pasteData.favorite) favorite() else noFavorite(),
-                        contentDescription = "Favorite",
-                        tint = favoriteColor(),
-                    )
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            modifier =
+                                Modifier.size(16.dp)
+                                    .pointerInput(Unit) {
+                                        detectTapGestures(
+                                            onTap = {
+                                                pasteRealm.setFavorite(
+                                                    pasteData.id,
+                                                    !pasteData.favorite,
+                                                )
+                                            },
+                                        )
+                                    },
+                            painter = if (pasteData.favorite) favorite() else noFavorite(),
+                            contentDescription = "Favorite",
+                            tint = favoriteColor(),
+                        )
+                    }
                 }
             }
 
@@ -389,8 +372,9 @@ fun PasteMenuView(
                                         Color.Transparent
                                     },
                                 ),
-                    ) {}
-                    PasteTypeIconView(pasteData, size = 16.dp)
+                    ) {
+                        PasteTypeIconView(pasteData, size = 16.dp)
+                    }
                 }
             }
         }
@@ -436,8 +420,7 @@ fun MoreMenuItems(
 ) {
     val currentPage = LocalScreenContent.current
     val copywriter = koinInject<GlobalCopywriter>()
-    val pasteRealm = koinInject<PasteRealm>()
-    val uiSupport = koinInject<UISupport>()
+    val pasteMenuService = koinInject<PasteMenuService>()
     Box(
         modifier =
             Modifier
@@ -471,14 +454,12 @@ fun MoreMenuItems(
                             pasteData,
                         )
                 } else {
-                    uiSupport.openPasteData(pasteData)
+                    pasteMenuService.openPasteData(pasteData)
                     hideMore()
                 }
             }
             MenuItem(copywriter.getText("delete")) {
-                runBlocking {
-                    pasteRealm.markDeletePasteData(pasteData.id)
-                }
+                pasteMenuService.deletePasteData(pasteData)
                 hideMore()
             }
         }

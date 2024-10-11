@@ -12,6 +12,7 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteType
+import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
 import com.google.common.io.Files
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -158,7 +159,10 @@ class DesktopUISupport(
         }
     }
 
-    override fun openPasteData(pasteData: PasteData) {
+    override fun openPasteData(
+        pasteData: PasteData,
+        index: Int,
+    ) {
         pasteData.getPasteItem()?.let { item ->
             when (pasteData.pasteType) {
                 PasteType.TEXT -> openText(pasteData.id, (item as TextPasteItem).text)
@@ -168,7 +172,12 @@ class DesktopUISupport(
                     item as PasteFiles
                     val pasteFiles = item.getPasteFiles(userDataPathProvider)
                     if (pasteFiles.isNotEmpty()) {
-                        browseFile(pasteFiles[0].getFilePath())
+                        val filepath = pasteFiles[index].getFilePath()
+                        if (fileUtils.canPreviewImage(filepath.extension)) {
+                            openImage(filepath)
+                        } else {
+                            browseFile(filepath)
+                        }
                     }
                 }
                 PasteType.IMAGE -> {
@@ -178,7 +187,7 @@ class DesktopUISupport(
                         if (pasteFiles.size == 1) {
                             openImage(pasteFiles[0].getFilePath())
                         } else {
-                            browseFile(pasteFiles[0].getFilePath())
+                            browseFile(pasteFiles[index].getFilePath())
                         }
                     }
                 }

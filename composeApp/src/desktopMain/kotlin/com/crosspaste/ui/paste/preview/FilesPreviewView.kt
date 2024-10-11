@@ -6,9 +6,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import com.crosspaste.paste.PasteMenuService
 import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
@@ -23,6 +27,7 @@ fun FilesPreviewView(
     onDoubleClick: () -> Unit,
 ) {
     pasteData.getPasteItem()?.let {
+        val pasteMenuService = koinInject<PasteMenuService>()
         val userDataPathProvider = koinInject<UserDataPathProvider>()
         val pasteFilePaths = (it as PasteFiles).getFilePaths(userDataPathProvider)
 
@@ -43,15 +48,26 @@ fun FilesPreviewView(
                 ) {
                     items(pasteFilePaths.size) { index ->
                         val filepath = pasteFilePaths[index]
-                        if (fileUtils.canPreviewImage(filepath.extension)) {
-                            val pasteFileCoordinate =
-                                PasteFileCoordinate(
-                                    pasteData.getPasteCoordinate(),
-                                    filepath,
-                                )
-                            SingleImagePreviewView(pasteFileCoordinate)
-                        } else {
-                            SingleFilePreviewView(filepath)
+                        val isImage by remember(filepath) { mutableStateOf(fileUtils.canPreviewImage(filepath.extension)) }
+
+                        PasteContextMenuView(
+                            items =
+                                pasteMenuService.fileMenuItemsProvider(
+                                    pasteData = pasteData,
+                                    pasteItem = it,
+                                    index = index,
+                                ),
+                        ) {
+                            if (isImage) {
+                                val pasteFileCoordinate =
+                                    PasteFileCoordinate(
+                                        pasteData.getPasteCoordinate(),
+                                        filepath,
+                                    )
+                                SingleImagePreviewView(pasteFileCoordinate)
+                            } else {
+                                SingleFilePreviewView(filepath)
+                            }
                         }
                         if (index != pasteFilePaths.size - 1) {
                             Spacer(modifier = Modifier.size(10.dp))

@@ -54,9 +54,6 @@ import com.crosspaste.ui.base.trash
 import com.crosspaste.ui.devices.DevicesScreen
 import com.crosspaste.ui.devices.QRScreen
 import com.crosspaste.ui.paste.PasteboardScreen
-import com.crosspaste.utils.mainDispatcher
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 
 val tabTextStyle =
@@ -117,17 +114,16 @@ fun TabsView() {
                             text = copywriter.getText("clean_all_pasteboard"),
                             contentDescription = "clean all paste",
                         ) {
-                            appWindowManager.setMainCursorWait()
-                            scope.launch {
-                                pasteRealm.markAllDeleteExceptFavorite()
-                                withContext(mainDispatcher) {
-                                    appWindowManager.resetMainCursor()
+                            appWindowManager.doLongTaskInMain(
+                                scope = scope,
+                                task = { pasteRealm.markAllDeleteExceptFavorite() },
+                                success = {
                                     notificationManager.addNotification(
                                         message = copywriter.getText("clean_successful"),
                                         messageType = MessageType.Success,
                                     )
-                                }
-                            }
+                                },
+                            )
                         }
                     }
                 }

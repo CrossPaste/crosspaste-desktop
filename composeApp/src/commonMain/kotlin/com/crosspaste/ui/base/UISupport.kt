@@ -26,7 +26,10 @@ interface UISupport {
         text: String,
     )
 
-    fun openPasteData(pasteData: PasteData)
+    fun openPasteData(
+        pasteData: PasteData,
+        index: Int = 0,
+    )
 
     fun jumpPrivacyAccessibility()
 }
