@@ -1,5 +1,7 @@
 package com.crosspaste.app
 
+import com.crosspaste.ui.ScreenContext
+import com.crosspaste.ui.ScreenType
 import com.crosspaste.utils.mainDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
@@ -8,6 +10,8 @@ import kotlinx.coroutines.withContext
 import okio.Path
 
 interface AppWindowManager {
+
+    val screenContext: StateFlow<ScreenContext>
 
     val firstLaunchCompleted: StateFlow<Boolean>
 
@@ -53,5 +57,14 @@ interface AppWindowManager {
         currentStoragePath: String,
         action: (Path) -> Unit,
         errorAction: (String) -> Unit,
+    )
+
+    fun setScreen(screenContext: ScreenContext)
+
+    fun returnScreen()
+
+    fun toScreen(
+        screenType: ScreenType,
+        context: Any = Unit,
     )
 }

@@ -23,7 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -66,11 +66,13 @@ val tabTextStyle =
 
 @Composable
 fun TabsView() {
-    val currentScreenContext = LocalScreenContent.current
     val appEnv = koinInject<AppEnv>()
+    val appWindowManager = koinInject<AppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
 
     val textMeasurer = rememberTextMeasurer()
+
+    val screen by appWindowManager.screenContext.collectAsState()
 
     val tabs =
         remember {
@@ -101,11 +103,10 @@ fun TabsView() {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     tabs.forEach { pair ->
-                        TabView(currentScreenContext, pair.first, copywriter.getText(pair.second))
+                        TabView(pair.first, copywriter.getText(pair.second))
                     }
                     Spacer(modifier = Modifier.weight(1f))
-                    if (currentScreenContext.value.screenType == ScreenType.PASTE_PREVIEW) {
-                        val appWindowManager = koinInject<AppWindowManager>()
+                    if (screen.screenType == ScreenType.PASTE_PREVIEW) {
                         val notificationManager = koinInject<NotificationManager>()
                         val pasteRealm = koinInject<PasteRealm>()
                         val scope = rememberCoroutineScope()
@@ -136,9 +137,9 @@ fun TabsView() {
                         ).size.width
                     }
 
-                val selectedIndex by remember(currentScreenContext.value.screenType) {
+                val selectedIndex by remember(screen.screenType) {
                     mutableStateOf(
-                        tabs.indexOfFirst { it.first.contains(currentScreenContext.value.screenType) },
+                        tabs.indexOfFirst { it.first.contains(screen.screenType) },
                     )
                 }
 
@@ -177,7 +178,7 @@ fun TabsView() {
             }
         }
 
-        when (currentScreenContext.value.screenType) {
+        when (screen.screenType) {
             ScreenType.PASTE_PREVIEW -> PasteboardScreen()
             ScreenType.DEVICES -> DevicesScreen()
             ScreenType.QR_CODE -> QRScreen()
@@ -189,14 +190,14 @@ fun TabsView() {
 
 @Composable
 fun TabView(
-    currentScreenContext: MutableState<ScreenContext>,
     screenTypes: List<ScreenType>,
     title: String,
 ) {
+    val appWindowManager = koinInject<AppWindowManager>()
     SingleTabView(
         title,
     ) {
-        currentScreenContext.value = ScreenContext(screenTypes[0])
+        appWindowManager.setScreen(ScreenContext(screenTypes[0]))
     }
 }
 

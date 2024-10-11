@@ -11,6 +11,8 @@ import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.getPlatform
+import com.crosspaste.ui.ScreenContext
+import com.crosspaste.ui.ScreenType
 import com.crosspaste.utils.Memoize
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KLogger
@@ -19,6 +21,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import okio.Path
 import okio.Path.Companion.toOkioPath
 import java.awt.Cursor
@@ -75,6 +78,9 @@ abstract class DesktopAppWindowManager(
     protected val logger: KLogger = KotlinLogging.logger {}
 
     protected val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
+
+    private val _screenContext = MutableStateFlow(ScreenContext(ScreenType.PASTE_PREVIEW))
+    override val screenContext: StateFlow<ScreenContext> = _screenContext.asStateFlow()
 
     private val _firstLaunchCompleted = MutableStateFlow(false)
     override var firstLaunchCompleted: StateFlow<Boolean> = _firstLaunchCompleted
@@ -246,4 +252,24 @@ abstract class DesktopAppWindowManager(
     abstract suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean = { false })
 
     abstract fun getPrevAppName(): String?
+
+    override fun returnScreen() {
+        _screenContext.value = screenContext.value.returnNext()
+    }
+
+    override fun setScreen(screenContext: ScreenContext) {
+        _screenContext.value = screenContext
+    }
+
+    override fun toScreen(
+        screenType: ScreenType,
+        context: Any,
+    ) {
+        _screenContext.value =
+            if (context == Unit) {
+                ScreenContext(screenType, _screenContext.value)
+            } else {
+                ScreenContext(screenType, _screenContext.value, context)
+            }
+    }
 }

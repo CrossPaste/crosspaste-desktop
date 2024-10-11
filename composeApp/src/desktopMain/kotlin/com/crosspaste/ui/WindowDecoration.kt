@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.crosspaste.app.AppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.arrowBack
 import org.koin.compose.koinInject
@@ -55,8 +56,7 @@ fun WindowDecoration(title: String) {
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun DecorationUI(title: String) {
-    val currentScreenContext = LocalScreenContent.current
-
+    val appWindowManager = koinInject<AppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
 
     var hoverReturn by remember { mutableStateOf(false) }
@@ -97,7 +97,7 @@ fun DecorationUI(title: String) {
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onTap = {
-                                        currentScreenContext.value = currentScreenContext.value.returnNext()
+                                        appWindowManager.returnScreen()
                                     },
                                 )
                             },

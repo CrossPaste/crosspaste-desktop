@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -16,12 +17,12 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.crosspaste.app.AppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.paste.plugin.type.TextTypePlugin
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteRealm
-import com.crosspaste.ui.LocalScreenContent
 import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.save
@@ -31,9 +32,10 @@ import org.koin.compose.koinInject
 
 @Composable
 fun PasteTextEditContentView() {
-    val currentScreenContext = LocalScreenContent.current
+    val appWindowManager = koinInject<AppWindowManager>()
+    val screen by appWindowManager.screenContext.collectAsState()
 
-    val pasteData = currentScreenContext.value.context as PasteData
+    val pasteData = screen.context as PasteData
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteRealm = koinInject<PasteRealm>()
     val textUpdater = koinInject<TextTypePlugin>()

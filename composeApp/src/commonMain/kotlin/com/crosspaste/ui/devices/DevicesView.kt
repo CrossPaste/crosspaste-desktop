@@ -15,7 +15,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,7 +35,6 @@ import androidx.compose.ui.unit.sp
 import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
 import com.crosspaste.sync.SyncManager
-import com.crosspaste.ui.ScreenContext
 import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
@@ -44,10 +42,10 @@ import com.crosspaste.ui.base.PasteDialog
 import org.koin.compose.koinInject
 
 @Composable
-fun MyDevicesView(currentScreenContext: MutableState<ScreenContext>) {
+fun MyDevicesView() {
     val dialogService = koinInject<DialogService>()
     Box(contentAlignment = Alignment.TopCenter) {
-        DevicesListView(currentScreenContext) { syncRuntimeInfo ->
+        DevicesListView { syncRuntimeInfo ->
             dialogService.pushDialog(
                 PasteDialog(
                     key = syncRuntimeInfo.deviceId,
@@ -173,16 +171,13 @@ fun MyDevicesView(currentScreenContext: MutableState<ScreenContext>) {
 }
 
 @Composable
-fun DevicesListView(
-    currentScreenContext: MutableState<ScreenContext>,
-    onEdit: (SyncRuntimeInfo) -> Unit,
-) {
+fun DevicesListView(onEdit: (SyncRuntimeInfo) -> Unit) {
     val syncManager = koinInject<SyncManager>()
     val rememberSyncRuntimeInfos = remember { syncManager.realTimeSyncRuntimeInfos }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         for ((index, syncRuntimeInfo) in rememberSyncRuntimeInfos.withIndex()) {
-            DeviceConnectView(syncRuntimeInfo, currentScreenContext, true, onEdit)
+            DeviceConnectView(syncRuntimeInfo, true, onEdit)
             if (index != rememberSyncRuntimeInfos.size - 1) {
                 HorizontalDivider()
             }

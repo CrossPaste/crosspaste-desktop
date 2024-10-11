@@ -17,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,11 +31,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppInfo
+import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.sync.SyncManager
-import com.crosspaste.ui.LocalScreenContent
 import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.alertCircle
 import com.crosspaste.ui.base.measureTextWidth
@@ -45,14 +46,17 @@ import org.koin.compose.koinInject
 
 @Composable
 fun DeviceDetailContentView() {
-    val currentScreenContext = LocalScreenContent.current
-
     val appInfo = koinInject<AppInfo>()
+    val appWindowManager = koinInject<AppWindowManager>()
     val checker = koinInject<VersionCompatibilityChecker>()
     val copywriter = koinInject<GlobalCopywriter>()
     val syncManager = koinInject<SyncManager>()
 
-    var syncRuntimeInfo by remember { mutableStateOf(currentScreenContext.value.context as SyncRuntimeInfo) }
+    val screen by appWindowManager.screenContext.collectAsState()
+
+    var syncRuntimeInfo by remember(screen) {
+        mutableStateOf(screen.context as SyncRuntimeInfo)
+    }
 
     val compatibility by remember {
         mutableStateOf(
@@ -60,7 +64,7 @@ fun DeviceDetailContentView() {
         )
     }
 
-    DeviceConnectView(syncRuntimeInfo, currentScreenContext, false) { }
+    DeviceConnectView(syncRuntimeInfo, false) { }
 
     Column(
         modifier =

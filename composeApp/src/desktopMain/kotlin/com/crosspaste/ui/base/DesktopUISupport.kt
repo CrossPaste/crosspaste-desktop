@@ -2,16 +2,17 @@ package com.crosspaste.ui.base
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppUrls
+import com.crosspaste.app.AppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.i18n.GlobalCopywriterImpl.Companion.ZH
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteFiles
-import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteType
+import com.crosspaste.ui.ScreenType
 import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
 import com.google.common.io.Files
@@ -24,6 +25,7 @@ import java.net.URI
 
 class DesktopUISupport(
     private val appUrls: AppUrls,
+    private val appWindowManager: AppWindowManager,
     private val copywriter: GlobalCopywriter,
     private val notificationManager: NotificationManager,
     private val userDataPathProvider: UserDataPathProvider,
@@ -139,24 +141,8 @@ class DesktopUISupport(
         }
     }
 
-    override fun openText(
-        objectId: ObjectId,
-        text: String,
-    ) {
-        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
-            val fileName = "${objectId.toHexString()}.txt"
-            val filePath = userDataPathProvider.resolve(fileName, AppFileType.TEMP)
-            val file = filePath.toFile()
-            if (!file.exists()) {
-                Files.write(text.toByteArray(), file)
-            }
-            Desktop.getDesktop().open(file)
-        } else {
-            notificationManager.addNotification(
-                message = copywriter.getText("failed_to_open_Text_pasteboard"),
-                messageType = MessageType.Error,
-            )
-        }
+    override fun openText(pasteData: PasteData) {
+        appWindowManager.toScreen(ScreenType.PASTE_TEXT_EDIT, pasteData)
     }
 
     override fun openPasteData(
@@ -165,7 +151,7 @@ class DesktopUISupport(
     ) {
         pasteData.getPasteItem()?.let { item ->
             when (pasteData.pasteType) {
-                PasteType.TEXT -> openText(pasteData.id, (item as TextPasteItem).text)
+                PasteType.TEXT -> openText(pasteData)
                 PasteType.URL -> openUrlInBrowser((item as UrlPasteItem).url)
                 PasteType.HTML -> openHtml(pasteData.id, (item as HtmlPasteItem).html)
                 PasteType.FILE -> {

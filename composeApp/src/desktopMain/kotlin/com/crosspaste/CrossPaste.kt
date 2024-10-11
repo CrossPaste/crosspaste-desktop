@@ -168,10 +168,7 @@ import com.crosspaste.ui.DesktopThemeDetector
 import com.crosspaste.ui.GrantAccessibilityPermissionsWindow
 import com.crosspaste.ui.LinuxTrayView
 import com.crosspaste.ui.LocalExitApplication
-import com.crosspaste.ui.LocalScreenContent
 import com.crosspaste.ui.MacTrayView
-import com.crosspaste.ui.ScreenContext
-import com.crosspaste.ui.ScreenType
 import com.crosspaste.ui.ThemeDetector
 import com.crosspaste.ui.WindowsTrayView
 import com.crosspaste.ui.base.DesktopDialogService
@@ -437,7 +434,7 @@ class CrossPaste {
                     single<SoundService> { DesktopSoundService }
                     single<ThemeDetector> { DesktopThemeDetector(get()) }
                     single<ToastManager> { DesktopToastManager() }
-                    single<UISupport> { DesktopUISupport(get(), get(), get(), get()) }
+                    single<UISupport> { DesktopUISupport(get(), get(), get(), get(), get()) }
 
                     // view model
                     viewModel { PasteDataViewModel(get()) }
@@ -564,13 +561,10 @@ class CrossPaste {
                     }
                 }
 
-                val currentScreenContext = remember { mutableStateOf(ScreenContext(ScreenType.PASTE_PREVIEW)) }
-
                 val contextMenuRepresentation = remember { PasteContextMenuRepresentation() }
 
                 CompositionLocalProvider(
                     LocalExitApplication provides exitApplication,
-                    LocalScreenContent provides currentScreenContext,
                     LocalContextMenuRepresentation provides contextMenuRepresentation,
                 ) {
                     val windowIcon: Painter? =

@@ -21,10 +21,7 @@ interface UISupport {
 
     fun openImage(imagePath: Path)
 
-    fun openText(
-        objectId: ObjectId,
-        text: String,
-    )
+    fun openText(pasteData: PasteData)
 
     fun openPasteData(
         pasteData: PasteData,
