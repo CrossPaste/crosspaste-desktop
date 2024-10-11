@@ -28,11 +28,11 @@ import java.awt.datatransfer.DataFlavor
 import java.io.ByteArrayInputStream
 import java.io.File
 
-class FilesTypePlugin(
+class DesktopFilesTypePlugin(
     private val appInfo: AppInfo,
     private val configManager: ConfigManager,
     private val userDataPathProvider: UserDataPathProvider,
-) : PasteTypePlugin {
+) : FilesTypePlugin {
 
     companion object {
 

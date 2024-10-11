@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.item.PasteText
-import com.crosspaste.paste.plugin.type.TextUpdater
+import com.crosspaste.paste.plugin.type.TextTypePlugin
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.ui.LocalScreenContent
@@ -36,7 +36,7 @@ fun PasteTextEditContentView() {
     val pasteData = currentScreenContext.value.context as PasteData
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteRealm = koinInject<PasteRealm>()
-    val textUpdater = koinInject<TextUpdater>()
+    val textUpdater = koinInject<TextTypePlugin>()
     val codecsUtils = getCodecsUtils()
 
     Box(
