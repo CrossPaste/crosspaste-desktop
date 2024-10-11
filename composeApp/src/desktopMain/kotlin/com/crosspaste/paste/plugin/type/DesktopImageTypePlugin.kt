@@ -93,7 +93,7 @@ class DesktopImageTypePlugin(
                 tryGetImageName(dataFlavorMap, pasteTransferable)
                     ?: fileUtils.createRandomFileName(ext = "png")
             val ext =
-                fileUtils.getExtFromFileName(name) ?: run {
+                fileUtils.getImageExtFromFileName(name) ?: run {
                     name += ".png"
                     "png"
                 }

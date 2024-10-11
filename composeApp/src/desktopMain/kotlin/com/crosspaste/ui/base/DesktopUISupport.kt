@@ -4,9 +4,8 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppUrls
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.i18n.GlobalCopywriterImpl.Companion.ZH
-import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
-import com.crosspaste.paste.item.ImagesPasteItem
+import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
@@ -17,7 +16,6 @@ import com.crosspaste.utils.getFileUtils
 import com.google.common.io.Files
 import io.github.oshai.kotlinlogging.KotlinLogging
 import okio.Path
-import okio.Path.Companion.toPath
 import org.mongodb.kbson.ObjectId
 import java.awt.Desktop
 import java.io.File
@@ -167,15 +165,21 @@ class DesktopUISupport(
                 PasteType.URL -> openUrlInBrowser((item as UrlPasteItem).url)
                 PasteType.HTML -> openHtml(pasteData.id, (item as HtmlPasteItem).html)
                 PasteType.FILE -> {
-                    val relativePathList = (item as FilesPasteItem).relativePathList
-                    if (relativePathList.size > 0) {
-                        browseFile(relativePathList[0].toPath())
+                    item as PasteFiles
+                    val pasteFiles = item.getPasteFiles(userDataPathProvider)
+                    if (pasteFiles.isNotEmpty()) {
+                        browseFile(pasteFiles[0].getFilePath())
                     }
                 }
                 PasteType.IMAGE -> {
-                    val relativePathList = (item as ImagesPasteItem).relativePathList
-                    if (relativePathList.size > 0) {
-                        browseFile(relativePathList[0].toPath())
+                    item as PasteFiles
+                    val pasteFiles = item.getPasteFiles(userDataPathProvider)
+                    if (pasteFiles.isNotEmpty()) {
+                        if (pasteFiles.size == 1) {
+                            openImage(pasteFiles[0].getFilePath())
+                        } else {
+                            browseFile(pasteFiles[0].getFilePath())
+                        }
                     }
                 }
             }
