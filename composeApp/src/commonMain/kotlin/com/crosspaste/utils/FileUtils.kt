@@ -42,10 +42,15 @@ interface FileUtils {
 
     fun createRandomFileName(ext: String? = null): String
 
-    fun getExtFromFileName(fileName: String): String? {
+    fun getImageExtFromFileName(fileName: String): String? {
         val index = fileName.lastIndexOf(".")
         return if (index != -1) {
-            fileName.substring(index + 1)
+            val ext = fileName.substring(index + 1)
+            if (canPreviewImage(ext)) {
+                ext
+            } else {
+                null
+            }
         } else {
             null
         }

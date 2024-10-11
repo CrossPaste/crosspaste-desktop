@@ -109,6 +109,7 @@ import com.crosspaste.paste.plugin.processs.DistinctPlugin
 import com.crosspaste.paste.plugin.processs.FilesToImagesPlugin
 import com.crosspaste.paste.plugin.processs.GenerateUrlPlugin
 import com.crosspaste.paste.plugin.processs.RemoveFolderImagePlugin
+import com.crosspaste.paste.plugin.processs.RemoveHtmlImagePlugin
 import com.crosspaste.paste.plugin.processs.SortPlugin
 import com.crosspaste.paste.plugin.type.DesktopFilesTypePlugin
 import com.crosspaste.paste.plugin.type.DesktopHtmlTypePlugin
@@ -384,6 +385,7 @@ class CrossPaste {
                                 GenerateUrlPlugin,
                                 FilesToImagesPlugin(get()),
                                 RemoveFolderImagePlugin(get()),
+                                RemoveHtmlImagePlugin(get()),
                                 SortPlugin,
                             ),
                             listOf(
