@@ -29,7 +29,7 @@ actual fun folder(): Painter {
 }
 
 @Composable
-actual fun html(): Painter {
+actual fun htmlOrRtf(): Painter {
     return painterResource(Res.drawable.html)
 }
 

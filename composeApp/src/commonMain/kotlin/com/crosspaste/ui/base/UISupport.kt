@@ -23,6 +23,8 @@ interface UISupport {
 
     fun openText(pasteData: PasteData)
 
+    fun openRtf(pasteData: PasteData)
+
     fun openPasteData(
         pasteData: PasteData,
         index: Int = 0,

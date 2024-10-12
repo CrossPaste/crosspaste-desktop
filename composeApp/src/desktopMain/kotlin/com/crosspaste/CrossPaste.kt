@@ -43,8 +43,6 @@ import com.crosspaste.app.getDesktopAppWindowManager
 import com.crosspaste.clean.CleanPasteScheduler
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.config.DefaultConfigManager
-import com.crosspaste.html.DesktopHtmlRenderingService
-import com.crosspaste.html.HtmlRenderingService
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.i18n.GlobalCopywriterImpl
 import com.crosspaste.image.DesktopFaviconLoader
@@ -116,6 +114,7 @@ import com.crosspaste.paste.plugin.processs.SortPlugin
 import com.crosspaste.paste.plugin.type.DesktopFilesTypePlugin
 import com.crosspaste.paste.plugin.type.DesktopHtmlTypePlugin
 import com.crosspaste.paste.plugin.type.DesktopImageTypePlugin
+import com.crosspaste.paste.plugin.type.DesktopRtfTypePlugin
 import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
 import com.crosspaste.paste.plugin.type.DesktopUrlTypePlugin
 import com.crosspaste.paste.plugin.type.FilesTypePlugin
@@ -134,6 +133,11 @@ import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.realm.signal.SignalRealm
 import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
 import com.crosspaste.realm.task.PasteTaskRealm
+import com.crosspaste.rendering.DesktopHtmlRenderingService
+import com.crosspaste.rendering.DesktopRenderingHelper
+import com.crosspaste.rendering.DesktopRtfRenderingService
+import com.crosspaste.rendering.RenderingHelper
+import com.crosspaste.rendering.RenderingService
 import com.crosspaste.serializer.PreKeyBundleSerializer
 import com.crosspaste.signal.DesktopPreKeySignalMessageFactory
 import com.crosspaste.signal.DesktopPreKeyStore
@@ -160,6 +164,7 @@ import com.crosspaste.task.DeletePasteTaskExecutor
 import com.crosspaste.task.Html2ImageTaskExecutor
 import com.crosspaste.task.PullFileTaskExecutor
 import com.crosspaste.task.PullIconTaskExecutor
+import com.crosspaste.task.Rtf2ImageTaskExecutor
 import com.crosspaste.task.SyncPasteTaskExecutor
 import com.crosspaste.task.TaskExecutor
 import com.crosspaste.ui.CrossPasteMainWindow
@@ -207,6 +212,8 @@ import kotlinx.coroutines.withContext
 import org.koin.core.KoinApplication
 import org.koin.core.context.GlobalContext
 import org.koin.core.module.dsl.viewModel
+import org.koin.core.qualifier.Qualifier
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.mongodb.kbson.ObjectId
 import org.signal.libsignal.protocol.state.IdentityKeyStore
@@ -350,10 +357,17 @@ class CrossPaste {
                     single<DesktopFilesTypePlugin> { DesktopFilesTypePlugin(get(), get(), get()) }
                     single<DesktopHtmlTypePlugin> { DesktopHtmlTypePlugin(get()) }
                     single<DesktopImageTypePlugin> { DesktopImageTypePlugin(get(), get(), get()) }
+                    single<DesktopRtfTypePlugin> { DesktopRtfTypePlugin(get()) }
                     single<DesktopTextTypePlugin> { DesktopTextTypePlugin() }
                     single<DesktopUrlTypePlugin> { DesktopUrlTypePlugin() }
                     single<FilesTypePlugin> { get<DesktopFilesTypePlugin>() }
-                    single<HtmlRenderingService> { DesktopHtmlRenderingService(get(), get(), get()) }
+                    single<RenderingHelper> { DesktopRenderingHelper(get()) }
+                    single<RenderingService<String>>(named("htmlRendering")) {
+                        DesktopHtmlRenderingService(get(), get(), get())
+                    }
+                    single<RenderingService<String>>(named("rtfRendering")) {
+                        DesktopRtfRenderingService(get(), get())
+                    }
                     single<HtmlTypePlugin> { get<DesktopHtmlTypePlugin>() }
                     single<ImageTypePlugin> { get<DesktopImageTypePlugin>() }
                     single<PasteMenuService> { PasteMenuService(get(), get(), get(), get(), get(), get()) }
@@ -365,12 +379,22 @@ class CrossPaste {
                     single<TaskExecutor> {
                         TaskExecutor(
                             listOf(
-                                SyncPasteTaskExecutor(get(), get(), get()),
-                                DeletePasteTaskExecutor(get()),
-                                PullFileTaskExecutor(get(), get(), get(), get(), get(), get(), get()),
                                 CleanPasteTaskExecutor(get(), get()),
-                                Html2ImageTaskExecutor(lazy { get() }, get(), get(), get()),
+                                DeletePasteTaskExecutor(get()),
+                                Html2ImageTaskExecutor(
+                                    lazy { get<RenderingService<String>>(named("htmlRendering")) },
+                                    get(),
+                                    get(),
+                                    get(),
+                                ),
+                                PullFileTaskExecutor(get(), get(), get(), get(), get(), get(), get()),
                                 PullIconTaskExecutor(get(), get(), get(), get()),
+                                Rtf2ImageTaskExecutor(
+                                    lazy { get<RenderingService<String>>(named("rtfRendering")) },
+                                    get(),
+                                    get(),
+                                ),
+                                SyncPasteTaskExecutor(get(), get(), get()),
                             ),
                             get(),
                         )
@@ -392,6 +416,7 @@ class CrossPaste {
                             listOf(
                                 get<DesktopFilesTypePlugin>(),
                                 get<DesktopHtmlTypePlugin>(),
+                                get<DesktopRtfTypePlugin>(),
                                 get<DesktopImageTypePlugin>(),
                                 get<DesktopTextTypePlugin>(),
                                 get<DesktopUrlTypePlugin>(),
@@ -403,6 +428,7 @@ class CrossPaste {
                             listOf(
                                 get<DesktopFilesTypePlugin>(),
                                 get<DesktopHtmlTypePlugin>(),
+                                get<DesktopRtfTypePlugin>(),
                                 get<DesktopImageTypePlugin>(),
                                 get<DesktopTextTypePlugin>(),
                                 get<DesktopUrlTypePlugin>(),
@@ -462,6 +488,8 @@ class CrossPaste {
                     koin.get<CleanPasteScheduler>().start()
                     koin.get<AppStartUpService>().followConfig()
                     koin.get<AppUpdateService>().start()
+                    koin.get<RenderingService<String>>(named("htmlRendering")).start()
+                    koin.get<RenderingService<String>>(named("rtfRendering")).start()
                 } else {
                     exitProcess(0)
                 }
@@ -499,8 +527,21 @@ class CrossPaste {
             supervisorScope {
                 val jobs =
                     listOf(
-                        async { stopService<AppUpdateService>("AppUpdateService") { it.stop() } },
-                        async { stopService<HtmlRenderingService>("HtmlRenderingService") { it.quit() } },
+                        async {
+                            stopService<AppUpdateService>("AppUpdateService") { it.stop() }
+                        },
+                        async {
+                            stopService<RenderingService<String>>(
+                                qualifier = named("htmlRendering"),
+                                serviceName = "RenderingService",
+                            ) { it.stop() }
+                        },
+                        async {
+                            stopService<RenderingService<String>>(
+                                qualifier = named("rtfRendering"),
+                                serviceName = "RenderingService",
+                            ) { it.stop() }
+                        },
                         async { stopService<PasteboardService>("PasteboardService") { it.stop() } },
                         async { stopService<PasteBonjourService>("PasteBonjourService") { it.unregisterService() } },
                         async { stopService<PasteServer<*, *>>("PasteServer") { it.stop() } },
@@ -516,10 +557,11 @@ class CrossPaste {
 
         private inline fun <reified T : Any> stopService(
             serviceName: String,
+            qualifier: Qualifier? = null,
             stopAction: (T) -> Unit,
         ) {
             try {
-                val service = koinApplication.koin.get<T>()
+                val service = koinApplication.koin.get<T>(qualifier = qualifier)
                 stopAction(service)
                 logger.info { "$serviceName stop completed" }
             } catch (e: Exception) {

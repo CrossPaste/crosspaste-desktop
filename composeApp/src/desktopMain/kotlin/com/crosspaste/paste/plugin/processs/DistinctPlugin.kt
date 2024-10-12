@@ -17,6 +17,7 @@ class DistinctPlugin(userDataPathProvider: UserDataPathProvider) : PasteProcessP
             Pair(PasteType.TEXT, firstPlugin),
             Pair(PasteType.URL, firstPlugin),
             Pair(PasteType.HTML, firstPlugin),
+            Pair(PasteType.RTF, firstPlugin),
         )
 
     override fun process(

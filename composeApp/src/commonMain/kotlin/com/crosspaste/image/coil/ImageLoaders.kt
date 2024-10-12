@@ -50,11 +50,11 @@ class ImageLoaders(
             .maxSizeBytes(64L * 1024L * 1024L)
             .build()
 
-    val html2ImageLoader =
+    val generateImageLoader =
         ImageLoader.Builder(platformContext)
             .components {
-                add(Html2ImageFactory())
-                    .add(Html2ImageKeyer())
+                add(GenerateImageFactory())
+                    .add(GenerateImageKeyer())
             }
             .memoryCache {
                 memoryCache

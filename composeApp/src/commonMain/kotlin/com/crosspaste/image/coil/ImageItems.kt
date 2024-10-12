@@ -7,11 +7,11 @@ import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.realm.paste.PasteData
 import okio.Path
 
-data class Html2ImageItem(val path: Path, val preview: Boolean, val density: Density)
+data class GenerateImageItem(val path: Path, val preview: Boolean, val density: Density)
 
-class Html2ImageKeyer : Keyer<Html2ImageItem> {
+class GenerateImageKeyer : Keyer<GenerateImageItem> {
     override fun key(
-        data: Html2ImageItem,
+        data: GenerateImageItem,
         options: Options,
     ): String {
         return "${data.path}_${data.preview}"

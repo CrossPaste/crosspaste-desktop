@@ -39,6 +39,7 @@ fun PasteSpecificPreviewView(pasteData: PasteData) {
             PasteType.TEXT -> TextPreviewView(pasteData, onDoubleClick)
             PasteType.URL -> UrlPreviewView(pasteData, onDoubleClick)
             PasteType.HTML -> HtmlToImagePreviewView(pasteData, onDoubleClick)
+            PasteType.RTF -> RtfToImagePreviewView(pasteData, onDoubleClick)
             PasteType.IMAGE -> ImagesPreviewView(pasteData, onDoubleClick)
             PasteType.FILE -> FilesPreviewView(pasteData, onDoubleClick)
         }

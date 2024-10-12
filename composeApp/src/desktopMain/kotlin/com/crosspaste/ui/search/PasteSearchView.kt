@@ -511,6 +511,17 @@ fun CrossPasteSearchWindowContent() {
                                                         }
                                                     }
 
+                                                    if (currentType != "rtf") {
+                                                        MenuItem(copywriter.getText("rtf"), textStyle, paddingValues) {
+                                                            pasteSearchService.setPasteType(
+                                                                PasteType.RTF,
+                                                            )
+                                                            currentType = "rtf"
+                                                            showTypes = false
+                                                            focusRequester.requestFocus() // keep textField focus
+                                                        }
+                                                    }
+
                                                     if (currentType != "image") {
                                                         MenuItem(
                                                             copywriter.getText("image"),

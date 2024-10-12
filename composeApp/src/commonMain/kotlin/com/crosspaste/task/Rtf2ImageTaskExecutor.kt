@@ -2,8 +2,7 @@ package com.crosspaste.task
 
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.createFailureResult
-import com.crosspaste.paste.item.PasteHtml
-import com.crosspaste.paste.plugin.type.HtmlTypePlugin
+import com.crosspaste.paste.item.PasteRtf
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.realm.task.PasteTask
@@ -12,18 +11,13 @@ import com.crosspaste.rendering.RenderingService
 import com.crosspaste.task.extra.BaseExtraInfo
 import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.getFileUtils
-import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.async
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-class Html2ImageTaskExecutor(
-    private val lazyHtmlRenderingService: Lazy<RenderingService<String>>,
+class Rtf2ImageTaskExecutor(
+    lazyRtfRenderingService: Lazy<RenderingService<String>>,
     private val pasteRealm: PasteRealm,
-    private val htmlTypePlugin: HtmlTypePlugin,
     private val userDataPathProvider: UserDataPathProvider,
 ) : SingleTypeTaskExecutor {
 
@@ -31,26 +25,21 @@ class Html2ImageTaskExecutor(
 
     private val fileUtils = getFileUtils()
 
-    override val taskType: Int = TaskType.HTML_TO_IMAGE_TASK
+    override val taskType: Int = TaskType.RTF_TO_IMAGE_TASK
+
+    private val rtfRenderingService = lazyRtfRenderingService.value
 
     private val mutex = Mutex()
 
-    private val htmlRenderingServiceDeferred: Deferred<RenderingService<String>> =
-        CoroutineScope(ioDispatcher).async {
-            lazyHtmlRenderingService.value
-        }
-
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         mutex.withLock {
-            val htmlRenderingService = htmlRenderingServiceDeferred.await()
             try {
                 pasteRealm.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
                     pasteData.getPasteItem()?.let { pasteItem ->
-                        if (pasteItem is PasteHtml) {
-                            val html2ImagePath = pasteItem.getHtmlImagePath(userDataPathProvider)
-                            if (!fileUtils.existFile(html2ImagePath)) {
-                                val normalizeHtml = htmlTypePlugin.normalizeHtml(pasteItem.html, pasteData.source)
-                                htmlRenderingService.saveRenderImage(normalizeHtml, html2ImagePath)
+                        if (pasteItem is PasteRtf) {
+                            val rtf2ImagePath = pasteItem.getRtfImagePath(userDataPathProvider)
+                            if (!fileUtils.existFile(rtf2ImagePath)) {
+                                rtfRenderingService.saveRenderImage(pasteItem.rtf, rtf2ImagePath)
                             }
                         }
                     }

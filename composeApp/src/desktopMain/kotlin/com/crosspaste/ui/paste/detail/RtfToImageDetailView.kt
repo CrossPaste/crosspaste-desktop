@@ -16,7 +16,7 @@ import com.crosspaste.info.PasteInfos.DATE
 import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
-import com.crosspaste.paste.item.PasteHtml
+import com.crosspaste.paste.item.PasteRtf
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteItem
@@ -27,22 +27,22 @@ import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
 
 @Composable
-fun HtmlToImageDetailView(
+fun RtfToImageDetailView(
     pasteData: PasteData,
-    pasteHtml: PasteHtml,
+    pasteRtf: PasteRtf,
     onDoubleClick: () -> Unit,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
     val uiSupport = koinInject<UISupport>()
     val userDataPathProvider = koinInject<UserDataPathProvider>()
-    val pasteItem = pasteHtml as PasteItem
+    val pasteItem = pasteRtf as PasteItem
 
     val dateUtils = getDateUtils()
     val fileUtils = getFileUtils()
 
     val filePath by remember(pasteData.id) {
         mutableStateOf(
-            pasteHtml.getHtmlImagePath(userDataPathProvider),
+            pasteRtf.getRtfImagePath(userDataPathProvider),
         )
     }
 
@@ -58,7 +58,7 @@ fun HtmlToImageDetailView(
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onTap = {
-                                    uiSupport.openHtml(pasteData.id, pasteHtml.html)
+                                    uiSupport.openRtf(pasteData)
                                 },
                                 onDoubleTap = {
                                     onDoubleClick()
@@ -66,7 +66,7 @@ fun HtmlToImageDetailView(
                             )
                         },
                 imagePath = filePath,
-                text = pasteHtml.getText(),
+                text = pasteRtf.getText(),
                 preview = false,
             )
         },
@@ -75,7 +75,7 @@ fun HtmlToImageDetailView(
                 pasteData = pasteData,
                 items =
                     listOf(
-                        PasteDetailInfoItem(TYPE, copywriter.getText("html")),
+                        PasteDetailInfoItem(TYPE, copywriter.getText("rtf")),
                         PasteDetailInfoItem(SIZE, fileUtils.formatBytes(pasteItem.size)),
                         PasteDetailInfoItem(REMOTE, copywriter.getText(if (pasteData.remote) "yes" else "no")),
                         PasteDetailInfoItem(

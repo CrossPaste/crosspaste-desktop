@@ -8,6 +8,7 @@ enum class AppFileType {
     MODULE,
     DATA,
     HTML,
+    RTF,
     ICON, // use for app icon
     FAVICON, // use for url favicon
     FILE_EXT_ICON, // use for file icon

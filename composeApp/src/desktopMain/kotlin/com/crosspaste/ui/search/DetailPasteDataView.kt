@@ -14,6 +14,7 @@ import com.crosspaste.paste.PasteSearchService
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteHtml
+import com.crosspaste.paste.item.PasteRtf
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.paste.item.PasteUrl
 import com.crosspaste.realm.paste.PasteData
@@ -25,6 +26,7 @@ import com.crosspaste.ui.paste.detail.PasteFilesDetailView
 import com.crosspaste.ui.paste.detail.PasteImagesDetailView
 import com.crosspaste.ui.paste.detail.PasteTextDetailView
 import com.crosspaste.ui.paste.detail.PasteUrlDetailView
+import com.crosspaste.ui.paste.detail.RtfToImageDetailView
 import org.koin.compose.koinInject
 
 @Composable
@@ -71,6 +73,9 @@ fun DetailPasteDataView() {
                 }
                 PasteType.HTML -> {
                     HtmlToImageDetailView(pasteData, it as PasteHtml, onDoubleClick)
+                }
+                PasteType.RTF -> {
+                    RtfToImageDetailView(pasteData, it as PasteRtf, onDoubleClick)
                 }
                 PasteType.IMAGE -> {
                     PasteImagesDetailView(pasteData, it as PasteFiles, onDoubleClick)

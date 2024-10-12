@@ -4,40 +4,41 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteTransferable
-import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteCoordinate
+import com.crosspaste.paste.item.RtfPasteItem
 import com.crosspaste.paste.toPasteDataFlavor
-import com.crosspaste.platform.getPlatform
-import com.crosspaste.platform.windows.html.HTMLCodec
-import com.crosspaste.plugin.office.OfficeHtmlPlugin
 import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getFileUtils
 import io.realm.kotlin.MutableRealm
 import java.awt.datatransfer.DataFlavor
+import java.io.InputStream
 
-class DesktopHtmlTypePlugin(
+class DesktopRtfTypePlugin(
     private val appInfo: AppInfo,
-) : HtmlTypePlugin {
+) : RtfTypePlugin {
 
     companion object {
+        const val RTF_ID = "text/rtf"
 
-        const val HTML_ID = "text/html"
+        val RTF_DATA_FLAVOR =
+            DataFlavor(
+                "text/rtf;  class=java.io.InputStream",
+                "Rich Text Format",
+            )
 
         private val codecsUtils = getCodecsUtils()
 
         private val fileUtils = getFileUtils()
-
-        private val officeHtmlPlugin = OfficeHtmlPlugin()
     }
 
     override fun getPasteType(): Int {
-        return PasteType.HTML
+        return PasteType.RTF
     }
 
     override fun getIdentifiers(): List<String> {
-        return listOf(HTML_ID)
+        return listOf(RTF_ID)
     }
 
     override fun createPrePasteItem(
@@ -47,7 +48,7 @@ class DesktopHtmlTypePlugin(
         pasteTransferable: PasteTransferable,
         pasteCollector: PasteCollector,
     ) {
-        HtmlPasteItem().apply {
+        RtfPasteItem().apply {
             this.identifier = identifier
         }.let {
             pasteCollector.preCollectItem(itemIndex, this::class, it)
@@ -63,11 +64,11 @@ class DesktopHtmlTypePlugin(
         pasteTransferable: PasteTransferable,
         pasteCollector: PasteCollector,
     ) {
-        if (transferData is String) {
-            val html = extractHtml(transferData)
-            val htmlBytes = html.toByteArray()
-            val hash = codecsUtils.hash(htmlBytes)
-            val size = htmlBytes.size.toLong()
+        if (transferData is InputStream) {
+            val rtfBytes = transferData.readBytes()
+            val hash = codecsUtils.hash(rtfBytes)
+            val size = rtfBytes.size.toLong()
+            val rtf = rtfBytes.toString(Charsets.UTF_8)
             val relativePath =
                 fileUtils.createPasteRelativePath(
                     pasteCoordinate =
@@ -75,11 +76,11 @@ class DesktopHtmlTypePlugin(
                             appInstanceId = appInfo.appInstanceId,
                             pasteId = pasteId,
                         ),
-                    fileName = "html2Image.png",
+                    fileName = "rtf2Image.png",
                 )
             val update: (PasteItem, MutableRealm) -> Unit = { pasteItem, realm ->
-                realm.query(HtmlPasteItem::class, "id == $0", pasteItem.id).first().find()?.apply {
-                    this.html = html
+                realm.query(RtfPasteItem::class, "id == $0", pasteItem.id).first().find()?.apply {
+                    this.rtf = rtf
                     this.relativePath = relativePath
                     this.size = size
                     this.hash = hash
@@ -94,45 +95,8 @@ class DesktopHtmlTypePlugin(
         singleType: Boolean,
         map: MutableMap<PasteDataFlavor, Any>,
     ) {
-        pasteItem as HtmlPasteItem
-        var currentHtml = pasteItem.html
-        if (getPlatform().isWindows()) {
-            currentHtml = String(HTMLCodec.convertToHTMLFormat(currentHtml))
-        }
-        map[DataFlavor.selectionHtmlFlavor.toPasteDataFlavor()] = currentHtml
-        map[DataFlavor.fragmentHtmlFlavor.toPasteDataFlavor()] = currentHtml
-        map[DataFlavor.allHtmlFlavor.toPasteDataFlavor()] = currentHtml
-    }
-
-    private fun extractHtml(inputStr: String): String {
-        // this is microsoft html format
-        // https://learn.microsoft.com/zh-cn/windows/win32/dataxchg/html-clipboard-format?redirectedfrom=MSDN
-        return if (inputStr.startsWith("Version:")) {
-            extractHtmlFromMicrosoftHtml(inputStr)
-        } else {
-            inputStr
-        }
-    }
-
-    private fun extractHtmlFromMicrosoftHtml(inputStr: String): String {
-        val start = inputStr.indexOfFirst { it == '<' }
-        return if (start != -1) {
-            inputStr.substring(start)
-        } else {
-            inputStr
-        }
-    }
-
-    override fun normalizeHtml(
-        html: String,
-        source: String?,
-    ): String {
-        return source?.let {
-            if (officeHtmlPlugin.match(source)) {
-                officeHtmlPlugin.officeNormalizationHTML(html)
-            } else {
-                html
-            }
-        } ?: html
+        pasteItem as RtfPasteItem
+        val currentRtf = pasteItem.rtf
+        map[RTF_DATA_FLAVOR.toPasteDataFlavor()] = currentRtf.byteInputStream()
     }
 }

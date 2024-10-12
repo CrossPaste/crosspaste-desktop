@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
 import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.ui.base.file
-import com.crosspaste.ui.base.html
+import com.crosspaste.ui.base.htmlOrRtf
 import com.crosspaste.ui.base.image
 import com.crosspaste.ui.base.link
 import com.crosspaste.ui.base.question
@@ -19,8 +19,10 @@ fun PasteTypeIconBaseView(pasteType: Int): Painter {
         PasteType.URL -> {
             link()
         }
-        PasteType.HTML -> {
-            html()
+        PasteType.HTML,
+        PasteType.RTF,
+        -> {
+            htmlOrRtf()
         }
         PasteType.IMAGE -> {
             image()

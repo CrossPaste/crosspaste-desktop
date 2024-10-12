@@ -468,6 +468,7 @@ fun getDetailInfo(
             PasteType.TEXT -> "text"
             PasteType.URL -> "link"
             PasteType.HTML -> "html"
+            PasteType.RTF -> "rtf"
             PasteType.IMAGE -> "image"
             PasteType.FILE -> "file"
             else -> "unknown"

@@ -8,12 +8,6 @@ interface PasteItem {
 
     var id: ObjectId
 
-    fun getIdentifierList(): List<String>
-
-    fun getPasteType(): Int
-
-    fun getSearchContent(): String?
-
     var favorite: Boolean
 
     var hash: String
@@ -23,6 +17,12 @@ interface PasteItem {
     var pasteState: Int
 
     var extraInfo: String?
+
+    fun getIdentifierList(): List<String>
+
+    fun getPasteType(): Int
+
+    fun getSearchContent(): String?
 
     fun update(
         data: Any,

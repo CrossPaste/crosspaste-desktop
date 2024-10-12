@@ -7,6 +7,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.i18n.GlobalCopywriterImpl.Companion.ZH
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteFiles
+import com.crosspaste.paste.item.PasteRtf
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.getPlatform
@@ -83,7 +84,7 @@ class DesktopUISupport(
             Desktop.getDesktop().browse(file.toURI())
         } else {
             notificationManager.addNotification(
-                message = copywriter.getText("failed_to_open_Html_pasteboard"),
+                message = copywriter.getText("failed_to_open_html_pasteboard"),
                 messageType = MessageType.Error,
             )
         }
@@ -99,7 +100,7 @@ class DesktopUISupport(
                     return
                 }
                 notificationManager.addNotification(
-                    message = copywriter.getText("failed_to_browse_File_pasteboard"),
+                    message = copywriter.getText("failed_to_browse_file_pasteboard"),
                     messageType = MessageType.Error,
                 )
             }
@@ -129,7 +130,7 @@ class DesktopUISupport(
                 Desktop.getDesktop().open(imagePath.toFile())
             } else {
                 notificationManager.addNotification(
-                    message = copywriter.getText("failed_to_open_Image_pasteboard"),
+                    message = copywriter.getText("failed_to_open_image_pasteboard"),
                     messageType = MessageType.Error,
                 )
             }
@@ -145,6 +146,25 @@ class DesktopUISupport(
         appWindowManager.toScreen(ScreenType.PASTE_TEXT_EDIT, pasteData)
     }
 
+    override fun openRtf(pasteData: PasteData) {
+        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+            val fileName = "${pasteData.id.toHexString()}.rtf"
+            val filePath = userDataPathProvider.resolve(fileName, AppFileType.TEMP)
+            val file = filePath.toFile()
+            if (!file.exists()) {
+                pasteData.getPasteItem(PasteRtf::class)?.let {
+                    Files.write(it.rtf.toByteArray(), file)
+                }
+            }
+            Desktop.getDesktop().browse(file.toURI())
+        } else {
+            notificationManager.addNotification(
+                message = copywriter.getText("failed_to_open_rtf_pasteboard"),
+                messageType = MessageType.Error,
+            )
+        }
+    }
+
     override fun openPasteData(
         pasteData: PasteData,
         index: Int,
@@ -154,6 +174,7 @@ class DesktopUISupport(
                 PasteType.TEXT -> openText(pasteData)
                 PasteType.URL -> openUrlInBrowser((item as UrlPasteItem).url)
                 PasteType.HTML -> openHtml(pasteData.id, (item as HtmlPasteItem).html)
+                PasteType.RTF -> openRtf(pasteData)
                 PasteType.FILE -> {
                     item as PasteFiles
                     val pasteFiles = item.getPasteFiles(userDataPathProvider)
