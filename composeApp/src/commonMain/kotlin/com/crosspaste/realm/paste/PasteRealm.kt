@@ -393,6 +393,8 @@ class PasteRealm(
                     val tasks = mutableListOf<ObjectId>()
                     if (pasteData.pasteType == PasteType.HTML) {
                         tasks.add(copyToRealm(TaskUtils.createTask(pasteData.id, TaskType.HTML_TO_IMAGE_TASK)).taskId)
+                    } else if (pasteData.pasteType == PasteType.RTF) {
+                        tasks.add(copyToRealm(TaskUtils.createTask(pasteData.id, TaskType.RTF_TO_IMAGE_TASK)).taskId)
                     }
                     if (!configManager.config.enabledSyncFileSizeLimit ||
                         fileUtils.bytesSize(configManager.config.maxSyncFileSize) > size
@@ -413,7 +415,7 @@ class PasteRealm(
         firstItem: PasteItem,
         remainingItems: List<PasteItem>,
     ): String? {
-        if (firstItem.getPasteType() == PasteType.HTML) {
+        if (firstItem.getPasteType() == PasteType.HTML || firstItem.getPasteType() == PasteType.RTF) {
             remainingItems.firstOrNull { it.getPasteType() == PasteType.TEXT }?.let {
                 return@let it.getSearchContent()
             }
@@ -448,6 +450,8 @@ class PasteRealm(
                 tasks.addAll(markDeleteSameHash(pasteData.id, pasteData.pasteType, pasteData.hash))
                 if (pasteData.pasteType == PasteType.HTML) {
                     tasks.add(copyToRealm(TaskUtils.createTask(pasteData.id, TaskType.HTML_TO_IMAGE_TASK)).taskId)
+                } else if (pasteData.pasteType == PasteType.RTF) {
+                    tasks.add(copyToRealm(TaskUtils.createTask(pasteData.id, TaskType.RTF_TO_IMAGE_TASK)).taskId)
                 }
             } else {
                 val pullFileTask = TaskUtils.createTask(pasteData.id, TaskType.PULL_FILE_TASK)

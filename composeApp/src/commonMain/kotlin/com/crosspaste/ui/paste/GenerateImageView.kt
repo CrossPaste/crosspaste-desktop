@@ -1,8 +1,8 @@
 package com.crosspaste.ui.paste
 
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,21 +23,23 @@ import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.crosspaste.image.coil.Html2ImageItem
+import com.crosspaste.app.AppSize
+import com.crosspaste.image.coil.GenerateImageItem
 import com.crosspaste.image.coil.ImageLoaders
 import okio.Path
 import org.koin.compose.koinInject
 
 @Composable
-fun HtmlToImageView(
+fun GenerateImageView(
     modifier: Modifier = Modifier,
-    html2ImagePath: Path,
-    htmlText: String,
+    imagePath: Path,
+    text: String,
     preview: Boolean,
     alignment: Alignment = Alignment.Center,
     contentScale: ContentScale = ContentScale.Fit,
 ) {
     val density = LocalDensity.current
+    val appSize = koinInject<AppSize>()
     val imageLoaders = koinInject<ImageLoaders>()
     val platformContext = koinInject<PlatformContext>()
 
@@ -45,13 +47,13 @@ fun HtmlToImageView(
         modifier = modifier,
         model =
             ImageRequest.Builder(platformContext)
-                .data(Html2ImageItem(html2ImagePath, preview, density))
+                .data(GenerateImageItem(imagePath, preview, density))
                 .crossfade(true)
                 .build(),
-        imageLoader = imageLoaders.html2ImageLoader,
+        imageLoader = imageLoaders.generateImageLoader,
         alignment = alignment,
         contentScale = contentScale,
-        contentDescription = "Html 2 Image",
+        contentDescription = "generate Image to preview",
         content = {
             when (this.painter.state.collectAsState().value) {
                 is AsyncImagePainter.State.Loading,
@@ -59,11 +61,11 @@ fun HtmlToImageView(
                 -> {
                     Row(
                         modifier =
-                            Modifier.fillMaxSize()
+                            Modifier.size(appSize.searchWindowDetailViewDpSize)
                                 .padding(10.dp),
                     ) {
                         Text(
-                            text = htmlText,
+                            text = text,
                             fontFamily = FontFamily.SansSerif,
                             maxLines = 4,
                             softWrap = true,

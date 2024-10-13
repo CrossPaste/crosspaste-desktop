@@ -1,18 +1,13 @@
-package com.crosspaste.html
+package com.crosspaste.rendering
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import com.crosspaste.app.AppSize
-import com.crosspaste.html.ChromeServiceServiceModule.Companion.CHROME_DRIVER_MODULE_ITEM_NAME
-import com.crosspaste.html.ChromeServiceServiceModule.Companion.CHROME_HEADLESS_SHELL_MODULE_ITEM_NAME
 import com.crosspaste.module.ModuleLoaderConfig
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.platform.windows.WinProcessUtils
 import com.crosspaste.platform.windows.WinProcessUtils.killProcessSet
-import com.crosspaste.platform.windows.WindowDpiHelper
 import com.crosspaste.presist.FilePersist
+import com.crosspaste.rendering.ChromeServiceServiceModule.Companion.CHROME_DRIVER_MODULE_ITEM_NAME
+import com.crosspaste.rendering.ChromeServiceServiceModule.Companion.CHROME_HEADLESS_SHELL_MODULE_ITEM_NAME
 import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.Retry
 import com.crosspaste.utils.getHtmlUtils
@@ -32,24 +27,16 @@ import org.openqa.selenium.chrome.ChromeOptions
 import kotlin.math.max
 
 class DesktopHtmlRenderingService(
-    private val appSize: AppSize,
     private val filePersist: FilePersist,
+    private val renderingHelper: RenderingHelper,
     private val userDataPathProvider: UserDataPathProvider,
-) : HtmlRenderingService {
+) : RenderingService<String> {
 
     private val logger = KotlinLogging.logger {}
 
-    private val htmlUtils = getHtmlUtils()
-
     private val currentPlatform = getPlatform()
 
-    private val scale: Double =
-        if (currentPlatform.isWindows()) {
-            val maxDpi: Int = WindowDpiHelper.getMaxDpiForMonitor()
-            maxDpi / 96.0
-        } else {
-            1.0
-        }
+    private val htmlUtils = getHtmlUtils()
 
     private val baseOptions: ChromeOptions =
         ChromeOptions()
@@ -60,44 +47,15 @@ class DesktopHtmlRenderingService(
             .addArguments("--disable-software-rasterizer")
             .addArguments("--no-sandbox")
 
-    private val options: ChromeOptions =
-        if (currentPlatform.isWindows()) {
-            baseOptions
-                .addArguments("--force-device-scale-factor=$scale")
-                .addArguments("--high-dpi-support=$scale")
-        } else {
-            baseOptions
-        }
-
-    private val windowDimension: Dimension =
-        run {
-            val detailViewDpSize = appSize.searchWindowDetailViewDpSize
-            val htmlWidthValue = detailViewDpSize.width.value - 20.0
-            val htmlHeightValue = detailViewDpSize.height.value - 20.0
-            if (currentPlatform.isWindows()) {
-                val width: Int = (htmlWidthValue * scale).toInt()
-                val height: Int = (htmlHeightValue * scale).toInt()
-                Dimension(width, height)
-            } else {
-                Dimension(htmlWidthValue.toInt(), htmlHeightValue.toInt())
-            }
-        }
-
     private var chromeDriverService: ChromeDriverService? = null
 
     private var chromeDriver: ChromeDriver? = null
-
-    override var startSuccess: Boolean by mutableStateOf(false)
 
     private val chromeDriverProperties =
         DesktopResourceUtils
             .loadProperties("chrome-driver.properties")
 
-    init {
-        initChromeDriver()
-    }
-
-    private fun initChromeDriver() {
+    override fun start() {
         val chromeModuleLoader = ChromeModuleLoader(userDataPathProvider)
         val chromeServiceModule = ChromeServiceServiceModule(chromeDriverProperties)
 
@@ -107,13 +65,24 @@ class DesktopHtmlRenderingService(
             optLoaderConfig?.let { loaderConfig ->
                 if (chromeModuleLoader.load(loaderConfig)) {
                     startByLoaderModule(loaderConfig)
-                    startSuccess = true
-                    return
+                    logger.info { "chromeDriver & chromeHeadlessShell start success" }
                 }
+            } ?: run {
+                logger.warn { "chromeDriver & chromeHeadlessShell not found" }
             }
         } catch (e: Exception) {
-            startSuccess = false
-            return
+            logger.error(e) { "chromeDriver & chromeHeadlessShell start fail" }
+        }
+    }
+
+    private fun buildOptions(): ChromeOptions {
+        return if (currentPlatform.isWindows()) {
+            val scale = renderingHelper.scale
+            baseOptions
+                .addArguments("--force-device-scale-factor=$scale")
+                .addArguments("--high-dpi-support=$scale")
+        } else {
+            baseOptions
         }
     }
 
@@ -137,6 +106,7 @@ class DesktopHtmlRenderingService(
                     "webdriver.chrome.driver",
                     chromeDriverFile.absolutePath,
                 )
+                val options = buildOptions()
                 options.setBinary(chromeHeadlessShellFile)
                 chromeDriver = ChromeDriver(chromeDriverService, options)
                 return true
@@ -147,16 +117,15 @@ class DesktopHtmlRenderingService(
 
     @Synchronized
     override fun saveRenderImage(
-        html: String,
+        input: String,
         savePath: Path,
     ) {
         return Retry.retry(1, {
-            html2Image(html)?.let { bytes ->
+            html2Image(input)?.let { bytes ->
                 filePersist.createOneFilePersist(savePath).saveBytes(bytes)
             }
         }) {
-            quit()
-            initChromeDriver()
+            restart()
         }
     }
 
@@ -164,7 +133,7 @@ class DesktopHtmlRenderingService(
 
     private val quitScope = CoroutineScope(ioDispatcher + quitSupervisorJob)
 
-    override fun quit() {
+    override fun stop() {
         chromeDriver?.let { driver ->
             if (currentPlatform.isWindows()) {
                 val shellPids = collectChromeHeadlessShellProcessIds()
@@ -230,6 +199,10 @@ class DesktopHtmlRenderingService(
     private fun html2Image(html: String): ByteArray? {
         chromeDriver?.let { driver ->
             driver.get(htmlUtils.dataUrl(html))
+            val windowDimension =
+                renderingHelper.dimension.let {
+                    Dimension(it.width, it.height)
+                }
             driver.manage().window().size = windowDimension
             val dimensions: List<Long> = driver.executeScript(JsCode.CODE) as List<Long>
             val pageWidth = max(dimensions[0].toInt(), windowDimension.width)

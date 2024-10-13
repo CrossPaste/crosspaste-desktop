@@ -16,14 +16,14 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.crosspaste.paste.PasteMenuService
-import com.crosspaste.paste.item.PasteHtml
+import com.crosspaste.paste.item.PasteRtf
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.ui.paste.GenerateImageView
 import org.koin.compose.koinInject
 
 @Composable
-fun HtmlToImagePreviewView(
+fun RtfToImagePreviewView(
     pasteData: PasteData,
     onDoubleClick: () -> Unit,
 ) {
@@ -31,11 +31,11 @@ fun HtmlToImagePreviewView(
         val pasteMenuService = koinInject<PasteMenuService>()
         val userDataPathProvider = koinInject<UserDataPathProvider>()
 
-        val pasteHtml = it as PasteHtml
+        val pasteRtf = it as PasteRtf
 
         val filePath by remember(pasteData.id) {
             mutableStateOf(
-                pasteHtml.getHtmlImagePath(userDataPathProvider),
+                pasteRtf.getRtfImagePath(userDataPathProvider),
             )
         }
 
@@ -59,7 +59,7 @@ fun HtmlToImagePreviewView(
                             GenerateImageView(
                                 modifier = Modifier.fillMaxSize(),
                                 imagePath = filePath,
-                                text = pasteHtml.getText(),
+                                text = pasteRtf.getText(),
                                 preview = true,
                                 alignment = Alignment.TopStart,
                                 contentScale = ContentScale.None,

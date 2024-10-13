@@ -1,4 +1,4 @@
-package com.crosspaste.html
+package com.crosspaste.rendering
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.module.ModuleItem

@@ -4,6 +4,7 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
+import com.crosspaste.paste.item.RtfPasteItem
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
@@ -48,6 +49,7 @@ class RealmManager private constructor(private val config: RealmConfiguration) {
                 FilesPasteItem::class,
                 HtmlPasteItem::class,
                 ImagesPasteItem::class,
+                RtfPasteItem::class,
                 TextPasteItem::class,
                 UrlPasteItem::class,
             )

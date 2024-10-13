@@ -44,6 +44,10 @@ class OneFilePersist(val path: Path) {
         writeWithParentDirs { write(bytes) }
     }
 
+    fun createEmptyFile() {
+        writeWithParentDirs { }
+    }
+
     fun delete(): Boolean {
         return if (fileSystem.exists(path)) {
             fileSystem.delete(path)

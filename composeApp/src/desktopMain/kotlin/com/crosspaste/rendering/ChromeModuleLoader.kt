@@ -1,4 +1,4 @@
-package com.crosspaste.html
+package com.crosspaste.rendering
 
 import com.crosspaste.module.AbstractModuleLoader
 import com.crosspaste.path.UserDataPathProvider

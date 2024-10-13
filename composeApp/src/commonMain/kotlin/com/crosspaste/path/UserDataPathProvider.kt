@@ -26,6 +26,7 @@ class UserDataPathProvider(
             AppFileType.IMAGE,
             AppFileType.DATA,
             AppFileType.HTML,
+            AppFileType.RTF,
             AppFileType.ICON,
             AppFileType.FAVICON,
             AppFileType.FILE_EXT_ICON,
@@ -54,6 +55,7 @@ class UserDataPathProvider(
                 AppFileType.IMAGE -> basePath.resolve("images")
                 AppFileType.DATA -> basePath.resolve("data")
                 AppFileType.HTML -> basePath.resolve("html")
+                AppFileType.RTF -> basePath.resolve("rtf")
                 AppFileType.ICON -> basePath.resolve("icons")
                 AppFileType.FAVICON -> basePath.resolve("favicon")
                 AppFileType.FILE_EXT_ICON -> basePath.resolve("file_ext_icons")

@@ -13,8 +13,8 @@ import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
-class Html2ImageFetcher(
-    private val item: Html2ImageItem,
+class GenerateImageFetcher(
+    private val item: GenerateImageItem,
 ) : Fetcher {
 
     private val coilUtils = getCoilUtils()
@@ -55,12 +55,12 @@ class Html2ImageFetcher(
     }
 }
 
-class Html2ImageFactory : Fetcher.Factory<Html2ImageItem> {
+class GenerateImageFactory : Fetcher.Factory<GenerateImageItem> {
     override fun create(
-        data: Html2ImageItem,
+        data: GenerateImageItem,
         options: Options,
         imageLoader: ImageLoader,
     ): Fetcher {
-        return Html2ImageFetcher(data)
+        return GenerateImageFetcher(data)
     }
 }

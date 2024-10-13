@@ -8,4 +8,5 @@ object PasteType {
     const val HTML = 2
     const val FILE = 3
     const val IMAGE = 4
+    const val RTF = 5
 }

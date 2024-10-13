@@ -102,7 +102,7 @@ fun PasteTypeIconView(
                 )
             }
         }
-    } else if (pasteData.pasteType != PasteType.HTML) {
+    } else if (pasteData.pasteType != PasteType.HTML && pasteData.pasteType != PasteType.RTF) {
         Icon(
             painter = PasteTypeIconBaseView(pasteType = pasteData.pasteType),
             contentDescription = "Paste Icon",
@@ -133,7 +133,7 @@ fun PasteTypeIconView(
                             imageSize = (size + 2.dp) / 24 * 20
                             imagePaddingSize = (size + 2.dp) / 24 * 2
                             Icon(
-                                painter = html(),
+                                painter = htmlOrRtf(),
                                 contentDescription = "Paste Icon",
                                 modifier = Modifier.padding(imagePaddingSize).size(imageSize),
                                 tint = MaterialTheme.colorScheme.primary,
@@ -147,7 +147,7 @@ fun PasteTypeIconView(
             )
         } ?: run {
             Icon(
-                painter = html(),
+                painter = htmlOrRtf(),
                 contentDescription = "Paste Icon",
                 modifier = Modifier.padding(padding).size(size),
                 tint = MaterialTheme.colorScheme.primary,
