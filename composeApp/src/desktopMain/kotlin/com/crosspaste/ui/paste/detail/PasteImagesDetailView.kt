@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -61,6 +62,7 @@ import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.ui.base.PasteIconButton
+import com.crosspaste.ui.base.TransparentBackground
 import com.crosspaste.ui.base.chevronLeft
 import com.crosspaste.ui.base.chevronRight
 import com.crosspaste.ui.base.imageCompress
@@ -161,9 +163,9 @@ fun PasteImagesDetailView(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Box(modifier = Modifier.fillMaxSize()) {
+                        Box(modifier = Modifier.wrapContentSize()) {
                             SubcomposeAsyncImage(
-                                modifier = Modifier.fillMaxSize(),
+                                modifier = Modifier.wrapContentSize(),
                                 model =
                                     ImageRequest.Builder(platformContext)
                                         .data(ImageItem(pasteFileCoordinate, false))
@@ -201,7 +203,7 @@ fun PasteImagesDetailView(
                                             val intrinsicSize = painter.intrinsicSize
                                             val fileName = imagePath.name
                                             val isSvg = fileName.substringAfterLast(".") == "svg"
-                                            var imageShowMode = ImageShowMode(Modifier.fillMaxSize(), ContentScale.Fit)
+                                            var imageShowMode = ImageShowMode(Modifier.wrapContentSize(), ContentScale.Fit)
                                             if (!isSvg && intrinsicSize.isSpecified) {
                                                 val builder = ImageInfoBuilder()
                                                 builder.add(
@@ -226,6 +228,8 @@ fun PasteImagesDetailView(
                                                         )
                                                 }
                                             }
+
+                                            TransparentBackground(modifier = Modifier.matchParentSize())
 
                                             SubcomposeAsyncImageContent(
                                                 modifier = imageShowMode.modifier,
