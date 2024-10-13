@@ -37,9 +37,10 @@ The [default priority](https://github.com/CrossPaste/crosspaste-desktop/blob/mai
 
 | Priority | Paste Type   |
 |----------|--------------|
-| 4        | File         |
-| 3        | Image        |
-| 2        | HTML RTF     |
+| 5        | File         |
+| 4        | HTML         |
+| 3        | RTF          |
+| 2        | Image        |
 | 1        | URL          |
 | 0        | Text         |
 | -1       | Invalid Type |
