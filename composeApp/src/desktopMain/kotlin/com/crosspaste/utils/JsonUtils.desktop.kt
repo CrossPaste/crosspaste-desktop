@@ -3,6 +3,7 @@ package com.crosspaste.utils
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
+import com.crosspaste.paste.item.RtfPasteItem
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.presist.DirFileInfoTree
@@ -48,6 +49,7 @@ object DesktopJsonUtils : JsonUtils {
                     polymorphic(RealmObject::class) {
                         subclass(FilesPasteItem::class)
                         subclass(HtmlPasteItem::class)
+                        subclass(RtfPasteItem::class)
                         subclass(ImagesPasteItem::class)
                         subclass(TextPasteItem::class)
                         subclass(UrlPasteItem::class)
