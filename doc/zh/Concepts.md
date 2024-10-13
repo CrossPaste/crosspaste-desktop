@@ -31,11 +31,12 @@ CrossPaste 的核心设计目标是最大限度地保留原始复制内容的信
 
 粘贴类型的预览[默认优先级](https://github.com/CrossPaste/crosspaste-desktop/blob/main/composeApp/src/desktopMain/kotlin/com/crosspaste/paste/plugin/processs/SortPlugin.kt)如下：
 
-| 优先级 | 粘贴类型   |
-|-----|-----------|
-| 4   | 文件        |
-| 3   | 图片        |
-| 2   | HTML 富文本 |
-| 1   | URL       |
-| 0   | 文本        |
-| -1  | 无效类型     |
+| 优先级 | 粘贴类型 |
+|-----|------|
+| 5   | 文件   |
+| 4   | HTML |
+| 3   | RTF  |
+| 2   | 图片   |
+| 1   | URL  |
+| 0   | 文本   |
+| -1  | 无效类型 |
