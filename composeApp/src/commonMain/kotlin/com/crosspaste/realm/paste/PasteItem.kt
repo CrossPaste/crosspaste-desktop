@@ -24,6 +24,8 @@ interface PasteItem {
 
     fun getSearchContent(): String?
 
+    fun getTitle(): String
+
     fun update(
         data: Any,
         hash: String,

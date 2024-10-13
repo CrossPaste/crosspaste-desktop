@@ -53,6 +53,10 @@ class UrlPasteItem : RealmObject, PasteItem, PasteUrl {
         return url.lowercase()
     }
 
+    override fun getTitle(): String {
+        return url
+    }
+
     override fun update(
         data: Any,
         hash: String,
