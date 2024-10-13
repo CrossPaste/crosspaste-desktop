@@ -76,6 +76,10 @@ class RtfPasteItem : RealmObject, PasteItem, PasteRtf {
         return rtfUtils.getRtfText(rtf).lowercase()
     }
 
+    override fun getTitle(): String {
+        return rtfUtils.getRtfText(rtf)
+    }
+
     override fun update(
         data: Any,
         hash: String,

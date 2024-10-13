@@ -53,6 +53,10 @@ class TextPasteItem : RealmObject, PasteItem, PasteText {
         return text.lowercase()
     }
 
+    override fun getTitle(): String {
+        return text
+    }
+
     override fun update(
         data: Any,
         hash: String,

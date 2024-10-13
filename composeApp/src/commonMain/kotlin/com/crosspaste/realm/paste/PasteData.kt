@@ -2,6 +2,7 @@ package com.crosspaste.realm.paste
 
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteFiles
+import com.crosspaste.paste.item.PasteText
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.serializer.PasteDataSerializer
 import com.crosspaste.serializer.PasteLabelRealmSetSerializer
@@ -149,6 +150,35 @@ class PasteData : RealmObject {
 
     fun getPasteCoordinate(): PasteCoordinate {
         return PasteCoordinate(appInstanceId, pasteId, createTime)
+    }
+
+    fun getTitle(): String {
+        return if (this.pasteState == PasteState.LOADING) {
+            "Loading..."
+        } else {
+            when (this.pasteType) {
+                PasteType.TEXT,
+                PasteType.URL,
+                PasteType.FILE,
+                PasteType.IMAGE,
+                -> {
+                    this.getPasteItem()?.getTitle() ?: "Unknown"
+                }
+                PasteType.HTML,
+                PasteType.RTF,
+                -> {
+                    getPasteAppearItems().firstOrNull { it is PasteText }?.let {
+                        val pasteText = it as PasteText
+                        return pasteText.text.trim()
+                    } ?: run {
+                        getPasteItem()?.getTitle() ?: "Unknown"
+                    }
+                }
+                else -> {
+                    "Unknown"
+                }
+            }
+        }
     }
 }
 

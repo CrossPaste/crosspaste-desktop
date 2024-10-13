@@ -26,11 +26,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
-import com.crosspaste.ui.paste.title.getPasteTitle
 import com.crosspaste.ui.selectColor
-import org.koin.compose.koinInject
 
 @Composable
 fun PasteTitleView(
@@ -38,58 +35,52 @@ fun PasteTitleView(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    val userDataPathProvider = koinInject<UserDataPathProvider>()
-
     val title by remember(pasteData.pasteState) {
-        mutableStateOf(
-            getPasteTitle(pasteData, userDataPathProvider),
-        )
+        mutableStateOf(pasteData.getTitle())
     }
 
-    title?.let {
-        Box(
-            modifier = Modifier.fillMaxWidth().height(40.dp),
-            contentAlignment = Alignment.Center,
+    Box(
+        modifier = Modifier.fillMaxWidth().height(40.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .fillMaxHeight()
+                    .padding(horizontal = 10.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(
+                        if (selected) {
+                            MaterialTheme.colorScheme.selectColor()
+                        } else {
+                            MaterialTheme.colorScheme.background
+                        },
+                    )
+                    .clickable(onClick = onClick),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .fillMaxHeight()
-                        .padding(horizontal = 10.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(
-                            if (selected) {
-                                MaterialTheme.colorScheme.selectColor()
-                            } else {
-                                MaterialTheme.colorScheme.background
-                            },
-                        )
-                        .clickable(onClick = onClick),
+                modifier = Modifier.padding(horizontal = 5.dp),
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 5.dp),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    PasteTypeIconView(pasteData)
+                PasteTypeIconView(pasteData)
 
-                    Text(
-                        modifier = Modifier.padding(start = 10.dp),
-                        text = it,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        style =
-                            TextStyle(
-                                textAlign = TextAlign.Start,
-                                fontWeight = FontWeight.Light,
-                                fontSize = 14.sp,
-                                fontFamily = FontFamily.SansSerif,
-                            ),
-                    )
-                }
+                Text(
+                    modifier = Modifier.padding(start = 10.dp),
+                    text = title,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    style =
+                        TextStyle(
+                            textAlign = TextAlign.Start,
+                            fontWeight = FontWeight.Light,
+                            fontSize = 14.sp,
+                            fontFamily = FontFamily.SansSerif,
+                        ),
+                )
             }
         }
     }

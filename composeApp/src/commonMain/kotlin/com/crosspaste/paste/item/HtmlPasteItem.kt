@@ -76,6 +76,10 @@ class HtmlPasteItem : RealmObject, PasteItem, PasteHtml {
         return htmlUtils.getHtmlText(html).lowercase()
     }
 
+    override fun getTitle(): String {
+        return htmlUtils.getHtmlText(html)
+    }
+
     override fun update(
         data: Any,
         hash: String,

@@ -100,6 +100,12 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
         }
     }
 
+    override fun getTitle(): String {
+        return relativePathList.joinToString(separator = ", ") {
+            it.toPath().name
+        }
+    }
+
     override fun update(
         data: Any,
         hash: String,
