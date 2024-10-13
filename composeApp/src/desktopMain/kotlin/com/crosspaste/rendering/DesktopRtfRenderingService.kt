@@ -45,7 +45,7 @@ class DesktopRtfRenderingService(
         graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
         graphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON)
 
-        graphics.scale(scale, scale)
+        graphics.scale(1.0, 1.0)
         graphics.color = Color.WHITE
         graphics.fillRect(0, 0, width, height)
         editorPane.print(graphics)
