@@ -2,7 +2,7 @@
    <img src="doc/zh/marketing.webp" width="768px" height="432px" alt="海报" />
    <h1>CrossPaste: 跨设备的通用粘贴板</h1>
    <p>
-      在任意设备间复制粘贴，就像在同一台设备上操作一样自然流畅。
+      <b>在任意设备间复制粘贴，就像在同一台设备上操作一样自然流畅</b>
       <br />
       <br />
       <a href="https://github.com/CrossPaste/crosspaste-desktop/blob/main/README.md">English</a>

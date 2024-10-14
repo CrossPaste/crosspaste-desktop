@@ -2,7 +2,7 @@
    <img src="doc/en/marketing.webp" width="768px" height="432px" alt="poster" />
    <h1>CrossPaste: Universal Pasteboard Across Devices</h1>
    <p>
-      Copy anything and paste it on any device, seamlessly
+      <b>Copy anything and paste it on any device, seamlessly</b>
       <br />
       <br />
       <a href="https://github.com/CrossPaste/crosspaste-desktop/blob/main/README.zh-CN.md">简体中文</a>
