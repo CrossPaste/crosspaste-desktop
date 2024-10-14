@@ -5,11 +5,12 @@
       在任意设备间复制粘贴，就像在同一台设备上操作一样自然流畅。
       <br />
       <br />
-      <b>简体中文</b> / <a href="https://github.com/CrossPaste/crosspaste-desktop/blob/main/README.md">English</a>
+      <a href="https://github.com/CrossPaste/crosspaste-desktop/blob/main/README.md">English</a>
        ·
       <a href="https://crosspaste.com/en/">Official Website</a>
        ·
       <a href="https://crosspaste.com/download">Download</a>
+      <br />
       <br />
    </p>
 
@@ -19,7 +20,6 @@
    [![Compose-Multiplatform](https://img.shields.io/badge/UI-Compose%20Multiplatform-3a7af2?logo=jetpackcompose&logoColor=white)](https://github.com/JetBrains/compose-multiplatform)
    [![Realm](https://img.shields.io/badge/Database-Realm-39477F?logo=realm&logoColor=white)](https://github.com/realm/realm-kotlin)
    ![Kotlin](https://img.shields.io/badge/Lang-Kotlin-0095D5.svg?logo=kotlin&logoColor=white)
-
    ![OS](https://img.shields.io/badge/OS-Windows%20%7C%20macOS%20%7C%20Linux-2cbe4e)
    [![Download](https://img.shields.io/badge/Download-v1.0.11-2cbe4e?logo=download&link=https://crosspaste.com/download)](https://crosspaste.com/download)
    [![AGPL-3.0](https://img.shields.io/badge/License-AGPL%20v3-2cbe4e.svg)](https://github.com/CrossPaste/crosspaste-desktop/blob/main/LICENSE)
