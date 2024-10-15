@@ -43,7 +43,7 @@ class SignalServerEncryptPluginFactory(private val signalProcessorCache: SignalP
 }
 
 object EncryptResponse :
-    Hook<suspend EncryptResponse.Context.(PipelineCall, OutgoingContent) -> Unit> {
+    Hook<suspend EncryptResponse.Context.(ApplicationCall, OutgoingContent) -> Unit> {
 
     val ioCoroutineDispatcher = CoroutineScope(ioDispatcher)
 
@@ -82,12 +82,12 @@ object EncryptResponse :
 
                         val deferred =
                             ioCoroutineDispatcher.async {
-                                val largeBuffer = kotlinx.io.Buffer()
+                                var largeBuffer = BytePacketBuilder()
                                 val tempBuffer = ByteArray(4096) // Temporary buffer for reading from the channel
 
                                 while (true) {
                                     val readSize = originChannel.readAvailable(tempBuffer)
-                                    if (readSize < 0 && largeBuffer.size == 0L) break // No more data to read and buffer is empty
+                                    if (readSize < 0 && largeBuffer.size == 0) break // No more data to read and buffer is empty
                                     if (readSize > 0) {
                                         largeBuffer.writeFully(tempBuffer, 0, readSize)
                                     }
@@ -98,7 +98,7 @@ object EncryptResponse :
                                         val encryptedData = encrypt(byteArray)
                                         encryptChannel.writeInt(encryptedData.size)
                                         encryptChannel.writeFully(encryptedData)
-                                        largeBuffer.clear() // Clear the buffer after processing
+                                        largeBuffer = BytePacketBuilder() // Clear the buffer after processing
                                     }
                                 }
                             }
@@ -126,7 +126,7 @@ object EncryptResponse :
 
     override fun install(
         pipeline: ApplicationCallPipeline,
-        handler: suspend Context.(PipelineCall, OutgoingContent) -> Unit,
+        handler: suspend Context.(ApplicationCall, OutgoingContent) -> Unit,
     ) {
         pipeline.sendPipeline.intercept(ApplicationSendPipeline.After) {
             handler(Context(this), call, subject as OutgoingContent)
