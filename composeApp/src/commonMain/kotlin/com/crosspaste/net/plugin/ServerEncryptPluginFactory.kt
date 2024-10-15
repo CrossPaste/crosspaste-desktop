@@ -12,6 +12,7 @@ import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
+import kotlinx.io.readByteArray
 
 class ServerEncryptPluginFactory(private val secureStore: SecureStore) {
 
@@ -41,11 +42,11 @@ class ServerEncryptPluginFactory(private val secureStore: SecureStore) {
 }
 
 object EncryptResponse :
-    Hook<suspend EncryptResponse.Context.(ApplicationCall, OutgoingContent) -> Unit> {
+    Hook<suspend EncryptResponse.Context.(PipelineCall, OutgoingContent) -> Unit> {
 
     val ioCoroutineDispatcher = CoroutineScope(ioDispatcher)
 
-    class Context(private val context: PipelineContext<Any, ApplicationCall>) {
+    class Context(private val context: PipelineContext<Any, PipelineCall>) {
         suspend fun transformBodyTo(
             body: OutgoingContent,
             encrypt: suspend (ByteArray) -> ByteArray,
@@ -62,7 +63,7 @@ object EncryptResponse :
                 }
 
                 is OutgoingContent.ReadChannelContent -> {
-                    val bytes = body.readFrom().readRemaining().readBytes()
+                    val bytes = body.readFrom().readRemaining().readByteArray()
                     context.subject =
                         ByteArrayContent(
                             encrypt(bytes),
@@ -80,23 +81,23 @@ object EncryptResponse :
 
                         val deferred =
                             ioCoroutineDispatcher.async {
-                                val largeBuffer = BytePacketBuilder()
+                                val largeBuffer = kotlinx.io.Buffer()
                                 val tempBuffer = ByteArray(4096) // Temporary buffer for reading from the channel
 
                                 while (true) {
                                     val readSize = originChannel.readAvailable(tempBuffer)
-                                    if (readSize < 0 && largeBuffer.size == 0) break // No more data to read and buffer is empty
+                                    if (readSize < 0 && largeBuffer.size == 0L) break // No more data to read and buffer is empty
                                     if (readSize > 0) {
                                         largeBuffer.writeFully(tempBuffer, 0, readSize)
                                     }
 
                                     // Check if largeBuffer is filled or no more data is available to read
                                     if (largeBuffer.size >= targetBufferSize || (readSize < 0 && largeBuffer.size > 0)) {
-                                        val byteArray = largeBuffer.build().readBytes()
+                                        val byteArray = largeBuffer.build().readByteArray()
                                         val encryptedData = encrypt(byteArray)
                                         encryptChannel.writeInt(encryptedData.size)
                                         encryptChannel.writeFully(encryptedData)
-                                        largeBuffer.reset() // Clear the buffer after processing
+                                        largeBuffer.clear() // Clear the buffer after processing
                                     }
                                 }
                             }
@@ -124,7 +125,7 @@ object EncryptResponse :
 
     override fun install(
         pipeline: ApplicationCallPipeline,
-        handler: suspend Context.(ApplicationCall, OutgoingContent) -> Unit,
+        handler: suspend Context.(PipelineCall, OutgoingContent) -> Unit,
     ) {
         pipeline.sendPipeline.intercept(ApplicationSendPipeline.After) {
             handler(Context(this), call, subject as OutgoingContent)
