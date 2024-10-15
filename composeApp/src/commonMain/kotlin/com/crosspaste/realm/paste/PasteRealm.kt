@@ -360,7 +360,7 @@ class PasteRealm(
                         pasteCollection.pasteItems.mapNotNull { anyValue ->
                             PasteCollection.getPasteItem(anyValue)
                         }
-                    assert(pasteAppearItems.isNotEmpty())
+                    check(pasteAppearItems.isNotEmpty())
                     pasteCollection.pasteItems.clear()
                     for (pastePlugin in pasteProcessPlugins) {
                         pasteAppearItems = pastePlugin.process(pasteAppearItems, this, pasteData.source)
