@@ -6,11 +6,13 @@ import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getAppInstanceId
+import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.successResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 fun Routing.pasteRouting(
@@ -18,6 +20,8 @@ fun Routing.pasteRouting(
     pasteboardService: PasteboardService,
 ) {
     val logger = KotlinLogging.logger {}
+
+    val scope = CoroutineScope(ioDispatcher + SupervisorJob())
 
     post("/sync/paste") {
         getAppInstanceId(call)?.let { appInstanceId ->
@@ -37,7 +41,7 @@ fun Routing.pasteRouting(
             try {
                 val pasteData = call.receive<PasteData>()
 
-                launch {
+                scope.launch {
                     pasteboardService.tryWriteRemotePasteboard(pasteData)
                 }
                 logger.debug { "sync handler ($appInstanceId) receive pasteData: $pasteData" }

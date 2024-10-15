@@ -12,6 +12,7 @@ import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
+import kotlinx.io.readByteArray
 
 class SignalServerEncryptPluginFactory(private val signalProcessorCache: SignalProcessorCache) {
 
@@ -46,7 +47,7 @@ object EncryptResponse :
 
     val ioCoroutineDispatcher = CoroutineScope(ioDispatcher)
 
-    class Context(private val context: PipelineContext<Any, ApplicationCall>) {
+    class Context(private val context: PipelineContext<Any, PipelineCall>) {
         suspend fun transformBodyTo(
             body: OutgoingContent,
             encrypt: suspend (ByteArray) -> ByteArray,
@@ -63,7 +64,7 @@ object EncryptResponse :
                 }
 
                 is OutgoingContent.ReadChannelContent -> {
-                    val bytes = body.readFrom().readRemaining().readBytes()
+                    val bytes = body.readFrom().readRemaining().readByteArray()
                     context.subject =
                         ByteArrayContent(
                             encrypt(bytes),
@@ -81,7 +82,7 @@ object EncryptResponse :
 
                         val deferred =
                             ioCoroutineDispatcher.async {
-                                val largeBuffer = BytePacketBuilder()
+                                var largeBuffer = BytePacketBuilder()
                                 val tempBuffer = ByteArray(4096) // Temporary buffer for reading from the channel
 
                                 while (true) {
@@ -93,11 +94,11 @@ object EncryptResponse :
 
                                     // Check if largeBuffer is filled or no more data is available to read
                                     if (largeBuffer.size >= targetBufferSize || (readSize < 0 && largeBuffer.size > 0)) {
-                                        val byteArray = largeBuffer.build().readBytes()
+                                        val byteArray = largeBuffer.build().readByteArray()
                                         val encryptedData = encrypt(byteArray)
                                         encryptChannel.writeInt(encryptedData.size)
                                         encryptChannel.writeFully(encryptedData)
-                                        largeBuffer.reset() // Clear the buffer after processing
+                                        largeBuffer = BytePacketBuilder() // Clear the buffer after processing
                                     }
                                 }
                             }

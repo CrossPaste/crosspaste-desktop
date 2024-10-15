@@ -11,6 +11,7 @@ import io.ktor.http.*
 import io.ktor.util.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
+import kotlinx.io.readByteArray
 
 class SignalClientDecryptPlugin(private val signalProcessorCache: SignalProcessorCache) :
     HttpClientPlugin<SignalConfig, SignalClientDecryptPlugin> {
@@ -34,14 +35,14 @@ class SignalClientDecryptPlugin(private val signalProcessorCache: SignalProcesso
                 headers["signal"]?.let { signal ->
                     if (signal == "1") {
                         logger.debug { "signal client decrypt $appInstanceId" }
-                        val byteReadChannel: ByteReadChannel = it.content
+                        val byteReadChannel: ByteReadChannel = it.rawContent
 
                         val contentType = it.call.response.contentType()
 
                         val processor = signalProcessorCache.getSignalMessageProcessor(appInstanceId)
 
                         if (contentType == ContentType.Application.Json) {
-                            val bytes = byteReadChannel.readRemaining().readBytes()
+                            val bytes = byteReadChannel.readRemaining().readByteArray()
                             val decrypt = processor.decryptSignalMessage(bytes)
 
                             // Create a new ByteReadChannel to contain the decrypted content
@@ -72,7 +73,7 @@ class SignalClientDecryptPlugin(private val signalProcessorCache: SignalProcesso
                                     }
                                 }
 
-                            val newChannel = ByteReadChannel(result.readBytes())
+                            val newChannel = ByteReadChannel(result.readByteArray())
                             val responseData =
                                 HttpResponseData(
                                     it.status,

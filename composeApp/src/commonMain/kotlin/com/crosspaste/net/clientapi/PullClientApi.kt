@@ -9,8 +9,8 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import io.ktor.util.*
 import io.ktor.util.reflect.*
+import io.ktor.utils.io.*
 
 class PullClientApi(
     private val pasteClient: PasteClient,
@@ -64,7 +64,7 @@ class PullClientApi(
     ): ClientApiResult {
         return if (response.status.value == 200) {
             logger.debug { "Success to pull $api" }
-            SuccessResult(response.content)
+            SuccessResult(response.rawContent)
         } else {
             val failResponse = response.body<FailResponse>()
             createFailureResult(

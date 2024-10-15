@@ -1,7 +1,7 @@
 package com.crosspaste.net.plugin
 
 import com.crosspaste.signal.SignalProcessorCache
-import io.ktor.util.*
+import io.ktor.utils.io.*
 
 @KtorDsl
 class SignalConfig(val signalProcessorCache: SignalProcessorCache)
