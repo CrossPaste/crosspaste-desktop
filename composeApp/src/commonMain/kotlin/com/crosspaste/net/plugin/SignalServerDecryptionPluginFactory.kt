@@ -6,7 +6,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.*
 import io.ktor.server.application.hooks.*
 import io.ktor.utils.io.*
-import io.ktor.utils.io.core.*
+import kotlinx.io.readByteArray
 
 class SignalServerDecryptionPluginFactory(private val signalProcessorCache: SignalProcessorCache) {
 
@@ -28,7 +28,7 @@ class SignalServerDecryptionPluginFactory(private val signalProcessorCache: Sign
                             return@on application.writer {
                                 val processor =
                                     signalProcessorCache.getSignalMessageProcessor(appInstanceId)
-                                val encryptedContent = body.readRemaining().readBytes()
+                                val encryptedContent = body.readRemaining().readByteArray()
                                 val decrypted = processor.decryptSignalMessage(encryptedContent)
                                 channel.writeFully(decrypted, 0, decrypted.size)
                             }.channel
