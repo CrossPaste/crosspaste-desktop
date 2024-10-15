@@ -8,7 +8,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.application
 import coil3.PlatformContext
 import com.crosspaste.app.AppEnv
@@ -41,6 +40,9 @@ import com.crosspaste.app.ExitMode
 import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.app.getDesktopAppWindowManager
 import com.crosspaste.clean.CleanPasteScheduler
+import com.crosspaste.composeapp.generated.resources.Res
+import com.crosspaste.composeapp.generated.resources.crosspaste
+import com.crosspaste.composeapp.generated.resources.crosspaste_mac
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.config.DefaultConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
@@ -209,6 +211,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
+import org.jetbrains.compose.resources.painterResource
 import org.koin.core.KoinApplication
 import org.koin.core.context.GlobalContext
 import org.koin.core.module.dsl.viewModel
@@ -611,9 +614,9 @@ class CrossPaste {
                 ) {
                     val windowIcon: Painter? =
                         if (isMacos) {
-                            painterResource("icon/crosspaste.mac.png")
+                            painterResource(Res.drawable.crosspaste_mac)
                         } else if (isWindows || isLinux) {
-                            painterResource("icon/crosspaste.png")
+                            painterResource(Res.drawable.crosspaste)
                         } else {
                             null
                         }

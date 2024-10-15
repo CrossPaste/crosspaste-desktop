@@ -21,7 +21,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
@@ -33,6 +32,8 @@ import com.crosspaste.app.AppSize
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.WinAppWindowManager
+import com.crosspaste.composeapp.generated.resources.Res
+import com.crosspaste.composeapp.generated.resources.crosspaste
 import com.crosspaste.ui.base.DesktopNotificationManager
 import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
@@ -40,6 +41,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
 import java.awt.GraphicsDevice
 import java.awt.GraphicsEnvironment
@@ -61,7 +63,7 @@ object WindowsTrayView {
         val appWindowManager = koinInject<DesktopAppWindowManager>()
         val notificationManager = koinInject<NotificationManager>() as DesktopNotificationManager
 
-        val trayIcon = painterResource("icon/crosspaste.png")
+        val trayIcon = painterResource(Res.drawable.crosspaste)
 
         var showMenu by remember { mutableStateOf(false) }
 

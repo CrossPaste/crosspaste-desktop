@@ -205,7 +205,7 @@ fun CrossPasteSearchWindowContent() {
                                         .fillMaxSize(),
                                 value = pasteSearchService.inputSearch,
                                 onValueChange = { pasteSearchService.updateInputSearch(it) },
-                                keyboardOptions = KeyboardOptions.Default.copy(autoCorrect = true),
+                                keyboardOptions = KeyboardOptions.Default.copy(autoCorrectEnabled = true),
                                 visualTransformation = VisualTransformation.None,
                                 placeholder = {
                                     Text(
