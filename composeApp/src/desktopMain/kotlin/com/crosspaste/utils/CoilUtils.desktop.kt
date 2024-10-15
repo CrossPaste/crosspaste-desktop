@@ -2,7 +2,6 @@ package com.crosspaste.utils
 
 import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
-import androidx.compose.ui.res.loadImageBitmap
 import coil3.Bitmap
 import coil3.Image
 import coil3.asImage
@@ -17,9 +16,11 @@ actual fun getCoilUtils(): CoilUtils {
 
 object DesktopCoilUtils : CoilUtils {
 
+    val fileUtils = getFileUtils()
+
     override fun createBitmap(path: Path): Bitmap {
         return path.toFile().inputStream().buffered().use {
-            it.use(::loadImageBitmap).asSkiaBitmap()
+            org.jetbrains.skia.Image.makeFromEncoded(it.readAllBytes()).toComposeImageBitmap().asSkiaBitmap()
         }
     }
 
@@ -29,7 +30,7 @@ object DesktopCoilUtils : CoilUtils {
         height: Int,
     ): Bitmap {
         return path.toFile().inputStream().buffered().use { stream ->
-            val originalImage = org.jetbrains.skia.Image.makeFromEncoded(stream.readBytes())
+            val originalImage = org.jetbrains.skia.Image.makeFromEncoded(stream.readAllBytes())
 
             // Determine the actual crop dimensions (in case the image is smaller than the requested crop size)
             val actualCropWidth = min(width, originalImage.width)

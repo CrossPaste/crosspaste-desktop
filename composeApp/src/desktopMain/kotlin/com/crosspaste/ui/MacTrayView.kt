@@ -7,7 +7,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
@@ -15,6 +14,8 @@ import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
+import com.crosspaste.composeapp.generated.resources.Res
+import com.crosspaste.composeapp.generated.resources.crosspaste_tray_mac
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.platform.macos.MacAppUtils.useAll
@@ -27,6 +28,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
 import java.awt.Color
 import java.awt.GraphicsEnvironment
@@ -51,7 +53,7 @@ object MacTrayView {
         val copywriter = koinInject<GlobalCopywriter>()
         val uiSupport = koinInject<UISupport>()
 
-        val trayIcon = painterResource("icon/crosspaste.tray.mac.png")
+        val trayIcon = painterResource(Res.drawable.crosspaste_tray_mac)
 
         var menu by remember {
             mutableStateOf(
