@@ -89,4 +89,10 @@ Here are some [FAQs](doc/en/FQA.md) that have been collected. If you have other 
 - **📝 Contribute**: [Code](doc/en/Contributing.md), comment on issues, and any contributions that can help the project are welcome.
 - **💖 Sponsor**: Support financially via [GitHub Sponsors](https://github.com/sponsors/CrossPaste) to help with ongoing development and maintenance.
 
+## 📝 Contributors
+<a href="https://github.com/CrossPaste/crosspaste-desktop/graphs/contributors">
+   <img src="https://contrib.rocks/image?repo=CrossPaste/crosspaste-desktop" />
+</a>
 
+## 💖 Sponsors
+<img src="https://avatars.githubusercontent.com/u/27792976?s=60&v=4"/>

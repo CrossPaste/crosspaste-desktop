@@ -88,3 +88,11 @@ CrossPaste 正在持续发展中！我们计划在未来的版本中添加更多
 - **📖 翻译**：帮助 CrossPaste 翻译、润色到你的[语言](https://github.com/CrossPaste/crosspaste-desktop/tree/main/composeApp/src/desktopMain/resources/i18n)。
 - **📝 贡献**：[贡献代码](doc/zh/Contributing.md)、评论 issue，欢迎一切可以帮助到项目的贡献。
 - **💖 赞助支持**: 通过 [GitHub Sponsors](https://github.com/sponsors/CrossPaste) 在经济上支持项目，以帮助持续开发和维护。
+
+## 📝 贡献者
+<a href="https://github.com/CrossPaste/crosspaste-desktop/graphs/contributors">
+   <img src="https://contrib.rocks/image?repo=CrossPaste/crosspaste-desktop" />
+</a>
+
+## 💖 赞助
+<img src="https://avatars.githubusercontent.com/u/27792976?s=60&v=4"/>
