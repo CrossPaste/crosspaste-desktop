@@ -45,6 +45,8 @@ import com.crosspaste.composeapp.generated.resources.crosspaste
 import com.crosspaste.composeapp.generated.resources.crosspaste_mac
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.config.DefaultConfigManager
+import com.crosspaste.config.ReadWriteConfig
+import com.crosspaste.config.ReadWritePort
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.i18n.GlobalCopywriterImpl
 import com.crosspaste.image.DesktopFaviconLoader
@@ -202,7 +204,6 @@ import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
 import com.github.kwhat.jnativehook.mouse.NativeMouseListener
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.realm.kotlin.Realm
 import kotlinx.coroutines.CoroutineScope
@@ -288,6 +289,7 @@ class CrossPaste {
                     single<LocaleUtils> { DesktopLocaleUtils }
                     single<PasteIDGenerator> { DesktopPasteIDGeneratorFactory(get()).createIDGenerator() }
                     single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
+                    single<ReadWriteConfig<Int>>(named("readWritePort")) { ReadWritePort(get()) }
                     single<SyncInfoFactory> { SyncInfoFactory(get(), get()) }
                     single<ThumbnailLoader> { DesktopThumbnailLoader(get()) }
                     single<UserDataPathProvider> { UserDataPathProvider(get(), getPlatformPathProvider()) }
@@ -312,7 +314,7 @@ class CrossPaste {
                     single<PasteClient> { PasteClient(get<AppInfo>(), get(), get()) }
                     single<PasteServer<*, *>> {
                         PasteServer(
-                            get(),
+                            get(named("readWritePort")),
                             get<ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>>(),
                             get(),
                         )
