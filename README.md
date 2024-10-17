@@ -73,9 +73,13 @@ systemProp.http.nonProxyHosts=*.nonproxyrepos.com|localhost
 ## 🗺️ Roadmap
 CrossPaste is continuously evolving! We plan to add more useful features in future versions. Here's an overview of our near-term development plans:
 
-- **v1.1.0**: Support for color pasteboard
-- **v1.2.0**: Native pasteboard support, performance improvements
-- **v1.3.0**: Introduction of command-line mode
+**As seen in the changelog, recent versions have included numerous PRs focused on refactoring and labeled with "multiplatform". Indeed, we are actively working towards launching a mobile version. These efforts are laying the groundwork for mobile support. Therefore, before the mobile version is released, we will only be focusing on bug fixes and a limited number of already-planned new features.**
+
+- [ ] **v1.0.12**: Support for RTF format in clipboard
+- [ ] **v1.0.13**: Support for color data in clipboard
+- [ ] **v1.1.0**: Support for mobile devices and shared pasteboard with mobile
+- [ ] **v1.2.0**: Support for native pasteboard, improve pasteboard performance
+- [ ] **v1.3.0**: Introduction of command-line mode
 
 This is just a small part of our plans. Want to learn more details and long-term plans? Check out our [full roadmap](doc/en/Roadmap.md).
 
