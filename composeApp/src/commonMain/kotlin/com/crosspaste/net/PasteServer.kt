@@ -1,12 +1,12 @@
 package com.crosspaste.net
 
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.ReadWriteConfig
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.engine.*
 import kotlinx.coroutines.runBlocking
 
 class PasteServer<TEngine : ApplicationEngine, TConfiguration : ApplicationEngine.Configuration>(
-    private val configManager: ConfigManager,
+    private val readWritePort: ReadWriteConfig<Int>,
     private val serverFactory: ServerFactory<TEngine, TConfiguration>,
     private val serverModule: ServerModule,
 ) {
@@ -15,7 +15,7 @@ class PasteServer<TEngine : ApplicationEngine, TConfiguration : ApplicationEngin
 
     private var port = 0
 
-    private var server: ApplicationEngine = createServer(port = configManager.config.port)
+    private var server: ApplicationEngine = createServer(port = readWritePort.getValue())
 
     private fun createServer(port: Int): ApplicationEngine {
         return embeddedServer(
@@ -32,14 +32,14 @@ class PasteServer<TEngine : ApplicationEngine, TConfiguration : ApplicationEngin
             server.start(wait = false)
         } catch (e: Exception) {
             if (e.message?.contains("already in use") == true) {
-                logger.warn { "Port ${configManager.config.port} is already in use" }
+                logger.warn { "Port ${readWritePort.getValue()} is already in use" }
                 server = createServer(port = 0)
                 server.start(wait = false)
             }
         }
         port = runBlocking { server.resolvedConnectors().first().port }
-        if (port != configManager.config.port) {
-            configManager.updateConfig("port", port)
+        if (port != readWritePort.getValue()) {
+            readWritePort.setValue(port)
         }
         logger.info { "Server started at port $port" }
         return this
