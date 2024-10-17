@@ -61,8 +61,6 @@ interface ThemeDetector {
         isFollowSystem: Boolean,
         isUserInDark: Boolean = false,
     )
-
-    fun addListener(listener: (Boolean) -> Unit)
 }
 
 fun Color.darken(amount: Float): Color {
