@@ -36,11 +36,11 @@ import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.sync.SyncManager
+import com.crosspaste.ui.CrossPasteTheme.connectedColor
+import com.crosspaste.ui.CrossPasteTheme.unmatchedColor
 import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.alertCircle
 import com.crosspaste.ui.base.measureTextWidth
-import com.crosspaste.ui.connectedColor
-import com.crosspaste.ui.unmatchedColor
 import kotlinx.coroutines.runBlocking
 import org.koin.compose.koinInject
 

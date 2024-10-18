@@ -50,6 +50,7 @@ import com.crosspaste.paste.PasteMenuService
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.realm.paste.PasteType
+import com.crosspaste.ui.CrossPasteTheme.favoriteColor
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.PasteTypeIconView
@@ -60,7 +61,6 @@ import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.base.moreVertical
 import com.crosspaste.ui.base.noFavorite
-import com.crosspaste.ui.favoriteColor
 import com.crosspaste.utils.getDateUtils
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch

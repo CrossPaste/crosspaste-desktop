@@ -32,6 +32,7 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
 import com.crosspaste.app.ExitMode
 import com.crosspaste.listener.GlobalListener
+import com.crosspaste.ui.CrossPasteTheme.Theme
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.ToastManager
 import com.crosspaste.ui.base.ToastView
@@ -111,7 +112,7 @@ fun CrossPasteMainWindowContent(hideWindow: suspend () -> Unit) {
     val mainCoroutineDispatcher = globalCoroutineScope.mainCoroutineDispatcher
     val toast by toastManager.toast
 
-    CrossPasteTheme {
+    Theme {
         Box(
             modifier =
                 Modifier

@@ -71,7 +71,9 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteSearchService
 import com.crosspaste.realm.paste.PasteType
-import com.crosspaste.ui.CrossPasteTheme
+import com.crosspaste.ui.CrossPasteTheme.Theme
+import com.crosspaste.ui.CrossPasteTheme.darken
+import com.crosspaste.ui.CrossPasteTheme.favoriteColor
 import com.crosspaste.ui.base.KeyboardView
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.PasteIconButton
@@ -84,8 +86,6 @@ import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.menuItemReminderTextStyle
 import com.crosspaste.ui.base.noFavorite
-import com.crosspaste.ui.darken
-import com.crosspaste.ui.favoriteColor
 import com.crosspaste.utils.mainDispatcher
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.delay
@@ -128,7 +128,7 @@ fun CrossPasteSearchWindowContent() {
         pasteSearchService.search()
     }
 
-    CrossPasteTheme {
+    Theme {
         Box(
             modifier =
                 Modifier
