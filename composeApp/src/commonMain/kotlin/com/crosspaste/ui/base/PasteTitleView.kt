@@ -27,7 +27,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.realm.paste.PasteData
-import com.crosspaste.ui.selectColor
+import com.crosspaste.ui.CrossPasteTheme.selectColor
 
 @Composable
 fun PasteTitleView(

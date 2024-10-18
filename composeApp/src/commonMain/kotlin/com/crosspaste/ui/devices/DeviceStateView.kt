@@ -7,16 +7,16 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.realm.sync.SyncState
+import com.crosspaste.ui.CrossPasteTheme.connectedColor
+import com.crosspaste.ui.CrossPasteTheme.connectingColor
+import com.crosspaste.ui.CrossPasteTheme.disconnectedColor
+import com.crosspaste.ui.CrossPasteTheme.unmatchedColor
+import com.crosspaste.ui.CrossPasteTheme.unverifiedColor
 import com.crosspaste.ui.base.allowReceive
 import com.crosspaste.ui.base.allowSend
 import com.crosspaste.ui.base.block
 import com.crosspaste.ui.base.sync
 import com.crosspaste.ui.base.unverified
-import com.crosspaste.ui.connectedColor
-import com.crosspaste.ui.connectingColor
-import com.crosspaste.ui.disconnectedColor
-import com.crosspaste.ui.unmatchedColor
-import com.crosspaste.ui.unverifiedColor
 
 @Composable
 fun AllowSendAndReceiveImage(syncRuntimeInfo: SyncRuntimeInfo): Painter {

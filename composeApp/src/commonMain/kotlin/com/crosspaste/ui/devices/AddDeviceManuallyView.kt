@@ -35,10 +35,10 @@ import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
 import com.crosspaste.realm.sync.createSyncRuntimeInfo
+import com.crosspaste.ui.CrossPasteTheme.connectedColor
 import com.crosspaste.ui.base.DefaultTextField
 import com.crosspaste.ui.base.MessageType
 import com.crosspaste.ui.base.NotificationManager
-import com.crosspaste.ui.connectedColor
 import com.crosspaste.utils.buildUrl
 import kotlinx.coroutines.runBlocking
 import org.koin.compose.koinInject
@@ -103,7 +103,7 @@ fun AddDeviceManuallyForm() {
                     ipArray.joinToString(".") {
                         try {
                             it.toInt().toString()
-                        } catch (e: NumberFormatException) {
+                        } catch (_: NumberFormatException) {
                             ""
                         }
                     }
@@ -133,7 +133,7 @@ fun AddDeviceManuallyForm() {
                 if (intPort > 0) {
                     port = intPort.toString()
                 }
-            } catch (e: NumberFormatException) {
+            } catch (_: NumberFormatException) {
                 return@DefaultTextField
             }
         }
