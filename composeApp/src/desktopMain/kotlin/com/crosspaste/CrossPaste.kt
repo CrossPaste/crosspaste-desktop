@@ -180,7 +180,6 @@ import com.crosspaste.ui.LocalExitApplication
 import com.crosspaste.ui.MacTrayView
 import com.crosspaste.ui.ThemeDetector
 import com.crosspaste.ui.WindowsTrayView
-import com.crosspaste.ui.base.DesktopDialogService
 import com.crosspaste.ui.base.DesktopIconStyle
 import com.crosspaste.ui.base.DesktopNotificationManager
 import com.crosspaste.ui.base.DesktopToastManager
@@ -450,7 +449,7 @@ class CrossPaste {
                     single<DesktopAppWindowManager> { getDesktopAppWindowManager(get(), lazy { get() }, get(), get()) }
                     single<DesktopMouseListener> { DesktopMouseListener }
                     single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get()) }
-                    single<DialogService> { DesktopDialogService() }
+                    single<DialogService> { DialogService }
                     single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
                     single<GlobalListener> { DesktopGlobalListener(get(), get(), get(), get(), get()) }
                     single<IconStyle> { DesktopIconStyle(get()) }

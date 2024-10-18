@@ -1,10 +1,27 @@
 package com.crosspaste.ui.base
 
-interface DialogService {
+import androidx.compose.runtime.mutableStateListOf
+import com.crosspaste.utils.createPlatformLock
 
-    var dialogs: MutableList<PasteDialog>
+object DialogService {
 
-    fun pushDialog(dialog: PasteDialog)
+    private val lock = createPlatformLock()
 
-    fun popDialog()
+    var dialogs: MutableList<PasteDialog> = mutableStateListOf()
+
+    fun pushDialog(dialog: PasteDialog) {
+        lock.withLock {
+            if (!dialogs.map { it.key }.contains(dialog.key)) {
+                dialogs.add(dialog)
+            }
+        }
+    }
+
+    fun popDialog() {
+        lock.withLock {
+            if (dialogs.isNotEmpty()) {
+                dialogs.removeAt(0)
+            }
+        }
+    }
 }
