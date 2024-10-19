@@ -11,7 +11,7 @@ import com.crosspaste.ui.settings.ShortcutKeysScreen
 import org.koin.compose.koinInject
 
 @Composable
-fun CrossPasteScreen() {
+actual fun CrossPasteScreen() {
     val appWindowManager = koinInject<AppWindowManager>()
 
     val screen by appWindowManager.screenContext.collectAsState()

@@ -65,7 +65,7 @@ import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
-fun HomeScreen() {
+actual fun HomeScreen() {
     HomeWindowDecoration()
     TabsView()
 }
