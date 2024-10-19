@@ -17,7 +17,7 @@ object DesktopAppEnvUtils : AppEnvUtils {
         return SYSTEM_PROPERTY.getOption("appEnv")?.let {
             try {
                 AppEnv.valueOf(it)
-            } catch (e: Throwable) {
+            } catch (_: Throwable) {
                 PRODUCTION
             }
         } ?: PRODUCTION

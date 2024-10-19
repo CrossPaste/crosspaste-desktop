@@ -3,6 +3,7 @@ package com.crosspaste.utils
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.platform.macos.MacDeviceUtils
 import com.sun.jna.platform.win32.Kernel32Util
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
@@ -37,6 +38,8 @@ object DesktopDeviceUtils : DeviceUtils {
 
 object WindowsDeviceUtils : DeviceUtils {
 
+    private val logger = KotlinLogging.logger {}
+
     private fun getProductUUID(): String? {
         try {
             val command = "wmic csproduct get UUID"
@@ -49,7 +52,7 @@ object WindowsDeviceUtils : DeviceUtils {
                 }
             }
         } catch (e: IOException) {
-            e.printStackTrace()
+            logger.error(e) { "Failed to get product UUID" }
         }
         return null
     }

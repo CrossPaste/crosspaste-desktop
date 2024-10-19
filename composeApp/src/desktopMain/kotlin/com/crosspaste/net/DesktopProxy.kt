@@ -45,7 +45,7 @@ object DesktopProxy {
                             Proxy.NO_PROXY
                         }
                     } catch (e: Exception) {
-                        logger.warn { "Invalid proxy configuration in environment variable: $e" }
+                        logger.warn(e) { "Invalid proxy configuration in environment variable" }
                         Proxy.NO_PROXY
                     }
                 } ?: Proxy.NO_PROXY
@@ -87,7 +87,7 @@ object DesktopProxy {
                         }
                     }
                 } catch (e: Exception) {
-                    logger.warn { "Invalid proxy configuration: $e" }
+                    logger.warn(e) { "Invalid proxy configuration" }
                     null
                 }
             }

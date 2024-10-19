@@ -1,6 +1,6 @@
 package com.crosspaste.dao.store
 
-import kotlinx.coroutines.Dispatchers
+import com.crosspaste.utils.cpuDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
@@ -88,7 +88,7 @@ class SessionBuilderTest {
         try {
             bobSessionCipher.decrypt(PreKeySignalMessage(outgoingMessage.serialize()))
             fail("shouldn't be trusted!")
-        } catch (uie: UntrustedIdentityException) {
+        } catch (_: UntrustedIdentityException) {
             bobStore.saveIdentity(
                 ALICE_ADDRESS,
                 PreKeySignalMessage(outgoingMessage.serialize()).identityKey,
@@ -111,7 +111,7 @@ class SessionBuilderTest {
         try {
             aliceSessionBuilder.process(badIdentityBundle)
             fail("shoulnd't be trusted!")
-        } catch (uie: UntrustedIdentityException) {
+        } catch (_: UntrustedIdentityException) {
             // good
         }
     }
@@ -227,7 +227,7 @@ class SessionBuilderTest {
             // Encrypting the same message concurrently multiple times
             val encryptedMessages =
                 List(10) {
-                    async(Dispatchers.Default) {
+                    async(cpuDispatcher) {
                         mutex.withLock {
                             aliceSessionCipher.encrypt(originalMessage.toByteArray())
                         }

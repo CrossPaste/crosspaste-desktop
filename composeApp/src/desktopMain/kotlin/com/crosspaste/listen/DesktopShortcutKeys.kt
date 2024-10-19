@@ -52,7 +52,7 @@ class DesktopShortcutKeys(
             loadKeysCore()?.let {
                 shortcutKeysCore = it
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             defaultKeysCore()
         }
     }

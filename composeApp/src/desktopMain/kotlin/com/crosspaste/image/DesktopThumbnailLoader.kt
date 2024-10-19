@@ -39,7 +39,7 @@ class DesktopThumbnailLoader(
                 imageInfoBuilder.add(createPasteInfoWithoutConverter(DIMENSIONS, it))
             }
         } catch (e: Exception) {
-            logger.warn { "Failed to read meta data for file: ${pasteFileCoordinate.filePath}" }
+            logger.warn(e) { "Failed to read meta data for file: ${pasteFileCoordinate.filePath}" }
         }
     }
 

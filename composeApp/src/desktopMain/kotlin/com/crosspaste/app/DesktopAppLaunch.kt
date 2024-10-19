@@ -39,7 +39,7 @@ object DesktopAppLaunch : AppLaunch, AppLock {
             logger.error(e) { "Another instance of the application is already running." }
             return Pair(false, firstLaunch)
         } catch (e: Exception) {
-            logger.error(e) { "Failed to create and lock file: ${e.message}" }
+            logger.error(e) { "Failed to create and lock file" }
             return Pair(false, firstLaunch)
         }
     }
@@ -55,7 +55,7 @@ object DesktopAppLaunch : AppLaunch, AppLock {
                 logger.info { "Application lock released." }
             }
         } catch (e: Exception) {
-            logger.error { "Failed to release lock: ${e.message}" }
+            logger.error(e) { "Failed to release lock" }
         }
     }
 

@@ -116,7 +116,7 @@ object LinuxTrayView {
     private fun safeFromString(trayName: String): TrayType {
         return try {
             TrayType.valueOf(trayName)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             TrayType.AutoDetect
         }
     }

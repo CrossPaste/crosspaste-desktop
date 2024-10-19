@@ -31,7 +31,7 @@ class ChromeModuleLoader(
             logger.info { "$fileName installed successfully" }
             return true
         } catch (e: Exception) {
-            logger.error { "Error during $fileName installation: ${e.message}" }
+            logger.error(e) { "Error during $fileName installation" }
             return false
         }
     }

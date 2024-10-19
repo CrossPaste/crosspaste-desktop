@@ -29,7 +29,7 @@ class FileExtFetcher(
                         image = coilUtils.createImage(it),
                     )
                 }
-            } catch (ignore: Exception) {
+            } catch (_: Exception) {
                 return@withContext null
             }
         }

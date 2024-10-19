@@ -97,7 +97,7 @@ class UserDataPathProvider(
                     val originTypePath = resolve(appFileType = type)
                     fileUtils.fileSystem.deleteRecursively(originTypePath)
                 }
-            } catch (ignore: Exception) {
+            } catch (_: Exception) {
             }
             configManager.updateConfig(
                 listOf("storagePath", "useDefaultStoragePath"),
@@ -113,7 +113,7 @@ class UserDataPathProvider(
                         fileSystem.delete(subPath)
                     }
                 }
-            } catch (ignore: Exception) {
+            } catch (_: Exception) {
             }
             throw e
         }
@@ -123,7 +123,7 @@ class UserDataPathProvider(
         try {
             val tempPath = resolve(appFileType = AppFileType.TEMP)
             fileUtils.fileSystem.deleteRecursively(tempPath)
-        } catch (ignore: Exception) {
+        } catch (_: Exception) {
         }
     }
 

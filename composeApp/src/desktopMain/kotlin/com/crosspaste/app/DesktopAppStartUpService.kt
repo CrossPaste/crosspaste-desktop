@@ -173,7 +173,7 @@ class WindowsAppStartUpService(
             var line: String?
             while (reader.readLine().also { line = it } != null) {
                 if (line!!.contains("REG_SZ")) {
-                    val registryValue = line!!.substringAfter("REG_SZ").trim()
+                    val registryValue = line.substringAfter("REG_SZ").trim()
                     if (registryValue.equals(getRegValue(), ignoreCase = true)) {
                         logger.info { "$AppName is set to start on boot with the correct path." }
                         return true

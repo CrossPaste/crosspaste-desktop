@@ -82,7 +82,7 @@ class DesktopShortcutKeysLoader(
             try {
                 val code = it.toInt()
                 map[code]
-            } catch (e: NumberFormatException) {
+            } catch (_: NumberFormatException) {
                 null
             }
         }.sortedWith(comparator)

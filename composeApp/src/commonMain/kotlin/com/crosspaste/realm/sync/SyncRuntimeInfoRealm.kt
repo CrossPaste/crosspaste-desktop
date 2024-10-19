@@ -112,7 +112,7 @@ class SyncRuntimeInfoRealm(private val realm: Realm) {
                     return@run ChangeType.NEW_INSTANCE
                 }
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             ChangeType.NO_CHANGE
         }
     }
@@ -133,7 +133,7 @@ class SyncRuntimeInfoRealm(private val realm: Realm) {
                 }
                 ids
             }
-        } catch (ignore: Exception) {
+        } catch (_: Exception) {
             emptyList()
         }
     }
