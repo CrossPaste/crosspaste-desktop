@@ -1,14 +1,18 @@
 package com.crosspaste.platform.linux
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.File
 import java.io.IOException
 
 object LinuxPlatform {
 
+    private val logger = KotlinLogging.logger {}
+
     fun getOsVersion(): String {
         val osName = System.getProperty("os.name")
         if (!osName.startsWith("Linux")) {
-            return "Not a Linux system"
+            logger.warn { "Not a Linux system" }
+            return "Unknown"
         }
 
         return try {
@@ -20,14 +24,15 @@ object LinuxPlatform {
                 else -> getGenericLinuxInfo()
             }
         } catch (e: IOException) {
-            "Unable to determine Linux version: ${e.message}"
+            logger.warn(e) { "Unable to determine Linux version" }
+            "Unknown"
         }
     }
 
     private fun commandExists(): Boolean {
         return try {
             ProcessBuilder("which", "lsb_release").start().waitFor() == 0
-        } catch (e: IOException) {
+        } catch (_: IOException) {
             false
         }
     }

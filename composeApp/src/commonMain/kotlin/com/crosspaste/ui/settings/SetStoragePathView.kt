@@ -204,7 +204,7 @@ fun SetStoragePathDialogView(path: Path) {
                     isMigration = false
                 }
                 isMigration = false
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 coroutineScope.launch {
                     isMigration = false
                     isError = true

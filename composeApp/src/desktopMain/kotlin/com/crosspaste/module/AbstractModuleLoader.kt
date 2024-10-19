@@ -90,7 +90,7 @@ abstract class AbstractModuleLoader : ModuleLoader {
                 false
             }
         } catch (e: Exception) {
-            logger.error { "Error during download: ${e.message}" }
+            logger.error(e) { "Error during download" }
             false
         }
     }

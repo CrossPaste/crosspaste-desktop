@@ -18,10 +18,7 @@ object RetryUtils {
                     return result
                 }
             } catch (e: Exception) {
-                logger.error {
-                    "Attempt ${attempt + 1}/$maxRetries failed with " +
-                        "${e::class.simpleName}: ${e.message}"
-                }
+                logger.error(e) { "Attempt ${attempt + 1}/$maxRetries failed" }
                 if (attempt == maxRetries - 1) {
                     return null
                 }

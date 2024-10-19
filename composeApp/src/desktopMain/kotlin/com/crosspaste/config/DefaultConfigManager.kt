@@ -19,7 +19,7 @@ class DefaultConfigManager(
     override var config by mutableStateOf(
         try {
             loadConfig() ?: createDefaultAppConfig()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             createDefaultAppConfig()
         },
     )
@@ -48,7 +48,7 @@ class DefaultConfigManager(
         config = oldConfig.copy(key, value)
         try {
             saveConfig(key, value, config)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             notificationManager?.let { manager ->
                 copywriter?.let {
                     manager.addNotification(

@@ -3,10 +3,10 @@ package com.crosspaste.app
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -22,7 +22,8 @@ class DesktopAppTokenService(
 
     private var refreshTokenJob: Job? = null
 
-    private val scope = CoroutineScope(Dispatchers.IO)
+    private val scope = CoroutineScope(ioDispatcher)
+
     override var showTokenProgress: Float by mutableStateOf(0.0f)
 
     override var showToken by mutableStateOf(false)
@@ -34,11 +35,9 @@ class DesktopAppTokenService(
         showToken = true
     }
 
-    private suspend fun refreshToken() {
-        withContext(mainDispatcher) {
-            token = CharArray(6) { (Random.nextInt(10) + '0'.code).toChar() }
-            showTokenProgress = 0.0f
-        }
+    private fun refreshToken() {
+        token = CharArray(6) { (Random.nextInt(10) + '0'.code).toChar() }
+        showTokenProgress = 0.0f
     }
 
     @Synchronized
@@ -47,7 +46,9 @@ class DesktopAppTokenService(
             refreshTokenJob =
                 scope.launch(CoroutineName("RefreshToken")) {
                     while (isActive) {
-                        refreshToken()
+                        withContext(mainDispatcher) {
+                            refreshToken()
+                        }
                         while (showTokenProgress < 0.99f) {
                             withContext(mainDispatcher) {
                                 showTokenProgress += 0.01f

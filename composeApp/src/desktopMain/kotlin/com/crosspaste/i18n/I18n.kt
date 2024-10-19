@@ -118,7 +118,7 @@ class CopywriterImpl(private val language: String) : Copywriter {
                 load(properties, language)
                 language
             } catch (e: Exception) {
-                logger.error(e) { "Error loading $language properties: ${e.message}" }
+                logger.error(e) { "Error loading $language properties" }
                 load(properties, EN)
                 EN
             }

@@ -2,11 +2,11 @@ package com.crosspaste.net
 
 import com.crosspaste.realm.sync.HostInfo
 import com.crosspaste.utils.buildUrl
+import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -27,7 +27,7 @@ class TelnetHelper(private val pasteClient: PasteClient) {
 
         val result = CompletableDeferred<HostInfo?>()
         val mutex = Mutex()
-        val scope = CoroutineScope(Dispatchers.IO)
+        val scope = CoroutineScope(ioDispatcher)
 
         hostInfoList.forEach { hostInfo ->
             scope.launch(CoroutineName("SwitchHost")) {
@@ -39,14 +39,14 @@ class TelnetHelper(private val pasteClient: PasteClient) {
                             }
                         }
                     }
-                } catch (ignore: Exception) {
+                } catch (_: Exception) {
                 }
             }
         }
 
         return try {
             withTimeout(timeout) { result.await() }
-        } catch (e: TimeoutCancellationException) {
+        } catch (_: TimeoutCancellationException) {
             null
         } finally {
             scope.cancel()

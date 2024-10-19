@@ -156,7 +156,7 @@ object DesktopNetUtils : NetUtils {
                 sortAddresses(getAllLocalAddresses())
                     .map { (hostInfo, _) -> hostInfo.hostAddress }
                     .firstOrNull()
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 null
             }
         }

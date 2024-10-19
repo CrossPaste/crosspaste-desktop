@@ -35,7 +35,7 @@ object GenerateUrlPlugin : PasteProcessPlugin {
         try {
             URL(string)
             return true
-        } catch (e: MalformedURLException) {
+        } catch (_: MalformedURLException) {
             return false
         }
     }

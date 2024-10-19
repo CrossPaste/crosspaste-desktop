@@ -171,7 +171,7 @@ class DesktopImageTypePlugin(
             // Get the last path segment
             val lastSegment = path.substring(path.lastIndexOf('/') + 1)
             return lastSegment
-        } catch (e: MalformedURLException) {
+        } catch (_: MalformedURLException) {
             return null
         }
     }

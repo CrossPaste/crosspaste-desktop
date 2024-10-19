@@ -58,7 +58,7 @@ class UserImageFetcher(
                         }
                     }
                 }
-            } catch (ignore: Exception) {
+            } catch (_: Exception) {
                 return@withContext null
             }
         }

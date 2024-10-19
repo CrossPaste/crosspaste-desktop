@@ -63,7 +63,7 @@ class SyncPasteTaskExecutor(
                                             ),
                                         )
                                     }
-                                } catch (e: Exception) {
+                                } catch (_: Exception) {
                                     return@async Pair(
                                         entryHandler.key,
                                         createFailureResult(

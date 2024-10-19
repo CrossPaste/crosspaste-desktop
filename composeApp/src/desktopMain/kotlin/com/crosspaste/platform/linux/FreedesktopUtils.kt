@@ -47,7 +47,7 @@ object FreedesktopUtils {
                 if (result.isNotEmpty()) {
                     return result
                 }
-            } catch (ignore: Exception) {
+            } catch (_: Exception) {
             }
         }
 
