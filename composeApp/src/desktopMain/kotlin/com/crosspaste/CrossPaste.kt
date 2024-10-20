@@ -81,7 +81,6 @@ import com.crosspaste.net.PasteServer
 import com.crosspaste.net.ServerFactory
 import com.crosspaste.net.ServerModule
 import com.crosspaste.net.SyncInfoFactory
-import com.crosspaste.net.SyncRefresher
 import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.clientapi.PullClientApi
 import com.crosspaste.net.clientapi.SendPasteClientApi
@@ -332,11 +331,10 @@ class CrossPaste {
                     single<SyncClientApi> { SyncClientApi(get(), get(), get()) }
                     single<SyncManager> {
                         SyncManager(
-                            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
+                            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
                             lazy { get() },
                         )
                     }
-                    single<SyncRefresher> { get<SyncManager>() }
                     single<TelnetHelper> { TelnetHelper(get<PasteClient>()) }
 
                     // signal component

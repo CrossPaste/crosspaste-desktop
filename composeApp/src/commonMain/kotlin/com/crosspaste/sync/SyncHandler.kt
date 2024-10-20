@@ -21,10 +21,12 @@ import com.crosspaste.signal.SignalProcessorCache
 import com.crosspaste.signal.SignalProtocolStoreInterface
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.getNetUtils
+import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.types.RealmInstant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -47,12 +49,13 @@ class SyncHandler(
     private val signalProcessorCache: SignalProcessorCache,
     private val syncRuntimeInfoRealm: SyncRuntimeInfoRealm,
     private val signalRealm: SignalRealm,
-    scope: CoroutineScope,
 ) {
 
     private val logger = KotlinLogging.logger {}
 
     private val netUtils = getNetUtils()
+
+    private val syncHandlerScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
     @Volatile
     var compatibility: Boolean =
@@ -75,7 +78,7 @@ class SyncHandler(
 
     init {
         job =
-            scope.launch {
+            syncHandlerScope.launch {
                 while (isActive) {
                     try {
                         pollingResolve()

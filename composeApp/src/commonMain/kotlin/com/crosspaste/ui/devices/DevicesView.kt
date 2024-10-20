@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
-import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
@@ -42,10 +41,10 @@ import com.crosspaste.ui.base.PasteDialog
 import org.koin.compose.koinInject
 
 @Composable
-fun MyDevicesView() {
+fun MyDevicesView(syncRuntimeInfos: List<SyncRuntimeInfo>) {
     val dialogService = koinInject<DialogService>()
     Box(contentAlignment = Alignment.TopCenter) {
-        DevicesListView { syncRuntimeInfo ->
+        DevicesListView(syncRuntimeInfos) { syncRuntimeInfo ->
             dialogService.pushDialog(
                 PasteDialog(
                     key = syncRuntimeInfo.deviceId,
@@ -171,14 +170,14 @@ fun MyDevicesView() {
 }
 
 @Composable
-fun DevicesListView(onEdit: (SyncRuntimeInfo) -> Unit) {
-    val syncManager = koinInject<SyncManager>()
-    val rememberSyncRuntimeInfos = remember { syncManager.realTimeSyncRuntimeInfos }
-
+fun DevicesListView(
+    syncRuntimeInfos: List<SyncRuntimeInfo>,
+    onEdit: (SyncRuntimeInfo) -> Unit,
+) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        for ((index, syncRuntimeInfo) in rememberSyncRuntimeInfos.withIndex()) {
+        for ((index, syncRuntimeInfo) in syncRuntimeInfos.withIndex()) {
             DeviceConnectView(syncRuntimeInfo, true, onEdit)
-            if (index != rememberSyncRuntimeInfos.size - 1) {
+            if (index != syncRuntimeInfos.size - 1) {
                 HorizontalDivider()
             }
         }

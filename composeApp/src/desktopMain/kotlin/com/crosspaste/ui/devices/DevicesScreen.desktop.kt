@@ -11,37 +11,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.crosspaste.sync.SyncManager
-import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.ExpandView
-import com.crosspaste.ui.base.PasteDialog
 import org.koin.compose.koinInject
 
 @Composable
 actual fun DevicesScreen() {
     val syncManager = koinInject<SyncManager>()
-    val dialogService = koinInject<DialogService>()
 
     LaunchedEffect(Unit) {
         syncManager.resolveSyncs()
-    }
-
-    LaunchedEffect(syncManager.waitToVerifySyncRuntimeInfo?.deviceId) {
-        syncManager.waitToVerifySyncRuntimeInfo?.let { info ->
-            dialogService.pushDialog(
-                PasteDialog(
-                    key = info.deviceId,
-                    title = "do_you_trust_this_device?",
-                    width = 320.dp,
-                ) {
-                    DeviceVerifyView(info)
-                },
-            )
-        }
     }
 
     Box(
@@ -53,9 +38,11 @@ actual fun DevicesScreen() {
         contentAlignment = Alignment.TopCenter,
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            if (syncManager.realTimeSyncRuntimeInfos.isNotEmpty()) {
+            val syncRuntimeInfos by syncManager.realTimeSyncRuntimeInfos.collectAsState()
+
+            if (syncRuntimeInfos.isNotEmpty()) {
                 ExpandView("my_devices", defaultExpand = true) {
-                    MyDevicesView()
+                    MyDevicesView(syncRuntimeInfos)
                 }
                 Spacer(modifier = Modifier.height(10.dp))
             }

@@ -54,10 +54,7 @@ class DeviceManager(
                 allSyncInfos.filter { !isNew(it.key) }
                     .map { createSyncRuntimeInfo(it.value) }
             if (existSyncRuntimeInfos.isNotEmpty()) {
-                syncRuntimeInfoRealm.update(existSyncRuntimeInfos)
-                    .forEach {
-                        syncManager.resolveSync(it)
-                    }
+                syncManager.refresh(syncRuntimeInfoRealm.update(existSyncRuntimeInfos))
             }
             syncInfos.addAll(allSyncInfos.filter { isNew(it.key) && !isBlackListed(it.key) }.values)
         } finally {

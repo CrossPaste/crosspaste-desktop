@@ -146,18 +146,22 @@ actual fun DeviceConnectView(
                     PasteIconButton(
                         size = 20.dp,
                         onClick = {
-                            scope.launch {
-                                try {
-                                    refresh = true
-                                    syncManager.resolveSync(syncRuntimeInfo.appInstanceId)
-                                    delay(1000)
-                                } catch (e: Exception) {
-                                    notificationManager.addNotification(
-                                        message = "${copywriter.getText("refresh_connection_failed")}:\n${e.message}",
-                                        messageType = MessageType.Error,
-                                    )
-                                } finally {
-                                    refresh = false
+                            if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
+                                syncManager.toVerify(syncRuntimeInfo.appInstanceId)
+                            } else {
+                                scope.launch {
+                                    try {
+                                        refresh = true
+                                        syncManager.resolveSync(syncRuntimeInfo.appInstanceId)
+                                        delay(1000)
+                                    } catch (e: Exception) {
+                                        notificationManager.addNotification(
+                                            message = "${copywriter.getText("refresh_connection_failed")}:\n${e.message}",
+                                            messageType = MessageType.Error,
+                                        )
+                                    } finally {
+                                        refresh = false
+                                    }
                                 }
                             }
                         },
