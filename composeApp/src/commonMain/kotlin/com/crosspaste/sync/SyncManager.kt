@@ -36,9 +36,16 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -66,7 +73,9 @@ class SyncManager(
 
     val realTimeSyncRuntimeInfos: StateFlow<List<SyncRuntimeInfo>> = _realTimeSyncRuntimeInfos.asStateFlow()
 
-    private val ignoreVerifySet: MutableSet<String> = ConcurrentSet()
+    private val _ignoreVerifySet = MutableStateFlow<Set<String>>(setOf())
+
+    private val ignoreVerifySet: StateFlow<Set<String>> = _ignoreVerifySet.asStateFlow()
 
     private var internalSyncHandlers: MutableMap<String, SyncHandler> = ConcurrentMap()
 
@@ -86,46 +95,80 @@ class SyncManager(
             )
             withContext(mainDispatcher) {
                 _realTimeSyncRuntimeInfos.value = syncRuntimeInfos
-                refreshWaitToVerifySyncRuntimeInfo()
                 deviceManager.refresh()
             }
             withContext(ioDispatcher) {
                 resolveSyncs()
             }
-            val syncRuntimeInfosFlow = syncRuntimeInfos.asFlow()
-            syncRuntimeInfosFlow.collect { changes: ResultsChange<SyncRuntimeInfo> ->
-                when (changes) {
-                    is UpdatedResults -> {
-                        for (deletion in changes.deletions) {
-                            val deletionSyncRuntimeInfo = realTimeSyncRuntimeInfos.value[deletion]
-                            internalSyncHandlers.remove(deletionSyncRuntimeInfo.appInstanceId)
-                                ?.clearContext()
+            collectSyncRuntimeInfosFlow(syncRuntimeInfos.asFlow())
+        }
+        collectPasteDialog()
+    }
+
+    private suspend fun collectSyncRuntimeInfosFlow(syncRuntimeInfosFlow: Flow<ResultsChange<SyncRuntimeInfo>>) {
+        syncRuntimeInfosFlow.collect { changes: ResultsChange<SyncRuntimeInfo> ->
+            when (changes) {
+                is UpdatedResults -> {
+                    for (deletion in changes.deletions) {
+                        val deletionSyncRuntimeInfo = realTimeSyncRuntimeInfos.value[deletion]
+                        internalSyncHandlers.remove(deletionSyncRuntimeInfo.appInstanceId)
+                            ?.clearContext()
+                    }
+
+                    for (insertion in changes.insertions) {
+                        val insertionSyncRuntimeInfo = changes.list[insertion]
+                        internalSyncHandlers[insertionSyncRuntimeInfo.appInstanceId] =
+                            createSyncHandler(insertionSyncRuntimeInfo)
+                    }
+
+                    // When the synchronization parameters change,
+                    // we will force resolve, so we do not need to process it redundantly here
+                    // for (change in changes.changes) { }
+
+                    withContext(mainDispatcher) {
+                        _realTimeSyncRuntimeInfos.value = changes.list
+                        _ignoreVerifySet.update {
+                            it.filter { it in changes.list.map { it.appInstanceId } }.toSet()
                         }
-
-                        for (insertion in changes.insertions) {
-                            val insertionSyncRuntimeInfo = changes.list[insertion]
-                            internalSyncHandlers[insertionSyncRuntimeInfo.appInstanceId] =
-                                createSyncHandler(insertionSyncRuntimeInfo)
-                        }
-
-                        // When the synchronization parameters change,
-                        // we will force resolve, so we do not need to process it redundantly here
-                        // for (change in changes.changes) { }
-
-                        withContext(mainDispatcher) {
-                            _realTimeSyncRuntimeInfos.value = changes.list
-                            refreshWaitToVerifySyncRuntimeInfo()
-                            if (changes.insertions.isNotEmpty() || changes.deletions.isNotEmpty()) {
-                                deviceManager.refresh()
-                            }
+                        if (changes.insertions.isNotEmpty() || changes.deletions.isNotEmpty()) {
+                            deviceManager.refresh()
                         }
                     }
-                    else -> {
-                        // types other than UpdatedResults are not changes -- ignore them
-                    }
+                }
+                else -> {
+                    // types other than UpdatedResults are not changes -- ignore them
                 }
             }
         }
+    }
+
+    private fun collectPasteDialog() {
+        combine(
+            realTimeSyncRuntimeInfos,
+            ignoreVerifySet,
+        ) { syncInfos, ignoreSet ->
+            logger.info { "${syncInfos.size} ${ignoreSet.size}" }
+            syncInfos to ignoreSet
+        }
+            .map { (syncInfos, ignoreSet) ->
+                syncInfos
+                    .filter { !ignoreSet.contains(it.appInstanceId) }
+                    .firstOrNull { it.connectState == SyncState.UNVERIFIED }
+            }
+            .filterNotNull()
+            .onEach { info ->
+                val dialog =
+                    PasteDialog(
+                        key = info.deviceId,
+                        title = "do_you_trust_this_device?",
+                        width = 320.dp,
+                    ) {
+                        DeviceVerifyView(info)
+                    }
+                logger.info { "deviceId: ${info.deviceId}" }
+                dialogService.pushDialog(dialog)
+            }
+            .launchIn(viewModelScope)
     }
 
     private fun createSyncHandler(syncRuntimeInfo: SyncRuntimeInfo): SyncHandler {
@@ -145,31 +188,12 @@ class SyncManager(
         )
     }
 
-    private fun refreshWaitToVerifySyncRuntimeInfo() {
-        realTimeSyncRuntimeInfos.value
-            .filter { !ignoreVerifySet.contains(it.appInstanceId) }
-            .firstOrNull { it.connectState == SyncState.UNVERIFIED }
-            ?.let { info ->
-                dialogService.pushDialog(
-                    PasteDialog(
-                        key = info.deviceId,
-                        title = "do_you_trust_this_device?",
-                        width = 320.dp,
-                    ) {
-                        DeviceVerifyView(info)
-                    },
-                )
-            }
-    }
-
     fun ignoreVerify(appInstanceId: String) {
-        ignoreVerifySet.add(appInstanceId)
-        refreshWaitToVerifySyncRuntimeInfo()
+        _ignoreVerifySet.update { it + appInstanceId }
     }
 
     fun toVerify(appInstanceId: String) {
-        ignoreVerifySet.remove(appInstanceId)
-        refreshWaitToVerifySyncRuntimeInfo()
+        _ignoreVerifySet.update { it - appInstanceId }
     }
 
     suspend fun resolveSyncs() =
