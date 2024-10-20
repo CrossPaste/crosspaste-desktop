@@ -66,6 +66,7 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
 
     LaunchedEffect(Unit) {
         syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]?.showToken()
+        focusRequesters.firstOrNull()?.requestFocus()
     }
 
     val confirmAction = {
@@ -173,6 +174,15 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
                                                 Key.Escape -> {
                                                     cancelAction()
                                                     true
+                                                }
+                                                Key.Backspace -> {
+                                                    if (token.isEmpty() && index > 0) {
+                                                        focusRequesters[index - 1].requestFocus()
+                                                        tokens[index - 1] = ""
+                                                        true
+                                                    } else {
+                                                        false
+                                                    }
                                                 }
                                                 else -> {
                                                     false
