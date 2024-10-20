@@ -1,8 +1,5 @@
 package com.crosspaste.sync
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -82,8 +79,6 @@ class SyncManager(
     private val realTimeSyncScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
     private val deviceManager: DeviceManager by lazyDeviceManager
-
-    var refreshing by mutableStateOf(false)
 
     init {
         viewModelScope.launch {
@@ -269,7 +264,6 @@ class SyncManager(
     }
 
     fun refresh(ids: List<String> = listOf()) {
-        refreshing = true
         realTimeSyncScope.launch(CoroutineName("SyncManagerRefresh")) {
             logger.info { "start launch" }
             try {
@@ -285,7 +279,6 @@ class SyncManager(
             }
             delay(1000)
             logger.info { "set refreshing false" }
-            refreshing = false
         }
     }
 }
