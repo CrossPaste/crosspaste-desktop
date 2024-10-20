@@ -1,14 +1,15 @@
 package com.crosspaste.sync
 
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.net.SyncInfoFactory
-import com.crosspaste.net.SyncRefresher
 import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.realm.signal.SignalRealm
@@ -20,6 +21,9 @@ import com.crosspaste.realm.sync.createSyncRuntimeInfo
 import com.crosspaste.signal.SessionBuilderFactory
 import com.crosspaste.signal.SignalProcessorCache
 import com.crosspaste.signal.SignalProtocolStoreInterface
+import com.crosspaste.ui.base.DialogService
+import com.crosspaste.ui.base.PasteDialog
+import com.crosspaste.ui.devices.DeviceVerifyView
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -28,9 +32,13 @@ import io.realm.kotlin.notifications.ResultsChange
 import io.realm.kotlin.notifications.UpdatedResults
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -38,6 +46,7 @@ import kotlinx.coroutines.withContext
 class SyncManager(
     private val appInfo: AppInfo,
     private val checker: VersionCompatibilityChecker,
+    private val dialogService: DialogService,
     private val telnetHelper: TelnetHelper,
     private val syncInfoFactory: SyncInfoFactory,
     private val syncClientApi: SyncClientApi,
@@ -47,114 +56,110 @@ class SyncManager(
     private val syncRuntimeInfoRealm: SyncRuntimeInfoRealm,
     private val signalRealm: SignalRealm,
     lazyDeviceManager: Lazy<DeviceManager>,
-) : SyncRefresher {
+) : ViewModel() {
 
     private val logger = KotlinLogging.logger {}
 
     private val tokenCache: TokenCache = TokenCache
 
-    var realTimeSyncRuntimeInfos: MutableList<SyncRuntimeInfo> = mutableStateListOf()
+    private val _realTimeSyncRuntimeInfos = MutableStateFlow<List<SyncRuntimeInfo>>(listOf())
 
-    private val ignoreVerifySet: MutableSet<String> = mutableSetOf()
+    val realTimeSyncRuntimeInfos: StateFlow<List<SyncRuntimeInfo>> = _realTimeSyncRuntimeInfos.asStateFlow()
 
-    var waitToVerifySyncRuntimeInfo by mutableStateOf<SyncRuntimeInfo?>(null)
+    private val ignoreVerifySet: MutableSet<String> = ConcurrentSet()
 
     private var internalSyncHandlers: MutableMap<String, SyncHandler> = ConcurrentMap()
 
-    private val realTimeJob = SupervisorJob()
-
-    private val realTimeSyncScope = CoroutineScope(ioDispatcher + realTimeJob)
+    private val realTimeSyncScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
     private val deviceManager: DeviceManager by lazyDeviceManager
 
-    override var refreshing by mutableStateOf(false)
-
-    private val syncManagerListenJob: Job
+    var refreshing by mutableStateOf(false)
 
     init {
-        syncManagerListenJob =
-            realTimeSyncScope.launch(CoroutineName("SyncManagerListenChanger")) {
-                val syncRuntimeInfos = syncRuntimeInfoRealm.getAllSyncRuntimeInfos()
-                internalSyncHandlers.putAll(
-                    syncRuntimeInfos.map { syncRuntimeInfo ->
-                        syncRuntimeInfo.appInstanceId to
-                            SyncHandler(
-                                appInfo,
-                                syncRuntimeInfo,
-                                checker,
-                                tokenCache,
-                                telnetHelper,
-                                syncInfoFactory,
-                                syncClientApi,
-                                sessionBuilderFactory,
-                                signalProtocolStore,
-                                signalProcessorCache,
-                                syncRuntimeInfoRealm,
-                                signalRealm,
-                                realTimeSyncScope,
-                            )
-                    },
-                )
-                withContext(mainDispatcher) {
-                    realTimeSyncRuntimeInfos.addAll(syncRuntimeInfos)
-                    refreshWaitToVerifySyncRuntimeInfo()
-                    deviceManager.refresh()
-                    resolveSyncs()
-                }
-                val syncRuntimeInfosFlow = syncRuntimeInfos.asFlow()
-                syncRuntimeInfosFlow.collect { changes: ResultsChange<SyncRuntimeInfo> ->
-                    when (changes) {
-                        is UpdatedResults -> {
-                            for (deletion in changes.deletions) {
-                                val deletionSyncRuntimeInfo = realTimeSyncRuntimeInfos[deletion]
-                                internalSyncHandlers.remove(deletionSyncRuntimeInfo.appInstanceId)!!
-                                    .clearContext()
-                            }
+        viewModelScope.launch {
+            val syncRuntimeInfos = syncRuntimeInfoRealm.getAllSyncRuntimeInfos()
+            internalSyncHandlers.putAll(
+                syncRuntimeInfos.map { syncRuntimeInfo ->
+                    syncRuntimeInfo.appInstanceId to createSyncHandler(syncRuntimeInfo)
+                },
+            )
+            withContext(mainDispatcher) {
+                _realTimeSyncRuntimeInfos.value = syncRuntimeInfos
+                refreshWaitToVerifySyncRuntimeInfo()
+                deviceManager.refresh()
+            }
+            withContext(ioDispatcher) {
+                resolveSyncs()
+            }
+            val syncRuntimeInfosFlow = syncRuntimeInfos.asFlow()
+            syncRuntimeInfosFlow.collect { changes: ResultsChange<SyncRuntimeInfo> ->
+                when (changes) {
+                    is UpdatedResults -> {
+                        for (deletion in changes.deletions) {
+                            val deletionSyncRuntimeInfo = realTimeSyncRuntimeInfos.value[deletion]
+                            internalSyncHandlers.remove(deletionSyncRuntimeInfo.appInstanceId)
+                                ?.clearContext()
+                        }
 
-                            for (insertion in changes.insertions) {
-                                val insertionSyncRuntimeInfo = changes.list[insertion]
-                                internalSyncHandlers[insertionSyncRuntimeInfo.appInstanceId] =
-                                    SyncHandler(
-                                        appInfo,
-                                        insertionSyncRuntimeInfo,
-                                        checker,
-                                        tokenCache,
-                                        telnetHelper,
-                                        syncInfoFactory,
-                                        syncClientApi,
-                                        sessionBuilderFactory,
-                                        signalProtocolStore,
-                                        signalProcessorCache,
-                                        syncRuntimeInfoRealm,
-                                        signalRealm,
-                                        realTimeSyncScope,
-                                    )
-                            }
+                        for (insertion in changes.insertions) {
+                            val insertionSyncRuntimeInfo = changes.list[insertion]
+                            internalSyncHandlers[insertionSyncRuntimeInfo.appInstanceId] =
+                                createSyncHandler(insertionSyncRuntimeInfo)
+                        }
 
-                            // When the synchronization parameters change,
-                            // we will force resolve, so we do not need to process it redundantly here
-                            // for (change in changes.changes) { }
+                        // When the synchronization parameters change,
+                        // we will force resolve, so we do not need to process it redundantly here
+                        // for (change in changes.changes) { }
 
-                            withContext(mainDispatcher) {
-                                realTimeSyncRuntimeInfos.clear()
-                                realTimeSyncRuntimeInfos.addAll(changes.list)
-                                refreshWaitToVerifySyncRuntimeInfo()
+                        withContext(mainDispatcher) {
+                            _realTimeSyncRuntimeInfos.value = changes.list
+                            refreshWaitToVerifySyncRuntimeInfo()
+                            if (changes.insertions.isNotEmpty() || changes.deletions.isNotEmpty()) {
                                 deviceManager.refresh()
                             }
                         }
-                        else -> {
-                            // types other than UpdatedResults are not changes -- ignore them
-                        }
+                    }
+                    else -> {
+                        // types other than UpdatedResults are not changes -- ignore them
                     }
                 }
             }
+        }
+    }
+
+    private fun createSyncHandler(syncRuntimeInfo: SyncRuntimeInfo): SyncHandler {
+        return SyncHandler(
+            appInfo,
+            syncRuntimeInfo,
+            checker,
+            tokenCache,
+            telnetHelper,
+            syncInfoFactory,
+            syncClientApi,
+            sessionBuilderFactory,
+            signalProtocolStore,
+            signalProcessorCache,
+            syncRuntimeInfoRealm,
+            signalRealm,
+        )
     }
 
     private fun refreshWaitToVerifySyncRuntimeInfo() {
-        waitToVerifySyncRuntimeInfo =
-            realTimeSyncRuntimeInfos
-                .filter { !ignoreVerifySet.contains(it.appInstanceId) }
-                .firstOrNull { it.connectState == SyncState.UNVERIFIED }
+        realTimeSyncRuntimeInfos.value
+            .filter { !ignoreVerifySet.contains(it.appInstanceId) }
+            .firstOrNull { it.connectState == SyncState.UNVERIFIED }
+            ?.let { info ->
+                dialogService.pushDialog(
+                    PasteDialog(
+                        key = info.deviceId,
+                        title = "do_you_trust_this_device?",
+                        width = 320.dp,
+                    ) {
+                        DeviceVerifyView(info)
+                    },
+                )
+            }
     }
 
     fun ignoreVerify(appInstanceId: String) {
@@ -167,21 +172,23 @@ class SyncManager(
         refreshWaitToVerifySyncRuntimeInfo()
     }
 
-    fun resolveSyncs() {
-        internalSyncHandlers.values.forEach { syncHandler ->
-            realTimeSyncScope.launch {
-                doResolveSync(syncHandler)
+    suspend fun resolveSyncs() =
+        coroutineScope {
+            internalSyncHandlers.values.map { syncHandler ->
+                async {
+                    doResolveSync(syncHandler)
+                }
             }
         }
-    }
 
-    fun resolveSync(id: String) {
-        internalSyncHandlers[id]?.let { syncHandler ->
-            realTimeSyncScope.launch {
-                doResolveSync(syncHandler)
+    suspend fun resolveSync(id: String) =
+        coroutineScope {
+            internalSyncHandlers[id]?.let { syncHandler ->
+                async {
+                    doResolveSync(syncHandler)
+                }
             }
         }
-    }
 
     private suspend fun doResolveSync(syncHandler: SyncHandler) {
         try {
@@ -214,7 +221,6 @@ class SyncManager(
     }
 
     fun notifyExit() {
-        syncManagerListenJob.cancel()
         internalSyncHandlers.values.forEach { syncHandler ->
             // Ensure that the notification is completed before exiting
             runBlocking { syncHandler.notifyExit() }
@@ -238,12 +244,18 @@ class SyncManager(
         }
     }
 
-    override fun refresh() {
+    fun refresh(ids: List<String> = listOf()) {
         refreshing = true
         realTimeSyncScope.launch(CoroutineName("SyncManagerRefresh")) {
             logger.info { "start launch" }
             try {
-                resolveSyncs()
+                if (ids.isEmpty()) {
+                    resolveSyncs()
+                } else {
+                    ids.forEach { id ->
+                        resolveSync(id)
+                    }
+                }
             } catch (e: Exception) {
                 logger.error(e) { "checkConnects error" }
             }
