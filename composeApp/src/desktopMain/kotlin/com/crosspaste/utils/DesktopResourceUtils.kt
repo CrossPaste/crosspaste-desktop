@@ -7,13 +7,10 @@ import java.util.Properties
 
 object DesktopResourceUtils {
 
-    fun resourceInputStream(fileName: String): InputStream {
-        return ClassLoaderResourceLoader.load(fileName)
-    }
-
     fun loadProperties(fileName: String): Properties {
         val properties = Properties()
-        InputStreamReader(resourceInputStream(fileName), StandardCharsets.UTF_8).use { inputStreamReader ->
+        val inputStream = ClassLoaderResourceLoader.load(fileName)
+        InputStreamReader(inputStream, StandardCharsets.UTF_8).use { inputStreamReader ->
             properties.load(inputStreamReader)
         }
         return properties

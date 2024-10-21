@@ -13,7 +13,7 @@ import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
-import com.crosspaste.utils.DesktopResourceUtils
+import com.crosspaste.composeapp.generated.resources.Res
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
 import dorkbox.systemTray.MenuItem
 import dorkbox.systemTray.SystemTray
@@ -21,14 +21,17 @@ import dorkbox.systemTray.SystemTray.TrayType
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.koin.compose.koinInject
 import java.awt.GraphicsEnvironment
 import java.awt.Toolkit
+import java.net.URL
 
 object LinuxTrayView {
 
     val logger = KotlinLogging.logger {}
 
+    @OptIn(ExperimentalResourceApi::class)
     @Composable
     fun Tray() {
         val applicationExit = LocalExitApplication.current
@@ -50,7 +53,7 @@ object LinuxTrayView {
         }
 
         LaunchedEffect(Unit) {
-            tray?.setImage(DesktopResourceUtils.resourceInputStream("icon/crosspaste.png"))
+            tray?.setImage(URL(Res.getUri("drawable/crosspaste.png")).openStream())
             tray?.setTooltip("CrossPaste")
             tray?.menu?.add(
                 MenuItem("Open CrossPaste") {
