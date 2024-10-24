@@ -10,13 +10,13 @@ import androidx.compose.ui.graphics.luminance
 import org.koin.compose.koinInject
 
 object CrossPasteTheme {
-    private val LightColorScheme =
+    val LightColorScheme =
         lightColorScheme(
             primary = Color(0xFF167DFF),
             surface = Color(0xFFF0F0F0),
         )
 
-    private val DarkColorScheme =
+    val DarkColorScheme =
         darkColorScheme(
             primary = Color(0xFFBB86FC),
             background = Color(0xFF23272A),
@@ -27,20 +27,8 @@ object CrossPasteTheme {
     fun Theme(content: @Composable () -> Unit) {
         val themeDetector = koinInject<ThemeDetector>()
 
-        val colorScheme =
-            if (themeDetector.isFollowSystem()) {
-                if (themeDetector.isSystemInDark()) {
-                    DarkColorScheme
-                } else {
-                    LightColorScheme
-                }
-            } else {
-                if (themeDetector.isUserInDark()) {
-                    DarkColorScheme
-                } else {
-                    LightColorScheme
-                }
-            }
+        val colorScheme = themeDetector.getCurrentColorScheme()
+
         MaterialTheme(
             colorScheme = colorScheme,
             content = content,
