@@ -124,7 +124,7 @@ fun Routing.syncRouting(
     post("/sync/trust") {
         getAppInstanceId(call)?.let { appInstanceId ->
             val requestTrust = call.receive(RequestTrust::class)
-            val sameToken = requestTrust.token == appTokenService.token.concatToString().toInt()
+            val sameToken = appTokenService.sameToken(requestTrust.token)
 
             if (!sameToken) {
                 logger.error { "token invalid: ${requestTrust.token}" }
@@ -137,7 +137,7 @@ fun Routing.syncRouting(
                 signalAddress,
                 requestTrust,
             )
-            appTokenService.showToken = false
+            appTokenService.toHideToken()
             logger.debug { "${appInfo.appInstanceId} to trust $appInstanceId" }
             successResponse(call)
         }

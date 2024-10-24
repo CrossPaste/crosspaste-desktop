@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,6 +65,8 @@ actual fun QRScreen() {
 
     var qrImage: ImageBitmap? by remember { mutableStateOf(null) }
 
+    val token by appTokenService.token.collectAsState()
+
     LaunchedEffect(Unit) {
         appTokenService.startRefreshToken()
     }
@@ -72,7 +75,7 @@ actual fun QRScreen() {
         // maybe slow (get host), we use ioDispatcher to avoid blocking the UI
         qrImage =
             withContext(ioDispatcher) {
-                qrCodeGenerator.generateQRCode(width, height, appTokenService.token)
+                qrCodeGenerator.generateQRCode(width, height, token)
                     .toImage() as ImageBitmap
             }
     }

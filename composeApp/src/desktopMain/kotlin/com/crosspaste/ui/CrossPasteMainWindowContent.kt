@@ -110,7 +110,9 @@ fun CrossPasteMainWindowContent() {
 
                 dialog.firstOrNull()?.content()
 
-                if (appTokenService.showToken) {
+                val showToken by appTokenService.showToken.collectAsState()
+
+                if (showToken) {
                     TokenView()
                 }
             }

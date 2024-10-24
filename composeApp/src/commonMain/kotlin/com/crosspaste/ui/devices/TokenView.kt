@@ -1,9 +1,5 @@
 package com.crosspaste.ui.devices
 
-import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.animateIntOffsetAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,11 +23,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -56,36 +51,14 @@ fun TokenView() {
     val appTokenService = koinInject<AppTokenService>()
 
     val offsetY =
-        animateIntOffsetAsState(
-            targetValue =
-                if (appTokenService.showToken) {
-                    IntOffset(
-                        with(density) { (0.dp).roundToPx() },
-                        with(density) { (50.dp).roundToPx() },
-                    )
-                } else {
-                    IntOffset(
-                        with(density) { (0.dp).roundToPx() },
-                        with(density) { ((-100).dp).roundToPx() },
-                    )
-                },
-            animationSpec = tween(durationMillis = 500),
+        IntOffset(
+            with(density) { (0.dp).roundToPx() },
+            with(density) { (50.dp).roundToPx() },
         )
 
-    val alpha by animateFloatAsState(
-        targetValue = if (appTokenService.showToken) 1f else 0f,
-        animationSpec =
-            tween(
-                durationMillis = 500,
-                easing = LinearOutSlowInEasing,
-            ),
-    )
-
-    LaunchedEffect(appTokenService.showToken) {
+    DisposableEffect(Unit) {
         appTokenService.startRefreshToken()
-    }
 
-    DisposableEffect(appTokenService.showToken) {
         onDispose {
             appTokenService.stopRefreshToken()
         }
@@ -93,13 +66,12 @@ fun TokenView() {
 
     Popup(
         alignment = Alignment.TopCenter,
-        offset = offsetY.value,
+        offset = offsetY,
         properties = PopupProperties(clippingEnabled = false),
     ) {
         Box(
             modifier =
                 Modifier
-                    .alpha(alpha)
                     .wrapContentSize()
                     .background(Color.Transparent)
                     .shadow(15.dp),
@@ -138,7 +110,7 @@ fun TokenView() {
                                 Modifier.fillMaxSize()
                                     .clip(RoundedCornerShape(16.dp))
                                     .clickable {
-                                        appTokenService.showToken = false
+                                        appTokenService.toHideToken()
                                     },
                             contentAlignment = Alignment.Center,
                         ) {
@@ -165,9 +137,11 @@ fun TokenView() {
 
 @Composable
 fun OTPCodeBox(appTokenService: AppTokenService) {
+    val token by appTokenService.token.collectAsState()
+
     Column {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            appTokenService.token.forEach { char ->
+            token.forEach { char ->
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier =
@@ -188,9 +162,10 @@ fun OTPCodeBox(appTokenService: AppTokenService) {
         }
         Spacer(modifier = Modifier.height(10.dp))
         Row(modifier = Modifier.width(300.dp).wrapContentHeight()) {
+            val progress by appTokenService.showTokenProgression.collectAsState()
             LinearProgressIndicator(
                 modifier = Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(1.5.dp)),
-                progress = { appTokenService.showTokenProgress },
+                progress = { progress },
             )
         }
     }
