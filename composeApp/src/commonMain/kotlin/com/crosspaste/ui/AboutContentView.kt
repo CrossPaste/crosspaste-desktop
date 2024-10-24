@@ -27,7 +27,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppInfo
-import com.crosspaste.app.AppInfoFactory
 import com.crosspaste.app.AppUrls
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.UISupport
@@ -38,7 +37,6 @@ import org.koin.compose.koinInject
 
 @Composable
 fun AboutContentView() {
-    val appInfoFactory = koinInject<AppInfoFactory>()
     val appInfo = koinInject<AppInfo>()
     val appUrls = koinInject<AppUrls>()
     val uiSupport = koinInject<UISupport>()
@@ -76,9 +74,8 @@ fun AboutContentView() {
                 )
                 Spacer(modifier = Modifier.height(12.dp))
 
-                val revision = if (appInfoFactory.getRevision() == "Unknown") "" else " (${appInfoFactory.getRevision()})"
                 Text(
-                    text = "version: ${appInfo.appVersion}$revision",
+                    text = "version: ${appInfo.displayVersion()}",
                     style =
                         TextStyle(
                             fontFamily = robotoFontFamily(),
