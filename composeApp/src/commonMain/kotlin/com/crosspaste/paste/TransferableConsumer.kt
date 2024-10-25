@@ -50,10 +50,8 @@ interface TransferableConsumer {
         logExecutionTime(logger, "updatePasteData") {
             for ((itemIndex, entry) in dataFlavorMap.entries.withIndex()) {
                 val (identity, flavors) = entry
-
+                val plugin = getPlugin(identity) ?: continue
                 for (flavor in flavors) {
-                    val plugin = getPlugin(identity) ?: continue
-
                     if (pasteCollector.needUpdateCollectItem(itemIndex, plugin::class)) {
                         plugin.loadRepresentation(
                             pasteId,
