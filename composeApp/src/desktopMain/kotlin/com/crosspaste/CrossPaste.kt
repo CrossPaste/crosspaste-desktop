@@ -477,7 +477,12 @@ class CrossPaste {
                 val koin = koinApplication.koin
                 val appLaunchState = koin.get<AppLaunchState>()
                 if (appLaunchState.acquireLock) {
-                    if (koin.get<ConfigManager>().config.enablePasteboardListening) {
+                    val configManager = koin.get<ConfigManager>()
+                    val notificationManager = koin.get<NotificationManager>()
+                    val copywriter = koin.get<GlobalCopywriter>()
+                    configManager.copywriter = copywriter
+                    configManager.notificationManager = notificationManager
+                    if (configManager.config.enablePasteboardListening) {
                         koin.get<PasteboardService>().start()
                     }
                     koin.get<QRCodeGenerator>()
