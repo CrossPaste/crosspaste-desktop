@@ -4,11 +4,10 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.paste.plugin.type.PasteTypePlugin
 import com.crosspaste.realm.paste.PasteRealm
-import com.crosspaste.utils.LoggerExtension.logExecutionTime
 import com.crosspaste.utils.LoggerExtension.logSuspendExecutionTime
 import io.github.oshai.kotlinlogging.KotlinLogging
 
-open class DesktopTransferableConsumer(
+class DesktopTransferableConsumer(
     private val appInfo: AppInfo,
     private val pasteRealm: PasteRealm,
     private val idGenerator: PasteIDGenerator,
@@ -16,14 +15,14 @@ open class DesktopTransferableConsumer(
     pasteTypePlugins: List<PasteTypePlugin>,
 ) : TransferableConsumer {
 
-    private val logger = KotlinLogging.logger {}
+    override val logger = KotlinLogging.logger {}
 
     private val pasteTypePluginMap: Map<String, PasteTypePlugin> =
         pasteTypePlugins.flatMap { pasteTypePlugin ->
             pasteTypePlugin.getIdentifiers().map { it to pasteTypePlugin }
         }.toMap()
 
-    private fun createDataFlavorMap(pasteTransferable: PasteTransferable): LinkedHashMap<String, MutableList<PasteDataFlavor>> {
+    private fun createDataFlavorMap(pasteTransferable: PasteTransferable): Map<String, List<PasteDataFlavor>> {
         val dataFlavorMap = LinkedHashMap<String, MutableList<PasteDataFlavor>>()
         pasteTransferable as DesktopReadTransferable
         for (flavor in pasteTransferable.transferable.transferDataFlavors) {
@@ -65,75 +64,7 @@ open class DesktopTransferableConsumer(
         }
     }
 
-    private fun preCollect(
-        pasteId: Long,
-        dataFlavorMap: Map<String, List<PasteDataFlavor>>,
-        pasteTransferable: PasteTransferable,
-        pasteCollector: PasteCollector,
-    ) {
-        logExecutionTime(logger, "preCollect") {
-            var itemIndex = 0
-            for (entry in dataFlavorMap) {
-                val identifier = entry.key
-                val flavors = entry.value
-                logger.info { "itemIndex: $itemIndex Transferable flavor: $identifier" }
-                for (flavor in flavors) {
-                    if (pasteTypePluginMap[identifier]?.let { pasteTypePlugin ->
-                            if (pasteCollector.needPreCollectionItem(itemIndex, pasteTypePlugin::class)) {
-                                pasteTypePlugin.createPrePasteItem(
-                                    pasteId,
-                                    itemIndex,
-                                    identifier,
-                                    pasteTransferable,
-                                    pasteCollector,
-                                )
-                                false
-                            } else {
-                                true
-                            }
-                        } == true
-                    ) {
-                        break
-                    }
-                }
-                itemIndex++
-            }
-        }
-    }
-
-    private fun updatePasteData(
-        pasteId: Long,
-        dataFlavorMap: Map<String, List<PasteDataFlavor>>,
-        pasteTransferable: PasteTransferable,
-        pasteCollector: PasteCollector,
-    ) {
-        logExecutionTime(logger, "updatePasteData") {
-            var itemIndex = 0
-            for (entry in dataFlavorMap) {
-                val identifier = entry.key
-                val flavors = entry.value
-                for (flavor in flavors) {
-                    if (pasteTypePluginMap[identifier]?.let { pasteItemService ->
-                            if (pasteCollector.needUpdateCollectItem(itemIndex, pasteItemService::class)) {
-                                pasteItemService.loadRepresentation(
-                                    pasteId,
-                                    itemIndex,
-                                    flavor,
-                                    dataFlavorMap,
-                                    pasteTransferable,
-                                    pasteCollector,
-                                )
-                                false
-                            } else {
-                                true
-                            }
-                        } == true
-                    ) {
-                        break
-                    }
-                }
-                itemIndex++
-            }
-        }
+    override fun getPlugin(identity: String): PasteTypePlugin? {
+        return pasteTypePluginMap[identity]
     }
 }
