@@ -34,7 +34,6 @@ import com.crosspaste.app.DesktopAppTokenService
 import com.crosspaste.app.DesktopAppUpdateService
 import com.crosspaste.app.DesktopAppUrls
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.app.DesktopEndpointInfoFactory
 import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.app.ExitMode
 import com.crosspaste.app.VersionCompatibilityChecker
@@ -277,7 +276,7 @@ class CrossPaste {
                     single<ConfigManager> { configManager }
                     single<CrossPasteLogger> { crossPasteLogger }
                     single<DeviceUtils> { DesktopDeviceUtils }
-                    single<EndpointInfoFactory> { DesktopEndpointInfoFactory(get(), lazy { get<PasteServer<*, *>>() }) }
+                    single<EndpointInfoFactory> { EndpointInfoFactory(get(), lazy { get<PasteServer<*, *>>() }) }
                     single<FileExtImageLoader> { DesktopFileExtLoader(get(), get()) }
                     single<FilePersist> { FilePersist }
                     single<GlobalCoroutineScope> { GlobalCoroutineScopeImpl }
