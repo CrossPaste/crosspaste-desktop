@@ -6,15 +6,12 @@ import com.crosspaste.config.ConfigManager
 import com.crosspaste.platform.macos.api.MacosApi
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.sound.SoundService
-import com.crosspaste.utils.cpuDispatcher
 import com.crosspaste.utils.getControlUtils
 import com.sun.jna.ptr.IntByReference
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -48,16 +45,10 @@ class MacosPasteboardService(
 
     override val pasteboardChannel: Channel<suspend () -> Unit> = Channel(Channel.UNLIMITED)
 
-    private val serviceScope = CoroutineScope(cpuDispatcher + SupervisorJob())
-
     private var job: Job? = null
 
     init {
-        serviceScope.launch {
-            for (task in pasteboardChannel) {
-                task()
-            }
-        }
+        startRemotePasteboardListener()
     }
 
     private fun run(): Job {

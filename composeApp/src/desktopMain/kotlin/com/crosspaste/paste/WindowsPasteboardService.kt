@@ -8,7 +8,6 @@ import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.sound.SoundService
 import com.crosspaste.utils.cpuDispatcher
 import com.crosspaste.utils.getControlUtils
-import com.crosspaste.utils.ioDispatcher
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.Kernel32
 import com.sun.jna.platform.win32.WinDef.HWND
@@ -21,7 +20,6 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
@@ -53,10 +51,6 @@ class WindowsPasteboardService(
 
     override val systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
 
-    override val pasteboardChannel: Channel<suspend () -> Unit> = Channel(Channel.UNLIMITED)
-
-    private val serviceScope = CoroutineScope(ioDispatcher + SupervisorJob())
-
     private val serviceConsumerScope = CoroutineScope(cpuDispatcher + SupervisorJob())
 
     private var job: Job? = null
@@ -71,11 +65,7 @@ class WindowsPasteboardService(
         )
 
     init {
-        serviceConsumerScope.launch {
-            for (task in pasteboardChannel) {
-                task()
-            }
-        }
+        startRemotePasteboardListener()
     }
 
     private fun run() {
