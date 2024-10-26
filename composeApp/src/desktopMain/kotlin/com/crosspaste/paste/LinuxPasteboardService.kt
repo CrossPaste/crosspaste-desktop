@@ -7,7 +7,6 @@ import com.crosspaste.platform.linux.api.XFixes
 import com.crosspaste.platform.linux.api.XFixesSelectionNotifyEvent
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.sound.SoundService
-import com.crosspaste.utils.cpuDispatcher
 import com.crosspaste.utils.getControlUtils
 import com.sun.jna.NativeLong
 import com.sun.jna.platform.unix.X11
@@ -18,8 +17,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.awt.Toolkit
@@ -52,18 +49,10 @@ class LinuxPasteboardService(
 
     override val systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
 
-    override val pasteboardChannel: Channel<suspend () -> Unit> = Channel(Channel.UNLIMITED)
-
-    private val serviceScope = CoroutineScope(cpuDispatcher + SupervisorJob())
-
     private var job: Job? = null
 
     init {
-        serviceScope.launch {
-            for (task in pasteboardChannel) {
-                task()
-            }
-        }
+        startRemotePasteboardListener()
     }
 
     private fun run(): Job {

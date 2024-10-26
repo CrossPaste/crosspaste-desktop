@@ -4,6 +4,10 @@ import com.crosspaste.app.AppWindowManager
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.sound.SoundService
+import com.crosspaste.utils.ioDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
 import org.mongodb.kbson.ObjectId
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.ClipboardOwner
@@ -24,6 +28,10 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
     abstract val soundService: SoundService
 
     abstract val currentPaste: CurrentPaste
+
+    override val pasteboardChannel: Channel<suspend () -> Unit> = Channel(Channel.UNLIMITED)
+
+    override val serviceScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
     fun isValidContents(contents: Transferable?): Boolean {
         return contents != null && contents.transferDataFlavors.isNotEmpty()
