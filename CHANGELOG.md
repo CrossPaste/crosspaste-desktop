@@ -1,6 +1,61 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+# [1.0.12] - 2024-10-19
+## Bug Fixes
+
+* :bug: Fix issue where clicking on the main interface causes hidden windows to be hidden by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2035
+* :bug: Fix simple code smells by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2066
+* :bug: Fix the path for referencing resource files in conveyor by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2088
+* :bug: Fix icon path error issue on Linux by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2102
+
+
+## New Features
+
+* :sparkles: Enhance desktop plugin class implementation by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2044
+* :sparkles: Store only image type when copying browser images, remove HTML type by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2046
+* :sparkles: Add separate right-click menu for pasteboard by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2047
+* :sparkles: Add support for RTF format pasteboard data by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2052
+
+## UI Improvements
+
+* :zap: Enhance Transparency Checkerboard for improved image background by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2057
+* :zap: Improve device sync logic by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2090
+* :lipstick: Implement backspace functionality in DeviceVerifyView token input by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2092
+
+## Refactor & Code Style
+
+* :hammer: Fix issues found by code inspection by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2031
+* :hammer: Modify HtmlRenderingService API to support asynchronous HTML rendering by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2037
+* :art: Modify plugin interface to add pasteboard source parameter by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2042
+* :hammer: Improve screen routing implementation by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2049
+* :hammer: Move getPasteTitle api to PasteItem interface by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2055
+* :memo: Implement ReadWriteConfig to decouple services from specific configurations, facilitating the creation of unit tests by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2074
+* :fire: Remove theme listener interface as it's unnecessary; Compose UI will automatically recompose based on state by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2076
+* :hammer: Implement DialogService in commonMain for multi-platform reuse by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2078
+* :hammer: Refactor theme implementation by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2080
+* :hammer: Improve UI Reusability and multiplatform Compatibility by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2082
+* :hammer: Optimize code style by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2084
+
+## Dependencies
+
+* ⬆️ Bump realm from 2.3.0 to 3.0.0 by @dependabot in https://github.com/CrossPaste/crosspaste-desktop/pull/2028
+* ⬆️ Bump compose from 1.7.2 to 1.7.3 by @dependabot in https://github.com/CrossPaste/crosspaste-desktop/pull/2026
+* ⬆️ Bump kotlin from 2.0.20 to 2.0.21 by @dependabot in https://github.com/CrossPaste/crosspaste-desktop/pull/2061
+* ⬆️ Bump imageio from 3.11.0 to 3.12.0 by @dependabot in https://github.com/CrossPaste/crosspaste-desktop/pull/2060
+* ⬆️ Bump coil from 3.0.0-alpha10 to 3.0.0-rc01 by @dependabot in https://github.com/CrossPaste/crosspaste-desktop/pull/2058
+* :arrow_up: Bump compose plugin to 1.7.0-rc01 by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2068
+* ⬆️ Bump compose from 1.7.3 to 1.7.4 by @dependabot in https://github.com/CrossPaste/crosspaste-desktop/pull/2096
+* ⬆️ Bump lifecycle from 2.8.2 to 2.8.3 by @dependabot in https://github.com/CrossPaste/crosspaste-desktop/pull/2095
+* ⬆️ Bump io.mockk:mockk from 1.13.12 to 1.13.13 by @dependabot in https://github.com/CrossPaste/crosspaste-desktop/pull/2094
+* :arrow_up: Bump compose-plugin from 1.7.0-rc01 to 1.7.0 by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2098
+
+## Documentation
+
+* :memo: Update pasteboard concept, add RTF type support by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2054
+* :memo: Update the current roadmap by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2072
+
+**Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/1.0.11.1046...1.0.12.1084
 
 # [1.0.11] - 2024-10-04
 
