@@ -6,12 +6,15 @@ import com.google.zxing.qrcode.QRCodeWriter
 import java.awt.Color
 import java.awt.image.BufferedImage
 
-class DesktopQRCodeImage(data: ByteArray, width: Int, height: Int) :
-    PlatformImage(data, width, height) {
+class DesktopQRCodeImage(data: ByteArray) :
+    PlatformImage(data) {
 
     private val writer = QRCodeWriter()
 
-    override fun toImage(): Any {
+    override fun toImage(
+        width: Int,
+        height: Int,
+    ): Any {
         val bitMatrix = writer.encode(data.decodeToString(), BarcodeFormat.QR_CODE, width, height)
         val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
         for (x in 0 until width) {

@@ -1,7 +1,5 @@
 package com.crosspaste.sync
 
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.dto.sync.SyncInfo
@@ -14,16 +12,11 @@ import kotlinx.serialization.json.Json
 abstract class QRCodeGenerator(
     private val appInfo: AppInfo,
     private val endpointInfoFactory: EndpointInfoFactory,
-    val qrSize: DpSize = DpSize(275.dp, 275.dp),
 ) {
 
     private val codecsUtils = getCodecsUtils()
 
-    abstract fun generateQRCode(
-        width: Int,
-        height: Int,
-        token: CharArray,
-    ): PlatformImage
+    abstract fun generateQRCode(token: CharArray): PlatformImage
 
     protected fun buildQRCode(token: CharArray): String {
         val endpointInfo = endpointInfoFactory.createEndpointInfo()
