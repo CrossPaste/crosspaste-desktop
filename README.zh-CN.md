@@ -21,7 +21,7 @@
    [![Realm](https://img.shields.io/badge/Database-Realm-39477F?logo=realm&logoColor=white)](https://github.com/realm/realm-kotlin)
    ![Kotlin](https://img.shields.io/badge/Lang-Kotlin-0095D5.svg?logo=kotlin&logoColor=white)
    ![OS](https://img.shields.io/badge/OS-Windows%20%7C%20macOS%20%7C%20Linux-2cbe4e)
-   [![Download](https://img.shields.io/badge/Download-v1.0.11-2cbe4e?logo=download&link=https://crosspaste.com/download)](https://crosspaste.com/download)
+   [![Download](https://img.shields.io/badge/Download-v1.0.12-2cbe4e?logo=download&link=https://crosspaste.com/download)](https://crosspaste.com/download)
    [![AGPL-3.0](https://img.shields.io/badge/License-AGPL%20v3-2cbe4e.svg)](https://github.com/CrossPaste/crosspaste-desktop/blob/main/LICENSE)
 </div>
 
@@ -75,7 +75,7 @@ CrossPaste 正在持续发展中！我们计划在未来的版本中添加更多
 
 **正如 changelog 中所见，最近多个版本都有大量的 pr 是在进行重构并打上了 multiplatform 标签，是的我们正在努力推出移动版本，这些都是在为提供移动端做铺垫，所以在退出移动版本之前只会进行 bug 修复以及已经确定的少量新特性。**
 
-- [ ] **v1.0.12**：支持 RTF 格式粘贴板
+- [x] **v1.0.12**：支持 RTF 格式粘贴板
 - [ ] **v1.0.13**：支持颜色类型粘贴板
 - [ ] **v1.1.0**: 支持移动端，与移动端共享粘贴板
 - [ ] **v1.2.0**：支持原生粘贴板，改进性能

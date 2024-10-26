@@ -21,7 +21,7 @@
    [![Realm](https://img.shields.io/badge/Database-Realm-39477F?logo=realm&logoColor=white)](https://github.com/realm/realm-kotlin)
    ![Kotlin](https://img.shields.io/badge/Lang-Kotlin-0095D5.svg?logo=kotlin&logoColor=white)
    ![OS](https://img.shields.io/badge/OS-Windows%20%7C%20macOS%20%7C%20Linux-2cbe4e)
-   [![Download](https://img.shields.io/badge/Download-v1.0.11-2cbe4e?logo=download&link=https://crosspaste.com/en/download)](https://crosspaste.com/en/download)
+   [![Download](https://img.shields.io/badge/Download-v1.0.12-2cbe4e?logo=download&link=https://crosspaste.com/en/download)](https://crosspaste.com/en/download)
    [![AGPL-3.0](https://img.shields.io/badge/License-AGPL%20v3-2cbe4e.svg)](https://github.com/CrossPaste/crosspaste-desktop/blob/main/LICENSE)
 </div>
 
@@ -75,7 +75,7 @@ CrossPaste is continuously evolving! We plan to add more useful features in futu
 
 **As seen in the changelog, recent versions have included numerous PRs focused on refactoring and labeled with "multiplatform". Indeed, we are actively working towards launching a mobile version. These efforts are laying the groundwork for mobile support. Therefore, before the mobile version is released, we will only be focusing on bug fixes and a limited number of already-planned new features.**
 
-- [ ] **v1.0.12**: Support for RTF format in clipboard
+- [x] **v1.0.12**: Support for RTF format in clipboard
 - [ ] **v1.0.13**: Support for color data in clipboard
 - [ ] **v1.1.0**: Support for mobile devices and shared pasteboard with mobile
 - [ ] **v1.2.0**: Support for native pasteboard, improve pasteboard performance
