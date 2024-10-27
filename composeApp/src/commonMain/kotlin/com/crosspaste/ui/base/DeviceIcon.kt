@@ -16,7 +16,7 @@ expect fun block(): Painter
 expect fun devices(): Painter
 
 @Composable
-expect fun qrCodeScanner(): Painter
+expect fun qrCode(): Painter
 
 @Composable
 expect fun sync(): Painter

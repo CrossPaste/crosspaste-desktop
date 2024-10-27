@@ -7,7 +7,7 @@ import com.crosspaste.composeapp.generated.resources.allow_receive
 import com.crosspaste.composeapp.generated.resources.allow_send
 import com.crosspaste.composeapp.generated.resources.block
 import com.crosspaste.composeapp.generated.resources.devices
-import com.crosspaste.composeapp.generated.resources.qr_code_scanner
+import com.crosspaste.composeapp.generated.resources.qr_code
 import com.crosspaste.composeapp.generated.resources.sync
 import com.crosspaste.composeapp.generated.resources.token
 import com.crosspaste.composeapp.generated.resources.unverified
@@ -34,8 +34,8 @@ actual fun devices(): Painter {
 }
 
 @Composable
-actual fun qrCodeScanner(): Painter {
-    return painterResource(Res.drawable.qr_code_scanner)
+actual fun qrCode(): Painter {
+    return painterResource(Res.drawable.qr_code)
 }
 
 @Composable

@@ -31,13 +31,14 @@ class ScreenContext(val screenType: ScreenType, val nextScreenContext: ScreenCon
 }
 
 enum class ScreenType {
-    PASTE_PREVIEW,
+    ABOUT,
+    DEBUG,
     DEVICES,
     DEVICE_DETAIL,
+    PASTE_PREVIEW,
+    PASTE_TEXT_EDIT,
     QR_CODE,
+    QR_SCANNER, // use in mobile
     SETTINGS,
     SHORTCUT_KEYS,
-    ABOUT,
-    PASTE_TEXT_EDIT,
-    DEBUG,
 }
