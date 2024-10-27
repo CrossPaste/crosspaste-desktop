@@ -39,5 +39,6 @@ actual fun CrossPasteScreen() {
         ScreenType.PASTE_TEXT_EDIT -> {
             PasteTextEditScreen()
         }
+        else -> {}
     }
 }
