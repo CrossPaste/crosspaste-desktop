@@ -90,6 +90,8 @@ import com.crosspaste.net.plugin.SignalClientDecryptPlugin
 import com.crosspaste.net.plugin.SignalClientEncryptPlugin
 import com.crosspaste.net.plugin.SignalServerDecryptionPluginFactory
 import com.crosspaste.net.plugin.SignalServerEncryptPluginFactory
+import com.crosspaste.notification.NotificationManager
+import com.crosspaste.notification.ToastManager
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.CacheManagerImpl
 import com.crosspaste.paste.CurrentPaste
@@ -184,9 +186,7 @@ import com.crosspaste.ui.base.DesktopToastManager
 import com.crosspaste.ui.base.DesktopUISupport
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.IconStyle
-import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.PasteContextMenuRepresentation
-import com.crosspaste.ui.base.ToastManager
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.model.PasteDataViewModel
 import com.crosspaste.utils.DesktopDeviceUtils

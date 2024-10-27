@@ -4,12 +4,12 @@ import androidx.compose.foundation.ContextMenuItem
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.notification.MessageType
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.realm.paste.PasteType
-import com.crosspaste.ui.base.MessageType
-import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -42,7 +42,7 @@ class PasteMenuService(
                 )
             },
             success = {
-                notificationManager.addNotification(
+                notificationManager.sendNotification(
                     message = copywriter.getText("copy_successful"),
                     messageType = MessageType.Success,
                 )
@@ -60,7 +60,7 @@ class PasteMenuService(
                 )
             },
             success = {
-                notificationManager.addNotification(
+                notificationManager.sendNotification(
                     message = copywriter.getText("copy_successful"),
                     messageType = MessageType.Success,
                 )

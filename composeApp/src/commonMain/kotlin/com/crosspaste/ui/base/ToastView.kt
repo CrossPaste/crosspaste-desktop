@@ -29,6 +29,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import com.crosspaste.notification.MessageType
+import com.crosspaste.notification.ToastManager
+import com.crosspaste.notification.getMessagePainter
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 

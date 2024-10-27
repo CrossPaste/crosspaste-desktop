@@ -46,9 +46,9 @@ import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppEnv
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.notification.MessageType
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.realm.paste.PasteRealm
-import com.crosspaste.ui.base.MessageType
-import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.trash
 import com.crosspaste.ui.devices.DevicesScreen
@@ -119,7 +119,7 @@ fun TabsView() {
                                 scope = scope,
                                 task = { pasteRealm.markAllDeleteExceptFavorite() },
                                 success = {
-                                    notificationManager.addNotification(
+                                    notificationManager.sendNotification(
                                         message = copywriter.getText("clean_successful"),
                                         messageType = MessageType.Success,
                                     )

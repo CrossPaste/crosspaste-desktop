@@ -1,6 +1,7 @@
-package com.crosspaste.ui.base
+package com.crosspaste.notification
 
 import androidx.compose.runtime.State
+import com.crosspaste.ui.base.Toast
 
 interface ToastManager {
 

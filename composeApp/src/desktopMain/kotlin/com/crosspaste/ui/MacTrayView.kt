@@ -17,11 +17,11 @@ import com.crosspaste.app.ExitMode
 import com.crosspaste.composeapp.generated.resources.Res
 import com.crosspaste.composeapp.generated.resources.crosspaste_tray_mac
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.platform.macos.MacAppUtils.useAll
 import com.crosspaste.platform.macos.api.WindowInfo
 import com.crosspaste.ui.base.DesktopNotificationManager
-import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging

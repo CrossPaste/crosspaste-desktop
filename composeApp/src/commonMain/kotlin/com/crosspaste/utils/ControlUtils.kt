@@ -1,5 +1,8 @@
 package com.crosspaste.utils
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+
 expect fun getControlUtils(): ControlUtils
 
 interface ControlUtils {
@@ -27,19 +30,27 @@ interface ControlUtils {
         isValidResult: (T) -> Boolean,
         action: () -> T,
     ): T
-
-    fun blockDebounce(
-        delay: Long,
-        action: () -> Unit,
-    ): () -> Unit
-
-    fun debounce(
-        delay: Long,
-        action: suspend () -> Unit,
-    ): suspend () -> Unit
-
-    fun <T> debounce(
-        delay: Long,
-        action: suspend (T) -> Unit,
-    ): suspend (T) -> Unit
 }
+
+fun <T> Flow<T>.equalDebounce(
+    durationMillis: Long,
+    isEqual: (T, T) -> Boolean = { a, b -> a == b },
+): Flow<T> =
+    flow {
+        var lastItem: T? = null
+        var lastEmitTime: Long = 0
+
+        collect { value ->
+            val currentTime = System.currentTimeMillis()
+            val shouldEmit =
+                lastItem?.let { last ->
+                    !isEqual(last, value) || (currentTime - lastEmitTime) >= durationMillis
+                } != false
+
+            if (shouldEmit) {
+                lastItem = value
+                lastEmitTime = currentTime
+                emit(value)
+            }
+        }
+    }

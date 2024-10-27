@@ -3,6 +3,7 @@ package com.crosspaste.ui.base
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
+import com.crosspaste.notification.ToastManager
 
 class DesktopToastManager : ToastManager {
 

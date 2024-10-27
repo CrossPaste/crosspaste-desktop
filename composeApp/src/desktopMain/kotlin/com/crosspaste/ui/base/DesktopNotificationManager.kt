@@ -3,6 +3,10 @@ package com.crosspaste.ui.base
 import androidx.compose.ui.window.Notification
 import com.crosspaste.app.AppName
 import com.crosspaste.app.DesktopAppWindowManager
+import com.crosspaste.notification.MessageObject
+import com.crosspaste.notification.MessageType
+import com.crosspaste.notification.NotificationManager
+import com.crosspaste.notification.ToastManager
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.platform.linux.api.NotificationSender.sendNotification
 import com.crosspaste.sound.SoundService
@@ -11,56 +15,43 @@ class DesktopNotificationManager(
     private val appWindowManager: DesktopAppWindowManager,
     private val soundService: SoundService,
     private val toastManager: ToastManager,
-) : NotificationManager {
+) : NotificationManager() {
 
     val platform = getPlatform()
 
     val trayState = CrossPasteTrayState()
 
-    override fun addNotification(
-        title: String?,
-        message: String,
-        messageType: MessageType,
-        duration: Long,
-    ) {
+    override fun doSendNotification(messageObject: MessageObject) {
         if (appWindowManager.getShowMainWindow()) {
-            notifyToast(message, messageType, duration)
+            notifyToast(messageObject)
         } else if (platform.isLinux()) {
-            sendNotification(AppName, message)
+            sendNotification(AppName, messageObject.message)
         } else {
-            notifyTray(title ?: AppName, message, messageType)
+            notifyTray(messageObject)
         }
-        if (messageType == MessageType.Error) {
+        if (messageObject.messageType == MessageType.Error) {
             soundService.errorSound()
-        } else if (messageType == MessageType.Success) {
+        } else if (messageObject.messageType == MessageType.Success) {
             soundService.successSound()
         }
     }
 
-    private fun notifyToast(
-        message: String,
-        messageType: MessageType,
-        duration: Long,
-    ) {
+    private fun notifyToast(messageObject: MessageObject) {
         toastManager.setToast(
             Toast(
-                message = message,
-                messageType = messageType,
-                duration = duration,
+                message = messageObject.message,
+                messageType = messageObject.messageType,
+                duration = messageObject.duration,
             ),
         )
     }
 
-    private fun notifyTray(
-        title: String,
-        message: String,
-        messageType: MessageType,
-    ) {
+    private fun notifyTray(messageObject: MessageObject) {
         trayState.sendNotification(
             Notification(
-                title,
-                message,
-                when (messageType) {
+                messageObject.title ?: AppName,
+                messageObject.message,
+                when (messageObject.messageType) {
                     MessageType.Error -> Notification.Type.Error
                     MessageType.Info -> Notification.Type.Info
                     MessageType.Success -> Notification.Type.None
