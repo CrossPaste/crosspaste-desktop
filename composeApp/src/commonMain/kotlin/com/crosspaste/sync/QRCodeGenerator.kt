@@ -5,9 +5,9 @@ import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.image.PlatformImage
 import com.crosspaste.utils.getCodecsUtils
+import com.crosspaste.utils.getJsonUtils
 import io.ktor.utils.io.core.*
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 abstract class QRCodeGenerator(
     private val appInfo: AppInfo,
@@ -15,6 +15,7 @@ abstract class QRCodeGenerator(
 ) {
 
     private val codecsUtils = getCodecsUtils()
+    protected val jsonUtils = getJsonUtils()
 
     abstract fun generateQRCode(token: CharArray): PlatformImage
 
@@ -28,7 +29,7 @@ abstract class QRCodeGenerator(
         syncInfo: SyncInfo,
         token: CharArray,
     ): String {
-        val syncInfoJson = Json.encodeToString(syncInfo)
+        val syncInfoJson = jsonUtils.JSON.encodeToString(syncInfo)
         val syncInfoBytes = syncInfoJson.toByteArray()
         return encodeSyncInfo(syncInfoBytes, token.concatToString().toInt())
     }
@@ -42,6 +43,33 @@ abstract class QRCodeGenerator(
         val rotatedBytes = syncInfoBytes.rotate(offset)
         val saltedBytes = rotatedBytes + token.toByteArray()
         return codecsUtils.base64Encode(saltedBytes)
+    }
+
+    protected fun decodeSyncInfo(encodedString: String): Pair<SyncInfo, Int> {
+        val decodedBytes = codecsUtils.base64Decode(encodedString)
+
+        if (decodedBytes.size < 4) {
+            throw IllegalArgumentException("Decoded bytes too short to contain token")
+        }
+
+        val token =
+            decodedBytes.takeLast(4).let { bytes ->
+                (bytes[0].toInt() and 0xFF shl 24) or
+                    (bytes[1].toInt() and 0xFF shl 16) or
+                    (bytes[2].toInt() and 0xFF shl 8) or
+                    (bytes[3].toInt() and 0xFF)
+            }
+
+        val syncInfoWithRotation = decodedBytes.dropLast(4).toByteArray()
+
+        val size = syncInfoWithRotation.size
+        val offset = token % size
+
+        val originalBytes = syncInfoWithRotation.rotate((size - offset) % size)
+
+        val syncInfo = jsonUtils.JSON.decodeFromString<SyncInfo>(originalBytes.decodeToString())
+
+        return Pair(syncInfo, token)
     }
 
     private fun ByteArray.rotate(offset: Int): ByteArray {
