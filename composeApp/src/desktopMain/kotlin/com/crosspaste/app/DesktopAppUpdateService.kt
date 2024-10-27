@@ -5,8 +5,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.DesktopProxy
-import com.crosspaste.ui.base.MessageType
-import com.crosspaste.ui.base.NotificationManager
+import com.crosspaste.notification.MessageType
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.utils.cpuDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -75,7 +75,7 @@ class DesktopAppUpdateService(
         if (existNewVersion()) {
             uiSupport.openCrossPasteWebInBrowser(path = "download")
         } else {
-            notificationManager.addNotification(
+            notificationManager.sendNotification(
                 message = copywriter.getText("no_new_version_available"),
                 messageType = MessageType.Info,
             )

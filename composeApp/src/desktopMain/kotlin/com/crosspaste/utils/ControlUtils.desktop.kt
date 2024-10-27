@@ -1,7 +1,6 @@
 package com.crosspaste.utils
 
 import kotlinx.coroutines.delay
-import java.util.concurrent.atomic.AtomicLong
 
 actual fun getControlUtils(): ControlUtils {
     return DesktopControlUtils
@@ -75,58 +74,5 @@ object DesktopControlUtils : ControlUtils {
             result = action()
         }
         return result
-    }
-
-    private fun createDebouncedCheck(delay: Long): () -> Boolean {
-        val lastExecutionTime = AtomicLong(0)
-        return {
-            val currentTime = System.currentTimeMillis()
-            val previousTime = lastExecutionTime.get()
-            if (currentTime - previousTime > delay || previousTime == 0L) {
-                lastExecutionTime.set(currentTime)
-                true
-            } else {
-                false
-            }
-        }
-    }
-
-    override fun blockDebounce(
-        delay: Long,
-        action: () -> Unit,
-    ): () -> Unit {
-        val shouldExecute = createDebouncedCheck(delay)
-        return {
-            if (shouldExecute()) {
-                action()
-            }
-        }
-    }
-
-    override fun debounce(
-        delay: Long,
-        action: suspend () -> Unit,
-    ): suspend () -> Unit {
-        val shouldExecute = createDebouncedCheck(delay)
-        return {
-            if (shouldExecute()) {
-                action()
-            }
-        }
-    }
-
-    override fun <T> debounce(
-        delay: Long,
-        action: suspend (T) -> Unit,
-    ): suspend (T) -> Unit {
-        val long = AtomicLong(0)
-        return { key ->
-            val currentTime = System.currentTimeMillis()
-            val previousTime = long.get()
-            if (currentTime - previousTime > delay || previousTime == 0L) {
-                long.set(currentTime)
-                action(key)
-            }
-        }
     }
 }

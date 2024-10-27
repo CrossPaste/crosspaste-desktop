@@ -3,8 +3,8 @@ package com.crosspaste.listen
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.listener.GlobalListener
-import com.crosspaste.ui.base.MessageType
-import com.crosspaste.ui.base.NotificationManager
+import com.crosspaste.notification.MessageType
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.utils.getSystemProperty
 import com.github.kwhat.jnativehook.GlobalScreen
 import com.github.kwhat.jnativehook.NativeHookException
@@ -43,7 +43,7 @@ class DesktopGlobalListener(
                 if (e.code == DARWIN_AXAPI_DISABLED) {
                     grantAccessibilityPermissions()
                 } else {
-                    notificationManager.addNotification(
+                    notificationManager.sendNotification(
                         message =
                             "${copywriter.getText("failed_to_register_keyboard_listener")}. " +
                                 "${copywriter.getText("error_Code")} ${e.code}",

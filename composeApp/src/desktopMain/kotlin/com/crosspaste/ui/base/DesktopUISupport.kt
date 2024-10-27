@@ -5,6 +5,8 @@ import com.crosspaste.app.AppUrls
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.i18n.GlobalCopywriterImpl.Companion.ZH
+import com.crosspaste.notification.MessageType
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteRtf
@@ -40,7 +42,7 @@ class DesktopUISupport(
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
             Desktop.getDesktop().browse(URI(url))
         } else {
-            notificationManager.addNotification(
+            notificationManager.sendNotification(
                 message = "${copywriter.getText("cant_open_browser")}  $url",
                 messageType = MessageType.Error,
             )
@@ -63,7 +65,7 @@ class DesktopUISupport(
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.MAIL)) {
             Desktop.getDesktop().mail(mailURI)
         } else {
-            notificationManager.addNotification(
+            notificationManager.sendNotification(
                 message = "${copywriter.getText("cant_open_email_client")} $email",
                 messageType = MessageType.Error,
             )
@@ -83,7 +85,7 @@ class DesktopUISupport(
             }
             Desktop.getDesktop().browse(file.toURI())
         } else {
-            notificationManager.addNotification(
+            notificationManager.sendNotification(
                 message = copywriter.getText("failed_to_open_html_pasteboard"),
                 messageType = MessageType.Error,
             )
@@ -99,13 +101,13 @@ class DesktopUISupport(
                 if (getPlatform().isWindows() && openFileInExplorer(filePath.toFile())) {
                     return
                 }
-                notificationManager.addNotification(
+                notificationManager.sendNotification(
                     message = copywriter.getText("failed_to_browse_file_pasteboard"),
                     messageType = MessageType.Error,
                 )
             }
         } else {
-            notificationManager.addNotification(
+            notificationManager.sendNotification(
                 message = copywriter.getText("file_not_found"),
                 messageType = MessageType.Error,
             )
@@ -129,13 +131,13 @@ class DesktopUISupport(
             if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
                 Desktop.getDesktop().open(imagePath.toFile())
             } else {
-                notificationManager.addNotification(
+                notificationManager.sendNotification(
                     message = copywriter.getText("failed_to_open_image_pasteboard"),
                     messageType = MessageType.Error,
                 )
             }
         } else {
-            notificationManager.addNotification(
+            notificationManager.sendNotification(
                 message = copywriter.getText("file_not_found"),
                 messageType = MessageType.Error,
             )
@@ -158,7 +160,7 @@ class DesktopUISupport(
             }
             Desktop.getDesktop().browse(file.toURI())
         } else {
-            notificationManager.addNotification(
+            notificationManager.sendNotification(
                 message = copywriter.getText("failed_to_open_rtf_pasteboard"),
                 messageType = MessageType.Error,
             )

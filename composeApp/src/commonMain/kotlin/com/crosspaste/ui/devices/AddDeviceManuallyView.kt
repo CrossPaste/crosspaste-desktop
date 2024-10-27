@@ -33,12 +33,12 @@ import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
+import com.crosspaste.notification.MessageType
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
 import com.crosspaste.realm.sync.createSyncRuntimeInfo
 import com.crosspaste.ui.CrossPasteTheme.connectedColor
 import com.crosspaste.ui.base.DefaultTextField
-import com.crosspaste.ui.base.MessageType
-import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.utils.buildUrl
 import kotlinx.coroutines.runBlocking
 import org.koin.compose.koinInject
@@ -174,7 +174,7 @@ fun AddDeviceManuallyForm() {
                             port = ""
                         }
                         else -> {
-                            notificationManager.addNotification(
+                            notificationManager.sendNotification(
                                 message =
                                     "${copywriter.getText("addition_failed")}\n" +
                                         "1. ${copywriter.getText("please_check_if_the_ip_and_port_are_correct")}\n" +

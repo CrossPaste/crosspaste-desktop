@@ -51,14 +51,14 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.notification.MessageType
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.realm.sync.SyncState
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.CrossPasteTheme.selectColor
 import com.crosspaste.ui.ScreenType
 import com.crosspaste.ui.base.MenuItem
-import com.crosspaste.ui.base.MessageType
-import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.moreVertical
@@ -155,7 +155,7 @@ actual fun DeviceConnectView(
                                         syncManager.resolveSync(syncRuntimeInfo.appInstanceId)
                                         delay(1000)
                                     } catch (e: Exception) {
-                                        notificationManager.addNotification(
+                                        notificationManager.sendNotification(
                                             message = "${copywriter.getText("refresh_connection_failed")}:\n${e.message}",
                                             messageType = MessageType.Error,
                                         )

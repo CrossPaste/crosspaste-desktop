@@ -38,6 +38,8 @@ import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.ExitMode
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.notification.MessageType
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.RealmManager
 import com.crosspaste.ui.LocalExitApplication
@@ -45,8 +47,6 @@ import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
-import com.crosspaste.ui.base.MessageType
-import com.crosspaste.ui.base.NotificationManager
 import com.crosspaste.ui.base.PasteDialog
 import com.crosspaste.ui.base.archive
 import kotlinx.coroutines.delay
@@ -130,7 +130,7 @@ fun SetStoragePathView() {
                                     },
                                 )
                             }) {
-                                notificationManager.addNotification(
+                                notificationManager.sendNotification(
                                     message = it,
                                     messageType = MessageType.Error,
                                 )
