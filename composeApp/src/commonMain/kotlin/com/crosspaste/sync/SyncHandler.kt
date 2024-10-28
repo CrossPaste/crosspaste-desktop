@@ -40,7 +40,6 @@ class SyncHandler(
     private val appInfo: AppInfo,
     var syncRuntimeInfo: SyncRuntimeInfo,
     private val checker: VersionCompatibilityChecker,
-    private val tokenCache: TokenCache,
     private val telnetHelper: TelnetHelper,
     private val syncInfoFactory: SyncInfoFactory,
     private val syncClientApi: SyncClientApi,
@@ -49,6 +48,7 @@ class SyncHandler(
     private val signalProcessorCache: SignalProcessorCache,
     private val syncRuntimeInfoRealm: SyncRuntimeInfoRealm,
     private val signalRealm: SignalRealm,
+    private val tokenCache: TokenCache,
 ) {
 
     private val logger = KotlinLogging.logger {}

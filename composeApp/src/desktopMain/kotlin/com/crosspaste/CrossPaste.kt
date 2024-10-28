@@ -163,6 +163,7 @@ import com.crosspaste.sync.DeviceListener
 import com.crosspaste.sync.DeviceManager
 import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.sync.SyncManager
+import com.crosspaste.sync.TokenCache
 import com.crosspaste.task.CleanPasteTaskExecutor
 import com.crosspaste.task.DeletePasteTaskExecutor
 import com.crosspaste.task.Html2ImageTaskExecutor
@@ -330,7 +331,7 @@ class CrossPaste {
                     single<SyncClientApi> { SyncClientApi(get(), get(), get()) }
                     single<SyncManager> {
                         SyncManager(
-                            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
+                            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
                             lazy { get() },
                         )
                     }
@@ -461,6 +462,7 @@ class CrossPaste {
                     single<SoundService> { DesktopSoundService }
                     single<ThemeDetector> { DesktopThemeDetector(get()) }
                     single<ToastManager> { DesktopToastManager() }
+                    single<TokenCache> { TokenCache }
                     single<UISupport> { DesktopUISupport(get(), get(), get(), get(), get()) }
 
                     // view model
