@@ -15,7 +15,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import com.crosspaste.paste.PasteMenuService
+import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
@@ -28,7 +28,7 @@ fun HtmlToImagePreviewView(
     onDoubleClick: () -> Unit,
 ) {
     pasteData.getPasteItem()?.let {
-        val pasteMenuService = koinInject<PasteMenuService>()
+        val pasteMenuService = koinInject<DesktopPasteMenuService>()
         val userDataPathProvider = koinInject<UserDataPathProvider>()
 
         val pasteHtml = it as PasteHtml

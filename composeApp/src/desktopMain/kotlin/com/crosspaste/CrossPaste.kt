@@ -98,11 +98,11 @@ import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.DefaultPasteSyncProcessManager
 import com.crosspaste.paste.DesktopCurrentPaste
 import com.crosspaste.paste.DesktopPasteIDGeneratorFactory
+import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.DesktopPasteSearchService
 import com.crosspaste.paste.DesktopTransferableConsumer
 import com.crosspaste.paste.DesktopTransferableProducer
 import com.crosspaste.paste.PasteIDGenerator
-import com.crosspaste.paste.PasteMenuService
 import com.crosspaste.paste.PasteSearchService
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.paste.PasteboardService
@@ -372,7 +372,7 @@ class CrossPaste {
                     }
                     single<HtmlTypePlugin> { get<DesktopHtmlTypePlugin>() }
                     single<ImageTypePlugin> { get<DesktopImageTypePlugin>() }
-                    single<PasteMenuService> { PasteMenuService(get(), get(), get(), get(), get(), get()) }
+                    single<DesktopPasteMenuService> { DesktopPasteMenuService(get(), get(), get(), get(), get(), get()) }
                     single<PasteboardService> {
                         getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get())
                     }
