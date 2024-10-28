@@ -1,8 +1,6 @@
 package com.crosspaste.sync
 
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.dto.sync.SyncInfo
@@ -30,7 +28,6 @@ import io.realm.kotlin.notifications.UpdatedResults
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -59,12 +56,11 @@ class SyncManager(
     private val signalProcessorCache: SignalProcessorCache,
     private val syncRuntimeInfoRealm: SyncRuntimeInfoRealm,
     private val signalRealm: SignalRealm,
+    private val tokenCache: TokenCache,
     lazyDeviceManager: Lazy<DeviceManager>,
-) : ViewModel() {
+) {
 
     private val logger = KotlinLogging.logger {}
-
-    private val tokenCache: TokenCache = TokenCache
 
     private val _realTimeSyncRuntimeInfos = MutableStateFlow<List<SyncRuntimeInfo>>(listOf())
 
@@ -81,7 +77,7 @@ class SyncManager(
     private val deviceManager: DeviceManager by lazyDeviceManager
 
     init {
-        viewModelScope.launch {
+        realTimeSyncScope.launch {
             val syncRuntimeInfos = syncRuntimeInfoRealm.getAllSyncRuntimeInfos()
             internalSyncHandlers.putAll(
                 syncRuntimeInfos.map { syncRuntimeInfo ->
@@ -122,8 +118,8 @@ class SyncManager(
 
                     withContext(mainDispatcher) {
                         _realTimeSyncRuntimeInfos.value = changes.list
-                        _ignoreVerifySet.update {
-                            it.filter { it in changes.list.map { it.appInstanceId } }.toSet()
+                        _ignoreVerifySet.update { set ->
+                            set.filter { it in changes.list.map { it.appInstanceId } }.toSet()
                         }
                         if (changes.insertions.isNotEmpty() || changes.deletions.isNotEmpty()) {
                             deviceManager.refresh()
@@ -142,7 +138,6 @@ class SyncManager(
             realTimeSyncRuntimeInfos,
             ignoreVerifySet,
         ) { syncInfos, ignoreSet ->
-            logger.info { "${syncInfos.size} ${ignoreSet.size}" }
             syncInfos to ignoreSet
         }
             .map { (syncInfos, ignoreSet) ->
@@ -160,10 +155,9 @@ class SyncManager(
                     ) {
                         DeviceVerifyView(info)
                     }
-                logger.info { "deviceId: ${info.deviceId}" }
                 dialogService.pushDialog(dialog)
             }
-            .launchIn(viewModelScope)
+            .launchIn(realTimeSyncScope)
     }
 
     private fun createSyncHandler(syncRuntimeInfo: SyncRuntimeInfo): SyncHandler {
@@ -171,7 +165,6 @@ class SyncManager(
             appInfo,
             syncRuntimeInfo,
             checker,
-            tokenCache,
             telnetHelper,
             syncInfoFactory,
             syncClientApi,
@@ -180,6 +173,7 @@ class SyncManager(
             signalProcessorCache,
             syncRuntimeInfoRealm,
             signalRealm,
+            tokenCache,
         )
     }
 
@@ -191,23 +185,25 @@ class SyncManager(
         _ignoreVerifySet.update { it - appInstanceId }
     }
 
-    suspend fun resolveSyncs() =
+    suspend fun resolveSyncs() {
         coroutineScope {
-            internalSyncHandlers.values.map { syncHandler ->
-                async {
+            internalSyncHandlers.values.forEach { syncHandler ->
+                launch {
                     doResolveSync(syncHandler)
                 }
             }
         }
+    }
 
-    suspend fun resolveSync(id: String) =
+    suspend fun resolveSync(id: String) {
         coroutineScope {
             internalSyncHandlers[id]?.let { syncHandler ->
-                async {
+                launch {
                     doResolveSync(syncHandler)
                 }
             }
         }
+    }
 
     private suspend fun doResolveSync(syncHandler: SyncHandler) {
         try {
