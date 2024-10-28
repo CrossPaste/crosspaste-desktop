@@ -195,13 +195,6 @@ class SyncHandler(
 
         resolveConnecting()
 
-        if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
-            tokenCache.getToken(syncRuntimeInfo.appInstanceId)?.let { token ->
-                trustByToken(token)
-            }
-            resolveConnecting()
-        }
-
         if (syncRuntimeInfo.connectState != SyncState.CONNECTED) {
             failTime++
             recommendedRefreshTime = computeRefreshTime()
@@ -357,6 +350,8 @@ class SyncHandler(
         port: Int,
         targetAppInstanceId: String,
     ) {
+        trustByTokenCache()
+
         val result =
             syncClientApi.isTrust(targetAppInstanceId) { urlBuilder ->
                 buildUrl(urlBuilder, host, port)
@@ -448,8 +443,20 @@ class SyncHandler(
         }
     }
 
+    // use user input token to trust
     suspend fun trustByToken(token: Int) {
         if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
+            syncRuntimeInfo.connectHostAddress?.let { host ->
+                syncClientApi.trust(token) { urlBuilder ->
+                    buildUrl(urlBuilder, host, syncRuntimeInfo.port)
+                }
+            }
+        }
+    }
+
+    // try to use camera to scan token to trust
+    private suspend fun trustByTokenCache() {
+        tokenCache.getToken(syncRuntimeInfo.appInstanceId)?.let { token ->
             syncRuntimeInfo.connectHostAddress?.let { host ->
                 syncClientApi.trust(token) { urlBuilder ->
                     buildUrl(urlBuilder, host, syncRuntimeInfo.port)
