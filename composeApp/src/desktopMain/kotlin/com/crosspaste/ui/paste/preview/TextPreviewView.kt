@@ -15,7 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.paste.PasteMenuService
+import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.realm.paste.PasteData
 import org.koin.compose.koinInject
@@ -26,7 +26,7 @@ fun TextPreviewView(
     onDoubleClick: () -> Unit,
 ) {
     pasteData.getPasteItem()?.let {
-        val pasteMenuService = koinInject<PasteMenuService>()
+        val pasteMenuService = koinInject<DesktopPasteMenuService>()
 
         PasteSpecificPreviewContentView(
             pasteMainContent = {

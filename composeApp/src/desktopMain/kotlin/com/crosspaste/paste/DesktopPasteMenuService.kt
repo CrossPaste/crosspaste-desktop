@@ -16,14 +16,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import org.mongodb.kbson.ObjectId
 
-class PasteMenuService(
+class DesktopPasteMenuService(
     private val appWindowManager: AppWindowManager,
     private val copywriter: GlobalCopywriter,
     private val notificationManager: NotificationManager,
     private val pasteboardService: PasteboardService,
     private val pasteRealm: PasteRealm,
     private val uiSupport: UISupport,
-) {
+) : PasteMenuService {
     private val desktopAppWindowManager = appWindowManager as DesktopAppWindowManager
 
     private val menuScope = CoroutineScope(ioDispatcher + SupervisorJob())
@@ -50,7 +50,7 @@ class PasteMenuService(
         )
     }
 
-    fun copyPasteData(pasteData: PasteData) {
+    override fun copyPasteData(pasteData: PasteData) {
         appWindowManager.doLongTaskInMain(
             scope = menuScope,
             task = {
@@ -68,9 +68,9 @@ class PasteMenuService(
         )
     }
 
-    fun openPasteData(
+    override fun openPasteData(
         pasteData: PasteData,
-        index: Int = 0,
+        index: Int,
     ) {
         uiSupport.openPasteData(pasteData, index)
         if (pasteData.pasteType != PasteType.TEXT) {
@@ -78,7 +78,7 @@ class PasteMenuService(
         }
     }
 
-    fun deletePasteData(pasteData: PasteData) {
+    override fun deletePasteData(pasteData: PasteData) {
         appWindowManager.doLongTaskInMain(
             scope = menuScope,
             task = {

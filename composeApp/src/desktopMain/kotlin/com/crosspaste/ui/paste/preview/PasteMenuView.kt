@@ -46,7 +46,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.i18n.Copywriter
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.paste.PasteMenuService
+import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.realm.paste.PasteType
@@ -74,7 +74,7 @@ fun PasteMenuView(
 ) {
     val density = LocalDensity.current
     val pasteRealm = koinInject<PasteRealm>()
-    val pasteMenuService = koinInject<PasteMenuService>()
+    val pasteMenuService = koinInject<DesktopPasteMenuService>()
     val copywriter = koinInject<GlobalCopywriter>()
 
     var parentBounds by remember { mutableStateOf(Rect.Zero) }
@@ -417,7 +417,7 @@ fun MoreMenuItems(
     hideMore: () -> Unit,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
-    val pasteMenuService = koinInject<PasteMenuService>()
+    val pasteMenuService = koinInject<DesktopPasteMenuService>()
     Box(
         modifier =
             Modifier
