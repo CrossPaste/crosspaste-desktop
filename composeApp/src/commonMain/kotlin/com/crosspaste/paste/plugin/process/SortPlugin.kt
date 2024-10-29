@@ -1,6 +1,5 @@
-package com.crosspaste.paste.plugin.processs
+package com.crosspaste.paste.plugin.process
 
-import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.realm.paste.PasteType
 import io.realm.kotlin.MutableRealm

@@ -1,9 +1,8 @@
-package com.crosspaste.paste.plugin.processs
+package com.crosspaste.paste.plugin.process
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
-import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.utils.extension
