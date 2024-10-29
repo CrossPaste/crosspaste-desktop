@@ -1,7 +1,6 @@
-package com.crosspaste.paste.plugin.processs
+package com.crosspaste.paste.plugin.process
 
 import com.crosspaste.paste.item.PasteHtml
-import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.realm.paste.PasteType

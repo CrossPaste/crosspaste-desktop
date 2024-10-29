@@ -112,9 +112,9 @@ import com.crosspaste.paste.getDesktopPasteboardService
 import com.crosspaste.paste.plugin.process.DistinctPlugin
 import com.crosspaste.paste.plugin.process.FilesToImagesPlugin
 import com.crosspaste.paste.plugin.process.GenerateUrlPlugin
+import com.crosspaste.paste.plugin.process.RemoveFolderImagePlugin
+import com.crosspaste.paste.plugin.process.RemoveHtmlImagePlugin
 import com.crosspaste.paste.plugin.process.SortPlugin
-import com.crosspaste.paste.plugin.processs.RemoveFolderImagePlugin
-import com.crosspaste.paste.plugin.processs.RemoveHtmlImagePlugin
 import com.crosspaste.paste.plugin.type.DesktopFilesTypePlugin
 import com.crosspaste.paste.plugin.type.DesktopHtmlTypePlugin
 import com.crosspaste.paste.plugin.type.DesktopImageTypePlugin
