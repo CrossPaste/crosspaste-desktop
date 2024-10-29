@@ -60,6 +60,6 @@ class DesktopWriteTransferable(
 
     override fun getTransferData(pasteDataFlavor: PasteDataFlavor): Any {
         pasteDataFlavor as DesktopPasteDataFlavor
-        return map[pasteDataFlavor.dataFlavor] ?: throw UnsupportedFlavorException(pasteDataFlavor.dataFlavor)
+        return map[pasteDataFlavor.dataFlavor] ?: NoneTransferData
     }
 }
