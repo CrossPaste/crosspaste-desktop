@@ -20,6 +20,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -86,7 +87,6 @@ fun SingleImagePreviewView(pasteFileCoordinate: PasteFileCoordinate) {
                     .build(),
             imageLoader = imageLoaders.userImageLoader,
             contentDescription = "imageType",
-            contentScale = ContentScale.Crop,
             content = {
                 val context = this
                 val state = context.painter.state.collectAsState().value
@@ -117,7 +117,15 @@ fun SingleImagePreviewView(pasteFileCoordinate: PasteFileCoordinate) {
                             }
 
                             else -> {
-                                context.SubcomposeAsyncImageContent()
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    context.SubcomposeAsyncImageContent(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop,
+                                    )
+                                }
                             }
                         }
                     }
