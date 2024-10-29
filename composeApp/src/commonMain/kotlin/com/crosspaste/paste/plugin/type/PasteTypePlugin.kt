@@ -1,5 +1,6 @@
 package com.crosspaste.paste.plugin.type
 
+import com.crosspaste.paste.NoneTransferData
 import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteTransferable
@@ -29,7 +30,17 @@ interface PasteTypePlugin {
     ) {
         try {
             val transferData = pasteTransferable.getTransferData(dataFlavor)
-            doLoadRepresentation(transferData, pasteId, itemIndex, dataFlavor, dataFlavorMap, pasteTransferable, pasteCollector)
+            if (transferData != NoneTransferData) {
+                doLoadRepresentation(
+                    transferData,
+                    pasteId,
+                    itemIndex,
+                    dataFlavor,
+                    dataFlavorMap,
+                    pasteTransferable,
+                    pasteCollector,
+                )
+            }
         } catch (e: Exception) {
             collectError(e, pasteId, itemIndex, pasteCollector)
         }
