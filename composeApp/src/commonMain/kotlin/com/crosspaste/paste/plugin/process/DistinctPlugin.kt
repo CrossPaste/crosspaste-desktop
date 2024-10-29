@@ -1,6 +1,5 @@
-package com.crosspaste.paste.plugin.processs
+package com.crosspaste.paste.plugin.process
 
-import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.realm.paste.PasteType
@@ -12,8 +11,14 @@ class DistinctPlugin(userDataPathProvider: UserDataPathProvider) : PasteProcessP
 
     private val childPlugins =
         mapOf(
-            Pair(PasteType.IMAGE, MultiImagesPlugin(userDataPathProvider)),
-            Pair(PasteType.FILE, MultFilesPlugin(userDataPathProvider)),
+            Pair(
+                PasteType.IMAGE,
+                MultiImagesPlugin(userDataPathProvider),
+            ),
+            Pair(
+                PasteType.FILE,
+                MultFilesPlugin(userDataPathProvider),
+            ),
             Pair(PasteType.TEXT, firstPlugin),
             Pair(PasteType.URL, firstPlugin),
             Pair(PasteType.HTML, firstPlugin),
