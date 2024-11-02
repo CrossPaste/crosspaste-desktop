@@ -74,11 +74,17 @@ fun StoreSettingsContentView() {
     var textCount: Long? by remember { mutableStateOf(null) }
     var textFormatSize: String? by remember { mutableStateOf(null) }
 
+    var colorCount: Long? by remember { mutableStateOf(null) }
+    var colorFormatSize: String? by remember { mutableStateOf(null) }
+
     var urlCount: Long? by remember { mutableStateOf(null) }
     var urlFormatSize: String? by remember { mutableStateOf(null) }
 
     var htmlCount: Long? by remember { mutableStateOf(null) }
     var htmlFormatSize: String? by remember { mutableStateOf(null) }
+
+    var rtfCount: Long? by remember { mutableStateOf(null) }
+    var rtfFormatSize: String? by remember { mutableStateOf(null) }
 
     var imageCount: Long? by remember { mutableStateOf(null) }
     var imageFormatSize: String? by remember { mutableStateOf(null) }
@@ -96,11 +102,17 @@ fun StoreSettingsContentView() {
         textCount = pasteResourceInfo.textCount
         textFormatSize = fileUtils.formatBytes(pasteResourceInfo.textSize)
 
+        colorCount = pasteResourceInfo.colorCount
+        colorFormatSize = fileUtils.formatBytes(pasteResourceInfo.colorSize)
+
         urlCount = pasteResourceInfo.urlCount
         urlFormatSize = fileUtils.formatBytes(pasteResourceInfo.urlSize)
 
         htmlCount = pasteResourceInfo.htmlCount
         htmlFormatSize = fileUtils.formatBytes(pasteResourceInfo.htmlSize)
+
+        rtfCount = pasteResourceInfo.rtfCount
+        rtfFormatSize = fileUtils.formatBytes(pasteResourceInfo.rtfSize)
 
         imageCount = pasteResourceInfo.imageCount
         imageFormatSize = fileUtils.formatBytes(pasteResourceInfo.imageSize)
@@ -130,8 +142,10 @@ fun StoreSettingsContentView() {
         arrayOf(
             Quadruple("pasteboard", hashtag(), pasteCount, pasteFormatSize),
             Quadruple("text", text(), textCount, textFormatSize),
+            Quadruple("color", hashtag(), colorCount, colorFormatSize),
             Quadruple("link", link(), urlCount, urlFormatSize),
             Quadruple("html", htmlOrRtf(), htmlCount, htmlFormatSize),
+            Quadruple("rtf", htmlOrRtf(), rtfCount, rtfFormatSize),
             Quadruple("image", image(), imageCount, imageFormatSize),
             Quadruple("file", file(), fileCount, fileFormatSize),
         )

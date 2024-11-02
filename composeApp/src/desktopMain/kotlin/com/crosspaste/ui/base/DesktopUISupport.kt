@@ -1,5 +1,6 @@
 package com.crosspaste.ui.base
 
+import androidx.compose.ui.awt.ComposeWindow
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppUrls
 import com.crosspaste.app.AppWindowManager
@@ -7,6 +8,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.i18n.GlobalCopywriterImpl.Companion.ZH
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteRtf
@@ -20,11 +22,16 @@ import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
 import com.google.common.io.Files
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import okio.Path
 import org.mongodb.kbson.ObjectId
+import java.awt.Color
 import java.awt.Desktop
+import java.awt.EventQueue
 import java.io.File
 import java.net.URI
+import javax.swing.JColorChooser
 
 class DesktopUISupport(
     private val appUrls: AppUrls,
@@ -37,6 +44,9 @@ class DesktopUISupport(
     private val logger = KotlinLogging.logger {}
 
     private val fileUtils = getFileUtils()
+
+    private val _showColorChooser = MutableStateFlow(false)
+    val showColorChooser: StateFlow<Boolean> = _showColorChooser
 
     override fun openUrlInBrowser(url: String) {
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
@@ -114,6 +124,28 @@ class DesktopUISupport(
         }
     }
 
+    override fun openColorPicker(color: Long) {
+        val initialColor = Color(color.toInt())
+        _showColorChooser.value = true
+        EventQueue.invokeLater {
+            JColorChooser(initialColor)
+            val result =
+                JColorChooser.showDialog(
+                    ComposeWindow(),
+                    copywriter.getText("color_picker"),
+                    initialColor,
+                )
+
+            if (result != null) {
+                val rgbColor = result.rgb
+                val alpha = result.alpha
+                _showColorChooser.value = false
+                logger.info { "Selected color: $rgbColor" }
+//                onColorSelected(selectedColor)
+            }
+        }
+    }
+
     private fun openFileInExplorer(file: File): Boolean {
         try {
             val filePath = file.absolutePath
@@ -174,6 +206,7 @@ class DesktopUISupport(
         pasteData.getPasteItem()?.let { item ->
             when (pasteData.pasteType) {
                 PasteType.TEXT -> openText(pasteData)
+                PasteType.COLOR -> openColorPicker((item as ColorPasteItem).color)
                 PasteType.URL -> openUrlInBrowser((item as UrlPasteItem).url)
                 PasteType.HTML -> openHtml(pasteData.id, (item as HtmlPasteItem).html)
                 PasteType.RTF -> openRtf(pasteData)

@@ -14,6 +14,7 @@ import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.PasteSearchService
 import com.crosspaste.paste.PasteboardService
+import com.crosspaste.paste.item.PasteColor
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.paste.item.PasteRtf
@@ -22,6 +23,7 @@ import com.crosspaste.paste.item.PasteUrl
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.ui.paste.detail.HtmlToImageDetailView
+import com.crosspaste.ui.paste.detail.PasteColorDetailView
 import com.crosspaste.ui.paste.detail.PasteFilesDetailView
 import com.crosspaste.ui.paste.detail.PasteImagesDetailView
 import com.crosspaste.ui.paste.detail.PasteTextDetailView
@@ -67,6 +69,9 @@ fun DetailPasteDataView() {
             when (pasteData.pasteType) {
                 PasteType.TEXT -> {
                     PasteTextDetailView(pasteData, it as PasteText, onDoubleClick)
+                }
+                PasteType.COLOR -> {
+                    PasteColorDetailView(pasteData, it as PasteColor, onDoubleClick)
                 }
                 PasteType.URL -> {
                     PasteUrlDetailView(pasteData, it as PasteUrl, onDoubleClick)

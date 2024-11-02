@@ -1,5 +1,6 @@
 package com.crosspaste.utils
 
+import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
@@ -47,10 +48,11 @@ object DesktopJsonUtils : JsonUtils {
                     serializersModuleOf(MutableRealmIntKSerializer)
                     serializersModuleOf(RealmAnyKSerializer)
                     polymorphic(RealmObject::class) {
+                        subclass(ColorPasteItem::class)
                         subclass(FilesPasteItem::class)
                         subclass(HtmlPasteItem::class)
-                        subclass(RtfPasteItem::class)
                         subclass(ImagesPasteItem::class)
+                        subclass(RtfPasteItem::class)
                         subclass(TextPasteItem::class)
                         subclass(UrlPasteItem::class)
                         subclass(PasteLabel::class)

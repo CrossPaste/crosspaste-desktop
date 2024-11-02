@@ -9,4 +9,5 @@ object PasteType {
     const val FILE = 3
     const val IMAGE = 4
     const val RTF = 5
+    const val COLOR = 6
 }

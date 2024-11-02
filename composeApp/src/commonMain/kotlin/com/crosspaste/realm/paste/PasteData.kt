@@ -158,6 +158,7 @@ class PasteData : RealmObject {
         } else {
             when (this.pasteType) {
                 PasteType.TEXT,
+                PasteType.COLOR,
                 PasteType.URL,
                 PasteType.FILE,
                 PasteType.IMAGE,
@@ -178,6 +179,19 @@ class PasteData : RealmObject {
                     "Unknown"
                 }
             }
+        }
+    }
+
+    fun getTypeText(): String {
+        return when (this.pasteType) {
+            PasteType.TEXT -> "text"
+            PasteType.COLOR -> "color"
+            PasteType.URL -> "link"
+            PasteType.HTML -> "html"
+            PasteType.RTF -> "rtf"
+            PasteType.IMAGE -> "image"
+            PasteType.FILE -> "file"
+            else -> "unknown"
         }
     }
 }

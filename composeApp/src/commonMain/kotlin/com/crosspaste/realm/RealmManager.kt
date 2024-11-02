@@ -1,6 +1,7 @@
 package com.crosspaste.realm
 
 import com.crosspaste.app.AppFileType
+import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
@@ -10,6 +11,7 @@ import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteCollection
 import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteLabel
 import com.crosspaste.realm.signal.PasteIdentityKey
 import com.crosspaste.realm.signal.PastePreKey
 import com.crosspaste.realm.signal.PasteSession
@@ -45,7 +47,8 @@ class RealmManager private constructor(private val config: RealmConfiguration) {
             setOf(
                 PasteData::class,
                 PasteCollection::class,
-                com.crosspaste.realm.paste.PasteLabel::class,
+                PasteLabel::class,
+                ColorPasteItem::class,
                 FilesPasteItem::class,
                 HtmlPasteItem::class,
                 ImagesPasteItem::class,

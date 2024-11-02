@@ -49,7 +49,6 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteRealm
-import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.ui.CrossPasteTheme.favoriteColor
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.PasteTooltipAreaView
@@ -463,16 +462,7 @@ fun getDetailInfo(
             "${copywriter.getText("source")}: $it",
         )
     }
-    val typeText =
-        when (pasteData.pasteType) {
-            PasteType.TEXT -> "text"
-            PasteType.URL -> "link"
-            PasteType.HTML -> "html"
-            PasteType.RTF -> "rtf"
-            PasteType.IMAGE -> "image"
-            PasteType.FILE -> "file"
-            else -> "unknown"
-        }
+    val typeText = pasteData.getTypeText()
     infos.add(
         "${copywriter.getText("type")}: ${copywriter.getText(typeText)}",
     )

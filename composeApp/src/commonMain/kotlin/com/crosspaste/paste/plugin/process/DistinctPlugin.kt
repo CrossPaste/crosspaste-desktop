@@ -20,6 +20,7 @@ class DistinctPlugin(userDataPathProvider: UserDataPathProvider) : PasteProcessP
                 MultFilesPlugin(userDataPathProvider),
             ),
             Pair(PasteType.TEXT, firstPlugin),
+            Pair(PasteType.COLOR, firstPlugin),
             Pair(PasteType.URL, firstPlugin),
             Pair(PasteType.HTML, firstPlugin),
             Pair(PasteType.RTF, firstPlugin),

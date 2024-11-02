@@ -29,7 +29,7 @@
 
 - **🔄 Real-time Sharing**: Instantly share pasteboard content across devices, seamlessly.
 - **🖥️ Unified Cross-platform**: Consistent interface on Mac, Windows, and Linux. No need to change habits.
-- **📋 Rich Type Support**: Easily handle various pasteboard types: Text、URL、HTML RTF、Images and Files.
+- **📋 Rich Type Support**: Handle various pasteboard types: Text, Color, URL, HTML, RTF, Image, File.
 - **🔒 End-to-End Encryption**: Using Signal protocol to fully protect your data security.
 - **🌐 LAN-only Serverless**: Local storage, serverless architecture. Privacy protection, in your control.
 - **🧹 Smart Space Management**: Auto-cleanup options manage pasteboard storage without manual effort.
@@ -75,8 +75,8 @@ CrossPaste is continuously evolving! We plan to add more useful features in futu
 
 **As seen in the changelog, recent versions have included numerous PRs focused on refactoring and labeled with "multiplatform". Indeed, we are actively working towards launching a mobile version. These efforts are laying the groundwork for mobile support. Therefore, before the mobile version is released, we will only be focusing on bug fixes and a limited number of already-planned new features.**
 
-- [x] **v1.0.12**: Support for RTF format in clipboard
-- [ ] **v1.0.13**: Support for color data in clipboard
+- [x] **v1.0.12**: Support for RTF format in pasteboard
+- [x] **v1.0.13**: Support for color data in pasteboard
 - [ ] **v1.1.0**: Support for mobile devices and shared pasteboard with mobile
 - [ ] **v1.2.0**: Support for native pasteboard, improve pasteboard performance
 - [ ] **v1.3.0**: Introduction of command-line mode
