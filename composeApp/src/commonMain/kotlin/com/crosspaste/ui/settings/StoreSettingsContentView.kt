@@ -45,6 +45,7 @@ import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.ui.base.CustomRectangleSwitch
 import com.crosspaste.ui.base.anglesUpDown
 import com.crosspaste.ui.base.clock
+import com.crosspaste.ui.base.color
 import com.crosspaste.ui.base.database
 import com.crosspaste.ui.base.file
 import com.crosspaste.ui.base.hashtag
@@ -142,7 +143,7 @@ fun StoreSettingsContentView() {
         arrayOf(
             Quadruple("pasteboard", hashtag(), pasteCount, pasteFormatSize),
             Quadruple("text", text(), textCount, textFormatSize),
-            Quadruple("color", hashtag(), colorCount, colorFormatSize),
+            Quadruple("color", color(), colorCount, colorFormatSize),
             Quadruple("link", link(), urlCount, urlFormatSize),
             Quadruple("html", htmlOrRtf(), htmlCount, htmlFormatSize),
             Quadruple("rtf", htmlOrRtf(), rtfCount, rtfFormatSize),
