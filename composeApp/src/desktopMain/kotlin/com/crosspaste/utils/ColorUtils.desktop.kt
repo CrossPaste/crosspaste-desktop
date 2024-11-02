@@ -1,5 +1,7 @@
 package com.crosspaste.utils
 
+import kotlin.math.roundToInt
+
 actual fun getColorUtils(): ColorUtils {
     return DesktopColorUtils
 }
@@ -9,19 +11,19 @@ object DesktopColorUtils : ColorUtils {
     private const val HEX_PATTERN = """[0-9A-Fa-f]"""
 
     // Regex patterns for different color formats
-    private val HEX_6_PATTERN = """#?(${HEX_PATTERN}{6})""".toRegex()
-    private val HEX_8_PATTERN = """#?(${HEX_PATTERN}{8})""".toRegex()
-    private val RGB_PATTERN = """rgb\s*\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)""".toRegex()
-    private val RGBA_PATTERN = """rgba\s*\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(0|1|0?\.\d+)\s*\)""".toRegex()
+    private val HEX_6_PATTERN = """^#?(${HEX_PATTERN}{6})$""".toRegex()
+    private val HEX_8_PATTERN = """^#?(${HEX_PATTERN}{8})$""".toRegex()
+    private val RGB_PATTERN = """^rgb\s*\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$""".toRegex()
+    private val RGBA_PATTERN = """^rgba\s*\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(1|0|0?\.\d+|1\.0)\s*\)$""".toRegex()
 
     override fun tryCovertToColor(text: String): Long? {
         // Quick check for common patterns to fail fast
         if (text.isEmpty()) return null
 
         return when {
-            text.startsWith("#") || text[0].isLetterOrDigit() -> tryConvertHex(text)
-            text.startsWith("rgb(") -> tryConvertRGB(text)
             text.startsWith("rgba(") -> tryConvertRGBA(text)
+            text.startsWith("rgb(") -> tryConvertRGB(text)
+            text.startsWith("#") || (text[0].isLetterOrDigit() && !text.startsWith("rgb")) -> tryConvertHex(text)
             else -> null
         }
     }
@@ -70,7 +72,7 @@ object DesktopColorUtils : ColorUtils {
             val red = r.toInt()
             val green = g.toInt()
             val blue = b.toInt()
-            val alpha = (a.toFloat() * 255).toInt()
+            val alpha = (a.toFloat() * 255).roundToInt()
 
             if (red !in 0..255 || green !in 0..255 || blue !in 0..255 || alpha !in 0..255) {
                 return null
