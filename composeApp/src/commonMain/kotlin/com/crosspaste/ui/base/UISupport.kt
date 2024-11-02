@@ -1,5 +1,6 @@
 package com.crosspaste.ui.base
 
+import com.crosspaste.paste.item.PasteColor
 import com.crosspaste.realm.paste.PasteData
 import okio.Path
 import org.mongodb.kbson.ObjectId
@@ -19,7 +20,7 @@ interface UISupport {
 
     fun browseFile(filePath: Path)
 
-    fun openColorPicker(color: Long)
+    fun openColorPicker(pasteColor: PasteColor)
 
     fun openImage(imagePath: Path)
 

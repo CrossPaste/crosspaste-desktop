@@ -10,12 +10,15 @@ import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
+import com.crosspaste.paste.item.PasteColor
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteRtf
 import com.crosspaste.paste.item.UrlPasteItem
+import com.crosspaste.paste.plugin.type.ColorTypePlugin
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.ui.ScreenType
 import com.crosspaste.utils.extension
@@ -36,8 +39,10 @@ import javax.swing.JColorChooser
 class DesktopUISupport(
     private val appUrls: AppUrls,
     private val appWindowManager: AppWindowManager,
+    private val colorTypePlugin: ColorTypePlugin,
     private val copywriter: GlobalCopywriter,
     private val notificationManager: NotificationManager,
+    private val pasteRealm: PasteRealm,
     private val userDataPathProvider: UserDataPathProvider,
 ) : UISupport {
 
@@ -124,8 +129,8 @@ class DesktopUISupport(
         }
     }
 
-    override fun openColorPicker(color: Long) {
-        val initialColor = Color(color.toInt())
+    override fun openColorPicker(pasteColor: PasteColor) {
+        val initialColor = Color(pasteColor.color.toInt())
         _showColorChooser.value = true
         EventQueue.invokeLater {
             JColorChooser(initialColor)
@@ -139,9 +144,18 @@ class DesktopUISupport(
             if (result != null) {
                 val rgbColor = result.rgb
                 val alpha = result.alpha
+
+                val newColor =
+                    ((alpha.toLong() and 0xFF) shl 24) or
+                        ((result.red.toLong() and 0xFF) shl 16) or
+                        ((result.green.toLong() and 0xFF) shl 8) or
+                        (result.blue.toLong() and 0xFF)
+
                 _showColorChooser.value = false
                 logger.info { "Selected color: $rgbColor" }
-//                onColorSelected(selectedColor)
+                pasteRealm.update { realm ->
+                    colorTypePlugin.updateColor(newColor, pasteColor as ColorPasteItem, realm)
+                }
             }
         }
     }
@@ -206,7 +220,7 @@ class DesktopUISupport(
         pasteData.getPasteItem()?.let { item ->
             when (pasteData.pasteType) {
                 PasteType.TEXT -> openText(pasteData)
-                PasteType.COLOR -> openColorPicker((item as ColorPasteItem).color)
+                PasteType.COLOR -> openColorPicker((item as ColorPasteItem))
                 PasteType.URL -> openUrlInBrowser((item as UrlPasteItem).url)
                 PasteType.HTML -> openHtml(pasteData.id, (item as HtmlPasteItem).html)
                 PasteType.RTF -> openRtf(pasteData)
