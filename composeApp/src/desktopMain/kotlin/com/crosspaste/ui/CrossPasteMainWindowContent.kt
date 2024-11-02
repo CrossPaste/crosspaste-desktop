@@ -31,7 +31,7 @@ import com.crosspaste.ui.CrossPasteTheme.Theme
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.ToastView
 import com.crosspaste.ui.devices.TokenView
-import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
+import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject

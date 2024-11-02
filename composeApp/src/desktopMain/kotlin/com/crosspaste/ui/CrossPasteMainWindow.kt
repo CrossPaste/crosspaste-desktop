@@ -12,7 +12,7 @@ import com.crosspaste.app.ExitMode
 import com.crosspaste.listener.GlobalListener
 import com.crosspaste.ui.base.DesktopUISupport
 import com.crosspaste.ui.base.UISupport
-import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
+import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject

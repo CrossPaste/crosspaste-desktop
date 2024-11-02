@@ -2,20 +2,21 @@ package com.crosspaste.utils
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 
-expect val ioDispatcher: CoroutineDispatcher
+val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 
-expect val mainDispatcher: CoroutineDispatcher
+val mainDispatcher: CoroutineDispatcher = Dispatchers.Main
 
-expect val cpuDispatcher: CoroutineDispatcher
+val cpuDispatcher: CoroutineDispatcher = Dispatchers.Default
 
-expect val unconfinedDispatcher: CoroutineDispatcher
+val unconfinedDispatcher: CoroutineDispatcher = Dispatchers.Unconfined
 
-interface GlobalCoroutineScope {
+object GlobalCoroutineScope {
 
-    val mainCoroutineDispatcher: CoroutineScope
+    val mainCoroutineDispatcher = CoroutineScope(mainDispatcher)
 
-    val ioCoroutineDispatcher: CoroutineScope
+    val ioCoroutineDispatcher = CoroutineScope(ioDispatcher)
 
-    val cpuCoroutineDispatcher: CoroutineScope
+    val cpuCoroutineDispatcher = CoroutineScope(cpuDispatcher)
 }
