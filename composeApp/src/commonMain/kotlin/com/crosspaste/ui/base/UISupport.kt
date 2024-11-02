@@ -19,6 +19,8 @@ interface UISupport {
 
     fun browseFile(filePath: Path)
 
+    fun openColorPicker(color: Long)
+
     fun openImage(imagePath: Path)
 
     fun openText(pasteData: PasteData)

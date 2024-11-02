@@ -10,6 +10,8 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
 import com.crosspaste.app.ExitMode
 import com.crosspaste.listener.GlobalListener
+import com.crosspaste.ui.base.DesktopUISupport
+import com.crosspaste.ui.base.UISupport
 import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch
@@ -24,9 +26,11 @@ fun CrossPasteMainWindow(
 ) {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val globalListener = koinInject<GlobalListener>()
+    val uiSupport = koinInject<UISupport>() as DesktopUISupport
 
     val showMainWindow by appWindowManager.showMainWindow.collectAsState()
     val currentMainWindowState by appWindowManager.mainWindowState.collectAsState()
+    val showColorChooser by uiSupport.showColorChooser.collectAsState()
 
     Window(
         onCloseRequest = { exitApplication(ExitMode.EXIT) },
@@ -54,7 +58,8 @@ fun CrossPasteMainWindow(
                         mainCoroutineDispatcher.launch(CoroutineName("Hide CrossPaste")) {
                             if (appWindowManager.getShowMainWindow() &&
                                 !appWindowManager.getShowMainDialog() &&
-                                !appWindowManager.getShowMainDialog()
+                                !appWindowManager.getShowFileDialog() &&
+                                !showColorChooser
                             ) {
                                 appWindowManager.unActiveMainWindow()
                             }

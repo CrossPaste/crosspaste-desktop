@@ -8,11 +8,12 @@ object SortPlugin : PasteProcessPlugin {
 
     private val itemPriorityMap: Map<Int, Int> =
         mapOf(
-            PasteType.FILE to 5,
-            PasteType.HTML to 4,
-            PasteType.RTF to 3,
-            PasteType.IMAGE to 2,
-            PasteType.URL to 1,
+            PasteType.FILE to 6,
+            PasteType.HTML to 5,
+            PasteType.RTF to 4,
+            PasteType.IMAGE to 3,
+            PasteType.URL to 2,
+            PasteType.COLOR to 1,
             PasteType.TEXT to 0,
             PasteType.INVALID to -1,
         )

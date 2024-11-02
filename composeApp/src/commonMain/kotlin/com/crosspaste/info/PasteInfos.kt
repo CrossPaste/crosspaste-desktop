@@ -15,4 +15,6 @@ object PasteInfos {
     const val SIZE = "size"
 
     const val TYPE = "type"
+
+    const val COLOR = "color"
 }

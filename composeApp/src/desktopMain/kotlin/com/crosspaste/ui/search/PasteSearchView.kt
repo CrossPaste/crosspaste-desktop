@@ -489,6 +489,17 @@ fun CrossPasteSearchWindowContent() {
                                                         }
                                                     }
 
+                                                    if (currentType != "color") {
+                                                        MenuItem(copywriter.getText("color"), textStyle, paddingValues) {
+                                                            pasteSearchService.setPasteType(
+                                                                PasteType.COLOR,
+                                                            )
+                                                            currentType = "color"
+                                                            showTypes = false
+                                                            focusRequester.requestFocus() // keep textField focus
+                                                        }
+                                                    }
+
                                                     if (currentType != "link") {
                                                         MenuItem(copywriter.getText("link"), textStyle, paddingValues) {
                                                             pasteSearchService.setPasteType(

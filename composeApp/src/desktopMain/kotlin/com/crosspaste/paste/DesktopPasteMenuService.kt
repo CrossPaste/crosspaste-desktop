@@ -73,7 +73,7 @@ class DesktopPasteMenuService(
         index: Int,
     ) {
         uiSupport.openPasteData(pasteData, index)
-        if (pasteData.pasteType != PasteType.TEXT) {
+        if (pasteData.pasteType != PasteType.TEXT && pasteData.pasteType != PasteType.COLOR) {
             desktopAppWindowManager.setShowMainWindow(false)
         }
     }

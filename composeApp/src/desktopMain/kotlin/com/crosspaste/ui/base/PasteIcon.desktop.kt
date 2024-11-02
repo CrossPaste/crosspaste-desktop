@@ -10,8 +10,14 @@ import com.crosspaste.composeapp.generated.resources.html
 import com.crosspaste.composeapp.generated.resources.image
 import com.crosspaste.composeapp.generated.resources.image_slash
 import com.crosspaste.composeapp.generated.resources.link
+import com.crosspaste.composeapp.generated.resources.palette
 import com.crosspaste.composeapp.generated.resources.text
 import org.jetbrains.compose.resources.painterResource
+
+@Composable
+actual fun color(): Painter {
+    return painterResource(Res.drawable.palette)
+}
 
 @Composable
 actual fun file(): Painter {

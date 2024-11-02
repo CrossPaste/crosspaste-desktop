@@ -3,9 +3,11 @@ package com.crosspaste.realm.paste
 import com.crosspaste.app.AppFileType
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.paste.CurrentPaste
+import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
+import com.crosspaste.paste.item.RtfPasteItem
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
@@ -192,6 +194,10 @@ class PasteRealm(
         val textCount = textQuery.count().find()
         val textSize = textQuery.sum<Long>("size").find()
 
+        val colorQuery = realm.query(ColorPasteItem::class, "pasteState != $0", PasteState.DELETED)
+        val colorCount = colorQuery.count().find()
+        val colorSize = colorQuery.sum<Long>("size").find()
+
         val urlQuery = realm.query(UrlPasteItem::class, "pasteState != $0", PasteState.DELETED)
         val urlCount = urlQuery.count().find()
         val urlSize = urlQuery.sum<Long>("size").find()
@@ -199,6 +205,10 @@ class PasteRealm(
         val htmlQuery = realm.query(HtmlPasteItem::class, "pasteState != $0", PasteState.DELETED)
         val htmlCount = htmlQuery.count().find()
         val htmlSize = htmlQuery.sum<Long>("size").find()
+
+        val rtfQuery = realm.query(RtfPasteItem::class, "pasteState != $0", PasteState.DELETED)
+        val rtfCount = rtfQuery.count().find()
+        val rtfSize = rtfQuery.sum<Long>("size").find()
 
         val imageQuery = realm.query(ImagesPasteItem::class, "pasteState != $0", PasteState.DELETED)
         val imageCount = imageQuery.sum<Long>("count").find()
@@ -213,8 +223,10 @@ class PasteRealm(
         return PasteResourceInfo(
             count, size,
             textCount, textSize,
+            colorCount, colorSize,
             urlCount, urlSize,
             htmlCount, htmlSize,
+            rtfCount, rtfSize,
             imageCount, imageSize,
             fileCount, fileSize,
         )
@@ -240,6 +252,16 @@ class PasteRealm(
         val textCount = textQuery.count().find()
         val textSize = textQuery.sum<Long>("size").find()
 
+        val colorQuery =
+            realm.query(
+                ColorPasteItem::class,
+                "favorite == $0 AND pasteState != $1",
+                true,
+                PasteState.DELETED,
+            )
+        val colorCount = colorQuery.count().find()
+        val colorSize = colorQuery.sum<Long>("size").find()
+
         val urlQuery =
             realm.query(
                 UrlPasteItem::class,
@@ -259,6 +281,16 @@ class PasteRealm(
             )
         val htmlCount = htmlQuery.count().find()
         val htmlSize = htmlQuery.sum<Long>("size").find()
+
+        val rtfQuery =
+            realm.query(
+                RtfPasteItem::class,
+                "favorite == $0 AND pasteState != $1",
+                true,
+                PasteState.DELETED,
+            )
+        val rtfCount = rtfQuery.count().find()
+        val rtfSize = rtfQuery.sum<Long>("size").find()
 
         val imageQuery =
             realm.query(
@@ -285,8 +317,10 @@ class PasteRealm(
         return PasteResourceInfo(
             count, size,
             textCount, textSize,
+            colorCount, colorSize,
             urlCount, urlSize,
             htmlCount, htmlSize,
+            rtfCount, rtfSize,
             imageCount, imageSize,
             fileCount, fileSize,
         )

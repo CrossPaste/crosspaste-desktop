@@ -3,6 +3,7 @@ package com.crosspaste.ui.paste
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
 import com.crosspaste.realm.paste.PasteType
+import com.crosspaste.ui.base.color
 import com.crosspaste.ui.base.file
 import com.crosspaste.ui.base.htmlOrRtf
 import com.crosspaste.ui.base.image
@@ -29,6 +30,10 @@ fun PasteTypeIconBaseView(pasteType: Int): Painter {
         }
         PasteType.FILE -> {
             file()
+        }
+
+        PasteType.COLOR -> {
+            color()
         }
         else -> {
             question()
