@@ -14,7 +14,7 @@ import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
 import com.crosspaste.composeapp.generated.resources.Res
-import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
+import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import dorkbox.systemTray.MenuItem
 import dorkbox.systemTray.SystemTray
 import dorkbox.systemTray.SystemTray.TrayType

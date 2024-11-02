@@ -197,8 +197,6 @@ import com.crosspaste.ui.model.PasteDataViewModel
 import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DesktopLocaleUtils
 import com.crosspaste.utils.DeviceUtils
-import com.crosspaste.utils.GlobalCoroutineScope
-import com.crosspaste.utils.GlobalCoroutineScopeImpl
 import com.crosspaste.utils.LocaleUtils
 import com.crosspaste.utils.getAppEnvUtils
 import com.crosspaste.utils.ioDispatcher
@@ -284,7 +282,6 @@ class CrossPaste {
                     single<EndpointInfoFactory> { EndpointInfoFactory(get(), lazy { get<PasteServer<*, *>>() }) }
                     single<FileExtImageLoader> { DesktopFileExtLoader(get(), get()) }
                     single<FilePersist> { FilePersist }
-                    single<GlobalCoroutineScope> { GlobalCoroutineScopeImpl }
                     single<ImageLoaders> { ImageLoaders(get(), get(), get(), get(), get()) }
                     single<ImageWriter<BufferedImage>> { DesktopImageWriter }
                     single<KLogger> { CrossPaste.logger }

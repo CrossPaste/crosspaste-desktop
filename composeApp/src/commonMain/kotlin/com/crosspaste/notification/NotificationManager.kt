@@ -1,7 +1,7 @@
 package com.crosspaste.notification
 
 import com.crosspaste.net.plugin.EncryptResponse.ioCoroutineDispatcher
-import com.crosspaste.utils.equalDebounce
+import com.crosspaste.utils.ControlUtils.equalDebounce
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow

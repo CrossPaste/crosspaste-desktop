@@ -23,7 +23,7 @@ import com.crosspaste.platform.macos.MacAppUtils.useAll
 import com.crosspaste.platform.macos.api.WindowInfo
 import com.crosspaste.ui.base.DesktopNotificationManager
 import com.crosspaste.ui.base.UISupport
-import com.crosspaste.utils.GlobalCoroutineScopeImpl.mainCoroutineDispatcher
+import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.delay
