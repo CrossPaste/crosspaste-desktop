@@ -25,7 +25,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.app.AppSize
 import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.item.PasteColor
 import com.crosspaste.realm.paste.PasteData
@@ -38,7 +37,6 @@ fun ColorPreviewView(
     onDoubleClick: () -> Unit,
 ) {
     pasteData.getPasteItem()?.let {
-        val appSize = koinInject<AppSize>()
         val uiSupport = koinInject<UISupport>()
         val pasteMenuService = koinInject<DesktopPasteMenuService>()
 
@@ -69,7 +67,7 @@ fun ColorPreviewView(
                                 Modifier.pointerInput(Unit) {
                                     detectTapGestures(
                                         onTap = {
-                                            uiSupport.openColorPicker(pasteColor.color)
+                                            uiSupport.openColorPicker(pasteColor)
                                         },
                                     )
                                 },
