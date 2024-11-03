@@ -31,6 +31,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -69,7 +70,6 @@ import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.paste.PasteSearchService
 import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.ui.CrossPasteTheme.Theme
 import com.crosspaste.ui.CrossPasteTheme.darken
@@ -86,11 +86,12 @@ import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.menuItemReminderTextStyle
 import com.crosspaste.ui.base.noFavorite
+import com.crosspaste.ui.model.PasteSearchViewModel
+import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.utils.mainDispatcher
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
@@ -101,31 +102,32 @@ fun CrossPasteSearchWindowContent() {
     val appSize = koinInject<AppSize>() as DesktopAppSize
     val copywriter = koinInject<GlobalCopywriter>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
-    val pasteSearchService = koinInject<PasteSearchService>()
     val appUpdateService = koinInject<AppUpdateService>()
     val logger = koinInject<KLogger>()
+
+    val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
+    val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
+
+    val inputSearch by pasteSearchViewModel.inputSearch.collectAsState()
+
+    val searchSort by pasteSearchViewModel.searchSort.collectAsState()
+
+    val searchFavorite by pasteSearchViewModel.searchFavorite.collectAsState()
+
+    val searchPasteType by pasteSearchViewModel.searchPasteType.collectAsState()
+
+    val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
+
     val focusRequester = appWindowManager.searchFocusRequester
 
     val scope = rememberCoroutineScope()
-    var lastInputTime by remember { mutableStateOf(0L) }
 
-    LaunchedEffect(pasteSearchService.inputSearch) {
-        val currentTime = Clock.System.now().toEpochMilliseconds()
-        lastInputTime = currentTime
-        if (pasteSearchService.inputSearch.trim().isNotEmpty()) {
-            delay(500)
+    LaunchedEffect(showSearchWindow) {
+        if (showSearchWindow) {
+            pasteSearchViewModel.resetSearch()
+            delay(32)
+            focusRequester.requestFocus()
         }
-        if (lastInputTime == currentTime) {
-            pasteSearchService.search()
-        }
-    }
-
-    LaunchedEffect(
-        pasteSearchService.searchFavorite,
-        pasteSearchService.searchSort,
-        pasteSearchService.searchPasteType,
-    ) {
-        pasteSearchService.search()
     }
 
     Theme {
@@ -141,28 +143,28 @@ fun CrossPasteSearchWindowContent() {
                             Key.Enter -> {
                                 scope.launch(mainDispatcher) {
                                     appWindowManager.setSearchCursorWait()
-                                    pasteSearchService.toPaste()
+                                    pasteSelectionViewModel.toPaste()
                                     appWindowManager.resetSearchCursor()
                                 }
                                 true
                             }
                             Key.DirectionUp -> {
-                                pasteSearchService.upSelectedIndex()
+                                pasteSelectionViewModel.upSelectedIndex()
                                 true
                             }
                             Key.DirectionDown -> {
-                                pasteSearchService.downSelectedIndex()
+                                pasteSelectionViewModel.downSelectedIndex()
                                 true
                             }
                             Key.N -> {
                                 if (it.isCtrlPressed) {
-                                    pasteSearchService.downSelectedIndex()
+                                    pasteSelectionViewModel.downSelectedIndex()
                                 }
                                 true
                             }
                             Key.P -> {
                                 if (it.isCtrlPressed) {
-                                    pasteSearchService.upSelectedIndex()
+                                    pasteSelectionViewModel.upSelectedIndex()
                                 }
                                 true
                             }
@@ -203,8 +205,8 @@ fun CrossPasteSearchWindowContent() {
                                             logger.debug { "onFocusChanged $it" }
                                         }
                                         .fillMaxSize(),
-                                value = pasteSearchService.inputSearch,
-                                onValueChange = { pasteSearchService.updateInputSearch(it) },
+                                value = inputSearch,
+                                onValueChange = { pasteSearchViewModel.updateInputSearch(it) },
                                 keyboardOptions = KeyboardOptions.Default.copy(autoCorrectEnabled = true),
                                 visualTransformation = VisualTransformation.None,
                                 placeholder = {
@@ -330,7 +332,7 @@ fun CrossPasteSearchWindowContent() {
                                             PasteIconButton(
                                                 size = 20.dp,
                                                 onClick = {
-                                                    pasteSearchService.switchSort()
+                                                    pasteSearchViewModel.switchSort()
                                                     focusRequester.requestFocus() // keep textField focus
                                                 },
                                                 modifier =
@@ -339,7 +341,7 @@ fun CrossPasteSearchWindowContent() {
                                             ) {
                                                 Icon(
                                                     modifier = Modifier.size(20.dp),
-                                                    painter = if (pasteSearchService.searchSort) descSort() else ascSort(),
+                                                    painter = if (searchSort) descSort() else ascSort(),
                                                     contentDescription = "Sort by creation time",
                                                     tint = MaterialTheme.colorScheme.primary,
                                                 )
@@ -384,7 +386,7 @@ fun CrossPasteSearchWindowContent() {
                                             PasteIconButton(
                                                 size = 18.dp,
                                                 onClick = {
-                                                    pasteSearchService.switchFavorite()
+                                                    pasteSearchViewModel.switchFavorite()
                                                     focusRequester.requestFocus() // keep textField focus
                                                 },
                                                 modifier =
@@ -393,10 +395,10 @@ fun CrossPasteSearchWindowContent() {
                                             ) {
                                                 Icon(
                                                     modifier = Modifier.size(18.dp),
-                                                    painter = if (pasteSearchService.searchFavorite) favorite() else noFavorite(),
+                                                    painter = if (searchFavorite) favorite() else noFavorite(),
                                                     contentDescription = "Favorite",
                                                     tint =
-                                                        if (pasteSearchService.searchFavorite) {
+                                                        if (searchFavorite) {
                                                             favoriteColor()
                                                         } else {
                                                             MaterialTheme.colorScheme.primary
@@ -470,9 +472,9 @@ fun CrossPasteSearchWindowContent() {
                                                             .clip(RoundedCornerShape(5.dp))
                                                             .background(MaterialTheme.colorScheme.surface),
                                                 ) {
-                                                    if (pasteSearchService.searchPasteType != null) {
+                                                    if (searchPasteType != null) {
                                                         MenuItem(copywriter.getText("all_types"), textStyle, paddingValues) {
-                                                            pasteSearchService.setPasteType(null)
+                                                            pasteSearchViewModel.setPasteType(null)
                                                             currentType = "all_types"
                                                             showTypes = false
                                                             focusRequester.requestFocus()
@@ -482,7 +484,7 @@ fun CrossPasteSearchWindowContent() {
 
                                                     if (currentType != "text") {
                                                         MenuItem(copywriter.getText("text"), textStyle, paddingValues) {
-                                                            pasteSearchService.setPasteType(PasteType.TEXT)
+                                                            pasteSearchViewModel.setPasteType(PasteType.TEXT)
                                                             currentType = "text"
                                                             showTypes = false
                                                             focusRequester.requestFocus() // keep textField focus
@@ -491,7 +493,7 @@ fun CrossPasteSearchWindowContent() {
 
                                                     if (currentType != "color") {
                                                         MenuItem(copywriter.getText("color"), textStyle, paddingValues) {
-                                                            pasteSearchService.setPasteType(
+                                                            pasteSearchViewModel.setPasteType(
                                                                 PasteType.COLOR,
                                                             )
                                                             currentType = "color"
@@ -502,7 +504,7 @@ fun CrossPasteSearchWindowContent() {
 
                                                     if (currentType != "link") {
                                                         MenuItem(copywriter.getText("link"), textStyle, paddingValues) {
-                                                            pasteSearchService.setPasteType(
+                                                            pasteSearchViewModel.setPasteType(
                                                                 PasteType.URL,
                                                             )
                                                             currentType = "link"
@@ -513,7 +515,7 @@ fun CrossPasteSearchWindowContent() {
 
                                                     if (currentType != "html") {
                                                         MenuItem(copywriter.getText("html"), textStyle, paddingValues) {
-                                                            pasteSearchService.setPasteType(
+                                                            pasteSearchViewModel.setPasteType(
                                                                 PasteType.HTML,
                                                             )
                                                             currentType = "html"
@@ -524,7 +526,7 @@ fun CrossPasteSearchWindowContent() {
 
                                                     if (currentType != "rtf") {
                                                         MenuItem(copywriter.getText("rtf"), textStyle, paddingValues) {
-                                                            pasteSearchService.setPasteType(
+                                                            pasteSearchViewModel.setPasteType(
                                                                 PasteType.RTF,
                                                             )
                                                             currentType = "rtf"
@@ -539,7 +541,7 @@ fun CrossPasteSearchWindowContent() {
                                                             textStyle,
                                                             paddingValues,
                                                         ) {
-                                                            pasteSearchService.setPasteType(
+                                                            pasteSearchViewModel.setPasteType(
                                                                 PasteType.IMAGE,
                                                             )
                                                             currentType = "image"
@@ -550,7 +552,7 @@ fun CrossPasteSearchWindowContent() {
 
                                                     if (currentType != "file") {
                                                         MenuItem(copywriter.getText("file"), textStyle, paddingValues) {
-                                                            pasteSearchService.setPasteType(
+                                                            pasteSearchViewModel.setPasteType(
                                                                 PasteType.FILE,
                                                             )
                                                             currentType = "file"
@@ -569,7 +571,7 @@ fun CrossPasteSearchWindowContent() {
 
                     Row(modifier = Modifier.size(appSize.searchCoreContentSize)) {
                         SearchListView {
-                            pasteSearchService.clickSetSelectedIndex(it)
+                            pasteSelectionViewModel.setSelectedIndex(it)
                             focusRequester.requestFocus()
                         }
                         VerticalDivider(thickness = 2.dp)
@@ -647,7 +649,7 @@ fun CrossPasteSearchWindowContent() {
                                     Modifier.clickable {
                                         scope.launch(mainDispatcher) {
                                             appWindowManager.setSearchCursorWait()
-                                            pasteSearchService.toPaste()
+                                            pasteSelectionViewModel.toPaste()
                                             appWindowManager.resetSearchCursor()
                                         }
                                     },

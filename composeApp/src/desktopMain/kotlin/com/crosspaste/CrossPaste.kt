@@ -99,11 +99,9 @@ import com.crosspaste.paste.DefaultPasteSyncProcessManager
 import com.crosspaste.paste.DesktopCurrentPaste
 import com.crosspaste.paste.DesktopPasteIDGeneratorFactory
 import com.crosspaste.paste.DesktopPasteMenuService
-import com.crosspaste.paste.DesktopPasteSearchService
 import com.crosspaste.paste.DesktopTransferableConsumer
 import com.crosspaste.paste.DesktopTransferableProducer
 import com.crosspaste.paste.PasteIDGenerator
-import com.crosspaste.paste.PasteSearchService
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.TransferableConsumer
@@ -194,6 +192,8 @@ import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.base.PasteContextMenuRepresentation
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.model.PasteDataViewModel
+import com.crosspaste.ui.model.PasteSearchViewModel
+import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DesktopLocaleUtils
 import com.crosspaste.utils.DeviceUtils
@@ -215,7 +215,6 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.painterResource
 import org.koin.core.KoinApplication
 import org.koin.core.context.GlobalContext
-import org.koin.core.module.dsl.viewModel
 import org.koin.core.qualifier.Qualifier
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -365,7 +364,6 @@ class CrossPaste {
                     // paste component
                     single<CleanPasteScheduler> { CleanPasteScheduler(get(), get(), get()) }
                     single<CurrentPaste> { DesktopCurrentPaste(lazy { get() }) }
-                    single<DesktopPasteSearchService> { DesktopPasteSearchService(get(), get(), get()) }
                     single<RenderingHelper> { DesktopRenderingHelper(get()) }
                     single<RenderingService<String>>(named("htmlRendering")) {
                         DesktopHtmlRenderingService(get(), get(), get())
@@ -377,7 +375,6 @@ class CrossPaste {
                     single<PasteboardService> {
                         getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get())
                     }
-                    single<PasteSearchService> { get<DesktopPasteSearchService>() }
                     single<PasteSyncProcessManager<ObjectId>> { DefaultPasteSyncProcessManager() }
                     single<TaskExecutor> {
                         TaskExecutor(
@@ -457,7 +454,7 @@ class CrossPaste {
                     single<NotificationManager> { DesktopNotificationManager(get(), get(), get()) }
                     single<PlatformContext> { PlatformContext.INSTANCE }
                     single<ShortcutKeys> { DesktopShortcutKeys(get()) }
-                    single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get(), get()) }
+                    single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get()) }
                     single<ShortcutKeysListener> { get<DesktopShortcutKeysListener>() }
                     single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get()) }
                     single<SoundService> { DesktopSoundService }
@@ -467,7 +464,9 @@ class CrossPaste {
                     single<UISupport> { DesktopUISupport(get(), get(), get(), get(), get(), get(), get()) }
 
                     // view model
-                    viewModel { PasteDataViewModel(get()) }
+                    single<PasteDataViewModel> { PasteDataViewModel(get()) }
+                    single<PasteSearchViewModel> { PasteSearchViewModel(get()) }
+                    single<PasteSelectionViewModel> { PasteSelectionViewModel(get(), get(), get()) }
                 }
             return GlobalContext.startKoin {
                 modules(appModule)

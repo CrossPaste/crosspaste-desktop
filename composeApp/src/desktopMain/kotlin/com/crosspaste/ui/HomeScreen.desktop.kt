@@ -52,7 +52,6 @@ import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.paste.DesktopPasteSearchService
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.crosspasteIcon
@@ -77,7 +76,6 @@ fun HomeWindowDecoration() {
     val appLaunchState = koinInject<AppLaunchState>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val appUpdateService = koinInject<AppUpdateService>()
-    val pasteSearchService = koinInject<DesktopPasteSearchService>()
     val configManager = koinInject<ConfigManager>()
     val uiSupport = koinInject<UISupport>()
 
@@ -222,7 +220,7 @@ fun HomeWindowDecoration() {
                     scope.launch {
                         appWindowManager.unActiveMainWindow()
                         delay(100)
-                        pasteSearchService.activeWindow()
+                        appWindowManager.activeSearchWindow()
                     }
                 }
 
