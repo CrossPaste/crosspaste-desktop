@@ -14,7 +14,6 @@ import com.crosspaste.listen.DesktopShortcutKeys.Companion.SWITCH_ENCRYPT
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.SWITCH_MONITOR_PASTEBOARD
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.paste.CurrentPaste
-import com.crosspaste.paste.DesktopPasteSearchService
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.realm.paste.PasteData
@@ -32,7 +31,6 @@ class DesktopShortKeysAction(
     private val configManager: ConfigManager,
     private val currentPaste: CurrentPaste,
     private val appWindowManager: DesktopAppWindowManager,
-    private val pasteSearchService: DesktopPasteSearchService,
     private val pasteboardService: PasteboardService,
 ) : ShortcutKeysAction {
 
@@ -62,7 +60,7 @@ class DesktopShortKeysAction(
     private fun showSearchWindow() {
         logger.info { "Open search window" }
         mainCoroutineDispatcher.launch(CoroutineName("OpenSearchWindow")) {
-            pasteSearchService.activeWindow()
+            appWindowManager.activeSearchWindow()
         }
     }
 
@@ -77,7 +75,7 @@ class DesktopShortKeysAction(
             }
 
             if (appWindowManager.getShowSearchWindow()) {
-                pasteSearchService.unActiveWindow()
+                appWindowManager.unActiveSearchWindow()
             }
         }
     }
@@ -136,7 +134,7 @@ class DesktopShortKeysAction(
                     limit = 1,
                 )
 
-            if (result.size > 0) {
+            if (result.isNotEmpty()) {
                 mainCoroutineDispatcher.launch(ioDispatcher) {
                     pasteboardService.tryWritePasteboard(
                         pasteData = result[0],

@@ -22,10 +22,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -33,8 +35,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.paste.PasteSearchService
 import com.crosspaste.ui.base.PasteTitleView
+import com.crosspaste.ui.model.PasteSearchViewModel
+import com.crosspaste.ui.model.PasteSelectionViewModel
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -44,8 +47,9 @@ import org.koin.compose.koinInject
 
 @Composable
 fun SearchListView(setSelectedIndex: (Int) -> Unit) {
-    val pasteSearchService = koinInject<PasteSearchService>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
+    val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
+    val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
     val searchListState = rememberLazyListState()
     val adapter = rememberScrollbarAdapter(scrollState = searchListState)
     var showScrollbar by remember { mutableStateOf(false) }
@@ -53,52 +57,53 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
 
     val coroutineScope = rememberCoroutineScope()
 
-    val searchResult = remember(pasteSearchService.searchTime) { pasteSearchService.searchResult }
+    val searchResult by pasteSearchViewModel.searchResults.collectAsState()
 
-    LaunchedEffect(appWindowManager.showSearchWindow) {
-        if (appWindowManager.getShowSearchWindow()) {
-            if (pasteSearchService.searchResult.size > 0) {
-                pasteSearchService.selectedIndex = 0
-                searchListState.scrollToItem(0)
-            }
+    val selectedIndex by pasteSelectionViewModel.selectedIndex.collectAsState()
+
+    val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
+
+    LaunchedEffect(showSearchWindow, searchResult) {
+        if (showSearchWindow) {
+            pasteSelectionViewModel.setSelectedIndex(0)
+            delay(32)
+            searchListState.animateScrollToItem(0, 0)
         }
     }
 
-    LaunchedEffect(pasteSearchService.selectedIndex, appWindowManager.showSearchWindow) {
-        if (appWindowManager.getShowSearchWindow()) {
+    LaunchedEffect(selectedIndex, showSearchWindow) {
+        if (showSearchWindow) {
             val visibleItems = searchListState.layoutInfo.visibleItemsInfo
             if (visibleItems.isNotEmpty()) {
                 val lastIndex = visibleItems.last().index
 
-                if (lastIndex < pasteSearchService.selectedIndex) {
-                    searchListState.scrollToItem(pasteSearchService.selectedIndex - 9)
-                } else if (visibleItems.first().index > pasteSearchService.selectedIndex) {
-                    searchListState.scrollToItem(pasteSearchService.selectedIndex)
+                if (lastIndex < selectedIndex) {
+                    searchListState.animateScrollToItem(selectedIndex - 9)
+                } else if (visibleItems.first().index > selectedIndex) {
+                    searchListState.animateScrollToItem(selectedIndex)
                 }
 
-                if (pasteSearchService.searchResult.size - lastIndex <= 10) {
-                    if (pasteSearchService.tryAddLimit()) {
-                        pasteSearchService.search(keepSelectIndex = true)
-                    }
+                if (searchResult.size - lastIndex <= 10) {
+                    pasteSearchViewModel.tryAddLimit()
                 }
             }
         }
     }
 
+    val latestSearchResult = rememberUpdatedState(searchResult)
+
     LaunchedEffect(searchListState) {
         snapshotFlow {
-            searchListState.firstVisibleItemIndex to
-                searchListState.firstVisibleItemScrollOffset
-        }.distinctUntilChanged().collect { (_, _) ->
-            val visibleItems = searchListState.layoutInfo.visibleItemsInfo
-            if (visibleItems.isNotEmpty() && pasteSearchService.searchResult.size - visibleItems.last().index <= 10) {
-                if (pasteSearchService.tryAddLimit()) {
-                    pasteSearchService.search(keepSelectIndex = true)
+            searchListState.firstVisibleItemIndex to searchListState.layoutInfo.visibleItemsInfo
+        }.distinctUntilChanged().collect { (_, visibleItems) ->
+            if (visibleItems.isNotEmpty()) {
+                if (latestSearchResult.value.size - visibleItems.last().index <= 10) {
+                    pasteSearchViewModel.tryAddLimit()
                 }
             }
 
-            showScrollbar = pasteSearchService.searchResult.size > 10
-            if (showScrollbar) {
+            val shouldShowScrollbar = latestSearchResult.value.size > 10
+            if (shouldShowScrollbar) {
                 scrollJob?.cancel()
                 scrollJob =
                     coroutineScope.launch(CoroutineName("HiddenScroll")) {
@@ -106,11 +111,12 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
                         showScrollbar = false
                     }
             }
+            showScrollbar = shouldShowScrollbar
         }
     }
 
-    LaunchedEffect(pasteSearchService.searchResult.size) {
-        if (pasteSearchService.searchResult.size > 10) {
+    LaunchedEffect(searchResult.size) {
+        if (searchResult.size > 10) {
             showScrollbar = true
         }
     }
@@ -126,7 +132,7 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
                     searchResult,
                     key = { _, item -> item.id },
                 ) { index, pasteData ->
-                    PasteTitleView(pasteData, index == pasteSearchService.selectedIndex) {
+                    PasteTitleView(pasteData, index == selectedIndex) {
                         setSelectedIndex(index)
                     }
                 }
@@ -137,7 +143,8 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
         VerticalScrollbar(
             modifier =
                 Modifier.background(color = Color.Transparent)
-                    .fillMaxHeight().align(Alignment.CenterEnd)
+                    .fillMaxHeight()
+                    .align(Alignment.CenterEnd)
                     .draggable(
                         orientation = Orientation.Vertical,
                         state =

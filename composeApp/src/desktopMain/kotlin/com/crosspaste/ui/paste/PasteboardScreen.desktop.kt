@@ -65,11 +65,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
-import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 actual fun PasteboardScreen() {
-    val pasteDataViewModel = koinViewModel<PasteDataViewModel>()
+    val pasteDataViewModel = koinInject<PasteDataViewModel>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
 
     val listState = rememberLazyListState()
