@@ -29,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -73,24 +74,27 @@ actual fun PasteboardScreen() {
 
     val listState = rememberLazyListState()
     var isScrolling by remember { mutableStateOf(false) }
+    var showToTop by remember { mutableStateOf(false) }
     var scrollJob: Job? by remember { mutableStateOf(null) }
     val coroutineScope = rememberCoroutineScope()
     val rememberPasteDataList by pasteDataViewModel.pasteDatas.collectAsState()
-    var showToTop by remember { mutableStateOf(false) }
+    val showMainWindow by appWindowManager.showMainWindow.collectAsState()
 
-    LaunchedEffect(Unit) {
-        pasteDataViewModel.initList()
-        if (rememberPasteDataList.isNotEmpty()) {
-            listState.scrollToItem(0)
+    DisposableEffect(Unit) {
+        pasteDataViewModel.resume()
+        onDispose {
+            pasteDataViewModel.cleanup()
         }
     }
 
-    LaunchedEffect(appWindowManager.showMainWindow) {
-        if (appWindowManager.getShowMainWindow()) {
-            pasteDataViewModel.initList()
+    LaunchedEffect(showMainWindow) {
+        if (showMainWindow) {
+            pasteDataViewModel.resume()
             if (rememberPasteDataList.isNotEmpty()) {
                 listState.scrollToItem(0)
             }
+        } else {
+            pasteDataViewModel.cleanup()
         }
     }
 
