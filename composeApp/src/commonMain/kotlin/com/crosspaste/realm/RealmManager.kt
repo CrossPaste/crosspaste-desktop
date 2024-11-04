@@ -94,6 +94,10 @@ class RealmManager private constructor(private val config: RealmConfiguration) {
         }
     }
 
+    fun close() {
+        realm.close()
+    }
+
     fun writeCopyTo(path: Path) {
         realm.writeCopyTo(createRealmConfig(path))
     }
