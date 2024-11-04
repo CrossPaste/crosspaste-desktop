@@ -557,6 +557,7 @@ class CrossPaste {
                         async { stopService<CleanPasteScheduler>("CleanPasteScheduler") { it.stop() } },
                         async { stopService<GlobalListener>("GlobalListener") { it.stop() } },
                         async { stopService<UserDataPathProvider>("UserDataPathProvider") { it.cleanTemp() } },
+                        async { stopService<RealmManager>("RealmManager") { it.close() } },
                     )
 
                 jobs.awaitAll()
