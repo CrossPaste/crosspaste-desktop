@@ -45,8 +45,8 @@ class DesktopFilesTypePlugin(
 
     private val jsonUtils = getJsonUtils()
 
-    override fun getPasteType(): Int {
-        return PasteType.FILE
+    override fun getPasteType(): PasteType {
+        return PasteType.FILE_TYPE
     }
 
     override fun getIdentifiers(): List<String> {

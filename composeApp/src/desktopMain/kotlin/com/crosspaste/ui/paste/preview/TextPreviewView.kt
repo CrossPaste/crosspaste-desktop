@@ -25,7 +25,7 @@ fun TextPreviewView(
     pasteData: PasteData,
     onDoubleClick: () -> Unit,
 ) {
-    pasteData.getPasteItem()?.let {
+    pasteData.getPasteItem(PasteText::class)?.let { pasteText ->
         val pasteMenuService = koinInject<DesktopPasteMenuService>()
 
         PasteSpecificPreviewContentView(
@@ -47,7 +47,7 @@ fun TextPreviewView(
                     ) {
                         Text(
                             modifier = Modifier.fillMaxSize(),
-                            text = (it as PasteText).text,
+                            text = pasteText.text,
                             fontFamily = FontFamily.SansSerif,
                             maxLines = 4,
                             softWrap = true,

@@ -68,8 +68,8 @@ class RtfPasteItem : RealmObject, PasteItem, PasteRtf {
         return listOf(identifier)
     }
 
-    override fun getPasteType(): Int {
-        return PasteType.RTF
+    override fun getPasteType(): PasteType {
+        return PasteType.RTF_TYPE
     }
 
     override fun getSearchContent(): String {

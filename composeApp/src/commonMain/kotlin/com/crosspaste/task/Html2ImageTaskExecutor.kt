@@ -45,13 +45,11 @@ class Html2ImageTaskExecutor(
             val htmlRenderingService = htmlRenderingServiceDeferred.await()
             try {
                 pasteRealm.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
-                    pasteData.getPasteItem()?.let { pasteItem ->
-                        if (pasteItem is PasteHtml) {
-                            val html2ImagePath = pasteItem.getHtmlImagePath(userDataPathProvider)
-                            if (!fileUtils.existFile(html2ImagePath)) {
-                                val normalizeHtml = htmlTypePlugin.normalizeHtml(pasteItem.html, pasteData.source)
-                                htmlRenderingService.saveRenderImage(normalizeHtml, html2ImagePath)
-                            }
+                    pasteData.getPasteItem(PasteHtml::class)?.let { pasteHtml ->
+                        val html2ImagePath = pasteHtml.getHtmlImagePath(userDataPathProvider)
+                        if (!fileUtils.existFile(html2ImagePath)) {
+                            val normalizeHtml = htmlTypePlugin.normalizeHtml(pasteHtml.html, pasteData.source)
+                            htmlRenderingService.saveRenderImage(normalizeHtml, html2ImagePath)
                         }
                     }
                 }

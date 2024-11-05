@@ -4,13 +4,14 @@ import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.plugin.type.PasteTypePlugin
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteItem
+import com.crosspaste.realm.paste.PasteType
 import java.awt.datatransfer.DataFlavor
 
 class DesktopTransferableProducer(
     pasteTypePlugins: List<PasteTypePlugin>,
 ) : TransferableProducer {
 
-    private val pasteTypePluginMap: Map<Int, PasteTypePlugin> =
+    private val pasteTypePluginMap: Map<PasteType, PasteTypePlugin> =
         pasteTypePlugins.associateBy { it.getPasteType() }
 
     override fun produce(

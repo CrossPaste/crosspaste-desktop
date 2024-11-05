@@ -68,8 +68,8 @@ class HtmlPasteItem : RealmObject, PasteItem, PasteHtml {
         return listOf(identifier)
     }
 
-    override fun getPasteType(): Int {
-        return PasteType.HTML
+    override fun getPasteType(): PasteType {
+        return PasteType.HTML_TYPE
     }
 
     override fun getSearchContent(): String {

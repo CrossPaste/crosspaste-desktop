@@ -90,8 +90,8 @@ class FilesPasteItem : RealmObject, PasteItem, PasteFiles {
         return identifiers
     }
 
-    override fun getPasteType(): Int {
-        return PasteType.FILE
+    override fun getPasteType(): PasteType {
+        return PasteType.FILE_TYPE
     }
 
     override fun getSearchContent(): String {

@@ -60,6 +60,7 @@ import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.realm.paste.PasteType
+import com.crosspaste.realm.paste.PasteType.Companion.ALL_TYPES
 import com.crosspaste.ui.CrossPasteTheme.favoriteColor
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.PasteIconButton
@@ -184,21 +185,13 @@ fun SearchInputView(requestFocus: () -> Unit) {
 
             var showTypes by remember { mutableStateOf(false) }
 
-            var currentType by remember { mutableStateOf("all_types") }
+            var currentType by remember { mutableStateOf<PasteType?>(null) }
 
-            val types =
-                mapOf<Int?, String>(
-                    null to "all_types",
-                    PasteType.TEXT to "text",
-                    PasteType.COLOR to "color",
-                    PasteType.URL to "link",
-                    PasteType.HTML to "html",
-                    PasteType.RTF to "rtf",
-                    PasteType.IMAGE to "image",
-                    PasteType.FILE to "file",
-                )
-
-            val menuTexts = types.values.map { copywriter.getText(it) }.toTypedArray()
+            val menuTexts =
+                PasteType.TYPES
+                    .map { copywriter.getText(it.name) }
+                    .plus(copywriter.getText(ALL_TYPES))
+                    .toTypedArray()
 
             val paddingValues = PaddingValues(10.dp, 5.dp, 10.dp, 5.dp)
 
@@ -351,7 +344,7 @@ fun SearchInputView(requestFocus: () -> Unit) {
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = copywriter.getText(currentType),
+                            text = currentType?.let { copywriter.getText(it.name) } ?: copywriter.getText(ALL_TYPES),
                             style =
                                 TextStyle(
                                     fontWeight = FontWeight.Light,
@@ -400,18 +393,18 @@ fun SearchInputView(requestFocus: () -> Unit) {
                                     if (searchPasteType != null) {
                                         MenuItem(copywriter.getText("all_types"), textStyle, paddingValues) {
                                             pasteSearchViewModel.setPasteType(null)
-                                            currentType = "all_types"
+                                            currentType = null
                                             showTypes = false
                                             focusRequester.requestFocus()
                                         }
                                         HorizontalDivider()
                                     }
 
-                                    types.filter { it.key != null }.forEach { (key, value) ->
-                                        if (currentType != value) {
-                                            MenuItem(copywriter.getText(value), textStyle, paddingValues) {
-                                                pasteSearchViewModel.setPasteType(key)
-                                                currentType = value
+                                    PasteType.TYPES.forEach { pasteType ->
+                                        if (currentType != pasteType) {
+                                            MenuItem(copywriter.getText(pasteType.name), textStyle, paddingValues) {
+                                                pasteSearchViewModel.setPasteType(pasteType.type)
+                                                currentType = pasteType
                                                 showTypes = false
                                                 focusRequester.requestFocus()
                                             }

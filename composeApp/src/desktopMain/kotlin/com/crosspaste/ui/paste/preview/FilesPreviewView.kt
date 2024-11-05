@@ -13,8 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.crosspaste.paste.DesktopPasteMenuService
+import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.PasteFileCoordinate
-import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.utils.extension
@@ -26,10 +26,10 @@ fun FilesPreviewView(
     pasteData: PasteData,
     onDoubleClick: () -> Unit,
 ) {
-    pasteData.getPasteItem()?.let {
+    pasteData.getPasteItem(FilesPasteItem::class)?.let {
         val pasteMenuService = koinInject<DesktopPasteMenuService>()
         val userDataPathProvider = koinInject<UserDataPathProvider>()
-        val pasteFilePaths = (it as PasteFiles).getFilePaths(userDataPathProvider)
+        val pasteFilePaths = it.getFilePaths(userDataPathProvider)
 
         val fileUtils = getFileUtils()
 

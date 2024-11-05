@@ -35,14 +35,14 @@ fun PasteSpecificPreviewView(pasteData: PasteData) {
                 }
             }
         }
-        when (pasteData.pasteType) {
-            PasteType.TEXT -> TextPreviewView(pasteData, onDoubleClick)
-            PasteType.COLOR -> ColorPreviewView(pasteData, onDoubleClick)
-            PasteType.URL -> UrlPreviewView(pasteData, onDoubleClick)
-            PasteType.HTML -> HtmlToImagePreviewView(pasteData, onDoubleClick)
-            PasteType.RTF -> RtfToImagePreviewView(pasteData, onDoubleClick)
-            PasteType.IMAGE -> ImagesPreviewView(pasteData, onDoubleClick)
-            PasteType.FILE -> FilesPreviewView(pasteData, onDoubleClick)
+        when (pasteData.getType()) {
+            PasteType.TEXT_TYPE -> TextPreviewView(pasteData, onDoubleClick)
+            PasteType.COLOR_TYPE -> ColorPreviewView(pasteData, onDoubleClick)
+            PasteType.URL_TYPE -> UrlPreviewView(pasteData, onDoubleClick)
+            PasteType.HTML_TYPE -> HtmlToImagePreviewView(pasteData, onDoubleClick)
+            PasteType.RTF_TYPE -> RtfToImagePreviewView(pasteData, onDoubleClick)
+            PasteType.IMAGE_TYPE -> ImagesPreviewView(pasteData, onDoubleClick)
+            PasteType.FILE_TYPE -> FilesPreviewView(pasteData, onDoubleClick)
         }
     }
 }

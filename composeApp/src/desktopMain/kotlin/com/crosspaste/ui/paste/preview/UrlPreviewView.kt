@@ -28,10 +28,9 @@ fun UrlPreviewView(
     pasteData: PasteData,
     onDoubleClick: () -> Unit,
 ) {
-    pasteData.getPasteItem()?.let {
+    pasteData.getPasteItem(PasteUrl::class)?.let { pasteUrl ->
         val pasteMenuService = koinInject<DesktopPasteMenuService>()
 
-        val pasteUrl = it as PasteUrl
         PasteSpecificPreviewContentView(
             pasteMainContent = {
                 Row(

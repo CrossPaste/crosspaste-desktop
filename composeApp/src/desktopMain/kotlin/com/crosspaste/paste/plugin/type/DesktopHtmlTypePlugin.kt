@@ -32,8 +32,8 @@ class DesktopHtmlTypePlugin(
         private val officeHtmlPlugin = OfficeHtmlPlugin()
     }
 
-    override fun getPasteType(): Int {
-        return PasteType.HTML
+    override fun getPasteType(): PasteType {
+        return PasteType.HTML_TYPE
     }
 
     override fun getIdentifiers(): List<String> {

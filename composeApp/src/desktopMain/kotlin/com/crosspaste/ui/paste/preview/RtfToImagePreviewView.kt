@@ -27,11 +27,9 @@ fun RtfToImagePreviewView(
     pasteData: PasteData,
     onDoubleClick: () -> Unit,
 ) {
-    pasteData.getPasteItem()?.let {
+    pasteData.getPasteItem(PasteRtf::class)?.let { pasteRtf ->
         val pasteMenuService = koinInject<DesktopPasteMenuService>()
         val userDataPathProvider = koinInject<UserDataPathProvider>()
-
-        val pasteRtf = it as PasteRtf
 
         val filePath by remember(pasteData.id) {
             mutableStateOf(

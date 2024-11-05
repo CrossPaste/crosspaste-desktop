@@ -25,8 +25,6 @@ import com.crosspaste.image.coil.PasteDataItem
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
-import com.crosspaste.realm.paste.PasteType
-import com.crosspaste.ui.paste.PasteTypeIconBaseView
 import org.koin.compose.koinInject
 
 @Composable
@@ -40,7 +38,9 @@ fun PasteTypeIconView(
     val platformContext = koinInject<PlatformContext>()
     val userDataPathProvider = koinInject<UserDataPathProvider>()
 
-    if (pasteData.pasteType == PasteType.URL) {
+    val pasteType = pasteData.getType()
+
+    if (pasteType.isUrl()) {
         SubcomposeAsyncImage(
             modifier = Modifier.padding(padding).size(size),
             model =
@@ -68,9 +68,8 @@ fun PasteTypeIconView(
                 }
             },
         )
-    } else if (pasteData.pasteType == PasteType.FILE) {
-        pasteData.getPasteItem()?.let {
-            it as PasteFiles
+    } else if (pasteType.isFile()) {
+        pasteData.getPasteItem(PasteFiles::class)?.let {
             val paths = it.getFilePaths(userDataPathProvider)
             if (paths.isNotEmpty()) {
                 SubcomposeAsyncImage(
@@ -102,9 +101,9 @@ fun PasteTypeIconView(
                 )
             }
         }
-    } else if (pasteData.pasteType != PasteType.HTML && pasteData.pasteType != PasteType.RTF) {
+    } else if (!pasteType.isHtml() && !pasteType.isRtf()) {
         Icon(
-            painter = PasteTypeIconBaseView(pasteType = pasteData.pasteType),
+            painter = pasteType.IconPainter(),
             contentDescription = "Paste Icon",
             modifier = Modifier.padding(padding).size(size),
             tint = MaterialTheme.colorScheme.primary,

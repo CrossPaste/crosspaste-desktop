@@ -27,11 +27,9 @@ fun HtmlToImagePreviewView(
     pasteData: PasteData,
     onDoubleClick: () -> Unit,
 ) {
-    pasteData.getPasteItem()?.let {
+    pasteData.getPasteItem(PasteHtml::class)?.let { pasteHtml ->
         val pasteMenuService = koinInject<DesktopPasteMenuService>()
         val userDataPathProvider = koinInject<UserDataPathProvider>()
-
-        val pasteHtml = it as PasteHtml
 
         val filePath by remember(pasteData.id) {
             mutableStateOf(

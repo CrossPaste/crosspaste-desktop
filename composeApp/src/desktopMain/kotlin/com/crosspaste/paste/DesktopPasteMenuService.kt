@@ -9,7 +9,6 @@ import com.crosspaste.notification.NotificationManager
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.realm.paste.PasteRealm
-import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -73,7 +72,8 @@ class DesktopPasteMenuService(
         index: Int,
     ) {
         uiSupport.openPasteData(pasteData, index)
-        if (pasteData.pasteType != PasteType.TEXT && pasteData.pasteType != PasteType.COLOR) {
+        val pasteType = pasteData.getType()
+        if (!pasteType.isText() && !pasteType.isColor()) {
             desktopAppWindowManager.setShowMainWindow(false)
         }
     }

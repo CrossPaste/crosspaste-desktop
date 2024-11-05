@@ -3,7 +3,6 @@ package com.crosspaste.paste.plugin.process
 import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteItem
-import com.crosspaste.realm.paste.PasteType
 import io.realm.kotlin.MutableRealm
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -16,8 +15,8 @@ class RemoveHtmlImagePlugin(
         realm: MutableRealm,
         source: String?,
     ): List<PasteItem> {
-        if (pasteItems.any { it.getPasteType() == PasteType.IMAGE }) {
-            pasteItems.firstOrNull { it.getPasteType() == PasteType.HTML }?.let { htmlItem ->
+        if (pasteItems.any { it.getPasteType().isImage() }) {
+            pasteItems.firstOrNull { it.getPasteType().isHtml() }?.let { htmlItem ->
                 val pasteHtml = htmlItem as PasteHtml
                 val html = pasteHtml.html
                 if (isSingleImgInBody(html)) {

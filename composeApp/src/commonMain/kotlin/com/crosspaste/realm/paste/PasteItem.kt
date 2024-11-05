@@ -20,7 +20,7 @@ interface PasteItem {
 
     fun getIdentifierList(): List<String>
 
-    fun getPasteType(): Int
+    fun getPasteType(): PasteType
 
     fun getSearchContent(): String?
 

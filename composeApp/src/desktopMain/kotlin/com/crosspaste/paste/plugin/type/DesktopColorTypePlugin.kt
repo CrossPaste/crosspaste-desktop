@@ -21,8 +21,8 @@ class DesktopColorTypePlugin : ColorTypePlugin {
         }
     }
 
-    override fun getPasteType(): Int {
-        return PasteType.COLOR
+    override fun getPasteType(): PasteType {
+        return PasteType.COLOR_TYPE
     }
 
     override fun getIdentifiers(): List<String> {

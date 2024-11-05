@@ -61,26 +61,26 @@ fun DetailPasteDataView() {
                 )
             }
 
-            when (pasteData.pasteType) {
-                PasteType.TEXT -> {
+            when (pasteData.getType()) {
+                PasteType.TEXT_TYPE -> {
                     PasteTextDetailView(pasteData, it as PasteText, onDoubleClick)
                 }
-                PasteType.COLOR -> {
+                PasteType.COLOR_TYPE -> {
                     PasteColorDetailView(pasteData, it as PasteColor, onDoubleClick)
                 }
-                PasteType.URL -> {
+                PasteType.URL_TYPE -> {
                     PasteUrlDetailView(pasteData, it as PasteUrl, onDoubleClick)
                 }
-                PasteType.HTML -> {
+                PasteType.HTML_TYPE -> {
                     HtmlToImageDetailView(pasteData, it as PasteHtml, onDoubleClick)
                 }
-                PasteType.RTF -> {
+                PasteType.RTF_TYPE -> {
                     RtfToImageDetailView(pasteData, it as PasteRtf, onDoubleClick)
                 }
-                PasteType.IMAGE -> {
+                PasteType.IMAGE_TYPE -> {
                     PasteImagesDetailView(pasteData, it as PasteFiles, onDoubleClick)
                 }
-                PasteType.FILE -> {
+                PasteType.FILE_TYPE -> {
                     PasteFilesDetailView(pasteData, it as PasteFiles, onDoubleClick)
                 }
                 else -> {

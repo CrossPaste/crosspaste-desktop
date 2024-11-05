@@ -45,8 +45,8 @@ class UrlPasteItem : RealmObject, PasteItem, PasteUrl {
         return listOf(identifier)
     }
 
-    override fun getPasteType(): Int {
-        return PasteType.URL
+    override fun getPasteType(): PasteType {
+        return PasteType.URL_TYPE
     }
 
     override fun getSearchContent(): String {

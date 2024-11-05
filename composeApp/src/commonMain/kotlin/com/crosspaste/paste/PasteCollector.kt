@@ -103,7 +103,7 @@ class PasteCollector(
                 PasteData().apply {
                     this.pasteId = pasteId
                     this.pasteCollection = pasteCollection
-                    this.pasteType = PasteType.INVALID
+                    this.pasteType = PasteType.INVALID_TYPE.type
                     this.source = source
                     this.hash = ""
                     this.appInstanceId = appInfo.appInstanceId

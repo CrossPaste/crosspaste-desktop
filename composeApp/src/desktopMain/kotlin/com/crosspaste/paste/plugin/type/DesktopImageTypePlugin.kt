@@ -50,8 +50,8 @@ class DesktopImageTypePlugin(
 
     private val jsonUtils = getJsonUtils()
 
-    override fun getPasteType(): Int {
-        return PasteType.IMAGE
+    override fun getPasteType(): PasteType {
+        return PasteType.IMAGE_TYPE
     }
 
     override fun getIdentifiers(): List<String> {

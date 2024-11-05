@@ -90,8 +90,8 @@ class ImagesPasteItem : RealmObject, PasteItem, PasteImages {
         return identifiers
     }
 
-    override fun getPasteType(): Int {
-        return PasteType.IMAGE
+    override fun getPasteType(): PasteType {
+        return PasteType.IMAGE_TYPE
     }
 
     override fun getSearchContent(): String {
