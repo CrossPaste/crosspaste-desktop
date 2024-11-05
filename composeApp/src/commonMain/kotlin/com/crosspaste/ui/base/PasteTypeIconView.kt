@@ -69,8 +69,7 @@ fun PasteTypeIconView(
             },
         )
     } else if (pasteType.isFile()) {
-        pasteData.getPasteItem()?.let {
-            it as PasteFiles
+        pasteData.getPasteItem(PasteFiles::class)?.let {
             val paths = it.getFilePaths(userDataPathProvider)
             if (paths.isNotEmpty()) {
                 SubcomposeAsyncImage(

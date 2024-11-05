@@ -35,12 +35,10 @@ class Rtf2ImageTaskExecutor(
         mutex.withLock {
             try {
                 pasteRealm.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
-                    pasteData.getPasteItem()?.let { pasteItem ->
-                        if (pasteItem is PasteRtf) {
-                            val rtf2ImagePath = pasteItem.getRtfImagePath(userDataPathProvider)
-                            if (!fileUtils.existFile(rtf2ImagePath)) {
-                                rtfRenderingService.saveRenderImage(pasteItem.rtf, rtf2ImagePath)
-                            }
+                    pasteData.getPasteItem(PasteRtf::class)?.let { pasteRtf ->
+                        val rtf2ImagePath = pasteRtf.getRtfImagePath(userDataPathProvider)
+                        if (!fileUtils.existFile(rtf2ImagePath)) {
+                            rtfRenderingService.saveRenderImage(pasteRtf.rtf, rtf2ImagePath)
                         }
                     }
                 }

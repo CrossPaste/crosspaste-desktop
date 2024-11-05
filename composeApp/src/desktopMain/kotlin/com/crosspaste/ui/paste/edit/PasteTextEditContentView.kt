@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.paste.item.PasteText
+import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.plugin.type.TextTypePlugin
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteRealm
@@ -45,8 +45,8 @@ fun PasteTextEditContentView() {
         modifier = Modifier.fillMaxSize().padding(16.dp),
         contentAlignment = Alignment.TopStart,
     ) {
-        pasteData.getPasteItem()?.let {
-            var text by remember { mutableStateOf((it as PasteText).text) }
+        pasteData.getPasteItem(TextPasteItem::class)?.let { pasteText ->
+            var text by remember { mutableStateOf(pasteText.text) }
 
             CustomTextField(
                 modifier = Modifier.fillMaxSize(),
@@ -73,11 +73,11 @@ fun PasteTextEditContentView() {
                     text = copywriter.getText("save"),
                     contentDescription = "save text",
                 ) {
-                    if (text != (it as PasteText).text && text.isNotEmpty()) {
+                    if (text != pasteText.text && text.isNotEmpty()) {
                         val textBytes = text.toByteArray()
                         val hash = codecsUtils.hash(textBytes)
                         pasteRealm.update { realm ->
-                            textUpdater.updateText(text, textBytes.size.toLong(), hash, it, realm)
+                            textUpdater.updateText(text, textBytes.size.toLong(), hash, pasteText, realm)
                         }
                     }
                 }

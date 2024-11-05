@@ -26,7 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.paste.DesktopPasteMenuService
-import com.crosspaste.paste.item.PasteColor
+import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.ui.base.UISupport
 import org.koin.compose.koinInject
@@ -36,11 +36,9 @@ fun ColorPreviewView(
     pasteData: PasteData,
     onDoubleClick: () -> Unit,
 ) {
-    pasteData.getPasteItem()?.let {
+    pasteData.getPasteItem(ColorPasteItem::class)?.let { pasteColor ->
         val uiSupport = koinInject<UISupport>()
         val pasteMenuService = koinInject<DesktopPasteMenuService>()
-
-        val pasteColor = it as PasteColor
 
         PasteSpecificPreviewContentView(
             pasteMainContent = {
@@ -59,7 +57,7 @@ fun ColorPreviewView(
                         items =
                             pasteMenuService.fileMenuItemsProvider(
                                 pasteData = pasteData,
-                                pasteItem = it,
+                                pasteItem = pasteColor,
                             ),
                     ) {
                         Row(
