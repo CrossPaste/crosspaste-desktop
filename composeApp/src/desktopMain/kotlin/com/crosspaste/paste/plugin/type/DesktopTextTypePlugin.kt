@@ -22,8 +22,8 @@ class DesktopTextTypePlugin : TextTypePlugin {
         private val codecsUtils = getCodecsUtils()
     }
 
-    override fun getPasteType(): Int {
-        return PasteType.TEXT
+    override fun getPasteType(): PasteType {
+        return PasteType.TEXT_TYPE
     }
 
     override fun getIdentifiers(): List<String> {

@@ -5,10 +5,11 @@ import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.realm.paste.PasteItem
+import com.crosspaste.realm.paste.PasteType
 
 interface PasteTypePlugin {
 
-    fun getPasteType(): Int
+    fun getPasteType(): PasteType
 
     fun getIdentifiers(): List<String>
 

@@ -45,8 +45,8 @@ class TextPasteItem : RealmObject, PasteItem, PasteText {
         return listOf(identifier)
     }
 
-    override fun getPasteType(): Int {
-        return PasteType.TEXT
+    override fun getPasteType(): PasteType {
+        return PasteType.TEXT_TYPE
     }
 
     override fun getSearchContent(): String {

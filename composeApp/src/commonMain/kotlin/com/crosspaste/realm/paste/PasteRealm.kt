@@ -414,7 +414,8 @@ class PasteRealm(
                     // update realm data
                     pasteData.pasteAppearItem = pasteAppearItem
                     pasteCollection.pasteItems.addAll(remainingItems.map { RealmAny.create(it as RealmObject) })
-                    pasteData.pasteType = firstItem.getPasteType()
+                    val pasteType = firstItem.getPasteType()
+                    pasteData.pasteType = pasteType.type
                     pasteData.pasteSearchContent =
                         PasteData.createSearchContent(
                             pasteData.source,
@@ -425,9 +426,9 @@ class PasteRealm(
                     pasteData.pasteState = PasteState.LOADED
 
                     val tasks = mutableListOf<ObjectId>()
-                    if (pasteData.pasteType == PasteType.HTML) {
+                    if (pasteType.isHtml()) {
                         tasks.add(copyToRealm(TaskUtils.createTask(pasteData.id, TaskType.HTML_TO_IMAGE_TASK)).taskId)
-                    } else if (pasteData.pasteType == PasteType.RTF) {
+                    } else if (pasteType.isRtf()) {
                         tasks.add(copyToRealm(TaskUtils.createTask(pasteData.id, TaskType.RTF_TO_IMAGE_TASK)).taskId)
                     }
                     if (!configManager.config.enabledSyncFileSizeLimit ||
@@ -436,7 +437,7 @@ class PasteRealm(
                         tasks.add(copyToRealm(TaskUtils.createTask(pasteData.id, TaskType.SYNC_PASTE_TASK, SyncExtraInfo())).taskId)
                     }
                     tasks.addAll(markDeleteSameHash(pasteData.id, pasteData.pasteType, pasteData.hash))
-                    return@write tasks
+                    tasks
                 }
             }
         }?.let { tasks ->
@@ -449,8 +450,10 @@ class PasteRealm(
         firstItem: PasteItem,
         remainingItems: List<PasteItem>,
     ): String? {
-        if (firstItem.getPasteType() == PasteType.HTML || firstItem.getPasteType() == PasteType.RTF) {
-            remainingItems.firstOrNull { it.getPasteType() == PasteType.TEXT }?.let {
+        if (firstItem.getPasteType().isHtml() ||
+            firstItem.getPasteType().isRtf()
+        ) {
+            remainingItems.firstOrNull { it.getPasteType().isText() }?.let {
                 return@let it.getSearchContent()
             }
         }
@@ -482,9 +485,9 @@ class PasteRealm(
                 pasteData.updatePasteState(PasteState.LOADED)
                 copyToRealm(pasteData)
                 tasks.addAll(markDeleteSameHash(pasteData.id, pasteData.pasteType, pasteData.hash))
-                if (pasteData.pasteType == PasteType.HTML) {
+                if (pasteData.getType().isHtml()) {
                     tasks.add(copyToRealm(TaskUtils.createTask(pasteData.id, TaskType.HTML_TO_IMAGE_TASK)).taskId)
-                } else if (pasteData.pasteType == PasteType.RTF) {
+                } else if (pasteData.getType().isRtf()) {
                     tasks.add(copyToRealm(TaskUtils.createTask(pasteData.id, TaskType.RTF_TO_IMAGE_TASK)).taskId)
                 }
             } else {

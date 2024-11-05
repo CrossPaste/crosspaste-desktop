@@ -12,18 +12,18 @@ class DistinctPlugin(userDataPathProvider: UserDataPathProvider) : PasteProcessP
     private val childPlugins =
         mapOf(
             Pair(
-                PasteType.IMAGE,
+                PasteType.IMAGE_TYPE,
                 MultiImagesPlugin(userDataPathProvider),
             ),
             Pair(
-                PasteType.FILE,
+                PasteType.FILE_TYPE,
                 MultFilesPlugin(userDataPathProvider),
             ),
-            Pair(PasteType.TEXT, firstPlugin),
-            Pair(PasteType.COLOR, firstPlugin),
-            Pair(PasteType.URL, firstPlugin),
-            Pair(PasteType.HTML, firstPlugin),
-            Pair(PasteType.RTF, firstPlugin),
+            Pair(PasteType.TEXT_TYPE, firstPlugin),
+            Pair(PasteType.COLOR_TYPE, firstPlugin),
+            Pair(PasteType.URL_TYPE, firstPlugin),
+            Pair(PasteType.HTML_TYPE, firstPlugin),
+            Pair(PasteType.RTF_TYPE, firstPlugin),
         )
 
     override fun process(

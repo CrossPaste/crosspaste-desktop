@@ -33,8 +33,8 @@ class DesktopRtfTypePlugin(
         private val fileUtils = getFileUtils()
     }
 
-    override fun getPasteType(): Int {
-        return PasteType.RTF
+    override fun getPasteType(): PasteType {
+        return PasteType.RTF_TYPE
     }
 
     override fun getIdentifiers(): List<String> {

@@ -3,7 +3,6 @@ package com.crosspaste.paste.plugin.process
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteItem
-import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.utils.isDirectory
 import io.realm.kotlin.MutableRealm
 
@@ -15,10 +14,10 @@ class RemoveFolderImagePlugin(
         realm: MutableRealm,
         source: String?,
     ): List<PasteItem> {
-        pasteItems.firstOrNull { it.getPasteType() == PasteType.IMAGE }?.let { imageItem ->
+        pasteItems.firstOrNull { it.getPasteType().isImage() }?.let { imageItem ->
             val files = imageItem as PasteFiles
             if (files.getFilePaths(userDataPathProvider).size == 1) {
-                pasteItems.firstOrNull { it.getPasteType() == PasteType.FILE }?.let {
+                pasteItems.firstOrNull { it.getPasteType().isFile() }?.let {
                     val pasteFiles = it as PasteFiles
                     if (it.getFilePaths(userDataPathProvider).size == 1 &&
                         pasteFiles.getFilePaths(userDataPathProvider)[0].isDirectory

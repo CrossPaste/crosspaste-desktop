@@ -46,8 +46,8 @@ class ColorPasteItem : RealmObject, PasteItem, PasteColor {
         return listOf(identifier)
     }
 
-    override fun getPasteType(): Int {
-        return PasteType.COLOR
+    override fun getPasteType(): PasteType {
+        return PasteType.COLOR_TYPE
     }
 
     override fun getSearchContent(): String {

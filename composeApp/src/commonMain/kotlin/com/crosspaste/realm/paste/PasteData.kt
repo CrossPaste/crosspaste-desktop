@@ -50,7 +50,7 @@ class PasteData : RealmObject {
     var pasteCollection: PasteCollection? = null
 
     @Index
-    var pasteType: Int = PasteType.INVALID
+    var pasteType: Int = PasteType.INVALID_TYPE.type
 
     var source: String? = null
 
@@ -79,7 +79,10 @@ class PasteData : RealmObject {
     @Serializable(with = PasteLabelRealmSetSerializer::class)
     var labels: RealmSet<PasteLabel> = realmSetOf()
 
-    // must be called in writeBlocking
+    fun getType(): PasteType {
+        return PasteType.fromType(pasteType)
+    }
+
     fun clear(
         realm: MutableRealm,
         userDataPathProvider: UserDataPathProvider,
@@ -156,17 +159,18 @@ class PasteData : RealmObject {
         return if (this.pasteState == PasteState.LOADING) {
             "Loading..."
         } else {
-            when (this.pasteType) {
-                PasteType.TEXT,
-                PasteType.COLOR,
-                PasteType.URL,
-                PasteType.FILE,
-                PasteType.IMAGE,
+            val type = PasteType.fromType(this.pasteType)
+            when (type) {
+                PasteType.TEXT_TYPE,
+                PasteType.COLOR_TYPE,
+                PasteType.URL_TYPE,
+                PasteType.FILE_TYPE,
+                PasteType.IMAGE_TYPE,
                 -> {
                     this.getPasteItem()?.getTitle() ?: "Unknown"
                 }
-                PasteType.HTML,
-                PasteType.RTF,
+                PasteType.HTML_TYPE,
+                PasteType.RTF_TYPE,
                 -> {
                     getPasteAppearItems().firstOrNull { it is PasteText }?.let {
                         val pasteText = it as PasteText
@@ -183,16 +187,7 @@ class PasteData : RealmObject {
     }
 
     fun getTypeText(): String {
-        return when (this.pasteType) {
-            PasteType.TEXT -> "text"
-            PasteType.COLOR -> "color"
-            PasteType.URL -> "link"
-            PasteType.HTML -> "html"
-            PasteType.RTF -> "rtf"
-            PasteType.IMAGE -> "image"
-            PasteType.FILE -> "file"
-            else -> "unknown"
-        }
+        return PasteType.fromType(this.pasteType).name
     }
 }
 

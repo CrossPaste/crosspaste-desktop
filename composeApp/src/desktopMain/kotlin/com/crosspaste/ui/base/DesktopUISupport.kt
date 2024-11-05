@@ -218,13 +218,14 @@ class DesktopUISupport(
         index: Int,
     ) {
         pasteData.getPasteItem()?.let { item ->
-            when (pasteData.pasteType) {
-                PasteType.TEXT -> openText(pasteData)
-                PasteType.COLOR -> openColorPicker((item as ColorPasteItem))
-                PasteType.URL -> openUrlInBrowser((item as UrlPasteItem).url)
-                PasteType.HTML -> openHtml(pasteData.id, (item as HtmlPasteItem).html)
-                PasteType.RTF -> openRtf(pasteData)
-                PasteType.FILE -> {
+            val pasteType = pasteData.getType()
+            when (pasteType) {
+                PasteType.TEXT_TYPE -> openText(pasteData)
+                PasteType.COLOR_TYPE -> openColorPicker((item as ColorPasteItem))
+                PasteType.URL_TYPE -> openUrlInBrowser((item as UrlPasteItem).url)
+                PasteType.HTML_TYPE -> openHtml(pasteData.id, (item as HtmlPasteItem).html)
+                PasteType.RTF_TYPE -> openRtf(pasteData)
+                PasteType.FILE_TYPE -> {
                     item as PasteFiles
                     val pasteFiles = item.getPasteFiles(userDataPathProvider)
                     if (pasteFiles.isNotEmpty()) {
@@ -236,7 +237,7 @@ class DesktopUISupport(
                         }
                     }
                 }
-                PasteType.IMAGE -> {
+                PasteType.IMAGE_TYPE -> {
                     item as PasteFiles
                     val pasteFiles = item.getPasteFiles(userDataPathProvider)
                     if (pasteFiles.isNotEmpty()) {
