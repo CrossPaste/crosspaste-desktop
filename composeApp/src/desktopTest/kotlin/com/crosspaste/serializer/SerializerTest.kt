@@ -41,7 +41,7 @@ class SerializerTest {
                         this.pasteItems = realmListOf()
                     }
                 this.pasteSearchContent = textPasteItem.text.lowercase()
-                this.pasteType = PasteType.TEXT
+                this.pasteType = PasteType.TEXT_TYPE.type
                 this.hash = textPasteItem.hash
                 this.pasteState = PasteState.LOADED
                 this.createTime = RealmInstant.now()
