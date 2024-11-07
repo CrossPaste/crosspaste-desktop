@@ -70,6 +70,8 @@ systemProp.https.proxyPassword=password
 systemProp.http.nonProxyHosts=*.nonproxyrepos.com|localhost
 ```
 
+另外关于 CrossPaste 的[技术博客](https://crosspaste.com/blog/introduction)也正在连载（大概每周一篇），如果你对开发跨平台应用感兴趣，欢迎阅读。
+
 ## 🗺️ 路线图
 CrossPaste 正在持续发展中！我们计划在未来的版本中添加更多实用的功能。以下是我们近期的发展计划概览：
 

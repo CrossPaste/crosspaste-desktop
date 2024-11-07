@@ -70,6 +70,8 @@ systemProp.https.proxyPassword=password
 systemProp.http.nonProxyHosts=*.nonproxyrepos.com|localhost
 ```
 
+Additionally, a series of technical [blogs](https://crosspaste.com/en/blog/introduction) about CrossPaste is being published (approximately one article per week). If you're interested in developing cross-platform applications, you're welcome to read them.
+
 ## 🗺️ Roadmap
 CrossPaste is continuously evolving! We plan to add more useful features in future versions. Here's an overview of our near-term development plans:
 
