@@ -301,8 +301,8 @@ class SyncHandler(
                 getCurrentSyncInfo(),
                 signalProcessor,
                 targetAppInstanceId,
-            ) { urlBuilder ->
-                buildUrl(urlBuilder, host, port)
+            ) {
+                buildUrl(host, port)
             }
 
         when (result) {
@@ -353,15 +353,15 @@ class SyncHandler(
         trustByTokenCache()
 
         val result =
-            syncClientApi.isTrust(targetAppInstanceId) { urlBuilder ->
-                buildUrl(urlBuilder, host, port)
+            syncClientApi.isTrust(targetAppInstanceId) {
+                buildUrl(host, port)
             }
 
         when (result) {
             is SuccessResult -> {
                 val preKeyBundleResult =
-                    syncClientApi.getPreKeyBundle { urlBuilder ->
-                        buildUrl(urlBuilder, host, port)
+                    syncClientApi.getPreKeyBundle {
+                        buildUrl(host, port)
                     }
 
                 when (preKeyBundleResult) {
@@ -384,8 +384,8 @@ class SyncHandler(
                             syncClientApi.createSession(
                                 getCurrentSyncInfo(),
                                 signalProcessor,
-                            ) { urlBuilder ->
-                                buildUrl(urlBuilder, host, port)
+                            ) {
+                                buildUrl(host, port)
                             }
                         when (resultCreateSession) {
                             is SuccessResult -> {
@@ -447,8 +447,8 @@ class SyncHandler(
     suspend fun trustByToken(token: Int) {
         if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
             syncRuntimeInfo.connectHostAddress?.let { host ->
-                syncClientApi.trust(token) { urlBuilder ->
-                    buildUrl(urlBuilder, host, syncRuntimeInfo.port)
+                syncClientApi.trust(token) {
+                    buildUrl(host, syncRuntimeInfo.port)
                 }
             }
         }
@@ -458,8 +458,8 @@ class SyncHandler(
     private suspend fun trustByTokenCache() {
         tokenCache.getToken(syncRuntimeInfo.appInstanceId)?.let { token ->
             syncRuntimeInfo.connectHostAddress?.let { host ->
-                syncClientApi.trust(token) { urlBuilder ->
-                    buildUrl(urlBuilder, host, syncRuntimeInfo.port)
+                syncClientApi.trust(token) {
+                    buildUrl(host, syncRuntimeInfo.port)
                 }
             }
         }
@@ -469,8 +469,8 @@ class SyncHandler(
         if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
             syncRuntimeInfo.connectHostAddress?.let { host ->
                 val result =
-                    syncClientApi.showToken { urlBuilder ->
-                        buildUrl(urlBuilder, host, syncRuntimeInfo.port)
+                    syncClientApi.showToken {
+                        buildUrl(host, syncRuntimeInfo.port)
                     }
                 if (result !is SuccessResult) {
                     update {
@@ -485,8 +485,8 @@ class SyncHandler(
     suspend fun notifyExit() {
         if (syncRuntimeInfo.connectState == SyncState.CONNECTED) {
             syncRuntimeInfo.connectHostAddress?.let { host ->
-                syncClientApi.notifyExit { urlBuilder ->
-                    buildUrl(urlBuilder, host, syncRuntimeInfo.port)
+                syncClientApi.notifyExit {
+                    buildUrl(host, syncRuntimeInfo.port)
                 }
             }
         }
@@ -510,8 +510,8 @@ class SyncHandler(
         signalRealm.deleteSession(syncRuntimeInfo.appInstanceId)
         signalRealm.deleteIdentity(syncRuntimeInfo.appInstanceId)
         syncRuntimeInfo.connectHostAddress?.let { host ->
-            syncClientApi.notifyRemove { urlBuilder ->
-                buildUrl(urlBuilder, host, syncRuntimeInfo.port)
+            syncClientApi.notifyRemove {
+                buildUrl(host, syncRuntimeInfo.port)
             }
         }
         job.cancel()

@@ -19,7 +19,7 @@ class SendPasteClientApi(
     suspend fun sendPaste(
         pasteData: PasteData,
         targetAppInstanceId: String,
-        toUrl: URLBuilder.(URLBuilder) -> Unit,
+        toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult {
         val response =
             pasteClient.post(
@@ -28,8 +28,8 @@ class SendPasteClientApi(
                 targetAppInstanceId = targetAppInstanceId,
                 encrypt = configManager.config.enableEncryptSync,
                 urlBuilder = {
-                    toUrl(it)
-                    buildUrl(it, "sync", "paste")
+                    toUrl()
+                    buildUrl("sync", "paste")
                 },
             )
 

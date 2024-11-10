@@ -103,8 +103,8 @@ class PullIconTaskExecutor(
         port: Int,
         baseExtraInfo: BaseExtraInfo,
     ): PasteTaskResult {
-        val toUrl: URLBuilder.(URLBuilder) -> Unit = { urlBuilder: URLBuilder ->
-            buildUrl(urlBuilder, host, port)
+        val toUrl: URLBuilder.() -> Unit = {
+            buildUrl(host, port)
         }
 
         val result = pullClientApi.pullIcon(source, toUrl)
