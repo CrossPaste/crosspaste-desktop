@@ -2,19 +2,17 @@ package com.crosspaste.utils
 
 import io.ktor.http.*
 
-fun buildUrl(
-    urlBuilder: URLBuilder,
+fun URLBuilder.buildUrl(
     host: String,
     port: Int,
 ) {
-    urlBuilder.protocol = URLProtocol.HTTP
-    urlBuilder.port = port
-    urlBuilder.host = host
+    this.protocol = URLProtocol.HTTP
+    this.port = port
+    this.host = host
 }
 
-fun buildUrl(
-    urlBuilder: URLBuilder,
+fun URLBuilder.buildUrl(
     vararg paths: String,
 ) {
-    urlBuilder.path(*paths)
+    this.path(*paths)
 }

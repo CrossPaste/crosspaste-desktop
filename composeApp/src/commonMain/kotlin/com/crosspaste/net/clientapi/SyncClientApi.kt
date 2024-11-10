@@ -13,7 +13,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.*
 import io.ktor.http.*
 import io.ktor.util.reflect.*
-import io.ktor.utils.io.core.toByteArray
+import io.ktor.utils.io.core.*
 import kotlinx.serialization.encodeToString
 
 class SyncClientApi(
@@ -26,22 +26,22 @@ class SyncClientApi(
 
     private val jsonUtils = getJsonUtils()
 
-    suspend fun getPreKeyBundle(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult {
+    suspend fun getPreKeyBundle(toUrl: URLBuilder.() -> Unit): ClientApiResult {
         return request(logger, request = {
             pasteClient.get(urlBuilder = {
-                toUrl(it)
-                buildUrl(it, "sync", "preKeyBundle")
+                toUrl()
+                buildUrl("sync", "preKeyBundle")
             })
         }) { response ->
             preKeyBundleCodecs.decodePreKeyBundle(response.body<DataContent>().data)
         }
     }
 
-    suspend fun syncInfo(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult {
+    suspend fun syncInfo(toUrl: URLBuilder.() -> Unit): ClientApiResult {
         return request(logger, request = {
             pasteClient.get(urlBuilder = {
-                toUrl(it)
-                buildUrl(it, "sync", "syncInfo")
+                toUrl()
+                buildUrl("sync", "syncInfo")
             })
         }) { response ->
             response.body<SyncInfo>()
@@ -51,7 +51,7 @@ class SyncClientApi(
     suspend fun createSession(
         syncInfo: SyncInfo,
         signalMessageProcessor: SignalMessageProcessor,
-        toUrl: URLBuilder.(URLBuilder) -> Unit,
+        toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult {
         return request(logger, request = {
             val data = jsonUtils.JSON.encodeToString(syncInfo).toByteArray()
@@ -61,8 +61,8 @@ class SyncClientApi(
                 dataContent,
                 typeInfo<DataContent>(),
                 urlBuilder = {
-                    toUrl(it)
-                    buildUrl(it, "sync", "createSession")
+                    toUrl()
+                    buildUrl("sync", "createSession")
                 },
             )
         }, transformData = { true })
@@ -72,7 +72,7 @@ class SyncClientApi(
         syncInfo: SyncInfo,
         signalMessageProcessor: SignalMessageProcessor,
         targetAppInstanceId: String,
-        toUrl: URLBuilder.(URLBuilder) -> Unit,
+        toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult {
         return request(logger, request = {
             val data = jsonUtils.JSON.encodeToString(syncInfo).toByteArray()
@@ -83,8 +83,8 @@ class SyncClientApi(
                 typeInfo<DataContent>(),
                 targetAppInstanceId,
                 urlBuilder = {
-                    toUrl(it)
-                    buildUrl(it, "sync", "heartbeat")
+                    toUrl()
+                    buildUrl("sync", "heartbeat")
                 },
             )
         }, transformData = { true })
@@ -92,14 +92,14 @@ class SyncClientApi(
 
     suspend fun isTrust(
         targetAppInstanceId: String,
-        toUrl: URLBuilder.(URLBuilder) -> Unit,
+        toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult {
         return request(logger, request = {
             pasteClient.get(
                 targetAppInstanceId,
                 urlBuilder = {
-                    toUrl(it)
-                    buildUrl(it, "sync", "isTrust")
+                    toUrl()
+                    buildUrl("sync", "isTrust")
                 },
             )
         }, transformData = { true })
@@ -107,7 +107,7 @@ class SyncClientApi(
 
     suspend fun trust(
         token: Int,
-        toUrl: URLBuilder.(URLBuilder) -> Unit,
+        toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult {
         return request(logger, request = {
             val publicKey = signalProtocolStore.getIdentityKeyPublicKey()
@@ -116,36 +116,36 @@ class SyncClientApi(
                 requestTrust,
                 typeInfo<RequestTrust>(),
                 urlBuilder = {
-                    toUrl(it)
-                    buildUrl(it, "sync", "trust")
+                    toUrl()
+                    buildUrl("sync", "trust")
                 },
             )
         }, transformData = { true })
     }
 
-    suspend fun showToken(toUrl: URLBuilder.(URLBuilder) -> Unit): ClientApiResult {
+    suspend fun showToken(toUrl: URLBuilder.() -> Unit): ClientApiResult {
         return request(logger, request = {
             pasteClient.get(urlBuilder = {
-                toUrl(it)
-                buildUrl(it, "sync", "showToken")
+                toUrl()
+                buildUrl("sync", "showToken")
             })
         }, transformData = { true })
     }
 
-    suspend fun notifyExit(toUrl: URLBuilder.(URLBuilder) -> Unit) {
+    suspend fun notifyExit(toUrl: URLBuilder.() -> Unit) {
         request(logger, request = {
             pasteClient.get(urlBuilder = {
-                toUrl(it)
-                buildUrl(it, "sync", "notifyExit")
+                toUrl()
+                buildUrl("sync", "notifyExit")
             })
         }, transformData = { true })
     }
 
-    suspend fun notifyRemove(toUrl: URLBuilder.(URLBuilder) -> Unit) {
+    suspend fun notifyRemove(toUrl: URLBuilder.() -> Unit) {
         request(logger, request = {
             pasteClient.get(urlBuilder = {
-                toUrl(it)
-                buildUrl(it, "sync", "notifyRemove")
+                toUrl()
+                buildUrl("sync", "notifyRemove")
             })
         }, transformData = { true })
     }

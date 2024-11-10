@@ -21,7 +21,7 @@ class PullClientApi(
 
     suspend fun pullFile(
         pullFileRequest: PullFileRequest,
-        toUrl: URLBuilder.(URLBuilder) -> Unit,
+        toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult {
         val response =
             pasteClient.post(
@@ -32,8 +32,8 @@ class PullClientApi(
                 // pull file timeout is 50s
                 timeout = 50000L,
                 urlBuilder = {
-                    toUrl(it)
-                    buildUrl(it, "pull", "file")
+                    toUrl()
+                    buildUrl("pull", "file")
                 },
             )
 
@@ -42,14 +42,14 @@ class PullClientApi(
 
     suspend fun pullIcon(
         source: String,
-        toUrl: URLBuilder.(URLBuilder) -> Unit,
+        toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult {
         val response =
             pasteClient.get(
                 timeout = 50000L,
                 urlBuilder = {
-                    toUrl(it)
-                    buildUrl(it, "pull", "icon", source)
+                    toUrl()
+                    buildUrl("pull", "icon", source)
                 },
             )
 

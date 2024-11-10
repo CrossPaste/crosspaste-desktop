@@ -50,8 +50,8 @@ class SyncPasteTaskExecutor(
                                     val targetAppInstanceId = clientHandler.syncRuntimeInfo.appInstanceId
                                     clientHandler.getConnectHostAddress()?.let {
                                         val syncPasteResult =
-                                            sendPasteClientApi.sendPaste(pasteData, targetAppInstanceId) { urlBuilder ->
-                                                buildUrl(urlBuilder, it, port)
+                                            sendPasteClientApi.sendPaste(pasteData, targetAppInstanceId) {
+                                                buildUrl(it, port)
                                             }
                                         return@async Pair(entryHandler.key, syncPasteResult)
                                     } ?: run {

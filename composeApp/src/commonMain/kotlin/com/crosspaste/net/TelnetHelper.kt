@@ -60,9 +60,9 @@ class TelnetHelper(private val pasteClient: PasteClient) {
     ): Boolean {
         return try {
             val httpResponse =
-                pasteClient.get(timeout = timeout) { urlBuilder ->
-                    buildUrl(urlBuilder, hostInfo.hostAddress, port)
-                    buildUrl(urlBuilder, "sync", "telnet")
+                pasteClient.get(timeout = timeout) {
+                    buildUrl(hostInfo.hostAddress, port)
+                    buildUrl("sync", "telnet")
                 }
             logger.info { "httpResponse.status = ${httpResponse.status.value} $hostInfo:$port" }
 

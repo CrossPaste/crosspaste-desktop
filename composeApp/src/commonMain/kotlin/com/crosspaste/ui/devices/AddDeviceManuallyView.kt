@@ -161,8 +161,8 @@ fun AddDeviceManuallyForm() {
                 runBlocking {
                     when (
                         val result =
-                            syncClientApi.syncInfo { urlBuilder ->
-                                buildUrl(urlBuilder, ip, port.toInt())
+                            syncClientApi.syncInfo {
+                                buildUrl(ip, port.toInt())
                             }
                     ) {
                         is SuccessResult -> {
