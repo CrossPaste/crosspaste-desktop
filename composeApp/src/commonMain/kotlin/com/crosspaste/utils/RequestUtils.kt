@@ -11,8 +11,6 @@ fun URLBuilder.buildUrl(
     this.host = host
 }
 
-fun URLBuilder.buildUrl(
-    vararg paths: String,
-) {
+fun URLBuilder.buildUrl(vararg paths: String) {
     this.path(*paths)
 }
