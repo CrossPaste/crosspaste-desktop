@@ -9,16 +9,11 @@ import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
-import com.crosspaste.realm.signal.SignalRealm
 import com.crosspaste.realm.sync.HostInfo
 import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
 import com.crosspaste.realm.sync.SyncState
-import com.crosspaste.signal.PreKeyBundleInterface
-import com.crosspaste.signal.SessionBuilderFactory
-import com.crosspaste.signal.SignalAddress
-import com.crosspaste.signal.SignalProcessorCache
-import com.crosspaste.signal.SignalProtocolStoreInterface
+import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.getNetUtils
 import com.crosspaste.utils.ioDispatcher
@@ -43,11 +38,8 @@ class SyncHandler(
     private val telnetHelper: TelnetHelper,
     private val syncInfoFactory: SyncInfoFactory,
     private val syncClientApi: SyncClientApi,
-    private val sessionBuilderFactory: SessionBuilderFactory,
-    private val signalProtocolStore: SignalProtocolStoreInterface,
-    private val signalProcessorCache: SignalProcessorCache,
+    private val secureStore: SecureStore,
     private val syncRuntimeInfoRealm: SyncRuntimeInfoRealm,
-    private val signalRealm: SignalRealm,
     private val tokenCache: TokenCache,
 ) {
 
@@ -64,9 +56,7 @@ class SyncHandler(
             syncRuntimeInfo.appVersion,
         )
 
-    private val appInstanceId: String = syncRuntimeInfo.appInstanceId
-
-    private val signalProcessor = signalProcessorCache.getSignalMessageProcessor(syncRuntimeInfo.appInstanceId)
+    private val messageProcessor = secureStore.getMessageProcessor(syncRuntimeInfo.appInstanceId)
 
     private var recommendedRefreshTime: Long = 0L
 
@@ -268,19 +258,34 @@ class SyncHandler(
 
     private suspend fun resolveConnecting() {
         syncRuntimeInfo.connectHostAddress?.let { host ->
-            if (isExistSession()) {
-                if (heartbeat(host, syncRuntimeInfo.port, syncRuntimeInfo.appInstanceId)) {
-                    return@resolveConnecting
-                }
-                if (syncRuntimeInfo.connectState == SyncState.UNMATCHED) {
-                    logger.info { "heartbeat fail and connectState is unmatched, create new session $host ${syncRuntimeInfo.port}" }
-                    createSession(host, syncRuntimeInfo.port, syncRuntimeInfo.appInstanceId)
-                } else {
-                    logger.info { "heartbeat fail $host ${syncRuntimeInfo.port}" }
+            if (secureStore.existIdentity(syncRuntimeInfo.appInstanceId)) {
+                val state = heartbeat(host, syncRuntimeInfo.port, syncRuntimeInfo.appInstanceId)
+
+                when (state) {
+                    SyncState.CONNECTED -> {
+                        logger.info { "heartbeat success $host ${syncRuntimeInfo.port}" }
+                        update {
+                            this.connectState = SyncState.CONNECTED
+                            this.modifyTime = RealmInstant.now()
+                        }
+                        return@resolveConnecting
+                    }
+                    SyncState.UNMATCHED -> {
+                        logger.info { "heartbeat fail and connectState is unmatched, need to re verify $host ${syncRuntimeInfo.port}" }
+                        secureStore.deleteIdentity(syncRuntimeInfo.appInstanceId)
+                        tryUseTokenCache(host, syncRuntimeInfo.port)
+                    }
+
+                    else -> {
+                        update {
+                            this.connectState = SyncState.DISCONNECTED
+                            this.modifyTime = RealmInstant.now()
+                        }
+                    }
                 }
             } else {
-                logger.info { "not exist session to create session $host ${syncRuntimeInfo.port}" }
-                createSession(host, syncRuntimeInfo.port, syncRuntimeInfo.appInstanceId)
+                logger.info { "not exist identity, need to verify $host ${syncRuntimeInfo.port}" }
+                tryUseTokenCache(host, syncRuntimeInfo.port)
             }
         } ?: run {
             logger.info { "${syncRuntimeInfo.platformName} to disconnected" }
@@ -295,11 +300,10 @@ class SyncHandler(
         host: String,
         port: Int,
         targetAppInstanceId: String,
-    ): Boolean {
+    ): Int {
         val result =
             syncClientApi.heartbeat(
                 getCurrentSyncInfo(),
-                signalProcessor,
                 targetAppInstanceId,
             ) {
                 buildUrl(host, port)
@@ -307,11 +311,7 @@ class SyncHandler(
 
         when (result) {
             is SuccessResult -> {
-                update {
-                    this.connectState = SyncState.CONNECTED
-                    this.modifyTime = RealmInstant.now()
-                }
-                return true
+                return SyncState.CONNECTED
             }
 
             is FailureResult -> {
@@ -319,126 +319,31 @@ class SyncHandler(
                     StandardErrorCode.SYNC_NOT_MATCH_APP_INSTANCE_ID.getCode()
                 ) {
                     logger.info { "heartbeat return fail state to disconnect $host $port" }
-                    update {
-                        this.connectHostAddress = null
-                        this.connectState = SyncState.DISCONNECTED
-                        this.modifyTime = RealmInstant.now()
-                    }
+                    return SyncState.DISCONNECTED
                 } else {
                     logger.info { "exchangeSyncInfo return fail state to unmatched $host $port" }
-                    update {
-                        this.connectState = SyncState.UNMATCHED
-                        this.modifyTime = RealmInstant.now()
-                    }
+                    return SyncState.UNMATCHED
                 }
-                return false
             }
 
             else -> {
                 logger.info { "exchangeSyncInfo connect fail state to unmatched $host $port" }
-                update {
-                    this.connectState = SyncState.DISCONNECTED
-                    this.modifyTime = RealmInstant.now()
-                }
-                return false
+                return SyncState.DISCONNECTED
             }
         }
     }
 
-    private suspend fun createSession(
-        host: String,
-        port: Int,
-        targetAppInstanceId: String,
-    ) {
-        trustByTokenCache()
-
-        val result =
-            syncClientApi.isTrust(targetAppInstanceId) {
-                buildUrl(host, port)
+    private suspend fun tryUseTokenCache(host: String, port: Int) {
+        if (trustByTokenCache()) {
+            logger.info { "trustByTokenCache success $host $port" }
+            update {
+                this.connectState = SyncState.CONNECTED
+                this.modifyTime = RealmInstant.now()
             }
-
-        when (result) {
-            is SuccessResult -> {
-                val preKeyBundleResult =
-                    syncClientApi.getPreKeyBundle {
-                        buildUrl(host, port)
-                    }
-
-                when (preKeyBundleResult) {
-                    is SuccessResult -> {
-                        val preKeyBundle = preKeyBundleResult.getResult<PreKeyBundleInterface>()
-                        val signalAddress = SignalAddress(appInstanceId, 1)
-                        try {
-                            val sessionBuilder = sessionBuilderFactory.createSessionBuilder(signalAddress)
-                            signalProtocolStore.saveIdentity(signalAddress, preKeyBundle)
-                            sessionBuilder.process(preKeyBundle)
-                        } catch (e: Exception) {
-                            logger.warn(e) { "createSession exchangeSyncInfo fail" }
-                            update {
-                                this.connectState = SyncState.DISCONNECTED
-                                this.modifyTime = RealmInstant.now()
-                            }
-                            return
-                        }
-                        val resultCreateSession =
-                            syncClientApi.createSession(
-                                getCurrentSyncInfo(),
-                                signalProcessor,
-                            ) {
-                                buildUrl(host, port)
-                            }
-                        when (resultCreateSession) {
-                            is SuccessResult -> {
-                                update {
-                                    this.connectState = SyncState.CONNECTED
-                                    this.modifyTime = RealmInstant.now()
-                                }
-                            }
-
-                            is FailureResult -> {
-                                logger.info { "createSession return fail state to unmatched $host $port" }
-                                update {
-                                    this.connectState = SyncState.UNMATCHED
-                                    this.modifyTime = RealmInstant.now()
-                                }
-                            }
-
-                            else -> {
-                                logger.info { "createSession connect fail state to unmatched $host $port" }
-                                update {
-                                    this.connectState = SyncState.DISCONNECTED
-                                    this.modifyTime = RealmInstant.now()
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            is FailureResult -> {
-                if (result.exception.getErrorCode().code ==
-                    StandardErrorCode.SYNC_NOT_MATCH_APP_INSTANCE_ID.getCode()
-                ) {
-                    logger.info { "heartbeat return fail state to disconnect $host $port" }
-                    update {
-                        this.connectHostAddress = null
-                        this.connectState = SyncState.DISCONNECTED
-                        this.modifyTime = RealmInstant.now()
-                    }
-                } else {
-                    logger.info { "connect state to unverified $host $port" }
-                    update {
-                        this.connectState = SyncState.UNVERIFIED
-                        this.modifyTime = RealmInstant.now()
-                        logger.info { "createSession ${syncRuntimeInfo.platformName} UNVERIFIED" }
-                    }
-                }
-            }
-            else -> {
-                logger.info { "connect state to disconnect $host $port" }
-                update {
-                    this.connectState = SyncState.DISCONNECTED
-                    this.modifyTime = RealmInstant.now()
-                }
+        } else {
+            update {
+                this.connectState = SyncState.UNVERIFIED
+                this.modifyTime = RealmInstant.now()
             }
         }
     }
@@ -455,14 +360,19 @@ class SyncHandler(
     }
 
     // try to use camera to scan token to trust
-    private suspend fun trustByTokenCache() {
+    private suspend fun trustByTokenCache(): Boolean {
         tokenCache.getToken(syncRuntimeInfo.appInstanceId)?.let { token ->
             syncRuntimeInfo.connectHostAddress?.let { host ->
-                syncClientApi.trust(token) {
+                val result = syncClientApi.trust(token) {
                     buildUrl(host, syncRuntimeInfo.port)
+                }
+
+                if (result is SuccessResult) {
+                    return@trustByTokenCache true
                 }
             }
         }
+        return false
     }
 
     suspend fun showToken() {
@@ -501,14 +411,9 @@ class SyncHandler(
         }
     }
 
-    private fun isExistSession(): Boolean {
-        return signalProtocolStore.existSession(SignalAddress(appInstanceId, 1))
-    }
-
     suspend fun clearContext() {
-        signalProcessorCache.removeSignalMessageProcessor(syncRuntimeInfo.appInstanceId)
-        signalRealm.deleteSession(syncRuntimeInfo.appInstanceId)
-        signalRealm.deleteIdentity(syncRuntimeInfo.appInstanceId)
+        secureStore.removeMessageProcessor(syncRuntimeInfo.appInstanceId)
+        secureStore.deleteIdentity(syncRuntimeInfo.appInstanceId)
         syncRuntimeInfo.connectHostAddress?.let { host ->
             syncClientApi.notifyRemove {
                 buildUrl(host, syncRuntimeInfo.port)

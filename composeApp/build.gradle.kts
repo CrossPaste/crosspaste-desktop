@@ -1,3 +1,4 @@
+
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
@@ -6,7 +7,7 @@ import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.Constructor
 import java.io.FileReader
-import java.util.Properties
+import java.util.*
 import java.util.zip.ZipFile
 
 val versionProperties = Properties()
@@ -112,6 +113,8 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.coil.compose)
             implementation(libs.coil.svg)
+            implementation(libs.cryptography.core)
+            implementation(libs.cryptography.provider)
             implementation(libs.koin.compose)
             implementation(libs.koin.core)
             implementation(libs.koin.viewmodel)

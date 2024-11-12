@@ -86,10 +86,10 @@ import com.crosspaste.net.clientapi.SendPasteClientApi
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.exception.DesktopExceptionHandler
 import com.crosspaste.net.exception.ExceptionHandler
-import com.crosspaste.net.plugin.SignalClientDecryptPlugin
-import com.crosspaste.net.plugin.SignalClientEncryptPlugin
-import com.crosspaste.net.plugin.SignalServerDecryptionPluginFactory
-import com.crosspaste.net.plugin.SignalServerEncryptPluginFactory
+import com.crosspaste.net.plugin.ClientDecryptPlugin
+import com.crosspaste.net.plugin.ClientEncryptPlugin
+import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
+import com.crosspaste.net.plugin.ServerEncryptPluginFactory
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.notification.ToastManager
 import com.crosspaste.paste.CacheManager
@@ -325,13 +325,13 @@ class CrossPaste {
                     single<ServerModule> {
                         DesktopServerModule(
                             get(), get(), get(), get(), get(), get(), get(), get(),
-                            get(), get(), get(), get(), get(), get(), get(),
+                            get(), get(), get(), get(),
                         )
                     }
-                    single<SyncClientApi> { SyncClientApi(get(), get(), get()) }
+                    single<SyncClientApi> { SyncClientApi(get(), get()) }
                     single<SyncManager> {
                         SyncManager(
-                            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
+                            get(), get(), get(), get(), get(), get(), get(), get(), get(),
                             lazy { get() },
                         )
                     }
@@ -344,12 +344,12 @@ class CrossPaste {
                     single<PreKeyStore> { DesktopPreKeyStore(get()) }
                     single<SessionBuilderFactory> { DesktopSessionBuilderFactory(get()) }
                     single<SessionStore> { DesktopSessionStore(get()) }
-                    single<SignalClientDecryptPlugin> { SignalClientDecryptPlugin(get()) }
-                    single<SignalClientEncryptPlugin> { SignalClientEncryptPlugin(get()) }
+                    single<ClientDecryptPlugin> { ClientDecryptPlugin(get()) }
+                    single<ClientEncryptPlugin> { ClientEncryptPlugin(get()) }
                     single<SignalProcessorCache> { SignalProcessorCacheImpl(get()) }
                     single<SignalProtocolStoreInterface> { DesktopSignalProtocolStore(get(), get(), get(), get()) }
-                    single<SignalServerDecryptionPluginFactory> { SignalServerDecryptionPluginFactory(get()) }
-                    single<SignalServerEncryptPluginFactory> { SignalServerEncryptPluginFactory(get()) }
+                    single<ServerDecryptionPluginFactory> { ServerDecryptionPluginFactory(get()) }
+                    single<ServerEncryptPluginFactory> { ServerEncryptPluginFactory(get()) }
                     single<SignedPreKeyStore> { DesktopSignedPreKeyStore(get()) }
 
                     // paste type plugin

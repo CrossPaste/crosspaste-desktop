@@ -4,16 +4,13 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenService
 import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.net.exception.ExceptionHandler
-import com.crosspaste.net.plugin.SignalServerDecryptionPluginFactory
-import com.crosspaste.net.plugin.SignalServerEncryptPluginFactory
+import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
+import com.crosspaste.net.plugin.ServerEncryptPluginFactory
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.realm.signal.SignalRealm
-import com.crosspaste.signal.PreKeyBundleCodecs
-import com.crosspaste.signal.PreKeySignalMessageFactory
-import com.crosspaste.signal.SignalProcessorCache
-import com.crosspaste.signal.SignalProtocolStoreInterface
+import com.crosspaste.secure.ECDSASerializer
+import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.SyncManager
 import io.ktor.server.application.*
 import io.ktor.server.plugins.compression.*
@@ -22,33 +19,27 @@ class DesktopServerModule(
     appInfo: AppInfo,
     appTokenService: AppTokenService,
     cacheManager: CacheManager,
+    ecdsaSerializer: ECDSASerializer,
     endpointInfoFactory: EndpointInfoFactory,
     exceptionHandler: ExceptionHandler,
     pasteboardService: PasteboardService,
-    preKeyBundleCodecs: PreKeyBundleCodecs,
-    preKeySignalMessageFactory: PreKeySignalMessageFactory,
-    signalRealm: SignalRealm,
-    signalProtocolStore: SignalProtocolStoreInterface,
-    signalProcessorCache: SignalProcessorCache,
+    secureStore: SecureStore,
     syncManager: SyncManager,
-    signalServerEncryptPluginFactory: SignalServerEncryptPluginFactory,
-    signalServerDecryptionPluginFactory: SignalServerDecryptionPluginFactory,
+    serverEncryptPluginFactory: ServerEncryptPluginFactory,
+    serverDecryptionPluginFactory: ServerDecryptionPluginFactory,
     userDataPathProvider: UserDataPathProvider,
 ) : DefaultServerModule(
         appInfo,
         appTokenService,
         cacheManager,
+        ecdsaSerializer,
         endpointInfoFactory,
         exceptionHandler,
         pasteboardService,
-        preKeyBundleCodecs,
-        preKeySignalMessageFactory,
-        signalRealm,
-        signalProtocolStore,
-        signalProcessorCache,
+        secureStore,
         syncManager,
-        signalServerEncryptPluginFactory,
-        signalServerDecryptionPluginFactory,
+        serverEncryptPluginFactory,
+        serverDecryptionPluginFactory,
         userDataPathProvider,
     ) {
 
