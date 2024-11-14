@@ -6,7 +6,9 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class PairingRequest(
     @Serializable(with = Base64ByteArraySerializer::class)
-    val identityKey: ByteArray,
+    val signPublicKey: ByteArray,
+    @Serializable(with = Base64ByteArraySerializer::class)
+    val cryptPublicKey: ByteArray,
     val token: Int,
     val timestamp: Long,
 ) {
@@ -16,7 +18,8 @@ data class PairingRequest(
 
         other as PairingRequest
 
-        if (!identityKey.contentEquals(other.identityKey)) return false
+        if (!signPublicKey.contentEquals(other.signPublicKey)) return false
+        if (!cryptPublicKey.contentEquals(other.cryptPublicKey)) return false
         if (token != other.token) return false
         if (timestamp != other.timestamp) return false
 
@@ -24,7 +27,8 @@ data class PairingRequest(
     }
 
     override fun hashCode(): Int {
-        var result = identityKey.contentHashCode()
+        var result = signPublicKey.contentHashCode()
+        result = 31 * result + cryptPublicKey.contentHashCode()
         result = 31 * result + token
         result = 31 * result + timestamp.hashCode()
         return result

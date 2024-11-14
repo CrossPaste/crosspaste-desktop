@@ -9,7 +9,7 @@ import com.crosspaste.net.plugin.ServerEncryptPluginFactory
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.secure.ECDSASerializer
+import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.SyncManager
 import io.ktor.server.application.*
@@ -19,7 +19,7 @@ class DesktopServerModule(
     appInfo: AppInfo,
     appTokenService: AppTokenService,
     cacheManager: CacheManager,
-    ecdsaSerializer: ECDSASerializer,
+    secureKeyPairSerializer: SecureKeyPairSerializer,
     endpointInfoFactory: EndpointInfoFactory,
     exceptionHandler: ExceptionHandler,
     pasteboardService: PasteboardService,
@@ -32,7 +32,7 @@ class DesktopServerModule(
         appInfo,
         appTokenService,
         cacheManager,
-        ecdsaSerializer,
+        secureKeyPairSerializer,
         endpointInfoFactory,
         exceptionHandler,
         pasteboardService,

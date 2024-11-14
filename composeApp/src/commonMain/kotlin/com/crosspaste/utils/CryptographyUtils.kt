@@ -18,7 +18,8 @@ object CryptographyUtils {
         pairingRequest: PairingRequest,
     ): ByteArray {
         val dataToSign = buildString {
-            append(codecsUtils.base64Encode(pairingRequest.identityKey))
+            append(codecsUtils.base64Encode(pairingRequest.signPublicKey))
+            append(codecsUtils.base64Encode(pairingRequest.cryptPublicKey))
             append(pairingRequest.token)
             append(pairingRequest.timestamp)
         }.toByteArray()
@@ -33,7 +34,8 @@ object CryptographyUtils {
         signature: ByteArray,
     ): Boolean {
         val dataToVerify = buildString {
-            append(codecsUtils.base64Encode(pairingRequest.identityKey))
+            append(codecsUtils.base64Encode(pairingRequest.signPublicKey))
+            append(codecsUtils.base64Encode(pairingRequest.cryptPublicKey))
             append(pairingRequest.token)
             append(pairingRequest.timestamp)
         }.toByteArray()
@@ -47,7 +49,8 @@ object CryptographyUtils {
         pairingResponse: PairingResponse,
     ): ByteArray {
         val dataToSign = buildString {
-            append(codecsUtils.base64Encode(pairingResponse.identityKey))
+            append(codecsUtils.base64Encode(pairingResponse.signPublicKey))
+            append(codecsUtils.base64Encode(pairingResponse.cryptPublicKey))
             append(pairingResponse.timestamp)
         }.toByteArray()
 
@@ -61,7 +64,8 @@ object CryptographyUtils {
         signature: ByteArray,
     ): Boolean {
         val dataToVerify = buildString {
-            append(codecsUtils.base64Encode(pairingResponse.identityKey))
+            append(codecsUtils.base64Encode(pairingResponse.signPublicKey))
+            append(codecsUtils.base64Encode(pairingResponse.cryptPublicKey))
             append(pairingResponse.timestamp)
         }.toByteArray()
 

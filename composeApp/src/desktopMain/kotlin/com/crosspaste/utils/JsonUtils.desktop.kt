@@ -14,8 +14,6 @@ import com.crosspaste.realm.paste.PasteCollection
 import com.crosspaste.realm.paste.PasteLabel
 import com.crosspaste.realm.task.PasteTaskExtraInfo
 import com.crosspaste.serializer.Base64ByteArraySerializer
-import com.crosspaste.serializer.PreKeyBundleSerializer
-import com.crosspaste.signal.PreKeyBundleInterface
 import com.crosspaste.task.extra.BaseExtraInfo
 import com.crosspaste.task.extra.PullExtraInfo
 import com.crosspaste.task.extra.SyncExtraInfo
@@ -42,7 +40,6 @@ object DesktopJsonUtils : JsonUtils {
                 SerializersModule {
                     // use in http request
                     serializersModuleOf(ByteArray::class, Base64ByteArraySerializer)
-                    serializersModuleOf(PreKeyBundleInterface::class, PreKeyBundleSerializer)
 
                     // use in paste data
                     serializersModuleOf(MutableRealmIntKSerializer)

@@ -4,7 +4,6 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.exception.StandardErrorCode
-import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getAppInstanceId
@@ -17,7 +16,6 @@ import io.ktor.server.routing.*
 fun Routing.baseSyncRouting(
     appInfo: AppInfo,
     endpointInfoFactory: EndpointInfoFactory,
-    secureStore: SecureStore,
     syncManager: SyncManager,
 ) {
     val logger = KotlinLogging.logger {}

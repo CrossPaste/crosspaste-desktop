@@ -12,7 +12,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 
 class MacosSecureStoreFactory(
     private val appInfo: AppInfo,
-    private val ecdsaSerializer: ECDSASerializer,
+    private val secureKeyPairSerializer: SecureKeyPairSerializer,
     private val secureRealm: SecureRealm,
 ): SecureStoreFactory {
 
@@ -29,7 +29,7 @@ class MacosSecureStoreFactory(
         val service = "crosspaste-${appEnvUtils.getCurrentAppEnv().name}-${appInfo.appInstanceId}"
         val file = filePersist.path.toFile()
         if (file.exists()) {
-            logger.info { "Found identityKey encrypt file" }
+            logger.info { "Found secureKeyPair encrypt file" }
             val bytes = file.readBytes()
             val password = MacosKeychainHelper.getPassword(service, appInfo.userName)
             password?.let {
@@ -37,23 +37,23 @@ class MacosSecureStoreFactory(
                 try {
                     val secretKey = EncryptUtils.stringToSecretKey(it)
                     val decryptData = EncryptUtils.decryptData(secretKey, bytes)
-                    val identityKeyPair = ecdsaSerializer.decodeKeyPair(decryptData)
-                    return@createSecureStore SecureStore(identityKeyPair, ecdsaSerializer, secureRealm)
+                    val secureKeyPair = secureKeyPairSerializer.decodeSecureKeyPair(decryptData)
+                    return@createSecureStore SecureStore(secureKeyPair, secureKeyPairSerializer, secureRealm)
                 } catch (e: Exception) {
-                    logger.error(e) { "Decrypt identityKey error" }
+                    logger.error(e) { "Decrypt secureKeyPair error" }
                 }
             }
 
             if (file.delete()) {
-                logger.info { "Delete identityKey encrypt file" }
+                logger.info { "Delete secureKeyPair encrypt file" }
             }
         } else {
-            logger.info { "Not found identityKey encrypt file" }
+            logger.info { "Not found secureKeyPair encrypt file" }
         }
 
-        logger.info { "Generate identityKeyPair" }
-        val identityKeyPair = generateIdentityKeyPair()
-        val data = ecdsaSerializer.encodeKeyPair(identityKeyPair)
+        logger.info { "Generate secureKeyPair" }
+        val secureKeyPair = generateSecureKeyPair()
+        val data = secureKeyPairSerializer.encodeSecureKeyPair(secureKeyPair)
         val password = MacosKeychainHelper.getPassword(service, appInfo.userName)
 
         val secretKey = password?.let {
@@ -67,6 +67,6 @@ class MacosSecureStoreFactory(
         }
         val encryptData = EncryptUtils.encryptData(secretKey, data)
         filePersist.saveBytes(encryptData)
-        return SecureStore(identityKeyPair, ecdsaSerializer, secureRealm)
+        return SecureStore(secureKeyPair, secureKeyPairSerializer, secureRealm)
     }
 }

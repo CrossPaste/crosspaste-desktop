@@ -12,10 +12,7 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteCollection
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteLabel
-import com.crosspaste.realm.signal.PasteIdentityKey
-import com.crosspaste.realm.signal.PastePreKey
-import com.crosspaste.realm.signal.PasteSession
-import com.crosspaste.realm.signal.PasteSignedPreKey
+import com.crosspaste.realm.secure.CryptPublicKey
 import com.crosspaste.realm.sync.HostInfo
 import com.crosspaste.realm.sync.SyncRuntimeInfo
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -35,12 +32,9 @@ class RealmManager private constructor(private val config: RealmConfiguration) {
                 HostInfo::class,
             )
 
-        private val SIGNAL_TYPES: Set<KClass<out TypedRealmObject>> =
+        private val SECURE_TYPES: Set<KClass<out TypedRealmObject>> =
             setOf(
-                PasteIdentityKey::class,
-                PastePreKey::class,
-                PasteSession::class,
-                PasteSignedPreKey::class,
+                CryptPublicKey::class,
             )
 
         private val PASTE_TYPES: Set<KClass<out TypedRealmObject>> =
@@ -64,7 +58,7 @@ class RealmManager private constructor(private val config: RealmConfiguration) {
 
         private const val NAME = "crosspaste.realm"
 
-        private const val SCHEMA_VALUE: Long = 3
+        private const val SCHEMA_VALUE: Long = 4
 
         fun createRealmManager(userDataPathProvider: UserDataPathProvider): RealmManager {
             val path = userDataPathProvider.resolve(appFileType = AppFileType.DATA)
@@ -72,7 +66,7 @@ class RealmManager private constructor(private val config: RealmConfiguration) {
         }
 
         fun createRealmConfig(path: Path): RealmConfiguration {
-            return RealmConfiguration.Builder(DTO_TYPES + SIGNAL_TYPES + PASTE_TYPES + TASK_TYPES)
+            return RealmConfiguration.Builder(DTO_TYPES + SECURE_TYPES + PASTE_TYPES + TASK_TYPES)
                 .directory(path.toString())
                 .name(NAME)
                 .schemaVersion(SCHEMA_VALUE)

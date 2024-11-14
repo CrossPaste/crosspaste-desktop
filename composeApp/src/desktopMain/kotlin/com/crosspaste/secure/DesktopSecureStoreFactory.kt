@@ -6,7 +6,7 @@ import com.crosspaste.realm.secure.SecureRealm
 
 class DesktopSecureStoreFactory(
     private val appInfo: AppInfo,
-    private val ecdsaSerializer: ECDSASerializer,
+    private val secureKeyPairSerializer: SecureKeyPairSerializer,
     private val secureRealm: SecureRealm,
 ): SecureStoreFactory {
 
@@ -18,11 +18,11 @@ class DesktopSecureStoreFactory(
 
     private fun getSecureStoreFactory(): SecureStoreFactory {
         return if (currentPlatform.isMacos()) {
-            MacosSecureStoreFactory(appInfo, ecdsaSerializer, secureRealm)
+            MacosSecureStoreFactory(appInfo, secureKeyPairSerializer, secureRealm)
         } else if (currentPlatform.isWindows()) {
-            WindowsSecureStoreFactory(ecdsaSerializer, secureRealm)
+            WindowsSecureStoreFactory(secureKeyPairSerializer, secureRealm)
         } else if (currentPlatform.isLinux()) {
-            LinuxSecureStoreFactory(ecdsaSerializer, secureRealm)
+            LinuxSecureStoreFactory(secureKeyPairSerializer, secureRealm)
         } else {
             throw IllegalStateException("Unsupported platform: ${currentPlatform.name}")
         }

@@ -56,8 +56,6 @@ class SyncHandler(
             syncRuntimeInfo.appVersion,
         )
 
-    private val messageProcessor = secureStore.getMessageProcessor(syncRuntimeInfo.appInstanceId)
-
     private var recommendedRefreshTime: Long = 0L
 
     private var failTime = 0
@@ -258,7 +256,7 @@ class SyncHandler(
 
     private suspend fun resolveConnecting() {
         syncRuntimeInfo.connectHostAddress?.let { host ->
-            if (secureStore.existIdentity(syncRuntimeInfo.appInstanceId)) {
+            if (secureStore.existCryptPublicKey(syncRuntimeInfo.appInstanceId)) {
                 val state = heartbeat(host, syncRuntimeInfo.port, syncRuntimeInfo.appInstanceId)
 
                 when (state) {
@@ -272,7 +270,7 @@ class SyncHandler(
                     }
                     SyncState.UNMATCHED -> {
                         logger.info { "heartbeat fail and connectState is unmatched, need to re verify $host ${syncRuntimeInfo.port}" }
-                        secureStore.deleteIdentity(syncRuntimeInfo.appInstanceId)
+                        secureStore.deleteCryptPublicKey(syncRuntimeInfo.appInstanceId)
                         tryUseTokenCache(host, syncRuntimeInfo.port)
                     }
 
@@ -352,7 +350,7 @@ class SyncHandler(
     suspend fun trustByToken(token: Int) {
         if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
             syncRuntimeInfo.connectHostAddress?.let { host ->
-                syncClientApi.trust(token) {
+                syncClientApi.trust(syncRuntimeInfo.appInstanceId, token) {
                     buildUrl(host, syncRuntimeInfo.port)
                 }
             }
@@ -363,7 +361,7 @@ class SyncHandler(
     private suspend fun trustByTokenCache(): Boolean {
         tokenCache.getToken(syncRuntimeInfo.appInstanceId)?.let { token ->
             syncRuntimeInfo.connectHostAddress?.let { host ->
-                val result = syncClientApi.trust(token) {
+                val result = syncClientApi.trust(syncRuntimeInfo.appInstanceId, token) {
                     buildUrl(host, syncRuntimeInfo.port)
                 }
 
@@ -412,8 +410,7 @@ class SyncHandler(
     }
 
     suspend fun clearContext() {
-        secureStore.removeMessageProcessor(syncRuntimeInfo.appInstanceId)
-        secureStore.deleteIdentity(syncRuntimeInfo.appInstanceId)
+        secureStore.deleteCryptPublicKey(syncRuntimeInfo.appInstanceId)
         syncRuntimeInfo.connectHostAddress?.let { host ->
             syncClientApi.notifyRemove {
                 buildUrl(host, syncRuntimeInfo.port)

@@ -14,7 +14,7 @@ import com.crosspaste.net.routing.syncRouting
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.secure.ECDSASerializer
+import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.failResponse
@@ -31,7 +31,7 @@ open class DefaultServerModule(
     private val appInfo: AppInfo,
     private val appTokenService: AppTokenService,
     private val cacheManager: CacheManager,
-    private val ecdsaSerializer: ECDSASerializer,
+    private val secureKeyPairSerializer: SecureKeyPairSerializer,
     private val endpointInfoFactory: EndpointInfoFactory,
     private val exceptionHandler: ExceptionHandler,
     private val pasteboardService: PasteboardService,
@@ -65,12 +65,11 @@ open class DefaultServerModule(
                 baseSyncRouting(
                     appInfo,
                     endpointInfoFactory,
-                    secureStore,
                     syncManager,
                 )
                 syncRouting(
                     appTokenService,
-                    ecdsaSerializer,
+                    secureKeyPairSerializer,
                     secureStore,
                 )
                 pasteRouting(

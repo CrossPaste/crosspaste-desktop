@@ -8,7 +8,7 @@ import com.crosspaste.realm.secure.SecureRealm
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 class WindowsSecureStoreFactory(
-    private val ecdsaSerializer: ECDSASerializer,
+    private val secureKeyPairSerializer: SecureKeyPairSerializer,
     private val secureRealm: SecureRealm,
 ): SecureStoreFactory {
     private val logger = KotlinLogging.logger {}
@@ -21,30 +21,30 @@ class WindowsSecureStoreFactory(
     override fun createSecureStore(): SecureStore {
         val file = filePersist.path.toFile()
         if (file.exists()) {
-            logger.info { "Found identityKey encrypt file" }
+            logger.info { "Found secureKeyPair encrypt file" }
             filePersist.readBytes()?.let {
                 try {
                     val decryptData = WindowDapiHelper.decryptData(it)
                     decryptData?.let { byteArray ->
-                        val identityKeyPair = ecdsaSerializer.decodeKeyPair(byteArray)
-                        return@createSecureStore SecureStore(identityKeyPair, ecdsaSerializer, secureRealm)
+                        val secureKeyPair = secureKeyPairSerializer.decodeSecureKeyPair(byteArray)
+                        return@createSecureStore SecureStore(secureKeyPair, secureKeyPairSerializer, secureRealm)
                     }
                 } catch (e: Exception) {
-                    logger.error(e) { "Failed to decrypt identityKey" }
+                    logger.error(e) { "Failed to decrypt secureKeyPair" }
                 }
             }
             if (file.delete()) {
-                logger.info { "Delete identityKey encrypt file" }
+                logger.info { "Delete secureKeyPair encrypt file" }
             }
         } else {
-            logger.info { "Not found identityKey encrypt file" }
+            logger.info { "Not found secureKeyPair encrypt file" }
         }
 
-        logger.info { "Generate identityKeyPair" }
-        val identityKeyPair = generateIdentityKeyPair()
-        val data = ecdsaSerializer.encodeKeyPair(identityKeyPair)
+        logger.info { "Generate secureKeyPair" }
+        val secureKeyPair = generateSecureKeyPair()
+        val data = secureKeyPairSerializer.encodeSecureKeyPair(secureKeyPair)
         val encryptData = WindowDapiHelper.encryptData(data)
         filePersist.saveBytes(encryptData!!)
-        return SecureStore(identityKeyPair, ecdsaSerializer, secureRealm)
+        return SecureStore(secureKeyPair, secureKeyPairSerializer, secureRealm)
     }
 }
