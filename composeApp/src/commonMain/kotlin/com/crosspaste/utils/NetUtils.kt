@@ -33,6 +33,10 @@ object NoFilter : HostInfoFilter {
     override fun equals(other: Any?): Boolean {
         return other == NoFilter
     }
+
+    override fun hashCode(): Int {
+        return 0
+    }
 }
 
 class HostInfoFilterImpl(
