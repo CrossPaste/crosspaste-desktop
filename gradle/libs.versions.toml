@@ -28,7 +28,6 @@ mockk = "1.13.13"
 okio = "3.9.1"
 realm = "3.0.0"
 selenium = "4.23.1"
-signal = "0.54.0"
 semver = "2.0.0"
 system-tray = "4.4"
 theme-detector = "3.8"
@@ -85,7 +84,6 @@ realm-kotlin-base = { module = "io.realm.kotlin:library-base", version.ref = "re
 selenium-chrome-driver = { module = "org.seleniumhq.selenium:selenium-chrome-driver", version.ref = "selenium" }
 selenium-devtools = { module = "org.seleniumhq.selenium:selenium-devtools-v125", version.ref = "selenium" }
 semver = { module = "io.github.z4kn4fein:semver", version.ref = "semver" }
-signal-client = { module = "org.signal:libsignal-client", version.ref = "signal" }
 system-tray = { module = "com.dorkbox:SystemTray", version.ref = "system-tray" }
 theme-detector = { module = "com.github.Dansoftowner:jSystemThemeDetector", version.ref = "theme-detector" }
 webp-imageio = { module = "com.github.usefulness:webp-imageio", version.ref = "webp-imageio" }

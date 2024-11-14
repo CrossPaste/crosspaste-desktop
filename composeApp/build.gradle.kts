@@ -95,7 +95,6 @@ kotlin {
             implementation(libs.logback.classic)
             implementation(libs.selenium.chrome.driver)
             implementation(libs.selenium.devtools)
-            implementation(libs.signal.client)
             implementation(libs.system.tray)
             implementation("com.github.Dansoftowner:jSystemThemeDetector:3.8") {
                 exclude(group = "net.java.dev.jna")
