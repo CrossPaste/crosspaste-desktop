@@ -1,8 +1,8 @@
 package com.crosspaste.net
 
 import com.crosspaste.app.AppInfo
-import com.crosspaste.net.plugin.SignalClientDecryptPlugin
-import com.crosspaste.net.plugin.SignalClientEncryptPlugin
+import com.crosspaste.net.plugin.ClientDecryptPlugin
+import com.crosspaste.net.plugin.ClientEncryptPlugin
 import com.crosspaste.utils.getJsonUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
@@ -18,8 +18,8 @@ import io.ktor.util.reflect.*
 
 class PasteClient(
     private val appInfo: AppInfo,
-    private val signalClientEncryptPlugin: SignalClientEncryptPlugin,
-    private val signalClientDecryptPlugin: SignalClientDecryptPlugin,
+    private val clientEncryptPlugin: ClientEncryptPlugin,
+    private val clientDecryptPlugin: ClientDecryptPlugin,
 ) {
 
     private val clientLogger = KotlinLogging.logger {}
@@ -40,8 +40,8 @@ class PasteClient(
             install(ContentNegotiation) {
                 json(getJsonUtils().JSON, ContentType.Application.Json)
             }
-            install(signalClientEncryptPlugin)
-            install(signalClientDecryptPlugin)
+            install(clientEncryptPlugin)
+            install(clientDecryptPlugin)
         }
 
     suspend fun <T : Any> post(

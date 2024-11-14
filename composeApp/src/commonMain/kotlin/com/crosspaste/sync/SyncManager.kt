@@ -7,15 +7,12 @@ import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.clientapi.SyncClientApi
-import com.crosspaste.realm.signal.SignalRealm
 import com.crosspaste.realm.sync.ChangeType
 import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
 import com.crosspaste.realm.sync.SyncState
 import com.crosspaste.realm.sync.createSyncRuntimeInfo
-import com.crosspaste.signal.SessionBuilderFactory
-import com.crosspaste.signal.SignalProcessorCache
-import com.crosspaste.signal.SignalProtocolStoreInterface
+import com.crosspaste.secure.SecureStore
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.PasteDialog
 import com.crosspaste.ui.devices.DeviceVerifyView
@@ -51,11 +48,8 @@ class SyncManager(
     private val telnetHelper: TelnetHelper,
     private val syncInfoFactory: SyncInfoFactory,
     private val syncClientApi: SyncClientApi,
-    private val sessionBuilderFactory: SessionBuilderFactory,
-    private val signalProtocolStore: SignalProtocolStoreInterface,
-    private val signalProcessorCache: SignalProcessorCache,
+    private val secureStore: SecureStore,
     private val syncRuntimeInfoRealm: SyncRuntimeInfoRealm,
-    private val signalRealm: SignalRealm,
     private val tokenCache: TokenCache,
     lazyDeviceManager: Lazy<DeviceManager>,
 ) {
@@ -168,11 +162,8 @@ class SyncManager(
             telnetHelper,
             syncInfoFactory,
             syncClientApi,
-            sessionBuilderFactory,
-            signalProtocolStore,
-            signalProcessorCache,
+            secureStore,
             syncRuntimeInfoRealm,
-            signalRealm,
             tokenCache,
         )
     }

@@ -1,41 +1,28 @@
 package com.crosspaste.net.clientapi
 
-import com.crosspaste.dto.sync.DataContent
-import com.crosspaste.dto.sync.RequestTrust
+import com.crosspaste.dto.secure.PairingRequest
+import com.crosspaste.dto.secure.TrustRequest
+import com.crosspaste.dto.secure.TrustResponse
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.net.PasteClient
-import com.crosspaste.signal.PreKeyBundleCodecs
-import com.crosspaste.signal.SignalMessageProcessor
-import com.crosspaste.signal.SignalProtocolStoreInterface
+import com.crosspaste.secure.SecureKeyPairSerializer
+import com.crosspaste.secure.SecureStore
+import com.crosspaste.utils.CryptographyUtils
 import com.crosspaste.utils.buildUrl
-import com.crosspaste.utils.getJsonUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.*
 import io.ktor.http.*
 import io.ktor.util.reflect.*
-import io.ktor.utils.io.core.*
-import kotlinx.serialization.encodeToString
+import kotlinx.datetime.Clock
+import kotlin.math.abs
 
 class SyncClientApi(
     private val pasteClient: PasteClient,
-    private val preKeyBundleCodecs: PreKeyBundleCodecs,
-    private val signalProtocolStore: SignalProtocolStoreInterface,
+    private val secureKeyPairSerializer: SecureKeyPairSerializer,
+    private val secureStore: SecureStore,
 ) {
 
     private val logger = KotlinLogging.logger {}
-
-    private val jsonUtils = getJsonUtils()
-
-    suspend fun getPreKeyBundle(toUrl: URLBuilder.() -> Unit): ClientApiResult {
-        return request(logger, request = {
-            pasteClient.get(urlBuilder = {
-                toUrl()
-                buildUrl("sync", "preKeyBundle")
-            })
-        }) { response ->
-            preKeyBundleCodecs.decodePreKeyBundle(response.body<DataContent>().data)
-        }
-    }
 
     suspend fun syncInfo(toUrl: URLBuilder.() -> Unit): ClientApiResult {
         return request(logger, request = {
@@ -48,40 +35,17 @@ class SyncClientApi(
         }
     }
 
-    suspend fun createSession(
-        syncInfo: SyncInfo,
-        signalMessageProcessor: SignalMessageProcessor,
-        toUrl: URLBuilder.() -> Unit,
-    ): ClientApiResult {
-        return request(logger, request = {
-            val data = jsonUtils.JSON.encodeToString(syncInfo).toByteArray()
-            val ciphertextMessageBytes = signalMessageProcessor.encrypt(data)
-            val dataContent = DataContent(data = ciphertextMessageBytes)
-            pasteClient.post(
-                dataContent,
-                typeInfo<DataContent>(),
-                urlBuilder = {
-                    toUrl()
-                    buildUrl("sync", "createSession")
-                },
-            )
-        }, transformData = { true })
-    }
-
     suspend fun heartbeat(
         syncInfo: SyncInfo,
-        signalMessageProcessor: SignalMessageProcessor,
         targetAppInstanceId: String,
         toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult {
         return request(logger, request = {
-            val data = jsonUtils.JSON.encodeToString(syncInfo).toByteArray()
-            val ciphertextMessageBytes = signalMessageProcessor.encrypt(data)
-            val dataContent = DataContent(data = ciphertextMessageBytes)
             pasteClient.post(
-                dataContent,
-                typeInfo<DataContent>(),
+                syncInfo,
+                typeInfo<SyncInfo>(),
                 targetAppInstanceId,
+                encrypt = true,
                 urlBuilder = {
                     toUrl()
                     buildUrl("sync", "heartbeat")
@@ -90,37 +54,67 @@ class SyncClientApi(
         }, transformData = { true })
     }
 
-    suspend fun isTrust(
-        targetAppInstanceId: String,
-        toUrl: URLBuilder.() -> Unit,
-    ): ClientApiResult {
-        return request(logger, request = {
-            pasteClient.get(
-                targetAppInstanceId,
-                urlBuilder = {
-                    toUrl()
-                    buildUrl("sync", "isTrust")
-                },
-            )
-        }, transformData = { true })
-    }
-
     suspend fun trust(
+        targetAppInstanceId: String,
         token: Int,
         toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult {
         return request(logger, request = {
-            val publicKey = signalProtocolStore.getIdentityKeyPublicKey()
-            val requestTrust = RequestTrust(publicKey, token)
+            val signPublicKey = secureStore.getSignPublicKeyBytes()
+            val cryptPublicKey = secureStore.getCryptPublicKeyBytes()
+            val pairingRequest =
+                PairingRequest(
+                    signPublicKey,
+                    cryptPublicKey,
+                    token,
+                    Clock.System.now().toEpochMilliseconds(),
+                )
+            val sign =
+                CryptographyUtils.signPairingRequest(
+                    secureStore.getSecureKeyPair().signKeyPair.privateKey,
+                    pairingRequest,
+                )
+            val trustRequest =
+                TrustRequest(
+                    pairingRequest,
+                    sign,
+                )
             pasteClient.post(
-                requestTrust,
-                typeInfo<RequestTrust>(),
+                trustRequest,
+                typeInfo<TrustRequest>(),
                 urlBuilder = {
                     toUrl()
                     buildUrl("sync", "trust")
                 },
             )
-        }, transformData = { true })
+        }, transformData = {
+            val trustResponse = it.body<TrustResponse>()
+
+            val currentTimestamp = Clock.System.now().toEpochMilliseconds()
+
+            if (abs(currentTimestamp - trustResponse.pairingResponse.timestamp) > 5000) {
+                logger.warn { "trust timeout" }
+                false
+            } else {
+                val receiveSignPublicKey =
+                    secureKeyPairSerializer.decodeSignPublicKey(
+                        trustResponse.pairingResponse.signPublicKey,
+                    )
+                val verifyResult =
+                    CryptographyUtils.verifyPairingResponse(
+                        receiveSignPublicKey,
+                        trustResponse.pairingResponse,
+                        trustResponse.signature,
+                    )
+
+                if (verifyResult) {
+                    secureStore.saveCryptPublicKey(targetAppInstanceId, trustResponse.pairingResponse.cryptPublicKey)
+                    true
+                } else {
+                    false
+                }
+            }
+        })
     }
 
     suspend fun showToken(toUrl: URLBuilder.() -> Unit): ClientApiResult {

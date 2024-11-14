@@ -86,10 +86,10 @@ import com.crosspaste.net.clientapi.SendPasteClientApi
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.exception.DesktopExceptionHandler
 import com.crosspaste.net.exception.ExceptionHandler
-import com.crosspaste.net.plugin.SignalClientDecryptPlugin
-import com.crosspaste.net.plugin.SignalClientEncryptPlugin
-import com.crosspaste.net.plugin.SignalServerDecryptionPluginFactory
-import com.crosspaste.net.plugin.SignalServerEncryptPluginFactory
+import com.crosspaste.net.plugin.ClientDecryptPlugin
+import com.crosspaste.net.plugin.ClientEncryptPlugin
+import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
+import com.crosspaste.net.plugin.ServerEncryptPluginFactory
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.notification.ToastManager
 import com.crosspaste.paste.CacheManager
@@ -136,7 +136,7 @@ import com.crosspaste.platform.getPlatform
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.realm.RealmManager
 import com.crosspaste.realm.paste.PasteRealm
-import com.crosspaste.realm.signal.SignalRealm
+import com.crosspaste.realm.secure.SecureRealm
 import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
 import com.crosspaste.realm.task.PasteTaskRealm
 import com.crosspaste.rendering.DesktopHtmlRenderingService
@@ -144,20 +144,10 @@ import com.crosspaste.rendering.DesktopRenderingHelper
 import com.crosspaste.rendering.DesktopRtfRenderingService
 import com.crosspaste.rendering.RenderingHelper
 import com.crosspaste.rendering.RenderingService
-import com.crosspaste.serializer.PreKeyBundleSerializer
-import com.crosspaste.signal.DesktopPreKeySignalMessageFactory
-import com.crosspaste.signal.DesktopPreKeyStore
-import com.crosspaste.signal.DesktopSessionBuilderFactory
-import com.crosspaste.signal.DesktopSessionStore
-import com.crosspaste.signal.DesktopSignalProtocolStore
-import com.crosspaste.signal.DesktopSignedPreKeyStore
-import com.crosspaste.signal.PreKeyBundleCodecs
-import com.crosspaste.signal.PreKeySignalMessageFactory
-import com.crosspaste.signal.SessionBuilderFactory
-import com.crosspaste.signal.SignalProcessorCache
-import com.crosspaste.signal.SignalProcessorCacheImpl
-import com.crosspaste.signal.SignalProtocolStoreInterface
-import com.crosspaste.signal.getPasteIdentityKeyStoreFactory
+import com.crosspaste.secure.DesktopSecureStoreFactory
+import com.crosspaste.secure.SecureKeyPairSerializer
+import com.crosspaste.secure.SecureStore
+import com.crosspaste.secure.SecureStoreFactory
 import com.crosspaste.sound.DesktopSoundService
 import com.crosspaste.sound.SoundService
 import com.crosspaste.sync.DesktopQRCodeGenerator
@@ -219,10 +209,6 @@ import org.koin.core.qualifier.Qualifier
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.mongodb.kbson.ObjectId
-import org.signal.libsignal.protocol.state.IdentityKeyStore
-import org.signal.libsignal.protocol.state.PreKeyStore
-import org.signal.libsignal.protocol.state.SessionStore
-import org.signal.libsignal.protocol.state.SignedPreKeyStore
 import java.awt.image.BufferedImage
 import kotlin.system.exitProcess
 
@@ -300,7 +286,7 @@ class CrossPaste {
                     single<PasteTaskRealm> { PasteTaskRealm(get()) }
                     single<Realm> { get<RealmManager>().realm }
                     single<RealmManager> { RealmManager.createRealmManager(get()) }
-                    single<SignalRealm> { SignalRealm(get()) }
+                    single<SecureRealm> { SecureRealm(get()) }
                     single<SyncRuntimeInfoRealm> { SyncRuntimeInfoRealm(get()) }
 
                     // net component
@@ -325,32 +311,26 @@ class CrossPaste {
                     single<ServerModule> {
                         DesktopServerModule(
                             get(), get(), get(), get(), get(), get(), get(), get(),
-                            get(), get(), get(), get(), get(), get(), get(),
+                            get(), get(), get(), get(),
                         )
                     }
                     single<SyncClientApi> { SyncClientApi(get(), get(), get()) }
                     single<SyncManager> {
                         SyncManager(
-                            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
+                            get(), get(), get(), get(), get(), get(), get(), get(), get(),
                             lazy { get() },
                         )
                     }
                     single<TelnetHelper> { TelnetHelper(get<PasteClient>()) }
 
-                    // signal component
-                    single<IdentityKeyStore> { getPasteIdentityKeyStoreFactory(get(), get()).createIdentityKeyStore() }
-                    single<PreKeyBundleCodecs> { PreKeyBundleSerializer }
-                    single<PreKeySignalMessageFactory> { DesktopPreKeySignalMessageFactory() }
-                    single<PreKeyStore> { DesktopPreKeyStore(get()) }
-                    single<SessionBuilderFactory> { DesktopSessionBuilderFactory(get()) }
-                    single<SessionStore> { DesktopSessionStore(get()) }
-                    single<SignalClientDecryptPlugin> { SignalClientDecryptPlugin(get()) }
-                    single<SignalClientEncryptPlugin> { SignalClientEncryptPlugin(get()) }
-                    single<SignalProcessorCache> { SignalProcessorCacheImpl(get()) }
-                    single<SignalProtocolStoreInterface> { DesktopSignalProtocolStore(get(), get(), get(), get()) }
-                    single<SignalServerDecryptionPluginFactory> { SignalServerDecryptionPluginFactory(get()) }
-                    single<SignalServerEncryptPluginFactory> { SignalServerEncryptPluginFactory(get()) }
-                    single<SignedPreKeyStore> { DesktopSignedPreKeyStore(get()) }
+                    // secure component
+                    single<ClientDecryptPlugin> { ClientDecryptPlugin(get()) }
+                    single<ClientEncryptPlugin> { ClientEncryptPlugin(get()) }
+                    single<SecureKeyPairSerializer> { SecureKeyPairSerializer() }
+                    single<SecureStore> { get<SecureStoreFactory>().createSecureStore() }
+                    single<SecureStoreFactory> { DesktopSecureStoreFactory(get(), get(), get()) }
+                    single<ServerDecryptionPluginFactory> { ServerDecryptionPluginFactory(get()) }
+                    single<ServerEncryptPluginFactory> { ServerEncryptPluginFactory(get()) }
 
                     // paste type plugin
                     single<ColorTypePlugin> { DesktopColorTypePlugin() }

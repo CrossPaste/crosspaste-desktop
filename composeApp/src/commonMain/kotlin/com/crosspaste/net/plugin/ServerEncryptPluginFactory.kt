@@ -1,6 +1,6 @@
 package com.crosspaste.net.plugin
 
-import com.crosspaste.signal.SignalProcessorCache
+import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -13,24 +13,23 @@ import io.ktor.utils.io.core.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 
-class SignalServerEncryptPluginFactory(private val signalProcessorCache: SignalProcessorCache) {
+class ServerEncryptPluginFactory(private val secureStore: SecureStore) {
 
-    fun createPlugin(): ApplicationPlugin<SignalConfig> {
+    fun createPlugin(): ApplicationPlugin<PluginConfig> {
         return createApplicationPlugin(
-            "SignalServerEncryptPlugin",
-            { SignalConfig(signalProcessorCache) },
+            "SecureServerEncryptPlugin",
+            { PluginConfig(secureStore) },
         ) {
             val logger: KLogger = KotlinLogging.logger {}
 
-            val signalProcessorCache: SignalProcessorCache = pluginConfig.signalProcessorCache
+            val secureStore: SecureStore = pluginConfig.secureStore
 
             on(EncryptResponse) { call, body ->
                 val headers = call.request.headers
                 headers["appInstanceId"]?.let { appInstanceId ->
-                    headers["signal"]?.let {
-                        logger.debug { "signal server encrypt $appInstanceId" }
-                        val processor =
-                            signalProcessorCache.getSignalMessageProcessor(appInstanceId)
+                    headers["secure"]?.let {
+                        logger.debug { "server encrypt $appInstanceId" }
+                        val processor = secureStore.getMessageProcessor(appInstanceId)
                         transformBodyTo(body) { bytes ->
                             processor.encrypt(bytes)
                         }

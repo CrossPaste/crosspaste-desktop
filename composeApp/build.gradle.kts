@@ -1,3 +1,4 @@
+
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
@@ -6,7 +7,7 @@ import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.Constructor
 import java.io.FileReader
-import java.util.Properties
+import java.util.*
 import java.util.zip.ZipFile
 
 val versionProperties = Properties()
@@ -94,7 +95,6 @@ kotlin {
             implementation(libs.logback.classic)
             implementation(libs.selenium.chrome.driver)
             implementation(libs.selenium.devtools)
-            implementation(libs.signal.client)
             implementation(libs.system.tray)
             implementation("com.github.Dansoftowner:jSystemThemeDetector:3.8") {
                 exclude(group = "net.java.dev.jna")
@@ -112,6 +112,8 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.coil.compose)
             implementation(libs.coil.svg)
+            implementation(libs.cryptography.core)
+            implementation(libs.cryptography.provider)
             implementation(libs.koin.compose)
             implementation(libs.koin.core)
             implementation(libs.koin.viewmodel)

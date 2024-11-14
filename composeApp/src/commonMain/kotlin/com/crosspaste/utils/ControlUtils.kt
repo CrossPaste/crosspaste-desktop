@@ -3,6 +3,7 @@ package com.crosspaste.utils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.datetime.Clock
 
 fun getControlUtils(): ControlUtils {
     return ControlUtils
@@ -14,9 +15,9 @@ object ControlUtils {
         delayTime: Int = 20,
         action: suspend () -> T,
     ): T {
-        val start = System.currentTimeMillis()
+        val start = Clock.System.now().toEpochMilliseconds()
         val result = action()
-        val end = System.currentTimeMillis()
+        val end = Clock.System.now().toEpochMilliseconds()
 
         val remainingDelay = delayTime + start - end
 
@@ -48,9 +49,9 @@ object ControlUtils {
         delayTime: Int = 20,
         action: () -> T,
     ): T {
-        val start = System.currentTimeMillis()
+        val start = Clock.System.now().toEpochMilliseconds()
         val result = action()
-        val end = System.currentTimeMillis()
+        val end = Clock.System.now().toEpochMilliseconds()
 
         val remainingDelay = delayTime + start - end
 
@@ -87,7 +88,7 @@ object ControlUtils {
             var lastEmitTime: Long = 0
 
             collect { value ->
-                val currentTime = System.currentTimeMillis()
+                val currentTime = Clock.System.now().toEpochMilliseconds()
                 val shouldEmit =
                     lastItem?.let { last ->
                         !isEqual(last, value) || (currentTime - lastEmitTime) >= durationMillis
