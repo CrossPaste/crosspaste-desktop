@@ -10,7 +10,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 class WindowsSecureStoreFactory(
     private val secureKeyPairSerializer: SecureKeyPairSerializer,
     private val secureRealm: SecureRealm,
-): SecureStoreFactory {
+) : SecureStoreFactory {
     private val logger = KotlinLogging.logger {}
 
     private val filePersist =

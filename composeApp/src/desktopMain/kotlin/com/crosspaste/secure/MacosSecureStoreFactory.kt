@@ -14,7 +14,7 @@ class MacosSecureStoreFactory(
     private val appInfo: AppInfo,
     private val secureKeyPairSerializer: SecureKeyPairSerializer,
     private val secureRealm: SecureRealm,
-): SecureStoreFactory {
+) : SecureStoreFactory {
 
     private val logger = KotlinLogging.logger {}
 
@@ -56,15 +56,16 @@ class MacosSecureStoreFactory(
         val data = secureKeyPairSerializer.encodeSecureKeyPair(secureKeyPair)
         val password = MacosKeychainHelper.getPassword(service, appInfo.userName)
 
-        val secretKey = password?.let {
-            logger.info { "Found password in keychain by $service ${appInfo.userName}" }
-            EncryptUtils.stringToSecretKey(it)
-        } ?: run {
-            logger.info { "Not found password in keychain by $service ${appInfo.userName}" }
-            val secretKey = EncryptUtils.generateAESKey()
-            MacosKeychainHelper.setPassword(service, appInfo.userName, EncryptUtils.secretKeyToString(secretKey))
-            secretKey
-        }
+        val secretKey =
+            password?.let {
+                logger.info { "Found password in keychain by $service ${appInfo.userName}" }
+                EncryptUtils.stringToSecretKey(it)
+            } ?: run {
+                logger.info { "Not found password in keychain by $service ${appInfo.userName}" }
+                val secretKey = EncryptUtils.generateAESKey()
+                MacosKeychainHelper.setPassword(service, appInfo.userName, EncryptUtils.secretKeyToString(secretKey))
+                secretKey
+            }
         val encryptData = EncryptUtils.encryptData(secretKey, data)
         filePersist.saveBytes(encryptData)
         return SecureStore(secureKeyPair, secureKeyPairSerializer, secureRealm)

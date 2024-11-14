@@ -17,10 +17,12 @@ class SecureMessageProcessor(
 
     init {
         val aes = provider.get(AES.CBC)
-        val bytes = privateKey.sharedSecretGenerator()
-            .generateSharedSecretToByteArrayBlocking(publicKey)
-        val key = aes.keyDecoder()
-            .decodeFromByteArrayBlocking(AES.Key.Format.JWK, bytes)
+        val bytes =
+            privateKey.sharedSecretGenerator()
+                .generateSharedSecretToByteArrayBlocking(publicKey)
+        val key =
+            aes.keyDecoder()
+                .decodeFromByteArrayBlocking(AES.Key.Format.JWK, bytes)
         cipher = key.cipher()
     }
 

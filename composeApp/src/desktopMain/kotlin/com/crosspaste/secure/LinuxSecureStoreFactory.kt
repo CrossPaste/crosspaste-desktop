@@ -11,7 +11,7 @@ import java.nio.file.attribute.PosixFilePermissions
 class LinuxSecureStoreFactory(
     private val secureKeyPairSerializer: SecureKeyPairSerializer,
     private val secureRealm: SecureRealm,
-): SecureStoreFactory {
+) : SecureStoreFactory {
 
     private val logger = KotlinLogging.logger {}
 

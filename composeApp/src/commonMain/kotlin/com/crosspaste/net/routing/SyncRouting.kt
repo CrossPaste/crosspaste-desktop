@@ -42,15 +42,17 @@ fun Routing.syncRouting(
                     return@post
                 }
 
-                val receiveSignPublicKey = secureKeyPairSerializer.decodeSignPublicKey(
-                    trustRequest.pairingRequest.signPublicKey,
-                )
+                val receiveSignPublicKey =
+                    secureKeyPairSerializer.decodeSignPublicKey(
+                        trustRequest.pairingRequest.signPublicKey,
+                    )
 
-                val verifyResult = CryptographyUtils.verifyPairingRequest(
-                    receiveSignPublicKey,
-                    trustRequest.pairingRequest,
-                    trustRequest.signature,
-                )
+                val verifyResult =
+                    CryptographyUtils.verifyPairingRequest(
+                        receiveSignPublicKey,
+                        trustRequest.pairingRequest,
+                        trustRequest.signature,
+                    )
 
                 if (!verifyResult) {
                     failResponse(call, StandardErrorCode.SIGN_INVALID.toErrorCode())
@@ -68,19 +70,22 @@ fun Routing.syncRouting(
                 val signPublicKey = secureStore.getSignPublicKeyBytes()
                 val cryptPublicKey = secureStore.getCryptPublicKeyBytes()
 
-                val pairingResponse = PairingResponse(
-                    signPublicKey,
-                    cryptPublicKey,
-                    currentTimestamp,
-                )
+                val pairingResponse =
+                    PairingResponse(
+                        signPublicKey,
+                        cryptPublicKey,
+                        currentTimestamp,
+                    )
 
-                val trustResponse = TrustResponse(
-                    pairingResponse = pairingResponse,
-                    signature = CryptographyUtils.signPairingResponse(
-                        secureStore.getSecureKeyPair().signKeyPair.privateKey,
-                        pairingResponse,
-                    ),
-                )
+                val trustResponse =
+                    TrustResponse(
+                        pairingResponse = pairingResponse,
+                        signature =
+                            CryptographyUtils.signPairingResponse(
+                                secureStore.getSecureKeyPair().signKeyPair.privateKey,
+                                pairingResponse,
+                            ),
+                    )
 
                 successResponse(call, trustResponse)
             } catch (e: Exception) {

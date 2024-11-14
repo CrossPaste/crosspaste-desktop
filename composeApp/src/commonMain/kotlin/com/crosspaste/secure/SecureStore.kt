@@ -20,7 +20,10 @@ class SecureStore(
         return instanceStates.remove(appInstanceId)
     }
 
-    suspend fun saveCryptPublicKey(appInstanceId: String, cryptPublicKey: ByteArray) {
+    suspend fun saveCryptPublicKey(
+        appInstanceId: String,
+        cryptPublicKey: ByteArray,
+    ) {
         val state = getInstanceState(appInstanceId)
         state.mutex.withLock {
             state.processor = null
@@ -54,7 +57,7 @@ class SecureStore(
     fun getSecureKeyPair(): SecureKeyPair {
         return secureKeyPair
     }
-    
+
     suspend fun getMessageProcessor(appInstanceId: String): SecureMessageProcessor {
         val state = getInstanceState(appInstanceId)
         state.processor?.let { return it }
@@ -78,5 +81,5 @@ class SecureStore(
 
 private data class InstanceState(
     val mutex: Mutex = Mutex(),
-    var processor: SecureMessageProcessor? = null
+    var processor: SecureMessageProcessor? = null,
 )

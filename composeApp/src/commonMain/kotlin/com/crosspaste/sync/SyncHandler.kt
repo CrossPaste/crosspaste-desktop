@@ -331,7 +331,10 @@ class SyncHandler(
         }
     }
 
-    private suspend fun tryUseTokenCache(host: String, port: Int) {
+    private suspend fun tryUseTokenCache(
+        host: String,
+        port: Int,
+    ) {
         if (trustByTokenCache()) {
             logger.info { "trustByTokenCache success $host $port" }
             update {
@@ -361,9 +364,10 @@ class SyncHandler(
     private suspend fun trustByTokenCache(): Boolean {
         tokenCache.getToken(syncRuntimeInfo.appInstanceId)?.let { token ->
             syncRuntimeInfo.connectHostAddress?.let { host ->
-                val result = syncClientApi.trust(syncRuntimeInfo.appInstanceId, token) {
-                    buildUrl(host, syncRuntimeInfo.port)
-                }
+                val result =
+                    syncClientApi.trust(syncRuntimeInfo.appInstanceId, token) {
+                        buildUrl(host, syncRuntimeInfo.port)
+                    }
 
                 if (result is SuccessResult) {
                     return@trustByTokenCache true

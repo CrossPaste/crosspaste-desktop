@@ -17,12 +17,13 @@ object CryptographyUtils {
         privateKey: ECDSA.PrivateKey,
         pairingRequest: PairingRequest,
     ): ByteArray {
-        val dataToSign = buildString {
-            append(codecsUtils.base64Encode(pairingRequest.signPublicKey))
-            append(codecsUtils.base64Encode(pairingRequest.cryptPublicKey))
-            append(pairingRequest.token)
-            append(pairingRequest.timestamp)
-        }.toByteArray()
+        val dataToSign =
+            buildString {
+                append(codecsUtils.base64Encode(pairingRequest.signPublicKey))
+                append(codecsUtils.base64Encode(pairingRequest.cryptPublicKey))
+                append(pairingRequest.token)
+                append(pairingRequest.timestamp)
+            }.toByteArray()
 
         return privateKey.signatureGenerator(sha256.id, ECDSA.SignatureFormat.DER)
             .generateSignatureBlocking(dataToSign)
@@ -33,12 +34,13 @@ object CryptographyUtils {
         pairingRequest: PairingRequest,
         signature: ByteArray,
     ): Boolean {
-        val dataToVerify = buildString {
-            append(codecsUtils.base64Encode(pairingRequest.signPublicKey))
-            append(codecsUtils.base64Encode(pairingRequest.cryptPublicKey))
-            append(pairingRequest.token)
-            append(pairingRequest.timestamp)
-        }.toByteArray()
+        val dataToVerify =
+            buildString {
+                append(codecsUtils.base64Encode(pairingRequest.signPublicKey))
+                append(codecsUtils.base64Encode(pairingRequest.cryptPublicKey))
+                append(pairingRequest.token)
+                append(pairingRequest.timestamp)
+            }.toByteArray()
 
         return publicKey.signatureVerifier(sha256.id, ECDSA.SignatureFormat.DER)
             .tryVerifySignatureBlocking(dataToVerify, signature)
@@ -48,11 +50,12 @@ object CryptographyUtils {
         privateKey: ECDSA.PrivateKey,
         pairingResponse: PairingResponse,
     ): ByteArray {
-        val dataToSign = buildString {
-            append(codecsUtils.base64Encode(pairingResponse.signPublicKey))
-            append(codecsUtils.base64Encode(pairingResponse.cryptPublicKey))
-            append(pairingResponse.timestamp)
-        }.toByteArray()
+        val dataToSign =
+            buildString {
+                append(codecsUtils.base64Encode(pairingResponse.signPublicKey))
+                append(codecsUtils.base64Encode(pairingResponse.cryptPublicKey))
+                append(pairingResponse.timestamp)
+            }.toByteArray()
 
         return privateKey.signatureGenerator(sha256.id, ECDSA.SignatureFormat.DER)
             .generateSignatureBlocking(dataToSign)
@@ -63,11 +66,12 @@ object CryptographyUtils {
         pairingResponse: PairingResponse,
         signature: ByteArray,
     ): Boolean {
-        val dataToVerify = buildString {
-            append(codecsUtils.base64Encode(pairingResponse.signPublicKey))
-            append(codecsUtils.base64Encode(pairingResponse.cryptPublicKey))
-            append(pairingResponse.timestamp)
-        }.toByteArray()
+        val dataToVerify =
+            buildString {
+                append(codecsUtils.base64Encode(pairingResponse.signPublicKey))
+                append(codecsUtils.base64Encode(pairingResponse.cryptPublicKey))
+                append(pairingResponse.timestamp)
+            }.toByteArray()
 
         return publicKey.signatureVerifier(sha256.id, ECDSA.SignatureFormat.DER)
             .tryVerifySignatureBlocking(dataToVerify, signature)

@@ -83,7 +83,6 @@ class ClientDecryptPlugin(private val secureStore: SecureStore) :
                             )
                         proceedWith(DefaultHttpResponse(it.call, responseData))
                     }
-
                 }
             }
         }

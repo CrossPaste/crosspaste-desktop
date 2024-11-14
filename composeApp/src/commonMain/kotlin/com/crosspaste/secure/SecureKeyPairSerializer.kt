@@ -22,7 +22,7 @@ class SecureKeyPairSerializer {
     fun decodeSignPublicKey(bytes: ByteArray): ECDSA.PublicKey {
         return signPublicKeyDecoder.decodeFromByteArrayBlocking(
             format = EC.PublicKey.Format.DER,
-            bytes = bytes
+            bytes = bytes,
         )
     }
 
@@ -33,7 +33,7 @@ class SecureKeyPairSerializer {
     fun decodeSignPrivateKey(bytes: ByteArray): ECDSA.PrivateKey {
         return signPrivateKeyDecoder.decodeFromByteArrayBlocking(
             format = EC.PrivateKey.Format.DER,
-            bytes = bytes
+            bytes = bytes,
         )
     }
 
@@ -89,7 +89,7 @@ class SecureKeyPairSerializer {
     fun decodeCryptPublicKey(bytes: ByteArray): ECDH.PublicKey {
         return cryptPublicKeyDecoder.decodeFromByteArrayBlocking(
             format = EC.PublicKey.Format.DER,
-            bytes = bytes
+            bytes = bytes,
         )
     }
 
@@ -100,7 +100,7 @@ class SecureKeyPairSerializer {
     fun decodeCryptPrivateKey(bytes: ByteArray): ECDH.PrivateKey {
         return cryptPrivateKeyDecoder.decodeFromByteArrayBlocking(
             format = EC.PrivateKey.Format.DER,
-            bytes = bytes
+            bytes = bytes,
         )
     }
 
@@ -195,19 +195,25 @@ class SecureKeyPairSerializer {
         }
     }
 
-
-    private fun writeIntToByteArray(dest: ByteArray, value: Int, offset: Int) {
+    private fun writeIntToByteArray(
+        dest: ByteArray,
+        value: Int,
+        offset: Int,
+    ) {
         dest[offset] = (value shr 24).toByte()
         dest[offset + 1] = (value shr 16).toByte()
         dest[offset + 2] = (value shr 8).toByte()
         dest[offset + 3] = value.toByte()
     }
 
-    private fun readIntFromByteArray(src: ByteArray, offset: Int): Int {
+    private fun readIntFromByteArray(
+        src: ByteArray,
+        offset: Int,
+    ): Int {
         return ((src[offset].toInt() and 0xFF) shl 24) or
-                ((src[offset + 1].toInt() and 0xFF) shl 16) or
-                ((src[offset + 2].toInt() and 0xFF) shl 8) or
-                (src[offset + 3].toInt() and 0xFF)
+            ((src[offset + 1].toInt() and 0xFF) shl 16) or
+            ((src[offset + 2].toInt() and 0xFF) shl 8) or
+            (src[offset + 3].toInt() and 0xFF)
     }
 }
 

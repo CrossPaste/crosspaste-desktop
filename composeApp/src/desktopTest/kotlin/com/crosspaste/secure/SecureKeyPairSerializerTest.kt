@@ -21,7 +21,6 @@ class SecureKeyPairSerializerTest {
         val cryptKeyPairGenerator = ecdh.keyPairGenerator(EC.Curve.P256)
         val cryptKeyPair = cryptKeyPairGenerator.generateKeyBlocking()
         return SecureKeyPair(signKeyPair, cryptKeyPair)
-
     }
 
     @Test
@@ -41,7 +40,7 @@ class SecureKeyPairSerializerTest {
         assertContentEquals(
             encodedPublicKey,
             reEncodedPublicKey,
-            "Re-encoded public key should match original encoded key"
+            "Re-encoded public key should match original encoded key",
         )
     }
 
@@ -62,7 +61,7 @@ class SecureKeyPairSerializerTest {
         assertContentEquals(
             encodedPrivateKey,
             reEncodedPrivateKey,
-            "Re-encoded private key should match original encoded key"
+            "Re-encoded private key should match original encoded key",
         )
     }
 
@@ -84,7 +83,7 @@ class SecureKeyPairSerializerTest {
         assertContentEquals(
             originalPublicKeyEncoded,
             decodedPublicKeyEncoded,
-            "Decoded public key should match original"
+            "Decoded public key should match original",
         )
 
         val originalPrivateKeyEncoded = serializer.encodeSignPrivateKey(originalKeyPair.signKeyPair.privateKey)
@@ -92,7 +91,7 @@ class SecureKeyPairSerializerTest {
         assertContentEquals(
             originalPrivateKeyEncoded,
             decodedPrivateKeyEncoded,
-            "Decoded private key should match original"
+            "Decoded private key should match original",
         )
     }
 
@@ -113,7 +112,7 @@ class SecureKeyPairSerializerTest {
         assertContentEquals(
             firstEncodedKeyPair,
             secondEncodedKeyPair,
-            "Multiple rounds of encoding should produce consistent results"
+            "Multiple rounds of encoding should produce consistent results",
         )
 
         // Verify final decoded keys match original
@@ -122,7 +121,7 @@ class SecureKeyPairSerializerTest {
         assertContentEquals(
             originalPublicKeyEncoded,
             finalPublicKeyEncoded,
-            "Public key should remain consistent after multiple encoding rounds"
+            "Public key should remain consistent after multiple encoding rounds",
         )
 
         val originalPrivateKeyEncoded = serializer.encodeSignPrivateKey(originalKeyPair.signKeyPair.privateKey)
@@ -130,7 +129,7 @@ class SecureKeyPairSerializerTest {
         assertContentEquals(
             originalPrivateKeyEncoded,
             finalPrivateKeyEncoded,
-            "Private key should remain consistent after multiple encoding rounds"
+            "Private key should remain consistent after multiple encoding rounds",
         )
     }
 }

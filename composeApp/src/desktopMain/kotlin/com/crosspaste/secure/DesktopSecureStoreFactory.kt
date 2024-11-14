@@ -8,7 +8,7 @@ class DesktopSecureStoreFactory(
     private val appInfo: AppInfo,
     private val secureKeyPairSerializer: SecureKeyPairSerializer,
     private val secureRealm: SecureRealm,
-): SecureStoreFactory {
+) : SecureStoreFactory {
 
     private val currentPlatform = getPlatform()
 

@@ -61,20 +61,23 @@ class SyncClientApi(
         return request(logger, request = {
             val signPublicKey = secureStore.getSignPublicKeyBytes()
             val cryptPublicKey = secureStore.getCryptPublicKeyBytes()
-            val pairingRequest = PairingRequest(
-                signPublicKey,
-                cryptPublicKey,
-                token,
-                Clock.System.now().toEpochMilliseconds(),
-            )
-            val sign = CryptographyUtils.signPairingRequest(
-                secureStore.getSecureKeyPair().signKeyPair.privateKey,
-                pairingRequest,
-            )
-            val trustRequest = TrustRequest(
-                pairingRequest,
-                sign,
-            )
+            val pairingRequest =
+                PairingRequest(
+                    signPublicKey,
+                    cryptPublicKey,
+                    token,
+                    Clock.System.now().toEpochMilliseconds(),
+                )
+            val sign =
+                CryptographyUtils.signPairingRequest(
+                    secureStore.getSecureKeyPair().signKeyPair.privateKey,
+                    pairingRequest,
+                )
+            val trustRequest =
+                TrustRequest(
+                    pairingRequest,
+                    sign,
+                )
             pasteClient.post(
                 trustRequest,
                 typeInfo<TrustRequest>(),
@@ -85,14 +88,16 @@ class SyncClientApi(
             )
         }, transformData = {
             val trustResponse = it.body<TrustResponse>()
-            val receiveSignPublicKey = secureKeyPairSerializer.decodeSignPublicKey(
-                trustResponse.pairingResponse.signPublicKey,
-            )
-            val verifyResult = CryptographyUtils.verifyPairingResponse(
-                receiveSignPublicKey,
-                trustResponse.pairingResponse,
-                trustResponse.signature,
-            )
+            val receiveSignPublicKey =
+                secureKeyPairSerializer.decodeSignPublicKey(
+                    trustResponse.pairingResponse.signPublicKey,
+                )
+            val verifyResult =
+                CryptographyUtils.verifyPairingResponse(
+                    receiveSignPublicKey,
+                    trustResponse.pairingResponse,
+                    trustResponse.signature,
+                )
 
             if (verifyResult) {
                 secureStore.saveCryptPublicKey(targetAppInstanceId, trustResponse.pairingResponse.cryptPublicKey)

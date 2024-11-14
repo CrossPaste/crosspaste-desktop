@@ -8,9 +8,10 @@ class SecureRealm(private val realm: Realm) {
         serialized: ByteArray,
     ): Boolean {
         return realm.writeBlocking {
-            val cryptPublicKey = query(CryptPublicKey::class, "appInstanceId == $0", appInstanceId)
-                .first()
-                .find()
+            val cryptPublicKey =
+                query(CryptPublicKey::class, "appInstanceId == $0", appInstanceId)
+                    .first()
+                    .find()
 
             cryptPublicKey?.let {
                 cryptPublicKey.serialized = serialized
