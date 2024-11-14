@@ -14,6 +14,7 @@ import io.ktor.client.call.*
 import io.ktor.http.*
 import io.ktor.util.reflect.*
 import kotlinx.datetime.Clock
+import kotlin.math.abs
 
 class SyncClientApi(
     private val pasteClient: PasteClient,
@@ -88,22 +89,30 @@ class SyncClientApi(
             )
         }, transformData = {
             val trustResponse = it.body<TrustResponse>()
-            val receiveSignPublicKey =
-                secureKeyPairSerializer.decodeSignPublicKey(
-                    trustResponse.pairingResponse.signPublicKey,
-                )
-            val verifyResult =
-                CryptographyUtils.verifyPairingResponse(
-                    receiveSignPublicKey,
-                    trustResponse.pairingResponse,
-                    trustResponse.signature,
-                )
 
-            if (verifyResult) {
-                secureStore.saveCryptPublicKey(targetAppInstanceId, trustResponse.pairingResponse.cryptPublicKey)
-                true
-            } else {
+            val currentTimestamp = Clock.System.now().toEpochMilliseconds()
+
+            if (abs(currentTimestamp - trustResponse.pairingResponse.timestamp) > 5000) {
+                logger.warn { "trust timeout" }
                 false
+            } else {
+                val receiveSignPublicKey =
+                    secureKeyPairSerializer.decodeSignPublicKey(
+                        trustResponse.pairingResponse.signPublicKey,
+                    )
+                val verifyResult =
+                    CryptographyUtils.verifyPairingResponse(
+                        receiveSignPublicKey,
+                        trustResponse.pairingResponse,
+                        trustResponse.signature,
+                    )
+
+                if (verifyResult) {
+                    secureStore.saveCryptPublicKey(targetAppInstanceId, trustResponse.pairingResponse.cryptPublicKey)
+                    true
+                } else {
+                    false
+                }
             }
         })
     }

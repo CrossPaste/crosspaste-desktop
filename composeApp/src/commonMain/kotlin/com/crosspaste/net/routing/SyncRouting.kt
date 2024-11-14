@@ -37,7 +37,7 @@ fun Routing.syncRouting(
                 val trustRequest = call.receive(TrustRequest::class)
                 val currentTimestamp = Clock.System.now().toEpochMilliseconds()
 
-                if (abs(currentTimestamp - trustRequest.pairingRequest.timestamp) <= 5000) {
+                if (abs(currentTimestamp - trustRequest.pairingRequest.timestamp) > 5000) {
                     failResponse(call, StandardErrorCode.TRUST_TIMEOUT.toErrorCode())
                     return@post
                 }
