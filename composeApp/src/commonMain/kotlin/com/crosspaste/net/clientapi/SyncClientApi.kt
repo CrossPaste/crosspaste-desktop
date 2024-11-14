@@ -58,10 +58,9 @@ class SyncClientApi(
                     urlBuilder = {
                         toUrl()
                         buildUrl("sync", "heartbeat")
-                    }
+                    },
                 )
             }
-
         }, transformData = { true })
     }
 

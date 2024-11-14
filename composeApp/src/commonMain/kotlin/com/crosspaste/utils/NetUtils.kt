@@ -42,13 +42,13 @@ object NoFilter : HostInfoFilter {
 class HostInfoFilterImpl(
     val hostAddress: String,
     val networkPrefixLength: Short,
-): HostInfoFilter {
+) : HostInfoFilter {
 
     private val netUtils = getNetUtils()
 
     override fun filter(hostInfo: HostInfo): Boolean {
         return networkPrefixLength == hostInfo.networkPrefixLength &&
-                netUtils.hostPreFixMatch(hostAddress, hostInfo.hostAddress, networkPrefixLength)
+            netUtils.hostPreFixMatch(hostAddress, hostInfo.hostAddress, networkPrefixLength)
     }
 
     override fun equals(other: Any?): Boolean {
