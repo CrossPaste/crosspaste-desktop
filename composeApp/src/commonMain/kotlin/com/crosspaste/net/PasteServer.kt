@@ -40,8 +40,8 @@ class PasteServer<TEngine : ApplicationEngine, TConfiguration : ApplicationEngin
             }
         }
         port = runBlocking { server.application.engine.resolvedConnectors().first().port }
-        if (port != configManager.config.port) {
-            configManager.updateConfig("port", port)
+        if (port != readWritePort.getValue()) {
+            readWritePort.setValue(port)
         }
         logger.info { "Server started at port $port" }
         return this
