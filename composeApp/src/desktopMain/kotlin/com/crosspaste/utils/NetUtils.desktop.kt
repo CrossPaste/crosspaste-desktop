@@ -112,14 +112,14 @@ object DesktopNetUtils : NetUtils {
         )
     }
 
-    override fun getHostInfoList(hostInfoFilter: (HostInfo) -> Boolean): List<HostInfo> {
+    override fun getHostInfoList(hostInfoFilter: HostInfoFilter): List<HostInfo> {
         val list =
             hostListProvider.getValue {
                 sortAddresses(getAllLocalAddresses())
                     .map { it.first }
                     .toList()
             } ?: listOf()
-        val hostInfoList = list.filter(hostInfoFilter)
+        val hostInfoList = list.filter(hostInfoFilter::filter)
         logger.info { "getHostInfoList: $hostInfoList" }
         return hostInfoList
     }

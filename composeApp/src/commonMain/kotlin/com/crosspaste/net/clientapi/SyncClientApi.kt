@@ -36,21 +36,32 @@ class SyncClientApi(
     }
 
     suspend fun heartbeat(
-        syncInfo: SyncInfo,
+        syncInfo: SyncInfo?,
         targetAppInstanceId: String,
         toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult {
         return request(logger, request = {
-            pasteClient.post(
-                syncInfo,
-                typeInfo<SyncInfo>(),
-                targetAppInstanceId,
-                encrypt = true,
-                urlBuilder = {
-                    toUrl()
-                    buildUrl("sync", "heartbeat")
-                },
-            )
+            syncInfo?.let {
+                pasteClient.post(
+                    syncInfo,
+                    typeInfo<SyncInfo>(),
+                    targetAppInstanceId,
+                    encrypt = true,
+                    urlBuilder = {
+                        toUrl()
+                        buildUrl("sync", "heartbeat", "syncInfo")
+                    },
+                )
+            } ?: run {
+                pasteClient.get(
+                    targetAppInstanceId,
+                    urlBuilder = {
+                        toUrl()
+                        buildUrl("sync", "heartbeat")
+                    }
+                )
+            }
+
         }, transformData = { true })
     }
 

@@ -9,13 +9,14 @@ import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
-import com.crosspaste.realm.sync.HostInfo
 import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
 import com.crosspaste.realm.sync.SyncState
 import com.crosspaste.secure.SecureStore
+import com.crosspaste.utils.HostInfoFilter
+import com.crosspaste.utils.HostInfoFilterImpl
+import com.crosspaste.utils.NoFilter
 import com.crosspaste.utils.buildUrl
-import com.crosspaste.utils.getNetUtils
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.types.RealmInstant
@@ -45,8 +46,6 @@ class SyncHandler(
 
     private val logger = KotlinLogging.logger {}
 
-    private val netUtils = getNetUtils()
-
     private val syncHandlerScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
     @Volatile
@@ -63,6 +62,8 @@ class SyncHandler(
     private val job: Job
 
     private val mutex: Mutex = Mutex()
+
+    private var syncInfo: SyncInfo? = null
 
     init {
         job =
@@ -106,18 +107,24 @@ class SyncHandler(
         waitNext()
     }
 
-    private fun getCurrentSyncInfo(): SyncInfo {
-        val hostInfoFilter: (HostInfo) -> Boolean =
+    private fun getNewSyncInfo(): SyncInfo? {
+        val hostInfoFilter: HostInfoFilter =
             syncRuntimeInfo.connectHostAddress?.let { hostAddress ->
                 syncRuntimeInfo.connectNetworkPrefixLength?.let { networkPrefixLength ->
-                    { hostInfo ->
-                        networkPrefixLength == hostInfo.networkPrefixLength &&
-                            netUtils.hostPreFixMatch(hostAddress, hostInfo.hostAddress, networkPrefixLength)
-                    }
-                } ?: { true }
-            } ?: { true }
+                    HostInfoFilterImpl(hostAddress, networkPrefixLength)
+                } ?: NoFilter
+            } ?: NoFilter
 
-        return syncInfoFactory.createSyncInfo(hostInfoFilter)
+        val currentSyncInfo = syncInfoFactory.createSyncInfo(hostInfoFilter)
+        if (syncInfo == null) {
+            syncInfo = currentSyncInfo
+            return currentSyncInfo
+        } else if (syncInfo != currentSyncInfo) {
+            syncInfo = currentSyncInfo
+            return currentSyncInfo
+        } else {
+            return null
+        }
     }
 
     private suspend fun waitNext() {
@@ -301,7 +308,7 @@ class SyncHandler(
     ): Int {
         val result =
             syncClientApi.heartbeat(
-                getCurrentSyncInfo(),
+                getNewSyncInfo(),
                 targetAppInstanceId,
             ) {
                 buildUrl(host, port)

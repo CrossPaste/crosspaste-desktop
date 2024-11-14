@@ -30,7 +30,19 @@ fun Routing.baseSyncRouting(
         successResponse(call, syncInfo)
     }
 
-    post("/sync/heartbeat") {
+    get("/sync/heartbeat") {
+        getAppInstanceId(call)?.let { appInstanceId ->
+            val targetAppInstanceId = call.request.headers["targetAppInstanceId"]
+            if (targetAppInstanceId != appInfo.appInstanceId) {
+                logger.debug { "heartbeat targetAppInstanceId $targetAppInstanceId not match ${appInfo.appInstanceId}" }
+                failResponse(call, StandardErrorCode.SYNC_NOT_MATCH_APP_INSTANCE_ID.toErrorCode())
+                return@let
+            }
+            successResponse(call)
+        }
+    }
+
+    post("/sync/heartbeat/syncInfo") {
         getAppInstanceId(call)?.let { appInstanceId ->
             val targetAppInstanceId = call.request.headers["targetAppInstanceId"]
             if (targetAppInstanceId != appInfo.appInstanceId) {
@@ -41,7 +53,6 @@ fun Routing.baseSyncRouting(
 
             try {
                 val syncInfo = call.receive(SyncInfo::class)
-                // todo check diff time to update
                 syncManager.updateSyncInfo(syncInfo)
                 logger.debug { "$appInstanceId heartbeat to ${appInfo.appInstanceId} success" }
                 successResponse(call)
