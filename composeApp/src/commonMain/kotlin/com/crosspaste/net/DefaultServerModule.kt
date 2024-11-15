@@ -1,7 +1,7 @@
 package com.crosspaste.net
 
 import com.crosspaste.app.AppInfo
-import com.crosspaste.app.AppTokenService
+import com.crosspaste.app.AppTokenApi
 import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.exception.ExceptionHandler
@@ -29,7 +29,7 @@ import io.ktor.server.routing.*
 
 open class DefaultServerModule(
     private val appInfo: AppInfo,
-    private val appTokenService: AppTokenService,
+    private val appTokenApi: AppTokenApi,
     private val cacheManager: CacheManager,
     private val endpointInfoFactory: EndpointInfoFactory,
     private val exceptionHandler: ExceptionHandler,
@@ -68,7 +68,7 @@ open class DefaultServerModule(
                     syncManager,
                 )
                 syncRouting(
-                    appTokenService,
+                    appTokenApi,
                     secureKeyPairSerializer,
                     secureStore,
                 )

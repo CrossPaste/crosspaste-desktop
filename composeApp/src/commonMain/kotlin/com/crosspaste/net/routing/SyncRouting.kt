@@ -1,6 +1,6 @@
 package com.crosspaste.net.routing
 
-import com.crosspaste.app.AppTokenService
+import com.crosspaste.app.AppTokenApi
 import com.crosspaste.dto.secure.PairingResponse
 import com.crosspaste.dto.secure.TrustRequest
 import com.crosspaste.dto.secure.TrustResponse
@@ -18,14 +18,14 @@ import kotlinx.datetime.Clock
 import kotlin.math.abs
 
 fun Routing.syncRouting(
-    appTokenService: AppTokenService,
+    appTokenApi: AppTokenApi,
     secureKeyPairSerializer: SecureKeyPairSerializer,
     secureStore: SecureStore,
 ) {
     val logger = KotlinLogging.logger {}
 
     get("/sync/showToken") {
-        appTokenService.toShowToken()
+        appTokenApi.toShowToken()
         logger.debug { "show token" }
         successResponse(call)
     }
@@ -58,7 +58,7 @@ fun Routing.syncRouting(
                     return@post
                 }
 
-                val sameToken = appTokenService.sameToken(trustRequest.pairingRequest.token)
+                val sameToken = appTokenApi.sameToken(trustRequest.pairingRequest.token)
                 if (!sameToken) {
                     failResponse(call, StandardErrorCode.TOKEN_INVALID.toErrorCode())
                     return@post
@@ -66,8 +66,8 @@ fun Routing.syncRouting(
 
                 secureStore.saveCryptPublicKey(appInstanceId, trustRequest.pairingRequest.cryptPublicKey)
 
-                val signPublicKey = secureStore.getSignPublicKeyBytes()
-                val cryptPublicKey = secureStore.getCryptPublicKeyBytes()
+                val signPublicKey = secureStore.secureKeyPair.getSignPublicKeyBytes(secureKeyPairSerializer)
+                val cryptPublicKey = secureStore.secureKeyPair.getCryptPublicKeyBytes(secureKeyPairSerializer)
 
                 val pairingResponse =
                     PairingResponse(
@@ -81,13 +81,13 @@ fun Routing.syncRouting(
                         pairingResponse = pairingResponse,
                         signature =
                             CryptographyUtils.signPairingResponse(
-                                secureStore.getSecureKeyPair().signKeyPair.privateKey,
+                                secureStore.secureKeyPair.signKeyPair.privateKey,
                                 pairingResponse,
                             ),
                     )
 
                 successResponse(call, trustResponse)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 failResponse(call, StandardErrorCode.TRUST_FAIL.toErrorCode())
             }
         }

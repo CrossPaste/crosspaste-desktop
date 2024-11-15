@@ -7,7 +7,7 @@ import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.Constructor
 import java.io.FileReader
-import java.util.*
+import java.util.Properties
 import java.util.zip.ZipFile
 
 val versionProperties = Properties()
@@ -135,6 +135,7 @@ kotlin {
 
         val commonTest by getting {
             dependencies {
+                implementation(libs.koin.test)
                 implementation(libs.kotlin.test)
                 implementation(libs.io.mockk)
             }

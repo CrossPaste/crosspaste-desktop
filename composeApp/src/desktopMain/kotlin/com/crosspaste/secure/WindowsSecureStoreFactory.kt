@@ -4,13 +4,13 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.platform.windows.WindowDapiHelper
 import com.crosspaste.presist.FilePersist
-import com.crosspaste.realm.secure.SecureRealm
+import com.crosspaste.realm.secure.SecureIO
 import com.crosspaste.utils.CryptographyUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 class WindowsSecureStoreFactory(
     private val secureKeyPairSerializer: SecureKeyPairSerializer,
-    private val secureRealm: SecureRealm,
+    private val secureIO: SecureIO,
 ) : SecureStoreFactory {
     private val logger = KotlinLogging.logger {}
 
@@ -28,7 +28,7 @@ class WindowsSecureStoreFactory(
                     val decryptData = WindowDapiHelper.decryptData(it)
                     decryptData?.let { byteArray ->
                         val secureKeyPair = secureKeyPairSerializer.decodeSecureKeyPair(byteArray)
-                        return@createSecureStore SecureStore(secureKeyPair, secureKeyPairSerializer, secureRealm)
+                        return@createSecureStore GeneralSecureStore(secureKeyPair, secureKeyPairSerializer, secureIO)
                     }
                 } catch (e: Exception) {
                     logger.error(e) { "Failed to decrypt secureKeyPair" }
@@ -46,6 +46,6 @@ class WindowsSecureStoreFactory(
         val data = secureKeyPairSerializer.encodeSecureKeyPair(secureKeyPair)
         val encryptData = WindowDapiHelper.encryptData(data)
         filePersist.saveBytes(encryptData!!)
-        return SecureStore(secureKeyPair, secureKeyPairSerializer, secureRealm)
+        return GeneralSecureStore(secureKeyPair, secureKeyPairSerializer, secureIO)
     }
 }

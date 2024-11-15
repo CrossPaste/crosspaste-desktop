@@ -1,6 +1,7 @@
 package com.crosspaste.net.plugin
 
 import com.crosspaste.secure.SecureStore
+import com.crosspaste.utils.getCodecsUtils
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
@@ -15,6 +16,8 @@ class ClientEncryptPlugin(private val secureStore: SecureStore) :
 
     private val logger: KLogger = KotlinLogging.logger {}
 
+    private val codecsUtils = getCodecsUtils()
+
     override val key = AttributeKey<ClientEncryptPlugin>("ClientEncryptPlugin")
 
     override fun prepare(block: PluginConfig.() -> Unit): ClientEncryptPlugin {
@@ -25,7 +28,7 @@ class ClientEncryptPlugin(private val secureStore: SecureStore) :
         plugin: ClientEncryptPlugin,
         scope: HttpClient,
     ) {
-        scope.sendPipeline.intercept(HttpSendPipeline.State) {
+        scope.sendPipeline.intercept(HttpSendPipeline.Before) {
             context.headers["targetAppInstanceId"]?.let { targetAppInstanceId ->
                 context.headers["secure"]?.let {
                     logger.debug { "client encrypt $targetAppInstanceId" }
@@ -34,7 +37,14 @@ class ClientEncryptPlugin(private val secureStore: SecureStore) :
                         is OutgoingContent.ByteArrayContent -> {
                             val processor = secureStore.getMessageProcessor(targetAppInstanceId)
                             val originalContent = context.body as OutgoingContent.ByteArrayContent
-                            val ciphertextMessageBytes = processor.encrypt(originalContent.bytes())
+                            val bytes = originalContent.bytes()
+                            val ciphertextMessageBytes = processor.encrypt(bytes)
+                            logger.info { "originalContent JSON ${bytes.size} bytes ${codecsUtils.hash(bytes)}" }
+                            logger.info {
+                                "Encrypting JSON ${ciphertextMessageBytes.size} bytes ${codecsUtils.hash(
+                                    ciphertextMessageBytes,
+                                )}"
+                            }
                             proceedWith(ByteArrayContent(ciphertextMessageBytes, contentType = ContentType.Application.Json))
                         }
                     }

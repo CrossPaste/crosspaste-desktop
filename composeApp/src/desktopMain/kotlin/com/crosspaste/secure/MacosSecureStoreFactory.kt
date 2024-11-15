@@ -5,7 +5,7 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.platform.macos.MacosKeychainHelper
 import com.crosspaste.presist.FilePersist
-import com.crosspaste.realm.secure.SecureRealm
+import com.crosspaste.realm.secure.SecureIO
 import com.crosspaste.utils.CryptographyUtils
 import com.crosspaste.utils.EncryptUtils
 import com.crosspaste.utils.getAppEnvUtils
@@ -14,7 +14,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 class MacosSecureStoreFactory(
     private val appInfo: AppInfo,
     private val secureKeyPairSerializer: SecureKeyPairSerializer,
-    private val secureRealm: SecureRealm,
+    private val secureIO: SecureIO,
 ) : SecureStoreFactory {
 
     private val logger = KotlinLogging.logger {}
@@ -39,7 +39,7 @@ class MacosSecureStoreFactory(
                     val secretKey = EncryptUtils.stringToSecretKey(it)
                     val decryptData = EncryptUtils.decryptData(secretKey, bytes)
                     val secureKeyPair = secureKeyPairSerializer.decodeSecureKeyPair(decryptData)
-                    return@createSecureStore SecureStore(secureKeyPair, secureKeyPairSerializer, secureRealm)
+                    return@createSecureStore GeneralSecureStore(secureKeyPair, secureKeyPairSerializer, secureIO)
                 } catch (e: Exception) {
                     logger.error(e) { "Decrypt secureKeyPair error" }
                 }
@@ -69,6 +69,6 @@ class MacosSecureStoreFactory(
             }
         val encryptData = EncryptUtils.encryptData(secretKey, data)
         filePersist.saveBytes(encryptData)
-        return SecureStore(secureKeyPair, secureKeyPairSerializer, secureRealm)
+        return GeneralSecureStore(secureKeyPair, secureKeyPairSerializer, secureIO)
     }
 }

@@ -70,8 +70,8 @@ class SyncClientApi(
         toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult {
         return request(logger, request = {
-            val signPublicKey = secureStore.getSignPublicKeyBytes()
-            val cryptPublicKey = secureStore.getCryptPublicKeyBytes()
+            val signPublicKey = secureStore.secureKeyPair.getSignPublicKeyBytes(secureKeyPairSerializer)
+            val cryptPublicKey = secureStore.secureKeyPair.getCryptPublicKeyBytes(secureKeyPairSerializer)
             val pairingRequest =
                 PairingRequest(
                     signPublicKey,
@@ -81,7 +81,7 @@ class SyncClientApi(
                 )
             val sign =
                 CryptographyUtils.signPairingRequest(
-                    secureStore.getSecureKeyPair().signKeyPair.privateKey,
+                    secureStore.secureKeyPair.signKeyPair.privateKey,
                     pairingRequest,
                 )
             val trustRequest =
@@ -118,9 +118,11 @@ class SyncClientApi(
                     )
 
                 if (verifyResult) {
+                    logger.info { "verifyResult is true to save" }
                     secureStore.saveCryptPublicKey(targetAppInstanceId, trustResponse.pairingResponse.cryptPublicKey)
                     true
                 } else {
+                    logger.info { "verifyResult is false" }
                     false
                 }
             }

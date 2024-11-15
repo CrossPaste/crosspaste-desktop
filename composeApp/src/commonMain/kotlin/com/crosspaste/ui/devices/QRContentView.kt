@@ -44,7 +44,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppSize
-import com.crosspaste.app.AppTokenService
+import com.crosspaste.app.AppTokenApi
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.ui.base.autoRenew
@@ -55,7 +55,7 @@ import org.koin.compose.koinInject
 
 @Composable
 fun QRContentView() {
-    val appTokenService = koinInject<AppTokenService>()
+    val appTokenApi = koinInject<AppTokenApi>()
     val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val qrCodeGenerator = koinInject<QRCodeGenerator>()
@@ -67,7 +67,7 @@ fun QRContentView() {
 
     var qrImage: ImageBitmap? by remember { mutableStateOf(null) }
 
-    val token by appTokenService.token.collectAsState()
+    val token by appTokenApi.token.collectAsState()
 
     LaunchedEffect(token) {
         // maybe slow (get host), we use ioDispatcher to avoid blocking the UI
@@ -79,9 +79,9 @@ fun QRContentView() {
     }
 
     DisposableEffect(Unit) {
-        appTokenService.startRefreshToken()
+        appTokenApi.startRefreshToken()
         onDispose {
-            appTokenService.stopRefreshToken()
+            appTokenApi.stopRefreshToken()
         }
     }
 

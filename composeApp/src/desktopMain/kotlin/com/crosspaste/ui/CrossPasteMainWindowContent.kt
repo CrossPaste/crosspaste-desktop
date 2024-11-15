@@ -23,7 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppSize
-import com.crosspaste.app.AppTokenService
+import com.crosspaste.app.AppTokenApi
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.notification.ToastManager
@@ -46,7 +46,7 @@ fun hideWindow(appWindowManager: DesktopAppWindowManager) {
 fun CrossPasteMainWindowContent() {
     val appSize = koinInject<AppSize>() as DesktopAppSize
     val appWindowManager = koinInject<DesktopAppWindowManager>()
-    val appTokenService = koinInject<AppTokenService>()
+    val appTokenApi = koinInject<AppTokenApi>()
     val toastManager = koinInject<ToastManager>()
     val dialogService = koinInject<DialogService>()
     val toast by toastManager.toast
@@ -110,7 +110,7 @@ fun CrossPasteMainWindowContent() {
 
                 dialog.firstOrNull()?.content()
 
-                val showToken by appTokenService.showToken.collectAsState()
+                val showToken by appTokenApi.showToken.collectAsState()
 
                 if (showToken) {
                     TokenView()

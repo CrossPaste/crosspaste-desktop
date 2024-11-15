@@ -33,7 +33,7 @@ class ClientDecryptPlugin(private val secureStore: SecureStore) :
             val headers = it.call.request.headers
             headers["targetAppInstanceId"]?.let { appInstanceId ->
                 headers["secure"]?.let { _ ->
-                    logger.debug { "client decrypt $appInstanceId" }
+                    logger.info { "client decrypt $appInstanceId" }
                     val byteReadChannel: ByteReadChannel = it.rawContent
 
                     val contentType = it.call.response.contentType()
@@ -42,6 +42,7 @@ class ClientDecryptPlugin(private val secureStore: SecureStore) :
 
                     if (contentType?.match(ContentType.Application.Json) == true) {
                         val bytes = byteReadChannel.readRemaining().readByteArray()
+                        logger.info { "Decrypting JSON ${bytes.size} bytes" }
                         val decrypt = processor.decrypt(bytes)
 
                         // Create a new ByteReadChannel to contain the decrypted content

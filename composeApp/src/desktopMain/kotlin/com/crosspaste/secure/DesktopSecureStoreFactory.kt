@@ -2,12 +2,12 @@ package com.crosspaste.secure
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.platform.getPlatform
-import com.crosspaste.realm.secure.SecureRealm
+import com.crosspaste.realm.secure.SecureIO
 
 class DesktopSecureStoreFactory(
     private val appInfo: AppInfo,
     private val secureKeyPairSerializer: SecureKeyPairSerializer,
-    private val secureRealm: SecureRealm,
+    private val secureIO: SecureIO,
 ) : SecureStoreFactory {
 
     private val currentPlatform = getPlatform()
@@ -18,11 +18,11 @@ class DesktopSecureStoreFactory(
 
     private fun getSecureStoreFactory(): SecureStoreFactory {
         return if (currentPlatform.isMacos()) {
-            MacosSecureStoreFactory(appInfo, secureKeyPairSerializer, secureRealm)
+            MacosSecureStoreFactory(appInfo, secureKeyPairSerializer, secureIO)
         } else if (currentPlatform.isWindows()) {
-            WindowsSecureStoreFactory(secureKeyPairSerializer, secureRealm)
+            WindowsSecureStoreFactory(secureKeyPairSerializer, secureIO)
         } else if (currentPlatform.isLinux()) {
-            LinuxSecureStoreFactory(secureKeyPairSerializer, secureRealm)
+            LinuxSecureStoreFactory(secureKeyPairSerializer, secureIO)
         } else {
             throw IllegalStateException("Unsupported platform: ${currentPlatform.name}")
         }

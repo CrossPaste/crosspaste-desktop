@@ -20,7 +20,7 @@ import com.crosspaste.app.AppLock
 import com.crosspaste.app.AppRestartService
 import com.crosspaste.app.AppSize
 import com.crosspaste.app.AppStartUpService
-import com.crosspaste.app.AppTokenService
+import com.crosspaste.app.AppTokenApi
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.AppUrls
 import com.crosspaste.app.AppWindowManager
@@ -136,6 +136,7 @@ import com.crosspaste.platform.getPlatform
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.realm.RealmManager
 import com.crosspaste.realm.paste.PasteRealm
+import com.crosspaste.realm.secure.SecureIO
 import com.crosspaste.realm.secure.SecureRealm
 import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
 import com.crosspaste.realm.task.PasteTaskRealm
@@ -286,7 +287,7 @@ class CrossPaste {
                     single<PasteTaskRealm> { PasteTaskRealm(get()) }
                     single<Realm> { get<RealmManager>().realm }
                     single<RealmManager> { RealmManager.createRealmManager(get()) }
-                    single<SecureRealm> { SecureRealm(get()) }
+                    single<SecureIO> { SecureRealm(get()) }
                     single<SyncRuntimeInfoRealm> { SyncRuntimeInfoRealm(get()) }
 
                     // net component
@@ -420,7 +421,7 @@ class CrossPaste {
                     // ui component
                     single<ActiveGraphicsDevice> { get<DesktopMouseListener>() }
                     single<AppSize> { DesktopAppSize }
-                    single<AppTokenService> { DesktopAppTokenService(get()) }
+                    single<AppTokenApi> { DesktopAppTokenService(get()) }
                     single<AppWindowManager> { get<DesktopAppWindowManager>() }
                     single<DesktopAppWindowManager> { getDesktopAppWindowManager(get(), lazy { get() }, get(), get()) }
                     single<DesktopMouseListener> { DesktopMouseListener }

@@ -1,7 +1,7 @@
 package com.crosspaste.net
 
 import com.crosspaste.app.AppInfo
-import com.crosspaste.app.AppTokenService
+import com.crosspaste.app.AppTokenApi
 import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
@@ -17,7 +17,7 @@ import io.ktor.server.plugins.compression.*
 
 class DesktopServerModule(
     appInfo: AppInfo,
-    appTokenService: AppTokenService,
+    appTokenApi: AppTokenApi,
     cacheManager: CacheManager,
     secureKeyPairSerializer: SecureKeyPairSerializer,
     endpointInfoFactory: EndpointInfoFactory,
@@ -30,7 +30,7 @@ class DesktopServerModule(
     userDataPathProvider: UserDataPathProvider,
 ) : DefaultServerModule(
         appInfo,
-        appTokenService,
+        appTokenApi,
         cacheManager,
         endpointInfoFactory,
         exceptionHandler,
