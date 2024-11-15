@@ -12,7 +12,6 @@ import com.crosspaste.utils.getAppInstanceId
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.successResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.utils.io.*

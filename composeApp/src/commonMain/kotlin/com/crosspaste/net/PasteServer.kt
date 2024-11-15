@@ -15,13 +15,15 @@ class PasteServer<TEngine : ApplicationEngine, TConfiguration : ApplicationEngin
 
     private var port = 0
 
-    private var server: ApplicationEngine = createServer(port = readWritePort.getValue())
+    private var server: EmbeddedServer<TEngine, TConfiguration> = createServer(port = readWritePort.getValue())
 
-    private fun createServer(port: Int): ApplicationEngine {
+    private fun createServer(port: Int): EmbeddedServer<TEngine, TConfiguration> {
         return embeddedServer(
             factory = serverFactory.getFactory(),
-            port = port,
-            configure = serverFactory.getConfigure(),
+            configure = {
+                connector { this.port = port }
+                serverFactory.getConfigure()()
+            },
         ) {
             serverModule.installModules()()
         }
@@ -37,7 +39,7 @@ class PasteServer<TEngine : ApplicationEngine, TConfiguration : ApplicationEngin
                 server.start(wait = false)
             }
         }
-        port = runBlocking { server.resolvedConnectors().first().port }
+        port = runBlocking { server.application.engine.resolvedConnectors().first().port }
         if (port != readWritePort.getValue()) {
             readWritePort.setValue(port)
         }

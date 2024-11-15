@@ -11,6 +11,7 @@ import io.ktor.http.*
 import io.ktor.util.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
+import kotlinx.io.readByteArray
 
 class ClientDecryptPlugin(private val secureStore: SecureStore) :
     HttpClientPlugin<PluginConfig, ClientDecryptPlugin> {
@@ -33,14 +34,14 @@ class ClientDecryptPlugin(private val secureStore: SecureStore) :
             headers["targetAppInstanceId"]?.let { appInstanceId ->
                 headers["secure"]?.let { _ ->
                     logger.debug { "client decrypt $appInstanceId" }
-                    val byteReadChannel: ByteReadChannel = it.content
+                    val byteReadChannel: ByteReadChannel = it.rawContent
 
                     val contentType = it.call.response.contentType()
 
                     val processor = secureStore.getMessageProcessor(appInstanceId)
 
                     if (contentType == ContentType.Application.Json) {
-                        val bytes = byteReadChannel.readRemaining().readBytes()
+                        val bytes = byteReadChannel.readRemaining().readByteArray()
                         val decrypt = processor.decrypt(bytes)
 
                         // Create a new ByteReadChannel to contain the decrypted content
@@ -71,7 +72,7 @@ class ClientDecryptPlugin(private val secureStore: SecureStore) :
                                 }
                             }
 
-                        val newChannel = ByteReadChannel(result.readBytes())
+                        val newChannel = ByteReadChannel(result.readByteArray())
                         val responseData =
                             HttpResponseData(
                                 it.status,
