@@ -9,7 +9,6 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.util.pipeline.*
 import io.ktor.utils.io.*
-import io.ktor.utils.io.core.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.io.readByteArray
@@ -76,35 +75,26 @@ object EncryptResponse :
                     val producer: suspend ByteWriteChannel.() -> Unit = {
                         val originChannel = ByteChannel(true)
                         val encryptChannel = this
-                        val targetBufferSize =
-                            81920 // Target buffer size for each encryption operation
+                        val chunkSize = 1024 * 256
 
                         val deferred =
                             ioCoroutineDispatcher.async {
-                                var largeBuffer = BytePacketBuilder()
-                                val tempBuffer = ByteArray(4096) // Temporary buffer for reading from the channel
+                                val buffer = ByteArray(chunkSize)
 
                                 while (true) {
-                                    val readSize = originChannel.readAvailable(tempBuffer)
-                                    if (readSize < 0 && largeBuffer.size == 0) break // No more data to read and buffer is empty
-                                    if (readSize > 0) {
-                                        largeBuffer.writeFully(tempBuffer, 0, readSize)
-                                    }
+                                    val bytesRead = originChannel.readAvailable(buffer)
+                                    if (bytesRead <= 0) break
 
-                                    // Check if largeBuffer is filled or no more data is available to read
-                                    if (largeBuffer.size >= targetBufferSize || (readSize < 0 && largeBuffer.size > 0)) {
-                                        val byteArray = largeBuffer.build().readByteArray()
-                                        val encryptedData = encrypt(byteArray)
-                                        encryptChannel.writeInt(encryptedData.size)
-                                        encryptChannel.writeFully(encryptedData)
-                                        largeBuffer = BytePacketBuilder() // Clear the buffer after processing
-                                    }
+                                    val chunk = if (bytesRead == chunkSize) buffer else buffer.copyOf(bytesRead)
+                                    val encryptedData = encrypt(chunk)
+                                    encryptChannel.writeInt(encryptedData.size)
+                                    encryptChannel.writeFully(encryptedData)
                                 }
                             }
 
                         body.writeTo(originChannel)
-                        originChannel.close() // Close the original channel after all data is written
-                        deferred.await() // Wait for all encryption and writing to complete
+                        originChannel.close()
+                        deferred.await()
                     }
 
                     val content =
