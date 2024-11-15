@@ -22,7 +22,7 @@ class SecureMessageProcessor(
                 .generateSharedSecretToByteArrayBlocking(publicKey)
         val key =
             aes.keyDecoder()
-                .decodeFromByteArrayBlocking(AES.Key.Format.JWK, bytes)
+                .decodeFromByteArrayBlocking(AES.Key.Format.RAW, bytes)
         cipher = key.cipher()
     }
 

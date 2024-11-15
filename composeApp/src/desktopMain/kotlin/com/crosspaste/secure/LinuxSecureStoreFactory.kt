@@ -4,6 +4,7 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.realm.secure.SecureRealm
+import com.crosspaste.utils.CryptographyUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.nio.file.Files
 import java.nio.file.attribute.PosixFilePermissions
@@ -40,7 +41,7 @@ class LinuxSecureStoreFactory(
         }
 
         logger.info { "Generate secureKeyPair" }
-        val secureKeyPair = generateSecureKeyPair()
+        val secureKeyPair = CryptographyUtils.generateSecureKeyPair()
         val data = secureKeyPairSerializer.encodeSecureKeyPair(secureKeyPair)
         filePersist.saveBytes(data)
         val permissions = PosixFilePermissions.fromString("rw-------")

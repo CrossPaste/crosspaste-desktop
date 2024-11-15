@@ -6,6 +6,7 @@ import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.platform.macos.MacosKeychainHelper
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.realm.secure.SecureRealm
+import com.crosspaste.utils.CryptographyUtils
 import com.crosspaste.utils.EncryptUtils
 import com.crosspaste.utils.getAppEnvUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -52,7 +53,7 @@ class MacosSecureStoreFactory(
         }
 
         logger.info { "Generate secureKeyPair" }
-        val secureKeyPair = generateSecureKeyPair()
+        val secureKeyPair = CryptographyUtils.generateSecureKeyPair()
         val data = secureKeyPairSerializer.encodeSecureKeyPair(secureKeyPair)
         val password = MacosKeychainHelper.getPassword(service, appInfo.userName)
 

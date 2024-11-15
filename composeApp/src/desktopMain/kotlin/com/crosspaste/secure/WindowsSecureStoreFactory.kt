@@ -5,6 +5,7 @@ import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.platform.windows.WindowDapiHelper
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.realm.secure.SecureRealm
+import com.crosspaste.utils.CryptographyUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 class WindowsSecureStoreFactory(
@@ -41,7 +42,7 @@ class WindowsSecureStoreFactory(
         }
 
         logger.info { "Generate secureKeyPair" }
-        val secureKeyPair = generateSecureKeyPair()
+        val secureKeyPair = CryptographyUtils.generateSecureKeyPair()
         val data = secureKeyPairSerializer.encodeSecureKeyPair(secureKeyPair)
         val encryptData = WindowDapiHelper.encryptData(data)
         filePersist.saveBytes(encryptData!!)
