@@ -1,7 +1,6 @@
 package com.crosspaste.net.plugin
 
 import com.crosspaste.secure.SecureStore
-import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -46,7 +45,7 @@ object EncryptResponse :
 
     private val ioCoroutineDispatcher = CoroutineScope(ioDispatcher)
 
-    private val fileUtils = getFileUtils()
+    private val encryptChunkSize = 1024 * 256
 
     class Context(private val context: PipelineContext<Any, PipelineCall>) {
         suspend fun transformBodyTo(
@@ -81,14 +80,14 @@ object EncryptResponse :
 
                         val deferred =
                             ioCoroutineDispatcher.async {
-                                val buffer = ByteArray(fileUtils.fileBufferSize)
+                                val buffer = ByteArray(encryptChunkSize)
 
                                 while (true) {
                                     val bytesRead = originChannel.readAvailable(buffer)
                                     if (bytesRead <= 0) break
 
                                     val chunk =
-                                        if (bytesRead == fileUtils.fileBufferSize) {
+                                        if (bytesRead == encryptChunkSize) {
                                             buffer
                                         } else {
                                             buffer.copyOf(bytesRead)
