@@ -30,6 +30,8 @@ object DesktopFileUtils : FileUtils {
 
     override val separator: String = File.separator
 
+    override val fileBufferSize: Int = 8192 * 10
+
     private val units = arrayOf(B, KB, MB, GB, TB)
     private val decimalFormat = DecimalFormat("###0.#")
 
@@ -164,7 +166,7 @@ object DesktopFileUtils : FileUtils {
         filesChunk: FilesChunk,
         byteWriteChannel: ByteWriteChannel,
     ) {
-        val buffer = ByteArray(8192 * 10)
+        val buffer = ByteArray(fileBufferSize)
         filesChunk.fileChunks.forEach { fileChunk ->
             val file = fileChunk.path.toFile()
             val offset = fileChunk.offset
@@ -189,7 +191,7 @@ object DesktopFileUtils : FileUtils {
         path: Path,
         byteWriteChannel: ByteWriteChannel,
     ) {
-        val buffer = ByteArray(8192 * 10)
+        val buffer = ByteArray(fileBufferSize)
         path.toFile().inputStream().use { inputStream ->
             while (true) {
                 val readSize = inputStream.read(buffer)

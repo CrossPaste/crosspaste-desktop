@@ -1,6 +1,7 @@
 package com.crosspaste.net.plugin
 
 import com.crosspaste.secure.SecureStore
+import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -43,7 +44,9 @@ class ServerEncryptPluginFactory(private val secureStore: SecureStore) {
 object EncryptResponse :
     Hook<suspend EncryptResponse.Context.(ApplicationCall, OutgoingContent) -> Unit> {
 
-    val ioCoroutineDispatcher = CoroutineScope(ioDispatcher)
+    private val ioCoroutineDispatcher = CoroutineScope(ioDispatcher)
+
+    private val fileUtils = getFileUtils()
 
     class Context(private val context: PipelineContext<Any, PipelineCall>) {
         suspend fun transformBodyTo(
@@ -75,17 +78,21 @@ object EncryptResponse :
                     val producer: suspend ByteWriteChannel.() -> Unit = {
                         val originChannel = ByteChannel(true)
                         val encryptChannel = this
-                        val chunkSize = 1024 * 256
 
                         val deferred =
                             ioCoroutineDispatcher.async {
-                                val buffer = ByteArray(chunkSize)
+                                val buffer = ByteArray(fileUtils.fileBufferSize)
 
                                 while (true) {
                                     val bytesRead = originChannel.readAvailable(buffer)
                                     if (bytesRead <= 0) break
 
-                                    val chunk = if (bytesRead == chunkSize) buffer else buffer.copyOf(bytesRead)
+                                    val chunk =
+                                        if (bytesRead == fileUtils.fileBufferSize) {
+                                            buffer
+                                        } else {
+                                            buffer.copyOf(bytesRead)
+                                        }
                                     val encryptedData = encrypt(chunk)
                                     encryptChannel.writeInt(encryptedData.size)
                                     encryptChannel.writeFully(encryptedData)
