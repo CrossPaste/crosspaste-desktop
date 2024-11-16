@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
-open class AppTokenService {
+open class AppTokenService : AppTokenApi {
 
     private val lock = createPlatformLock()
 
@@ -23,29 +23,29 @@ open class AppTokenService {
 
     private val _showTokenProgress = MutableStateFlow(0f)
 
-    val showTokenProgression: StateFlow<Float> = _showTokenProgress.asStateFlow()
+    override val showTokenProgression: StateFlow<Float> = _showTokenProgress.asStateFlow()
 
     private val _showToken = MutableStateFlow(false)
 
-    val showToken: StateFlow<Boolean> = _showToken.asStateFlow()
+    override val showToken: StateFlow<Boolean> = _showToken.asStateFlow()
 
     private val _token = MutableStateFlow(charArrayOf('0', '0', '0', '0', '0', '0'))
 
-    val token: StateFlow<CharArray> = _token.asStateFlow()
+    override val token: StateFlow<CharArray> = _token.asStateFlow()
 
     open fun preShowToken() {
     }
 
-    fun sameToken(token: Int): Boolean {
+    override fun sameToken(token: Int): Boolean {
         return token == this.token.value.concatToString().toInt()
     }
 
-    fun toShowToken() {
+    override fun toShowToken() {
         preShowToken()
         _showToken.value = true
     }
 
-    fun toHideToken() {
+    override fun toHideToken() {
         _showToken.value = false
     }
 
@@ -54,7 +54,7 @@ open class AppTokenService {
         _showTokenProgress.value = 0.0f
     }
 
-    fun startRefreshToken() {
+    override fun startRefreshToken() {
         lock.withLock {
             if (enableRefresh) return@withLock
             enableRefresh = true
@@ -71,7 +71,7 @@ open class AppTokenService {
         }
     }
 
-    fun stopRefreshToken() {
+    override fun stopRefreshToken() {
         lock.withLock {
             if (!enableRefresh) return@withLock
             enableRefresh = false

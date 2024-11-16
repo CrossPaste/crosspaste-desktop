@@ -1,9 +1,12 @@
 package com.crosspaste.net.routing
 
-import com.crosspaste.app.AppTokenService
+import com.crosspaste.app.AppInfo
+import com.crosspaste.app.AppTokenApi
+import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.dto.secure.PairingResponse
 import com.crosspaste.dto.secure.TrustRequest
 import com.crosspaste.dto.secure.TrustResponse
+import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
@@ -18,15 +21,75 @@ import kotlinx.datetime.Clock
 import kotlin.math.abs
 
 fun Routing.syncRouting(
-    appTokenService: AppTokenService,
+    appInfo: AppInfo,
+    appTokenApi: AppTokenApi,
+    endpointInfoFactory: EndpointInfoFactory,
     secureKeyPairSerializer: SecureKeyPairSerializer,
     secureStore: SecureStore,
+    syncRoutingApi: SyncRoutingApi,
 ) {
     val logger = KotlinLogging.logger {}
 
+    get("/sync/heartbeat") {
+        getAppInstanceId(call)?.let { appInstanceId ->
+            val targetAppInstanceId = call.request.headers["targetAppInstanceId"]
+            if (targetAppInstanceId != appInfo.appInstanceId) {
+                logger.debug { "heartbeat targetAppInstanceId $targetAppInstanceId not match ${appInfo.appInstanceId}" }
+                failResponse(call, StandardErrorCode.SYNC_NOT_MATCH_APP_INSTANCE_ID.toErrorCode())
+                return@let
+            }
+            successResponse(call)
+        }
+    }
+
+    post("/sync/heartbeat/syncInfo") {
+        getAppInstanceId(call)?.let { appInstanceId ->
+            val targetAppInstanceId = call.request.headers["targetAppInstanceId"]
+            if (targetAppInstanceId != appInfo.appInstanceId) {
+                logger.debug { "heartbeat targetAppInstanceId $targetAppInstanceId not match ${appInfo.appInstanceId}" }
+                failResponse(call, StandardErrorCode.SYNC_NOT_MATCH_APP_INSTANCE_ID.toErrorCode())
+                return@let
+            }
+
+            try {
+                val syncInfo = call.receive(SyncInfo::class)
+                syncRoutingApi.updateSyncInfo(syncInfo)
+                logger.debug { "$appInstanceId heartbeat to ${appInfo.appInstanceId} success" }
+                successResponse(call)
+            } catch (e: Exception) {
+                logger.error(e) { "$appInstanceId heartbeat to ${appInfo.appInstanceId} fail" }
+                failResponse(call, StandardErrorCode.SIGN_INVALID.toErrorCode())
+            }
+        }
+    }
+
+    get("/sync/notifyExit") {
+        getAppInstanceId(call)?.let { appInstanceId ->
+            syncRoutingApi.markExit(appInstanceId)
+            successResponse(call)
+        }
+    }
+
+    get("/sync/notifyRemove") {
+        getAppInstanceId(call)?.let { appInstanceId ->
+            syncRoutingApi.removeSyncHandler(appInstanceId)
+            successResponse(call)
+        }
+    }
+
     get("/sync/showToken") {
-        appTokenService.toShowToken()
+        appTokenApi.toShowToken()
         logger.debug { "show token" }
+        successResponse(call)
+    }
+
+    get("/sync/syncInfo") {
+        val endpointInfo = endpointInfoFactory.createEndpointInfo()
+        val syncInfo = SyncInfo(appInfo, endpointInfo)
+        successResponse(call, syncInfo)
+    }
+
+    get("/sync/telnet") {
         successResponse(call)
     }
 
@@ -37,6 +100,7 @@ fun Routing.syncRouting(
                 val currentTimestamp = Clock.System.now().toEpochMilliseconds()
 
                 if (abs(currentTimestamp - trustRequest.pairingRequest.timestamp) > 5000) {
+                    logger.debug { "trustRequest timeout" }
                     failResponse(call, StandardErrorCode.TRUST_TIMEOUT.toErrorCode())
                     return@post
                 }
@@ -54,11 +118,12 @@ fun Routing.syncRouting(
                     )
 
                 if (!verifyResult) {
+                    logger.debug { "trustRequest verify fail" }
                     failResponse(call, StandardErrorCode.SIGN_INVALID.toErrorCode())
                     return@post
                 }
 
-                val sameToken = appTokenService.sameToken(trustRequest.pairingRequest.token)
+                val sameToken = appTokenApi.sameToken(trustRequest.pairingRequest.token)
                 if (!sameToken) {
                     failResponse(call, StandardErrorCode.TOKEN_INVALID.toErrorCode())
                     return@post
@@ -66,8 +131,8 @@ fun Routing.syncRouting(
 
                 secureStore.saveCryptPublicKey(appInstanceId, trustRequest.pairingRequest.cryptPublicKey)
 
-                val signPublicKey = secureStore.getSignPublicKeyBytes()
-                val cryptPublicKey = secureStore.getCryptPublicKeyBytes()
+                val signPublicKey = secureStore.secureKeyPair.getSignPublicKeyBytes(secureKeyPairSerializer)
+                val cryptPublicKey = secureStore.secureKeyPair.getCryptPublicKeyBytes(secureKeyPairSerializer)
 
                 val pairingResponse =
                     PairingResponse(
@@ -81,13 +146,13 @@ fun Routing.syncRouting(
                         pairingResponse = pairingResponse,
                         signature =
                             CryptographyUtils.signPairingResponse(
-                                secureStore.getSecureKeyPair().signKeyPair.privateKey,
+                                secureStore.secureKeyPair.signKeyPair.privateKey,
                                 pairingResponse,
                             ),
                     )
 
                 successResponse(call, trustResponse)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 failResponse(call, StandardErrorCode.TRUST_FAIL.toErrorCode())
             }
         }

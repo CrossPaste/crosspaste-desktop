@@ -61,6 +61,7 @@ suspend inline fun <T> request(
             return createFailureResult(StandardErrorCode.NOT_FOUND_API, "Not found Api")
         } else if (response.status.value != 200) {
             val failResponse = response.body<FailResponse>()
+            logger.error { "request error: $failResponse" }
             return createFailureResult(failResponse)
         }
         return SuccessResult(transformData(response))

@@ -40,7 +40,7 @@ class ClientDecryptPlugin(private val secureStore: SecureStore) :
 
                     val processor = secureStore.getMessageProcessor(appInstanceId)
 
-                    if (contentType == ContentType.Application.Json) {
+                    if (contentType?.match(ContentType.Application.Json) == true) {
                         val bytes = byteReadChannel.readRemaining().readByteArray()
                         val decrypt = processor.decrypt(bytes)
 
@@ -56,7 +56,7 @@ class ClientDecryptPlugin(private val secureStore: SecureStore) :
                                 it.coroutineContext,
                             )
                         proceedWith(DefaultHttpResponse(it.call, responseData))
-                    } else if (contentType == ContentType.Application.OctetStream) {
+                    } else if (contentType?.match(ContentType.Application.OctetStream) == true) {
                         val result =
                             buildPacket {
                                 while (!byteReadChannel.isClosedForRead) {

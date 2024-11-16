@@ -45,7 +45,7 @@ object EncryptResponse :
 
     private val ioCoroutineDispatcher = CoroutineScope(ioDispatcher)
 
-    private val encryptChunkSize = 1024 * 256
+    private const val ENCRYPT_CHUNK_SIZE = 1024 * 256
 
     class Context(private val context: PipelineContext<Any, PipelineCall>) {
         suspend fun transformBodyTo(
@@ -80,14 +80,12 @@ object EncryptResponse :
 
                         val deferred =
                             ioCoroutineDispatcher.async {
-                                val buffer = ByteArray(encryptChunkSize)
-
+                                val buffer = ByteArray(ENCRYPT_CHUNK_SIZE)
                                 while (true) {
                                     val bytesRead = originChannel.readAvailable(buffer)
                                     if (bytesRead <= 0) break
-
                                     val chunk =
-                                        if (bytesRead == encryptChunkSize) {
+                                        if (bytesRead == ENCRYPT_CHUNK_SIZE) {
                                             buffer
                                         } else {
                                             buffer.copyOf(bytesRead)

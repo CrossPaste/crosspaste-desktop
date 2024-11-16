@@ -58,7 +58,7 @@ class PasteClient(
                 header("targetAppInstanceId", it)
             }
             if (encrypt) {
-                header("signal", "1")
+                header("secure", "1")
             }
             timeout {
                 requestTimeoutMillis = timeout

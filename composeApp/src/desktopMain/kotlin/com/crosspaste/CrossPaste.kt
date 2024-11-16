@@ -20,7 +20,7 @@ import com.crosspaste.app.AppLock
 import com.crosspaste.app.AppRestartService
 import com.crosspaste.app.AppSize
 import com.crosspaste.app.AppStartUpService
-import com.crosspaste.app.AppTokenService
+import com.crosspaste.app.AppTokenApi
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.AppUrls
 import com.crosspaste.app.AppWindowManager
@@ -90,6 +90,7 @@ import com.crosspaste.net.plugin.ClientDecryptPlugin
 import com.crosspaste.net.plugin.ClientEncryptPlugin
 import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
 import com.crosspaste.net.plugin.ServerEncryptPluginFactory
+import com.crosspaste.net.routing.SyncRoutingApi
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.notification.ToastManager
 import com.crosspaste.paste.CacheManager
@@ -136,6 +137,7 @@ import com.crosspaste.platform.getPlatform
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.realm.RealmManager
 import com.crosspaste.realm.paste.PasteRealm
+import com.crosspaste.realm.secure.SecureIO
 import com.crosspaste.realm.secure.SecureRealm
 import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
 import com.crosspaste.realm.task.PasteTaskRealm
@@ -153,6 +155,7 @@ import com.crosspaste.sound.SoundService
 import com.crosspaste.sync.DesktopQRCodeGenerator
 import com.crosspaste.sync.DeviceListener
 import com.crosspaste.sync.DeviceManager
+import com.crosspaste.sync.GeneralSyncManager
 import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.sync.TokenCache
@@ -286,7 +289,7 @@ class CrossPaste {
                     single<PasteTaskRealm> { PasteTaskRealm(get()) }
                     single<Realm> { get<RealmManager>().realm }
                     single<RealmManager> { RealmManager.createRealmManager(get()) }
-                    single<SecureRealm> { SecureRealm(get()) }
+                    single<SecureIO> { SecureRealm(get()) }
                     single<SyncRuntimeInfoRealm> { SyncRuntimeInfoRealm(get()) }
 
                     // net component
@@ -316,11 +319,12 @@ class CrossPaste {
                     }
                     single<SyncClientApi> { SyncClientApi(get(), get(), get()) }
                     single<SyncManager> {
-                        SyncManager(
+                        GeneralSyncManager(
                             get(), get(), get(), get(), get(), get(), get(), get(), get(),
                             lazy { get() },
                         )
                     }
+                    single<SyncRoutingApi> { get<SyncManager>() }
                     single<TelnetHelper> { TelnetHelper(get<PasteClient>()) }
 
                     // secure component
@@ -420,7 +424,7 @@ class CrossPaste {
                     // ui component
                     single<ActiveGraphicsDevice> { get<DesktopMouseListener>() }
                     single<AppSize> { DesktopAppSize }
-                    single<AppTokenService> { DesktopAppTokenService(get()) }
+                    single<AppTokenApi> { DesktopAppTokenService(get()) }
                     single<AppWindowManager> { get<DesktopAppWindowManager>() }
                     single<DesktopAppWindowManager> { getDesktopAppWindowManager(get(), lazy { get() }, get(), get()) }
                     single<DesktopMouseListener> { DesktopMouseListener }
@@ -533,7 +537,7 @@ class CrossPaste {
                         async { stopService<PasteboardService>("PasteboardService") { it.stop() } },
                         async { stopService<PasteBonjourService>("PasteBonjourService") { it.unregisterService() } },
                         async { stopService<PasteServer<*, *>>("PasteServer") { it.stop() } },
-                        async { stopService<SyncManager>("SyncManager") { it.notifyExit() } },
+                        async { stopService<GeneralSyncManager>("SyncManager") { it.notifyExit() } },
                         async { stopService<CleanPasteScheduler>("CleanPasteScheduler") { it.stop() } },
                         async { stopService<GlobalListener>("GlobalListener") { it.stop() } },
                         async { stopService<UserDataPathProvider>("UserDataPathProvider") { it.cleanTemp() } },

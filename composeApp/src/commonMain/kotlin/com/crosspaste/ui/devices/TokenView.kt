@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.crosspaste.app.AppTokenService
+import com.crosspaste.app.AppTokenApi
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.close
 import com.crosspaste.ui.base.robotoFontFamily
@@ -48,7 +48,7 @@ import org.koin.compose.koinInject
 fun TokenView() {
     val density = LocalDensity.current
     val copywriter = koinInject<GlobalCopywriter>()
-    val appTokenService = koinInject<AppTokenService>()
+    val appTokenApi = koinInject<AppTokenApi>()
 
     val offsetY =
         IntOffset(
@@ -57,10 +57,10 @@ fun TokenView() {
         )
 
     DisposableEffect(Unit) {
-        appTokenService.startRefreshToken()
+        appTokenApi.startRefreshToken()
 
         onDispose {
-            appTokenService.stopRefreshToken()
+            appTokenApi.stopRefreshToken()
         }
     }
 
@@ -110,7 +110,7 @@ fun TokenView() {
                                 Modifier.fillMaxSize()
                                     .clip(RoundedCornerShape(16.dp))
                                     .clickable {
-                                        appTokenService.toHideToken()
+                                        appTokenApi.toHideToken()
                                     },
                             contentAlignment = Alignment.Center,
                         ) {
@@ -128,7 +128,7 @@ fun TokenView() {
                         Modifier.align(Alignment.CenterHorizontally)
                             .padding(horizontal = 4.dp, vertical = 12.dp),
                 ) {
-                    OTPCodeBox(appTokenService)
+                    OTPCodeBox()
                 }
             }
         }
@@ -136,8 +136,9 @@ fun TokenView() {
 }
 
 @Composable
-fun OTPCodeBox(appTokenService: AppTokenService) {
-    val token by appTokenService.token.collectAsState()
+fun OTPCodeBox() {
+    val appTokenApi = koinInject<AppTokenApi>()
+    val token by appTokenApi.token.collectAsState()
 
     Column {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -162,7 +163,7 @@ fun OTPCodeBox(appTokenService: AppTokenService) {
         }
         Spacer(modifier = Modifier.height(10.dp))
         Row(modifier = Modifier.width(300.dp).wrapContentHeight()) {
-            val progress by appTokenService.showTokenProgression.collectAsState()
+            val progress by appTokenApi.showTokenProgression.collectAsState()
             LinearProgressIndicator(
                 modifier = Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(1.5.dp)),
                 progress = { progress },

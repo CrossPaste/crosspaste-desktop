@@ -2,8 +2,8 @@ package com.crosspaste.realm.secure
 
 import io.realm.kotlin.Realm
 
-class SecureRealm(private val realm: Realm) {
-    fun saveCryptPublicKey(
+class SecureRealm(private val realm: Realm) : SecureIO {
+    override fun saveCryptPublicKey(
         appInstanceId: String,
         serialized: ByteArray,
     ): Boolean {
@@ -25,13 +25,13 @@ class SecureRealm(private val realm: Realm) {
         }
     }
 
-    fun existCryptPublicKey(appInstanceId: String): Boolean {
+    override fun existCryptPublicKey(appInstanceId: String): Boolean {
         return realm.query(CryptPublicKey::class, "appInstanceId == $0", appInstanceId)
             .first()
             .find() != null
     }
 
-    fun deleteCryptPublicKey(appInstanceId: String) {
+    override fun deleteCryptPublicKey(appInstanceId: String) {
         return realm.writeBlocking {
             query(CryptPublicKey::class, "appInstanceId == $0", appInstanceId)
                 .first()
@@ -41,9 +41,22 @@ class SecureRealm(private val realm: Realm) {
         }
     }
 
-    fun serializedIdentity(appInstanceId: String): ByteArray? {
+    override fun serializedPublicKey(appInstanceId: String): ByteArray? {
         return realm.query(CryptPublicKey::class, "appInstanceId == $0", appInstanceId)
             .first()
             .find()?.serialized
     }
+}
+
+interface SecureIO {
+    fun saveCryptPublicKey(
+        appInstanceId: String,
+        serialized: ByteArray,
+    ): Boolean
+
+    fun existCryptPublicKey(appInstanceId: String): Boolean
+
+    fun deleteCryptPublicKey(appInstanceId: String)
+
+    fun serializedPublicKey(appInstanceId: String): ByteArray?
 }
