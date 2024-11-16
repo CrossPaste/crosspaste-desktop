@@ -25,7 +25,6 @@ class ServerDecryptionPluginFactory(private val secureStore: SecureStore) {
                     headers["secure"]?.let {
                         logger.debug { "server decrypt $appInstanceId" }
                         return@on application.writer {
-                            logger.info { "xxxxxxxxxxxxx" }
                             val processor = secureStore.getMessageProcessor(appInstanceId)
                             val encryptedContent = body.readRemaining().readByteArray()
                             val decrypted = processor.decrypt(encryptedContent)

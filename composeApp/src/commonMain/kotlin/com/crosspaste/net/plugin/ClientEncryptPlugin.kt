@@ -1,7 +1,6 @@
 package com.crosspaste.net.plugin
 
 import com.crosspaste.secure.SecureStore
-import com.crosspaste.utils.getCodecsUtils
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
@@ -16,8 +15,6 @@ class ClientEncryptPlugin(private val secureStore: SecureStore) :
     HttpClientPlugin<PluginConfig, ClientEncryptPlugin> {
 
     private val logger: KLogger = KotlinLogging.logger {}
-
-    private val codecsUtils = getCodecsUtils()
 
     override val key = AttributeKey<ClientEncryptPlugin>("ClientEncryptPlugin")
 
@@ -41,12 +38,6 @@ class ClientEncryptPlugin(private val secureStore: SecureStore) :
                             val originalContent = context.body as OutgoingContent.ByteArrayContent
                             val bytes = originalContent.bytes()
                             val ciphertextMessageBytes = processor.encrypt(bytes)
-                            logger.info { "originalContent JSON ${bytes.size} bytes ${codecsUtils.hash(bytes)}" }
-                            logger.info {
-                                "Encrypting JSON ${ciphertextMessageBytes.size} bytes ${codecsUtils.hash(
-                                    ciphertextMessageBytes,
-                                )}"
-                            }
                             context.body = ByteArrayContent(ciphertextMessageBytes, contentType = ContentType.Application.Json)
                         }
                     }
