@@ -6,12 +6,12 @@ import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
 import com.crosspaste.net.plugin.ServerEncryptPluginFactory
+import com.crosspaste.net.routing.SyncRoutingApi
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
-import com.crosspaste.sync.SyncManager
 import io.ktor.server.application.*
 import io.ktor.server.plugins.compression.*
 
@@ -24,7 +24,7 @@ class DesktopServerModule(
     exceptionHandler: ExceptionHandler,
     pasteboardService: PasteboardService,
     secureStore: SecureStore,
-    syncManager: SyncManager,
+    syncRoutingApi: SyncRoutingApi,
     serverEncryptPluginFactory: ServerEncryptPluginFactory,
     serverDecryptionPluginFactory: ServerDecryptionPluginFactory,
     userDataPathProvider: UserDataPathProvider,
@@ -37,7 +37,7 @@ class DesktopServerModule(
         pasteboardService,
         secureKeyPairSerializer,
         secureStore,
-        syncManager,
+        syncRoutingApi,
         serverEncryptPluginFactory,
         serverDecryptionPluginFactory,
         userDataPathProvider,

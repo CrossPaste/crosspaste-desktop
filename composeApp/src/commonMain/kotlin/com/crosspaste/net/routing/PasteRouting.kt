@@ -3,7 +3,6 @@ package com.crosspaste.net.routing
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.realm.paste.PasteData
-import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getAppInstanceId
 import com.crosspaste.utils.ioDispatcher
@@ -16,8 +15,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 fun Routing.pasteRouting(
-    syncManager: SyncManager,
     pasteboardService: PasteboardService,
+    syncRoutingApi: SyncRoutingApi,
 ) {
     val logger = KotlinLogging.logger {}
 
@@ -26,7 +25,7 @@ fun Routing.pasteRouting(
     post("/sync/paste") {
         getAppInstanceId(call)?.let { appInstanceId ->
             val syncHandler =
-                syncManager.getSyncHandlers()[appInstanceId] ?: run {
+                syncRoutingApi.getSyncHandler(appInstanceId) ?: run {
                     logger.error { "not found appInstance id: $appInstanceId" }
                     failResponse(call, StandardErrorCode.NOT_FOUND_APP_INSTANCE_ID.toErrorCode())
                     return@let

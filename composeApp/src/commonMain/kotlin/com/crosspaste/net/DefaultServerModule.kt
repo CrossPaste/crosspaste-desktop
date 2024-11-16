@@ -7,7 +7,7 @@ import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
 import com.crosspaste.net.plugin.ServerEncryptPluginFactory
-import com.crosspaste.net.routing.baseSyncRouting
+import com.crosspaste.net.routing.SyncRoutingApi
 import com.crosspaste.net.routing.pasteRouting
 import com.crosspaste.net.routing.pullRouting
 import com.crosspaste.net.routing.syncRouting
@@ -16,7 +16,6 @@ import com.crosspaste.paste.PasteboardService
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
-import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getJsonUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -36,7 +35,7 @@ open class DefaultServerModule(
     private val pasteboardService: PasteboardService,
     private val secureKeyPairSerializer: SecureKeyPairSerializer,
     private val secureStore: SecureStore,
-    private val syncManager: SyncManager,
+    private val syncRoutingApi: SyncRoutingApi,
     private val serverEncryptPluginFactory: ServerEncryptPluginFactory,
     private val serverDecryptionPluginFactory: ServerDecryptionPluginFactory,
     private val userDataPathProvider: UserDataPathProvider,
@@ -62,23 +61,21 @@ open class DefaultServerModule(
                 logger.info { "Received request: ${call.request.httpMethod.value} ${call.request.uri} ${call.request.contentType()}" }
             }
             routing {
-                baseSyncRouting(
-                    appInfo,
-                    endpointInfoFactory,
-                    syncManager,
-                )
                 syncRouting(
+                    appInfo,
                     appTokenApi,
+                    endpointInfoFactory,
                     secureKeyPairSerializer,
                     secureStore,
+                    syncRoutingApi,
                 )
                 pasteRouting(
-                    syncManager,
                     pasteboardService,
+                    syncRoutingApi,
                 )
                 pullRouting(
                     cacheManager,
-                    syncManager,
+                    syncRoutingApi,
                     userDataPathProvider,
                 )
             }

@@ -90,6 +90,7 @@ import com.crosspaste.net.plugin.ClientDecryptPlugin
 import com.crosspaste.net.plugin.ClientEncryptPlugin
 import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
 import com.crosspaste.net.plugin.ServerEncryptPluginFactory
+import com.crosspaste.net.routing.SyncRoutingApi
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.notification.ToastManager
 import com.crosspaste.paste.CacheManager
@@ -154,6 +155,7 @@ import com.crosspaste.sound.SoundService
 import com.crosspaste.sync.DesktopQRCodeGenerator
 import com.crosspaste.sync.DeviceListener
 import com.crosspaste.sync.DeviceManager
+import com.crosspaste.sync.GeneralSyncManager
 import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.sync.TokenCache
@@ -317,11 +319,12 @@ class CrossPaste {
                     }
                     single<SyncClientApi> { SyncClientApi(get(), get(), get()) }
                     single<SyncManager> {
-                        SyncManager(
+                        GeneralSyncManager(
                             get(), get(), get(), get(), get(), get(), get(), get(), get(),
                             lazy { get() },
                         )
                     }
+                    single<SyncRoutingApi> { get<SyncManager>() }
                     single<TelnetHelper> { TelnetHelper(get<PasteClient>()) }
 
                     // secure component
@@ -534,7 +537,7 @@ class CrossPaste {
                         async { stopService<PasteboardService>("PasteboardService") { it.stop() } },
                         async { stopService<PasteBonjourService>("PasteBonjourService") { it.unregisterService() } },
                         async { stopService<PasteServer<*, *>>("PasteServer") { it.stop() } },
-                        async { stopService<SyncManager>("SyncManager") { it.notifyExit() } },
+                        async { stopService<GeneralSyncManager>("SyncManager") { it.notifyExit() } },
                         async { stopService<CleanPasteScheduler>("CleanPasteScheduler") { it.stop() } },
                         async { stopService<GlobalListener>("GlobalListener") { it.stop() } },
                         async { stopService<UserDataPathProvider>("UserDataPathProvider") { it.cleanTemp() } },

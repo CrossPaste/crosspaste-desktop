@@ -43,8 +43,6 @@ class ServerEncryptPluginFactory(private val secureStore: SecureStore) {
 object EncryptResponse :
     Hook<suspend EncryptResponse.Context.(ApplicationCall, OutgoingContent) -> Unit> {
 
-    private val logger = KotlinLogging.logger {}
-
     private val ioCoroutineDispatcher = CoroutineScope(ioDispatcher)
 
     private const val ENCRYPT_CHUNK_SIZE = 1024 * 256
@@ -83,11 +81,9 @@ object EncryptResponse :
                         val deferred =
                             ioCoroutineDispatcher.async {
                                 val buffer = ByteArray(ENCRYPT_CHUNK_SIZE)
-                                logger.info { "ENCRYPT_CHUNK_SIZE = $ENCRYPT_CHUNK_SIZE" }
                                 while (true) {
                                     val bytesRead = originChannel.readAvailable(buffer)
                                     if (bytesRead <= 0) break
-                                    logger.info { "bytesRead = $bytesRead" }
                                     val chunk =
                                         if (bytesRead == ENCRYPT_CHUNK_SIZE) {
                                             buffer

@@ -36,7 +36,7 @@ class SyncClientApi(
     }
 
     suspend fun heartbeat(
-        syncInfo: SyncInfo?,
+        syncInfo: SyncInfo? = null,
         targetAppInstanceId: String,
         toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult {
@@ -118,11 +118,10 @@ class SyncClientApi(
                     )
 
                 if (verifyResult) {
-                    logger.info { "verifyResult is true to save" }
                     secureStore.saveCryptPublicKey(targetAppInstanceId, trustResponse.pairingResponse.cryptPublicKey)
                     true
                 } else {
-                    logger.info { "verifyResult is false" }
+                    logger.warn { "verifyResult is false" }
                     false
                 }
             }

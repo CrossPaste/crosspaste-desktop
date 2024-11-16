@@ -3,19 +3,26 @@ package com.crosspaste.net
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenApi
 import com.crosspaste.app.AppTokenService
+import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.config.ReadWriteConfig
 import com.crosspaste.config.TestReadWritePort
+import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.plugin.ClientDecryptPlugin
 import com.crosspaste.net.plugin.ClientEncryptPlugin
 import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
 import com.crosspaste.net.plugin.ServerEncryptPluginFactory
+import com.crosspaste.net.routing.SyncRoutingApi
+import com.crosspaste.net.routing.TestSyncRoutingApi
 import com.crosspaste.realm.MemorySecureIO
 import com.crosspaste.realm.secure.SecureIO
 import com.crosspaste.secure.GeneralSecureStore
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.CryptographyUtils.generateSecureKeyPair
+import com.crosspaste.utils.DesktopDeviceUtils
+import com.crosspaste.utils.DeviceUtils
 import com.crosspaste.utils.buildUrl
 import io.ktor.server.netty.*
 import kotlinx.coroutines.runBlocking
@@ -27,15 +34,24 @@ import org.koin.test.inject
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertTrue
 
 class SyncTest : KoinTest {
 
     private val appTokenApi by inject<AppTokenApi>()
 
+    private val endpointInfoFactory by inject<EndpointInfoFactory>()
+
     private val pasteServer by inject<PasteServer<*, *>>()
 
     private val readWritePort by inject<ReadWriteConfig<Int>>(named("readWritePort"))
+
+    private val secureKeyPairSerializer by inject<SecureKeyPairSerializer>()
+
+    private val serverSecureIO by inject<SecureIO>(named("serverSecureIO"))
+
+    private val clientSecureIO by inject<SecureIO>(named("clientSecureIO"))
 
     private val syncClientApi by inject<SyncClientApi>()
 
@@ -61,17 +77,17 @@ class SyncTest : KoinTest {
 
         private val clientSecureKeyPair = generateSecureKeyPair()
 
-        private val serverSecureIO = MemorySecureIO()
-
-        private val clientSecureIO = MemorySecureIO()
-
         private val testModule =
             module {
                 // simple component
+                single<AppInfo>(named("serverAppInfo")) { serverAppInfo }
+                single<AppInfo>(named("clientAppInfo")) { clientAppInfo }
+                single<DeviceUtils> { DesktopDeviceUtils }
+                single<EndpointInfoFactory> { EndpointInfoFactory(get(), lazy { get<PasteServer<*, *>>() }) }
                 single<ReadWriteConfig<Int>>(named("readWritePort")) { TestReadWritePort() }
 
                 // net component
-                single<PasteClient> { PasteClient(clientAppInfo, get(), get()) }
+                single<PasteClient> { PasteClient(get(named("clientAppInfo")), get(), get()) }
                 single<PasteServer<*, *>> {
                     PasteServer(
                         get(named("readWritePort")),
@@ -84,14 +100,18 @@ class SyncTest : KoinTest {
                 }
                 single<ServerModule> {
                     TestServerModule(
+                        get(named("serverAppInfo")),
+                        get(),
                         get(),
                         get(),
                         get(named("serverSecureStore")),
                         get(),
                         get(),
+                        get(),
                     )
                 }
                 single<SyncClientApi> { SyncClientApi(get(), get(), get(named("clientSecureStore"))) }
+                single<SyncRoutingApi> { TestSyncRoutingApi() }
 
                 // secure component
                 single<ClientDecryptPlugin> { ClientDecryptPlugin(get(named("clientSecureStore"))) }
@@ -107,8 +127,8 @@ class SyncTest : KoinTest {
                 single<ServerEncryptPluginFactory> { ServerEncryptPluginFactory(get(named("serverSecureStore"))) }
 
                 // io component
-                single<SecureIO>(named("serverSecureIO")) { serverSecureIO }
-                single<SecureIO>(named("clientSecureIO")) { clientSecureIO }
+                single<SecureIO>(named("serverSecureIO")) { MemorySecureIO() }
+                single<SecureIO>(named("clientSecureIO")) { MemorySecureIO() }
 
                 // ui component
                 single<AppTokenApi> { AppTokenService() }
@@ -128,19 +148,59 @@ class SyncTest : KoinTest {
     }
 
     @Test
-    fun testSync() {
+    fun testTrustAndHeartbeat() {
         pasteServer.start()
 
-        runBlocking {
-            syncClientApi.trust(
-                serverAppInfo.appInstanceId,
-                appTokenApi.token.value.concatToString().toInt(),
-            ) {
-                buildUrl(host, readWritePort.getValue())
+        var result =
+            runBlocking {
+                syncClientApi.trust(
+                    serverAppInfo.appInstanceId,
+                    appTokenApi.token.value.concatToString().toInt(),
+                ) {
+                    buildUrl("localhost", readWritePort.getValue())
+                }
             }
-        }
+
+        assertTrue(result is SuccessResult)
 
         assertTrue(serverSecureIO.existCryptPublicKey(clientAppInfo.appInstanceId))
         assertTrue(clientSecureIO.existCryptPublicKey(serverAppInfo.appInstanceId))
+        assertContentEquals(
+            serverSecureIO.serializedPublicKey(clientAppInfo.appInstanceId),
+            secureKeyPairSerializer.encodeCryptPublicKey(clientSecureKeyPair.cryptKeyPair.publicKey),
+        )
+        assertContentEquals(
+            clientSecureIO.serializedPublicKey(serverAppInfo.appInstanceId),
+            secureKeyPairSerializer.encodeCryptPublicKey(serverSecureKeyPair.cryptKeyPair.publicKey),
+        )
+
+        result =
+            runBlocking {
+                syncClientApi.heartbeat(targetAppInstanceId = serverAppInfo.appInstanceId) {
+                    buildUrl("localhost", readWritePort.getValue())
+                }
+            }
+
+        assertTrue(result is SuccessResult)
+
+        val syncInfo =
+            SyncInfo(
+                appInfo = clientAppInfo,
+                endpointInfo = endpointInfoFactory.createEndpointInfo(),
+            )
+
+        result =
+            runBlocking {
+                syncClientApi.heartbeat(
+                    syncInfo = syncInfo,
+                    targetAppInstanceId = serverAppInfo.appInstanceId,
+                ) {
+                    buildUrl("localhost", readWritePort.getValue())
+                }
+            }
+
+        assertTrue(result is SuccessResult)
+
+        pasteServer.stop()
     }
 }

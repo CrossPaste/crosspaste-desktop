@@ -6,7 +6,6 @@ import com.crosspaste.dto.pull.PullFilesKey
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getAppInstanceId
 import com.crosspaste.utils.getFileUtils
@@ -18,7 +17,7 @@ import io.ktor.utils.io.*
 
 fun Routing.pullRouting(
     cacheManager: CacheManager,
-    syncManager: SyncManager,
+    syncRoutingApi: SyncRoutingApi,
     userDataPathProvider: UserDataPathProvider,
 ) {
     val logger = KotlinLogging.logger {}
@@ -32,7 +31,7 @@ fun Routing.pullRouting(
             val pasteId = pullFileRequest.pasteId
 
             val syncHandler =
-                syncManager.getSyncHandlers()[fromAppInstanceId] ?: run {
+                syncRoutingApi.getSyncHandler(fromAppInstanceId) ?: run {
                     logger.error { "not found appInstance id: $fromAppInstanceId" }
                     failResponse(call, StandardErrorCode.NOT_FOUND_APP_INSTANCE_ID.toErrorCode())
                     return@let

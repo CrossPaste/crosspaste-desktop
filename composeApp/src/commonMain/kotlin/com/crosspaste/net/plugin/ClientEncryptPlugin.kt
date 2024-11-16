@@ -10,6 +10,7 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.util.*
+import io.ktor.utils.io.*
 
 class ClientEncryptPlugin(private val secureStore: SecureStore) :
     HttpClientPlugin<PluginConfig, ClientEncryptPlugin> {
@@ -24,6 +25,7 @@ class ClientEncryptPlugin(private val secureStore: SecureStore) :
         return this
     }
 
+    @OptIn(InternalAPI::class)
     override fun install(
         plugin: ClientEncryptPlugin,
         scope: HttpClient,
@@ -45,7 +47,7 @@ class ClientEncryptPlugin(private val secureStore: SecureStore) :
                                     ciphertextMessageBytes,
                                 )}"
                             }
-                            proceedWith(ByteArrayContent(ciphertextMessageBytes, contentType = ContentType.Application.Json))
+                            context.body = ByteArrayContent(ciphertextMessageBytes, contentType = ContentType.Application.Json)
                         }
                     }
                 }
