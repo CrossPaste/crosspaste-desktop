@@ -85,7 +85,11 @@ interface FileUtils {
 
     fun deleteFile(path: Path): Result<Unit> =
         runCatching {
-            fileSystem.delete(path)
+            if (path.isDirectory) {
+                fileSystem.deleteRecursively(path)
+            } else {
+                fileSystem.delete(path)
+            }
         }
 
     fun createFile(
