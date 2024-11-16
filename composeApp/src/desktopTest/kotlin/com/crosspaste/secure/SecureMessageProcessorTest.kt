@@ -63,13 +63,20 @@ class SecureMessageProcessorTest {
         // Test with messages of different lengths
         val testMessages =
             listOf(
-                "A".repeat(15), // 15 bytes (not multiple of 16)
-                "B".repeat(16), // 16 bytes (exact multiple)
-                "C".repeat(17), // 17 bytes (one more than multiple)
-                "D".repeat(31), // 31 bytes (not multiple of 16)
-                "E".repeat(32), // 32 bytes (exact multiple)
-                "", // Empty message
-                "Hello!", // 6 bytes (not multiple of 16)
+                // 15 bytes (not multiple of 16)
+                "A".repeat(15),
+                // 16 bytes (exact multiple)
+                "B".repeat(16),
+                // 17 bytes (one more than multiple)
+                "C".repeat(17),
+                // 31 bytes (not multiple of 16)
+                "D".repeat(31),
+                // 32 bytes (exact multiple)
+                "E".repeat(32),
+                // Empty message
+                "",
+                // 6 bytes (not multiple of 16)
+                "Hello!",
             )
 
         for (message in testMessages) {
@@ -85,7 +92,7 @@ class SecureMessageProcessorTest {
                 )
             } catch (e: IllegalBlockSizeException) {
                 println("IllegalBlockSizeException caught for message length ${message.length}: $message")
-                throw e // Re-throw to fail the test
+                throw e
             } catch (e: Exception) {
                 println("Unexpected exception for message length ${message.length}: ${e.javaClass.simpleName} - ${e.message}")
                 throw e
