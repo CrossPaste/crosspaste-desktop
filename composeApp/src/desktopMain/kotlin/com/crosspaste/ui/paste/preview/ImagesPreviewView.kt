@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppSize
@@ -28,6 +29,7 @@ fun ImagesPreviewView(
         val userDataPathProvider = koinInject<UserDataPathProvider>()
 
         PasteSpecificPreviewContentView(
+            backgroundColor = Color.Transparent,
             pasteMainContent = {
                 val imagePaths = pasteFiles.getFilePaths(userDataPathProvider)
                 val pasteCoordinate = pasteData.getPasteCoordinate()
