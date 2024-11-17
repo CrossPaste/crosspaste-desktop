@@ -34,6 +34,15 @@ val Path.isDirectory: Boolean
         return metadata.isDirectory
     }
 
+val Path.safeIsDirectory: Boolean
+    get() {
+        return try {
+            this.isDirectory
+        } catch (_: Exception) {
+            false
+        }
+    }
+
 val Path.noOptionParent: Path
     get() {
         return this.parent ?: this

@@ -8,6 +8,8 @@ import androidx.compose.ui.unit.dp
 object DesktopAppSize : AppSize {
     override val mainWindowSize: DpSize = DpSize(width = 480.dp, height = 740.dp)
 
+    override val mainPasteSize: DpSize = DpSize(width = 424.dp, height = 100.dp)
+
     override val qrCodeSize: DpSize = DpSize(width = 275.dp, height = 275.dp)
 
     override val searchWindowSize: DpSize = DpSize(width = 800.dp, height = 540.dp)

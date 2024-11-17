@@ -10,8 +10,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import com.crosspaste.app.AppSize
 import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.PasteFileCoordinate
@@ -27,6 +29,7 @@ fun FilesPreviewView(
     onDoubleClick: () -> Unit,
 ) {
     pasteData.getPasteItem(FilesPasteItem::class)?.let {
+        val appSize = koinInject<AppSize>()
         val pasteMenuService = koinInject<DesktopPasteMenuService>()
         val userDataPathProvider = koinInject<UserDataPathProvider>()
         val pasteFilePaths = it.getFilePaths(userDataPathProvider)
@@ -34,6 +37,7 @@ fun FilesPreviewView(
         val fileUtils = getFileUtils()
 
         PasteSpecificPreviewContentView(
+            backgroundColor = Color.Transparent,
             pasteMainContent = {
                 LazyRow(
                     modifier =
@@ -47,6 +51,7 @@ fun FilesPreviewView(
                             },
                 ) {
                     items(pasteFilePaths.size) { index ->
+                        val itemWidthSize = if (pasteFilePaths.size > 1) appSize.mainPasteSize.width / 2 else appSize.mainPasteSize.width
                         val filepath = pasteFilePaths[index]
                         val isImage by remember(filepath) { mutableStateOf(fileUtils.canPreviewImage(filepath.extension)) }
 
@@ -64,13 +69,13 @@ fun FilesPreviewView(
                                         pasteData.getPasteCoordinate(),
                                         filepath,
                                     )
-                                SingleImagePreviewView(pasteFileCoordinate)
+                                SingleImagePreviewView(pasteFileCoordinate, itemWidthSize)
                             } else {
-                                SingleFilePreviewView(filepath)
+                                SingleFilePreviewView(filepath, itemWidthSize)
                             }
                         }
                         if (index != pasteFilePaths.size - 1) {
-                            Spacer(modifier = Modifier.size(10.dp))
+                            Spacer(modifier = Modifier.size(8.dp))
                         }
                     }
                 }
