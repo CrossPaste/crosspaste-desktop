@@ -1,5 +1,6 @@
 package com.crosspaste.ui.paste.preview
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -7,10 +8,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,10 +21,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.PlatformContext
@@ -36,17 +42,20 @@ import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.info.PasteInfos.FILE_NAME
 import com.crosspaste.info.PasteInfos.MISSING_FILE
 import com.crosspaste.info.PasteInfos.SIZE
+import com.crosspaste.ui.base.FileIcon
+import com.crosspaste.ui.base.FileSlashIcon
+import com.crosspaste.ui.base.FolderIcon
 import com.crosspaste.ui.base.UISupport
-import com.crosspaste.ui.base.file
-import com.crosspaste.ui.base.fileSlash
-import com.crosspaste.ui.base.folder
 import com.crosspaste.utils.getFileUtils
-import com.crosspaste.utils.isDirectory
+import com.crosspaste.utils.safeIsDirectory
 import okio.Path
 import org.koin.compose.koinInject
 
 @Composable
-fun SingleFilePreviewView(filePath: Path) {
+fun SingleFilePreviewView(
+    filePath: Path,
+    width: Dp,
+) {
     val copywriter = koinInject<GlobalCopywriter>()
     val imageLoaders = koinInject<ImageLoaders>()
     val platformContext = koinInject<PlatformContext>()
@@ -54,18 +63,22 @@ fun SingleFilePreviewView(filePath: Path) {
 
     val fileUtils = getFileUtils()
 
-    val existFile by remember { mutableStateOf(fileUtils.existFile(filePath)) }
-    val isFile by remember { mutableStateOf(if (existFile) !filePath.isDirectory else null) }
+    val existFile by remember(filePath) { mutableStateOf(fileUtils.existFile(filePath)) }
+    val isFile by remember(filePath) { mutableStateOf(!filePath.safeIsDirectory) }
 
     Row(
         modifier =
-            Modifier.pointerInput(Unit) {
-                detectTapGestures(
-                    onTap = {
-                        uiSupport.browseFile(filePath)
-                    },
-                )
-            },
+            Modifier.width(width)
+                .wrapContentHeight()
+                .clip(RoundedCornerShape(5.dp))
+                .background(MaterialTheme.colorScheme.background)
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onTap = {
+                            uiSupport.browseFile(filePath)
+                        },
+                    )
+                },
     ) {
         Box(modifier = Modifier.size(100.dp)) {
             SubcomposeAsyncImage(
@@ -77,18 +90,24 @@ fun SingleFilePreviewView(filePath: Path) {
                         .build(),
                 imageLoader = imageLoaders.fileExtImageLoader,
                 contentDescription = "fileType",
+                alignment = Alignment.Center,
                 content = {
                     when (this.painter.state.collectAsState().value) {
                         is AsyncImagePainter.State.Loading,
                         is AsyncImagePainter.State.Error,
                         -> {
-                            Icon(
-                                modifier = Modifier.size(100.dp),
-                                painter = isFile?.let { if (it) file() else folder() } ?: fileSlash(),
-                                contentDescription = "fileType",
-                                tint = MaterialTheme.colorScheme.onBackground,
-                            )
+                            val modifier = Modifier.padding(10.dp).size(90.dp)
+                            if (existFile) {
+                                if (isFile) {
+                                    FileIcon(modifier)
+                                } else {
+                                    FolderIcon(modifier)
+                                }
+                            } else {
+                                FileSlashIcon(modifier)
+                            }
                         }
+
                         else -> {
                             SubcomposeAsyncImageContent()
                         }
@@ -100,7 +119,7 @@ fun SingleFilePreviewView(filePath: Path) {
         Column(
             modifier =
                 Modifier.fillMaxHeight()
-                    .wrapContentWidth()
+                    .fillMaxWidth()
                     .padding(horizontal = 8.dp)
                     .padding(bottom = 8.dp),
             verticalArrangement = Arrangement.Bottom,

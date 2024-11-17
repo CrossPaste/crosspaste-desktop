@@ -23,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.crosspaste.app.AppSize
+import org.koin.compose.koinInject
 
 @Composable
 fun PasteSpecificPreviewContentView(
@@ -30,8 +32,18 @@ fun PasteSpecificPreviewContentView(
     pasteMainContent: @Composable () -> Unit,
     pasteRightInfo: @Composable ((Boolean) -> Unit) -> Unit,
 ) {
+    val appSize = koinInject<AppSize>()
+
     var showMenu by remember { mutableStateOf(false) }
-    val width = animateDpAsState(targetValue = if (showMenu) (440 - 16 - 35).dp else (440 - 16).dp)
+    val width =
+        animateDpAsState(
+            targetValue =
+                if (showMenu) {
+                    appSize.mainPasteSize.width - 35.dp
+                } else {
+                    appSize.mainPasteSize.width
+                },
+        )
 
     Box(
         modifier =

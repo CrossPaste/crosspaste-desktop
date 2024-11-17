@@ -1,5 +1,6 @@
 package com.crosspaste.ui.paste.preview
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,7 +10,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -28,6 +30,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.PlatformContext
@@ -53,7 +57,10 @@ import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
 
 @Composable
-fun SingleImagePreviewView(pasteFileCoordinate: PasteFileCoordinate) {
+fun SingleImagePreviewView(
+    pasteFileCoordinate: PasteFileCoordinate,
+    width: Dp,
+) {
     val copywriter = koinInject<GlobalCopywriter>()
     val imageLoaders = koinInject<ImageLoaders>()
     val platformContext = koinInject<PlatformContext>()
@@ -70,13 +77,17 @@ fun SingleImagePreviewView(pasteFileCoordinate: PasteFileCoordinate) {
 
     Row(
         modifier =
-            Modifier.pointerInput(Unit) {
-                detectTapGestures(
-                    onDoubleTap = {
-                        uiSupport.openImage(pasteFileCoordinate.filePath)
-                    },
-                )
-            },
+            Modifier.width(width)
+                .wrapContentHeight()
+                .clip(RoundedCornerShape(5.dp))
+                .background(MaterialTheme.colorScheme.background)
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onDoubleTap = {
+                            uiSupport.openImage(pasteFileCoordinate.filePath)
+                        },
+                    )
+                },
     ) {
         SubcomposeAsyncImage(
             modifier = Modifier.fillMaxSize(),
@@ -132,13 +143,14 @@ fun SingleImagePreviewView(pasteFileCoordinate: PasteFileCoordinate) {
                     Column(
                         modifier =
                             Modifier.fillMaxHeight()
-                                .wrapContentWidth()
                                 .padding(horizontal = 8.dp)
                                 .padding(bottom = 8.dp),
                         verticalArrangement = Arrangement.Bottom,
                     ) {
                         Text(
                             text = "${copywriter.getText(FILE_NAME)}: ${pasteFileCoordinate.filePath.name}",
+                            maxLines = 3,
+                            overflow = TextOverflow.Visible,
                             color = MaterialTheme.colorScheme.onBackground,
                             style =
                                 TextStyle(
@@ -154,6 +166,8 @@ fun SingleImagePreviewView(pasteFileCoordinate: PasteFileCoordinate) {
                             imageInfo.map[DIMENSIONS]?.let {
                                 Text(
                                     text = "${copywriter.getText(DIMENSIONS)}: ${it.getTextByCopyWriter(copywriter)}",
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Visible,
                                     color = MaterialTheme.colorScheme.onBackground,
                                     style =
                                         TextStyle(
@@ -172,6 +186,8 @@ fun SingleImagePreviewView(pasteFileCoordinate: PasteFileCoordinate) {
 
                             Text(
                                 text = "${copywriter.getText(SIZE)}: $imageSize",
+                                maxLines = 1,
+                                overflow = TextOverflow.Visible,
                                 color = MaterialTheme.colorScheme.onBackground,
                                 style =
                                     TextStyle(
@@ -182,6 +198,8 @@ fun SingleImagePreviewView(pasteFileCoordinate: PasteFileCoordinate) {
                         } else {
                             Text(
                                 text = copywriter.getText(MISSING_FILE),
+                                maxLines = 1,
+                                overflow = TextOverflow.Visible,
                                 color = MaterialTheme.colorScheme.error,
                                 style =
                                     TextStyle(

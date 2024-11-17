@@ -536,7 +536,7 @@ class CrossPaste {
                         async { stopService<PasteboardService>("PasteboardService") { it.stop() } },
                         async { stopService<PasteBonjourService>("PasteBonjourService") { it.unregisterService() } },
                         async { stopService<PasteServer<*, *>>("PasteServer") { it.stop() } },
-                        async { stopService<GeneralSyncManager>("SyncManager") { it.notifyExit() } },
+                        async { stopService<SyncManager>("SyncManager") { it.notifyExit() } },
                         async { stopService<CleanPasteScheduler>("CleanPasteScheduler") { it.stop() } },
                         async { stopService<GlobalListener>("GlobalListener") { it.stop() } },
                         async { stopService<UserDataPathProvider>("UserDataPathProvider") { it.cleanTemp() } },

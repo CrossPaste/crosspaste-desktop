@@ -9,6 +9,7 @@ import coil3.request.Options
 import com.crosspaste.image.FileExtImageLoader
 import com.crosspaste.utils.getCoilUtils
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.isDirectory
 import kotlinx.coroutines.withContext
 
 class FileExtFetcher(
@@ -22,15 +23,19 @@ class FileExtFetcher(
         return withContext(ioDispatcher) {
             val path = data.path
             try {
-                fileExtLoader.load(path)?.let {
-                    return@withContext ImageFetchResult(
-                        dataSource = DataSource.MEMORY_CACHE,
-                        isSampled = false,
-                        image = coilUtils.createImage(it),
-                    )
+                if (!path.isDirectory) {
+                    fileExtLoader.load(path)?.let {
+                        ImageFetchResult(
+                            dataSource = DataSource.MEMORY_CACHE,
+                            isSampled = false,
+                            image = coilUtils.createImage(it),
+                        )
+                    }
+                } else {
+                    null
                 }
             } catch (_: Exception) {
-                return@withContext null
+                null
             }
         }
     }

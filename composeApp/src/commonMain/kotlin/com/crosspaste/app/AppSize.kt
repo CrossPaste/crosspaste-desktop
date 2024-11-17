@@ -6,6 +6,8 @@ interface AppSize {
 
     val mainWindowSize: DpSize
 
+    val mainPasteSize: DpSize
+
     val qrCodeSize: DpSize
 
     val searchWindowSize: DpSize

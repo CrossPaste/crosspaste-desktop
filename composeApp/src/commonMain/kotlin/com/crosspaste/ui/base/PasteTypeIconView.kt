@@ -25,6 +25,7 @@ import com.crosspaste.image.coil.PasteDataItem
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
+import com.crosspaste.utils.safeIsDirectory
 import org.koin.compose.koinInject
 
 @Composable
@@ -72,32 +73,50 @@ fun PasteTypeIconView(
         pasteData.getPasteItem(PasteFiles::class)?.let {
             val paths = it.getFilePaths(userDataPathProvider)
             if (paths.isNotEmpty()) {
-                SubcomposeAsyncImage(
+                val isSingleFile = paths.size == 1 && !paths[0].safeIsDirectory
+                if (isSingleFile) {
+                    SubcomposeAsyncImage(
+                        modifier = Modifier.padding(padding).size(size),
+                        model =
+                            ImageRequest.Builder(platformContext)
+                                .data(FileExtItem(paths[0]))
+                                .crossfade(false)
+                                .build(),
+                        imageLoader = imageLoaders.fileExtImageLoader,
+                        contentDescription = "Paste Icon",
+                        content = {
+                            when (this.painter.state.collectAsState().value) {
+                                is AsyncImagePainter.State.Loading,
+                                is AsyncImagePainter.State.Error,
+                                -> {
+                                    Icon(
+                                        painter = file(),
+                                        contentDescription = "Paste Icon",
+                                        modifier = Modifier.padding(padding).size(size),
+                                        tint = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+
+                                else -> {
+                                    SubcomposeAsyncImageContent()
+                                }
+                            }
+                        },
+                    )
+                } else {
+                    Icon(
+                        painter = folder(),
+                        contentDescription = "folder",
+                        modifier = Modifier.padding(padding).size(size),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            } else {
+                Icon(
+                    painter = fileSlash(),
+                    contentDescription = "fileSlash",
                     modifier = Modifier.padding(padding).size(size),
-                    model =
-                        ImageRequest.Builder(platformContext)
-                            .data(FileExtItem(paths[0]))
-                            .crossfade(false)
-                            .build(),
-                    imageLoader = imageLoaders.fileExtImageLoader,
-                    contentDescription = "Paste Icon",
-                    content = {
-                        when (this.painter.state.collectAsState().value) {
-                            is AsyncImagePainter.State.Loading,
-                            is AsyncImagePainter.State.Error,
-                            -> {
-                                Icon(
-                                    painter = file(),
-                                    contentDescription = "Paste Icon",
-                                    modifier = Modifier.padding(padding).size(size),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                )
-                            }
-                            else -> {
-                                SubcomposeAsyncImageContent()
-                            }
-                        }
-                    },
+                    tint = MaterialTheme.colorScheme.primary,
                 )
             }
         }
