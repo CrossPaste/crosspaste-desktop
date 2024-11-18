@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppSize
 import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.item.FilesPasteItem
-import com.crosspaste.paste.item.PasteFileCoordinate
+import com.crosspaste.paste.item.PasteFileInfoTreeCoordinate
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.utils.extension
@@ -33,7 +33,7 @@ fun FilesPreviewView(
         val pasteMenuService = koinInject<DesktopPasteMenuService>()
         val userDataPathProvider = koinInject<UserDataPathProvider>()
         val pasteFilePaths = it.getFilePaths(userDataPathProvider)
-
+        val fileInfoTree = it.getFileInfoTreeMap()
         val fileUtils = getFileUtils()
 
         PasteSpecificPreviewContentView(
@@ -53,6 +53,7 @@ fun FilesPreviewView(
                     items(pasteFilePaths.size) { index ->
                         val itemWidthSize = if (pasteFilePaths.size > 1) appSize.mainPasteSize.width / 2 else appSize.mainPasteSize.width
                         val filepath = pasteFilePaths[index]
+                        val fileInfoTree = fileInfoTree[filepath.name]!!
                         val isImage by remember(filepath) { mutableStateOf(fileUtils.canPreviewImage(filepath.extension)) }
 
                         PasteContextMenuView(
@@ -63,15 +64,16 @@ fun FilesPreviewView(
                                     index = index,
                                 ),
                         ) {
+                            val pasteFileInfoTreeCoordinate =
+                                PasteFileInfoTreeCoordinate(
+                                    pasteData.getPasteCoordinate(),
+                                    filepath,
+                                    fileInfoTree,
+                                )
                             if (isImage) {
-                                val pasteFileCoordinate =
-                                    PasteFileCoordinate(
-                                        pasteData.getPasteCoordinate(),
-                                        filepath,
-                                    )
-                                SingleImagePreviewView(pasteFileCoordinate, itemWidthSize)
+                                SingleImagePreviewView(pasteFileInfoTreeCoordinate, itemWidthSize)
                             } else {
-                                SingleFilePreviewView(filepath, itemWidthSize)
+                                SingleFilePreviewView(pasteFileInfoTreeCoordinate, itemWidthSize)
                             }
                         }
                         if (index != pasteFilePaths.size - 1) {
