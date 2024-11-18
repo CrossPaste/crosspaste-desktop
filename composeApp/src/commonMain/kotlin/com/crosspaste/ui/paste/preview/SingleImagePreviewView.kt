@@ -69,9 +69,11 @@ fun SingleImagePreviewView(
 
     val fileUtils = getFileUtils()
 
-    val existFile by remember {
+    val filePath = pasteFileCoordinate.filePath
+
+    val existFile by remember(filePath) {
         mutableStateOf(
-            fileUtils.existFile(pasteFileCoordinate.filePath),
+            fileUtils.existFile(filePath),
         )
     }
 
@@ -84,7 +86,7 @@ fun SingleImagePreviewView(
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onDoubleTap = {
-                            uiSupport.openImage(pasteFileCoordinate.filePath)
+                            uiSupport.openImage(filePath)
                         },
                     )
                 },
@@ -122,7 +124,7 @@ fun SingleImagePreviewView(
                                 Icon(
                                     modifier = Modifier.size(100.dp),
                                     painter = imageSlash(),
-                                    contentDescription = pasteFileCoordinate.filePath.name,
+                                    contentDescription = filePath.name,
                                     tint = MaterialTheme.colorScheme.onBackground,
                                 )
                             }
@@ -148,7 +150,7 @@ fun SingleImagePreviewView(
                         verticalArrangement = Arrangement.Bottom,
                     ) {
                         Text(
-                            text = "${copywriter.getText(FILE_NAME)}: ${pasteFileCoordinate.filePath.name}",
+                            text = "${copywriter.getText(FILE_NAME)}: ${filePath.name}",
                             maxLines = 3,
                             overflow = TextOverflow.Visible,
                             color = MaterialTheme.colorScheme.onBackground,
@@ -180,8 +182,8 @@ fun SingleImagePreviewView(
 
                         if (existFile) {
                             val imageSize =
-                                remember(pasteFileCoordinate.filePath) {
-                                    fileUtils.formatBytes(fileUtils.getFileSize(pasteFileCoordinate.filePath))
+                                remember(filePath) {
+                                    fileUtils.formatBytes(fileUtils.getFileSize(filePath))
                                 }
 
                             Text(

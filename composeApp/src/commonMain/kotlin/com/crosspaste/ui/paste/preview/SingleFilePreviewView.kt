@@ -42,18 +42,17 @@ import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.info.PasteInfos.FILE_NAME
 import com.crosspaste.info.PasteInfos.MISSING_FILE
 import com.crosspaste.info.PasteInfos.SIZE
+import com.crosspaste.paste.item.PasteFileInfoTreeCoordinate
 import com.crosspaste.ui.base.FileIcon
 import com.crosspaste.ui.base.FileSlashIcon
 import com.crosspaste.ui.base.FolderIcon
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.utils.getFileUtils
-import com.crosspaste.utils.safeIsDirectory
-import okio.Path
 import org.koin.compose.koinInject
 
 @Composable
 fun SingleFilePreviewView(
-    filePath: Path,
+    pasteFileInfoTreeCoordinate: PasteFileInfoTreeCoordinate,
     width: Dp,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
@@ -63,8 +62,14 @@ fun SingleFilePreviewView(
 
     val fileUtils = getFileUtils()
 
-    val existFile by remember(filePath) { mutableStateOf(fileUtils.existFile(filePath)) }
-    val isFile by remember(filePath) { mutableStateOf(!filePath.safeIsDirectory) }
+    val filePath = pasteFileInfoTreeCoordinate.filePath
+
+    val existFile by remember(filePath) {
+        mutableStateOf(fileUtils.existFile(filePath))
+    }
+    val isFile by remember(filePath) {
+        mutableStateOf(pasteFileInfoTreeCoordinate.fileInfoTree.isFile())
+    }
 
     Row(
         modifier =

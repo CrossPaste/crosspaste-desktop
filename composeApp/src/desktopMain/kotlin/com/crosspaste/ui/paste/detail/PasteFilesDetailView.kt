@@ -48,12 +48,12 @@ import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteItem
+import com.crosspaste.ui.base.FileIcon
+import com.crosspaste.ui.base.FileSlashIcon
+import com.crosspaste.ui.base.FolderIcon
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.chevronLeft
 import com.crosspaste.ui.base.chevronRight
-import com.crosspaste.ui.base.file
-import com.crosspaste.ui.base.fileSlash
-import com.crosspaste.ui.base.folder
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
 import kotlinx.coroutines.delay
@@ -107,10 +107,12 @@ fun PasteFilesDetailView(
         }
 
         val filePath = pasteFiles.getFilePaths(userDataPathProvider)[index]
-        val fileInfoTree = pasteFiles.getFileInfoTreeMap()[filePath.name]!!
-        val file = filePath.toFile()
-        val existFile = file.exists()
-        val isFile = if (existFile) fileInfoTree.isFile() else null
+        val existFile by remember(filePath) {
+            mutableStateOf(fileUtils.existFile(filePath))
+        }
+        val isFile by remember(filePath) {
+            mutableStateOf(pasteFiles.getFileInfoTreeMap()[filePath.name]!!.isFile())
+        }
 
         var hover by remember { mutableStateOf(false) }
 
@@ -160,12 +162,16 @@ fun PasteFilesDetailView(
                                     is AsyncImagePainter.State.Loading,
                                     is AsyncImagePainter.State.Error,
                                     -> {
-                                        Icon(
-                                            modifier = Modifier.size(150.dp),
-                                            painter = isFile?.let { if (it) file() else folder() } ?: fileSlash(),
-                                            contentDescription = "fileType",
-                                            tint = MaterialTheme.colorScheme.onBackground,
-                                        )
+                                        val modifier = Modifier.size(150.dp)
+                                        if (existFile) {
+                                            if (isFile) {
+                                                FileIcon(modifier)
+                                            } else {
+                                                FolderIcon(modifier)
+                                            }
+                                        } else {
+                                            FileSlashIcon(modifier)
+                                        }
                                     }
                                     else -> {
                                         SubcomposeAsyncImageContent()
