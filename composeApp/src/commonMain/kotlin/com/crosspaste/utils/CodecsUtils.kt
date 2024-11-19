@@ -1,7 +1,8 @@
 package com.crosspaste.utils
 
-import io.ktor.utils.io.core.toByteArray
+import io.ktor.utils.io.core.*
 import okio.Path
+import okio.buffer
 
 expect fun getCodecsUtils(): CodecsUtils
 
@@ -12,6 +13,8 @@ val CROSS_PASTE_SEED = 13043025u
 val CROSSPASTE_HASH = MurmurHash3(CROSS_PASTE_SEED)
 
 interface CodecsUtils {
+
+    val fileUtils: FileUtils
 
     fun base64Encode(bytes: ByteArray): String
 
@@ -29,7 +32,25 @@ interface CodecsUtils {
         }
     }
 
-    fun hash(path: Path): String
+    fun hash(path: Path): String {
+        val streamingMurmurHash3 = StreamingMurmurHash3(CROSS_PASTE_SEED)
+        val bufferSize = fileUtils.fileBufferSize
+        val buffer = ByteArray(bufferSize)
+
+        fileUtils.fileSystem.source(path).buffer().use { bufferedSource ->
+            while (true) {
+                val bytesRead = bufferedSource.read(buffer, 0, bufferSize)
+                if (bytesRead == -1) break
+                streamingMurmurHash3.update(buffer, 0, bytesRead)
+            }
+        }
+
+        val (hash1, hash2) = streamingMurmurHash3.finish()
+        return buildString(32) {
+            appendHex(hash1)
+            appendHex(hash2)
+        }
+    }
 
     fun hashByString(string: String): String {
         return hash(string.toByteArray())
