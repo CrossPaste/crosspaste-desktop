@@ -12,6 +12,8 @@ actual fun getCodecsUtils(): CodecsUtils {
 
 object DesktopCodecsUtils : CodecsUtils {
 
+    override val fileUtils: FileUtils = getFileUtils()
+
     override fun base64Encode(bytes: ByteArray): String {
         return Base64.getEncoder().encodeToString(bytes)
     }
@@ -26,25 +28,6 @@ object DesktopCodecsUtils : CodecsUtils {
 
     override fun base64mimeDecode(string: String): ByteArray {
         return Base64.getMimeDecoder().decode(string)
-    }
-
-    override fun hash(path: Path): String {
-        val streamingMurmurHash3 = StreamingMurmurHash3(CROSS_PASTE_SEED)
-        val bufferSize = 8192 * 10
-        val buffer = ByteArray(bufferSize)
-
-        path.toFile().inputStream().use { input ->
-            var bytesRead: Int
-            while (input.read(buffer).also { bytesRead = it } != -1) {
-                streamingMurmurHash3.update(buffer, 0, bytesRead)
-            }
-        }
-
-        val (hash1, hash2) = streamingMurmurHash3.finish()
-        return buildString(32) {
-            appendHex(hash1)
-            appendHex(hash2)
-        }
     }
 
     override fun hashByArray(array: Array<String>): String {
