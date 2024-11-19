@@ -21,8 +21,6 @@ interface FileUtils {
 
     val fileSystem: FileSystem
 
-    val separator: String
-
     val fileBufferSize: Int
 
     fun formatBytes(bytesSize: Long): String
