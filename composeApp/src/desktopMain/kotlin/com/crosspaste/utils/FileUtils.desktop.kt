@@ -1,14 +1,10 @@
 package com.crosspaste.utils
 
 import com.crosspaste.paste.item.PasteCoordinate
-import com.crosspaste.presist.FileInfoTree
-import com.crosspaste.presist.FileInfoTreeBuilder
 import com.crosspaste.presist.FilesChunk
-import com.crosspaste.presist.SingleFileInfoTree
 import io.ktor.utils.io.*
 import okio.FileSystem
 import okio.Path
-import okio.Path.Companion.toOkioPath
 import java.io.RandomAccessFile
 import java.nio.file.Paths
 import java.text.DecimalFormat
@@ -73,31 +69,6 @@ object DesktopFileUtils : FileUtils {
             pasteCoordinate.pasteId.toString(),
             fileName,
         ).pathString
-    }
-
-    override fun getFileInfoTree(path: Path): FileInfoTree {
-        return if (path.isDirectory) {
-            getDirFileInfoTree(path)
-        } else {
-            getSingleFileInfoTree(path)
-        }
-    }
-
-    private fun getDirFileInfoTree(path: Path): FileInfoTree {
-        val builder = FileInfoTreeBuilder()
-        path.toFile().listFiles()?.let {
-            for (file in it.sortedBy { file -> file.name }) {
-                val fileTree = getFileInfoTree(file.toOkioPath())
-                builder.addFileInfoTree(file.name, fileTree)
-            }
-        }
-        return builder.build(path)
-    }
-
-    private fun getSingleFileInfoTree(path: Path): FileInfoTree {
-        val size = getFileSize(path)
-        val hash = getFileHash(path)
-        return SingleFileInfoTree(size, hash)
     }
 
     override fun getFileSize(path: Path): Long {

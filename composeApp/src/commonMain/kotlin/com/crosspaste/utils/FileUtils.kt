@@ -4,7 +4,9 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FileInfoTree
+import com.crosspaste.presist.FileInfoTreeBuilder
 import com.crosspaste.presist.FilesChunk
+import com.crosspaste.presist.SingleFileInfoTree
 import io.ktor.utils.io.*
 import okio.FileSystem
 import okio.Path
@@ -71,7 +73,31 @@ interface FileUtils {
         return userDataPathProvider.resolve(basePath, fileRelativePath, isFile = isFile)
     }
 
-    fun getFileInfoTree(path: Path): FileInfoTree
+    fun getFileInfoTree(path: Path): FileInfoTree {
+        return if (path.isDirectory) {
+            getDirFileInfoTree(path)
+        } else {
+            getSingleFileInfoTree(path)
+        }
+    }
+
+    private fun getDirFileInfoTree(path: Path): FileInfoTree {
+        val builder = FileInfoTreeBuilder()
+
+        FileSystem.SYSTEM.list(path).sorted().forEach { childPath ->
+            val fileName = childPath.name
+            val fileTree = getFileInfoTree(childPath)
+            builder.addFileInfoTree(fileName, fileTree)
+        }
+
+        return builder.build(path)
+    }
+
+    private fun getSingleFileInfoTree(path: Path): FileInfoTree {
+        val size = getFileSize(path)
+        val hash = getFileHash(path)
+        return SingleFileInfoTree(size, hash)
+    }
 
     fun getFileSize(path: Path): Long
 
