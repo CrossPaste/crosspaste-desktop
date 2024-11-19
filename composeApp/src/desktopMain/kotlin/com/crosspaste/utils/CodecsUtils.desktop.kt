@@ -22,14 +22,6 @@ object DesktopCodecsUtils : CodecsUtils {
         return Base64.getDecoder().decode(string)
     }
 
-    override fun base64mimeEncode(bytes: ByteArray): String {
-        return Base64.getMimeEncoder().encodeToString(bytes)
-    }
-
-    override fun base64mimeDecode(string: String): ByteArray {
-        return Base64.getMimeDecoder().decode(string)
-    }
-
     override fun hashByArray(array: Array<String>): String {
         if (array.isEmpty()) {
             throw IllegalArgumentException("Array is empty")

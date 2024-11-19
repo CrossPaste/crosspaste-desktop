@@ -20,10 +20,6 @@ interface CodecsUtils {
 
     fun base64Decode(string: String): ByteArray
 
-    fun base64mimeEncode(bytes: ByteArray): String
-
-    fun base64mimeDecode(string: String): ByteArray
-
     fun hash(bytes: ByteArray): String {
         val (hash1, hash2) = CROSSPASTE_HASH.hash128x64(bytes)
         return buildString(32) {
