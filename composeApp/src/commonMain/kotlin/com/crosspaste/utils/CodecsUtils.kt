@@ -1,8 +1,10 @@
 package com.crosspaste.utils
 
+import dev.whyoleg.cryptography.operations.Hasher
 import io.ktor.utils.io.core.*
 import okio.Path
 import okio.buffer
+import okio.use
 
 expect fun getCodecsUtils(): CodecsUtils
 
@@ -15,6 +17,8 @@ val CROSSPASTE_HASH = MurmurHash3(CROSS_PASTE_SEED)
 interface CodecsUtils {
 
     val fileUtils: FileUtils
+
+    val sha256: Hasher
 
     fun base64Encode(bytes: ByteArray): String
 
@@ -54,7 +58,22 @@ interface CodecsUtils {
 
     fun hashByArray(array: Array<String>): String
 
-    fun sha256(path: Path): String
+    @OptIn(ExperimentalStdlibApi::class)
+    fun sha256(path: Path): String {
+        val sha256Hasher = sha256.createHashFunction()
+        val bufferSize = fileUtils.fileBufferSize
+        val buffer = ByteArray(bufferSize)
+
+        fileUtils.fileSystem.source(path).buffer().use { bufferedSource ->
+            while (true) {
+                val bytesRead = bufferedSource.read(buffer, 0, bufferSize)
+                if (bytesRead == -1) break
+                sha256Hasher.update(buffer, 0, bytesRead)
+            }
+        }
+        val hash = sha256Hasher.hashToByteArray()
+        return hash.toHexString()
+    }
 
     fun StringBuilder.appendHex(value: ULong) {
         for (i in 0 until 8) {

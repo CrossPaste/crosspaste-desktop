@@ -1,9 +1,8 @@
 package com.crosspaste.utils
 
-import okio.Path
+import dev.whyoleg.cryptography.CryptographyProvider
+import dev.whyoleg.cryptography.algorithms.SHA256
 import java.io.ByteArrayOutputStream
-import java.io.FileInputStream
-import java.security.MessageDigest
 import java.util.Base64
 
 actual fun getCodecsUtils(): CodecsUtils {
@@ -13,6 +12,10 @@ actual fun getCodecsUtils(): CodecsUtils {
 object DesktopCodecsUtils : CodecsUtils {
 
     override val fileUtils: FileUtils = getFileUtils()
+
+    private val provider = CryptographyProvider.Default
+
+    override val sha256 = provider.get(SHA256).hasher()
 
     override fun base64Encode(bytes: ByteArray): String {
         return Base64.getEncoder().encodeToString(bytes)
@@ -35,18 +38,5 @@ object DesktopCodecsUtils : CodecsUtils {
             }
             return hash(outputStream.toByteArray())
         }
-    }
-
-    override fun sha256(path: Path): String {
-        val buffer = ByteArray(8192) // 8KB buffer
-        val digest = MessageDigest.getInstance("SHA-256")
-        var bytesRead: Int
-
-        FileInputStream(path.toFile()).use { fis ->
-            while (fis.read(buffer).also { bytesRead = it } != -1) {
-                digest.update(buffer, 0, bytesRead)
-            }
-        }
-        return digest.digest().joinToString("") { "%02x".format(it) }
     }
 }
