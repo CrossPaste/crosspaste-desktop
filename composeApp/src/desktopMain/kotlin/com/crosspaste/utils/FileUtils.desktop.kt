@@ -9,7 +9,6 @@ import io.ktor.utils.io.*
 import okio.FileSystem
 import okio.Path
 import okio.Path.Companion.toOkioPath
-import java.io.File
 import java.io.RandomAccessFile
 import java.nio.file.Paths
 import java.text.DecimalFormat
@@ -27,8 +26,6 @@ object DesktopFileUtils : FileUtils {
     private val dateUtils = getDateUtils()
 
     override val fileSystem: FileSystem = FileSystem.SYSTEM
-
-    override val separator: String = File.separator
 
     override val fileBufferSize: Int = 8192 * 10
 
