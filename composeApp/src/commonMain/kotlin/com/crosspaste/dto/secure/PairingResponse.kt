@@ -13,9 +13,7 @@ data class PairingResponse(
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as PairingResponse
+        if (other !is PairingResponse) return false
 
         if (!signPublicKey.contentEquals(other.signPublicKey)) return false
         if (!cryptPublicKey.contentEquals(other.cryptPublicKey)) return false

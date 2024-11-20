@@ -11,9 +11,7 @@ open class PasteCoordinate(
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as PasteCoordinate
+        if (other !is PasteCoordinate) return false
 
         if (pasteId != other.pasteId) return false
         if (appInstanceId != other.appInstanceId) return false
@@ -50,10 +48,8 @@ open class PasteFileCoordinate(
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
+        if (other !is PasteFileCoordinate) return false
         if (!super.equals(other)) return false
-
-        other as PasteFileCoordinate
 
         if (pasteId != other.pasteId) return false
         if (appInstanceId != other.appInstanceId) return false
@@ -95,10 +91,8 @@ class PasteFileInfoTreeCoordinate(
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
+        if (other !is PasteFileInfoTreeCoordinate) return false
         if (!super.equals(other)) return false
-
-        other as PasteFileInfoTreeCoordinate
 
         if (pasteId != other.pasteId) return false
         if (appInstanceId != other.appInstanceId) return false
