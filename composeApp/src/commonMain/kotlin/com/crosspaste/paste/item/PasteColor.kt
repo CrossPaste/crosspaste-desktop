@@ -12,7 +12,13 @@ interface PasteColor {
 
     fun getAlpha(): Int = ((color shr 24) and 0xFF).toInt()
 
-    fun toHexString(): String = String.format("#%02X%02X%02X", getRed(), getGreen(), getBlue())
+    fun toHexString(): String =
+        buildString {
+            append('#')
+            append(getRed().toString(16).padStart(2, '0').uppercase())
+            append(getGreen().toString(16).padStart(2, '0').uppercase())
+            append(getBlue().toString(16).padStart(2, '0').uppercase())
+        }
 
     fun toRGBString(): String = "rgb(${getRed()}, ${getGreen()}, ${getBlue()})"
 

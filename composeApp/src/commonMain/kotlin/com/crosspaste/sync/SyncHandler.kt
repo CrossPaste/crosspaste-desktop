@@ -48,7 +48,6 @@ class SyncHandler(
 
     private val syncHandlerScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
-    @Volatile
     var compatibility: Boolean =
         !checker.hasApiCompatibilityChangesBetween(
             appInfo.appVersion,
