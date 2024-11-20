@@ -6,6 +6,7 @@ import com.crosspaste.platform.getPlatform
 import com.crosspaste.platform.windows.api.User32
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.sound.SoundService
+import com.crosspaste.utils.DesktopControlUtils
 import com.crosspaste.utils.cpuDispatcher
 import com.crosspaste.utils.getControlUtils
 import com.sun.jna.Pointer
@@ -36,7 +37,7 @@ class WindowsPasteboardService(
 ) : AbstractPasteboardService(), User32.WNDPROC {
     override val logger: KLogger = KotlinLogging.logger {}
 
-    private val controlUtils = getControlUtils()
+    private val controlUtils = getControlUtils() as DesktopControlUtils
 
     @Volatile
     private var existNew = false

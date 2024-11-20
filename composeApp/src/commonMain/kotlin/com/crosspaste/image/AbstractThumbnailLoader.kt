@@ -6,10 +6,10 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.PlatformLock
 import com.crosspaste.utils.fileNameRemoveExtension
 import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.noOptionParent
 import io.github.oshai.kotlinlogging.KLogger
 import io.ktor.util.collections.*
 import okio.Path
-import okio.Path.Companion.toOkioPath
 
 abstract class AbstractThumbnailLoader(
     private val userDataPathProvider: UserDataPathProvider,
@@ -42,9 +42,8 @@ abstract class AbstractThumbnailLoader(
         val thumbnailName = "thumbnail_${pasteFileCoordinate.filePath.fileNameRemoveExtension}.png"
 
         return userDataPathProvider.resolve(basePath, relativePath, autoCreate = true, isFile = true)
-            .toNioPath()
-            .resolveSibling(thumbnailName)
-            .toOkioPath()
+            .noOptionParent
+            .resolve(thumbnailName)
     }
 
     override fun getOriginMetaPath(pasteFileCoordinate: PasteFileCoordinate): Path {
@@ -57,9 +56,8 @@ abstract class AbstractThumbnailLoader(
         val metaProperties = "meta_${pasteFileCoordinate.filePath.fileNameRemoveExtension}.properties"
 
         return userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
-            .toNioPath()
-            .resolveSibling(metaProperties)
-            .toOkioPath()
+            .noOptionParent
+            .resolve(metaProperties)
     }
 
     override fun convertToKey(value: PasteFileCoordinate): String {

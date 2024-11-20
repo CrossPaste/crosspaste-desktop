@@ -93,7 +93,7 @@ object DesktopFileUtils : FileUtils {
         path: Path,
         byteReadChannel: ByteReadChannel,
     ) {
-        val buffer = ByteArray(8192 * 10)
+        val buffer = ByteArray(fileBufferSize)
         path.toFile().outputStream().use { outputStream ->
             while (true) {
                 val readSize = byteReadChannel.readAvailable(buffer)
@@ -109,7 +109,7 @@ object DesktopFileUtils : FileUtils {
         filesChunk: FilesChunk,
         byteReadChannel: ByteReadChannel,
     ) {
-        val buffer = ByteArray(8192 * 10)
+        val buffer = ByteArray(fileBufferSize)
         filesChunk.fileChunks.forEach { fileChunk ->
             val file = fileChunk.path.toFile()
             val offset = fileChunk.offset

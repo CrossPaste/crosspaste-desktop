@@ -8,6 +8,7 @@ import dev.whyoleg.cryptography.algorithms.EC
 import dev.whyoleg.cryptography.algorithms.ECDH
 import dev.whyoleg.cryptography.algorithms.ECDSA
 import dev.whyoleg.cryptography.algorithms.SHA256
+import io.ktor.utils.io.core.toByteArray
 
 object CryptographyUtils {
 

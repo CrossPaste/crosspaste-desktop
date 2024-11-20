@@ -5,11 +5,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.datetime.Clock
 
-fun getControlUtils(): ControlUtils {
-    return ControlUtils
-}
+expect fun getControlUtils(): ControlUtils
 
-object ControlUtils {
+interface ControlUtils {
 
     suspend fun <T> ensureMinExecutionTime(
         delayTime: Int = 20,
@@ -44,61 +42,27 @@ object ControlUtils {
         }
         return result
     }
+}
 
-    fun <T> blockEnsureMinExecutionTime(
-        delayTime: Int = 20,
-        action: () -> T,
-    ): T {
-        val start = Clock.System.now().toEpochMilliseconds()
-        val result = action()
-        val end = Clock.System.now().toEpochMilliseconds()
+fun <T> Flow<T>.equalDebounce(
+    durationMillis: Long,
+    isEqual: (T, T) -> Boolean = { a, b -> a == b },
+): Flow<T> =
+    flow {
+        var lastItem: T? = null
+        var lastEmitTime: Long = 0
 
-        val remainingDelay = delayTime + start - end
+        collect { value ->
+            val currentTime = Clock.System.now().toEpochMilliseconds()
+            val shouldEmit =
+                lastItem?.let { last ->
+                    !isEqual(last, value) || (currentTime - lastEmitTime) >= durationMillis
+                } != false
 
-        if (remainingDelay > 0) {
-            Thread.sleep(remainingDelay)
-        }
-        return result
-    }
-
-    fun <T> blockExponentialBackoffUntilValid(
-        initTime: Long,
-        maxTime: Long,
-        isValidResult: (T) -> Boolean,
-        action: () -> T,
-    ): T {
-        var result = action()
-        var sum = 0L
-        var waiting = initTime
-        while (!isValidResult(result) && sum < maxTime) {
-            Thread.sleep(waiting)
-            sum += waiting
-            waiting *= 2
-            result = action()
-        }
-        return result
-    }
-
-    fun <T> Flow<T>.equalDebounce(
-        durationMillis: Long,
-        isEqual: (T, T) -> Boolean = { a, b -> a == b },
-    ): Flow<T> =
-        flow {
-            var lastItem: T? = null
-            var lastEmitTime: Long = 0
-
-            collect { value ->
-                val currentTime = Clock.System.now().toEpochMilliseconds()
-                val shouldEmit =
-                    lastItem?.let { last ->
-                        !isEqual(last, value) || (currentTime - lastEmitTime) >= durationMillis
-                    } != false
-
-                if (shouldEmit) {
-                    lastItem = value
-                    lastEmitTime = currentTime
-                    emit(value)
-                }
+            if (shouldEmit) {
+                lastItem = value
+                lastEmitTime = currentTime
+                emit(value)
             }
         }
-}
+    }
