@@ -10,6 +10,8 @@ import com.crosspaste.presist.SingleFileInfoTree
 import io.ktor.utils.io.*
 import okio.FileSystem
 import okio.Path
+import okio.buffer
+import okio.use
 
 expect fun getFileUtils(): FileUtils
 
@@ -84,7 +86,7 @@ interface FileUtils {
     private fun getDirFileInfoTree(path: Path): FileInfoTree {
         val builder = FileInfoTreeBuilder()
 
-        FileSystem.SYSTEM.list(path).sorted().forEach { childPath ->
+        fileSystem.list(path).sorted().forEach { childPath ->
             val fileName = childPath.name
             val fileTree = getFileInfoTree(childPath)
             builder.addFileInfoTree(fileName, fileTree)
@@ -101,7 +103,24 @@ interface FileUtils {
 
     fun getFileSize(path: Path): Long
 
-    fun getFileHash(path: Path): String
+    fun getFileHash(path: Path): String {
+        val streamingMurmurHash3 = StreamingMurmurHash3(CROSS_PASTE_SEED)
+        val buffer = ByteArray(fileBufferSize)
+
+        fileSystem.source(path).buffer().use { bufferedSource ->
+            while (true) {
+                val bytesRead = bufferedSource.read(buffer, 0, fileBufferSize)
+                if (bytesRead == -1) break
+                streamingMurmurHash3.update(buffer, 0, bytesRead)
+            }
+        }
+
+        val (hash1, hash2) = streamingMurmurHash3.finish()
+        return buildString(32) {
+            appendHex(hash1)
+            appendHex(hash2)
+        }
+    }
 
     fun existFile(path: Path): Boolean {
         return fileSystem.exists(path)

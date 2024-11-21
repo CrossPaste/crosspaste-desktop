@@ -17,8 +17,6 @@ actual fun getFileUtils(): FileUtils {
 
 object DesktopFileUtils : FileUtils {
 
-    private val codecsUtils = getCodecsUtils()
-
     private val dateUtils = getDateUtils()
 
     override val fileSystem: FileSystem = FileSystem.SYSTEM
@@ -73,10 +71,6 @@ object DesktopFileUtils : FileUtils {
 
     override fun getFileSize(path: Path): Long {
         return path.toFile().length()
-    }
-
-    override fun getFileHash(path: Path): String {
-        return codecsUtils.hash(path)
     }
 
     override fun createEmptyPasteFile(

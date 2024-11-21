@@ -33,23 +33,7 @@ interface CodecsUtils {
     }
 
     fun hash(path: Path): String {
-        val streamingMurmurHash3 = StreamingMurmurHash3(CROSS_PASTE_SEED)
-        val bufferSize = fileUtils.fileBufferSize
-        val buffer = ByteArray(bufferSize)
-
-        fileUtils.fileSystem.source(path).buffer().use { bufferedSource ->
-            while (true) {
-                val bytesRead = bufferedSource.read(buffer, 0, bufferSize)
-                if (bytesRead == -1) break
-                streamingMurmurHash3.update(buffer, 0, bytesRead)
-            }
-        }
-
-        val (hash1, hash2) = streamingMurmurHash3.finish()
-        return buildString(32) {
-            appendHex(hash1)
-            appendHex(hash2)
-        }
+        return fileUtils.getFileHash(path)
     }
 
     fun hashByString(string: String): String {
@@ -73,13 +57,5 @@ interface CodecsUtils {
         }
         val hash = sha256Hasher.hashToByteArray()
         return hash.toHexString()
-    }
-
-    fun StringBuilder.appendHex(value: ULong) {
-        for (i in 0 until 8) {
-            val byte = (value shr i * 8).toByte()
-            append(HEX_DIGITS[(byte.toInt() shr 4) and 0xf])
-            append(HEX_DIGITS[byte.toInt() and 0xf])
-        }
     }
 }
