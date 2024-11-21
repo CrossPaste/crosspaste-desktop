@@ -1,6 +1,5 @@
 package com.crosspaste.utils
 
-import com.crosspaste.utils.DesktopCodecsUtils.appendHex
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
