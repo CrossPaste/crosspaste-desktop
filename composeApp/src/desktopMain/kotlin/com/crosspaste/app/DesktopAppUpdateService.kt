@@ -60,7 +60,7 @@ class DesktopAppUpdateService(
     }
 
     override fun existNewVersion(): Boolean {
-        return lastVersion?.let { it > currentVersion } ?: false
+        return lastVersion?.let { it > currentVersion } == true
     }
 
     override fun start() {

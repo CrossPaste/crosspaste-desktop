@@ -40,16 +40,14 @@ class DevelopmentPlatformUserDataPathProvider : PlatformUserDataPathProvider {
     private val development = DesktopResourceUtils.loadProperties("development.properties")
 
     override fun getUserDefaultStoragePath(): Path {
-        development.getProperty("pasteUserPath")?.let {
+        return development.getProperty("pasteUserPath")?.let {
             val path = it.toPath(normalize = true)
             if (path.isAbsolute) {
-                return path
+                path
             } else {
-                return composeAppDir.toPath().resolve(it)
+                composeAppDir.toPath().resolve(it)
             }
-        } ?: run {
-            return composeAppDir.toPath()
-        }
+        } ?: composeAppDir.toPath()
     }
 }
 

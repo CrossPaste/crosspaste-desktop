@@ -38,11 +38,7 @@ class PasteCollection : RealmObject {
                 return when (it.type) {
                     RealmAny.Type.OBJECT -> {
                         val asRealmObject = anyValue.asRealmObject<RealmObject>()
-                        if (asRealmObject is PasteItem) {
-                            asRealmObject
-                        } else {
-                            null
-                        }
+                        asRealmObject as? PasteItem
                     }
                     else -> null
                 }

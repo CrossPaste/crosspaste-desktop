@@ -42,7 +42,7 @@ class MurmurHash3(private val seed: UInt = 0u) {
         return h
     }
 
-    public fun hash128x86(key: ByteArray): Array<UInt> {
+    fun hash128x86(key: ByteArray): Array<UInt> {
         var h1 = seed
         var h2 = seed
         var h3 = seed

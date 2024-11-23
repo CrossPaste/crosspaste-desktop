@@ -51,7 +51,7 @@ class DesktopShortcutKeysLoader(
                     (
                         map[info.code]?.match?.let { match ->
                             match(event)
-                        } ?: false
+                        } == true
                     )
                 }
             }
