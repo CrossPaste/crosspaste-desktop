@@ -112,7 +112,9 @@ class GeneralSyncManager(
                     withContext(mainDispatcher) {
                         _realTimeSyncRuntimeInfos.value = changes.list
                         _ignoreVerifySet.update { set ->
-                            set.filter { it in changes.list.map { it.appInstanceId } }.toSet()
+                            set.filter {
+                                it in changes.list.map { info -> info.appInstanceId }
+                            }.toSet()
                         }
                         if (changes.insertions.isNotEmpty() || changes.deletions.isNotEmpty()) {
                             deviceManager.refresh()

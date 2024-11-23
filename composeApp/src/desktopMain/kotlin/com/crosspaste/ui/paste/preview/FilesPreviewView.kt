@@ -33,7 +33,7 @@ fun FilesPreviewView(
         val pasteMenuService = koinInject<DesktopPasteMenuService>()
         val userDataPathProvider = koinInject<UserDataPathProvider>()
         val pasteFilePaths = it.getFilePaths(userDataPathProvider)
-        val fileInfoTree = it.getFileInfoTreeMap()
+        val fileInfoTreeMap = it.getFileInfoTreeMap()
         val fileUtils = getFileUtils()
 
         PasteSpecificPreviewContentView(
@@ -53,7 +53,7 @@ fun FilesPreviewView(
                     items(pasteFilePaths.size) { index ->
                         val itemWidthSize = if (pasteFilePaths.size > 1) appSize.mainPasteSize.width / 2 else appSize.mainPasteSize.width
                         val filepath = pasteFilePaths[index]
-                        val fileInfoTree = fileInfoTree[filepath.name]!!
+                        val fileInfoTree = fileInfoTreeMap[filepath.name]!!
                         val isImage by remember(filepath) { mutableStateOf(fileUtils.canPreviewImage(filepath.extension)) }
 
                         PasteContextMenuView(

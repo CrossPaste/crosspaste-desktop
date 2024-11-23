@@ -24,15 +24,14 @@ data class AppVersionInfo(
 )
 
 class VersionCompatibilityChecker(private val versionInfos: Map<String, AppVersionInfo>) {
-    private val sortedVersions: List<String>
-    private val versionIndexMap: Map<String, Int>
-    private val apiCompatibilityChanges: List<Boolean>
-
-    init {
-        sortedVersions = versionInfos.keys.sortedBy { Version.parse(it) }
-        versionIndexMap = sortedVersions.withIndex().associate { it.value to it.index }
-        apiCompatibilityChanges = sortedVersions.map { versionInfos[it]?.hasApiCompatibilityChanges ?: false }
-    }
+    private val sortedVersions: List<String> = versionInfos.keys.sortedBy { Version.parse(it) }
+    private val versionIndexMap: Map<String, Int> =
+        sortedVersions.withIndex()
+            .associate { it.value to it.index }
+    private val apiCompatibilityChanges: List<Boolean> =
+        sortedVersions.map {
+            versionInfos[it]?.hasApiCompatibilityChanges == true
+        }
 
     fun hasApiCompatibilityChangesBetween(
         version1: String,
