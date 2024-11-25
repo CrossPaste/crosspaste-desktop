@@ -16,10 +16,10 @@ import com.crosspaste.presist.FilesIndexBuilder
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.realm.task.PasteTask
+import com.crosspaste.realm.task.PullExtraInfo
 import com.crosspaste.realm.task.TaskType
 import com.crosspaste.sound.SoundService
 import com.crosspaste.sync.SyncManager
-import com.crosspaste.task.extra.PullExtraInfo
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.TaskUtils

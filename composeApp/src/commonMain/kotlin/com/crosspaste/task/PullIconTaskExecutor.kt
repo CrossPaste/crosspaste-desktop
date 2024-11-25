@@ -7,10 +7,10 @@ import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteRealm
+import com.crosspaste.realm.task.BaseExtraInfo
 import com.crosspaste.realm.task.PasteTask
 import com.crosspaste.realm.task.TaskType
 import com.crosspaste.sync.SyncManager
-import com.crosspaste.task.extra.BaseExtraInfo
 import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.buildUrl

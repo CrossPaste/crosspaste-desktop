@@ -7,9 +7,9 @@ import com.crosspaste.net.clientapi.SendPasteClientApi
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.realm.task.PasteTask
+import com.crosspaste.realm.task.SyncExtraInfo
 import com.crosspaste.realm.task.TaskType
 import com.crosspaste.sync.SyncManager
-import com.crosspaste.task.extra.SyncExtraInfo
 import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.getJsonUtils

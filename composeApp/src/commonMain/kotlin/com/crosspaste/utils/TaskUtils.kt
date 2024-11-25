@@ -1,12 +1,12 @@
 package com.crosspaste.utils
 
 import com.crosspaste.net.clientapi.FailureResult
+import com.crosspaste.realm.task.BaseExtraInfo
 import com.crosspaste.realm.task.ExecutionHistory
 import com.crosspaste.realm.task.PasteTask
 import com.crosspaste.realm.task.PasteTaskExtraInfo
 import com.crosspaste.realm.task.TaskStatus
 import com.crosspaste.task.FailurePasteTaskResult
-import com.crosspaste.task.extra.BaseExtraInfo
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.datetime.Clock
 import kotlinx.serialization.InternalSerializationApi

@@ -2,7 +2,8 @@ package com.crosspaste.realm.task
 
 import kotlinx.serialization.Serializable
 
-interface PasteTaskExtraInfo {
+@Serializable
+sealed interface PasteTaskExtraInfo {
 
     val executionHistories: MutableList<ExecutionHistory>
 }
