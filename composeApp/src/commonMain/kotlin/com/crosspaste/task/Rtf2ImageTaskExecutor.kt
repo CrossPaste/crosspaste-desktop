@@ -5,10 +5,10 @@ import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.paste.item.PasteRtf
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteRealm
+import com.crosspaste.realm.task.BaseExtraInfo
 import com.crosspaste.realm.task.PasteTask
 import com.crosspaste.realm.task.TaskType
 import com.crosspaste.rendering.RenderingService
-import com.crosspaste.task.extra.BaseExtraInfo
 import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging

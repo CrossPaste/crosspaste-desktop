@@ -12,11 +12,11 @@ import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.SingleFileInfoTree
 import com.crosspaste.realm.paste.PasteCollection
 import com.crosspaste.realm.paste.PasteLabel
+import com.crosspaste.realm.task.BaseExtraInfo
 import com.crosspaste.realm.task.PasteTaskExtraInfo
+import com.crosspaste.realm.task.PullExtraInfo
+import com.crosspaste.realm.task.SyncExtraInfo
 import com.crosspaste.serializer.Base64ByteArraySerializer
-import com.crosspaste.task.extra.BaseExtraInfo
-import com.crosspaste.task.extra.PullExtraInfo
-import com.crosspaste.task.extra.SyncExtraInfo
 import io.realm.kotlin.serializers.MutableRealmIntKSerializer
 import io.realm.kotlin.serializers.RealmAnyKSerializer
 import io.realm.kotlin.types.RealmObject

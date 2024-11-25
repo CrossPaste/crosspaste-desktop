@@ -12,9 +12,9 @@ import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.realm.task.SyncExtraInfo
 import com.crosspaste.realm.task.TaskType
 import com.crosspaste.task.TaskExecutor
-import com.crosspaste.task.extra.SyncExtraInfo
 import com.crosspaste.utils.LoggerExtension.logExecutionTime
 import com.crosspaste.utils.LoggerExtension.logSuspendExecutionTime
 import com.crosspaste.utils.TaskUtils
