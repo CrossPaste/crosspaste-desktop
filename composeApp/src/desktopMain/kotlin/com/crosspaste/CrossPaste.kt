@@ -93,9 +93,9 @@ import com.crosspaste.net.routing.SyncRoutingApi
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.notification.ToastManager
 import com.crosspaste.paste.CacheManager
-import com.crosspaste.paste.CacheManagerImpl
 import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.DefaultPasteSyncProcessManager
+import com.crosspaste.paste.DesktopCacheManager
 import com.crosspaste.paste.DesktopCurrentPaste
 import com.crosspaste.paste.DesktopPasteIDGeneratorFactory
 import com.crosspaste.paste.DesktopPasteMenuService
@@ -262,7 +262,7 @@ class CrossPaste {
                     single<AppStartUpService> { DesktopAppStartUpService(get(), get()) }
                     single<AppUpdateService> { DesktopAppUpdateService(get(), get(), get(), get(), get()) }
                     single<AppUrls> { DesktopAppUrls }
-                    single<CacheManager> { CacheManagerImpl(get(), get()) }
+                    single<CacheManager> { DesktopCacheManager(get(), get()) }
                     single<ConfigManager> { configManager }
                     single<CrossPasteLogger> { crossPasteLogger }
                     single<DeviceUtils> { DesktopDeviceUtils }
