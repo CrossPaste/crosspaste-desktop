@@ -15,6 +15,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,11 +35,13 @@ fun SearchNearByDevices() {
     val copywriter = koinInject<GlobalCopywriter>()
     val deviceManager = koinInject<DeviceManager>()
 
+    val searching by deviceManager.searching.collectAsState()
+
     val offsetX = remember { Animatable(0f) }
     val offsetY = remember { Animatable(0f) }
 
-    LaunchedEffect(deviceManager.searching) {
-        if (deviceManager.searching) {
+    LaunchedEffect(searching) {
+        if (searching) {
             while (true) {
                 launch {
                     offsetX.animateTo(

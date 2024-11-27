@@ -1,9 +1,5 @@
 package com.crosspaste.sync
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import com.crosspaste.app.AppInfo
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dto.sync.SyncInfo
@@ -11,6 +7,10 @@ import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
 import com.crosspaste.realm.sync.createSyncRuntimeInfo
 import com.crosspaste.utils.getJsonUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 class DeviceManager(
     private val appInfo: AppInfo,
@@ -23,11 +23,14 @@ class DeviceManager(
 
     private val jsonUtils = getJsonUtils()
 
-    var searching by mutableStateOf(false)
+    private val _searching = MutableStateFlow<Boolean>(false)
 
-    private val allSyncInfos: MutableMap<String, SyncInfo> = mutableMapOf()
+    val searching: StateFlow<Boolean> = _searching.asStateFlow()
 
-    var syncInfos: MutableList<SyncInfo> = mutableStateListOf()
+    private val _allSyncInfos = MutableStateFlow<Map<String, SyncInfo>>(mapOf())
+
+    private val _syncInfos = MutableStateFlow<List<SyncInfo>>(listOf())
+    override val syncInfos = _syncInfos.asStateFlow()
 
     private val isSelf: (String) -> Boolean = { appInstanceId ->
         appInstanceId == appInfo.appInstanceId
@@ -47,18 +50,30 @@ class DeviceManager(
     }
 
     fun refresh() {
-        searching = true
+        _searching.value = true
         try {
-            syncInfos.clear()
+            val currentAllSyncInfos = _allSyncInfos.value
+
+            // Handle existing sync infos
             val existSyncRuntimeInfos =
-                allSyncInfos.filter { !isNew(it.key) }
+                currentAllSyncInfos
+                    .filter { !isNew(it.key) }
                     .map { createSyncRuntimeInfo(it.value) }
+
             if (existSyncRuntimeInfos.isNotEmpty()) {
                 syncManager.refresh(syncRuntimeInfoRealm.update(existSyncRuntimeInfos))
             }
-            syncInfos.addAll(allSyncInfos.filter { isNew(it.key) && !isBlackListed(it.key) }.values)
+
+            // Update syncInfos with new, non-blacklisted devices
+            val newSyncInfos =
+                currentAllSyncInfos
+                    .filter { isNew(it.key) && !isBlackListed(it.key) }
+                    .values
+                    .toList()
+
+            _syncInfos.value = newSyncInfos
         } finally {
-            searching = false
+            _searching.value = false
         }
     }
 
@@ -66,7 +81,9 @@ class DeviceManager(
         val appInstanceId = syncInfo.appInfo.appInstanceId
         logger.debug { "Service resolved: $syncInfo" }
         if (!isSelf(appInstanceId)) {
-            allSyncInfos[appInstanceId] = syncInfo
+            _allSyncInfos.update { current ->
+                current + (appInstanceId to syncInfo)
+            }
             refresh()
         }
     }
@@ -74,7 +91,9 @@ class DeviceManager(
     override fun removeDevice(syncInfo: SyncInfo) {
         val appInstanceId = syncInfo.appInfo.appInstanceId
         logger.debug { "Service removed: $syncInfo" }
-        allSyncInfos.remove(appInstanceId)
+        _allSyncInfos.update { current ->
+            current - appInstanceId
+        }
         refresh()
     }
 }
