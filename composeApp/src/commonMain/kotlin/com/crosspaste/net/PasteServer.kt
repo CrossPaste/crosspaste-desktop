@@ -9,7 +9,7 @@ class PasteServer<TEngine : ApplicationEngine, TConfiguration : ApplicationEngin
     private val readWritePort: ReadWriteConfig<Int>,
     private val serverFactory: ServerFactory<TEngine, TConfiguration>,
     private val serverModule: ServerModule,
-) {
+) : Server {
 
     private val logger = KotlinLogging.logger {}
 
@@ -29,7 +29,7 @@ class PasteServer<TEngine : ApplicationEngine, TConfiguration : ApplicationEngin
         }
     }
 
-    fun start(): PasteServer<TEngine, TConfiguration> {
+    override fun start() {
         try {
             server.start(wait = false)
         } catch (e: Exception) {
@@ -44,14 +44,13 @@ class PasteServer<TEngine : ApplicationEngine, TConfiguration : ApplicationEngin
             readWritePort.setValue(port)
         }
         logger.info { "Server started at port $port" }
-        return this
     }
 
-    fun stop() {
+    override fun stop() {
         server.stop()
     }
 
-    fun port(): Int {
+    override fun port(): Int {
         return port
     }
 }
