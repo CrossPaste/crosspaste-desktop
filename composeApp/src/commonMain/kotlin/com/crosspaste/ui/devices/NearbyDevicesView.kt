@@ -4,7 +4,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.crosspaste.sync.DeviceManager
 import org.koin.compose.koinInject
@@ -13,9 +14,11 @@ import org.koin.compose.koinInject
 fun NearbyDevicesView() {
     val deviceManager = koinInject<DeviceManager>()
 
-    val nearbyDevicesList = remember { deviceManager.syncInfos }
+    val nearbyDevicesList by deviceManager.syncInfos.collectAsState()
 
-    if (deviceManager.searching) {
+    val searching by deviceManager.searching.collectAsState()
+
+    if (searching) {
         SearchNearByDevices()
     } else if (nearbyDevicesList.isEmpty()) {
         NotFoundNearByDevices()
