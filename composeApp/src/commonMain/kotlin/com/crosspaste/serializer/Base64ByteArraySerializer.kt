@@ -7,7 +7,7 @@ import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-object Base64ByteArraySerializer : KSerializer<ByteArray> {
+class Base64ByteArraySerializer : KSerializer<ByteArray> {
 
     private val codecsUtils = getCodecsUtils()
 

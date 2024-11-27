@@ -9,7 +9,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-object PasteLabelRealmSetSerializer : KSerializer<RealmSet<PasteLabel>> {
+class PasteLabelRealmSetSerializer : KSerializer<RealmSet<PasteLabel>> {
     private val delegateSerializer = SetSerializer(PasteLabel.serializer())
 
     override val descriptor: SerialDescriptor = delegateSerializer.descriptor

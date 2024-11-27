@@ -21,7 +21,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import org.mongodb.kbson.BsonObjectId
 
-object PasteDataSerializer : KSerializer<PasteData> {
+class PasteDataSerializer : KSerializer<PasteData> {
     override val descriptor: SerialDescriptor =
         buildClassSerialDescriptor("pasteData") {
             element<String>("id")
