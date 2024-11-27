@@ -5,6 +5,8 @@ import io.ktor.utils.io.core.*
 import okio.Path
 import okio.buffer
 import okio.use
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
 expect fun getCodecsUtils(): CodecsUtils
 
@@ -20,9 +22,15 @@ interface CodecsUtils {
 
     val sha256: Hasher
 
-    fun base64Encode(bytes: ByteArray): String
+    @OptIn(ExperimentalEncodingApi::class)
+    fun base64Encode(bytes: ByteArray): String {
+        return Base64.encode(bytes)
+    }
 
-    fun base64Decode(string: String): ByteArray
+    @OptIn(ExperimentalEncodingApi::class)
+    fun base64Decode(string: String): ByteArray {
+        return Base64.decode(string)
+    }
 
     fun hash(bytes: ByteArray): String {
         val (hash1, hash2) = CROSSPASTE_HASH.hash128x64(bytes)
