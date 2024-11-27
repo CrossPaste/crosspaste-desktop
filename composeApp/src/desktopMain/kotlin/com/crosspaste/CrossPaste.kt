@@ -77,6 +77,7 @@ import com.crosspaste.net.DesktopServerModule
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.net.PasteClient
 import com.crosspaste.net.PasteServer
+import com.crosspaste.net.Server
 import com.crosspaste.net.ServerFactory
 import com.crosspaste.net.ServerModule
 import com.crosspaste.net.SyncInfoFactory
@@ -325,6 +326,7 @@ class CrossPaste {
                     }
                     single<SyncRoutingApi> { get<SyncManager>() }
                     single<TelnetHelper> { TelnetHelper(get<PasteClient>()) }
+                    single<Server> { get<PasteServer<*, *>>() }
 
                     // secure component
                     single<ClientDecryptPlugin> { ClientDecryptPlugin(get()) }
@@ -471,7 +473,7 @@ class CrossPaste {
                         koin.get<PasteboardService>().start()
                     }
                     koin.get<QRCodeGenerator>()
-                    koin.get<PasteServer<*, *>>().start()
+                    koin.get<Server>().start()
                     koin.get<PasteClient>()
                     // bonjour service should be registered after paste server started
                     // only server started, bonjour service can get the port
@@ -535,7 +537,7 @@ class CrossPaste {
                         },
                         async { stopService<PasteboardService>("PasteboardService") { it.stop() } },
                         async { stopService<PasteBonjourService>("PasteBonjourService") { it.unregisterService() } },
-                        async { stopService<PasteServer<*, *>>("PasteServer") { it.stop() } },
+                        async { stopService<Server>("PasteServer") { it.stop() } },
                         async { stopService<SyncManager>("SyncManager") { it.notifyExit() } },
                         async { stopService<CleanPasteScheduler>("CleanPasteScheduler") { it.stop() } },
                         async { stopService<GlobalListener>("GlobalListener") { it.stop() } },
