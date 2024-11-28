@@ -108,6 +108,7 @@ class SyncTest : KoinTest {
                         get(),
                         get(),
                         get(),
+                        get(),
                     )
                 }
                 single<SyncClientApi> { SyncClientApi(get(), get(), get(named("clientSecureStore"))) }
