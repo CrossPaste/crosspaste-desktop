@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.net.SyncApi
+import com.crosspaste.net.VersionRelation
 import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.CrossPasteTheme.connectedColor
@@ -73,7 +73,7 @@ fun DeviceDetailContentView() {
                 Modifier.fillMaxSize()
                     .padding(16.dp),
         ) {
-            if (versionRelation != null && versionRelation != SyncApi.VersionRelation.EQUAL_TO) {
+            if (versionRelation != null && versionRelation != VersionRelation.EQUAL_TO) {
                 Column(
                     modifier =
                         Modifier.wrapContentSize()

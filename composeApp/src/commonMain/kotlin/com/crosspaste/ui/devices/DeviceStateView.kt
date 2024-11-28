@@ -3,7 +3,7 @@ package com.crosspaste.ui.devices
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import com.crosspaste.net.SyncApi
+import com.crosspaste.net.VersionRelation
 import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.realm.sync.SyncState
 import com.crosspaste.ui.CrossPasteTheme.connectedColor
@@ -34,17 +34,24 @@ fun AllowSendAndReceiveImage(syncRuntimeInfo: SyncRuntimeInfo): Painter {
 
 fun getConnectStateColorAndText(
     syncRuntimeInfo: SyncRuntimeInfo,
-    versionRelation: SyncApi.VersionRelation?,
+    versionRelation: VersionRelation?,
     refresh: Boolean,
 ): Pair<Color, String> {
     return if (refresh) {
         Pair(connectingColor(), "connecting")
     } else {
-        if (versionRelation != SyncApi.VersionRelation.EQUAL_TO) {
+        if (versionRelation != VersionRelation.EQUAL_TO) {
             // versionRelation is relation current app,
             // so LOWER_THAN means the other app is higher
             // HIGHER_THAN means the other app is lower
-            Pair(unmatchedColor(), if (versionRelation == SyncApi.VersionRelation.LOWER_THAN) "version_higher" else "version_lower")
+            Pair(
+                unmatchedColor(),
+                if (versionRelation == VersionRelation.LOWER_THAN) {
+                    "version_higher"
+                } else {
+                    "version_lower"
+                },
+            )
         } else if (syncRuntimeInfo.allowSend || syncRuntimeInfo.allowReceive) {
             when (syncRuntimeInfo.connectState) {
                 SyncState.CONNECTED -> Pair(connectedColor(), "connected")

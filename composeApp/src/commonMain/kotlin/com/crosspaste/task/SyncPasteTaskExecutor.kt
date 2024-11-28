@@ -1,7 +1,7 @@
 package com.crosspaste.task
 
 import com.crosspaste.exception.StandardErrorCode
-import com.crosspaste.net.SyncApi
+import com.crosspaste.net.VersionRelation
 import com.crosspaste.net.clientapi.ClientApiResult
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SendPasteClientApi
@@ -43,7 +43,7 @@ class SyncPasteTaskExecutor(
                 val deferredResults: MutableList<Deferred<Pair<String, ClientApiResult>>> = mutableListOf()
                 for (entryHandler in syncManager.getSyncHandlers()) {
                     if (entryHandler.value.syncRuntimeInfo.allowSend &&
-                        entryHandler.value.versionRelation == SyncApi.VersionRelation.EQUAL_TO
+                        entryHandler.value.versionRelation == VersionRelation.EQUAL_TO
                     ) {
                         val deferred =
                             ioScope.async {

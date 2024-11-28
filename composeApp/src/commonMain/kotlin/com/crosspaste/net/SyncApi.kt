@@ -65,21 +65,21 @@ object SyncApi {
             else -> VersionRelation.HIGHER_THAN
         }
     }
+}
 
-    enum class VersionRelation {
-        /**
-         * Current version is lower than the connected version
-         */
-        LOWER_THAN,
+enum class VersionRelation {
+    /**
+     * Current version is lower than the connected version
+     */
+    LOWER_THAN,
 
-        /**
-         * Current version equals the connected version
-         */
-        EQUAL_TO,
+    /**
+     * Current version equals the connected version
+     */
+    EQUAL_TO,
 
-        /**
-         * Current version is higher than the connected version
-         */
-        HIGHER_THAN,
-    }
+    /**
+     * Current version is higher than the connected version
+     */
+    HIGHER_THAN,
 }

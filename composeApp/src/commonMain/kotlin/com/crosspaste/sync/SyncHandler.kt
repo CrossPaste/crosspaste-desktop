@@ -2,9 +2,9 @@ package com.crosspaste.sync
 
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.exception.StandardErrorCode
-import com.crosspaste.net.SyncApi
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.TelnetHelper
+import com.crosspaste.net.VersionRelation
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
@@ -45,7 +45,7 @@ class SyncHandler(
 
     private val syncHandlerScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
-    var versionRelation: SyncApi.VersionRelation = SyncApi.VersionRelation.EQUAL_TO
+    var versionRelation: VersionRelation = VersionRelation.EQUAL_TO
 
     private var recommendedRefreshTime: Long = 0L
 
@@ -219,7 +219,7 @@ class SyncHandler(
                     this.connectHostAddress = hostInfo.hostAddress
                     this.connectNetworkPrefixLength = hostInfo.networkPrefixLength
                     this.connectState =
-                        if (versionRelation == SyncApi.VersionRelation.EQUAL_TO) {
+                        if (versionRelation == VersionRelation.EQUAL_TO) {
                             SyncState.CONNECTED
                         } else {
                             SyncState.INCOMPATIBLE
@@ -248,7 +248,7 @@ class SyncHandler(
                 this.connectHostAddress = hostInfo.hostAddress
                 this.connectNetworkPrefixLength = hostInfo.networkPrefixLength
                 this.connectState =
-                    if (versionRelation == SyncApi.VersionRelation.EQUAL_TO) {
+                    if (versionRelation == VersionRelation.EQUAL_TO) {
                         SyncState.CONNECTING
                     } else {
                         SyncState.INCOMPATIBLE

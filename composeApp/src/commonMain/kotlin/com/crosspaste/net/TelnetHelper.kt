@@ -1,6 +1,5 @@
 package com.crosspaste.net
 
-import com.crosspaste.net.SyncApi.VersionRelation
 import com.crosspaste.realm.sync.HostInfo
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.ioDispatcher
