@@ -23,6 +23,7 @@ class TestServerModule(
     private val secureStore: SecureStore,
     private val serverEncryptPluginFactory: ServerEncryptPluginFactory,
     private val serverDecryptionPluginFactory: ServerDecryptionPluginFactory,
+    private val syncApi: SyncApi,
     private val syncRoutingApi: SyncRoutingApi,
 ) : ServerModule {
     override fun installModules(): Application.() -> Unit =
@@ -39,6 +40,7 @@ class TestServerModule(
                     endpointInfoFactory,
                     secureKeyPairSerializer,
                     secureStore,
+                    syncApi,
                     syncRoutingApi,
                 )
             }

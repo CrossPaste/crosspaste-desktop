@@ -3,8 +3,7 @@ package com.crosspaste.ui.devices
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import com.crosspaste.app.AppInfo
-import com.crosspaste.app.VersionCompatibilityChecker
+import com.crosspaste.net.VersionRelation
 import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.realm.sync.SyncState
 import com.crosspaste.ui.CrossPasteTheme.connectedColor
@@ -34,22 +33,25 @@ fun AllowSendAndReceiveImage(syncRuntimeInfo: SyncRuntimeInfo): Painter {
 }
 
 fun getConnectStateColorAndText(
-    appInfo: AppInfo,
     syncRuntimeInfo: SyncRuntimeInfo,
-    checker: VersionCompatibilityChecker,
+    versionRelation: VersionRelation?,
     refresh: Boolean,
 ): Pair<Color, String> {
     return if (refresh) {
         Pair(connectingColor(), "connecting")
     } else {
-        val hasApiCompatibilityChangesBetween =
-            checker.hasApiCompatibilityChangesBetween(
-                appInfo.appVersion,
-                syncRuntimeInfo.appVersion,
+        if (versionRelation != VersionRelation.EQUAL_TO) {
+            // versionRelation is relation current app,
+            // so LOWER_THAN means the other app is higher
+            // HIGHER_THAN means the other app is lower
+            Pair(
+                unmatchedColor(),
+                if (versionRelation == VersionRelation.LOWER_THAN) {
+                    "version_higher"
+                } else {
+                    "version_lower"
+                },
             )
-
-        if (hasApiCompatibilityChangesBetween) {
-            Pair(unmatchedColor(), "no_compatible")
         } else if (syncRuntimeInfo.allowSend || syncRuntimeInfo.allowReceive) {
             when (syncRuntimeInfo.connectState) {
                 SyncState.CONNECTED -> Pair(connectedColor(), "connected")

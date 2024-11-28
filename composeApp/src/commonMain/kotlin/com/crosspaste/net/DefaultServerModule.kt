@@ -35,6 +35,7 @@ open class DefaultServerModule(
     private val pasteboardService: PasteboardService,
     private val secureKeyPairSerializer: SecureKeyPairSerializer,
     private val secureStore: SecureStore,
+    private val syncApi: SyncApi,
     private val syncRoutingApi: SyncRoutingApi,
     private val serverEncryptPluginFactory: ServerEncryptPluginFactory,
     private val serverDecryptionPluginFactory: ServerDecryptionPluginFactory,
@@ -67,6 +68,7 @@ open class DefaultServerModule(
                     endpointInfoFactory,
                     secureKeyPairSerializer,
                     secureStore,
+                    syncApi,
                     syncRoutingApi,
                 )
                 pasteRouting(

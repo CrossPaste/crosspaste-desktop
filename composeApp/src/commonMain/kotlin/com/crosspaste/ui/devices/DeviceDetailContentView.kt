@@ -32,8 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppWindowManager
-import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.net.VersionRelation
 import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.CrossPasteTheme.connectedColor
@@ -48,7 +48,6 @@ import org.koin.compose.koinInject
 fun DeviceDetailContentView() {
     val appInfo = koinInject<AppInfo>()
     val appWindowManager = koinInject<AppWindowManager>()
-    val checker = koinInject<VersionCompatibilityChecker>()
     val copywriter = koinInject<GlobalCopywriter>()
     val syncManager = koinInject<SyncManager>()
 
@@ -58,10 +57,12 @@ fun DeviceDetailContentView() {
         mutableStateOf(screen.context as SyncRuntimeInfo)
     }
 
-    val compatibility by remember {
-        mutableStateOf(
-            !checker.hasApiCompatibilityChangesBetween(appInfo.appVersion, syncRuntimeInfo.appVersion),
-        )
+    var syncHandler by remember(screen) {
+        mutableStateOf(syncManager.getSyncHandler(syncRuntimeInfo.appInstanceId))
+    }
+
+    var versionRelation by remember(screen) {
+        mutableStateOf(syncHandler?.versionRelation)
     }
 
     Column {
@@ -72,7 +73,7 @@ fun DeviceDetailContentView() {
                 Modifier.fillMaxSize()
                     .padding(16.dp),
         ) {
-            if (!compatibility) {
+            if (versionRelation != null && versionRelation != VersionRelation.EQUAL_TO) {
                 Column(
                     modifier =
                         Modifier.wrapContentSize()

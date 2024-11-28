@@ -95,6 +95,7 @@ class SyncTest : KoinTest {
                         get(),
                     )
                 }
+                single<SyncApi> { SyncApi }
                 single<ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>> {
                     DesktopServerFactory()
                 }
@@ -105,6 +106,7 @@ class SyncTest : KoinTest {
                         get(),
                         get(),
                         get(named("serverSecureStore")),
+                        get(),
                         get(),
                         get(),
                         get(),

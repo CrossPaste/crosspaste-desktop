@@ -8,6 +8,7 @@ import com.crosspaste.dto.secure.TrustRequest
 import com.crosspaste.dto.secure.TrustResponse
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.exception.StandardErrorCode
+import com.crosspaste.net.SyncApi
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.CryptographyUtils
@@ -26,6 +27,7 @@ fun Routing.syncRouting(
     endpointInfoFactory: EndpointInfoFactory,
     secureKeyPairSerializer: SecureKeyPairSerializer,
     secureStore: SecureStore,
+    syncApi: SyncApi,
     syncRoutingApi: SyncRoutingApi,
 ) {
     val logger = KotlinLogging.logger {}
@@ -90,7 +92,7 @@ fun Routing.syncRouting(
     }
 
     get("/sync/telnet") {
-        successResponse(call)
+        successResponse(call, syncApi.VERSION)
     }
 
     post("/sync/trust") {
