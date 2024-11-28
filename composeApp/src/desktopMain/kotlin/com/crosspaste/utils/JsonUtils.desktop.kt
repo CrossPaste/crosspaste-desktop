@@ -39,7 +39,7 @@ object DesktopJsonUtils : JsonUtils {
             serializersModule =
                 SerializersModule {
                     // use in http request
-                    serializersModuleOf(ByteArray::class, Base64ByteArraySerializer)
+                    serializersModuleOf(ByteArray::class, Base64ByteArraySerializer())
 
                     // use in paste data
                     serializersModuleOf(MutableRealmIntKSerializer)

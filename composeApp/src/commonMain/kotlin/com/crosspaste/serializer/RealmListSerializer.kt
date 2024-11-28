@@ -12,7 +12,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import okio.Path
 
-object StringRealmListSerializer : KSerializer<RealmList<String>> {
+class StringRealmListSerializer : KSerializer<RealmList<String>> {
     private val delegateSerializer = ListSerializer(String.serializer())
 
     override val descriptor: SerialDescriptor = delegateSerializer.descriptor
@@ -30,7 +30,7 @@ object StringRealmListSerializer : KSerializer<RealmList<String>> {
     }
 }
 
-object PathStringRealmListSerializer : KSerializer<RealmList<String>> {
+class PathStringRealmListSerializer : KSerializer<RealmList<String>> {
     private val delegateSerializer = ListSerializer(ListSerializer(String.serializer()))
 
     private val separator = Path.DIRECTORY_SEPARATOR
@@ -51,7 +51,7 @@ object PathStringRealmListSerializer : KSerializer<RealmList<String>> {
     }
 }
 
-object RealmAnyRealmListSerializer : KSerializer<RealmList<RealmAny>> {
+class RealmAnyRealmListSerializer : KSerializer<RealmList<RealmAny>> {
     private val delegateSerializer = ListSerializer(RealmAnyKSerializer)
 
     override val descriptor: SerialDescriptor = delegateSerializer.descriptor
