@@ -36,7 +36,6 @@ import com.crosspaste.app.DesktopAppUrls
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.app.ExitMode
-import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.app.getDesktopAppWindowManager
 import com.crosspaste.clean.CleanPasteScheduler
 import com.crosspaste.composeapp.generated.resources.Res
@@ -80,6 +79,7 @@ import com.crosspaste.net.PasteServer
 import com.crosspaste.net.Server
 import com.crosspaste.net.ServerFactory
 import com.crosspaste.net.ServerModule
+import com.crosspaste.net.SyncApi
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.clientapi.PullClientApi
@@ -280,9 +280,6 @@ class CrossPaste {
                     single<SyncInfoFactory> { SyncInfoFactory(get(), get()) }
                     single<ThumbnailLoader> { DesktopThumbnailLoader(get()) }
                     single<UserDataPathProvider> { UserDataPathProvider(get(), getPlatformPathProvider()) }
-                    single<VersionCompatibilityChecker> {
-                        get<AppInfoFactory>().createVersionCompatibilityChecker()
-                    }
 
                     // realm component
                     single<PasteRealm> { PasteRealm(get(), get(), get(), get(), lazy { get() }) }
@@ -314,18 +311,25 @@ class CrossPaste {
                     single<ServerModule> {
                         DesktopServerModule(
                             get(), get(), get(), get(), get(), get(), get(), get(),
-                            get(), get(), get(), get(),
+                            get(), get(), get(), get(), get(),
                         )
                     }
+                    single<SyncApi> { SyncApi }
                     single<SyncClientApi> { SyncClientApi(get(), get(), get()) }
                     single<SyncManager> {
                         GeneralSyncManager(
-                            get(), get(), get(), get(), get(), get(), get(), get(), get(),
+                            get(),
+                            get(),
+                            get(),
+                            get(),
+                            get(),
+                            get(),
+                            get(),
                             lazy { get() },
                         )
                     }
                     single<SyncRoutingApi> { get<SyncManager>() }
-                    single<TelnetHelper> { TelnetHelper(get<PasteClient>()) }
+                    single<TelnetHelper> { TelnetHelper(get(), get()) }
                     single<Server> { get<PasteServer<*, *>>() }
 
                     // secure component

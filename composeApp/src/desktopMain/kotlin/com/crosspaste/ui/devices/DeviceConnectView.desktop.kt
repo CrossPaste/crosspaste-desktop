@@ -47,9 +47,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppWindowManager
-import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
@@ -74,9 +72,7 @@ actual fun DeviceConnectView(
     onEdit: (SyncRuntimeInfo) -> Unit,
 ) {
     val density = LocalDensity.current
-    val appInfo = koinInject<AppInfo>()
     val appWindowManager = koinInject<AppWindowManager>()
-    val checker = koinInject<VersionCompatibilityChecker>()
     val copywriter = koinInject<GlobalCopywriter>()
     val notificationManager = koinInject<NotificationManager>()
     val syncManager = koinInject<SyncManager>()
@@ -85,11 +81,14 @@ actual fun DeviceConnectView(
 
     var refresh by remember { mutableStateOf(false) }
 
+    var syncHandler by remember(syncRuntimeInfo.appInstanceId) {
+        mutableStateOf(syncManager.getSyncHandler(syncRuntimeInfo.appInstanceId))
+    }
+
     val (connectColor, connectText) =
         getConnectStateColorAndText(
-            appInfo,
             syncRuntimeInfo,
-            checker,
+            syncHandler?.versionRelation,
             refresh,
         )
 

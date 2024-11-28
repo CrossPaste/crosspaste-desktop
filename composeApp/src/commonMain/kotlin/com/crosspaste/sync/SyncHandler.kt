@@ -1,9 +1,8 @@
 package com.crosspaste.sync
 
-import com.crosspaste.app.AppInfo
-import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.exception.StandardErrorCode
+import com.crosspaste.net.SyncApi
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.clientapi.FailureResult
@@ -33,9 +32,7 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.min
 
 class SyncHandler(
-    private val appInfo: AppInfo,
     var syncRuntimeInfo: SyncRuntimeInfo,
-    private val checker: VersionCompatibilityChecker,
     private val telnetHelper: TelnetHelper,
     private val syncInfoFactory: SyncInfoFactory,
     private val syncClientApi: SyncClientApi,
@@ -48,11 +45,7 @@ class SyncHandler(
 
     private val syncHandlerScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
-    var compatibility: Boolean =
-        !checker.hasApiCompatibilityChangesBetween(
-            appInfo.appVersion,
-            syncRuntimeInfo.appVersion,
-        )
+    var versionRelation: SyncApi.VersionRelation = SyncApi.VersionRelation.EQUAL_TO
 
     private var recommendedRefreshTime: Long = 0L
 
@@ -85,6 +78,7 @@ class SyncHandler(
                 return@withLock
             }
             if (syncRuntimeInfo.connectState == SyncState.DISCONNECTED ||
+                syncRuntimeInfo.connectState == SyncState.INCOMPATIBLE ||
                 syncRuntimeInfo.connectHostAddress == null
             ) {
                 resolveDisconnected()
@@ -209,11 +203,6 @@ class SyncHandler(
             block()
         }?. let {
             this.syncRuntimeInfo = it
-            this.compatibility =
-                !checker.hasApiCompatibilityChangesBetween(
-                    appInfo.appVersion,
-                    it.appVersion,
-                )
             return it
         } ?: run {
             return null
@@ -222,11 +211,19 @@ class SyncHandler(
 
     suspend fun tryDirectUpdateConnected() {
         mutex.withLock {
-            telnetHelper.switchHost(syncRuntimeInfo.hostInfoList, syncRuntimeInfo.port)?.let { hostInfo ->
+            telnetHelper.switchHost(syncRuntimeInfo.hostInfoList, syncRuntimeInfo.port)?.let { pair ->
+                val (hostInfo, versionRelation) = pair
+                logger.info { "$hostInfo to connecting, versionRelation: $versionRelation" }
+                this.versionRelation = versionRelation
                 update {
-                    this.connectState = SyncState.CONNECTED
                     this.connectHostAddress = hostInfo.hostAddress
                     this.connectNetworkPrefixLength = hostInfo.networkPrefixLength
+                    this.connectState =
+                        if (versionRelation == SyncApi.VersionRelation.EQUAL_TO) {
+                            SyncState.CONNECTED
+                        } else {
+                            SyncState.INCOMPATIBLE
+                        }
                     this.modifyTime = RealmInstant.now()
                 }
                 failTime = 0
@@ -243,16 +240,23 @@ class SyncHandler(
     }
 
     private suspend fun resolveDisconnected() {
-        telnetHelper.switchHost(syncRuntimeInfo.hostInfoList, syncRuntimeInfo.port)?.let { hostInfo ->
-            logger.info { "$hostInfo to connecting" }
+        telnetHelper.switchHost(syncRuntimeInfo.hostInfoList, syncRuntimeInfo.port)?.let { pair ->
+            val (hostInfo, versionRelation) = pair
+            logger.info { "$hostInfo to connecting, versionRelation: $versionRelation" }
+            this.versionRelation = versionRelation
             update {
                 this.connectHostAddress = hostInfo.hostAddress
                 this.connectNetworkPrefixLength = hostInfo.networkPrefixLength
-                this.connectState = SyncState.CONNECTING
+                this.connectState =
+                    if (versionRelation == SyncApi.VersionRelation.EQUAL_TO) {
+                        SyncState.CONNECTING
+                    } else {
+                        SyncState.INCOMPATIBLE
+                    }
                 this.modifyTime = RealmInstant.now()
             }
         } ?: run {
-            logger.info { "${syncRuntimeInfo.platformName} to disconnected" }
+            logger.info { "${syncRuntimeInfo.appInstanceId} to disconnected" }
             update {
                 this.connectState = SyncState.DISCONNECTED
                 this.modifyTime = RealmInstant.now()

@@ -9,6 +9,4 @@ interface AppInfoFactory {
     fun getRevision(): String
 
     fun getUserName(): String
-
-    fun createVersionCompatibilityChecker(): VersionCompatibilityChecker
 }

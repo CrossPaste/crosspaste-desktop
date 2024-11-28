@@ -1,8 +1,6 @@
 package com.crosspaste.sync
 
 import androidx.compose.ui.unit.dp
-import com.crosspaste.app.AppInfo
-import com.crosspaste.app.VersionCompatibilityChecker
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.TelnetHelper
@@ -41,8 +39,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class GeneralSyncManager(
-    private val appInfo: AppInfo,
-    private val checker: VersionCompatibilityChecker,
     private val dialogService: DialogService,
     private val telnetHelper: TelnetHelper,
     private val syncInfoFactory: SyncInfoFactory,
@@ -157,9 +153,7 @@ class GeneralSyncManager(
 
     private fun createSyncHandler(syncRuntimeInfo: SyncRuntimeInfo): SyncHandler {
         return SyncHandler(
-            appInfo,
             syncRuntimeInfo,
-            checker,
             telnetHelper,
             syncInfoFactory,
             syncClientApi,
