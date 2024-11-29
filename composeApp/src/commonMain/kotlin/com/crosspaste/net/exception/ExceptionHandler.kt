@@ -24,6 +24,8 @@ abstract class ExceptionHandler {
             }
         }
 
+    abstract fun isPortAlreadyInUse(e: Throwable): Boolean
+
     abstract fun isConnectionRefused(e: Throwable): Boolean
 
     fun isEncryptFail(e: Throwable): Boolean {
