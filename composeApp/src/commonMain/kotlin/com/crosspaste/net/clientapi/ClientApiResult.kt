@@ -4,7 +4,7 @@ import com.crosspaste.exception.ErrorCodeSupplier
 import com.crosspaste.exception.PasteException
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.exception.standardErrorCodeMap
-import com.crosspaste.utils.getExceptionUtils
+import com.crosspaste.net.exception.ExceptionHandler
 import io.github.oshai.kotlinlogging.KLogger
 import io.ktor.client.call.*
 import io.ktor.client.statement.*
@@ -22,6 +22,10 @@ class SuccessResult(private val result: Any? = null) : ClientApiResult {
 class FailureResult(val exception: PasteException) : ClientApiResult
 
 object ConnectionRefused : ClientApiResult
+
+object EncryptFail : ClientApiResult
+
+object DecryptFail : ClientApiResult
 
 object UnknownError : ClientApiResult
 
@@ -51,6 +55,7 @@ fun createFailureResult(
 
 suspend inline fun <T> request(
     logger: KLogger,
+    exceptionHandler: ExceptionHandler,
     request: () -> HttpResponse,
     transformData: (HttpResponse) -> T,
 ): ClientApiResult {
@@ -67,9 +72,12 @@ suspend inline fun <T> request(
         return SuccessResult(transformData(response))
     } catch (e: Exception) {
         logger.error(e) { "request error" }
-        val exceptionUtils = getExceptionUtils()
-        return if (exceptionUtils.isConnectionRefused(e)) {
+        return if (exceptionHandler.isConnectionRefused(e)) {
             ConnectionRefused
+        } else if (exceptionHandler.isEncryptFail(e)) {
+            EncryptFail
+        } else if (exceptionHandler.isDecryptFail(e)) {
+            DecryptFail
         } else {
             UnknownError
         }

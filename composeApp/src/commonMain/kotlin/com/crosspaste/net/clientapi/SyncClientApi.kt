@@ -5,6 +5,7 @@ import com.crosspaste.dto.secure.TrustRequest
 import com.crosspaste.dto.secure.TrustResponse
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.net.PasteClient
+import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.CryptographyUtils
@@ -18,6 +19,7 @@ import kotlin.math.abs
 
 class SyncClientApi(
     private val pasteClient: PasteClient,
+    private val exceptionHandler: ExceptionHandler,
     private val secureKeyPairSerializer: SecureKeyPairSerializer,
     private val secureStore: SecureStore,
 ) {
@@ -25,7 +27,7 @@ class SyncClientApi(
     private val logger = KotlinLogging.logger {}
 
     suspend fun syncInfo(toUrl: URLBuilder.() -> Unit): ClientApiResult {
-        return request(logger, request = {
+        return request(logger, exceptionHandler, request = {
             pasteClient.get(urlBuilder = {
                 toUrl()
                 buildUrl("sync", "syncInfo")
@@ -40,7 +42,7 @@ class SyncClientApi(
         targetAppInstanceId: String,
         toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult {
-        return request(logger, request = {
+        return request(logger, exceptionHandler, request = {
             syncInfo?.let {
                 pasteClient.post(
                     syncInfo,
@@ -69,7 +71,7 @@ class SyncClientApi(
         token: Int,
         toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult {
-        return request(logger, request = {
+        return request(logger, exceptionHandler, request = {
             val signPublicKey = secureStore.secureKeyPair.getSignPublicKeyBytes(secureKeyPairSerializer)
             val cryptPublicKey = secureStore.secureKeyPair.getCryptPublicKeyBytes(secureKeyPairSerializer)
             val pairingRequest =
@@ -129,7 +131,7 @@ class SyncClientApi(
     }
 
     suspend fun showToken(toUrl: URLBuilder.() -> Unit): ClientApiResult {
-        return request(logger, request = {
+        return request(logger, exceptionHandler, request = {
             pasteClient.get(urlBuilder = {
                 toUrl()
                 buildUrl("sync", "showToken")
@@ -138,7 +140,7 @@ class SyncClientApi(
     }
 
     suspend fun notifyExit(toUrl: URLBuilder.() -> Unit) {
-        request(logger, request = {
+        request(logger, exceptionHandler, request = {
             pasteClient.get(urlBuilder = {
                 toUrl()
                 buildUrl("sync", "notifyExit")
@@ -147,7 +149,7 @@ class SyncClientApi(
     }
 
     suspend fun notifyRemove(toUrl: URLBuilder.() -> Unit) {
-        request(logger, request = {
+        request(logger, exceptionHandler, request = {
             pasteClient.get(urlBuilder = {
                 toUrl()
                 buildUrl("sync", "notifyRemove")

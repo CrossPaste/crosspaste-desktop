@@ -6,7 +6,7 @@ import com.crosspaste.utils.failResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.plugins.statuspages.*
 
-class ExceptionHandler {
+abstract class ExceptionHandler {
 
     private val logger = KotlinLogging.logger {}
 
@@ -23,4 +23,22 @@ class ExceptionHandler {
                 failResponse(call, pasteException.getErrorCode())
             }
         }
+
+    abstract fun isConnectionRefused(e: Throwable): Boolean
+
+    fun isEncryptFail(e: Throwable): Boolean {
+        return if (e is PasteException) {
+            e.getErrorCode() == StandardErrorCode.ENCRYPT_FAIL.toErrorCode()
+        } else {
+            false
+        }
+    }
+
+    fun isDecryptFail(e: Throwable): Boolean {
+        return if (e is PasteException) {
+            e.getErrorCode() == StandardErrorCode.DECRYPT_FAIL.toErrorCode()
+        } else {
+            false
+        }
+    }
 }

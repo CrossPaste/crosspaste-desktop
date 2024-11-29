@@ -5,6 +5,8 @@ import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.VersionRelation
+import com.crosspaste.net.clientapi.DecryptFail
+import com.crosspaste.net.clientapi.EncryptFail
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
@@ -323,19 +325,32 @@ class SyncHandler(
             }
 
             is FailureResult -> {
-                if (result.exception.getErrorCode().code ==
+                val failErrorCode = result.exception.getErrorCode().code
+                if (failErrorCode ==
                     StandardErrorCode.SYNC_NOT_MATCH_APP_INSTANCE_ID.getCode()
                 ) {
                     logger.info { "heartbeat return fail state to disconnect $host $port" }
                     return SyncState.DISCONNECTED
-                } else {
-                    logger.info { "exchangeSyncInfo return fail state to unmatched $host $port" }
+                } else if (failErrorCode == StandardErrorCode.DECRYPT_FAIL.getCode()) {
+                    logger.info { "exchangeSyncInfo return fail state to unmatched $host $port $failErrorCode" }
                     return SyncState.UNMATCHED
+                } else {
+                    logger.info { "failErrorCode $failErrorCode $host $port" }
+                    return SyncState.DISCONNECTED
                 }
             }
 
+            is EncryptFail -> {
+                logger.info { "exchangeSyncInfo encrypt fail $host $port" }
+                return SyncState.UNMATCHED
+            }
+            is DecryptFail -> {
+                logger.info { "exchangeSyncInfo decrypt fail $host $port" }
+                return SyncState.UNMATCHED
+            }
+
             else -> {
-                logger.info { "exchangeSyncInfo connect fail state to unmatched $host $port" }
+                logger.info { "exchangeSyncInfo connect fail state to disconnected $host $port" }
                 return SyncState.DISCONNECTED
             }
         }
