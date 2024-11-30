@@ -66,6 +66,7 @@ open class DefaultServerModule(
                     appInfo,
                     appTokenApi,
                     endpointInfoFactory,
+                    exceptionHandler,
                     secureKeyPairSerializer,
                     secureStore,
                     syncApi,

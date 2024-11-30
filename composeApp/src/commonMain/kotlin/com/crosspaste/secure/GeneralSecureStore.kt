@@ -1,5 +1,7 @@
 package com.crosspaste.secure
 
+import com.crosspaste.exception.PasteException
+import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.realm.secure.SecureIO
 import io.ktor.util.collections.*
 import kotlinx.coroutines.sync.withLock
@@ -60,7 +62,10 @@ class GeneralSecureStore(
                     session.processor = it
                 }
             } ?: run {
-                throw IllegalStateException("Crypt public key not found by appInstanceId: $appInstanceId")
+                throw PasteException(
+                    StandardErrorCode.ENCRYPT_FAIL.toErrorCode(),
+                    "Crypt public key not found by appInstanceId: $appInstanceId",
+                )
             }
         }
     }

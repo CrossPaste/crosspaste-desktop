@@ -9,6 +9,7 @@ import com.crosspaste.dto.secure.TrustResponse
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.SyncApi
+import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.CryptographyUtils
@@ -25,6 +26,7 @@ fun Routing.syncRouting(
     appInfo: AppInfo,
     appTokenApi: AppTokenApi,
     endpointInfoFactory: EndpointInfoFactory,
+    exceptionHandler: ExceptionHandler,
     secureKeyPairSerializer: SecureKeyPairSerializer,
     secureStore: SecureStore,
     syncApi: SyncApi,
@@ -60,7 +62,11 @@ fun Routing.syncRouting(
                 successResponse(call)
             } catch (e: Exception) {
                 logger.error(e) { "$appInstanceId heartbeat to ${appInfo.appInstanceId} fail" }
-                failResponse(call, StandardErrorCode.SIGN_INVALID.toErrorCode())
+                if (exceptionHandler.isDecryptFail(e)) {
+                    failResponse(call, StandardErrorCode.DECRYPT_FAIL.toErrorCode())
+                } else {
+                    failResponse(call, StandardErrorCode.UNKNOWN_ERROR.toErrorCode())
+                }
             }
         }
     }

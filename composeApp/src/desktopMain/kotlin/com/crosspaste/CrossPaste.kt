@@ -85,6 +85,7 @@ import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.clientapi.PullClientApi
 import com.crosspaste.net.clientapi.SendPasteClientApi
 import com.crosspaste.net.clientapi.SyncClientApi
+import com.crosspaste.net.exception.DesktopExceptionHandler
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.net.plugin.ClientDecryptPlugin
 import com.crosspaste.net.plugin.ClientEncryptPlugin
@@ -292,13 +293,14 @@ class CrossPaste {
                     // net component
                     single<DeviceListener> { get<DeviceManager>() }
                     single<DeviceManager> { DeviceManager(get(), get(), get(), get()) }
-                    single<ExceptionHandler> { ExceptionHandler() }
+                    single<ExceptionHandler> { DesktopExceptionHandler() }
                     single<FaviconLoader> { DesktopFaviconLoader(get()) }
                     single<PasteBonjourService> { DesktopPasteBonjourService(get(), get(), get()) }
                     single<PasteClient> { PasteClient(get<AppInfo>(), get(), get()) }
                     single<PasteServer<*, *>> {
                         PasteServer(
                             get(named("readWritePort")),
+                            get(),
                             get<ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>>(),
                             get(),
                         )
@@ -315,7 +317,7 @@ class CrossPaste {
                         )
                     }
                     single<SyncApi> { SyncApi }
-                    single<SyncClientApi> { SyncClientApi(get(), get(), get()) }
+                    single<SyncClientApi> { SyncClientApi(get(), get(), get(), get()) }
                     single<SyncManager> {
                         GeneralSyncManager(
                             get(),

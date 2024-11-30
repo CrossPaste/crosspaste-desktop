@@ -9,6 +9,8 @@ import com.crosspaste.config.TestReadWritePort
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
+import com.crosspaste.net.exception.DesktopExceptionHandler
+import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.net.plugin.ClientDecryptPlugin
 import com.crosspaste.net.plugin.ClientEncryptPlugin
 import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
@@ -87,10 +89,12 @@ class SyncTest : KoinTest {
                 single<ReadWriteConfig<Int>>(named("readWritePort")) { TestReadWritePort() }
 
                 // net component
+                single<ExceptionHandler> { DesktopExceptionHandler() }
                 single<PasteClient> { PasteClient(get(named("clientAppInfo")), get(), get()) }
                 single<PasteServer<*, *>> {
                     PasteServer(
                         get(named("readWritePort")),
+                        get(),
                         get<ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>>(),
                         get(),
                     )
@@ -105,6 +109,7 @@ class SyncTest : KoinTest {
                         get(),
                         get(),
                         get(),
+                        get(),
                         get(named("serverSecureStore")),
                         get(),
                         get(),
@@ -112,7 +117,7 @@ class SyncTest : KoinTest {
                         get(),
                     )
                 }
-                single<SyncClientApi> { SyncClientApi(get(), get(), get(named("clientSecureStore"))) }
+                single<SyncClientApi> { SyncClientApi(get(), get(), get(), get(named("clientSecureStore"))) }
                 single<SyncRoutingApi> { TestSyncRoutingApi() }
 
                 // secure component

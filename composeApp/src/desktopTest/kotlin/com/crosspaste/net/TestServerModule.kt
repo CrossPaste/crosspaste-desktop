@@ -3,6 +3,7 @@ package com.crosspaste.net
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenApi
 import com.crosspaste.app.EndpointInfoFactory
+import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
 import com.crosspaste.net.plugin.ServerEncryptPluginFactory
 import com.crosspaste.net.routing.SyncRoutingApi
@@ -19,6 +20,7 @@ class TestServerModule(
     private val appInfo: AppInfo,
     private val appTokenApi: AppTokenApi,
     private val endpointInfoFactory: EndpointInfoFactory,
+    private val exceptionHandler: ExceptionHandler,
     private val secureKeyPairSerializer: SecureKeyPairSerializer,
     private val secureStore: SecureStore,
     private val serverEncryptPluginFactory: ServerEncryptPluginFactory,
@@ -38,6 +40,7 @@ class TestServerModule(
                     appInfo,
                     appTokenApi,
                     endpointInfoFactory,
+                    exceptionHandler,
                     secureKeyPairSerializer,
                     secureStore,
                     syncApi,
