@@ -300,6 +300,7 @@ class CrossPaste {
                     single<PasteServer<*, *>> {
                         PasteServer(
                             get(named("readWritePort")),
+                            get(),
                             get<ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>>(),
                             get(),
                         )
