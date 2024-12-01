@@ -16,10 +16,10 @@ import com.crosspaste.info.PasteInfos.DATE
 import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
+import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteRtf
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
-import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.paste.GenerateImageView
 import com.crosspaste.utils.getDateUtils

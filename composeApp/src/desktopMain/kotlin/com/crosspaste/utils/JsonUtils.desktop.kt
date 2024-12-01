@@ -4,6 +4,7 @@ import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
+import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.RtfPasteItem
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
@@ -44,7 +45,7 @@ object DesktopJsonUtils : JsonUtils {
                     // use in paste data
                     serializersModuleOf(MutableRealmIntKSerializer)
                     serializersModuleOf(RealmAnyKSerializer)
-                    polymorphic(RealmObject::class) {
+                    polymorphic(PasteItem::class) {
                         subclass(ColorPasteItem::class)
                         subclass(FilesPasteItem::class)
                         subclass(HtmlPasteItem::class)
@@ -52,6 +53,9 @@ object DesktopJsonUtils : JsonUtils {
                         subclass(RtfPasteItem::class)
                         subclass(TextPasteItem::class)
                         subclass(UrlPasteItem::class)
+                    }
+
+                    polymorphic(RealmObject::class) {
                         subclass(PasteLabel::class)
                         subclass(PasteCollection::class)
                     }

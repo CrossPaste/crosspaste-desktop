@@ -1,8 +1,8 @@
 package com.crosspaste.paste.plugin.process
 
 import com.crosspaste.paste.item.PasteFiles
+import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.utils.isDirectory
 import io.realm.kotlin.MutableRealm
 

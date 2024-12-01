@@ -4,10 +4,10 @@ import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteDataFlavors.URL_FLAVOR
 import com.crosspaste.paste.PasteTransferable
+import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.platform.getPlatform
-import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.utils.getCodecsUtils
 import io.realm.kotlin.MutableRealm

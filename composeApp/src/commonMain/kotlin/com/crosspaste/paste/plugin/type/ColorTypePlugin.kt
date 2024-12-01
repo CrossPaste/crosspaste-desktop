@@ -1,6 +1,6 @@
 package com.crosspaste.paste.plugin.type
 
-import com.crosspaste.realm.paste.PasteItem
+import com.crosspaste.paste.item.PasteItem
 import io.realm.kotlin.MutableRealm
 
 interface ColorTypePlugin : PasteTypePlugin {

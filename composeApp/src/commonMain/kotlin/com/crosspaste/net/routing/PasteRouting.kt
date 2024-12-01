@@ -1,5 +1,6 @@
 package com.crosspaste.net.routing
 
+import com.crosspaste.dto.paste.SyncPasteData
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.realm.paste.PasteData
@@ -38,12 +39,13 @@ fun Routing.pasteRouting(
             }
 
             try {
-                val pasteData = call.receive<PasteData>()
+                val syncPasteData = call.receive<SyncPasteData>()
 
                 scope.launch {
+                    val pasteData = PasteData.fromSyncPasteData(syncPasteData)
                     pasteboardService.tryWriteRemotePasteboard(pasteData)
                 }
-                logger.debug { "sync handler ($appInstanceId) receive pasteData: $pasteData" }
+                logger.debug { "sync handler ($appInstanceId) receive pasteData: $syncPasteData" }
                 successResponse(call)
             } catch (e: Exception) {
                 logger.error(e) { "sync handler ($appInstanceId) receive pasteData error" }

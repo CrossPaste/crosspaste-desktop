@@ -1,13 +1,16 @@
 package com.crosspaste.realm.paste
 
+import com.crosspaste.dto.paste.SyncPasteData
 import com.crosspaste.paste.item.PasteCoordinate
+import com.crosspaste.paste.item.PasteCoordinateBinder
 import com.crosspaste.paste.item.PasteFiles
+import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.serializer.PasteDataSerializer
 import com.crosspaste.serializer.PasteLabelRealmSetSerializer
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.ext.realmSetOf
+import io.realm.kotlin.ext.toRealmSet
 import io.realm.kotlin.types.RealmAny
 import io.realm.kotlin.types.RealmInstant
 import io.realm.kotlin.types.RealmObject
@@ -21,7 +24,6 @@ import org.mongodb.kbson.ObjectId
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
 
-@Serializable(with = PasteDataSerializer::class)
 class PasteData : RealmObject {
 
     companion object {
@@ -35,6 +37,57 @@ class PasteData : RealmObject {
                     "${source.lowercase()} $pasteItemSearchContent"
                 } ?: source.lowercase()
             } ?: pasteItemSearchContent
+        }
+
+        fun toSyncPasteData(pasteData: PasteData): SyncPasteData {
+            return SyncPasteData(
+                id = pasteData.id.toHexString(),
+                appInstanceId = pasteData.appInstanceId,
+                pasteId = pasteData.pasteId,
+                pasteType = pasteData.pasteType,
+                source = pasteData.source,
+                size = pasteData.size,
+                hash = pasteData.hash,
+                favorite = pasteData.favorite,
+                pasteAppearItem = PasteCollection.getPasteItem(pasteData.pasteAppearItem),
+                pasteCollection = pasteData.pasteCollection?.let { PasteCollection.toSyncPasteCollection(it) },
+                labels = pasteData.labels.map { PasteLabel.toSyncPasteLabel(it) }.toSet(),
+            )
+        }
+
+        fun fromSyncPasteData(syncPasteData: SyncPasteData): PasteData {
+            return PasteData().apply {
+                this.id = ObjectId(syncPasteData.id)
+                this.appInstanceId = syncPasteData.appInstanceId
+                this.pasteId = syncPasteData.pasteId
+                this.pasteType = syncPasteData.pasteType
+                this.source = syncPasteData.source
+                this.size = syncPasteData.size
+                this.hash = syncPasteData.hash
+                this.favorite = syncPasteData.favorite
+                this.pasteAppearItem =
+                    syncPasteData.pasteAppearItem?.let {
+                        RealmAny.create(it as RealmObject)
+                    }
+                this.pasteCollection =
+                    syncPasteData.pasteCollection?.let {
+                        PasteCollection.fromSyncPasteCollection(it)
+                    }
+                this.labels =
+                    syncPasteData.labels.map {
+                        PasteLabel.fromSyncPasteLabel(it)
+                    }.toRealmSet()
+
+                this.pasteSearchContent =
+                    createSearchContent(
+                        syncPasteData.source,
+                        PasteCollection.getPasteItem(this.pasteAppearItem)?.getSearchContent(),
+                    )
+
+                for (pasteBinder in this.getPasteAppearItems().filterIsInstance<PasteCoordinateBinder>()) {
+                    pasteBinder.bind(this.getPasteCoordinate())
+                }
+            }
         }
     }
 
@@ -71,6 +124,7 @@ class PasteData : RealmObject {
     @Transient
     var pasteState: Int = PasteState.LOADING
 
+    @Transient
     var remote: Boolean = false
 
     @Index
@@ -91,10 +145,6 @@ class PasteData : RealmObject {
         PasteCollection.getPasteItem(pasteAppearItem)?.clear(realm, userDataPathProvider, clearResource)
         pasteCollection?.clear(realm, userDataPathProvider, clearResource)
         realm.delete(this)
-    }
-
-    fun getPasteDataSortObject(): PasteDataSortObject {
-        return PasteDataSortObject(createTime, pasteId, appInstanceId)
     }
 
     fun getPasteAppearItems(): List<PasteItem> {
@@ -188,42 +238,5 @@ class PasteData : RealmObject {
 
     fun getTypeText(): String {
         return PasteType.fromType(this.pasteType).name
-    }
-}
-
-data class PasteDataSortObject(
-    val createTime: RealmInstant,
-    val pasteId: Long,
-    val appInstanceId: String,
-) : Comparable<PasteDataSortObject> {
-
-    override fun compareTo(other: PasteDataSortObject): Int {
-        val createTimeCompare = createTime.compareTo(other.createTime)
-        if (createTimeCompare != 0) {
-            return createTimeCompare
-        }
-        val pasteIdCompare = pasteId.compareTo(other.pasteId)
-        if (pasteIdCompare != 0) {
-            return pasteIdCompare
-        }
-        return appInstanceId.compareTo(other.appInstanceId)
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is PasteDataSortObject) return false
-
-        if (createTime != other.createTime) return false
-        if (pasteId != other.pasteId) return false
-        if (appInstanceId != other.appInstanceId) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = createTime.hashCode()
-        result = 31 * result + pasteId.hashCode()
-        result = 31 * result + appInstanceId.hashCode()
-        return result
     }
 }

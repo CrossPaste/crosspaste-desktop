@@ -3,7 +3,6 @@ package com.crosspaste.paste.item
 import com.crosspaste.app.AppFileType
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FileInfoTree
-import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.realm.paste.PasteState
 import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.serializer.PathStringRealmListSerializer

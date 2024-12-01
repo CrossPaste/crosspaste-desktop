@@ -7,6 +7,7 @@ import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
+import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.RtfPasteItem
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem

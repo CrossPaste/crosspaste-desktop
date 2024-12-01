@@ -4,7 +4,7 @@ import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.item.ColorPasteItem
-import com.crosspaste.realm.paste.PasteItem
+import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.realm.paste.PasteType
 import io.realm.kotlin.MutableRealm
 

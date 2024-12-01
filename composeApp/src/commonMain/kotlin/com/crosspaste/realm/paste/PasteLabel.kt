@@ -1,5 +1,6 @@
 package com.crosspaste.realm.paste
 
+import com.crosspaste.dto.paste.SyncPasteLabel
 import io.realm.kotlin.types.RealmInstant
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.Index
@@ -13,7 +14,24 @@ import org.mongodb.kbson.ObjectId
 @SerialName("label")
 class PasteLabel : RealmObject {
 
-    companion object {}
+    companion object {
+
+        fun toSyncPasteLabel(pasteLabel: PasteLabel): SyncPasteLabel {
+            return SyncPasteLabel(
+                id = pasteLabel.id.toHexString(),
+                color = pasteLabel.color,
+                text = pasteLabel.text,
+            )
+        }
+
+        fun fromSyncPasteLabel(syncPasteLabel: SyncPasteLabel): PasteLabel {
+            return PasteLabel().apply {
+                this.id = ObjectId(syncPasteLabel.id)
+                this.color = syncPasteLabel.color
+                this.text = syncPasteLabel.text
+            }
+        }
+    }
 
     @PrimaryKey
     @Transient
