@@ -8,7 +8,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import okio.Path
 
-interface FileInfoTree {
+@Serializable
+sealed interface FileInfoTree {
 
     val size: Long
 
