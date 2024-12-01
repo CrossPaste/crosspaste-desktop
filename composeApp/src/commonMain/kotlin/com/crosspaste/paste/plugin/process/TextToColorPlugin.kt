@@ -1,8 +1,8 @@
 package com.crosspaste.paste.plugin.process
 
 import com.crosspaste.paste.item.ColorPasteItem
+import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.TextPasteItem
-import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.utils.getColorUtils
 import io.realm.kotlin.MutableRealm
 

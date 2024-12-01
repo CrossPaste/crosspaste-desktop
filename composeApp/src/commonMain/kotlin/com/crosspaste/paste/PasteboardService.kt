@@ -1,8 +1,8 @@
 package com.crosspaste.paste
 
 import com.crosspaste.config.ConfigManager
+import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.realm.paste.PasteData
-import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.realm.paste.PasteRealm
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.CoroutineScope

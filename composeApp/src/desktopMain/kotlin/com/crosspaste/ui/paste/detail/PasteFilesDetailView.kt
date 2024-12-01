@@ -45,9 +45,9 @@ import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
 import com.crosspaste.paste.item.PasteFiles
+import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
-import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.ui.base.FileIcon
 import com.crosspaste.ui.base.FileSlashIcon
 import com.crosspaste.ui.base.FolderIcon

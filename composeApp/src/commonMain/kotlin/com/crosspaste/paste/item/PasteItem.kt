@@ -1,10 +1,13 @@
-package com.crosspaste.realm.paste
+package com.crosspaste.paste.item
 
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.realm.paste.PasteType
 import io.realm.kotlin.MutableRealm
+import kotlinx.serialization.Serializable
 import org.mongodb.kbson.ObjectId
 
-interface PasteItem {
+@Serializable
+sealed interface PasteItem {
 
     var id: ObjectId
 

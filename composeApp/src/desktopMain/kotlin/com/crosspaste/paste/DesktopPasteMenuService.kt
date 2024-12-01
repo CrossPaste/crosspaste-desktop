@@ -6,8 +6,8 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.realm.paste.PasteData
-import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.utils.ioDispatcher

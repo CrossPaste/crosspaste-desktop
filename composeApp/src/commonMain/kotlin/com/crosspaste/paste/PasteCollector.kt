@@ -1,11 +1,11 @@
 package com.crosspaste.paste
 
 import com.crosspaste.app.AppInfo
+import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.paste.plugin.type.PasteTypePlugin
 import com.crosspaste.realm.paste.PasteCollection
 import com.crosspaste.realm.paste.PasteData
-import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.realm.paste.PasteState
 import com.crosspaste.realm.paste.PasteType

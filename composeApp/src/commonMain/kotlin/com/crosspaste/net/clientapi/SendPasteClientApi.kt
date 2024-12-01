@@ -1,6 +1,7 @@
 package com.crosspaste.net.clientapi
 
 import com.crosspaste.config.ConfigManager
+import com.crosspaste.dto.paste.SyncPasteData
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.PasteClient
 import com.crosspaste.realm.paste.PasteData
@@ -21,10 +22,11 @@ class SendPasteClientApi(
         targetAppInstanceId: String,
         toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult {
+        val syncPasteData = PasteData.toSyncPasteData(pasteData)
         val response =
             pasteClient.post(
-                message = pasteData,
-                messageType = typeInfo<PasteData>(),
+                message = syncPasteData,
+                messageType = typeInfo<SyncPasteData>(),
                 targetAppInstanceId = targetAppInstanceId,
                 encrypt = configManager.config.enableEncryptSync,
                 urlBuilder = {

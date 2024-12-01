@@ -5,9 +5,9 @@ import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.item.PasteCoordinate
+import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.RtfPasteItem
 import com.crosspaste.paste.toPasteDataFlavor
-import com.crosspaste.realm.paste.PasteItem
 import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getFileUtils

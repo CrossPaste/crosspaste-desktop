@@ -1,8 +1,8 @@
 package com.crosspaste.paste.plugin.process
 
 import com.crosspaste.paste.item.PasteHtml
+import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.realm.paste.PasteItem
 import io.realm.kotlin.MutableRealm
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
