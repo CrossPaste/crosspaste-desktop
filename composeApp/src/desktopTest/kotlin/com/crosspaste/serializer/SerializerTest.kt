@@ -1,5 +1,6 @@
 package com.crosspaste.serializer
 
+import com.crosspaste.dto.paste.SyncPasteData
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
 import com.crosspaste.realm.paste.PasteCollection
@@ -48,9 +49,12 @@ class SerializerTest {
                 this.appInstanceId = UUID.randomUUID().toString()
             }
 
-        val json = jsonUtils.JSON.encodeToString(pasteData)
+        val syncPasteData = PasteData.toSyncPasteData(pasteData)
+
+        val json = jsonUtils.JSON.encodeToString(syncPasteData)
         println(json)
-        val newPasteData: PasteData = jsonUtils.JSON.decodeFromString(json)
+        val newSyncPasteData: SyncPasteData = jsonUtils.JSON.decodeFromString(json)
+        val newPasteData = PasteData.fromSyncPasteData(newSyncPasteData)
         assertEquals(pasteData.pasteId, newPasteData.pasteId)
         val newTextPasteItem = PasteCollection.getPasteItem(newPasteData.pasteAppearItem)
         assertTrue(newTextPasteItem is TextPasteItem)

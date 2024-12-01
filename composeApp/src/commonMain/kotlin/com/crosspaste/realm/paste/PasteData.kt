@@ -78,6 +78,8 @@ class PasteData : RealmObject {
                         PasteLabel.fromSyncPasteLabel(it)
                     }.toRealmSet()
 
+                this.remote = true
+
                 this.pasteSearchContent =
                     createSearchContent(
                         syncPasteData.source,
