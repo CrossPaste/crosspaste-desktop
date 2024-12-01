@@ -4,6 +4,7 @@ import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
@@ -28,6 +29,9 @@ class ServerEncryptPluginFactory(private val secureStore: SecureStore) {
                 val headers = call.request.headers
                 headers["appInstanceId"]?.let { appInstanceId ->
                     headers["secure"]?.let {
+                        if (call.response.status()?.isSuccess() == false) {
+                            return@let
+                        }
                         logger.debug { "server encrypt $appInstanceId" }
                         val processor = secureStore.getMessageProcessor(appInstanceId)
                         transformBodyTo(body) { bytes ->

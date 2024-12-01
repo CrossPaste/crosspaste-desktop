@@ -33,6 +33,9 @@ class ClientDecryptPlugin(private val secureStore: SecureStore) :
             val headers = it.call.request.headers
             headers["targetAppInstanceId"]?.let { appInstanceId ->
                 headers["secure"]?.let { _ ->
+                    if (!it.call.response.status.isSuccess()) {
+                        return@intercept
+                    }
                     logger.debug { "client decrypt $appInstanceId" }
                     val byteReadChannel: ByteReadChannel = it.rawContent
 
