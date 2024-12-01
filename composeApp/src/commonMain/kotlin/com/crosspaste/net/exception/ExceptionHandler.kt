@@ -4,6 +4,7 @@ import com.crosspaste.exception.PasteException
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.utils.failResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.server.plugins.*
 import io.ktor.server.plugins.statuspages.*
 
 abstract class ExceptionHandler {
@@ -39,6 +40,8 @@ abstract class ExceptionHandler {
     fun isDecryptFail(e: Throwable): Boolean {
         return if (e is PasteException) {
             e.getErrorCode() == StandardErrorCode.DECRYPT_FAIL.toErrorCode()
+        } else if (e is CannotTransformContentToTypeException) {
+            true
         } else {
             false
         }
