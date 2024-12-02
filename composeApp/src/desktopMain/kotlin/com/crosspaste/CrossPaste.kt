@@ -71,11 +71,11 @@ import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.log.CrossPasteLogger
 import com.crosspaste.log.DesktopCrossPasteLogger
 import com.crosspaste.net.DesktopPasteBonjourService
+import com.crosspaste.net.DesktopPasteServer
 import com.crosspaste.net.DesktopServerFactory
 import com.crosspaste.net.DesktopServerModule
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.net.PasteClient
-import com.crosspaste.net.PasteServer
 import com.crosspaste.net.Server
 import com.crosspaste.net.ServerFactory
 import com.crosspaste.net.ServerModule
@@ -268,7 +268,7 @@ class CrossPaste {
                     single<ConfigManager> { configManager }
                     single<CrossPasteLogger> { crossPasteLogger }
                     single<DeviceUtils> { DesktopDeviceUtils }
-                    single<EndpointInfoFactory> { EndpointInfoFactory(get(), lazy { get<PasteServer<*, *>>() }) }
+                    single<EndpointInfoFactory> { EndpointInfoFactory(get(), lazy { get<Server>() }) }
                     single<FileExtImageLoader> { DesktopFileExtLoader(get(), get()) }
                     single<FilePersist> { FilePersist }
                     single<ImageLoaders> { ImageLoaders(get(), get(), get(), get(), get()) }
@@ -297,16 +297,16 @@ class CrossPaste {
                     single<FaviconLoader> { DesktopFaviconLoader(get()) }
                     single<PasteBonjourService> { DesktopPasteBonjourService(get(), get(), get()) }
                     single<PasteClient> { PasteClient(get<AppInfo>(), get(), get()) }
-                    single<PasteServer<*, *>> {
-                        PasteServer(
+                    single<PullClientApi> { PullClientApi(get(), get()) }
+                    single<SendPasteClientApi> { SendPasteClientApi(get(), get()) }
+                    single<Server> {
+                        DesktopPasteServer(
                             get(named("readWritePort")),
                             get(),
                             get<ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>>(),
                             get(),
                         )
                     }
-                    single<PullClientApi> { PullClientApi(get(), get()) }
-                    single<SendPasteClientApi> { SendPasteClientApi(get(), get()) }
                     single<ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>> {
                         DesktopServerFactory()
                     }
@@ -332,7 +332,6 @@ class CrossPaste {
                     }
                     single<SyncRoutingApi> { get<SyncManager>() }
                     single<TelnetHelper> { TelnetHelper(get(), get()) }
-                    single<Server> { get<PasteServer<*, *>>() }
 
                     // secure component
                     single<ClientDecryptPlugin> { ClientDecryptPlugin(get()) }

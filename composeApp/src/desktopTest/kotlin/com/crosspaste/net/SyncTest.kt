@@ -45,7 +45,7 @@ class SyncTest : KoinTest {
 
     private val endpointInfoFactory by inject<EndpointInfoFactory>()
 
-    private val pasteServer by inject<PasteServer<*, *>>()
+    private val pasteServer by inject<Server>()
 
     private val readWritePort by inject<ReadWriteConfig<Int>>(named("readWritePort"))
 
@@ -85,14 +85,14 @@ class SyncTest : KoinTest {
                 single<AppInfo>(named("serverAppInfo")) { serverAppInfo }
                 single<AppInfo>(named("clientAppInfo")) { clientAppInfo }
                 single<DeviceUtils> { DesktopDeviceUtils }
-                single<EndpointInfoFactory> { EndpointInfoFactory(get(), lazy { get<PasteServer<*, *>>() }) }
+                single<EndpointInfoFactory> { EndpointInfoFactory(get(), lazy { get<Server>() }) }
                 single<ReadWriteConfig<Int>>(named("readWritePort")) { TestReadWritePort() }
 
                 // net component
                 single<ExceptionHandler> { DesktopExceptionHandler() }
                 single<PasteClient> { PasteClient(get(named("clientAppInfo")), get(), get()) }
-                single<PasteServer<*, *>> {
-                    PasteServer(
+                single<Server> {
+                    DesktopPasteServer(
                         get(named("readWritePort")),
                         get(),
                         get<ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>>(),

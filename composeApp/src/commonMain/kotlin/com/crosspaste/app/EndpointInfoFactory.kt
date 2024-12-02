@@ -1,7 +1,7 @@
 package com.crosspaste.app
 
 import com.crosspaste.dto.sync.EndpointInfo
-import com.crosspaste.net.PasteServer
+import com.crosspaste.net.Server
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.utils.DeviceUtils
 import com.crosspaste.utils.HostInfoFilter
@@ -10,7 +10,7 @@ import com.crosspaste.utils.getNetUtils
 
 class EndpointInfoFactory(
     deviceUtils: DeviceUtils,
-    private val pasteServer: Lazy<PasteServer<*, *>>,
+    private val pasteServer: Lazy<Server>,
 ) {
     private val netUtils = getNetUtils()
 
