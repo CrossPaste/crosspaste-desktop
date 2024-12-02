@@ -85,7 +85,7 @@ class SyncTest : KoinTest {
                 single<AppInfo>(named("serverAppInfo")) { serverAppInfo }
                 single<AppInfo>(named("clientAppInfo")) { clientAppInfo }
                 single<DeviceUtils> { DesktopDeviceUtils }
-                single<EndpointInfoFactory> { EndpointInfoFactory(get(), lazy { get<PasteServer<*, *>>() }) }
+                single<EndpointInfoFactory> { EndpointInfoFactory(get(), lazy { get<Server>() }) }
                 single<ReadWriteConfig<Int>>(named("readWritePort")) { TestReadWritePort() }
 
                 // net component
