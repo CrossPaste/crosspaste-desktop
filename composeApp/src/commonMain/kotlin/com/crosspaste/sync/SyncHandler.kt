@@ -2,7 +2,6 @@ package com.crosspaste.sync
 
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.exception.StandardErrorCode
-import com.crosspaste.net.SyncApi
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.VersionRelation
@@ -329,8 +328,7 @@ class SyncHandler(
 
         when (result) {
             is SuccessResult -> {
-                val syncApiVersion = result.getResult<Int>()
-                this.versionRelation = SyncApi.compareVersion(syncApiVersion)
+                this.versionRelation = result.getResult<VersionRelation>()
                 return if (this.versionRelation == VersionRelation.EQUAL_TO) {
                     SyncState.CONNECTED
                 } else {
