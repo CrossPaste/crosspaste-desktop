@@ -42,7 +42,7 @@ fun Routing.syncRouting(
                 failResponse(call, StandardErrorCode.SYNC_NOT_MATCH_APP_INSTANCE_ID.toErrorCode())
                 return@let
             }
-            successResponse(call)
+            successResponse(call, syncApi.VERSION)
         }
     }
 
@@ -59,7 +59,7 @@ fun Routing.syncRouting(
                 val syncInfo = call.receive(SyncInfo::class)
                 syncRoutingApi.updateSyncInfo(syncInfo)
                 logger.debug { "$appInstanceId heartbeat to ${appInfo.appInstanceId} success" }
-                successResponse(call)
+                successResponse(call, syncApi.VERSION)
             } catch (e: Exception) {
                 logger.error(e) { "$appInstanceId heartbeat to ${appInfo.appInstanceId} fail" }
                 if (exceptionHandler.isDecryptFail(e)) {

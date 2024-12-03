@@ -5,6 +5,7 @@ import com.crosspaste.dto.secure.TrustRequest
 import com.crosspaste.dto.secure.TrustResponse
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.net.PasteClient
+import com.crosspaste.net.SyncApi
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
@@ -12,6 +13,7 @@ import com.crosspaste.utils.CryptographyUtils
 import com.crosspaste.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.util.reflect.*
 import kotlinx.datetime.Clock
@@ -22,6 +24,7 @@ class SyncClientApi(
     private val exceptionHandler: ExceptionHandler,
     private val secureKeyPairSerializer: SecureKeyPairSerializer,
     private val secureStore: SecureStore,
+    private val syncApi: SyncApi,
 ) {
 
     private val logger = KotlinLogging.logger {}
@@ -63,7 +66,10 @@ class SyncClientApi(
                     },
                 )
             }
-        }, transformData = { true })
+        }, transformData = {
+            val result = it.bodyAsText()
+            syncApi.compareVersion(result.toIntOrNull() ?: -1)
+        })
     }
 
     suspend fun trust(
