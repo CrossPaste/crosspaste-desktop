@@ -20,7 +20,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.Clock
-import kotlin.math.abs
 
 fun Routing.syncRouting(
     appInfo: AppInfo,
@@ -42,7 +41,7 @@ fun Routing.syncRouting(
                 failResponse(call, StandardErrorCode.SYNC_NOT_MATCH_APP_INSTANCE_ID.toErrorCode())
                 return@let
             }
-            successResponse(call)
+            successResponse(call, syncApi.VERSION)
         }
     }
 
@@ -59,7 +58,7 @@ fun Routing.syncRouting(
                 val syncInfo = call.receive(SyncInfo::class)
                 syncRoutingApi.updateSyncInfo(syncInfo)
                 logger.debug { "$appInstanceId heartbeat to ${appInfo.appInstanceId} success" }
-                successResponse(call)
+                successResponse(call, syncApi.VERSION)
             } catch (e: Exception) {
                 logger.error(e) { "$appInstanceId heartbeat to ${appInfo.appInstanceId} fail" }
                 if (exceptionHandler.isDecryptFail(e)) {
@@ -106,12 +105,6 @@ fun Routing.syncRouting(
             try {
                 val trustRequest = call.receive(TrustRequest::class)
                 val currentTimestamp = Clock.System.now().toEpochMilliseconds()
-
-                if (abs(currentTimestamp - trustRequest.pairingRequest.timestamp) > 5000) {
-                    logger.debug { "trustRequest timeout" }
-                    failResponse(call, StandardErrorCode.TRUST_TIMEOUT.toErrorCode())
-                    return@post
-                }
 
                 val receiveSignPublicKey =
                     secureKeyPairSerializer.decodeSignPublicKey(

@@ -117,7 +117,7 @@ class SyncTest : KoinTest {
                         get(),
                     )
                 }
-                single<SyncClientApi> { SyncClientApi(get(), get(), get(), get(named("clientSecureStore"))) }
+                single<SyncClientApi> { SyncClientApi(get(), get(), get(), get(named("clientSecureStore")), get()) }
                 single<SyncRoutingApi> { TestSyncRoutingApi() }
 
                 // secure component

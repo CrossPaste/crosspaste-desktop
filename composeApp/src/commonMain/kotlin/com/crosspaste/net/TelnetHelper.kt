@@ -36,7 +36,7 @@ class TelnetHelper(
         hostInfoList.forEach { hostInfo ->
             scope.launch(CoroutineName("SwitchHost")) {
                 try {
-                    telnet(hostInfo, port, timeout)?.let {
+                    telnet(hostInfo.hostAddress, port, timeout)?.let {
                         mutex.withLock {
                             if (!result.isCompleted) {
                                 result.complete(Pair(hostInfo, it))
@@ -57,18 +57,18 @@ class TelnetHelper(
         }
     }
 
-    private suspend fun telnet(
-        hostInfo: HostInfo,
+    suspend fun telnet(
+        hostAddress: String,
         port: Int,
-        timeout: Long,
+        timeout: Long = 500L,
     ): VersionRelation? {
         return try {
             val httpResponse =
                 pasteClient.get(timeout = timeout) {
-                    buildUrl(hostInfo.hostAddress, port)
+                    buildUrl(hostAddress, port)
                     buildUrl("sync", "telnet")
                 }
-            logger.info { "httpResponse.status = ${httpResponse.status.value} $hostInfo:$port" }
+            logger.info { "httpResponse.status = ${httpResponse.status.value} $hostAddress:$port" }
 
             if (httpResponse.status.value == 200) {
                 val result = httpResponse.bodyAsText()
@@ -77,7 +77,7 @@ class TelnetHelper(
                 null
             }
         } catch (e: Exception) {
-            logger.debug(e) { "telnet $hostInfo fail" }
+            logger.debug(e) { "telnet $hostAddress fail" }
             null
         }
     }

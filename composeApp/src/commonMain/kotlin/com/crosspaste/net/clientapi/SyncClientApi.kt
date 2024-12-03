@@ -5,6 +5,7 @@ import com.crosspaste.dto.secure.TrustRequest
 import com.crosspaste.dto.secure.TrustResponse
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.net.PasteClient
+import com.crosspaste.net.SyncApi
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
@@ -12,16 +13,17 @@ import com.crosspaste.utils.CryptographyUtils
 import com.crosspaste.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.util.reflect.*
 import kotlinx.datetime.Clock
-import kotlin.math.abs
 
 class SyncClientApi(
     private val pasteClient: PasteClient,
     private val exceptionHandler: ExceptionHandler,
     private val secureKeyPairSerializer: SecureKeyPairSerializer,
     private val secureStore: SecureStore,
+    private val syncApi: SyncApi,
 ) {
 
     private val logger = KotlinLogging.logger {}
@@ -63,7 +65,10 @@ class SyncClientApi(
                     },
                 )
             }
-        }, transformData = { true })
+        }, transformData = {
+            val result = it.bodyAsText()
+            syncApi.compareVersion(result.toIntOrNull() ?: -1)
+        })
     }
 
     suspend fun trust(
@@ -102,30 +107,23 @@ class SyncClientApi(
         }, transformData = {
             val trustResponse = it.body<TrustResponse>()
 
-            val currentTimestamp = Clock.System.now().toEpochMilliseconds()
+            val receiveSignPublicKey =
+                secureKeyPairSerializer.decodeSignPublicKey(
+                    trustResponse.pairingResponse.signPublicKey,
+                )
+            val verifyResult =
+                CryptographyUtils.verifyPairingResponse(
+                    receiveSignPublicKey,
+                    trustResponse.pairingResponse,
+                    trustResponse.signature,
+                )
 
-            if (abs(currentTimestamp - trustResponse.pairingResponse.timestamp) > 5000) {
-                logger.warn { "trust timeout" }
-                false
+            if (verifyResult) {
+                secureStore.saveCryptPublicKey(targetAppInstanceId, trustResponse.pairingResponse.cryptPublicKey)
+                true
             } else {
-                val receiveSignPublicKey =
-                    secureKeyPairSerializer.decodeSignPublicKey(
-                        trustResponse.pairingResponse.signPublicKey,
-                    )
-                val verifyResult =
-                    CryptographyUtils.verifyPairingResponse(
-                        receiveSignPublicKey,
-                        trustResponse.pairingResponse,
-                        trustResponse.signature,
-                    )
-
-                if (verifyResult) {
-                    secureStore.saveCryptPublicKey(targetAppInstanceId, trustResponse.pairingResponse.cryptPublicKey)
-                    true
-                } else {
-                    logger.warn { "verifyResult is false" }
-                    false
-                }
+                logger.warn { "verifyResult is false" }
+                false
             }
         })
     }

@@ -317,7 +317,7 @@ class CrossPaste {
                         )
                     }
                     single<SyncApi> { SyncApi }
-                    single<SyncClientApi> { SyncClientApi(get(), get(), get(), get()) }
+                    single<SyncClientApi> { SyncClientApi(get(), get(), get(), get(), get()) }
                     single<SyncManager> {
                         GeneralSyncManager(
                             get(),

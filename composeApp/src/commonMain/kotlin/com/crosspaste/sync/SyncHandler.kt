@@ -285,6 +285,13 @@ class SyncHandler(
                         secureStore.deleteCryptPublicKey(syncRuntimeInfo.appInstanceId)
                         tryUseTokenCache(host, syncRuntimeInfo.port)
                     }
+                    SyncState.INCOMPATIBLE -> {
+                        logger.info { "heartbeat success and connectState is incompatible $host ${syncRuntimeInfo.port}" }
+                        update {
+                            this.connectState = SyncState.INCOMPATIBLE
+                            this.modifyTime = RealmInstant.now()
+                        }
+                    }
 
                     else -> {
                         update {
@@ -321,7 +328,12 @@ class SyncHandler(
 
         when (result) {
             is SuccessResult -> {
-                return SyncState.CONNECTED
+                this.versionRelation = result.getResult<VersionRelation>()
+                return if (this.versionRelation == VersionRelation.EQUAL_TO) {
+                    SyncState.CONNECTED
+                } else {
+                    SyncState.INCOMPATIBLE
+                }
             }
 
             is FailureResult -> {
@@ -367,8 +379,27 @@ class SyncHandler(
                 this.modifyTime = RealmInstant.now()
             }
         } else {
+            syncRuntimeInfo.connectHostAddress?.let {
+                telnetHelper.telnet(it, syncRuntimeInfo.port)?.let { versionRelation ->
+                    this.versionRelation = versionRelation
+                    if (versionRelation == VersionRelation.EQUAL_TO) {
+                        logger.info { "telnet success $host $port" }
+                        update {
+                            this.connectState = SyncState.UNVERIFIED
+                            this.modifyTime = RealmInstant.now()
+                        }
+                    } else {
+                        logger.info { "telnet fail $host $port" }
+                        update {
+                            this.connectState = SyncState.INCOMPATIBLE
+                            this.modifyTime = RealmInstant.now()
+                        }
+                    }
+                    return@tryUseTokenCache
+                }
+            }
             update {
-                this.connectState = SyncState.UNVERIFIED
+                this.connectState = SyncState.DISCONNECTED
                 this.modifyTime = RealmInstant.now()
             }
         }
