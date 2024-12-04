@@ -65,6 +65,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import org.mongodb.kbson.ObjectId
 
 @Composable
 actual fun PasteboardScreen() {
@@ -79,10 +80,24 @@ actual fun PasteboardScreen() {
     val rememberPasteDataList by pasteDataViewModel.pasteDatas.collectAsState()
     val showMainWindow by appWindowManager.showMainWindow.collectAsState()
 
+    var previousFirstItemId by remember { mutableStateOf<ObjectId?>(null) }
+
     DisposableEffect(Unit) {
         pasteDataViewModel.resume()
         onDispose {
             pasteDataViewModel.cleanup()
+        }
+    }
+
+    LaunchedEffect(rememberPasteDataList) {
+        if (rememberPasteDataList.isNotEmpty()) {
+            val currentFirstItemId = rememberPasteDataList.first().id
+            if (currentFirstItemId != previousFirstItemId &&
+                listState.firstVisibleItemIndex == 1
+            ) {
+                listState.animateScrollToItem(0)
+            }
+            previousFirstItemId = currentFirstItemId
         }
     }
 
