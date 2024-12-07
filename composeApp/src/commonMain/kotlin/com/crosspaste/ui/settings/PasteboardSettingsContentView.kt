@@ -42,7 +42,7 @@ fun PasteboardSettingsContentView() {
     Text(
         modifier =
             Modifier.wrapContentSize()
-                .padding(start = 32.dp, top = 5.dp, bottom = 5.dp),
+                .padding(start = 16.dp, top = 5.dp, bottom = 5.dp),
         text = copywriter.getText("paste_control"),
         color = MaterialTheme.colorScheme.onBackground,
         style = MaterialTheme.typography.headlineSmall,
@@ -53,7 +53,6 @@ fun PasteboardSettingsContentView() {
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .padding(horizontal = 16.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.background),
     ) {

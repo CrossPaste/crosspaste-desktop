@@ -71,6 +71,9 @@ fun DeviceDetailContentView() {
         Column(
             modifier =
                 Modifier.fillMaxSize()
+                    .padding(16.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surface.copy(0.64f))
                     .padding(16.dp),
         ) {
             if (versionRelation != null && versionRelation != VersionRelation.EQUAL_TO) {

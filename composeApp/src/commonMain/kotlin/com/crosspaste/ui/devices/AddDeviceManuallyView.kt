@@ -1,6 +1,7 @@
 package com.crosspaste.ui.devices
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -65,9 +65,12 @@ fun AddDeviceManuallyForm() {
 
     Row(
         modifier =
-            Modifier.wrapContentWidth()
+            Modifier.fillMaxWidth()
                 .height(40.dp)
+                .background(MaterialTheme.colorScheme.surface)
                 .padding(horizontal = 12.dp, vertical = 5.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         var ip by remember { mutableStateOf("") }
         var ipIsError by remember { mutableStateOf(false) }
@@ -76,14 +79,14 @@ fun AddDeviceManuallyForm() {
         var portIsError by remember { mutableStateOf(false) }
 
         Text(
-            text = "IP:",
+            text = "IP",
             color = MaterialTheme.colorScheme.onBackground,
-            style = MaterialTheme.typography.headlineSmall,
             fontFamily = FontFamily.SansSerif,
-            fontSize = 12.sp,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 14.sp,
         )
 
-        Spacer(modifier = Modifier.width(5.dp))
+        Spacer(modifier = Modifier.width(8.dp))
 
         DefaultTextField(
             fixContentWidth = 137.5.dp,
@@ -116,12 +119,12 @@ fun AddDeviceManuallyForm() {
         Text(
             text = "Port",
             color = MaterialTheme.colorScheme.onBackground,
-            style = MaterialTheme.typography.headlineSmall,
             fontFamily = FontFamily.SansSerif,
-            fontSize = 12.sp,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 14.sp,
         )
 
-        Spacer(modifier = Modifier.width(5.dp))
+        Spacer(modifier = Modifier.width(8.dp))
 
         DefaultTextField(
             fixContentWidth = 46.dp,

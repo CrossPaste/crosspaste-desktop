@@ -64,7 +64,7 @@ actual fun SettingsScreen() {
             modifier =
                 Modifier.verticalScroll(scrollState)
                     .fillMaxSize()
-                    .padding(vertical = 20.dp),
+                    .padding(vertical = 25.dp),
         ) {
             SettingsContentView()
         }

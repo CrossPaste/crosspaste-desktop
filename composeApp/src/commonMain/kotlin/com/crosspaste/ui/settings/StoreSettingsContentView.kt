@@ -41,6 +41,7 @@ import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.clean.CleanTime
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.platform.getPlatform
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.ui.base.CustomRectangleSwitch
 import com.crosspaste.ui.base.anglesUpDown
@@ -68,6 +69,7 @@ fun StoreSettingsContentView() {
     val copywriter = koinInject<GlobalCopywriter>()
 
     val fileUtils = getFileUtils()
+    val platform = getPlatform()
 
     var pasteCount: Long? by remember { mutableStateOf(null) }
     var pasteFormatSize: String? by remember { mutableStateOf(null) }
@@ -129,7 +131,7 @@ fun StoreSettingsContentView() {
     Text(
         modifier =
             Modifier.wrapContentSize()
-                .padding(start = 32.dp, top = 5.dp, bottom = 5.dp),
+                .padding(start = 16.dp, top = 5.dp, bottom = 5.dp),
         text = copywriter.getText("store_info"),
         color = MaterialTheme.colorScheme.onBackground,
         style = MaterialTheme.typography.headlineSmall,
@@ -165,7 +167,6 @@ fun StoreSettingsContentView() {
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .padding(horizontal = 16.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.background),
     ) {
@@ -266,12 +267,14 @@ fun StoreSettingsContentView() {
         }
     }
 
-    SetStoragePathView()
+    if (platform.isDesktop()) {
+        SetStoragePathView()
+    }
 
     Text(
         modifier =
             Modifier.wrapContentSize()
-                .padding(start = 32.dp, top = 5.dp, bottom = 5.dp),
+                .padding(start = 16.dp, top = 5.dp, bottom = 5.dp),
         text = copywriter.getText("auto_cleanup_settings"),
         color = MaterialTheme.colorScheme.onBackground,
         style = MaterialTheme.typography.headlineSmall,
@@ -282,7 +285,6 @@ fun StoreSettingsContentView() {
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .padding(horizontal = 16.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.background),
     ) {
@@ -447,7 +449,6 @@ fun StoreSettingsContentView() {
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .padding(horizontal = 16.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.background),
     ) {
