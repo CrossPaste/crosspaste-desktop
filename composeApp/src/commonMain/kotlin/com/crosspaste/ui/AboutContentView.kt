@@ -1,6 +1,7 @@
 package com.crosspaste.ui
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,7 +43,11 @@ fun AboutContentView() {
     val uiSupport = koinInject<UISupport>()
 
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier =
+            Modifier.fillMaxSize()
+                .padding(16.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surface.copy(0.64f)),
         contentAlignment = Alignment.Center,
     ) {
         Box(

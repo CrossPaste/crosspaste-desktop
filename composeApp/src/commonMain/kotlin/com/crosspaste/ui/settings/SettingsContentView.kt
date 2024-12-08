@@ -10,15 +10,15 @@ import androidx.compose.ui.unit.dp
 fun SettingsContentView() {
     MainSettingsView()
 
-    Spacer(modifier = Modifier.height(10.dp))
+    Spacer(modifier = Modifier.height(25.dp))
 
     NetSettingsView()
 
-    Spacer(modifier = Modifier.height(10.dp))
+    Spacer(modifier = Modifier.height(25.dp))
 
     StoreSettingsView()
 
-    Spacer(modifier = Modifier.height(10.dp))
+    Spacer(modifier = Modifier.height(25.dp))
 
     PasteboardSettingsView()
 }

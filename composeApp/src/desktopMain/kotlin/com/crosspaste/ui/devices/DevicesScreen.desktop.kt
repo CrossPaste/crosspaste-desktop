@@ -1,6 +1,5 @@
 package com.crosspaste.ui.devices
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -8,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -33,25 +31,39 @@ actual fun DevicesScreen() {
         modifier =
             Modifier.fillMaxSize()
                 .padding(8.dp)
-                .clip(RoundedCornerShape(5.dp))
-                .background(MaterialTheme.colorScheme.surface.copy(0.64f)),
+                .clip(RoundedCornerShape(5.dp)),
         contentAlignment = Alignment.TopCenter,
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             val syncRuntimeInfos by syncManager.realTimeSyncRuntimeInfos.collectAsState()
 
             if (syncRuntimeInfos.isNotEmpty()) {
-                ExpandView("my_devices", defaultExpand = true) {
+                ExpandView(
+                    title = "my_devices",
+                    horizontalPadding = 0.dp,
+                    defaultExpand = true,
+                ) {
+                    Spacer(modifier = Modifier.height(3.dp))
                     MyDevicesView(syncRuntimeInfos)
                 }
                 Spacer(modifier = Modifier.height(10.dp))
             }
 
-            ExpandView("add_device_manually", defaultExpand = false) {
+            ExpandView(
+                title = "add_device_manually",
+                horizontalPadding = 0.dp,
+                defaultExpand = false,
+            ) {
+                Spacer(modifier = Modifier.height(3.dp))
                 AddDeviceManuallyView()
             }
             Spacer(modifier = Modifier.height(10.dp))
-            ExpandView("nearby_devices", defaultExpand = true) {
+            ExpandView(
+                title = "nearby_devices",
+                horizontalPadding = 0.dp,
+                defaultExpand = true,
+            ) {
+                Spacer(modifier = Modifier.height(3.dp))
                 NearbyDevicesView()
             }
         }

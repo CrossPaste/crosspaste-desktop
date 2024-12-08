@@ -38,6 +38,10 @@ data class Platform(
         return name == LINUX
     }
 
+    fun isDesktop(): Boolean {
+        return isWindows() || isMacos() || isLinux()
+    }
+
     fun isIphone(): Boolean {
         return name == IPHONE
     }

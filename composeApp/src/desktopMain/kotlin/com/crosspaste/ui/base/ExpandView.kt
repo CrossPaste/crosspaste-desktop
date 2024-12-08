@@ -1,21 +1,31 @@
 package com.crosspaste.ui.base
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -28,13 +38,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.i18n.GlobalCopywriter
@@ -44,96 +58,141 @@ import org.koin.compose.koinInject
 @Composable
 fun ExpandView(
     title: String,
+    icon: @Composable () -> Painter? = { null },
+    iconTintColor: Color = MaterialTheme.colorScheme.onBackground,
     defaultExpand: Boolean = false,
+    horizontalPadding: Dp = 16.dp,
+    titleBackgroundColor: Color = MaterialTheme.colorScheme.background,
+    backgroundColor: Color = MaterialTheme.colorScheme.surface.copy(0.64f),
     content: @Composable () -> Unit,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
     var hover by remember { mutableStateOf(false) }
     var expand by remember { mutableStateOf(defaultExpand) }
 
-    val backgroundColor =
-        if (hover) {
-            MaterialTheme.colorScheme.surface
-        } else {
-            Color.Transparent
-        }
+    val arrowRotation by animateFloatAsState(
+        targetValue = if (expand) 90f else 0f,
+        animationSpec = tween(300, easing = FastOutSlowInEasing),
+    )
 
-    val languageArrow: Painter =
-        if (expand) {
-            arrowDown()
-        } else {
-            arrowLeft()
-        }
+    val elevation by animateDpAsState(
+        targetValue = if (hover) 4.dp else 0.dp,
+        animationSpec = tween(200),
+    )
+
+    val iconScale by animateFloatAsState(
+        targetValue = if (hover || expand) 1f else 0.8f,
+        animationSpec = tween(200),
+    )
+
+    val arrowOffset by animateFloatAsState(
+        targetValue = if (hover || expand) 8f else 0f,
+        animationSpec = tween(200),
+    )
 
     Column(
         modifier =
-            Modifier.fillMaxWidth()
-                .wrapContentHeight(),
+            Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .padding(horizontal = horizontalPadding)
+                .clip(RoundedCornerShape(8.dp))
+                .background(backgroundColor),
     ) {
         Row(
             modifier =
-                Modifier.fillMaxWidth()
-                    .height(42.dp)
-                    .padding(horizontal = 10.dp)
+                Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
                     .combinedClickable(
                         interactionSource = MutableInteractionSource(),
                         indication = null,
-                        onClick = {
-                            expand = !expand
-                        },
+                        onClick = { expand = !expand },
                     )
-                    .onPointerEvent(
-                        eventType = PointerEventType.Enter,
-                        onEvent = {
-                            hover = true
-                        },
+                    .onPointerEvent(PointerEventType.Enter) { hover = true }
+                    .onPointerEvent(PointerEventType.Exit) { hover = false }
+                    .graphicsLayer(shadowElevation = elevation.value, shape = RoundedCornerShape(8.dp))
+                    .background(
+                        titleBackgroundColor,
+                        RoundedCornerShape(8.dp),
                     )
-                    .onPointerEvent(
-                        eventType = PointerEventType.Exit,
-                        onEvent = {
-                            hover = false
-                        },
-                    ),
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier =
-                    Modifier
-                        .height(26.dp)
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(5.dp))
-                        .background(backgroundColor),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                val paddingValue = if (expand || hover) 10.dp else 5.dp
-                val animatedPadding = animateDpAsState(targetValue = paddingValue)
-
-                Row(
+            icon()?.let {
+                Box(
                     modifier =
-                        Modifier.wrapContentSize()
-                            .padding(horizontal = animatedPadding.value),
-                    verticalAlignment = Alignment.CenterVertically,
+                        Modifier
+                            .size(22.dp)
+                            .graphicsLayer(
+                                scaleX = iconScale,
+                                scaleY = iconScale,
+                                transformOrigin = TransformOrigin(0.5f, 0.5f),
+                            ),
                 ) {
                     Icon(
-                        modifier = Modifier.size(15.dp),
-                        painter = languageArrow,
+                        painter = it,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onBackground,
-                    )
-                    Spacer(modifier = Modifier.width(5.dp))
-                    Text(
-                        text = copywriter.getText(title),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontSize = 14.sp,
-                        fontFamily = FontFamily.SansSerif,
-                        style = TextStyle(fontWeight = FontWeight.Light),
+                        modifier = Modifier.matchParentSize(),
+                        tint = iconTintColor,
                     )
                 }
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+
+            Text(
+                text = copywriter.getText(title),
+                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = 14.sp,
+                fontFamily = FontFamily.SansSerif,
+                style = TextStyle(fontWeight = FontWeight.Light),
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Box(
+                modifier =
+                    Modifier
+                        .size(18.dp)
+                        .graphicsLayer(
+                            translationX = arrowOffset,
+                            transformOrigin = TransformOrigin(1f, 0.5f),
+                        ),
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    modifier =
+                        Modifier
+                            .matchParentSize()
+                            .rotate(arrowRotation),
+                    tint = MaterialTheme.colorScheme.onBackground,
+                )
             }
         }
 
-        if (expand) {
-            content()
+        AnimatedVisibility(
+            visible = expand,
+            enter =
+                fadeIn(animationSpec = tween(300)) +
+                    expandVertically(
+                        animationSpec = tween(300, easing = FastOutSlowInEasing),
+                    ),
+            exit =
+                fadeOut(animationSpec = tween(300)) +
+                    shrinkVertically(
+                        animationSpec = tween(300, easing = FastOutSlowInEasing),
+                    ),
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .wrapContentSize(),
+            ) {
+                Column {
+                    content()
+                }
+            }
         }
     }
 }

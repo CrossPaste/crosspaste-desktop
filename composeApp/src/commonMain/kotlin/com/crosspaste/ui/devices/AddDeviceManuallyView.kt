@@ -1,6 +1,7 @@
 package com.crosspaste.ui.devices
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -10,9 +11,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.dto.sync.SyncInfo
@@ -39,6 +44,8 @@ import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
 import com.crosspaste.realm.sync.createSyncRuntimeInfo
 import com.crosspaste.ui.CrossPasteTheme.connectedColor
 import com.crosspaste.ui.base.DefaultTextField
+import com.crosspaste.ui.base.measureTextWidth
+import com.crosspaste.ui.base.textFieldStyle
 import com.crosspaste.utils.buildUrl
 import kotlinx.coroutines.runBlocking
 import org.koin.compose.koinInject
@@ -65,9 +72,12 @@ fun AddDeviceManuallyForm() {
 
     Row(
         modifier =
-            Modifier.wrapContentWidth()
+            Modifier.fillMaxWidth()
                 .height(40.dp)
+                .background(MaterialTheme.colorScheme.surface)
                 .padding(horizontal = 12.dp, vertical = 5.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         var ip by remember { mutableStateOf("") }
         var ipIsError by remember { mutableStateOf(false) }
@@ -76,19 +86,31 @@ fun AddDeviceManuallyForm() {
         var portIsError by remember { mutableStateOf(false) }
 
         Text(
-            text = "IP:",
+            text = "IP",
             color = MaterialTheme.colorScheme.onBackground,
-            style = MaterialTheme.typography.headlineSmall,
             fontFamily = FontFamily.SansSerif,
-            fontSize = 12.sp,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 14.sp,
         )
 
-        Spacer(modifier = Modifier.width(5.dp))
+        Spacer(modifier = Modifier.width(8.dp))
+
+        val ipWidth =
+            measureTextWidth(
+                "000.000.000.000",
+                textFieldStyle(),
+            )
 
         DefaultTextField(
-            fixContentWidth = 137.5.dp,
+            modifier =
+                Modifier
+                    .weight(0.9f)
+                    .widthIn(max = ipWidth + 16.dp),
             isError = ipIsError,
+            textAlign = TextAlign.Center,
             value = ip,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            contentPadding = PaddingValues(horizontal = 8.dp),
         ) { newValue ->
             val filteredValue = newValue.filter { it.isDigit() || it == '.' }
             if (filteredValue.length <= 15 && filteredValue == newValue) {
@@ -116,19 +138,35 @@ fun AddDeviceManuallyForm() {
         Text(
             text = "Port",
             color = MaterialTheme.colorScheme.onBackground,
-            style = MaterialTheme.typography.headlineSmall,
             fontFamily = FontFamily.SansSerif,
-            fontSize = 12.sp,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 14.sp,
         )
 
-        Spacer(modifier = Modifier.width(5.dp))
+        Spacer(modifier = Modifier.width(8.dp))
+
+        val portWidth =
+            measureTextWidth(
+                "10000",
+                textFieldStyle(),
+            )
 
         DefaultTextField(
-            fixContentWidth = 46.dp,
+            modifier =
+                Modifier
+                    .weight(0.5f)
+                    .widthIn(max = portWidth + 16.dp),
             isError = portIsError,
+            textAlign = TextAlign.Center,
             value = port,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            contentPadding = PaddingValues(horizontal = 8.dp),
         ) { newValue ->
             try {
+                if (newValue.isEmpty()) {
+                    port = ""
+                    return@DefaultTextField
+                }
                 val intPort = newValue.toInt()
                 if (intPort > 0) {
                     port = intPort.toString()
@@ -141,7 +179,10 @@ fun AddDeviceManuallyForm() {
         Spacer(modifier = Modifier.width(15.dp))
 
         Button(
-            modifier = Modifier.height(28.dp),
+            modifier =
+                Modifier.wrapContentWidth()
+                    .height(28.dp)
+                    .weight(0.4f),
             onClick = {
                 // check ip and port
                 if (ip.isEmpty()) {
@@ -209,6 +250,8 @@ fun AddDeviceManuallyForm() {
                         fontWeight = FontWeight.Light,
                         fontSize = 14.sp,
                     ),
+                maxLines = 1,
+                softWrap = false,
             )
         }
     }
