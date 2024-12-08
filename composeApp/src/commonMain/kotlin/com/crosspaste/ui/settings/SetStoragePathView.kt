@@ -130,7 +130,7 @@ fun SetStoragePathView() {
                                 )
                             }) {
                                 notificationManager.sendNotification(
-                                    message = it,
+                                    message = copywriter.getText(it),
                                     messageType = MessageType.Error,
                                 )
                             }
