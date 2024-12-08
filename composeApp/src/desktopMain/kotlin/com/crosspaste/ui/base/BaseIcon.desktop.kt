@@ -8,6 +8,7 @@ import com.crosspaste.composeapp.generated.resources.alert_circle
 import com.crosspaste.composeapp.generated.resources.archive
 import com.crosspaste.composeapp.generated.resources.arrow_back
 import com.crosspaste.composeapp.generated.resources.autorenew
+import com.crosspaste.composeapp.generated.resources.bell
 import com.crosspaste.composeapp.generated.resources.circle
 import com.crosspaste.composeapp.generated.resources.clipboard
 import com.crosspaste.composeapp.generated.resources.close
@@ -62,6 +63,11 @@ actual fun ascSort(): Painter {
 @Composable
 actual fun autoRenew(): Painter {
     return painterResource(Res.drawable.autorenew)
+}
+
+@Composable
+actual fun bell(): Painter {
+    return painterResource(Res.drawable.bell)
 }
 
 @Composable

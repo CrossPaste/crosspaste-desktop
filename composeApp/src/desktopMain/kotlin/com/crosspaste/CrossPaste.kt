@@ -447,7 +447,7 @@ class CrossPaste {
                     single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get()) }
                     single<ShortcutKeysListener> { get<DesktopShortcutKeysListener>() }
                     single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get()) }
-                    single<SoundService> { DesktopSoundService }
+                    single<SoundService> { DesktopSoundService(get()) }
                     single<ThemeDetector> { DesktopThemeDetector(get()) }
                     single<ToastManager> { DesktopToastManager() }
                     single<TokenCache> { TokenCache }

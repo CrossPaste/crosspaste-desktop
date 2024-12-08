@@ -31,6 +31,7 @@ data class AppConfig(
     val maxSyncFileSize: Long = 512,
     val useDefaultStoragePath: Boolean = true,
     val storagePath: String = "",
+    val enableSoundEffect: Boolean = true,
 ) {
     fun copy(
         key: String,
@@ -67,6 +68,7 @@ data class AppConfig(
             maxSyncFileSize = if (key == "maxSyncFileSize") value as Long else maxSyncFileSize,
             useDefaultStoragePath = if (key == "useDefaultStoragePath") value as Boolean else useDefaultStoragePath,
             storagePath = if (key == "storagePath") value as String else storagePath,
+            enableSoundEffect = if (key == "enableSoundEffect") value as Boolean else enableSoundEffect,
         )
     }
 }

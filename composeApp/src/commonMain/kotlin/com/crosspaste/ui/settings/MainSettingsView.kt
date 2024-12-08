@@ -20,6 +20,7 @@ import com.crosspaste.config.ConfigManager
 import com.crosspaste.log.CrossPasteLogger
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.ui.ScreenType
+import com.crosspaste.ui.base.bell
 import com.crosspaste.ui.base.bolt
 import com.crosspaste.ui.base.clipboard
 import com.crosspaste.ui.base.debug
@@ -75,6 +76,17 @@ fun MainSettingsView() {
             getCurrentSwitchValue = { configManager.config.enableEncryptSync },
         ) {
             configManager.updateConfig("enableEncryptSync", it)
+        }
+
+        HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
+
+        SettingSwitchItemView(
+            text = "sound_effect",
+            painter = bell(),
+            tint = Color(0xFFFF748B),
+            getCurrentSwitchValue = { configManager.config.enableSoundEffect },
+        ) {
+            configManager.updateConfig("enableSoundEffect", it)
         }
 
         HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
