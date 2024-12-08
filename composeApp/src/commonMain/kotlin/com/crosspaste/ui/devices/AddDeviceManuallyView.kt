@@ -163,6 +163,10 @@ fun AddDeviceManuallyForm() {
             contentPadding = PaddingValues(horizontal = 8.dp),
         ) { newValue ->
             try {
+                if (newValue.isEmpty()) {
+                    port = ""
+                    return@DefaultTextField
+                }
                 val intPort = newValue.toInt()
                 if (intPort > 0) {
                     port = intPort.toString()
