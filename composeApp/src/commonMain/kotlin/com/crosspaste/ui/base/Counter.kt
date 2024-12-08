@@ -77,6 +77,7 @@ fun Counter(
         DefaultTextField(
             modifier = Modifier.width(width + 16.dp),
             value = "$count",
+            contentPadding = PaddingValues(horizontal = 8.dp),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             onValueChange = {
                 if (it.matches(Regex("^\\d+$"))) {
