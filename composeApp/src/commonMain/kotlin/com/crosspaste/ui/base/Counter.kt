@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -21,8 +22,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+
+val countTextStyle =
+    TextStyle(
+        fontSize = 14.sp,
+        fontWeight = FontWeight.Bold,
+        fontFamily = FontFamily.Monospace,
+        textAlign = TextAlign.Center,
+    )
 
 @Composable
 fun Counter(
@@ -52,17 +63,21 @@ fun Counter(
             Text(
                 text = "-",
                 color = Color.White,
-                style =
-                    TextStyle(
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Light,
-                        fontFamily = FontFamily.SansSerif,
-                    ),
+                style = countTextStyle,
             )
         }
         Spacer(modifier = Modifier.width(4.dp))
+
+        val width =
+            measureTextWidth(
+                "$count",
+                countTextStyle,
+            )
+
         DefaultTextField(
+            modifier = Modifier.width(width + 16.dp),
             value = "$count",
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             onValueChange = {
                 if (it.matches(Regex("^\\d+$"))) {
                     val newCount = it.toLong()
@@ -77,12 +92,7 @@ fun Counter(
         Text(
             text = unit,
             color = MaterialTheme.colorScheme.primary,
-            style =
-                TextStyle(
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace,
-                ),
+            style = countTextStyle,
         )
         Spacer(modifier = Modifier.width(4.dp))
         Button(
@@ -99,12 +109,7 @@ fun Counter(
             Text(
                 text = "+",
                 color = Color.White,
-                style =
-                    TextStyle(
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Light,
-                        fontFamily = FontFamily.SansSerif,
-                    ),
+                style = countTextStyle,
             )
         }
     }
