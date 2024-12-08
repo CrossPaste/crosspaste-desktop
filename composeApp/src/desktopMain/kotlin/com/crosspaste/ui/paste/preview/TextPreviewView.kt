@@ -21,10 +21,7 @@ import com.crosspaste.realm.paste.PasteData
 import org.koin.compose.koinInject
 
 @Composable
-fun TextPreviewView(
-    pasteData: PasteData,
-    onDoubleClick: () -> Unit,
-) {
+fun TextPreviewView(pasteData: PasteData) {
     pasteData.getPasteItem(PasteText::class)?.let { pasteText ->
         val pasteMenuService = koinInject<DesktopPasteMenuService>()
 
@@ -35,8 +32,11 @@ fun TextPreviewView(
                         Modifier.fillMaxSize()
                             .pointerInput(Unit) {
                                 detectTapGestures(
+                                    onTap = {
+                                        pasteMenuService.copyPasteData(pasteData)
+                                    },
                                     onDoubleTap = {
-                                        onDoubleClick()
+                                        pasteMenuService.quickPaste(pasteData)
                                     },
                                 )
                             }

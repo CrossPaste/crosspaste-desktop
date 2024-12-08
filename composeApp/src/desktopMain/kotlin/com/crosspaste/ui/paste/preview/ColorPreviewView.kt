@@ -32,10 +32,7 @@ import com.crosspaste.ui.base.UISupport
 import org.koin.compose.koinInject
 
 @Composable
-fun ColorPreviewView(
-    pasteData: PasteData,
-    onDoubleClick: () -> Unit,
-) {
+fun ColorPreviewView(pasteData: PasteData) {
     pasteData.getPasteItem(ColorPasteItem::class)?.let { pasteColor ->
         val uiSupport = koinInject<UISupport>()
         val pasteMenuService = koinInject<DesktopPasteMenuService>()
@@ -47,8 +44,11 @@ fun ColorPreviewView(
                         Modifier.fillMaxSize()
                             .pointerInput(Unit) {
                                 detectTapGestures(
+                                    onTap = {
+                                        pasteMenuService.copyPasteData(pasteData)
+                                    },
                                     onDoubleTap = {
-                                        onDoubleClick()
+                                        pasteMenuService.quickPaste(pasteData)
                                     },
                                 )
                             },
