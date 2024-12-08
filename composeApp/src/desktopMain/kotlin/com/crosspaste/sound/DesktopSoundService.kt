@@ -1,5 +1,6 @@
 package com.crosspaste.sound
 
+import com.crosspaste.config.ConfigManager
 import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.cpuDispatcher
 import com.crosspaste.utils.ioDispatcher
@@ -15,21 +16,27 @@ import javax.sound.sampled.Clip
 import javax.sound.sampled.DataLine
 import kotlin.time.Duration.Companion.milliseconds
 
-object DesktopSoundService : SoundService {
+class DesktopSoundService(private val configManager: ConfigManager) : SoundService {
 
     private val logger = KotlinLogging.logger {}
 
     private val scope = CoroutineScope(cpuDispatcher)
 
-    private const val ERROR_SOUND_PATH = "sound/Basso.wav"
+    companion object {
 
-    private const val SUCCESS_SOUND_PATH = "sound/Blow.wav"
+        private const val ERROR_SOUND_PATH = "sound/Basso.wav"
 
-    private const val ENABLE_PASTEBOARD_LISTENING_SOUND_PATH = "sound/Glass.wav"
+        private const val SUCCESS_SOUND_PATH = "sound/Blow.wav"
 
-    private const val DISABLE_PASTEBOARD_LISTENING_SOUND_PATH = "sound/Pop.wav"
+        private const val ENABLE_PASTEBOARD_LISTENING_SOUND_PATH = "sound/Glass.wav"
+
+        private const val DISABLE_PASTEBOARD_LISTENING_SOUND_PATH = "sound/Pop.wav"
+    }
 
     private fun playSound(filePath: String) {
+        if (!configManager.config.enableSoundEffect) {
+            return
+        }
         scope.launch {
             try {
                 withContext(ioDispatcher) {

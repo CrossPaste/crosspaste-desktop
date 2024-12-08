@@ -22,6 +22,9 @@ expect fun ascSort(): Painter
 expect fun autoRenew(): Painter
 
 @Composable
+expect fun bell(): Painter
+
+@Composable
 expect fun circle(): Painter
 
 @Composable
