@@ -13,6 +13,8 @@ import com.crosspaste.ui.base.UISupport
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.mongodb.kbson.ObjectId
 
 class DesktopPasteMenuService(
@@ -85,6 +87,21 @@ class DesktopPasteMenuService(
                 pasteRealm.markDeletePasteData(pasteData.id)
             },
         )
+    }
+
+    override fun quickPaste(pasteData: PasteData) {
+        menuScope.launch {
+            desktopAppWindowManager.unActiveMainWindow {
+                withContext(ioDispatcher) {
+                    pasteboardService.tryWritePasteboard(
+                        pasteData = pasteData,
+                        localOnly = true,
+                        updateCreateTime = true,
+                    )
+                    true
+                }
+            }
+        }
     }
 
     fun fileMenuItemsProvider(

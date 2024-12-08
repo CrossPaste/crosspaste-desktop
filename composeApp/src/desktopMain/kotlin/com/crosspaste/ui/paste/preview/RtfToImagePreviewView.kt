@@ -23,10 +23,7 @@ import com.crosspaste.ui.paste.GenerateImageView
 import org.koin.compose.koinInject
 
 @Composable
-fun RtfToImagePreviewView(
-    pasteData: PasteData,
-    onDoubleClick: () -> Unit,
-) {
+fun RtfToImagePreviewView(pasteData: PasteData) {
     pasteData.getPasteItem(PasteRtf::class)?.let { pasteRtf ->
         val pasteMenuService = koinInject<DesktopPasteMenuService>()
         val userDataPathProvider = koinInject<UserDataPathProvider>()
@@ -47,7 +44,12 @@ fun RtfToImagePreviewView(
                                 .clip(RoundedCornerShape(5.dp))
                                 .pointerInput(Unit) {
                                     detectTapGestures(
-                                        onDoubleTap = { onDoubleClick() },
+                                        onTap = {
+                                            pasteMenuService.copyPasteData(pasteData)
+                                        },
+                                        onDoubleTap = {
+                                            pasteMenuService.quickPaste(pasteData)
+                                        },
                                     )
                                 },
                     ) {
