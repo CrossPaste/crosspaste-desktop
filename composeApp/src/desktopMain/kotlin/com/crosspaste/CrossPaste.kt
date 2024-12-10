@@ -15,7 +15,6 @@ import com.crosspaste.app.AppExitService
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppInfoFactory
-import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.AppLock
 import com.crosspaste.app.AppRestartService
 import com.crosspaste.app.AppSize
@@ -27,6 +26,7 @@ import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopAppExitService
 import com.crosspaste.app.DesktopAppInfoFactory
 import com.crosspaste.app.DesktopAppLaunch
+import com.crosspaste.app.DesktopAppLaunchState
 import com.crosspaste.app.DesktopAppRestartService
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppStartUpService
@@ -257,7 +257,6 @@ class CrossPaste {
                     single<AppExitService> { DesktopAppExitService }
                     single<AppInfo> { get<AppInfoFactory>().createAppInfo() }
                     single<AppInfoFactory> { DesktopAppInfoFactory(get()) }
-                    single<AppLaunchState> { DesktopAppLaunch.launch() }
                     single<AppLock> { DesktopAppLaunch }
                     single<AppPathProvider> { appPathProvider }
                     single<AppRestartService> { DesktopAppRestartService }
@@ -267,6 +266,7 @@ class CrossPaste {
                     single<CacheManager> { DesktopCacheManager(get(), get()) }
                     single<ConfigManager> { configManager }
                     single<CrossPasteLogger> { crossPasteLogger }
+                    single<DesktopAppLaunchState> { DesktopAppLaunch.launch() }
                     single<DeviceUtils> { DesktopDeviceUtils }
                     single<EndpointInfoFactory> { EndpointInfoFactory(get(), lazy { get<Server>() }) }
                     single<FileExtImageLoader> { DesktopFileExtLoader(get(), get()) }
@@ -467,7 +467,7 @@ class CrossPaste {
         private fun initInject() {
             try {
                 val koin = koinApplication.koin
-                val appLaunchState = koin.get<AppLaunchState>()
+                val appLaunchState = koin.get<DesktopAppLaunchState>()
                 if (appLaunchState.acquireLock) {
                     val configManager = koin.get<ConfigManager>()
                     val notificationManager = koin.get<NotificationManager>()
@@ -578,7 +578,7 @@ class CrossPaste {
             initInject()
             logger.info { "CrossPaste started" }
 
-            val appLaunchState = koinApplication.koin.get<AppLaunchState>()
+            val appLaunchState = koinApplication.koin.get<DesktopAppLaunchState>()
             val appWindowManager = koinApplication.koin.get<DesktopAppWindowManager>()
             val platform = getPlatform()
 

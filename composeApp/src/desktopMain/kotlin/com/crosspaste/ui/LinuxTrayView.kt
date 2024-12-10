@@ -9,7 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
-import com.crosspaste.app.AppLaunchState
+import com.crosspaste.app.DesktopAppLaunchState
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
@@ -35,7 +35,7 @@ object LinuxTrayView {
     @Composable
     fun Tray() {
         val applicationExit = LocalExitApplication.current
-        val appLaunchState = koinInject<AppLaunchState>()
+        val appLaunchState = koinInject<DesktopAppLaunchState>()
         val appWindowManager = koinInject<DesktopAppWindowManager>()
         val tray by remember {
             val trayType = getTrayType()
