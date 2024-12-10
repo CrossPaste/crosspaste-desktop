@@ -129,7 +129,7 @@ class PasteRealm(
             "hash == $0 AND pasteType == $1 AND createTime > $2 AND id != $3 AND pasteState != $4",
             newPasteDataHash,
             newPasteDataType,
-            dateUtils.getPrevDay(),
+            dateUtils.getRealmInstantOffsetDay(-1),
             newPasteDataId,
             PasteState.DELETED,
         )

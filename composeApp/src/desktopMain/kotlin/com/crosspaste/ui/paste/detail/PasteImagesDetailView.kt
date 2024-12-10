@@ -366,7 +366,6 @@ fun detailInfoItems(
                 DATE,
                 copywriter.getDate(
                     dateUtils.convertRealmInstantToLocalDateTime(pasteData.createTime),
-                    true,
                 ),
             ),
         )

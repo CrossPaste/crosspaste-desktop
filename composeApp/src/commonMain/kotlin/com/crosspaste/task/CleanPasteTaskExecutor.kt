@@ -35,11 +35,11 @@ class CleanPasteTaskExecutor(
             try {
                 cleanLock.withLock {
                     val imageCleanTime = CleanTime.entries[configManager.config.imageCleanTimeIndex]
-                    val imageCleanTimeInstant = dateUtils.getRealmInstant(-imageCleanTime.days)
+                    val imageCleanTimeInstant = dateUtils.getRealmInstantOffsetDay(-imageCleanTime.days)
                     pasteRealm.markDeleteByCleanTime(imageCleanTimeInstant, PasteType.IMAGE_TYPE.type)
 
                     val fileCleanTime = CleanTime.entries[configManager.config.fileCleanTimeIndex]
-                    val fileCleanTimeInstant = dateUtils.getRealmInstant(-fileCleanTime.days)
+                    val fileCleanTimeInstant = dateUtils.getRealmInstantOffsetDay(-fileCleanTime.days)
                     pasteRealm.markDeleteByCleanTime(fileCleanTimeInstant, PasteType.FILE_TYPE.type)
                 }
             } catch (e: Throwable) {

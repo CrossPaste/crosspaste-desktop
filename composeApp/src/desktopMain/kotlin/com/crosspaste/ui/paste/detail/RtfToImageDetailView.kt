@@ -82,7 +82,6 @@ fun RtfToImageDetailView(
                             DATE,
                             copywriter.getDate(
                                 dateUtils.convertRealmInstantToLocalDateTime(pasteData.createTime),
-                                true,
                             ),
                         ),
                     ),

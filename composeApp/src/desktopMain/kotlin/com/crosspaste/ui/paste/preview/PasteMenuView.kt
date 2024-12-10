@@ -470,7 +470,6 @@ fun getDetailInfo(
         infos.add(
             "${copywriter.getText("create_time")}: ${copywriter.getDate(
                 getDateUtils().convertRealmInstantToLocalDateTime(it),
-                true,
             )}",
         )
     }

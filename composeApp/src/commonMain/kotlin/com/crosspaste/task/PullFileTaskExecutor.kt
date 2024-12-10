@@ -62,7 +62,7 @@ class PullFileTaskExecutor(
             val fileItems = pasteData.getPasteAppearItems().filter { it is PasteFiles }
             val appInstanceId = pasteData.appInstanceId
             val dateString =
-                dateUtils.getYYYYMMDD(
+                dateUtils.getYMD(
                     dateUtils.convertRealmInstantToLocalDateTime(pasteData.createTime),
                 )
             val pasteId = pasteData.pasteId

@@ -5,13 +5,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriterImpl.Companion.EN
+import com.crosspaste.utils.DateTimeFormatOptions
 import com.crosspaste.utils.getDateUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.datetime.LocalDateTime
 import java.io.FileNotFoundException
 import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
-import java.util.Locale
 import java.util.Properties
 import java.util.concurrent.ConcurrentHashMap
 
@@ -76,9 +76,9 @@ class GlobalCopywriterImpl(private val configManager: ConfigManager) : GlobalCop
 
     override fun getDate(
         date: LocalDateTime,
-        detail: Boolean,
+        options: DateTimeFormatOptions,
     ): String {
-        return copywriter.getDate(date, detail)
+        return copywriter.getDate(date, options)
     }
 
     override fun getAbridge(): String {
@@ -145,36 +145,9 @@ class CopywriterImpl(private val language: String) : Copywriter {
 
     override fun getDate(
         date: LocalDateTime,
-        detail: Boolean,
+        options: DateTimeFormatOptions,
     ): String {
-        val locale =
-            when (language) {
-                "zh" -> Locale.SIMPLIFIED_CHINESE
-                "en" -> Locale.US
-                "jp" -> Locale.JAPAN
-                "es" -> Locale("es", "ES")
-                else -> Locale.getDefault()
-            }
-
-        val pattern =
-            if (detail) {
-                when (language) {
-                    "en" -> "MM/dd/yyyy HH:mm:ss"
-                    "es" -> "dd/MM/yyyy HH:mm:ss"
-                    "jp" -> "yyyy/MM/dd HH:mm:ss"
-                    "zh" -> "yyyy年MM月dd日 HH:mm:ss"
-                    else -> "MM/dd/yyyy HH:mm:ss"
-                }
-            } else {
-                when (language) {
-                    "en" -> "MM/dd/yyyy"
-                    "es" -> "dd/MM/yyyy"
-                    "jp" -> "yyyy/MM/dd"
-                    "zh" -> "yyyy年MM月dd日"
-                    else -> "MM/dd/yyyy"
-                }
-            }
-        return dateUtils.getDateText(date, pattern, locale.toString())
+        return dateUtils.getDateDesc(date, options, language.toString())
     }
 
     override fun getAbridge(): String {

@@ -24,7 +24,7 @@ interface CacheManager {
         val pasteId = key.pasteId
         pasteRealm.getPasteData(appInstanceId, pasteId)?.let { pasteData ->
             val dateString =
-                dateUtils.getYYYYMMDD(
+                dateUtils.getYMD(
                     dateUtils.convertRealmInstantToLocalDateTime(pasteData.createTime),
                 )
             val filesIndexBuilder = FilesIndexBuilder(PullFileTaskExecutor.CHUNK_SIZE)
