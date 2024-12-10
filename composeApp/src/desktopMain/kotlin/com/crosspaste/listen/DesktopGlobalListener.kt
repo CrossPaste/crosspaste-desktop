@@ -1,6 +1,6 @@
 package com.crosspaste.listen
 
-import com.crosspaste.app.AppLaunchState
+import com.crosspaste.app.DesktopAppLaunchState
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.listener.GlobalListener
 import com.crosspaste.notification.MessageType
@@ -14,7 +14,7 @@ import com.github.kwhat.jnativehook.mouse.NativeMouseListener
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 class DesktopGlobalListener(
-    private val appLaunchState: AppLaunchState,
+    private val appLaunchState: DesktopAppLaunchState,
     private val shortcutKeysListener: NativeKeyListener,
     private val mouseListener: NativeMouseListener,
     private val notificationManager: NotificationManager,

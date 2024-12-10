@@ -27,8 +27,8 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.rememberWindowState
-import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.AppSize
+import com.crosspaste.app.DesktopAppLaunchState
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.WinAppWindowManager
@@ -60,7 +60,7 @@ object WindowsTrayView {
     @Composable
     fun Tray() {
         val appSize = koinInject<AppSize>() as DesktopAppSize
-        val appLaunchState = koinInject<AppLaunchState>()
+        val appLaunchState = koinInject<DesktopAppLaunchState>()
         val appWindowManager = koinInject<DesktopAppWindowManager>()
         val notificationManager = koinInject<NotificationManager>() as DesktopNotificationManager
 

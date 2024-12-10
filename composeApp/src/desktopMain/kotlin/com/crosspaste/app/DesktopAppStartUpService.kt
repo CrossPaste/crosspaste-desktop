@@ -12,7 +12,7 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 class DesktopAppStartUpService(
-    appLaunchState: AppLaunchState,
+    appLaunchState: DesktopAppLaunchState,
     configManager: ConfigManager,
 ) : AppStartUpService {
 
@@ -130,7 +130,7 @@ class MacAppStartUpService(private val configManager: ConfigManager) : AppStartU
 }
 
 class WindowsAppStartUpService(
-    appLaunchState: AppLaunchState,
+    appLaunchState: DesktopAppLaunchState,
     private val configManager: ConfigManager,
 ) : AppStartUpService {
 

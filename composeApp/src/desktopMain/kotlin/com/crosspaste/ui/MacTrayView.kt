@@ -10,7 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
-import com.crosspaste.app.AppLaunchState
+import com.crosspaste.app.DesktopAppLaunchState
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
@@ -47,7 +47,7 @@ object MacTrayView {
     fun Tray() {
         val applicationExit = LocalExitApplication.current
 
-        val appLaunchState = koinInject<AppLaunchState>()
+        val appLaunchState = koinInject<DesktopAppLaunchState>()
         val appWindowManager = koinInject<DesktopAppWindowManager>()
         val notificationManager = koinInject<NotificationManager>() as DesktopNotificationManager
         val copywriter = koinInject<GlobalCopywriter>()
@@ -203,7 +203,7 @@ object MacTrayView {
 
     class MacTrayMouseClicked(
         private val appWindowManager: DesktopAppWindowManager,
-        private val appLaunchState: AppLaunchState,
+        private val appLaunchState: DesktopAppLaunchState,
         private val mouseClickedAction: (MouseEvent, WindowInfo) -> Unit,
     ) : MouseAdapter() {
 
