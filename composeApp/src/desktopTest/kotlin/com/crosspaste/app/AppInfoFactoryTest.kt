@@ -10,6 +10,7 @@ class AppInfoFactoryTest {
     fun testAppVersion() {
         val version =
             DesktopAppInfoFactory.getVersion(
+                AppEnv.PRODUCTION,
                 properties =
                     run {
                         val properties = Properties()
@@ -22,6 +23,7 @@ class AppInfoFactoryTest {
 
         val versionWithBeta =
             DesktopAppInfoFactory.getVersion(
+                AppEnv.PRODUCTION,
                 properties =
                     run {
                         val properties = Properties()
@@ -35,6 +37,7 @@ class AppInfoFactoryTest {
 
         val versionWithBeta2 =
             DesktopAppInfoFactory.getVersion(
+                AppEnv.PRODUCTION,
                 properties =
                     run {
                         val properties = Properties()
@@ -48,6 +51,7 @@ class AppInfoFactoryTest {
 
         val versionWithBetaNull =
             DesktopAppInfoFactory.getVersion(
+                AppEnv.PRODUCTION,
                 properties =
                     run {
                         val properties = Properties()
@@ -60,6 +64,7 @@ class AppInfoFactoryTest {
 
         val unknownVersion =
             DesktopAppInfoFactory.getVersion(
+                AppEnv.PRODUCTION,
                 properties =
                     run {
                         null
