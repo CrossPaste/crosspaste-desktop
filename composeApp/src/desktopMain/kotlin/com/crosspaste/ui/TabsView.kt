@@ -43,7 +43,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.app.AppEnv
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
@@ -54,6 +53,7 @@ import com.crosspaste.ui.base.trash
 import com.crosspaste.ui.devices.DevicesScreen
 import com.crosspaste.ui.devices.QRScreen
 import com.crosspaste.ui.paste.PasteboardScreen
+import com.crosspaste.utils.getAppEnvUtils
 import org.koin.compose.koinInject
 
 val tabTextStyle =
@@ -66,7 +66,6 @@ val tabTextStyle =
 
 @Composable
 fun TabsView() {
-    val appEnv = koinInject<AppEnv>()
     val appWindowManager = koinInject<AppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
 
@@ -80,7 +79,7 @@ fun TabsView() {
                 Pair(listOf(ScreenType.PASTE_PREVIEW), "pasteboard"),
                 Pair(listOf(ScreenType.DEVICES), "devices"),
                 Pair(listOf(ScreenType.QR_CODE), "scan"),
-                if (appEnv == AppEnv.DEVELOPMENT) Pair(listOf(ScreenType.DEBUG), "debug") else null,
+                if (getAppEnvUtils().isDevelopment()) Pair(listOf(ScreenType.DEBUG), "debug") else null,
             )
         }
 

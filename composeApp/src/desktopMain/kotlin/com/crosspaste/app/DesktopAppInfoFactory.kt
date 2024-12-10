@@ -57,29 +57,26 @@ class DesktopAppInfoFactory(private val configManager: ConfigManager) : AppInfoF
         private val appEnvUtils = getAppEnvUtils()
 
         fun getVersion(
-            appEnv: AppEnv = AppEnv.PRODUCTION,
+            appEnv: AppEnv,
             properties: Properties?,
         ): String {
-            return properties?.let {
-                val version = properties.getProperty("version", "Unknown")
+            val version = properties?.getProperty("version", "Unknown") ?: return "Unknown"
 
-                when (appEnv) {
-                    AppEnv.DEVELOPMENT -> {
-                        "$version-dev"
-                    }
-                    AppEnv.TEST -> {
-                        "$version-test"
-                    }
-                    else -> {
-                        val prerelease: String? = properties.getProperty("prerelease")
-                        val prereleaseSuffix =
-                            prerelease?.let {
-                                "-$prerelease"
-                            } ?: ""
-                        "$version$prereleaseSuffix"
-                    }
+            return when (appEnv) {
+                AppEnv.DEVELOPMENT -> "$version-dev"
+                AppEnv.TEST -> "$version-test"
+                else -> {
+                    val beta =
+                        if (appEnv == AppEnv.BETA) {
+                            "-beta"
+                        } else {
+                            ""
+                        }
+                    properties.getProperty("prerelease")?.let { prerelease ->
+                        "$version$beta-$prerelease"
+                    } ?: "$version$beta"
                 }
-            } ?: "Unknown"
+            }
         }
     }
 }
