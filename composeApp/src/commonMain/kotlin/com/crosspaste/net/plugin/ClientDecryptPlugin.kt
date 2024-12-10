@@ -53,7 +53,7 @@ class ClientDecryptPlugin(private val secureStore: SecureStore) :
                             HttpResponseData(
                                 it.status,
                                 it.requestTime,
-                                it.headers,
+                                updateContentLength(it.headers, decrypt.size.toString()),
                                 it.version,
                                 newChannel,
                                 it.coroutineContext,
@@ -75,12 +75,14 @@ class ClientDecryptPlugin(private val secureStore: SecureStore) :
                                 }
                             }
 
-                        val newChannel = ByteReadChannel(result.readByteArray())
+                        val byteArray = result.readByteArray()
+                        val contentLength = byteArray.size.toString()
+                        val newChannel = ByteReadChannel(byteArray)
                         val responseData =
                             HttpResponseData(
                                 it.status,
                                 it.requestTime,
-                                it.headers,
+                                updateContentLength(it.headers, contentLength),
                                 it.version,
                                 newChannel,
                                 it.coroutineContext,
@@ -89,6 +91,17 @@ class ClientDecryptPlugin(private val secureStore: SecureStore) :
                     }
                 }
             }
+        }
+    }
+
+    private fun updateContentLength(
+        headers: Headers,
+        newLength: String,
+    ): Headers {
+        return Headers.build {
+            appendAll(headers)
+            remove(HttpHeaders.ContentLength)
+            append(HttpHeaders.ContentLength, newLength)
         }
     }
 }
