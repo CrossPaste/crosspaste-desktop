@@ -1,78 +1,14 @@
 package com.crosspaste.realm
 
-import com.crosspaste.app.AppFileType
-import com.crosspaste.paste.item.ColorPasteItem
-import com.crosspaste.paste.item.FilesPasteItem
-import com.crosspaste.paste.item.HtmlPasteItem
-import com.crosspaste.paste.item.ImagesPasteItem
-import com.crosspaste.paste.item.RtfPasteItem
-import com.crosspaste.paste.item.TextPasteItem
-import com.crosspaste.paste.item.UrlPasteItem
-import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.realm.paste.PasteCollection
-import com.crosspaste.realm.paste.PasteData
-import com.crosspaste.realm.paste.PasteLabel
-import com.crosspaste.realm.secure.CryptPublicKey
-import com.crosspaste.realm.sync.HostInfo
-import com.crosspaste.realm.sync.SyncRuntimeInfo
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.Realm
 import io.realm.kotlin.RealmConfiguration
-import io.realm.kotlin.types.TypedRealmObject
 import okio.Path
-import kotlin.reflect.KClass
 
-class RealmManager private constructor(private val config: RealmConfiguration) {
-
-    companion object {
-
-        private val DTO_TYPES: Set<KClass<out TypedRealmObject>> =
-            setOf(
-                SyncRuntimeInfo::class,
-                HostInfo::class,
-            )
-
-        private val SECURE_TYPES: Set<KClass<out TypedRealmObject>> =
-            setOf(
-                CryptPublicKey::class,
-            )
-
-        private val PASTE_TYPES: Set<KClass<out TypedRealmObject>> =
-            setOf(
-                PasteData::class,
-                PasteCollection::class,
-                PasteLabel::class,
-                ColorPasteItem::class,
-                FilesPasteItem::class,
-                HtmlPasteItem::class,
-                ImagesPasteItem::class,
-                RtfPasteItem::class,
-                TextPasteItem::class,
-                UrlPasteItem::class,
-            )
-
-        private val TASK_TYPES: Set<KClass<out TypedRealmObject>> =
-            setOf(
-                com.crosspaste.realm.task.PasteTask::class,
-            )
-
-        private const val NAME = "crosspaste.realm"
-
-        private const val SCHEMA_VALUE: Long = 4
-
-        fun createRealmManager(userDataPathProvider: UserDataPathProvider): RealmManager {
-            val path = userDataPathProvider.resolve(appFileType = AppFileType.DATA)
-            return RealmManager(createRealmConfig(path))
-        }
-
-        fun createRealmConfig(path: Path): RealmConfiguration {
-            return RealmConfiguration.Builder(DTO_TYPES + SECURE_TYPES + PASTE_TYPES + TASK_TYPES)
-                .directory(path.toString())
-                .name(NAME)
-                .schemaVersion(SCHEMA_VALUE)
-                .build()
-        }
-    }
+class RealmManager(
+    private val path: Path,
+    private val createConfig: (Path) -> RealmConfiguration,
+) {
 
     private val logger = KotlinLogging.logger {}
 
@@ -82,9 +18,9 @@ class RealmManager private constructor(private val config: RealmConfiguration) {
 
     private fun createRealm(): Realm {
         try {
-            return Realm.open(config)
+            return Realm.open(createConfig(path))
         } finally {
-            logger.info { "RealmManager createRealm - ${config.path}" }
+            logger.info { "RealmManager createRealm - $path" }
         }
     }
 
@@ -92,7 +28,7 @@ class RealmManager private constructor(private val config: RealmConfiguration) {
         realm.close()
     }
 
-    fun writeCopyTo(path: Path) {
-        realm.writeCopyTo(createRealmConfig(path))
+    fun writeCopyTo(copyToPath: Path) {
+        realm.writeCopyTo(createConfig(copyToPath))
     }
 }
