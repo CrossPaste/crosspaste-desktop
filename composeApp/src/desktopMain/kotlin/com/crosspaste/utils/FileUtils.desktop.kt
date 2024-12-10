@@ -58,7 +58,7 @@ object DesktopFileUtils : FileUtils {
         fileName: String,
     ): String {
         val dateYYYYMMDD =
-            dateUtils.getYYYYMMDD(
+            dateUtils.getYMD(
                 dateUtils.convertRealmInstantToLocalDateTime(pasteCoordinate.createTime),
             )
         return Paths.get(

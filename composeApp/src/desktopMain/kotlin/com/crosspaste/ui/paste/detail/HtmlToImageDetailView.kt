@@ -82,7 +82,6 @@ fun HtmlToImageDetailView(
                             DATE,
                             copywriter.getDate(
                                 dateUtils.convertRealmInstantToLocalDateTime(pasteData.createTime),
-                                true,
                             ),
                         ),
                     ),

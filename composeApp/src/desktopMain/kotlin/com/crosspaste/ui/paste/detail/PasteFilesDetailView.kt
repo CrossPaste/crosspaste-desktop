@@ -254,7 +254,6 @@ fun PasteFilesDetailView(
                                 DATE,
                                 copywriter.getDate(
                                     dateUtils.convertRealmInstantToLocalDateTime(pasteData.createTime),
-                                    true,
                                 ),
                             ),
                         ),

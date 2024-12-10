@@ -1,5 +1,6 @@
 package com.crosspaste.i18n
 
+import com.crosspaste.utils.DateTimeFormatOptions
 import kotlinx.datetime.LocalDateTime
 
 interface Copywriter {
@@ -12,7 +13,7 @@ interface Copywriter {
 
     fun getDate(
         date: LocalDateTime,
-        detail: Boolean = false,
+        options: DateTimeFormatOptions = DateTimeFormatOptions(),
     ): String
 
     fun getAbridge(): String

@@ -90,7 +90,6 @@ fun PasteColorDetailView(
                             DATE,
                             copywriter.getDate(
                                 dateUtils.convertRealmInstantToLocalDateTime(pasteData.createTime),
-                                true,
                             ),
                         ),
                     ),

@@ -83,7 +83,6 @@ fun PasteTextDetailView(
                             DATE,
                             copywriter.getDate(
                                 dateUtils.convertRealmInstantToLocalDateTime(pasteData.createTime),
-                                true,
                             ),
                         ),
                     ),
