@@ -136,7 +136,9 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.path.getPlatformPathProvider
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.presist.FilePersist
+import com.crosspaste.realm.DesktopRealmManagerFactory
 import com.crosspaste.realm.RealmManager
+import com.crosspaste.realm.RealmManagerFactory
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.realm.secure.SecureIO
 import com.crosspaste.realm.secure.SecureRealm
@@ -286,7 +288,8 @@ class CrossPaste {
                     single<PasteRealm> { PasteRealm(get(), get(), get(), get(), lazy { get() }) }
                     single<PasteTaskRealm> { PasteTaskRealm(get()) }
                     single<Realm> { get<RealmManager>().realm }
-                    single<RealmManager> { RealmManager.createRealmManager(get()) }
+                    single<RealmManager> { get<RealmManagerFactory>().createRealmManager() }
+                    single<RealmManagerFactory> { DesktopRealmManagerFactory(get()) }
                     single<SecureIO> { SecureRealm(get()) }
                     single<SyncRuntimeInfoRealm> { SyncRuntimeInfoRealm(get()) }
 
