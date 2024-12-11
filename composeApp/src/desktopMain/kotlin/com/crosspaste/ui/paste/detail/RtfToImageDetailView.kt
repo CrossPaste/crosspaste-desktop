@@ -22,7 +22,7 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.paste.GenerateImageView
-import com.crosspaste.utils.getDateUtils
+import com.crosspaste.utils.DateUtils.toLocalDateTime
 import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
 
@@ -37,7 +37,6 @@ fun RtfToImageDetailView(
     val userDataPathProvider = koinInject<UserDataPathProvider>()
     val pasteItem = pasteRtf as PasteItem
 
-    val dateUtils = getDateUtils()
     val fileUtils = getFileUtils()
 
     val filePath by remember(pasteData.id) {
@@ -80,9 +79,7 @@ fun RtfToImageDetailView(
                         PasteDetailInfoItem(REMOTE, copywriter.getText(if (pasteData.remote) "yes" else "no")),
                         PasteDetailInfoItem(
                             DATE,
-                            copywriter.getDate(
-                                dateUtils.convertRealmInstantToLocalDateTime(pasteData.createTime),
-                            ),
+                            copywriter.getDate(pasteData.createTime.toLocalDateTime()),
                         ),
                     ),
             )

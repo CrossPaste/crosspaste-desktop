@@ -60,7 +60,7 @@ import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.base.moreVertical
 import com.crosspaste.ui.base.noFavorite
-import com.crosspaste.utils.getDateUtils
+import com.crosspaste.utils.DateUtils.toLocalDateTime
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -469,7 +469,7 @@ fun getDetailInfo(
     pasteData.createTime.let {
         infos.add(
             "${copywriter.getText("create_time")}: ${copywriter.getDate(
-                getDateUtils().convertRealmInstantToLocalDateTime(it),
+                it.toLocalDateTime(),
             )}",
         )
     }

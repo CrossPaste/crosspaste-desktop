@@ -8,6 +8,7 @@ import com.crosspaste.presist.FilesIndexBuilder
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.task.PullFileTaskExecutor
 import com.crosspaste.utils.DateUtils
+import com.crosspaste.utils.DateUtils.toLocalDateTime
 
 interface CacheManager {
 
@@ -23,10 +24,7 @@ interface CacheManager {
         val appInstanceId = key.appInstanceId
         val pasteId = key.pasteId
         pasteRealm.getPasteData(appInstanceId, pasteId)?.let { pasteData ->
-            val dateString =
-                dateUtils.getYMD(
-                    dateUtils.convertRealmInstantToLocalDateTime(pasteData.createTime),
-                )
+            val dateString = dateUtils.getYMD(pasteData.createTime.toLocalDateTime())
             val filesIndexBuilder = FilesIndexBuilder(PullFileTaskExecutor.CHUNK_SIZE)
             val fileItems = pasteData.getPasteAppearItems().filter { it is PasteFiles }
             for (pasteAppearItem in fileItems) {
