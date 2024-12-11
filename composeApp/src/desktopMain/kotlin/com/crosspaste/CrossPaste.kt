@@ -206,6 +206,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.painterResource
@@ -268,7 +269,7 @@ class CrossPaste {
                     single<CacheManager> { DesktopCacheManager(get(), get()) }
                     single<ConfigManager> { configManager }
                     single<CrossPasteLogger> { crossPasteLogger }
-                    single<DesktopAppLaunchState> { DesktopAppLaunch.launch() }
+                    single<DesktopAppLaunchState> { runBlocking { DesktopAppLaunch.launch() } }
                     single<DeviceUtils> { DesktopDeviceUtils }
                     single<EndpointInfoFactory> { EndpointInfoFactory(get(), lazy { get<Server>() }) }
                     single<FileExtImageLoader> { DesktopFileExtLoader(get(), get()) }
@@ -467,7 +468,7 @@ class CrossPaste {
         }
 
         @Throws(Exception::class)
-        private fun initInject() {
+        private fun startApplication() {
             try {
                 val koin = koinApplication.koin
                 val appLaunchState = koin.get<DesktopAppLaunchState>()
@@ -578,7 +579,7 @@ class CrossPaste {
             }
 
             logger.info { "Starting CrossPaste" }
-            initInject()
+            startApplication()
             logger.info { "CrossPaste started" }
 
             val appLaunchState = koinApplication.koin.get<DesktopAppLaunchState>()
