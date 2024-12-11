@@ -68,9 +68,8 @@ import com.crosspaste.ui.base.chevronRight
 import com.crosspaste.ui.base.imageCompress
 import com.crosspaste.ui.base.imageExpand
 import com.crosspaste.ui.base.imageSlash
-import com.crosspaste.utils.DateUtils
+import com.crosspaste.utils.DateUtils.toLocalDateTime
 import com.crosspaste.utils.FileUtils
-import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -92,7 +91,6 @@ fun PasteImagesDetailView(
         val platformContext = koinInject<PlatformContext>()
         val userDataPathProvider = koinInject<UserDataPathProvider>()
 
-        val dateUtils = getDateUtils()
         val fileUtils = getFileUtils()
 
         var index by remember(pasteData.id) { mutableStateOf(0) }
@@ -338,7 +336,6 @@ fun PasteImagesDetailView(
                             imagePath,
                             copywriter,
                             fileUtils,
-                            dateUtils,
                             pasteData,
                         ),
                 )
@@ -353,7 +350,6 @@ fun detailInfoItems(
     imagePath: Path,
     copywriter: GlobalCopywriter,
     fileUtils: FileUtils,
-    dateUtils: DateUtils,
     pasteData: PasteData,
 ): List<PasteDetailInfoItem> {
     val details =
@@ -364,9 +360,7 @@ fun detailInfoItems(
             PasteDetailInfoItem(REMOTE, copywriter.getText(if (pasteData.remote) "yes" else "no")),
             PasteDetailInfoItem(
                 DATE,
-                copywriter.getDate(
-                    dateUtils.convertRealmInstantToLocalDateTime(pasteData.createTime),
-                ),
+                copywriter.getDate(pasteData.createTime.toLocalDateTime()),
             ),
         )
 

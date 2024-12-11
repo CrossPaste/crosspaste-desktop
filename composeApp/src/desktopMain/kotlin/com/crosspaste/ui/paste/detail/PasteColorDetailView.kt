@@ -22,7 +22,7 @@ import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
 import com.crosspaste.paste.item.PasteColor
 import com.crosspaste.realm.paste.PasteData
-import com.crosspaste.utils.getDateUtils
+import com.crosspaste.utils.DateUtils.toLocalDateTime
 import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
 
@@ -33,8 +33,6 @@ fun PasteColorDetailView(
     onDoubleClick: () -> Unit,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
-    val dateUtils = getDateUtils()
-
     val fileUtils = getFileUtils()
 
     PasteDetailView(
@@ -88,9 +86,7 @@ fun PasteColorDetailView(
                         PasteDetailInfoItem(REMOTE, copywriter.getText(if (pasteData.remote) "yes" else "no")),
                         PasteDetailInfoItem(
                             DATE,
-                            copywriter.getDate(
-                                dateUtils.convertRealmInstantToLocalDateTime(pasteData.createTime),
-                            ),
+                            copywriter.getDate(pasteData.createTime.toLocalDateTime()),
                         ),
                     ),
             )

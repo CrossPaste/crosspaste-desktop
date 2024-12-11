@@ -54,7 +54,7 @@ import com.crosspaste.ui.base.FolderIcon
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.chevronLeft
 import com.crosspaste.ui.base.chevronRight
-import com.crosspaste.utils.getDateUtils
+import com.crosspaste.utils.DateUtils.toLocalDateTime
 import com.crosspaste.utils.getFileUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -79,7 +79,6 @@ fun PasteFilesDetailView(
 
         val pasteItem = pasteFiles as PasteItem
 
-        val dateUtils = getDateUtils()
         val fileUtils = getFileUtils()
 
         var index by remember(pasteData.id) { mutableStateOf(0) }
@@ -252,9 +251,7 @@ fun PasteFilesDetailView(
                             PasteDetailInfoItem(REMOTE, copywriter.getText(if (pasteData.remote) "yes" else "no")),
                             PasteDetailInfoItem(
                                 DATE,
-                                copywriter.getDate(
-                                    dateUtils.convertRealmInstantToLocalDateTime(pasteData.createTime),
-                                ),
+                                copywriter.getDate(pasteData.createTime.toLocalDateTime()),
                             ),
                         ),
                 )

@@ -21,6 +21,7 @@ import com.crosspaste.realm.task.TaskType
 import com.crosspaste.sound.SoundService
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.DateUtils
+import com.crosspaste.utils.DateUtils.toLocalDateTime
 import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.buildUrl
@@ -61,10 +62,7 @@ class PullFileTaskExecutor(
         pasteRealm.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
             val fileItems = pasteData.getPasteAppearItems().filter { it is PasteFiles }
             val appInstanceId = pasteData.appInstanceId
-            val dateString =
-                dateUtils.getYMD(
-                    dateUtils.convertRealmInstantToLocalDateTime(pasteData.createTime),
-                )
+            val dateString = dateUtils.getYMD(pasteData.createTime.toLocalDateTime())
             val pasteId = pasteData.pasteId
             val filesIndexBuilder = FilesIndexBuilder(CHUNK_SIZE)
             for (pasteAppearItem in fileItems) {

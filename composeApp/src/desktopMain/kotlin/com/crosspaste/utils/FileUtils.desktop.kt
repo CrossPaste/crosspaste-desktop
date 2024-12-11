@@ -2,6 +2,7 @@ package com.crosspaste.utils
 
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.presist.FilesChunk
+import com.crosspaste.utils.DateUtils.toLocalDateTime
 import io.ktor.utils.io.*
 import okio.FileSystem
 import okio.Path
@@ -57,10 +58,7 @@ object DesktopFileUtils : FileUtils {
         pasteCoordinate: PasteCoordinate,
         fileName: String,
     ): String {
-        val dateYYYYMMDD =
-            dateUtils.getYMD(
-                dateUtils.convertRealmInstantToLocalDateTime(pasteCoordinate.createTime),
-            )
+        val dateYYYYMMDD = dateUtils.getYMD(pasteCoordinate.createTime.toLocalDateTime())
         return Paths.get(
             pasteCoordinate.appInstanceId,
             dateYYYYMMDD,

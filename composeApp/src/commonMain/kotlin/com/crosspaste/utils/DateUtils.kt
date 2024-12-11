@@ -75,13 +75,16 @@ object DateUtils {
         return dateTimeFormat.format(date)
     }
 
-    fun convertRealmInstantToLocalDateTime(realmInstant: RealmInstant): LocalDateTime {
+    fun RealmInstant.toLocalDateTime(): LocalDateTime {
+        return this.toInstant().toLocalDateTime(TIME_ZONE)
+    }
+
+    fun RealmInstant.toInstant(): Instant {
         // Get seconds and nanoseconds from RealmInstant
-        val epochSeconds = realmInstant.epochSeconds
-        val nanosecondsOfSecond = realmInstant.nanosecondsOfSecond
+        val epochSeconds = this.epochSeconds
+        val nanosecondsOfSecond = this.nanosecondsOfSecond
 
         return Instant.fromEpochSeconds(epochSeconds, nanosecondsOfSecond)
-            .toLocalDateTime(TIME_ZONE)
     }
 
     fun now(): LocalDateTime {

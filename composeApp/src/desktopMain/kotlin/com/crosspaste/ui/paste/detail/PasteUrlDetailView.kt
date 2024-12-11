@@ -24,7 +24,7 @@ import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteUrl
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.ui.base.UISupport
-import com.crosspaste.utils.getDateUtils
+import com.crosspaste.utils.DateUtils.toLocalDateTime
 import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
 
@@ -36,7 +36,6 @@ fun PasteUrlDetailView(
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
     val uiSupport = koinInject<UISupport>()
-    val dateUtils = getDateUtils()
     val fileUtils = getFileUtils()
     val url = pasteUrl.url
     val pasteItem = pasteUrl as PasteItem
@@ -82,9 +81,7 @@ fun PasteUrlDetailView(
                         PasteDetailInfoItem(REMOTE, copywriter.getText(if (pasteData.remote) "yes" else "no")),
                         PasteDetailInfoItem(
                             DATE,
-                            copywriter.getDate(
-                                dateUtils.convertRealmInstantToLocalDateTime(pasteData.createTime),
-                            ),
+                            copywriter.getDate(pasteData.createTime.toLocalDateTime()),
                         ),
                     ),
             )
