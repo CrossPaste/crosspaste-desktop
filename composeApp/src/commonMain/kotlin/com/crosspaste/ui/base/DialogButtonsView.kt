@@ -86,7 +86,6 @@ fun AdaptiveTextButton(
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Monospace,
             overflow = TextOverflow.Ellipsis,
-            lineHeight = 0.sp,
             onTextLayout = { textLayoutResult ->
                 if (!readyToDraw) {
                     if (textLayoutResult.hasVisualOverflow) {
