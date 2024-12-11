@@ -63,7 +63,7 @@ object DesktopAppLaunch : AppLaunch, AppLock {
         resetLock = true
     }
 
-    override fun launch(): DesktopAppLaunchState {
+    override suspend fun launch(): DesktopAppLaunchState {
         val pair = acquireLock()
         val platform = getPlatform()
         val pid = ProcessHandle.current().pid()
