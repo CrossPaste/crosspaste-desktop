@@ -72,6 +72,10 @@ fun PasteDetailInfoView(
     val pasteRealm = koinInject<PasteRealm>()
     val userDataPathProvider = koinInject<UserDataPathProvider>()
 
+    var favorite by remember(pasteData.id) {
+        mutableStateOf(pasteData.favorite)
+    }
+
     Row(
         modifier = Modifier.fillMaxWidth().height(30.dp),
         horizontalArrangement = Arrangement.Start,
@@ -89,12 +93,13 @@ fun PasteDetailInfoView(
         )
         Spacer(modifier = Modifier.width(8.dp))
         PasteTooltipIconView(
-            painter = if (pasteData.favorite) favorite() else noFavorite(),
+            painter = if (favorite) favorite() else noFavorite(),
             contentDescription = "Favorite",
             tint = favoriteColor(),
             text = copywriter.getText("whether_to_search_only_favorites"),
         ) {
-            pasteRealm.setFavorite(pasteData.id, !pasteData.favorite)
+            pasteRealm.setFavorite(pasteData.id, !favorite)
+            favorite = !favorite
         }
         Spacer(modifier = Modifier.weight(1f))
         pasteData.source?.let { source ->
