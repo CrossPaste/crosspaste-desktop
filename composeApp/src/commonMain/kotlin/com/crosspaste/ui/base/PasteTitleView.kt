@@ -53,7 +53,7 @@ fun PasteTitleView(
                         if (selected) {
                             MaterialTheme.colorScheme.selectColor()
                         } else {
-                            MaterialTheme.colorScheme.background
+                            MaterialTheme.colorScheme.secondaryContainer
                         },
                     )
                     .clickable(onClick = onClick),

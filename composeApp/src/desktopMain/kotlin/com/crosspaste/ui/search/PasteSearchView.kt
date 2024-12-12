@@ -120,7 +120,7 @@ fun CrossPasteSearchWindowContent() {
                     Modifier
                         .shadow(5.dp, RoundedCornerShape(10.dp))
                         .size(appSize.searchWindowContentSize)
-                        .background(MaterialTheme.colorScheme.background)
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
                         .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center,
             ) {
