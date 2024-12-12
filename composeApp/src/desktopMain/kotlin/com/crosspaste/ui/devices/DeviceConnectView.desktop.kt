@@ -98,8 +98,6 @@ actual fun DeviceConnectView(
     val backgroundColor =
         if (hover) {
             MaterialTheme.colorScheme.selectColor()
-        } else if (deviceInteractionEnabled) {
-            MaterialTheme.colorScheme.surface
         } else {
             MaterialTheme.colorScheme.background
         }

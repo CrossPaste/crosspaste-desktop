@@ -14,6 +14,8 @@ object CrossPasteTheme {
         lightColorScheme(
             primary = Color(0xFF167DFF),
             surface = Color(0xFFF0F0F0),
+            secondaryContainer = Color(0xFFFFFFFF),
+            onSecondaryContainer = Color(0xFF000000),
         )
 
     val DarkColorScheme =
@@ -21,6 +23,8 @@ object CrossPasteTheme {
             primary = Color(0xFFBB86FC),
             background = Color(0xFF23272A),
             surface = Color(0xFF323232),
+            secondaryContainer = Color(0xFF000000),
+            onSecondaryContainer = Color(0xFFFFFFFF),
         )
 
     @Composable

@@ -126,7 +126,7 @@ fun textFieldStyle(textAlign: TextAlign = TextAlign.Start): TextStyle {
         fontSize = 14.sp,
         fontWeight = FontWeight.Bold,
         fontFamily = FontFamily.Monospace,
-        lineHeight = 10.sp,
+        lineHeight = 14.sp,
     )
 }
 
@@ -139,6 +139,13 @@ fun DefaultTextField(
     value: String,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
+    colors: TextFieldColors =
+        TextFieldDefaults.colors(
+            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+            unfocusedIndicatorColor = Color.Transparent,
+            focusedContainerColor = MaterialTheme.colorScheme.surface,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+        ),
     onValueChange: (String) -> Unit,
 ) {
     val textStyle = textFieldStyle(textAlign)
@@ -152,11 +159,7 @@ fun DefaultTextField(
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
         textStyle = textStyle,
-        colors =
-            TextFieldDefaults.colors(
-                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                unfocusedIndicatorColor = Color.Transparent,
-            ),
+        colors = colors,
         contentPadding = contentPadding,
     )
 }

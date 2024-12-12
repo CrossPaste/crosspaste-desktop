@@ -34,12 +34,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -108,7 +110,7 @@ fun QRContentView() {
                         Modifier.align(Alignment.CenterHorizontally)
                             .width(appSize.qrCodeSize.width)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(MaterialTheme.colorScheme.background),
+                            .background(Color.White),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -120,20 +122,21 @@ fun QRContentView() {
                         textAlign = TextAlign.Center,
                         text = copywriter.getText("please_scan_the_binding_device"),
                         maxLines = 3,
+                        softWrap = true,
                         style =
                             TextStyle(
                                 fontFamily = FontFamily.SansSerif,
                                 fontWeight = FontWeight.Light,
-                                color = MaterialTheme.colorScheme.onBackground,
+                                color = Color.Black,
                                 fontSize = 20.sp,
-                                lineHeight = 24.sp,
+                                lineBreak = LineBreak.Paragraph,
                             ),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Icon(
                         painter = scan(),
                         contentDescription = "Scan",
-                        modifier = Modifier.size(28.dp),
+                        modifier = Modifier.size(20.dp),
                         tint = MaterialTheme.colorScheme.primary,
                     )
                     Spacer(modifier = Modifier.width(8.dp))
