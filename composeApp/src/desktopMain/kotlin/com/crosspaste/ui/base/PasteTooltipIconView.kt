@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun PasteTooltipIconView(
     painter: Painter,
+    tint: Color = MaterialTheme.colorScheme.onBackground,
     text: String,
     contentDescription: String = "",
     onClick: () -> Unit,
@@ -80,7 +81,7 @@ fun PasteTooltipIconView(
                 painter = painter,
                 contentDescription = contentDescription,
                 modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.onBackground,
+                tint = tint,
             )
         }
     }

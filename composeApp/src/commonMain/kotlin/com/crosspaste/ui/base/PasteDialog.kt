@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
@@ -58,7 +59,12 @@ class PasteDialog(
         ) {
             Box(
                 modifier =
-                    Modifier.shadow(5.dp, RoundedCornerShape(10.dp))
+                    Modifier.shadow(
+                        elevation = 5.dp,
+                        RoundedCornerShape(10.dp),
+                        ambientColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        spotColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
                         .wrapContentSize()
                         .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center,
@@ -83,6 +89,7 @@ class PasteDialog(
                         ) {
                             val copywriter = koinInject<GlobalCopywriter>()
                             Text(
+                                modifier = Modifier.padding(horizontal = 16.dp),
                                 text = copywriter.getText(title),
                                 color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,

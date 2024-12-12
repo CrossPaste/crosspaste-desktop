@@ -62,7 +62,7 @@ fun ExpandView(
     iconTintColor: Color = MaterialTheme.colorScheme.onBackground,
     defaultExpand: Boolean = false,
     horizontalPadding: Dp = 16.dp,
-    titleBackgroundColor: Color = MaterialTheme.colorScheme.background,
+    titleBackgroundColor: Color = MaterialTheme.colorScheme.secondaryContainer,
     backgroundColor: Color = MaterialTheme.colorScheme.surface.copy(0.64f),
     content: @Composable () -> Unit,
 ) {
@@ -111,7 +111,12 @@ fun ExpandView(
                     )
                     .onPointerEvent(PointerEventType.Enter) { hover = true }
                     .onPointerEvent(PointerEventType.Exit) { hover = false }
-                    .graphicsLayer(shadowElevation = elevation.value, shape = RoundedCornerShape(8.dp))
+                    .graphicsLayer(
+                        shadowElevation = elevation.value,
+                        shape = RoundedCornerShape(8.dp),
+                        ambientShadowColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        spotShadowColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
                     .background(
                         titleBackgroundColor,
                         RoundedCornerShape(8.dp),

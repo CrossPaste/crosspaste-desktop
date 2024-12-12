@@ -74,7 +74,7 @@ fun AddDeviceManuallyForm() {
         modifier =
             Modifier.fillMaxWidth()
                 .height(40.dp)
-                .background(MaterialTheme.colorScheme.surface)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 12.dp, vertical = 5.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,

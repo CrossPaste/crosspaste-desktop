@@ -14,15 +14,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -44,8 +41,6 @@ import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -63,8 +58,7 @@ import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.realm.paste.PasteType.Companion.ALL_TYPES
 import com.crosspaste.ui.CrossPasteTheme.favoriteColor
 import com.crosspaste.ui.base.MenuItem
-import com.crosspaste.ui.base.PasteIconButton
-import com.crosspaste.ui.base.PasteTooltipAreaView
+import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.ascSort
 import com.crosspaste.ui.base.descSort
 import com.crosspaste.ui.base.favorite
@@ -197,10 +191,6 @@ fun SearchInputView(requestFocus: () -> Unit) {
 
             val maxWidth = getMenWidth(menuTexts, textStyle, paddingValues)
 
-            var hoverSortIcon by remember { mutableStateOf(false) }
-
-            var hoverFavoritesIcon by remember { mutableStateOf(false) }
-
             Row(
                 modifier = Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -211,119 +201,24 @@ fun SearchInputView(requestFocus: () -> Unit) {
                     horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    PasteTooltipAreaView(
-                        modifier = Modifier.size(32.dp),
+                    PasteTooltipIconView(
+                        painter = if (searchSort) descSort() else ascSort(),
+                        contentDescription = "Sort by creation time",
+                        tint = MaterialTheme.colorScheme.primary,
                         text = copywriter.getText("sort_by_creation_time"),
                     ) {
-                        Box(
-                            modifier =
-                                Modifier.size(32.dp)
-                                    .onPointerEvent(
-                                        eventType = PointerEventType.Enter,
-                                        onEvent = {
-                                            hoverSortIcon = true
-                                        },
-                                    )
-                                    .onPointerEvent(
-                                        eventType = PointerEventType.Exit,
-                                        onEvent = {
-                                            hoverSortIcon = false
-                                        },
-                                    ),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Box(
-                                modifier =
-                                    Modifier.fillMaxSize()
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(
-                                            if (hoverSortIcon) {
-                                                MaterialTheme.colorScheme.surface.copy(0.64f)
-                                            } else {
-                                                Color.Transparent
-                                            },
-                                        ),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                PasteIconButton(
-                                    size = 20.dp,
-                                    onClick = {
-                                        pasteSearchViewModel.switchSort()
-                                        focusRequester.requestFocus() // keep textField focus
-                                    },
-                                    modifier =
-                                        Modifier
-                                            .background(Color.Transparent, CircleShape),
-                                ) {
-                                    Icon(
-                                        modifier = Modifier.size(20.dp),
-                                        painter = if (searchSort) descSort() else ascSort(),
-                                        contentDescription = "Sort by creation time",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                    )
-                                }
-                            }
-                        }
+                        pasteSearchViewModel.switchSort()
+                        focusRequester.requestFocus() // keep textField focus
                     }
 
-                    PasteTooltipAreaView(
-                        modifier = Modifier.size(32.dp),
+                    PasteTooltipIconView(
+                        painter = if (searchFavorite) favorite() else noFavorite(),
+                        contentDescription = "Favorite",
+                        tint = favoriteColor(),
                         text = copywriter.getText("whether_to_search_only_favorites"),
                     ) {
-                        Box(
-                            modifier =
-                                Modifier.size(32.dp)
-                                    .onPointerEvent(
-                                        eventType = PointerEventType.Enter,
-                                        onEvent = {
-                                            hoverFavoritesIcon = true
-                                        },
-                                    )
-                                    .onPointerEvent(
-                                        eventType = PointerEventType.Exit,
-                                        onEvent = {
-                                            hoverFavoritesIcon = false
-                                        },
-                                    ),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Box(
-                                modifier =
-                                    Modifier.fillMaxSize()
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(
-                                            if (hoverFavoritesIcon) {
-                                                MaterialTheme.colorScheme.surface.copy(0.64f)
-                                            } else {
-                                                Color.Transparent
-                                            },
-                                        ),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                PasteIconButton(
-                                    size = 18.dp,
-                                    onClick = {
-                                        pasteSearchViewModel.switchFavorite()
-                                        focusRequester.requestFocus() // keep textField focus
-                                    },
-                                    modifier =
-                                        Modifier
-                                            .background(Color.Transparent, CircleShape),
-                                ) {
-                                    Icon(
-                                        modifier = Modifier.size(18.dp),
-                                        painter = if (searchFavorite) favorite() else noFavorite(),
-                                        contentDescription = "Favorite",
-                                        tint =
-                                            if (searchFavorite) {
-                                                favoriteColor()
-                                            } else {
-                                                MaterialTheme.colorScheme.primary
-                                            },
-                                    )
-                                }
-                            }
-                        }
+                        pasteSearchViewModel.switchFavorite()
+                        focusRequester.requestFocus() // keep textField focus
                     }
 
                     Spacer(modifier = Modifier.width(10.dp))
