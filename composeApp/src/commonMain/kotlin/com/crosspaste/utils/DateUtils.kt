@@ -69,7 +69,7 @@ object DateUtils {
         val dateTimeFormat =
             LocalDateTime.Format {
                 byUnicodePattern(
-                    "${options.dateStyle.toPattern(locale)} ${options.timeStyle.toPattern(locale, options.hour12)}",
+                    "${options.dateStyle.toPattern(locale)} ${options.timeStyle.toPattern(locale)}",
                 )
             }
         return dateTimeFormat.format(date)
