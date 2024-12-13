@@ -139,6 +139,8 @@ fun DefaultTextField(
     value: String,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
+    placeholder: @Composable (() -> Unit)? = null,
+    leadingIcon: @Composable (() -> Unit)? = null,
     colors: TextFieldColors =
         TextFieldDefaults.colors(
             focusedIndicatorColor = MaterialTheme.colorScheme.primary,
@@ -158,6 +160,8 @@ fun DefaultTextField(
         singleLine = true,
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
+        placeholder = placeholder,
+        leadingIcon = leadingIcon,
         textStyle = textStyle,
         colors = colors,
         contentPadding = contentPadding,
