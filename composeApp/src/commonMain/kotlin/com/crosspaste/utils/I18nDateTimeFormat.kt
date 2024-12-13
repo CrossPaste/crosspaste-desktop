@@ -3,7 +3,6 @@ package com.crosspaste.utils
 data class DateTimeFormatOptions(
     val dateStyle: DateStyle = DateStyle.MEDIUM,
     val timeStyle: TimeStyle = TimeStyle.MEDIUM,
-    val hour12: Boolean? = null,
 )
 
 enum class DateStyle {
@@ -19,30 +18,30 @@ enum class DateStyle {
                 when (locale) {
                     "zh" -> "yyyy年MM月dd日 EEEE"
                     "ja" -> "yyyy年MM月dd日 EEEE"
-                    "en" -> "EEEE, MMMM d, yyyy"
-                    "es" -> "EEEE, d 'de' MMMM 'de' yyyy"
-                    else -> "EEEE, MMMM d, yyyy"
+                    "en" -> "EEEE, MM/dd/yyyy"
+                    "es" -> "EEEE, dd 'de' MM 'de' yyyy"
+                    else -> "EEEE, MM/dd/yyyy"
                 }
             LONG ->
                 when (locale) {
                     "zh" -> "yyyy年MM月dd日"
                     "ja" -> "yyyy年MM月dd日"
-                    "en" -> "MMMM d, yyyy"
-                    "es" -> "d 'de' MMMM 'de' yyyy"
-                    else -> "MMMM d, yyyy"
+                    "en" -> "MM/dd/yyyy"
+                    "es" -> "dd 'de' MM 'de' yyyy"
+                    else -> "MM/dd/yyyy"
                 }
             MEDIUM ->
                 when (locale) {
                     "zh" -> "yyyy年MM月dd日"
-                    "jp" -> "yyyy年MM月dd日"
-                    "en" -> "MMM d, yyyy"
-                    "es" -> "d MMM yyyy"
-                    else -> "MMM d, yyyy"
+                    "ja" -> "yyyy年MM月dd日"
+                    "en" -> "MM/dd/yyyy"
+                    "es" -> "dd/MM/yyyy"
+                    else -> "MM/dd/yyyy"
                 }
             SHORT ->
                 when (locale) {
                     "zh" -> "yyyy/MM/dd"
-                    "jp" -> "yyyy/MM/dd"
+                    "ja" -> "yyyy/MM/dd"
                     "en" -> "M/d/yy"
                     "es" -> "d/M/yy"
                     else -> "M/d/yy"
@@ -57,57 +56,29 @@ enum class TimeStyle {
     SHORT,
     ;
 
-    internal fun toPattern(
-        locale: String,
-        hour12: Boolean?,
-    ): String {
-        val useHour12 =
-            hour12 ?: when (locale) {
-                "en" -> true
-                else -> false
-            }
-
-        return when (this) {
+    internal fun toPattern(locale: String): String =
+        when (this) {
             FULL ->
-                if (useHour12) {
-                    "hh:mm:ss a zzzz"
-                } else {
-                    "HH:mm:ss zzzz"
+                when (locale) {
+                    "zh", "ja" -> "HH:mm:ss"
+                    else -> "HH:mm:ss z"
                 }
             LONG ->
-                if (useHour12) {
-                    "hh:mm:ss a z"
-                } else {
-                    "HH:mm:ss z"
+                when (locale) {
+                    "zh", "ja" -> "HH:mm:ss"
+                    else -> "HH:mm:ss"
                 }
             MEDIUM ->
-                if (useHour12) {
-                    when (locale) {
-                        "zh" -> "ah:mm:ss"
-                        "jp" -> "ah:mm:ss"
-                        else -> "hh:mm:ss a"
-                    }
-                } else {
-                    when (locale) {
-                        "zh" -> "HH:mm:ss"
-                        "jp" -> "HH時mm分ss秒"
-                        else -> "HH:mm:ss"
-                    }
+                when (locale) {
+                    "zh" -> "HH:mm:ss"
+                    "ja" -> "HH時mm分ss秒"
+                    else -> "HH:mm:ss"
                 }
             SHORT ->
-                if (useHour12) {
-                    when (locale) {
-                        "zh" -> "ah:mm"
-                        "ja" -> "ah:mm"
-                        else -> "hh:mm a"
-                    }
-                } else {
-                    when (locale) {
-                        "zh" -> "HH:mm"
-                        "ja" -> "HH時mm分"
-                        else -> "HH:mm"
-                    }
+                when (locale) {
+                    "zh" -> "HH:mm"
+                    "ja" -> "HH時mm分"
+                    else -> "HH:mm"
                 }
         }
-    }
 }
