@@ -79,7 +79,7 @@ CrossPaste is continuously evolving! We plan to add more useful features in futu
 
 - [x] **v1.0.12**: Support for RTF format in pasteboard
 - [x] **v1.0.13**: Support for color data in pasteboard
-- [ ] **v1.1.0**: Support for mobile devices and shared pasteboard with mobile
+- [x] **v1.1.0**: Support for mobile devices and shared pasteboard with mobile
 - [ ] **v1.2.0**: Support for native pasteboard, improve pasteboard performance
 - [ ] **v1.3.0**: Introduction of command-line mode
 
