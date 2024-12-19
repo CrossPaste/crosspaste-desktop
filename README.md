@@ -30,7 +30,7 @@
 - **🔄 Real-time Sharing**: Instantly share pasteboard content across devices, seamlessly.
 - **🖥️ Unified Cross-platform**: Consistent interface on Mac, Windows, and Linux. No need to change habits.
 - **📋 Rich Type Support**: Handle various pasteboard types: Text, Color, URL, HTML, RTF, Image, File.
-- **🔒 End-to-End Encryption**: Using Signal protocol to fully protect your data security.
+- **🔒 End-to-End Encryption**: Using asymmetric encryption to fully protect your data security.
 - **🌐 LAN-only Serverless**: Local storage, serverless architecture. Privacy protection, in your control.
 - **🧹 Smart Space Management**: Auto-cleanup options manage pasteboard storage without manual effort.
 
