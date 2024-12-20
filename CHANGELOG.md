@@ -1,6 +1,138 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
+# [1.1.0] - 2024-12-20
+## Bug Fixes
+- :bug: Resolve custom encryption related bugs
+- :bug: Resolve incorrect deletion of folder pasteboard
+- :bug: Fix bugs related to multi-file and multi-image pasteboard handling
+- :bug: Fix commonMain implementation to support iOS compilation
+- :bug: Avoid circular reference between fileUtils and CodecsUtils
+- :bug: Fix code style issues
+- :bug: Fix PasteTaskExtraInfo serialization issue on iOS
+- :bug: Use class instead of object for serialization to prevent iOS crashes
+- :bug: Disable encryption on error response
+- :bug: Fix FileInfoTree serialization issue on iOS
+- :bug: Fix storage migration error where multi-language conversion was incorrect
+- :bug: Display AdaptiveTextButton correctly on Android
+
+## New Features
+- :sparkles: Implement custom encryption protocol to replace signal
+- :sparkles: Add click-to-copy feature for pasteboard
+- :sparkles: Add toggle switch for sound effects
+- :sparkles: Support Beta AppEnv to enable mobile beta version public testing
+- :sparkles: Abstract application launch states
+- :sparkles: Implement RealmManagerFactory for custom database storage across platforms
+- :sparkles: Add placeholder and leadingIcon to DefaultTextField
+
+## UI Improvements
+- :lipstick: Auto-scroll pasteboard list to latest item
+- :lipstick: Enhance UI contrast in device and settings screen
+- :lipstick: Enhance UI components visibility and theming
+- :lipstick: Add padding to Counter component UI
+
+## Multiplatform & Refactor & Code Style
+- :hammer: Optimize urlBuilder related interfaces to simplify usage
+- :hammer: Move ExceptionHandler to commonMain for multiplatform support
+- :hammer: Remove accidentally committed debug logs
+- :hammer: Refactor single file and image view
+- :hammer: Migrate FileIcon to Material 3 icon
+- :hammer: Move file hash algorithm to commonMain for multiplatform reuse
+- :hammer: Remove unused Base64 MIME encode/decode functions
+- :hammer: Move SHA256 algorithm to commonMain for multiplatform reuse
+- :hammer: Replace manual path separator with Okio Path API
+- :hammer: Make FileInfoTree creation multiplatform compatible
+- :hammer: Replace javaClass comparison with platform-independent implementation in equals method
+- :hammer: Abstract common logic into CacheManager interface
+- :hammer: Base64 implementation using kotlin.io, better multiplatform equivalent implementation
+- :hammer: Add Server interface for better iOS SwiftUI integration
+- :hammer: Migrate state variables to StateFlow in DeviceManager
+- :hammer: Optimize app sync api compatibility check
+- :hammer: Refactor Data Communication Layer to Avoid Direct Realm Object Serialization
+- :hammer: Make PasteServer extensible for mobile platforms
+- :hammer: Implement multiplatform dateUtils for reusability
+- :hammer: Convert RealmInstant utils to extension functions
+- :hammer: Make launch function suspendable
+- :zap: Optimize heartbeat performance by caching sync information
+
+## Dependencies
+- ⬆️ Bump coil from 3.0.0-rc02 to 3.0.2
+- ⬆️ Bump org.jmdns:jmdns from 3.5.12 to 3.6.0
+- ⬆️ Bump ktor from 2.3.12 to 3.0.1
+- ⬆️ Bump lifecycle from 2.8.3 to 2.8.4
+- ⬆️ Bump coil from 3.0.2 to 3.0.3
+- ⬆️ Bump compose-plugin from 1.7.0 to 1.7.1
+- ⬆️ Bump io.github.oshai:kotlin-logging from 7.0.0 to 7.0.3
+- ⬆️ Bump org.jlleitschuh.gradle.ktlint from 12.1.1 to 12.1.2
+- ⬆️ Bump coil from 3.0.3 to 3.0.4
+- ⬆️ Bump org.jsoup:jsoup from 1.18.1 to 1.18.3
+- ⬆️ Bump ktor from 3.0.1 to 3.0.2
+- ⬆️ Bump compose from 1.7.5 to 1.7.6
+
+## Documentation
+- :memo: Add tech blog links to README
+- :memo: Remove signal documentation
+- :bookmark: Update version to 1.1.0
+
+**Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/1.0.13.1121...1.1.0.1184
+
+
+# [1.0.13] - 2024-11-6
+## Bug Fixes
+* :bug: Initialize copywriter and notificationManager in configManager by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2115
+* :bug: Correct image cropping and centering on Android platform by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2144
+* :bug: Improve color format parsing and add conversion tests by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2153
+* :bug: Actively close Realm database when exiting the app to ensure data persistence by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2170
+* :bug: Fix regression issue with image type pasteboard display by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2176
+
+## New Features
+* :sparkles: Enable ThemeDetector to get current ColorScheme by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2107
+* :sparkles: Enhance QR code generation and parsing by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2133
+* :sparkles: Support auto-filling verification token from cache by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2140
+* :sparkles: Add NoneTransferData to handle invalid data by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2147
+* :sparkles: Support for color data in pasteboard by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2151
+* :sparkles: Add support for updating color palette by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2155
+
+## UI Improvements
+* :lipstick: Add About item to main settings menu by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2105
+* :art: Wrap DeviceConnectView inside Column for better layout isolation by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2111
+* :lipstick: Define QR code scanning interface for mobile by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2129
+* :zap: Improve pasteboard loading logic by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2159
+* :zap: Improve search window state management by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2161
+
+## Multiplatform  & Refactor & Code Style
+* :hammer: Make AppTokenService multiplatform reusable by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2109
+* :hammer: Move EndpointInfoFactory to commonMain for multiplatform reuse by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2113
+* :hammer: Move common pasteboard consumption logic to TransferableConsumer for multiplatform reuse by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2117
+* :hammer: Extract remote pasteboard listening service to common interface by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2120
+* :hammer: Refactor QR code UI for multiplatform reuse by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2126
+* :hammer: Restructure notification component for multiplatform reuse by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2131
+* :hammer: Optimize SyncManager implementation by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2138
+* :hammer: Extract PasteMenuService interface for multiplatform reuse by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2142
+* :hammer: Migrate pasteboard process plugin to common module for multiplatform support by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2149
+* :hammer: Move shared utils implementation to commonMain by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2157
+* :hammer: Refactor search input into separate component by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2163
+* :hammer: enhance pastetype from object to data class by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2172
+
+## Dependencies
+* ⬆️ Bump ch.qos.logback:logback-classic from 1.5.8 to 1.5.12 by @dependabot in https://github.com/CrossPaste/crosspaste-desktop/pull/2136
+* ⬆️ Bump dev.hydraulic.conveyor from 1.11 to 1.12 by @dependabot in https://github.com/CrossPaste/crosspaste-desktop/pull/2135
+* ⬆️ Bump coil from 3.0.0-rc01 to 3.0.0-rc02 by @dependabot in https://github.com/CrossPaste/crosspaste-desktop/pull/2164
+* ⬆️ Bump androidx.compose.material3:material3 from 1.3.0 to 1.3.1 by @dependabot in https://github.com/CrossPaste/crosspaste-desktop/pull/2167
+* ⬆️ Bump compose from 1.7.4 to 1.7.5 by @dependabot in https://github.com/CrossPaste/crosspaste-desktop/pull/2166
+
+## Documentation
+* :memo: Update changelog / download to 1.0.12 by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2122
+* :memo: Add QR code scanner and token SVG support by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2124
+* 📝 Update `SortPlugin.kt` reference by @emmanuel-ferdman in https://github.com/CrossPaste/crosspaste-desktop/pull/2150
+* :memo: Update version to 1.0.13 by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/2174
+
+## New Contributors
+* @emmanuel-ferdman made their first contribution in https://github.com/CrossPaste/crosspaste-desktop/pull/2150
+
+**Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/1.0.12.1084...1.0.13.1121
+
 # [1.0.12] - 2024-10-19
 ## Bug Fixes
 
