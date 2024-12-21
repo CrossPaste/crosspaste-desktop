@@ -43,7 +43,7 @@ import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.realm.paste.PasteRealm
-import com.crosspaste.ui.base.CustomRectangleSwitch
+import com.crosspaste.ui.base.CustomTextSwitch
 import com.crosspaste.ui.base.anglesUpDown
 import com.crosspaste.ui.base.clock
 import com.crosspaste.ui.base.color
@@ -182,8 +182,8 @@ fun StoreSettingsContentView() {
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                CustomRectangleSwitch(
-                    modifier = Modifier.width(96.dp).height(30.dp),
+                CustomTextSwitch(
+                    modifier = Modifier.width(nameMaxWidth + 23.dp).height(30.dp),
                     checked = allOrFavorite,
                     onCheckedChange = { newAllOrFavorite ->
                         allOrFavorite = newAllOrFavorite
@@ -195,13 +195,13 @@ fun StoreSettingsContentView() {
                             fontWeight = FontWeight.Light,
                             fontFamily = FontFamily.SansSerif,
                         ),
-                    checkedText = copywriter.getText("all_storage"),
-                    uncheckedText = copywriter.getText("favorite_storage"),
+                    checkedText = copywriter.getText("all"),
+                    uncheckedText = copywriter.getText("favorite"),
                 )
             }
 
             Row(
-                modifier = Modifier.weight(0.25f),
+                modifier = Modifier.weight(0.2f),
                 horizontalArrangement = Arrangement.End,
             ) {
                 SettingsText(copywriter.getText("count"))
