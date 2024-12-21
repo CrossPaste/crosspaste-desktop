@@ -147,7 +147,7 @@ fun OTPCodeBox() {
                     contentAlignment = Alignment.Center,
                     modifier =
                         Modifier
-                            .background(MaterialTheme.colorScheme.background, RoundedCornerShape(4.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
                             .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp))
                             .padding(vertical = 8.dp, horizontal = 12.dp),
                 ) {

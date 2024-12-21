@@ -214,7 +214,7 @@ fun SearchInputView(requestFocus: () -> Unit) {
                     PasteTooltipIconView(
                         painter = if (searchFavorite) favorite() else noFavorite(),
                         contentDescription = "Favorite",
-                        tint = favoriteColor(),
+                        tint = MaterialTheme.colorScheme.favoriteColor(),
                         text = copywriter.getText("whether_to_search_only_favorites"),
                     ) {
                         pasteSearchViewModel.switchFavorite()
