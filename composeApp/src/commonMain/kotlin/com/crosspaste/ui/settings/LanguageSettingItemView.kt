@@ -7,7 +7,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -88,7 +87,7 @@ fun LanguageSettingItemView() {
     ) {
         Row(
             modifier =
-                Modifier.padding(6.dp).wrapContentSize()
+                Modifier.wrapContentSize()
                     .combinedClickable(
                         interactionSource = MutableInteractionSource(),
                         indication = null,
@@ -110,8 +109,7 @@ fun LanguageSettingItemView() {
             Icon(
                 modifier =
                     Modifier
-                        .padding(5.dp, 0.dp, 5.dp, 0.dp)
-                        .size(15.dp),
+                        .size(20.dp),
                 painter = languageArrow,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onBackground,

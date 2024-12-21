@@ -97,7 +97,8 @@ fun AboutContentView() {
 
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 80.dp),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                    thickness = 2.dp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.36f),
                 )
 
                 AboutInfoItem("newbie_tutorial") {
@@ -106,7 +107,8 @@ fun AboutContentView() {
 
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 80.dp),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                    thickness = 2.dp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.36f),
                 )
 
                 AboutInfoItem("change_log") {
@@ -115,7 +117,8 @@ fun AboutContentView() {
 
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 80.dp),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                    thickness = 2.dp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.36f),
                 )
 
                 AboutInfoItem("feedback") {
@@ -124,7 +127,8 @@ fun AboutContentView() {
 
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 80.dp),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                    thickness = 2.dp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.36f),
                 )
 
                 AboutInfoItem("contact_us") {
@@ -144,7 +148,7 @@ fun AboutInfoItem(
     Row(
         modifier =
             Modifier.fillMaxWidth()
-                .height(40.dp)
+                .height(48.dp)
                 .padding(horizontal = 80.dp, vertical = 5.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .clickable(onClick = onClick),
@@ -153,7 +157,7 @@ fun AboutInfoItem(
         Text(
             modifier = Modifier.wrapContentSize().padding(start = 5.dp),
             text = copywriter.getText(title),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.titleLarge.copy(lineHeight = 24.sp),
             color = MaterialTheme.colorScheme.onBackground,
             fontSize = 15.sp,
         )
