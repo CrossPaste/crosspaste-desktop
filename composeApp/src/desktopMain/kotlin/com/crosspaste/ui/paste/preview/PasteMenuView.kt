@@ -321,7 +321,7 @@ fun PasteMenuView(
                                     },
                             painter = if (pasteData.favorite) favorite() else noFavorite(),
                             contentDescription = "Favorite",
-                            tint = favoriteColor(),
+                            tint = MaterialTheme.colorScheme.favoriteColor(),
                         )
                     }
                 }

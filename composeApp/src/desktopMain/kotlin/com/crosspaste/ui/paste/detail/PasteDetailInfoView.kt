@@ -95,7 +95,7 @@ fun PasteDetailInfoView(
         PasteTooltipIconView(
             painter = if (favorite) favorite() else noFavorite(),
             contentDescription = "Favorite",
-            tint = favoriteColor(),
+            tint = MaterialTheme.colorScheme.favoriteColor(),
             text = copywriter.getText("whether_to_search_only_favorites"),
         ) {
             pasteRealm.setFavorite(pasteData.id, !favorite)

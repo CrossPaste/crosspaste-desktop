@@ -253,12 +253,12 @@ fun textFieldColors() =
         focusedTextColor = MaterialTheme.colorScheme.onBackground,
         unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
         disabledTextColor = Color.Transparent,
-        focusedContainerColor = Color.Transparent,
-        unfocusedContainerColor = Color.Transparent,
+        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
         disabledContainerColor = Color.Transparent,
         cursorColor = MaterialTheme.colorScheme.primary,
-        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-        unfocusedIndicatorColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f),
+        focusedIndicatorColor = Color.Transparent,
+        unfocusedIndicatorColor = Color.Transparent,
         disabledIndicatorColor = Color.Transparent,
     )
 

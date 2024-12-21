@@ -47,8 +47,13 @@ object CrossPasteTheme {
         )
     }
 
-    fun favoriteColor(): Color {
-        return Color(0xFFFFCE34)
+    @Composable
+    fun ColorScheme.favoriteColor(): Color {
+        return if (isLight()) {
+            Color(0xFFFFAA00)
+        } else {
+            Color(0xFFFFCE34)
+        }
     }
 
     @Composable
