@@ -26,7 +26,7 @@ import org.koin.compose.koinInject
 fun SettingItemView(
     painter: Painter,
     text: String,
-    tint: Color = MaterialTheme.colorScheme.primary,
+    tint: Color = MaterialTheme.colorScheme.onSurface,
     content: @Composable () -> Unit,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()

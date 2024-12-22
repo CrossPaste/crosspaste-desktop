@@ -6,16 +6,16 @@ import androidx.compose.ui.graphics.painter.Painter
 import com.crosspaste.net.VersionRelation
 import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.realm.sync.SyncState
-import com.crosspaste.ui.CrossPasteTheme.connectedColor
-import com.crosspaste.ui.CrossPasteTheme.connectingColor
-import com.crosspaste.ui.CrossPasteTheme.disconnectedColor
-import com.crosspaste.ui.CrossPasteTheme.unmatchedColor
-import com.crosspaste.ui.CrossPasteTheme.unverifiedColor
 import com.crosspaste.ui.base.allowReceive
 import com.crosspaste.ui.base.allowSend
 import com.crosspaste.ui.base.block
 import com.crosspaste.ui.base.sync
 import com.crosspaste.ui.base.unverified
+import com.crosspaste.ui.theme.CrossPasteTheme.connectedColor
+import com.crosspaste.ui.theme.CrossPasteTheme.connectingColor
+import com.crosspaste.ui.theme.CrossPasteTheme.disconnectedColor
+import com.crosspaste.ui.theme.CrossPasteTheme.unmatchedColor
+import com.crosspaste.ui.theme.CrossPasteTheme.unverifiedColor
 
 @Composable
 fun AllowSendAndReceiveImage(syncRuntimeInfo: SyncRuntimeInfo): Painter {

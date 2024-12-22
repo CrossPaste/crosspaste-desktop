@@ -21,7 +21,6 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.dp
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.realm.sync.createSyncRuntimeInfo
-import com.crosspaste.ui.CrossPasteTheme.selectColor
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -34,9 +33,9 @@ actual fun SyncDeviceView(
     var hover by remember { mutableStateOf(false) }
     val backgroundColor =
         if (hover) {
-            MaterialTheme.colorScheme.selectColor()
+            MaterialTheme.colorScheme.secondaryContainer
         } else {
-            MaterialTheme.colorScheme.background
+            MaterialTheme.colorScheme.surfaceContainerHigh
         }
 
     DeviceBarView(

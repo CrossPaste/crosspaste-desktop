@@ -1,8 +1,8 @@
 package com.crosspaste.ui
 
 import androidx.compose.material3.ColorScheme
-import com.crosspaste.ui.CrossPasteTheme.DarkColorScheme
-import com.crosspaste.ui.CrossPasteTheme.LightColorScheme
+import com.crosspaste.ui.theme.CrossPasteTheme.DarkColorScheme
+import com.crosspaste.ui.theme.CrossPasteTheme.LightColorScheme
 
 interface ThemeDetector {
     fun isSystemInDark(): Boolean

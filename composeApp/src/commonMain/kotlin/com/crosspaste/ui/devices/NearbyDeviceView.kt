@@ -24,8 +24,8 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
 import com.crosspaste.realm.sync.createSyncRuntimeInfo
 import com.crosspaste.sync.DeviceManager
-import com.crosspaste.ui.CrossPasteTheme.connectedColor
-import com.crosspaste.ui.CrossPasteTheme.disconnectedColor
+import com.crosspaste.ui.theme.CrossPasteTheme.connectedColor
+import com.crosspaste.ui.theme.CrossPasteTheme.disconnectedColor
 import com.crosspaste.utils.getJsonUtils
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString

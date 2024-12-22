@@ -47,7 +47,7 @@ fun WindowDecoration(title: String) {
             Modifier
                 .fillMaxWidth()
                 .height(60.dp)
-                .background(MaterialTheme.colorScheme.background.copy(0.64f)),
+                .background(MaterialTheme.colorScheme.primaryContainer),
     ) {
         DecorationUI(title)
     }
@@ -77,7 +77,7 @@ fun DecorationUI(title: String) {
                             .clip(RoundedCornerShape(6.dp))
                             .background(
                                 if (hoverReturn) {
-                                    MaterialTheme.colorScheme.background
+                                    MaterialTheme.colorScheme.surfaceContainerLowest
                                 } else {
                                     Color.Transparent
                                 },
@@ -108,7 +108,12 @@ fun DecorationUI(title: String) {
                         painter = arrowBack(),
                         contentDescription = "return",
                         modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint =
+                            if (hoverReturn) {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
                     )
 
                     Text(
@@ -116,7 +121,12 @@ fun DecorationUI(title: String) {
                         style =
                             TextStyle(
                                 fontWeight = FontWeight.Light,
-                                color = MaterialTheme.colorScheme.primary,
+                                color =
+                                    if (hoverReturn) {
+                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    },
                                 fontFamily = FontFamily.SansSerif,
                                 fontSize = 22.sp,
                             ),
@@ -129,7 +139,7 @@ fun DecorationUI(title: String) {
                 Text(
                     modifier = Modifier,
                     text = copywriter.getText(title),
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                     fontSize = 22.sp,
                     style = TextStyle(fontWeight = FontWeight.Bold),
                     fontFamily = FontFamily.SansSerif,

@@ -33,9 +33,11 @@ fun CustomSwitch(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     checkedThumbColor: Color = MaterialTheme.colorScheme.primary,
-    uncheckedThumbColor: Color = MaterialTheme.colorScheme.background,
+    uncheckedThumbColor: Color = MaterialTheme.colorScheme.secondary,
 ) {
-    val trackColor = if (checked) checkedThumbColor else Color(0xFFAFCBE1)
+    val trackColor = if (checked) checkedThumbColor else uncheckedThumbColor
+
+    val circleColor = MaterialTheme.colorScheme.background
 
     Canvas(
         modifier =
@@ -59,7 +61,7 @@ fun CustomSwitch(
 
         // Draw the knob
         drawCircle(
-            color = uncheckedThumbColor,
+            color = circleColor,
             radius = size.height / 2 - 2.dp.toPx(),
             center = Offset(knobOffset + size.height / 2, size.height / 2),
         )
@@ -74,6 +76,8 @@ fun CustomTextSwitch(
     textStyle: TextStyle,
     checkedText: String = "ON",
     uncheckedText: String = "OFF",
+    checkedThumbColor: Color = MaterialTheme.colorScheme.primary,
+    uncheckedThumbColor: Color = MaterialTheme.colorScheme.secondary,
 ) {
     val switchPadding = 4.dp
     val thumbSize = 20.dp
@@ -93,7 +97,13 @@ fun CustomTextSwitch(
                     .width(maxTextWidth + thumbSize + switchPadding * 4)
                     .height(28.dp)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(MaterialTheme.colorScheme.primary)
+                    .background(
+                        if (checked) {
+                            checkedThumbColor
+                        } else {
+                            uncheckedThumbColor
+                        },
+                    )
                     .clickable { onCheckedChange(!checked) },
             contentAlignment = Alignment.Center,
         ) {
@@ -118,7 +128,7 @@ fun CustomTextSwitch(
                 ) {
                     Text(
                         text = if (checked) checkedText else uncheckedText,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         style = textStyle,
                         maxLines = 1,
                     )
@@ -140,7 +150,7 @@ fun CustomTextSwitch(
                         .padding(switchPadding)
                         .size(thumbSize)
                         .clip(CircleShape)
-                        .background(Color.White)
+                        .background(MaterialTheme.colorScheme.background)
                         .align(if (checked) Alignment.CenterStart else Alignment.CenterEnd),
             )
         }

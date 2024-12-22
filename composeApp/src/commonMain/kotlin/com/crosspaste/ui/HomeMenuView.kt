@@ -76,7 +76,7 @@ fun HomeMenuView(
                     .width(maxWidth)
                     .wrapContentHeight()
                     .clip(RoundedCornerShape(5.dp))
-                    .background(MaterialTheme.colorScheme.surface),
+                    .background(MaterialTheme.colorScheme.surfaceBright),
         ) {
             MenuItem(copywriter.getText("settings")) {
                 openMainWindow()

@@ -47,7 +47,7 @@ fun AboutContentView() {
             Modifier.fillMaxSize()
                 .padding(16.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surface.copy(0.64f)),
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
         contentAlignment = Alignment.Center,
     ) {
         Box(
@@ -97,7 +97,7 @@ fun AboutContentView() {
 
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 80.dp),
-                    thickness = 2.dp,
+                    thickness = 1.5.dp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.36f),
                 )
 
@@ -107,7 +107,7 @@ fun AboutContentView() {
 
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 80.dp),
-                    thickness = 2.dp,
+                    thickness = 1.5.dp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.36f),
                 )
 
@@ -117,7 +117,7 @@ fun AboutContentView() {
 
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 80.dp),
-                    thickness = 2.dp,
+                    thickness = 1.5.dp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.36f),
                 )
 
@@ -127,7 +127,7 @@ fun AboutContentView() {
 
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 80.dp),
-                    thickness = 2.dp,
+                    thickness = 1.5.dp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.36f),
                 )
 

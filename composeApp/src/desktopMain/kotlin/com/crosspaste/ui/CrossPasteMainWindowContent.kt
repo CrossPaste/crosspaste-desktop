@@ -27,10 +27,10 @@ import com.crosspaste.app.AppTokenApi
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.notification.ToastManager
-import com.crosspaste.ui.CrossPasteTheme.Theme
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.ToastView
 import com.crosspaste.ui.devices.TokenView
+import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch

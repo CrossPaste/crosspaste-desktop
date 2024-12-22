@@ -79,7 +79,7 @@ fun DeviceBarView(
                 modifier = Modifier.padding(12.dp).size(36.dp),
                 painter = PlatformPainter(syncRuntimeInfo),
                 contentDescription = "OS Icon",
-                tint = MaterialTheme.colorScheme.onBackground,
+                tint = MaterialTheme.colorScheme.onSurface,
             )
 
             Column(
@@ -100,7 +100,7 @@ fun DeviceBarView(
                         style =
                             TextStyle(
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onBackground,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 13.sp,
                             ),
                     )
@@ -112,7 +112,7 @@ fun DeviceBarView(
                         style =
                             TextStyle(
                                 fontWeight = FontWeight.Light,
-                                color = MaterialTheme.colorScheme.onBackground,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 11.sp,
                             ),
                     )
@@ -125,7 +125,7 @@ fun DeviceBarView(
                     style =
                         TextStyle(
                             fontWeight = FontWeight.Light,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                             fontSize = 11.sp,
                         ),
                     overflow = TextOverflow.Ellipsis,

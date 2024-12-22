@@ -56,7 +56,6 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.realm.paste.PasteType
 import com.crosspaste.realm.paste.PasteType.Companion.ALL_TYPES
-import com.crosspaste.ui.CrossPasteTheme.favoriteColor
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.ascSort
@@ -65,6 +64,7 @@ import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.noFavorite
 import com.crosspaste.ui.model.PasteSearchViewModel
+import com.crosspaste.ui.theme.CrossPasteTheme.favoriteColor
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
@@ -130,7 +130,7 @@ fun SearchInputView(requestFocus: () -> Unit) {
                         style =
                             TextStyle(
                                 fontWeight = FontWeight.Light,
-                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                                 fontSize = 15.sp,
                             ),
                         maxLines = 1,
@@ -141,8 +141,8 @@ fun SearchInputView(requestFocus: () -> Unit) {
                 singleLine = true,
                 colors =
                     TextFieldDefaults.colors(
-                        focusedTextColor = MaterialTheme.colorScheme.onBackground,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         disabledTextColor = Color.Transparent,
                         errorTextColor = MaterialTheme.colorScheme.error,
                         cursorColor = MaterialTheme.colorScheme.primary,
@@ -155,15 +155,15 @@ fun SearchInputView(requestFocus: () -> Unit) {
                         unfocusedContainerColor = Color.Transparent,
                         disabledContainerColor = Color.Transparent,
                         errorContainerColor = Color.Transparent,
-                        focusedPlaceholderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-                        unfocusedPlaceholderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                        focusedPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                         disabledPlaceholderColor = Color.Transparent,
                         errorPlaceholderColor = MaterialTheme.colorScheme.error.copy(alpha = 0.5f),
                     ),
                 textStyle =
                     TextStyle(
                         fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colorScheme.onBackground,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 15.sp,
                         lineHeight = 5.sp,
                     ),
@@ -173,7 +173,7 @@ fun SearchInputView(requestFocus: () -> Unit) {
                 TextStyle(
                     fontWeight = FontWeight.Light,
                     fontFamily = FontFamily.SansSerif,
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 15.sp,
                 )
 
@@ -227,7 +227,7 @@ fun SearchInputView(requestFocus: () -> Unit) {
                             Modifier.fillMaxWidth().height(32.dp)
                                 .border(
                                     1.dp,
-                                    MaterialTheme.colorScheme.onBackground.copy(alpha = 0.12f),
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
                                     RoundedCornerShape(5.dp),
                                 )
                                 .clickable {
@@ -244,7 +244,7 @@ fun SearchInputView(requestFocus: () -> Unit) {
                                 TextStyle(
                                     fontWeight = FontWeight.Light,
                                     fontFamily = FontFamily.SansSerif,
-                                    color = MaterialTheme.colorScheme.onBackground,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontSize = 15.sp,
                                 ),
                         )
@@ -283,7 +283,7 @@ fun SearchInputView(requestFocus: () -> Unit) {
                                             .width(maxWidth)
                                             .wrapContentHeight()
                                             .clip(RoundedCornerShape(5.dp))
-                                            .background(MaterialTheme.colorScheme.surface),
+                                            .background(MaterialTheme.colorScheme.surfaceBright),
                                 ) {
                                     if (searchPasteType != null) {
                                         MenuItem(copywriter.getText("all_types"), textStyle, paddingValues) {

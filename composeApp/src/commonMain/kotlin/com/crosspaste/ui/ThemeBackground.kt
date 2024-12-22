@@ -6,9 +6,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import com.crosspaste.ui.CrossPasteTheme.isLight
+import com.crosspaste.ui.theme.CrossPasteTheme.isLight
 
 @Composable
 fun ThemeBackground() {
@@ -29,38 +28,38 @@ fun ThemeBackground() {
         }
 
     Canvas(modifier = Modifier.fillMaxSize().background(backgroundColor)) {
-        val canvasWidth = size.width
-
-        drawRect(
-            brush =
-                Brush.radialGradient(
-                    colors =
-                        listOf(
-                            backgroundColor.copy(alpha = 0.0f),
-                            leftColor,
-                            Color(0xFFFFC0CB).copy(0.88f),
-                            Color(0xFFDC82C2).copy(0.88f),
-                            Color(0xFFDC82C2).copy(alpha = 0.12f),
-                        ),
-                    center = center.copy(x = -100f, y = 0f),
-                    radius = 1000f,
-                ),
-        )
-
-        drawRect(
-            brush =
-                Brush.radialGradient(
-                    colors =
-                        listOf(
-                            backgroundColor.copy(alpha = 0.0f),
-                            rightColor,
-                            Color(0xFFFFC0CB).copy(0.64f),
-                            Color(0xFFDC82C2).copy(0.24f),
-                            Color(0xFFDC82C2).copy(alpha = 0.12f),
-                        ),
-                    center = center.copy(x = 1.3f * canvasWidth, y = -0f),
-                    radius = 1800f,
-                ),
-        )
+//        val canvasWidth = size.width
+//
+//        drawRect(
+//            brush =
+//                Brush.radialGradient(
+//                    colors =
+//                        listOf(
+//                            backgroundColor.copy(alpha = 0.0f),
+//                            leftColor,
+//                            Color(0xFFFFC0CB).copy(0.88f),
+//                            Color(0xFFDC82C2).copy(0.88f),
+//                            Color(0xFFDC82C2).copy(alpha = 0.12f),
+//                        ),
+//                    center = center.copy(x = -100f, y = 0f),
+//                    radius = 1000f,
+//                ),
+//        )
+//
+//        drawRect(
+//            brush =
+//                Brush.radialGradient(
+//                    colors =
+//                        listOf(
+//                            backgroundColor.copy(alpha = 0.0f),
+//                            rightColor,
+//                            Color(0xFFFFC0CB).copy(0.64f),
+//                            Color(0xFFDC82C2).copy(0.24f),
+//                            Color(0xFFDC82C2).copy(alpha = 0.12f),
+//                        ),
+//                    center = center.copy(x = 1.3f * canvasWidth, y = -0f),
+//                    radius = 1800f,
+//                ),
+//        )
     }
 }

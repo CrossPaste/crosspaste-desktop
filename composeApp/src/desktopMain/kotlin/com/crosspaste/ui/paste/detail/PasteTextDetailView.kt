@@ -64,7 +64,7 @@ fun PasteTextDetailView(
                         TextStyle(
                             fontWeight = FontWeight.Normal,
                             fontFamily = FontFamily.SansSerif,
-                            color = MaterialTheme.colorScheme.onBackground,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 14.sp,
                         ),
                 )

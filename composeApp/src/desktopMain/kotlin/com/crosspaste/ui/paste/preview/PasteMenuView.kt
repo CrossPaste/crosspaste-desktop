@@ -49,7 +49,6 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteRealm
-import com.crosspaste.ui.CrossPasteTheme.favoriteColor
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.PasteTypeIconView
@@ -60,6 +59,7 @@ import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.base.moreVertical
 import com.crosspaste.ui.base.noFavorite
+import com.crosspaste.ui.theme.CrossPasteTheme.favoriteColor
 import com.crosspaste.utils.DateUtils.toLocalDateTime
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -133,7 +133,7 @@ fun PasteMenuView(
                     hideIfNotHovered(parentBounds.topLeft + it.position)
                 }
                 .clip(RoundedCornerShape(5.dp))
-                .background(if (showMenu) MaterialTheme.colorScheme.surface.copy(0.72f) else Color.Transparent),
+                .background(if (showMenu) MaterialTheme.colorScheme.surfaceContainerHighest else Color.Transparent),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -171,10 +171,10 @@ fun PasteMenuView(
                 Box(
                     modifier =
                         Modifier.fillMaxSize()
-                            .clip(RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(5.dp))
                             .background(
                                 if (hoverMenu) {
-                                    MaterialTheme.colorScheme.background
+                                    MaterialTheme.colorScheme.surfaceContainerLowest
                                 } else {
                                     Color.Transparent
                                 },
@@ -234,10 +234,10 @@ fun PasteMenuView(
                     Box(
                         modifier =
                             Modifier.fillMaxSize()
-                                .clip(RoundedCornerShape(6.dp))
+                                .clip(RoundedCornerShape(5.dp))
                                 .background(
                                     if (hoverCopy) {
-                                        MaterialTheme.colorScheme.background
+                                        MaterialTheme.colorScheme.surfaceContainerLowest
                                     } else {
                                         Color.Transparent
                                     },
@@ -296,10 +296,10 @@ fun PasteMenuView(
                     Box(
                         modifier =
                             Modifier.fillMaxSize()
-                                .clip(RoundedCornerShape(6.dp))
+                                .clip(RoundedCornerShape(5.dp))
                                 .background(
                                     if (hoverFavorite) {
-                                        MaterialTheme.colorScheme.background
+                                        MaterialTheme.colorScheme.surfaceContainerLowest
                                     } else {
                                         Color.Transparent
                                     },
@@ -360,10 +360,10 @@ fun PasteMenuView(
                     Box(
                         modifier =
                             Modifier.fillMaxSize()
-                                .clip(RoundedCornerShape(6.dp))
+                                .clip(RoundedCornerShape(5.dp))
                                 .background(
                                     if (hoverSource) {
-                                        MaterialTheme.colorScheme.background
+                                        MaterialTheme.colorScheme.surfaceContainerLowest
                                     } else {
                                         Color.Transparent
                                     },
@@ -438,7 +438,7 @@ fun MoreMenuItems(
                     .width(maxWidth)
                     .wrapContentHeight()
                     .clip(RoundedCornerShape(5.dp))
-                    .background(MaterialTheme.colorScheme.surface),
+                    .background(MaterialTheme.colorScheme.inverseOnSurface),
         ) {
             MenuItem(copywriter.getText("open")) {
                 pasteMenuService.openPasteData(pasteData)

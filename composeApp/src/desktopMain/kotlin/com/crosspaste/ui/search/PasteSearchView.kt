@@ -42,13 +42,12 @@ import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.ui.CrossPasteTheme.Theme
-import com.crosspaste.ui.CrossPasteTheme.darken
 import com.crosspaste.ui.base.KeyboardView
 import com.crosspaste.ui.base.crosspasteIcon
 import com.crosspaste.ui.base.enter
 import com.crosspaste.ui.base.menuItemReminderTextStyle
 import com.crosspaste.ui.model.PasteSelectionViewModel
+import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import com.crosspaste.utils.mainDispatcher
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -120,7 +119,7 @@ fun CrossPasteSearchWindowContent() {
                     Modifier
                         .shadow(5.dp, RoundedCornerShape(10.dp))
                         .size(appSize.searchWindowContentSize)
-                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                        .background(MaterialTheme.colorScheme.surface)
                         .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center,
             ) {
@@ -140,7 +139,7 @@ fun CrossPasteSearchWindowContent() {
                         modifier =
                             Modifier.height(40.dp)
                                 .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.surface.darken(0.1f))
+                                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                                 .padding(horizontal = 10.dp),
                         horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically,
@@ -161,7 +160,7 @@ fun CrossPasteSearchWindowContent() {
                                 TextStyle(
                                     fontWeight = FontWeight.Normal,
                                     fontFamily = FontFamily.SansSerif,
-                                    color = MaterialTheme.colorScheme.onBackground,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontSize = 14.sp,
                                 ),
                         )
@@ -197,7 +196,7 @@ fun CrossPasteSearchWindowContent() {
                                     TextStyle(
                                         fontWeight = FontWeight.Normal,
                                         fontFamily = FontFamily.SansSerif,
-                                        color = MaterialTheme.colorScheme.onBackground,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                         fontSize = 14.sp,
                                     ),
                             )

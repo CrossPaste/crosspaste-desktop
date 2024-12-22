@@ -78,7 +78,7 @@ fun SetStoragePathView() {
         modifier =
             Modifier.wrapContentSize()
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.background),
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
         var useDefaultStoragePath by remember { mutableStateOf(configManager.config.useDefaultStoragePath) }
 
@@ -92,7 +92,6 @@ fun SetStoragePathView() {
             SettingItemView(
                 painter = archive(),
                 text = "use_default_storage_path",
-                tint = Color(0xFF41B06E),
             ) {
                 CustomSwitch(
                     modifier =

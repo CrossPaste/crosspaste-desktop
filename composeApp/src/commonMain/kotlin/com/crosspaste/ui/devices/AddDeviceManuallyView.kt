@@ -42,10 +42,10 @@ import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
 import com.crosspaste.realm.sync.createSyncRuntimeInfo
-import com.crosspaste.ui.CrossPasteTheme.connectedColor
 import com.crosspaste.ui.base.DefaultTextField
 import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.base.textFieldStyle
+import com.crosspaste.ui.theme.CrossPasteTheme.connectedColor
 import com.crosspaste.utils.buildUrl
 import kotlinx.coroutines.runBlocking
 import org.koin.compose.koinInject
@@ -74,7 +74,7 @@ fun AddDeviceManuallyForm() {
         modifier =
             Modifier.fillMaxWidth()
                 .height(40.dp)
-                .background(MaterialTheme.colorScheme.background)
+                .background(MaterialTheme.colorScheme.surfaceContainerLowest)
                 .padding(horizontal = 12.dp, vertical = 5.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -87,7 +87,7 @@ fun AddDeviceManuallyForm() {
 
         Text(
             text = "IP",
-            color = MaterialTheme.colorScheme.onBackground,
+            color = MaterialTheme.colorScheme.onSurface,
             fontFamily = FontFamily.SansSerif,
             fontWeight = FontWeight.ExtraBold,
             fontSize = 14.sp,
@@ -137,7 +137,7 @@ fun AddDeviceManuallyForm() {
 
         Text(
             text = "Port",
-            color = MaterialTheme.colorScheme.onBackground,
+            color = MaterialTheme.colorScheme.onSurface,
             fontFamily = FontFamily.SansSerif,
             fontWeight = FontWeight.ExtraBold,
             fontSize = 14.sp,

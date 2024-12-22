@@ -163,11 +163,11 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
                     hoverDurationMillis = 300,
                     unhoverColor =
                         if (showScrollbar) {
-                            MaterialTheme.colorScheme.onBackground.copy(alpha = 0.48f)
+                            MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.48f)
                         } else {
                             Color.Transparent
                         },
-                    hoverColor = MaterialTheme.colorScheme.onBackground,
+                    hoverColor = MaterialTheme.colorScheme.inverseSurface,
                 ),
         )
     }

@@ -27,7 +27,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.realm.paste.PasteData
-import com.crosspaste.ui.CrossPasteTheme.selectColor
 
 @Composable
 fun PasteTitleView(
@@ -51,9 +50,9 @@ fun PasteTitleView(
                     .clip(RoundedCornerShape(8.dp))
                     .background(
                         if (selected) {
-                            MaterialTheme.colorScheme.selectColor()
+                            MaterialTheme.colorScheme.primaryContainer
                         } else {
-                            MaterialTheme.colorScheme.secondaryContainer
+                            MaterialTheme.colorScheme.surface
                         },
                     )
                     .clickable(onClick = onClick),
@@ -72,7 +71,7 @@ fun PasteTitleView(
                     text = title,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style =
                         TextStyle(
                             textAlign = TextAlign.Start,

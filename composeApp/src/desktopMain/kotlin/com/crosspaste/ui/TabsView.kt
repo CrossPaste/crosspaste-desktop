@@ -91,7 +91,7 @@ fun TabsView() {
                         .fillMaxWidth()
                         .height(40.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surface.copy(0.64f)),
+                        .background(MaterialTheme.colorScheme.primaryContainer),
             ) {}
 
             Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
@@ -111,6 +111,7 @@ fun TabsView() {
                         val scope = rememberCoroutineScope()
                         PasteTooltipIconView(
                             painter = trash(),
+                            hover = MaterialTheme.colorScheme.surfaceContainerLowest,
                             text = copywriter.getText("clean_all_pasteboard"),
                             contentDescription = "clean all paste",
                         ) {
@@ -244,7 +245,7 @@ fun SingleTabView(
         ) {
             Text(
                 text = title,
-                color = MaterialTheme.colorScheme.onBackground,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
                 style = tabTextStyle,
             )
         }

@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,7 +31,7 @@ fun KeyboardView(
             fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
         ),
     keyboardValue: String,
-    backgroundColor: Color = MaterialTheme.colorScheme.background,
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
 ) {
     val textMeasurer = rememberTextMeasurer()
     val size = textMeasurer.measure(keyboardValue, textStyle).size
@@ -49,7 +48,7 @@ fun KeyboardView(
         Text(
             text = keyboardValue,
             style = textStyle,
-            color = MaterialTheme.colorScheme.contentColorFor(backgroundColor),
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }

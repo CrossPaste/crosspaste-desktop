@@ -133,7 +133,7 @@ fun StoreSettingsContentView() {
             Modifier.wrapContentSize()
                 .padding(start = 16.dp, top = 5.dp, bottom = 5.dp),
         text = copywriter.getText("store_info"),
-        color = MaterialTheme.colorScheme.onBackground,
+        color = MaterialTheme.colorScheme.onSurface,
         style = MaterialTheme.typography.headlineSmall,
         fontFamily = FontFamily.SansSerif,
         fontSize = 12.sp,
@@ -168,7 +168,7 @@ fun StoreSettingsContentView() {
         modifier =
             Modifier.wrapContentSize()
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.background),
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
         Row(
             modifier =
@@ -229,7 +229,7 @@ fun StoreSettingsContentView() {
                     modifier = Modifier.size(15.dp),
                     painter = quadruple.second,
                     contentDescription = "pasteboard",
-                    tint = MaterialTheme.colorScheme.onBackground,
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(modifier = Modifier.width(8.dp))
 
@@ -276,7 +276,7 @@ fun StoreSettingsContentView() {
             Modifier.wrapContentSize()
                 .padding(start = 16.dp, top = 5.dp, bottom = 5.dp),
         text = copywriter.getText("auto_cleanup_settings"),
-        color = MaterialTheme.colorScheme.onBackground,
+        color = MaterialTheme.colorScheme.onSurface,
         style = MaterialTheme.typography.headlineSmall,
         fontFamily = FontFamily.SansSerif,
         fontSize = 12.sp,
@@ -286,7 +286,7 @@ fun StoreSettingsContentView() {
         modifier =
             Modifier.wrapContentSize()
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.background),
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
         SettingSwitchItemView(
             text = "expiration_cleanup",
@@ -301,7 +301,7 @@ fun StoreSettingsContentView() {
         SettingItemView(
             painter = clock(),
             text = "image_expiry_period",
-            tint = MaterialTheme.colorScheme.onBackground,
+            tint = MaterialTheme.colorScheme.onSurface,
         ) {
             var selectImageCleanTimeIndex by remember { mutableStateOf(configManager.config.imageCleanTimeIndex) }
 
@@ -333,7 +333,7 @@ fun StoreSettingsContentView() {
                     modifier = Modifier.size(15.dp),
                     painter = anglesUpDown(),
                     contentDescription = "Image expiration time",
-                    tint = MaterialTheme.colorScheme.onBackground,
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
 
@@ -374,7 +374,7 @@ fun StoreSettingsContentView() {
         SettingItemView(
             painter = file(),
             text = "file_expiry_period",
-            tint = MaterialTheme.colorScheme.onBackground,
+            tint = MaterialTheme.colorScheme.onSurface,
         ) {
             var selectFileCleanTimeIndex by remember { mutableStateOf(configManager.config.fileCleanTimeIndex) }
 
@@ -407,7 +407,7 @@ fun StoreSettingsContentView() {
                     modifier = Modifier.size(15.dp),
                     painter = anglesUpDown(),
                     contentDescription = "File Expiry Period",
-                    tint = MaterialTheme.colorScheme.onBackground,
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
 
@@ -450,7 +450,7 @@ fun StoreSettingsContentView() {
         modifier =
             Modifier.wrapContentSize()
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.background),
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
         SettingSwitchItemView(
             text = "threshold_cleanup",

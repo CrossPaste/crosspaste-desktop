@@ -19,7 +19,7 @@ fun SettingsText(
     Text(
         modifier = modifier,
         text = text,
-        color = MaterialTheme.colorScheme.onBackground,
+        color = MaterialTheme.colorScheme.onSurface,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         style = SettingsTextStyle(),
@@ -33,5 +33,5 @@ fun SettingsTextStyle() =
         fontWeight = FontWeight.Light,
         fontSize = 14.sp,
         fontFamily = FontFamily.SansSerif,
-        color = MaterialTheme.colorScheme.onBackground,
+        color = MaterialTheme.colorScheme.onSurface,
     )

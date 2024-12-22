@@ -28,7 +28,7 @@ import org.koin.compose.koinInject
 
 @Composable
 fun PasteSpecificPreviewContentView(
-    backgroundColor: Color = MaterialTheme.colorScheme.background,
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     pasteMainContent: @Composable () -> Unit,
     pasteRightInfo: @Composable ((Boolean) -> Unit) -> Unit,
 ) {
