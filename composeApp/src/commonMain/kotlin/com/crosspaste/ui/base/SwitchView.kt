@@ -14,9 +14,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.SwitchColors
-import androidx.compose.material.SwitchDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SwitchColors
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -36,9 +36,9 @@ fun CustomSwitch(
     modifier: Modifier = Modifier,
     colors: SwitchColors = SwitchDefaults.colors(),
 ) {
-    val thumbColor = colors.thumbColor(true, checked).value
+    val thumbColor = if (checked) colors.checkedThumbColor else colors.uncheckedThumbColor
 
-    val trackColor = colors.trackColor(true, checked).value
+    val trackColor = if (checked) colors.checkedTrackColor else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.36f)
 
     Canvas(
         modifier =
