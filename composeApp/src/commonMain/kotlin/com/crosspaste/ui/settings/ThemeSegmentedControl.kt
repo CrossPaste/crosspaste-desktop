@@ -34,287 +34,298 @@ import org.koin.compose.koinInject
 
 @Composable
 fun ThemeSegmentedControl() {
-    val copywriter = koinInject<GlobalCopywriter>()
-    val themeDetector = koinInject<ThemeDetector>()
-
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            // Light Button
-            Button(
-                modifier = Modifier.height(28.dp),
-                onClick = {
-                    themeDetector.setThemeConfig(
-                        isFollowSystem = false,
-                        isUserInDark = false,
-                    )
-                },
-                // Apply the shape only to the left side for the first button
-                shape =
-                    RoundedCornerShape(
-                        topStart = 4.dp,
-                        bottomStart = 4.dp,
-                        topEnd = 0.dp,
-                        bottomEnd = 0.dp,
-                    ),
-                // Change the background and content colors based on selection
-                colors =
-                    if (!themeDetector.isFollowSystem() && !themeDetector.isCurrentThemeDark()) {
-                        ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                    } else {
-                        ButtonDefaults.buttonColors(containerColor = Color.White)
-                    },
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceDim),
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                elevation =
-                    ButtonDefaults.elevatedButtonElevation(
-                        defaultElevation = 0.dp,
-                        pressedElevation = 0.dp,
-                        hoveredElevation = 0.dp,
-                        focusedElevation = 0.dp,
-                    ),
-            ) {
-                Text(
-                    copywriter.getText("light"),
-                    fontSize = 14.sp,
-                    fontFamily = FontFamily.SansSerif,
-                    style = TextStyle(fontWeight = FontWeight.Light),
-                    color = if (!themeDetector.isFollowSystem() && !themeDetector.isCurrentThemeDark()) Color.White else Color.Black,
-                )
-            }
+        ThemeStyle()
+        ThemeColor()
+    }
+}
 
-            // System Button
-            Button(
-                modifier = Modifier.height(28.dp).offset(x = (-1).dp),
-                onClick = { themeDetector.setThemeConfig(isFollowSystem = true) },
-                // No shape for the middle button to keep it rectangular
-                shape = RoundedCornerShape(0.dp),
-                colors =
-                    if (themeDetector.isFollowSystem()) {
-                        ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                    } else {
-                        ButtonDefaults.buttonColors(containerColor = Color.White)
-                    },
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceDim),
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                elevation =
-                    ButtonDefaults.elevatedButtonElevation(
-                        defaultElevation = 0.dp,
-                        pressedElevation = 0.dp,
-                        hoveredElevation = 0.dp,
-                        focusedElevation = 0.dp,
-                    ),
-            ) {
-                Text(
-                    copywriter.getText("system"),
-                    fontSize = 14.sp,
-                    fontFamily = FontFamily.SansSerif,
-                    style = TextStyle(fontWeight = FontWeight.Light),
-                    color = if (themeDetector.isFollowSystem()) Color.White else Color.Black,
-                )
-            }
+@Composable
+private fun ThemeStyle() {
+    val copywriter = koinInject<GlobalCopywriter>()
+    val themeDetector = koinInject<ThemeDetector>()
 
-            // Dark Button
-            Button(
-                modifier = Modifier.height(28.dp).offset(x = (-2).dp),
-                onClick = {
-                    themeDetector.setThemeConfig(
-                        isFollowSystem = false,
-                        isUserInDark = true,
-                    )
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        // Light Button
+        Button(
+            modifier = Modifier.height(28.dp),
+            onClick = {
+                themeDetector.setThemeConfig(
+                    isFollowSystem = false,
+                    isUserInDark = false,
+                )
+            },
+            // Apply the shape only to the left side for the first button
+            shape =
+                RoundedCornerShape(
+                    topStart = 4.dp,
+                    bottomStart = 4.dp,
+                    topEnd = 0.dp,
+                    bottomEnd = 0.dp,
+                ),
+            // Change the background and content colors based on selection
+            colors =
+                if (!themeDetector.isFollowSystem() && !themeDetector.isCurrentThemeDark()) {
+                    ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                } else {
+                    ButtonDefaults.buttonColors(containerColor = Color.White)
                 },
-                // Apply the shape only to the right side for the last button
-                shape =
-                    RoundedCornerShape(
-                        topStart = 0.dp,
-                        bottomStart = 0.dp,
-                        topEnd = 4.dp,
-                        bottomEnd = 4.dp,
-                    ),
-                colors =
-                    if (!themeDetector.isFollowSystem() && themeDetector.isCurrentThemeDark()) {
-                        ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                    } else {
-                        ButtonDefaults.buttonColors(containerColor = Color.White)
-                    },
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceDim),
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                elevation =
-                    ButtonDefaults.elevatedButtonElevation(
-                        defaultElevation = 0.dp,
-                        pressedElevation = 0.dp,
-                        hoveredElevation = 0.dp,
-                        focusedElevation = 0.dp,
-                    ),
-            ) {
-                Text(
-                    copywriter.getText("dark"),
-                    fontSize = 14.sp,
-                    fontFamily = FontFamily.SansSerif,
-                    style = TextStyle(fontWeight = FontWeight.Light),
-                    color = if (!themeDetector.isFollowSystem() && themeDetector.isCurrentThemeDark()) Color.White else Color.Black,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceDim),
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+            elevation =
+                ButtonDefaults.elevatedButtonElevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 0.dp,
+                    hoveredElevation = 0.dp,
+                    focusedElevation = 0.dp,
+                ),
+        ) {
+            Text(
+                copywriter.getText("light"),
+                fontSize = 14.sp,
+                fontFamily = FontFamily.SansSerif,
+                style = TextStyle(fontWeight = FontWeight.Light),
+                color = if (!themeDetector.isFollowSystem() && !themeDetector.isCurrentThemeDark()) Color.White else Color.Black,
+            )
+        }
+
+        // System Button
+        Button(
+            modifier = Modifier.height(28.dp).offset(x = (-1).dp),
+            onClick = { themeDetector.setThemeConfig(isFollowSystem = true) },
+            // No shape for the middle button to keep it rectangular
+            shape = RoundedCornerShape(0.dp),
+            colors =
+                if (themeDetector.isFollowSystem()) {
+                    ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                } else {
+                    ButtonDefaults.buttonColors(containerColor = Color.White)
+                },
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceDim),
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+            elevation =
+                ButtonDefaults.elevatedButtonElevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 0.dp,
+                    hoveredElevation = 0.dp,
+                    focusedElevation = 0.dp,
+                ),
+        ) {
+            Text(
+                copywriter.getText("system"),
+                fontSize = 14.sp,
+                fontFamily = FontFamily.SansSerif,
+                style = TextStyle(fontWeight = FontWeight.Light),
+                color = if (themeDetector.isFollowSystem()) Color.White else Color.Black,
+            )
+        }
+
+        // Dark Button
+        Button(
+            modifier = Modifier.height(28.dp).offset(x = (-2).dp),
+            onClick = {
+                themeDetector.setThemeConfig(
+                    isFollowSystem = false,
+                    isUserInDark = true,
+                )
+            },
+            // Apply the shape only to the right side for the last button
+            shape =
+                RoundedCornerShape(
+                    topStart = 0.dp,
+                    bottomStart = 0.dp,
+                    topEnd = 4.dp,
+                    bottomEnd = 4.dp,
+                ),
+            colors =
+                if (!themeDetector.isFollowSystem() && themeDetector.isCurrentThemeDark()) {
+                    ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                } else {
+                    ButtonDefaults.buttonColors(containerColor = Color.White)
+                },
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceDim),
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+            elevation =
+                ButtonDefaults.elevatedButtonElevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 0.dp,
+                    hoveredElevation = 0.dp,
+                    focusedElevation = 0.dp,
+                ),
+        ) {
+            Text(
+                copywriter.getText("dark"),
+                fontSize = 14.sp,
+                fontFamily = FontFamily.SansSerif,
+                style = TextStyle(fontWeight = FontWeight.Light),
+                color = if (!themeDetector.isFollowSystem() && themeDetector.isCurrentThemeDark()) Color.White else Color.Black,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ThemeColor() {
+    val themeDetector = koinInject<ThemeDetector>()
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        // CoralColor
+        Button(
+            modifier = Modifier.height(28.dp),
+            onClick = {
+                themeDetector.setThemeColor(CoralColor)
+            },
+            // Apply the shape only to the left side for the first button
+            shape =
+                RoundedCornerShape(
+                    topStart = 4.dp,
+                    bottomStart = 4.dp,
+                    topEnd = 0.dp,
+                    bottomEnd = 0.dp,
+                ),
+            // Change the background and content colors based on selection
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor =
+                        if (themeDetector.isCurrentThemeDark()) {
+                            CoralColor.darkColorScheme.primary
+                        } else {
+                            CoralColor.lightColorScheme.primary
+                        },
+                ),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceDim),
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+            elevation =
+                ButtonDefaults.elevatedButtonElevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 0.dp,
+                    hoveredElevation = 0.dp,
+                    focusedElevation = 0.dp,
+                ),
+        ) {
+            if (themeDetector.isThemeColor(CoralColor)) {
+                Icon(
+                    imageVector = Icons.Outlined.Check,
+                    contentDescription = null,
+                    tint = Color.White,
                 )
             }
         }
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            // CoralColor
-            Button(
-                modifier = Modifier.height(28.dp),
-                onClick = {
-                    themeDetector.setThemeColor(CoralColor)
-                },
-                // Apply the shape only to the left side for the first button
-                shape =
-                    RoundedCornerShape(
-                        topStart = 4.dp,
-                        bottomStart = 4.dp,
-                        topEnd = 0.dp,
-                        bottomEnd = 0.dp,
-                    ),
-                // Change the background and content colors based on selection
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor =
-                            if (themeDetector.isCurrentThemeDark()) {
-                                CoralColor.darkColorScheme.primary
-                            } else {
-                                CoralColor.lightColorScheme.primary
-                            },
-                    ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceDim),
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                elevation =
-                    ButtonDefaults.elevatedButtonElevation(
-                        defaultElevation = 0.dp,
-                        pressedElevation = 0.dp,
-                        hoveredElevation = 0.dp,
-                        focusedElevation = 0.dp,
-                    ),
-            ) {
-                if (themeDetector.isThemeColor(CoralColor)) {
-                    Icon(
-                        imageVector = Icons.Outlined.Check,
-                        contentDescription = null,
-                        tint = Color.White,
-                    )
-                }
+        // GrassColor
+        Button(
+            modifier = Modifier.height(28.dp).offset(x = (-1).dp),
+            onClick = {
+                themeDetector.setThemeColor(GrassColor)
+            },
+            // No shape for the middle button to keep it rectangular
+            shape = RoundedCornerShape(0.dp),
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor =
+                        if (themeDetector.isCurrentThemeDark()) {
+                            GrassColor.darkColorScheme.primary
+                        } else {
+                            GrassColor.lightColorScheme.primary
+                        },
+                ),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceDim),
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+            elevation =
+                ButtonDefaults.elevatedButtonElevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 0.dp,
+                    hoveredElevation = 0.dp,
+                    focusedElevation = 0.dp,
+                ),
+        ) {
+            if (themeDetector.isThemeColor(GrassColor)) {
+                Icon(
+                    imageVector = Icons.Outlined.Check,
+                    contentDescription = null,
+                    tint = Color.White,
+                )
             }
+        }
 
-            // GrassColor
-            Button(
-                modifier = Modifier.height(28.dp).offset(x = (-1).dp),
-                onClick = {
-                    themeDetector.setThemeColor(GrassColor)
-                },
-                // No shape for the middle button to keep it rectangular
-                shape = RoundedCornerShape(0.dp),
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor =
-                            if (themeDetector.isCurrentThemeDark()) {
-                                GrassColor.darkColorScheme.primary
-                            } else {
-                                GrassColor.lightColorScheme.primary
-                            },
-                    ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceDim),
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                elevation =
-                    ButtonDefaults.elevatedButtonElevation(
-                        defaultElevation = 0.dp,
-                        pressedElevation = 0.dp,
-                        hoveredElevation = 0.dp,
-                        focusedElevation = 0.dp,
-                    ),
-            ) {
-                if (themeDetector.isThemeColor(GrassColor)) {
-                    Icon(
-                        imageVector = Icons.Outlined.Check,
-                        contentDescription = null,
-                        tint = Color.White,
-                    )
-                }
+        // SeaColor
+        Button(
+            modifier = Modifier.height(28.dp).offset(x = (-1).dp),
+            onClick = {
+                themeDetector.setThemeColor(SeaColor)
+            },
+            // No shape for the middle button to keep it rectangular
+            shape = RoundedCornerShape(0.dp),
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor =
+                        if (themeDetector.isCurrentThemeDark()) {
+                            SeaColor.darkColorScheme.primary
+                        } else {
+                            SeaColor.lightColorScheme.primary
+                        },
+                ),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceDim),
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+            elevation =
+                ButtonDefaults.elevatedButtonElevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 0.dp,
+                    hoveredElevation = 0.dp,
+                    focusedElevation = 0.dp,
+                ),
+        ) {
+            if (themeDetector.isThemeColor(SeaColor)) {
+                Icon(
+                    imageVector = Icons.Outlined.Check,
+                    contentDescription = null,
+                    tint = Color.White,
+                )
             }
+        }
 
-            // SeaColor
-            Button(
-                modifier = Modifier.height(28.dp).offset(x = (-1).dp),
-                onClick = {
-                    themeDetector.setThemeColor(SeaColor)
-                },
-                // No shape for the middle button to keep it rectangular
-                shape = RoundedCornerShape(0.dp),
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor =
-                            if (themeDetector.isCurrentThemeDark()) {
-                                SeaColor.darkColorScheme.primary
-                            } else {
-                                SeaColor.lightColorScheme.primary
-                            },
-                    ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceDim),
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                elevation =
-                    ButtonDefaults.elevatedButtonElevation(
-                        defaultElevation = 0.dp,
-                        pressedElevation = 0.dp,
-                        hoveredElevation = 0.dp,
-                        focusedElevation = 0.dp,
-                    ),
-            ) {
-                if (themeDetector.isThemeColor(SeaColor)) {
-                    Icon(
-                        imageVector = Icons.Outlined.Check,
-                        contentDescription = null,
-                        tint = Color.White,
-                    )
-                }
-            }
-
-            // HoneyColor
-            Button(
-                modifier = Modifier.height(28.dp).offset(x = (-2).dp),
-                onClick = {
-                    themeDetector.setThemeColor(HoneyColor)
-                },
-                // Apply the shape only to the right side for the last button
-                shape =
-                    RoundedCornerShape(
-                        topStart = 0.dp,
-                        bottomStart = 0.dp,
-                        topEnd = 4.dp,
-                        bottomEnd = 4.dp,
-                    ),
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor =
-                            if (themeDetector.isCurrentThemeDark()) {
-                                HoneyColor.darkColorScheme.primary
-                            } else {
-                                HoneyColor.lightColorScheme.primary
-                            },
-                    ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceDim),
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                elevation =
-                    ButtonDefaults.elevatedButtonElevation(
-                        defaultElevation = 0.dp,
-                        pressedElevation = 0.dp,
-                        hoveredElevation = 0.dp,
-                        focusedElevation = 0.dp,
-                    ),
-            ) {
-                if (themeDetector.isThemeColor(HoneyColor)) {
-                    Icon(
-                        imageVector = Icons.Outlined.Check,
-                        contentDescription = null,
-                        tint = Color.White,
-                    )
-                }
+        // HoneyColor
+        Button(
+            modifier = Modifier.height(28.dp).offset(x = (-2).dp),
+            onClick = {
+                themeDetector.setThemeColor(HoneyColor)
+            },
+            // Apply the shape only to the right side for the last button
+            shape =
+                RoundedCornerShape(
+                    topStart = 0.dp,
+                    bottomStart = 0.dp,
+                    topEnd = 4.dp,
+                    bottomEnd = 4.dp,
+                ),
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor =
+                        if (themeDetector.isCurrentThemeDark()) {
+                            HoneyColor.darkColorScheme.primary
+                        } else {
+                            HoneyColor.lightColorScheme.primary
+                        },
+                ),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceDim),
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+            elevation =
+                ButtonDefaults.elevatedButtonElevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 0.dp,
+                    hoveredElevation = 0.dp,
+                    focusedElevation = 0.dp,
+                ),
+        ) {
+            if (themeDetector.isThemeColor(HoneyColor)) {
+                Icon(
+                    imageVector = Icons.Outlined.Check,
+                    contentDescription = null,
+                    tint = Color.White,
+                )
             }
         }
     }
