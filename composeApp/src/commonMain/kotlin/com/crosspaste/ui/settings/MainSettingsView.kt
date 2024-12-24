@@ -49,6 +49,7 @@ fun MainSettingsView() {
 
         SettingItemView(
             painter = palette(),
+            height = 80.dp,
             text = "theme",
         ) {
             ThemeSegmentedControl()

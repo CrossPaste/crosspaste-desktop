@@ -39,7 +39,6 @@ import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.alertCircle
 import com.crosspaste.ui.base.measureTextWidth
-import com.crosspaste.ui.theme.CrossPasteTheme.connectedColor
 import com.crosspaste.ui.theme.CrossPasteTheme.unmatchedColor
 import kotlinx.coroutines.runBlocking
 import org.koin.compose.koinInject
@@ -162,7 +161,7 @@ fun DeviceDetailContentView() {
                                     }
                             }
                         },
-                        checkedThumbColor = connectedColor(),
+//                        checkedThumbColor = connectedColor(),
                     )
                 }
 
@@ -198,7 +197,7 @@ fun DeviceDetailContentView() {
                                     }
                             }
                         },
-                        checkedThumbColor = connectedColor(),
+//                        checkedThumbColor = connectedColor(),
                     )
                 }
             }

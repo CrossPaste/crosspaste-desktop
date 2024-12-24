@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.SwitchColors
+import androidx.compose.material.SwitchDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,12 +34,11 @@ fun CustomSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    checkedThumbColor: Color = MaterialTheme.colorScheme.primary,
-    uncheckedThumbColor: Color = MaterialTheme.colorScheme.secondary,
+    colors: SwitchColors = SwitchDefaults.colors(),
 ) {
-    val trackColor = if (checked) checkedThumbColor else uncheckedThumbColor
+    val thumbColor = colors.thumbColor(true, checked).value
 
-    val circleColor = MaterialTheme.colorScheme.background
+    val trackColor = colors.trackColor(true, checked).value
 
     Canvas(
         modifier =
@@ -61,7 +62,7 @@ fun CustomSwitch(
 
         // Draw the knob
         drawCircle(
-            color = circleColor,
+            color = thumbColor,
             radius = size.height / 2 - 2.dp.toPx(),
             center = Offset(knobOffset + size.height / 2, size.height / 2),
         )

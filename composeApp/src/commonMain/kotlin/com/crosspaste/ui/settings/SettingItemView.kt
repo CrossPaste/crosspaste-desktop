@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.crosspaste.i18n.GlobalCopywriter
 import org.koin.compose.koinInject
@@ -26,6 +27,7 @@ import org.koin.compose.koinInject
 fun SettingItemView(
     painter: Painter,
     text: String,
+    height: Dp = 40.dp,
     tint: Color = MaterialTheme.colorScheme.onSurface,
     content: @Composable () -> Unit,
 ) {
@@ -33,7 +35,7 @@ fun SettingItemView(
     Row(
         modifier =
             Modifier.fillMaxWidth()
-                .height(40.dp)
+                .height(height)
                 .padding(horizontal = 12.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

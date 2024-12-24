@@ -63,7 +63,7 @@ fun ExpandView(
     horizontalPadding: Dp = 16.dp,
     titleBackgroundColor: Color = MaterialTheme.colorScheme.secondary,
     onTitleBackgroundColor: Color = MaterialTheme.colorScheme.onSecondary,
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.72f),
     content: @Composable () -> Unit,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
