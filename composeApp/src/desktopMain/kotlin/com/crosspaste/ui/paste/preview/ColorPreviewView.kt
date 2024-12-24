@@ -102,7 +102,7 @@ fun ColorPreviewView(pasteData: PasteData) {
                             ) {
                                 Text(
                                     text = pasteColor.toHexString(),
-                                    color = MaterialTheme.colorScheme.onBackground,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     style =
                                         TextStyle(
                                             fontWeight = FontWeight.Light,
@@ -111,7 +111,7 @@ fun ColorPreviewView(pasteData: PasteData) {
                                 )
                                 Text(
                                     text = pasteColor.toRGBAString(),
-                                    color = MaterialTheme.colorScheme.onBackground,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     style =
                                         TextStyle(
                                             fontWeight = FontWeight.Light,
