@@ -41,9 +41,9 @@ import com.crosspaste.app.AppLock
 import com.crosspaste.app.AppRestartService
 import com.crosspaste.app.ExitMode
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.ui.CrossPasteTheme.Theme
-import com.crosspaste.ui.CrossPasteTheme.grantPermissionColor
 import com.crosspaste.ui.LocalExitApplication
+import com.crosspaste.ui.theme.CrossPasteTheme.Theme
+import com.crosspaste.ui.theme.CrossPasteTheme.grantPermissionColor
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 

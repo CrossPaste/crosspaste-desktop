@@ -66,7 +66,7 @@ fun NetSettingsContentView() {
             Modifier.wrapContentSize()
                 .padding(start = 16.dp, top = 5.dp, bottom = 5.dp),
         text = copywriter.getText("network_info"),
-        color = MaterialTheme.colorScheme.onBackground,
+        color = MaterialTheme.colorScheme.onSurface,
         style = MaterialTheme.typography.headlineSmall,
         fontFamily = FontFamily.SansSerif,
         fontSize = 12.sp,
@@ -76,12 +76,12 @@ fun NetSettingsContentView() {
         modifier =
             Modifier.wrapContentSize()
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.background),
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
         SettingItemView(
             painter = network(),
             text = "ip_address",
-            tint = MaterialTheme.colorScheme.onBackground,
+            tint = MaterialTheme.colorScheme.onSurface,
         ) {
             ip?.let {
                 SettingsText(it)
@@ -95,7 +95,7 @@ fun NetSettingsContentView() {
         SettingItemView(
             painter = link(),
             text = "port",
-            tint = MaterialTheme.colorScheme.onBackground,
+            tint = MaterialTheme.colorScheme.onSurface,
         ) {
             port?.let {
                 SettingsText(it)
@@ -110,7 +110,7 @@ fun NetSettingsContentView() {
             Modifier.wrapContentSize()
                 .padding(start = 16.dp, top = 5.dp, bottom = 5.dp),
         text = copywriter.getText("service_discovery"),
-        color = MaterialTheme.colorScheme.onBackground,
+        color = MaterialTheme.colorScheme.onSurface,
         style = MaterialTheme.typography.headlineSmall,
         fontFamily = FontFamily.SansSerif,
         fontSize = 12.sp,
@@ -120,12 +120,12 @@ fun NetSettingsContentView() {
         modifier =
             Modifier.wrapContentSize()
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.background),
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
         SettingItemView(
             painter = wifi(),
             text = "allow_discovery_by_new_devices",
-            tint = MaterialTheme.colorScheme.onBackground,
+            tint = MaterialTheme.colorScheme.onSurface,
         ) {
             var isAllowDiscovery by remember { mutableStateOf(configManager.config.enableDiscovery) }
 
@@ -147,7 +147,7 @@ fun NetSettingsContentView() {
             Modifier.wrapContentSize()
                 .padding(start = 16.dp, top = 5.dp, bottom = 5.dp),
         text = copywriter.getText("blacklist"),
-        color = MaterialTheme.colorScheme.onBackground,
+        color = MaterialTheme.colorScheme.onSurface,
         style = MaterialTheme.typography.headlineSmall,
         fontFamily = FontFamily.SansSerif,
         fontSize = 12.sp,
@@ -157,7 +157,7 @@ fun NetSettingsContentView() {
         modifier =
             Modifier.wrapContentSize()
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.background),
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
         Row(
             modifier =

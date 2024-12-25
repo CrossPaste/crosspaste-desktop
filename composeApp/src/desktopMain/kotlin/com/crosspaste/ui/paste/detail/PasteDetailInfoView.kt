@@ -46,12 +46,12 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteRealm
-import com.crosspaste.ui.CrossPasteTheme.favoriteColor
 import com.crosspaste.ui.base.AppImageIcon
 import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.noFavorite
+import com.crosspaste.ui.theme.CrossPasteTheme.favoriteColor
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -87,7 +87,7 @@ fun PasteDetailInfoView(
                 TextStyle(
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.SansSerif,
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 20.sp,
                 ),
         )
@@ -127,7 +127,7 @@ fun PasteDetailInfoView(
                     TextStyle(
                         fontWeight = FontWeight.Light,
                         fontFamily = FontFamily.SansSerif,
-                        color = MaterialTheme.colorScheme.onBackground,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 12.sp,
                     ),
             )
@@ -175,7 +175,7 @@ fun PasteDetailInfoView(
                             TextStyle(
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = FontFamily.SansSerif,
-                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                                 fontSize = 12.sp,
                             ),
                     )
@@ -186,7 +186,7 @@ fun PasteDetailInfoView(
                             TextStyle(
                                 fontWeight = FontWeight.Normal,
                                 fontFamily = FontFamily.Monospace,
-                                color = MaterialTheme.colorScheme.onBackground,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 12.sp,
                             ),
                     )

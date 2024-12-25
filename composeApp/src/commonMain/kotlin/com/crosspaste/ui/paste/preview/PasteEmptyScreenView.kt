@@ -1,4 +1,4 @@
-package com.crosspaste.ui.devices
+package com.crosspaste.ui.paste.preview
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -19,16 +19,16 @@ import com.crosspaste.i18n.GlobalCopywriter
 import org.koin.compose.koinInject
 
 @Composable
-fun NotFoundNearByDevices() {
+fun PasteEmptyScreenView() {
     val copywriter = koinInject<GlobalCopywriter>()
     Box(
         contentAlignment = Alignment.Center,
         modifier =
             Modifier.fillMaxSize()
-                .background(MaterialTheme.colorScheme.surfaceContainerLowest),
+                .background(MaterialTheme.colorScheme.surface.copy(0.64f)),
     ) {
         Box(
-            modifier = Modifier.wrapContentSize().align(Alignment.Center),
+            modifier = Modifier.wrapContentSize(),
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -36,13 +36,13 @@ fun NotFoundNearByDevices() {
                     Modifier
                         .fillMaxWidth(0.8f),
                 textAlign = TextAlign.Center,
-                text = copywriter.getText("no_other_devices_found_with_crosspaste_enabled"),
+                text = copywriter.getText("haven't_listened_to_any_pasteboard_data_yet"),
                 maxLines = 3,
                 style =
                     TextStyle(
                         fontFamily = FontFamily.SansSerif,
                         fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 20.sp,
                         lineHeight = 24.sp,
                     ),

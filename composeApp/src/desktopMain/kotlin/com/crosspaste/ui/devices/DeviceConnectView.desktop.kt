@@ -54,7 +54,6 @@ import com.crosspaste.notification.NotificationManager
 import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.realm.sync.SyncState
 import com.crosspaste.sync.SyncManager
-import com.crosspaste.ui.CrossPasteTheme.selectColor
 import com.crosspaste.ui.ScreenType
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.PasteIconButton
@@ -97,9 +96,9 @@ actual fun DeviceConnectView(
     var hover by remember { mutableStateOf(false) }
     val backgroundColor =
         if (hover) {
-            MaterialTheme.colorScheme.selectColor()
+            MaterialTheme.colorScheme.secondaryContainer
         } else {
-            MaterialTheme.colorScheme.background
+            MaterialTheme.colorScheme.surfaceContainerHighest
         }
 
     var modifier =
@@ -270,7 +269,7 @@ actual fun DeviceConnectView(
                                         .width(maxWidth)
                                         .wrapContentHeight()
                                         .clip(RoundedCornerShape(5.dp))
-                                        .background(MaterialTheme.colorScheme.surface),
+                                        .background(MaterialTheme.colorScheme.surfaceBright),
                             ) {
                                 MenuItem(copywriter.getText("add_note")) {
                                     onEdit(syncRuntimeInfo)

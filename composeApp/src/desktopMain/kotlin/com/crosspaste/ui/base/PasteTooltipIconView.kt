@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun PasteTooltipIconView(
     painter: Painter,
+    hover: Color = MaterialTheme.colorScheme.primaryContainer,
     tint: Color = MaterialTheme.colorScheme.onBackground,
     text: String,
     contentDescription: String = "",
@@ -63,7 +64,7 @@ fun PasteTooltipIconView(
                         .clip(RoundedCornerShape(6.dp))
                         .background(
                             if (hoverIcon) {
-                                MaterialTheme.colorScheme.surface.copy(0.64f)
+                                hover
                             } else {
                                 Color.Transparent
                             },

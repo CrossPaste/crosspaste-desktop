@@ -92,7 +92,7 @@ fun QRContentView() {
             Modifier.fillMaxSize()
                 .padding(8.dp)
                 .clip(RoundedCornerShape(5.dp))
-                .background(MaterialTheme.colorScheme.surface.copy(0.64f)),
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
         contentAlignment = Alignment.Center,
     ) {
         Box(

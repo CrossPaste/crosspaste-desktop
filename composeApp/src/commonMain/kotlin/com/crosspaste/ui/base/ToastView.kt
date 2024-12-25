@@ -74,7 +74,7 @@ fun ToastView(
             Row(
                 modifier =
                     Modifier
-                        .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.tertiaryContainer, shape = RoundedCornerShape(8.dp))
                         .padding(all = 8.dp)
                         .width(280.dp)
                         .padding(horizontal = 12.dp),
@@ -91,7 +91,7 @@ fun ToastView(
                     style =
                         TextStyle(
                             fontWeight = FontWeight.Light,
-                            color = MaterialTheme.colorScheme.onSurface,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
                             fontSize = 16.sp,
                         ),
                 )

@@ -83,7 +83,6 @@ fun LanguageSettingItemView() {
     SettingItemView(
         painter = language(),
         text = "language",
-        tint = MaterialTheme.colorScheme.primary,
     ) {
         Row(
             modifier =

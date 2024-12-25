@@ -55,7 +55,7 @@ fun TextPreviewView(pasteData: PasteData) {
                             style =
                                 TextStyle(
                                     fontWeight = FontWeight.Normal,
-                                    color = MaterialTheme.colorScheme.onBackground,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontSize = 14.sp,
                                 ),
                         )

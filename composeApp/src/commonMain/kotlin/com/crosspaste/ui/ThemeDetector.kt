@@ -1,10 +1,15 @@
 package com.crosspaste.ui
 
 import androidx.compose.material3.ColorScheme
-import com.crosspaste.ui.CrossPasteTheme.DarkColorScheme
-import com.crosspaste.ui.CrossPasteTheme.LightColorScheme
+import com.crosspaste.ui.theme.ThemeColor
+import kotlinx.coroutines.flow.StateFlow
 
 interface ThemeDetector {
+
+    val lightColorScheme: StateFlow<ColorScheme>
+
+    val darkColorScheme: StateFlow<ColorScheme>
+
     fun isSystemInDark(): Boolean
 
     fun isFollowSystem(): Boolean
@@ -20,18 +25,22 @@ interface ThemeDetector {
         isUserInDark: Boolean = false,
     )
 
-    fun getCurrentColorScheme(): ColorScheme {
+    fun setThemeColor(themeColor: ThemeColor)
+
+    fun isThemeColor(themeColor: ThemeColor): Boolean
+
+    fun getCurrentColorScheme(): StateFlow<ColorScheme> {
         return if (isFollowSystem()) {
             if (isSystemInDark()) {
-                DarkColorScheme
+                darkColorScheme
             } else {
-                LightColorScheme
+                lightColorScheme
             }
         } else {
             if (isUserInDark()) {
-                DarkColorScheme
+                darkColorScheme
             } else {
-                LightColorScheme
+                lightColorScheme
             }
         }
     }

@@ -36,11 +36,10 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.VersionRelation
 import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.sync.SyncManager
-import com.crosspaste.ui.CrossPasteTheme.connectedColor
-import com.crosspaste.ui.CrossPasteTheme.unmatchedColor
 import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.alertCircle
 import com.crosspaste.ui.base.measureTextWidth
+import com.crosspaste.ui.theme.CrossPasteTheme.unmatchedColor
 import kotlinx.coroutines.runBlocking
 import org.koin.compose.koinInject
 
@@ -73,7 +72,7 @@ fun DeviceDetailContentView() {
                 Modifier.fillMaxSize()
                     .padding(16.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.surface.copy(0.64f))
+                    .background(MaterialTheme.colorScheme.surfaceContainerLowest)
                     .padding(16.dp),
         ) {
             if (versionRelation != null && versionRelation != VersionRelation.EQUAL_TO) {
@@ -81,7 +80,7 @@ fun DeviceDetailContentView() {
                     modifier =
                         Modifier.wrapContentSize()
                             .clip(RoundedCornerShape(8.dp))
-                            .background(MaterialTheme.colorScheme.background),
+                            .background(MaterialTheme.colorScheme.errorContainer),
                 ) {
                     Row(
                         modifier =
@@ -121,7 +120,7 @@ fun DeviceDetailContentView() {
                     Modifier.wrapContentSize()
                         .padding(start = 15.dp, bottom = 5.dp),
                 text = copywriter.getText("sync_control"),
-                color = MaterialTheme.colorScheme.onBackground,
+                color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.headlineSmall,
                 fontFamily = FontFamily.SansSerif,
                 fontSize = 12.sp,
@@ -130,7 +129,7 @@ fun DeviceDetailContentView() {
                 modifier =
                     Modifier.wrapContentSize()
                         .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.background),
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
             ) {
                 Row(
                     modifier =
@@ -140,7 +139,7 @@ fun DeviceDetailContentView() {
                 ) {
                     Text(
                         text = "${copywriter.getText("allow_send_to")} ${syncRuntimeInfo.getDeviceDisplayName()}",
-                        color = MaterialTheme.colorScheme.onBackground,
+                        color = MaterialTheme.colorScheme.onSurface,
                         style = TextStyle(fontWeight = FontWeight.Light),
                         fontFamily = FontFamily.SansSerif,
                         fontSize = 14.sp,
@@ -162,7 +161,7 @@ fun DeviceDetailContentView() {
                                     }
                             }
                         },
-                        checkedThumbColor = connectedColor(),
+//                        checkedThumbColor = connectedColor(),
                     )
                 }
 
@@ -176,7 +175,7 @@ fun DeviceDetailContentView() {
                 ) {
                     Text(
                         text = "${copywriter.getText("allow_receive_from")} ${syncRuntimeInfo.getDeviceDisplayName()}",
-                        color = MaterialTheme.colorScheme.onBackground,
+                        color = MaterialTheme.colorScheme.onSurface,
                         style = TextStyle(fontWeight = FontWeight.Light),
                         fontFamily = FontFamily.SansSerif,
                         fontSize = 14.sp,
@@ -198,7 +197,7 @@ fun DeviceDetailContentView() {
                                     }
                             }
                         },
-                        checkedThumbColor = connectedColor(),
+//                        checkedThumbColor = connectedColor(),
                     )
                 }
             }
@@ -235,7 +234,7 @@ fun DeviceDetailContentView() {
                     Modifier.wrapContentSize()
                         .padding(start = 15.dp, bottom = 5.dp),
                 text = copywriter.getText("base_info"),
-                color = MaterialTheme.colorScheme.onBackground,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontFamily = FontFamily.SansSerif,
                 style = MaterialTheme.typography.headlineSmall,
                 fontSize = 12.sp,
@@ -245,7 +244,7 @@ fun DeviceDetailContentView() {
                 modifier =
                     Modifier.wrapContentSize()
                         .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.background),
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
             ) {
                 properties.forEachIndexed { index, pair ->
                     Row(
@@ -259,14 +258,14 @@ fun DeviceDetailContentView() {
                             text = copywriter.getText(pair.first),
                             style = TextStyle(fontWeight = FontWeight.Light),
                             fontFamily = FontFamily.SansSerif,
-                            color = MaterialTheme.colorScheme.onBackground,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 14.sp,
                         )
                         Text(
                             text = pair.second,
                             style = TextStyle(fontWeight = FontWeight.Light),
                             fontFamily = FontFamily.SansSerif,
-                            color = MaterialTheme.colorScheme.onBackground,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 12.sp,
                         )
                     }

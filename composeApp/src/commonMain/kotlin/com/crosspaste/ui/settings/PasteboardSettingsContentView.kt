@@ -21,7 +21,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,12 +53,11 @@ fun PasteboardSettingsContentView() {
         modifier =
             Modifier.wrapContentSize()
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.background),
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
         SettingItemView(
             painter = skipForward(),
             text = "skip_prior_pasteboard_content",
-            tint = Color(0xFFFF885B),
         ) {
             var enableSkipPriorPasteboardContent by remember {
                 mutableStateOf(
@@ -84,7 +82,6 @@ fun PasteboardSettingsContentView() {
         SettingItemView(
             painter = file(),
             text = "max_back_up_file_size",
-            tint = Color(0xFF41B06E),
         ) {
             Row(
                 modifier = Modifier.wrapContentWidth(),
@@ -106,7 +103,6 @@ fun PasteboardSettingsContentView() {
         SettingItemView(
             painter = sync(),
             text = "sync_file_size_limit",
-            tint = Color(0xFF825B32),
         ) {
             var enabledSyncFileSizeLimit by remember {
                 mutableStateOf(
@@ -132,7 +128,6 @@ fun PasteboardSettingsContentView() {
             SettingItemView(
                 painter = file(),
                 text = "max_sync_file_size",
-                tint = Color(0xFF41B06E),
             ) {
                 Row(
                     modifier = Modifier.wrapContentWidth(),

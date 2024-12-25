@@ -85,7 +85,7 @@ fun ShortcutKeysContentView() {
                     Modifier.fillMaxSize()
                         .padding(horizontal = 16.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.background),
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
             ) {
                 ShortcutKeyRow(PASTE)
             }
@@ -97,7 +97,7 @@ fun ShortcutKeysContentView() {
                     Modifier.fillMaxSize()
                         .padding(horizontal = 16.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.background),
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
             ) {
                 ShortcutKeyRow(PASTE_PLAIN_TEXT)
 
@@ -121,7 +121,7 @@ fun ShortcutKeysContentView() {
                     Modifier.fillMaxSize()
                         .padding(horizontal = 16.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.background),
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
             ) {
                 ShortcutKeyRow(SHOW_MAIN)
 
@@ -137,7 +137,7 @@ fun ShortcutKeysContentView() {
                     Modifier.fillMaxSize()
                         .padding(horizontal = 16.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.background),
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
             ) {
                 ShortcutKeyRow(SWITCH_MONITOR_PASTEBOARD)
 
@@ -281,12 +281,12 @@ fun ShortcutKeyItemView(keys: List<KeyboardKey>) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         keys.forEachIndexed { index, info ->
-            KeyboardView(keyboardValue = info.name, backgroundColor = MaterialTheme.colorScheme.surface)
+            KeyboardView(keyboardValue = info.name, backgroundColor = MaterialTheme.colorScheme.primaryContainer)
             if (index != keys.size - 1) {
                 Spacer(modifier = Modifier.width(5.dp))
                 Text(
                     text = "+",
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                     style =
                         TextStyle(
                             fontSize = 14.sp,

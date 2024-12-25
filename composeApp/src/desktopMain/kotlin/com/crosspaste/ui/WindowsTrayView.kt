@@ -35,8 +35,8 @@ import com.crosspaste.app.WinAppWindowManager
 import com.crosspaste.composeapp.generated.resources.Res
 import com.crosspaste.composeapp.generated.resources.crosspaste
 import com.crosspaste.notification.NotificationManager
-import com.crosspaste.ui.CrossPasteTheme.Theme
 import com.crosspaste.ui.base.DesktopNotificationManager
+import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName

@@ -40,13 +40,13 @@ actual fun PasteShimmer(singleProcess: PasteSingleProcess?) {
                 Modifier
                     .size(100.dp)
                     .padding(10.dp)
-                    .background(Color.Gray),
+                    .background(MaterialTheme.colorScheme.secondaryContainer),
             contentAlignment = Alignment.Center,
         ) {
             singleProcess?.process?.let {
                 Text(
                     text = "${(it * 100).toInt()}%",
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style =
                         TextStyle(
                             fontSize = 14.sp,
@@ -71,7 +71,7 @@ actual fun PasteShimmer(singleProcess: PasteSingleProcess?) {
                         .height(26.dp)
                         .width(290.dp)
                         .padding(bottom = 5.dp)
-                        .background(Color.Gray),
+                        .background(MaterialTheme.colorScheme.secondaryContainer),
             )
             Row(modifier = Modifier.height(26.dp).width(290.dp)) {
                 Box(
@@ -80,7 +80,7 @@ actual fun PasteShimmer(singleProcess: PasteSingleProcess?) {
                             .height(26.dp)
                             .width(160.dp)
                             .padding(vertical = 5.dp)
-                            .background(Color.Gray),
+                            .background(MaterialTheme.colorScheme.secondaryContainer),
                 )
                 Spacer(modifier = Modifier.width(20.dp))
                 Box(
@@ -89,7 +89,7 @@ actual fun PasteShimmer(singleProcess: PasteSingleProcess?) {
                             .height(26.dp)
                             .width(119.dp)
                             .padding(vertical = 5.dp)
-                            .background(Color.Gray),
+                            .background(MaterialTheme.colorScheme.secondaryContainer),
                 )
             }
             Box(
@@ -97,7 +97,7 @@ actual fun PasteShimmer(singleProcess: PasteSingleProcess?) {
                     Modifier
                         .height(26.dp)
                         .width(290.dp).padding(top = 6.dp)
-                        .background(Color.Gray),
+                        .background(MaterialTheme.colorScheme.secondaryContainer),
             )
         }
     }

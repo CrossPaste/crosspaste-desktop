@@ -59,11 +59,11 @@ import org.koin.compose.koinInject
 fun ExpandView(
     title: String,
     icon: @Composable () -> Painter? = { null },
-    iconTintColor: Color = MaterialTheme.colorScheme.onBackground,
     defaultExpand: Boolean = false,
     horizontalPadding: Dp = 16.dp,
-    titleBackgroundColor: Color = MaterialTheme.colorScheme.secondaryContainer,
-    backgroundColor: Color = MaterialTheme.colorScheme.surface.copy(0.64f),
+    titleBackgroundColor: Color = MaterialTheme.colorScheme.secondary,
+    onTitleBackgroundColor: Color = MaterialTheme.colorScheme.onSecondary,
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.72f),
     content: @Composable () -> Unit,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
@@ -114,8 +114,8 @@ fun ExpandView(
                     .graphicsLayer(
                         shadowElevation = elevation.value,
                         shape = RoundedCornerShape(8.dp),
-                        ambientShadowColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        spotShadowColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        ambientShadowColor = MaterialTheme.colorScheme.onSecondary,
+                        spotShadowColor = MaterialTheme.colorScheme.onSecondary,
                     )
                     .background(
                         titleBackgroundColor,
@@ -139,7 +139,7 @@ fun ExpandView(
                         painter = it,
                         contentDescription = null,
                         modifier = Modifier.matchParentSize(),
-                        tint = iconTintColor,
+                        tint = onTitleBackgroundColor,
                     )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
@@ -147,7 +147,7 @@ fun ExpandView(
 
             Text(
                 text = copywriter.getText(title),
-                color = MaterialTheme.colorScheme.onBackground,
+                color = onTitleBackgroundColor,
                 fontSize = 14.sp,
                 fontFamily = FontFamily.SansSerif,
                 style = TextStyle(fontWeight = FontWeight.Light),
@@ -171,7 +171,7 @@ fun ExpandView(
                         Modifier
                             .matchParentSize()
                             .rotate(arrowRotation),
-                    tint = MaterialTheme.colorScheme.onBackground,
+                    tint = onTitleBackgroundColor,
                 )
             }
         }

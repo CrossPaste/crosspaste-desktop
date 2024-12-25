@@ -12,7 +12,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppWindowManager
@@ -42,7 +41,7 @@ fun MainSettingsView() {
             Modifier.wrapContentSize()
                 .padding(horizontal = 16.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.background),
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
         LanguageSettingItemView()
 
@@ -50,8 +49,8 @@ fun MainSettingsView() {
 
         SettingItemView(
             painter = palette(),
+            height = 80.dp,
             text = "theme",
-            tint = Color(0xFFFFC94A),
         ) {
             ThemeSegmentedControl()
         }
@@ -61,7 +60,6 @@ fun MainSettingsView() {
         SettingSwitchItemView(
             text = "pasteboard_listening",
             painter = clipboard(),
-            tint = Color(0xFF41B06E),
             getCurrentSwitchValue = { configManager.config.enablePasteboardListening },
         ) {
             pasteboardService.toggle()
@@ -72,7 +70,6 @@ fun MainSettingsView() {
         SettingSwitchItemView(
             text = "encrypted_sync",
             painter = shield(),
-            tint = Color(0xFF41C9E2),
             getCurrentSwitchValue = { configManager.config.enableEncryptSync },
         ) {
             configManager.updateConfig("enableEncryptSync", it)
@@ -83,7 +80,6 @@ fun MainSettingsView() {
         SettingSwitchItemView(
             text = "sound_effect",
             painter = bell(),
-            tint = Color(0xFFFF748B),
             getCurrentSwitchValue = { configManager.config.enableSoundEffect },
         ) {
             configManager.updateConfig("enableSoundEffect", it)
@@ -94,7 +90,6 @@ fun MainSettingsView() {
         SettingSwitchItemView(
             text = "boot_start_up",
             painter = bolt(),
-            tint = Color(0xFF90D26D),
             getCurrentSwitchValue = { configManager.config.enableAutoStartUp },
         ) {
             configManager.updateConfig("enableAutoStartUp", it)
@@ -105,7 +100,6 @@ fun MainSettingsView() {
         SettingSwitchItemView(
             text = "debug_mode",
             painter = debug(),
-            tint = Color(0xFFFCCD2A),
             getCurrentSwitchValue = { configManager.config.enableDebugMode },
         ) {
             crossPasteLogger.updateRootLogLevel(

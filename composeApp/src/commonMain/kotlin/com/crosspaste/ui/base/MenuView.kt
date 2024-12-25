@@ -32,7 +32,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.ui.CrossPasteTheme.selectColor
 
 val menuItemTextStyle =
     TextStyle(
@@ -62,7 +61,7 @@ fun MenuItem(
     val isHovered by interactionSource.collectIsHoveredAsState()
     val backgroundColor =
         if (enabledInteraction && isHovered) {
-            MaterialTheme.colorScheme.selectColor()
+            MaterialTheme.colorScheme.primaryContainer
         } else {
             Color.Transparent
         }
@@ -85,7 +84,7 @@ fun MenuItem(
     ) {
         Text(
             text = text,
-            color = MaterialTheme.colorScheme.onBackground,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
             style = textStyle,
         )
         if (reminder) {

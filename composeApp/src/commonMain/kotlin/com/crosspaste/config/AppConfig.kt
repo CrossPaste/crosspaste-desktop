@@ -1,5 +1,6 @@
 package com.crosspaste.config
 
+import com.crosspaste.ui.theme.GrassColor
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -10,6 +11,7 @@ data class AppConfig(
     val enableDebugMode: Boolean = false,
     val isFollowSystemTheme: Boolean = true,
     val isDarkTheme: Boolean = false,
+    val themeColor: String = GrassColor.name,
     val port: Int = 13129,
     val enableEncryptSync: Boolean = false,
     val enableExpirationCleanup: Boolean = true,
@@ -44,6 +46,7 @@ data class AppConfig(
             enableDebugMode = if (key == "enableDebugMode") value as Boolean else enableDebugMode,
             isFollowSystemTheme = if (key == "isFollowSystemTheme") value as Boolean else isFollowSystemTheme,
             isDarkTheme = if (key == "isDarkTheme") value as Boolean else isDarkTheme,
+            themeColor = if (key == "themeColor") value as String else themeColor,
             port = if (key == "port") value as Int else port,
             enableEncryptSync = if (key == "enableEncryptSync") value as Boolean else enableEncryptSync,
             enableExpirationCleanup = if (key == "enableExpirationCleanup") value as Boolean else enableExpirationCleanup,
