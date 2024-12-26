@@ -11,7 +11,7 @@ import com.crosspaste.composeapp.generated.resources.crosspaste_svg
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
-actual fun CrossPasteLogooView(modifier: Modifier) {
+actual fun CrossPasteLogoView(modifier: Modifier) {
     Box(modifier = modifier) {
         Icon(
             modifier = Modifier.fillMaxSize(),
