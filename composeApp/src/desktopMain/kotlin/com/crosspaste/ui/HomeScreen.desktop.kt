@@ -102,7 +102,7 @@ fun HomeWindowDecoration() {
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                CrossPasteLogooView(
+                CrossPasteLogoView(
                     modifier =
                         Modifier.padding(start = 13.dp, top = 13.dp, end = 10.dp, bottom = 13.dp)
                             .align(Alignment.CenterVertically)

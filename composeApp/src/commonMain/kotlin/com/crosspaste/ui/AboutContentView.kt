@@ -57,7 +57,7 @@ fun AboutContentView() {
                 modifier = Modifier.align(Alignment.Center),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                CrossPasteLogooView(
+                CrossPasteLogoView(
                     modifier =
                         Modifier.clip(RoundedCornerShape(6.dp))
                             .background(MaterialTheme.colorScheme.primary)
