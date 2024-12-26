@@ -360,7 +360,7 @@ private fun ContrastColor() {
             buttonColors =
                 ButtonDefaults.buttonColors(
                     containerColor =
-                        if (themeDetector.isCurrentThemeDark()) {
+                        if (colorContrast == ColorContrast.Standard) {
                             themeColor.lightColorScheme.primary
                         } else {
                             themeColor.darkColorScheme.primary
@@ -394,7 +394,7 @@ private fun ContrastColor() {
             buttonColors =
                 ButtonDefaults.buttonColors(
                     containerColor =
-                        if (themeDetector.isCurrentThemeDark()) {
+                        if (colorContrast == ColorContrast.Medium) {
                             themeColor.lightColorScheme.primary
                         } else {
                             themeColor.darkColorScheme.primary
@@ -428,7 +428,7 @@ private fun ContrastColor() {
             buttonColors =
                 ButtonDefaults.buttonColors(
                     containerColor =
-                        if (themeDetector.isCurrentThemeDark()) {
+                        if (colorContrast == ColorContrast.High) {
                             themeColor.lightColorScheme.primary
                         } else {
                             themeColor.darkColorScheme.primary
