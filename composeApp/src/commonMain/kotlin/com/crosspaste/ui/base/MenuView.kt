@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -52,6 +53,7 @@ val menuItemReminderTextStyle =
 fun MenuItem(
     text: String,
     textStyle: TextStyle = menuItemTextStyle,
+    background: Color = MaterialTheme.colorScheme.surface,
     paddingValues: PaddingValues = PaddingValues(16.dp, 8.dp, 16.dp, 8.dp),
     enabledInteraction: Boolean = true,
     reminder: Boolean = false,
@@ -63,7 +65,7 @@ fun MenuItem(
         if (enabledInteraction && isHovered) {
             MaterialTheme.colorScheme.primaryContainer
         } else {
-            Color.Transparent
+            background
         }
 
     var modifier =
@@ -84,7 +86,7 @@ fun MenuItem(
     ) {
         Text(
             text = text,
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            color = MaterialTheme.colorScheme.contentColorFor(backgroundColor),
             style = textStyle,
         )
         if (reminder) {

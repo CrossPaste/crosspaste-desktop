@@ -78,31 +78,50 @@ fun HomeMenuView(
                     .clip(RoundedCornerShape(5.dp))
                     .background(MaterialTheme.colorScheme.surfaceBright),
         ) {
-            MenuItem(copywriter.getText("settings")) {
+            MenuItem(
+                text = copywriter.getText("settings"),
+                background = MaterialTheme.colorScheme.surfaceBright,
+            ) {
                 openMainWindow()
                 appWindowManager.toScreen(ScreenType.SETTINGS)
                 close()
             }
-            MenuItem(copywriter.getText("shortcut_keys")) {
+            MenuItem(
+                text = copywriter.getText("shortcut_keys"),
+                background = MaterialTheme.colorScheme.surfaceBright,
+            ) {
                 openMainWindow()
                 appWindowManager.toScreen(ScreenType.SHORTCUT_KEYS)
                 close()
             }
-            MenuItem(copywriter.getText("check_for_updates"), reminder = existNewVersion) {
+            MenuItem(
+                text = copywriter.getText("check_for_updates"),
+                background = MaterialTheme.colorScheme.surfaceBright,
+                reminder = existNewVersion,
+            ) {
                 appUpdateService.jumpDownload()
                 close()
             }
-            MenuItem(copywriter.getText("about")) {
+            MenuItem(
+                text = copywriter.getText("about"),
+                background = MaterialTheme.colorScheme.surfaceBright,
+            ) {
                 openMainWindow()
                 appWindowManager.toScreen(ScreenType.ABOUT)
                 close()
             }
-            MenuItem(copywriter.getText("fqa")) {
+            MenuItem(
+                text = copywriter.getText("fqa"),
+                background = MaterialTheme.colorScheme.surfaceBright,
+            ) {
                 uiSupport.openCrossPasteWebInBrowser(path = "FQA")
                 close()
             }
             HorizontalDivider()
-            MenuItem(copywriter.getText("quit")) {
+            MenuItem(
+                text = copywriter.getText("quit"),
+                background = MaterialTheme.colorScheme.surfaceBright,
+            ) {
                 close()
                 applicationExit(ExitMode.EXIT)
             }

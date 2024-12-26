@@ -111,6 +111,7 @@ fun TabsView() {
                         val scope = rememberCoroutineScope()
                         PasteTooltipIconView(
                             painter = trash(),
+                            background = MaterialTheme.colorScheme.primaryContainer,
                             hover = MaterialTheme.colorScheme.surfaceContainerLowest,
                             text = copywriter.getText("clean_all_pasteboard"),
                             contentDescription = "clean all paste",

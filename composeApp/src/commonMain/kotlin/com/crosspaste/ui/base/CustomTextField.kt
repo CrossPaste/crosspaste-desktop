@@ -141,13 +141,7 @@ fun DefaultTextField(
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     placeholder: @Composable (() -> Unit)? = null,
     leadingIcon: @Composable (() -> Unit)? = null,
-    colors: TextFieldColors =
-        TextFieldDefaults.colors(
-            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-            unfocusedIndicatorColor = Color.Transparent,
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-        ),
+    colors: TextFieldColors = TextFieldDefaults.colors(),
     onValueChange: (String) -> Unit,
 ) {
     val textStyle = textFieldStyle(textAlign)

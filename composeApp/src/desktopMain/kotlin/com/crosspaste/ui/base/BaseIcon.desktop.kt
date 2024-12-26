@@ -12,6 +12,9 @@ import com.crosspaste.composeapp.generated.resources.bell
 import com.crosspaste.composeapp.generated.resources.circle
 import com.crosspaste.composeapp.generated.resources.clipboard
 import com.crosspaste.composeapp.generated.resources.close
+import com.crosspaste.composeapp.generated.resources.contrast_high
+import com.crosspaste.composeapp.generated.resources.contrast_medium
+import com.crosspaste.composeapp.generated.resources.contrast_standard
 import com.crosspaste.composeapp.generated.resources.database
 import com.crosspaste.composeapp.generated.resources.debug
 import com.crosspaste.composeapp.generated.resources.edit
@@ -83,6 +86,21 @@ actual fun clipboard(): Painter {
 @Composable
 actual fun close(): Painter {
     return painterResource(Res.drawable.close)
+}
+
+@Composable
+actual fun contrastHigh(): Painter {
+    return painterResource(Res.drawable.contrast_high)
+}
+
+@Composable
+actual fun contrastMedium(): Painter {
+    return painterResource(Res.drawable.contrast_medium)
+}
+
+@Composable
+actual fun contrastStandard(): Painter {
+    return painterResource(Res.drawable.contrast_standard)
 }
 
 @Composable

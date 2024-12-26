@@ -286,7 +286,11 @@ fun SearchInputView(requestFocus: () -> Unit) {
                                             .background(MaterialTheme.colorScheme.surfaceBright),
                                 ) {
                                     if (searchPasteType != null) {
-                                        MenuItem(copywriter.getText("all_types"), textStyle, paddingValues) {
+                                        MenuItem(
+                                            text = copywriter.getText("all_types"),
+                                            textStyle = textStyle,
+                                            paddingValues = paddingValues,
+                                        ) {
                                             pasteSearchViewModel.setPasteType(null)
                                             currentType = null
                                             showTypes = false
@@ -297,7 +301,11 @@ fun SearchInputView(requestFocus: () -> Unit) {
 
                                     PasteType.TYPES.forEach { pasteType ->
                                         if (currentType != pasteType) {
-                                            MenuItem(copywriter.getText(pasteType.name), textStyle, paddingValues) {
+                                            MenuItem(
+                                                text = copywriter.getText(pasteType.name),
+                                                textStyle = textStyle,
+                                                paddingValues = paddingValues,
+                                            ) {
                                                 pasteSearchViewModel.setPasteType(pasteType.type)
                                                 currentType = pasteType
                                                 showTypes = false

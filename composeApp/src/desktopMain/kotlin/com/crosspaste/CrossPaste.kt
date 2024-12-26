@@ -177,7 +177,6 @@ import com.crosspaste.ui.GrantAccessibilityPermissionsWindow
 import com.crosspaste.ui.LinuxTrayView
 import com.crosspaste.ui.LocalExitApplication
 import com.crosspaste.ui.MacTrayView
-import com.crosspaste.ui.ThemeDetector
 import com.crosspaste.ui.WindowsTrayView
 import com.crosspaste.ui.base.DesktopIconStyle
 import com.crosspaste.ui.base.DesktopNotificationManager
@@ -190,6 +189,7 @@ import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.model.PasteDataViewModel
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
+import com.crosspaste.ui.theme.ThemeDetector
 import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DesktopLocaleUtils
 import com.crosspaste.utils.DeviceUtils

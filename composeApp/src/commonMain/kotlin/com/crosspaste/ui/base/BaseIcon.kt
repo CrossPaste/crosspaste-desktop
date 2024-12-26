@@ -34,6 +34,15 @@ expect fun clipboard(): Painter
 expect fun close(): Painter
 
 @Composable
+expect fun contrastHigh(): Painter
+
+@Composable
+expect fun contrastMedium(): Painter
+
+@Composable
+expect fun contrastStandard(): Painter
+
+@Composable
 expect fun database(): Painter
 
 @Composable

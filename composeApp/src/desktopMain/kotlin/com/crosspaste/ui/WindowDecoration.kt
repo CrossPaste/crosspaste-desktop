@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,7 +27,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
@@ -40,8 +40,14 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.arrowBack
 import org.koin.compose.koinInject
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun WindowDecoration(title: String) {
+    val appWindowManager = koinInject<AppWindowManager>()
+    val copywriter = koinInject<GlobalCopywriter>()
+
+    var hoverReturn by remember { mutableStateOf(false) }
+
     Row(
         modifier =
             Modifier
@@ -49,101 +55,81 @@ fun WindowDecoration(title: String) {
                 .height(60.dp)
                 .background(MaterialTheme.colorScheme.primaryContainer),
     ) {
-        DecorationUI(title)
-    }
-}
-
-@OptIn(ExperimentalComposeUiApi::class)
-@Composable
-fun DecorationUI(title: String) {
-    val appWindowManager = koinInject<AppWindowManager>()
-    val copywriter = koinInject<GlobalCopywriter>()
-
-    var hoverReturn by remember { mutableStateOf(false) }
-
-    Box {
-        Column(
-            modifier =
-                Modifier.wrapContentSize()
-                    .padding(start = 10.dp, end = 20.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxSize(),
-                verticalAlignment = Alignment.CenterVertically,
+        Box {
+            Column(
+                modifier =
+                    Modifier.wrapContentSize()
+                        .padding(start = 10.dp, end = 20.dp),
             ) {
                 Row(
-                    modifier =
-                        Modifier.wrapContentSize()
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(
-                                if (hoverReturn) {
-                                    MaterialTheme.colorScheme.surfaceContainerLowest
-                                } else {
-                                    Color.Transparent
-                                },
-                            )
-                            .onPointerEvent(
-                                eventType = PointerEventType.Enter,
-                                onEvent = {
-                                    hoverReturn = true
-                                },
-                            )
-                            .onPointerEvent(
-                                eventType = PointerEventType.Exit,
-                                onEvent = {
-                                    hoverReturn = false
-                                },
-                            )
-                            .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onTap = {
-                                        appWindowManager.returnScreen()
-                                    },
-                                )
-                            },
+                    modifier = Modifier.fillMaxSize(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Spacer(modifier = Modifier.width(10.dp).height(40.dp))
-                    Icon(
-                        painter = arrowBack(),
-                        contentDescription = "return",
-                        modifier = Modifier.size(20.dp),
-                        tint =
-                            if (hoverReturn) {
-                                MaterialTheme.colorScheme.onPrimaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            },
-                    )
+                    val returnBackground =
+                        if (hoverReturn) {
+                            MaterialTheme.colorScheme.surfaceContainerLowest
+                        } else {
+                            MaterialTheme.colorScheme.primaryContainer
+                        }
+
+                    Row(
+                        modifier =
+                            Modifier.wrapContentSize()
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(returnBackground)
+                                .onPointerEvent(
+                                    eventType = PointerEventType.Enter,
+                                    onEvent = {
+                                        hoverReturn = true
+                                    },
+                                )
+                                .onPointerEvent(
+                                    eventType = PointerEventType.Exit,
+                                    onEvent = {
+                                        hoverReturn = false
+                                    },
+                                )
+                                .pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onTap = {
+                                            appWindowManager.returnScreen()
+                                        },
+                                    )
+                                },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Spacer(modifier = Modifier.width(10.dp).height(40.dp))
+                        Icon(
+                            painter = arrowBack(),
+                            contentDescription = "return",
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.contentColorFor(returnBackground),
+                        )
+
+                        Text(
+                            text = copywriter.getText("return_"),
+                            style =
+                                TextStyle(
+                                    fontWeight = FontWeight.Light,
+                                    color = MaterialTheme.colorScheme.contentColorFor(returnBackground),
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontSize = 22.sp,
+                                ),
+                        )
+                        Spacer(modifier = Modifier.width(10.dp).height(40.dp))
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
 
                     Text(
-                        text = copywriter.getText("return_"),
-                        style =
-                            TextStyle(
-                                fontWeight = FontWeight.Light,
-                                color =
-                                    if (hoverReturn) {
-                                        MaterialTheme.colorScheme.onPrimaryContainer
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurface
-                                    },
-                                fontFamily = FontFamily.SansSerif,
-                                fontSize = 22.sp,
-                            ),
+                        modifier = Modifier,
+                        text = copywriter.getText(title),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        fontSize = 22.sp,
+                        style = TextStyle(fontWeight = FontWeight.Bold),
+                        fontFamily = FontFamily.SansSerif,
                     )
-                    Spacer(modifier = Modifier.width(10.dp).height(40.dp))
                 }
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                Text(
-                    modifier = Modifier,
-                    text = copywriter.getText(title),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    fontSize = 22.sp,
-                    style = TextStyle(fontWeight = FontWeight.Bold),
-                    fontFamily = FontFamily.SansSerif,
-                )
             }
         }
     }

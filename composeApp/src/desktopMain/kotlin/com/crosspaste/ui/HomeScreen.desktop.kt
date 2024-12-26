@@ -120,7 +120,7 @@ fun HomeWindowDecoration() {
                 ) {
                     Text(
                         text = "Compile Future",
-                        color = MaterialTheme.colorScheme.onBackground,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 10.sp,
                         style =
                             TextStyle(
@@ -131,7 +131,7 @@ fun HomeWindowDecoration() {
                     Box {
                         Text(
                             text = "CrossPaste",
-                            color = MaterialTheme.colorScheme.onBackground,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 23.sp,
                             style =
                                 TextStyle(
