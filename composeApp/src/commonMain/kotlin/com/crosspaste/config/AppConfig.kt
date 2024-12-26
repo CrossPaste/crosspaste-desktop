@@ -41,37 +41,73 @@ data class AppConfig(
     ): AppConfig {
         return this.copy(
             appInstanceId = appInstanceId,
-            language = if (key == "language") value as String else language,
-            enableAutoStartUp = if (key == "enableAutoStartUp") value as Boolean else enableAutoStartUp,
-            enableDebugMode = if (key == "enableDebugMode") value as Boolean else enableDebugMode,
-            isFollowSystemTheme = if (key == "isFollowSystemTheme") value as Boolean else isFollowSystemTheme,
-            isDarkTheme = if (key == "isDarkTheme") value as Boolean else isDarkTheme,
-            themeColor = if (key == "themeColor") value as String else themeColor,
-            port = if (key == "port") value as Int else port,
-            enableEncryptSync = if (key == "enableEncryptSync") value as Boolean else enableEncryptSync,
-            enableExpirationCleanup = if (key == "enableExpirationCleanup") value as Boolean else enableExpirationCleanup,
-            imageCleanTimeIndex = if (key == "imageCleanTimeIndex") value as Int else imageCleanTimeIndex,
-            fileCleanTimeIndex = if (key == "fileCleanTimeIndex") value as Int else fileCleanTimeIndex,
-            enableThresholdCleanup = if (key == "enableThresholdCleanup") value as Boolean else enableThresholdCleanup,
-            maxStorage = if (key == "maxStorage") value as Long else maxStorage,
-            cleanupPercentage = if (key == "cleanupPercentage") value as Int else cleanupPercentage,
-            enableDiscovery = if (key == "enableDiscovery") value as Boolean else enableDiscovery,
-            blacklist = if (key == "blacklist") value as String else blacklist,
+            language = if (key == "language") toString(value) else language,
+            enableAutoStartUp = if (key == "enableAutoStartUp") toBoolean(value) else enableAutoStartUp,
+            enableDebugMode = if (key == "enableDebugMode") toBoolean(value) else enableDebugMode,
+            isFollowSystemTheme = if (key == "isFollowSystemTheme") toBoolean(value) else isFollowSystemTheme,
+            isDarkTheme = if (key == "isDarkTheme") toBoolean(value) else isDarkTheme,
+            themeColor = if (key == "themeColor") toString(value) else themeColor,
+            port = if (key == "port") toInt(value) else port,
+            enableEncryptSync = if (key == "enableEncryptSync") toBoolean(value) else enableEncryptSync,
+            enableExpirationCleanup = if (key == "enableExpirationCleanup") toBoolean(value) else enableExpirationCleanup,
+            imageCleanTimeIndex = if (key == "imageCleanTimeIndex") toInt(value) else imageCleanTimeIndex,
+            fileCleanTimeIndex = if (key == "fileCleanTimeIndex") toInt(value) else fileCleanTimeIndex,
+            enableThresholdCleanup = if (key == "enableThresholdCleanup") toBoolean(value) else enableThresholdCleanup,
+            maxStorage = if (key == "maxStorage") toLong(value) else maxStorage,
+            cleanupPercentage = if (key == "cleanupPercentage") toInt(value) else cleanupPercentage,
+            enableDiscovery = if (key == "enableDiscovery") toBoolean(value) else enableDiscovery,
+            blacklist = if (key == "blacklist") toString(value) else blacklist,
             enableSkipPriorPasteboardContent =
                 if (key == "enableSkipPriorPasteboardContent") {
-                    value as Boolean
+                    toBoolean(value)
                 } else {
                     enableSkipPriorPasteboardContent
                 },
-            lastPasteboardChangeCount = if (key == "lastPasteboardChangeCount") value as Int else lastPasteboardChangeCount,
-            enablePasteboardListening = if (key == "enablePasteboardListening") value as Boolean else enablePasteboardListening,
-            showTutorial = if (key == "showTutorial") value as Boolean else showTutorial,
-            maxBackupFileSize = if (key == "maxBackupFileSize") value as Long else maxBackupFileSize,
-            enabledSyncFileSizeLimit = if (key == "enabledSyncFileSizeLimit") value as Boolean else enabledSyncFileSizeLimit,
-            maxSyncFileSize = if (key == "maxSyncFileSize") value as Long else maxSyncFileSize,
-            useDefaultStoragePath = if (key == "useDefaultStoragePath") value as Boolean else useDefaultStoragePath,
-            storagePath = if (key == "storagePath") value as String else storagePath,
-            enableSoundEffect = if (key == "enableSoundEffect") value as Boolean else enableSoundEffect,
+            lastPasteboardChangeCount = if (key == "lastPasteboardChangeCount") toInt(value) else lastPasteboardChangeCount,
+            enablePasteboardListening = if (key == "enablePasteboardListening") toBoolean(value) else enablePasteboardListening,
+            showTutorial = if (key == "showTutorial") toBoolean(value) else showTutorial,
+            maxBackupFileSize = if (key == "maxBackupFileSize") toLong(value) else maxBackupFileSize,
+            enabledSyncFileSizeLimit = if (key == "enabledSyncFileSizeLimit") toBoolean(value) else enabledSyncFileSizeLimit,
+            maxSyncFileSize = if (key == "maxSyncFileSize") toLong(value) else maxSyncFileSize,
+            useDefaultStoragePath = if (key == "useDefaultStoragePath") toBoolean(value) else useDefaultStoragePath,
+            storagePath = if (key == "storagePath") toString(value) else storagePath,
+            enableSoundEffect = if (key == "enableSoundEffect") toBoolean(value) else enableSoundEffect,
         )
+    }
+
+    // For compatibility with different storage implementations
+    // it is convenient to read the correct configuration from the storage
+    private fun toBoolean(any: Any): Boolean {
+        return when (any) {
+            is Boolean -> any
+            is String -> any.toBoolean()
+            is Int -> any != 0
+            is Long -> any != 0L
+            else -> false
+        }
+    }
+
+    private fun toInt(any: Any): Int {
+        return when (any) {
+            is Int -> any
+            is String -> any.toIntOrNull() ?: 0
+            is Boolean -> if (any) 1 else 0
+            is Long -> any.toInt()
+            else -> 0
+        }
+    }
+
+    private fun toLong(any: Any): Long {
+        return when (any) {
+            is Long -> any
+            is String -> any.toLongOrNull() ?: 0L
+            is Boolean -> if (any) 1L else 0L
+            is Int -> any.toLong()
+            else -> 0L
+        }
+    }
+
+    private fun toString(any: Any): String {
+        return any.toString()
     }
 }
