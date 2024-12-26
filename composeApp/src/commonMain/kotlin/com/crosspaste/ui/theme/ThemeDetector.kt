@@ -1,10 +1,13 @@
-package com.crosspaste.ui
+package com.crosspaste.ui.theme
 
 import androidx.compose.material3.ColorScheme
-import com.crosspaste.ui.theme.ThemeColor
 import kotlinx.coroutines.flow.StateFlow
 
 interface ThemeDetector {
+
+    val currentThemeColor: StateFlow<ThemeColor>
+
+    val colorContrast: StateFlow<ColorContrast>
 
     val lightColorScheme: StateFlow<ColorScheme>
 
@@ -27,7 +30,7 @@ interface ThemeDetector {
 
     fun setThemeColor(themeColor: ThemeColor)
 
-    fun isThemeColor(themeColor: ThemeColor): Boolean
+    fun setColorContrast(colorContrast: ColorContrast)
 
     fun getCurrentColorScheme(): StateFlow<ColorScheme> {
         return if (isFollowSystem()) {

@@ -7,7 +7,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import com.crosspaste.ui.ThemeDetector
 import org.koin.compose.koinInject
 
 object CrossPasteTheme {

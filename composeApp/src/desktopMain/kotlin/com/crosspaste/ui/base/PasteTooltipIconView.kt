@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,8 +30,9 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun PasteTooltipIconView(
     painter: Painter,
+    background: Color = MaterialTheme.colorScheme.surface,
     hover: Color = MaterialTheme.colorScheme.primaryContainer,
-    tint: Color = MaterialTheme.colorScheme.onBackground,
+    tint: Color? = null,
     text: String,
     contentDescription: String = "",
     onClick: () -> Unit,
@@ -82,7 +84,12 @@ fun PasteTooltipIconView(
                 painter = painter,
                 contentDescription = contentDescription,
                 modifier = Modifier.size(20.dp),
-                tint = tint,
+                tint =
+                    tint ?: if (hoverIcon) {
+                        MaterialTheme.colorScheme.contentColorFor(hover)
+                    } else {
+                        MaterialTheme.colorScheme.contentColorFor(background)
+                    },
             )
         }
     }

@@ -5,8 +5,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.crosspaste.config.ConfigManager
+import com.crosspaste.ui.theme.ColorContrast
 import com.crosspaste.ui.theme.CrossPasteTheme
 import com.crosspaste.ui.theme.ThemeColor
+import com.crosspaste.ui.theme.ThemeDetector
 import com.jthemedetecor.OsThemeDetector
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,18 +21,18 @@ class DesktopThemeDetector(private val configManager: ConfigManager) : ThemeDete
         MutableStateFlow(
             CrossPasteTheme.getThemeColor(configManager.config.themeColor),
         )
-    private val currentThemeColor: StateFlow<ThemeColor> = _currentThemeColor
+    override val currentThemeColor: StateFlow<ThemeColor> = _currentThemeColor
 
-    private val _lightColorScheme =
+    private val _colorContrast =
         MutableStateFlow(
-            currentThemeColor.value.lightColorScheme,
+            ColorContrast.valueOf(configManager.config.colorContrast),
         )
+    override val colorContrast: StateFlow<ColorContrast> = _colorContrast
+
+    private val _lightColorScheme = MutableStateFlow(getLightColorSchema(currentThemeColor.value))
     override val lightColorScheme: StateFlow<ColorScheme> = _lightColorScheme
 
-    private val _darkColorScheme =
-        MutableStateFlow(
-            currentThemeColor.value.darkColorScheme,
-        )
+    private val _darkColorScheme = MutableStateFlow(getDarkColorSchema(currentThemeColor.value))
     override val darkColorScheme: StateFlow<ColorScheme> = _darkColorScheme
 
     private var _isFollowSystem: Boolean by mutableStateOf(configManager.config.isFollowSystemTheme)
@@ -68,12 +70,31 @@ class DesktopThemeDetector(private val configManager: ConfigManager) : ThemeDete
 
     override fun setThemeColor(themeColor: ThemeColor) {
         _currentThemeColor.value = themeColor
-        _lightColorScheme.value = themeColor.lightColorScheme
-        _darkColorScheme.value = themeColor.darkColorScheme
+        _lightColorScheme.value = getLightColorSchema(themeColor)
+        _darkColorScheme.value = getDarkColorSchema(themeColor)
         configManager.updateConfig("themeColor", themeColor.name)
     }
 
-    override fun isThemeColor(themeColor: ThemeColor): Boolean {
-        return currentThemeColor.value == themeColor
+    override fun setColorContrast(colorContrast: ColorContrast) {
+        _colorContrast.value = colorContrast
+        _lightColorScheme.value = getLightColorSchema(currentThemeColor.value)
+        _darkColorScheme.value = getDarkColorSchema(currentThemeColor.value)
+        configManager.updateConfig("colorContrast", colorContrast.name)
+    }
+
+    private fun getLightColorSchema(themeColor: ThemeColor): ColorScheme {
+        return when (colorContrast.value) {
+            ColorContrast.Standard -> themeColor.lightColorScheme
+            ColorContrast.Medium -> themeColor.lightMediumContrastColorScheme
+            ColorContrast.High -> themeColor.lightHighContrastColorScheme
+        }
+    }
+
+    private fun getDarkColorSchema(themeColor: ThemeColor): ColorScheme {
+        return when (colorContrast.value) {
+            ColorContrast.Standard -> themeColor.darkColorScheme
+            ColorContrast.Medium -> themeColor.darkMediumContrastColorScheme
+            ColorContrast.High -> themeColor.darkHighContrastColorScheme
+        }
     }
 }
