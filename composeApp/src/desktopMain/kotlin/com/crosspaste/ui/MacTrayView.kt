@@ -15,7 +15,7 @@ import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
 import com.crosspaste.composeapp.generated.resources.Res
-import com.crosspaste.composeapp.generated.resources.crosspaste_tray_mac
+import com.crosspaste.composeapp.generated.resources.crosspaste_svg
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.platform.macos.MacAppUtils
@@ -53,7 +53,7 @@ object MacTrayView {
         val copywriter = koinInject<GlobalCopywriter>()
         val uiSupport = koinInject<UISupport>()
 
-        val trayIcon = painterResource(Res.drawable.crosspaste_tray_mac)
+        val trayIcon = painterResource(Res.drawable.crosspaste_svg)
 
         var menu by remember {
             mutableStateOf(
