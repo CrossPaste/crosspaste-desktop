@@ -7,7 +7,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -54,7 +53,6 @@ import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.UISupport
-import com.crosspaste.ui.base.crosspasteIcon
 import com.crosspaste.ui.base.menuItemReminderTextStyle
 import com.crosspaste.ui.base.robotoFontFamily
 import com.crosspaste.ui.base.search
@@ -104,14 +102,13 @@ fun HomeWindowDecoration() {
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Image(
+                CrossPasteLogooView(
                     modifier =
                         Modifier.padding(start = 13.dp, top = 13.dp, end = 10.dp, bottom = 13.dp)
                             .align(Alignment.CenterVertically)
                             .clip(RoundedCornerShape(3.dp))
+                            .background(MaterialTheme.colorScheme.primary)
                             .size(36.dp),
-                    painter = crosspasteIcon(),
-                    contentDescription = "crosspaste icon",
                 )
                 Column(
                     Modifier.wrapContentWidth()

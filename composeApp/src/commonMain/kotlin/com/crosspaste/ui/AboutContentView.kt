@@ -1,6 +1,5 @@
 package com.crosspaste.ui
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -32,7 +31,6 @@ import com.crosspaste.app.AppUrls
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.chevronRight
-import com.crosspaste.ui.base.crosspasteIcon
 import com.crosspaste.ui.base.robotoFontFamily
 import org.koin.compose.koinInject
 
@@ -59,12 +57,11 @@ fun AboutContentView() {
                 modifier = Modifier.align(Alignment.Center),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Image(
+                CrossPasteLogooView(
                     modifier =
                         Modifier.clip(RoundedCornerShape(6.dp))
+                            .background(MaterialTheme.colorScheme.primary)
                             .size(72.dp),
-                    painter = crosspasteIcon(),
-                    contentDescription = "crosspaste icon",
                 )
                 Spacer(modifier = Modifier.height(14.dp))
                 Text(
