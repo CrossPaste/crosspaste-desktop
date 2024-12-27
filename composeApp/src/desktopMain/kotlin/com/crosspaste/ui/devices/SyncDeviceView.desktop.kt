@@ -16,6 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.dp
@@ -26,7 +27,7 @@ import com.crosspaste.realm.sync.createSyncRuntimeInfo
 @Composable
 actual fun SyncDeviceView(
     syncInfo: SyncInfo,
-    action: @Composable () -> Unit,
+    action: @Composable (Color) -> Unit,
 ) {
     val syncRuntimeInfo = createSyncRuntimeInfo(syncInfo)
 
@@ -64,7 +65,7 @@ actual fun SyncDeviceView(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.End,
         ) {
-            action()
+            action(backgroundColor)
         }
     }
 }

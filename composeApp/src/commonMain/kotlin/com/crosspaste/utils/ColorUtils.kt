@@ -1,5 +1,9 @@
 package com.crosspaste.utils
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 fun getColorUtils(): ColorUtils {
@@ -86,5 +90,98 @@ object ColorUtils {
         } catch (_: Exception) {
             null
         }
+    }
+
+    fun Color.toHSL(): FloatArray {
+        val r: Float = red
+        val g: Float = green
+        val b: Float = blue
+
+        val max = max(max(r, g), b)
+        val min = min(min(r, g), b)
+        var h: Float
+        val s: Float
+        val l = (max + min) / 2f
+
+        if (max == min) {
+            h = 0f
+            s = 0f
+        } else {
+            val d = max - min
+            s = if (l > 0.5f) d / (2f - max - min) else d / (max + min)
+            h =
+                when (max) {
+                    r -> (g - b) / d + (if (g < b) 6f else 0f)
+                    g -> (b - r) / d + 2f
+                    else -> (r - g) / d + 4f
+                }
+            h /= 6f
+        }
+
+        return floatArrayOf(h * 360, s * 100, l * 100)
+    }
+
+    fun hslToColor(
+        h: Float,
+        s: Float,
+        l: Float,
+    ): Color {
+        val h1 = h / 360f
+        val s1 = s / 100f
+        val l1 = l / 100f
+
+        fun hueToRgb(
+            p: Float,
+            q: Float,
+            t: Float,
+        ): Float {
+            var t1 = t
+            if (t1 < 0f) t1 += 1f
+            if (t1 > 1f) t1 -= 1f
+            if (t1 < 1f / 6f) return p + (q - p) * 6f * t1
+            if (t1 < 1f / 2f) return q
+            if (t1 < 2f / 3f) return p + (q - p) * (2f / 3f - t1) * 6f
+            return p
+        }
+
+        if (s1 == 0f) {
+            return Color(l1, l1, l1)
+        } else {
+            val q = if (l1 < 0.5f) l1 * (1 + s1) else l1 + s1 - l1 * s1
+            val p = 2 * l1 - q
+            val r = hueToRgb(p, q, h1 + 1f / 3f)
+            val g = hueToRgb(p, q, h1)
+            val b = hueToRgb(p, q, h1 - 1f / 3f)
+            return Color(r, g, b)
+        }
+    }
+
+    // Calculate adaptive color based on background
+    fun getAdaptiveColor(
+        backgroundColor: Color,
+        targetHue: Float,
+        baseSaturation: Float = 70f,
+        baseLightness: Float = 60f,
+    ): Color {
+        val bgLuminance = backgroundColor.luminance()
+        val bgHsl = backgroundColor.toHSL()
+
+        // Adjust target color lightness based on background luminance
+        val adjustedLightness =
+            when {
+                bgLuminance > 0.7f -> baseLightness - 20f // Bright background, decrease color lightness
+                bgLuminance < 0.3f -> baseLightness + 20f // Dark background, increase color lightness
+                else -> baseLightness
+            }
+
+        // Adjust target color saturation based on background saturation
+        val adjustedSaturation =
+            when {
+                bgHsl[1] > 70f -> baseSaturation - 20f // High background saturation, decrease color saturation
+                bgHsl[1] < 30f -> baseSaturation + 10f // Low background saturation, increase color saturation
+                else -> baseSaturation
+            }
+
+        return hslToColor(targetHue, adjustedSaturation, adjustedLightness)
     }
 }

@@ -39,7 +39,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
     val configManager = koinInject<ConfigManager>()
     val jsonUtils = getJsonUtils()
     val scope = rememberCoroutineScope()
-    SyncDeviceView(syncInfo = syncInfo) {
+    SyncDeviceView(syncInfo = syncInfo) { background ->
         Button(
             modifier = Modifier.height(28.dp),
             onClick = {
@@ -47,7 +47,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
                 syncRuntimeInfoRealm.insertOrUpdate(newSyncRuntimeInfo)
             },
             shape = RoundedCornerShape(4.dp),
-            border = BorderStroke(1.dp, connectedColor()),
+            border = BorderStroke(1.dp, connectedColor(background)),
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background),
             elevation =
@@ -60,7 +60,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
         ) {
             Text(
                 text = copywriter.getText("add"),
-                color = connectedColor(),
+                color = connectedColor(background),
                 style =
                     TextStyle(
                         fontFamily = FontFamily.SansSerif,
@@ -89,7 +89,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
                 }
             },
             shape = RoundedCornerShape(4.dp),
-            border = BorderStroke(1.dp, disconnectedColor()),
+            border = BorderStroke(1.dp, disconnectedColor(background)),
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background),
             elevation =
@@ -102,7 +102,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
         ) {
             Text(
                 text = copywriter.getText("block"),
-                color = disconnectedColor(),
+                color = disconnectedColor(background),
                 style =
                     TextStyle(
                         fontFamily = FontFamily.SansSerif,

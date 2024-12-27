@@ -51,7 +51,6 @@ import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.noFavorite
-import com.crosspaste.ui.theme.CrossPasteTheme.favoriteColor
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -95,7 +94,7 @@ fun PasteDetailInfoView(
         PasteTooltipIconView(
             painter = if (favorite) favorite() else noFavorite(),
             contentDescription = "Favorite",
-            tint = MaterialTheme.colorScheme.favoriteColor(),
+            tint = MaterialTheme.colorScheme.primary,
             text = copywriter.getText("whether_to_search_only_favorites"),
         ) {
             pasteRealm.setFavorite(pasteData.id, !favorite)

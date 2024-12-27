@@ -36,16 +36,17 @@ fun getConnectStateColorAndText(
     syncRuntimeInfo: SyncRuntimeInfo,
     versionRelation: VersionRelation?,
     refresh: Boolean,
+    background: Color,
 ): Pair<Color, String> {
     return if (refresh) {
-        Pair(connectingColor(), "connecting")
+        Pair(connectingColor(background), "connecting")
     } else {
         if (versionRelation != VersionRelation.EQUAL_TO) {
             // versionRelation is relation current app,
             // so LOWER_THAN means the other app is higher
             // HIGHER_THAN means the other app is lower
             Pair(
-                unmatchedColor(),
+                unmatchedColor(background),
                 if (versionRelation == VersionRelation.LOWER_THAN) {
                     "version_higher"
                 } else {
@@ -54,15 +55,15 @@ fun getConnectStateColorAndText(
             )
         } else if (syncRuntimeInfo.allowSend || syncRuntimeInfo.allowReceive) {
             when (syncRuntimeInfo.connectState) {
-                SyncState.CONNECTED -> Pair(connectedColor(), "connected")
-                SyncState.CONNECTING -> Pair(connectingColor(), "connecting")
-                SyncState.DISCONNECTED -> Pair(disconnectedColor(), "disconnected")
-                SyncState.UNMATCHED -> Pair(unmatchedColor(), "unmatched")
-                SyncState.UNVERIFIED -> Pair(unverifiedColor(), "unverified")
+                SyncState.CONNECTED -> Pair(connectedColor(background), "connected")
+                SyncState.CONNECTING -> Pair(connectingColor(background), "connecting")
+                SyncState.DISCONNECTED -> Pair(disconnectedColor(background), "disconnected")
+                SyncState.UNMATCHED -> Pair(unmatchedColor(background), "unmatched")
+                SyncState.UNVERIFIED -> Pair(unverifiedColor(background), "unverified")
                 else -> throw IllegalArgumentException("Unknown connectState: ${syncRuntimeInfo.connectState}")
             }
         } else {
-            Pair(disconnectedColor(), "off_connected")
+            Pair(disconnectedColor(background), "off_connected")
         }
     }
 }

@@ -1,12 +1,11 @@
 package com.crosspaste.ui.theme
 
-import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
+import com.crosspaste.utils.ColorUtils.getAdaptiveColor
 import org.koin.compose.koinInject
 
 object CrossPasteTheme {
@@ -33,41 +32,23 @@ object CrossPasteTheme {
         }
     }
 
-    @Composable
-    fun ColorScheme.favoriteColor(): Color {
-        return if (isLight()) {
-            Color(0xFFFFAA00)
-        } else {
-            Color(0xFFFFCE34)
-        }
+    fun connectedColor(backgroundColor: Color): Color {
+        return getAdaptiveColor(backgroundColor, 120f)
     }
 
-    @Composable
-    fun ColorScheme.isLight(): Boolean {
-        return surface.luminance() > 0.5
+    fun connectingColor(backgroundColor: Color): Color {
+        return getAdaptiveColor(backgroundColor, 60f)
     }
 
-    fun connectedColor(): Color {
-        return Color(0xFF95EC69)
+    fun disconnectedColor(backgroundColor: Color): Color {
+        return getAdaptiveColor(backgroundColor, 0f)
     }
 
-    fun connectingColor(): Color {
-        return Color(0xFFE6C44D)
+    fun unmatchedColor(backgroundColor: Color): Color {
+        return getAdaptiveColor(backgroundColor, 270f)
     }
 
-    fun disconnectedColor(): Color {
-        return Color(0xFFFF6969)
-    }
-
-    fun unmatchedColor(): Color {
-        return Color(0xFF9A69EC)
-    }
-
-    fun unverifiedColor(): Color {
-        return Color(0xFF69A9EC)
-    }
-
-    fun grantPermissionColor(): Color {
-        return Color(0xFF95EC69)
+    fun unverifiedColor(backgroundColor: Color): Color {
+        return getAdaptiveColor(backgroundColor, 240f)
     }
 }

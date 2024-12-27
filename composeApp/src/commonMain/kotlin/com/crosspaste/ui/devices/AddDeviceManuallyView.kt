@@ -230,7 +230,7 @@ fun AddDeviceManuallyForm() {
                 }
             },
             shape = RoundedCornerShape(4.dp),
-            border = BorderStroke(1.dp, connectedColor()),
+            border = BorderStroke(1.dp, connectedColor(MaterialTheme.colorScheme.surfaceContainerLowest)),
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background),
             elevation =
@@ -243,7 +243,7 @@ fun AddDeviceManuallyForm() {
         ) {
             Text(
                 text = copywriter.getText("add"),
-                color = connectedColor(),
+                color = connectedColor(MaterialTheme.colorScheme.surfaceContainerLowest),
                 style =
                     TextStyle(
                         fontFamily = FontFamily.SansSerif,

@@ -84,13 +84,6 @@ actual fun DeviceConnectView(
         mutableStateOf(syncManager.getSyncHandler(syncRuntimeInfo.appInstanceId))
     }
 
-    val (connectColor, connectText) =
-        getConnectStateColorAndText(
-            syncRuntimeInfo,
-            syncHandler?.versionRelation,
-            refresh,
-        )
-
     val connectIcon = AllowSendAndReceiveImage(syncRuntimeInfo)
 
     var hover by remember { mutableStateOf(false) }
@@ -100,6 +93,14 @@ actual fun DeviceConnectView(
         } else {
             MaterialTheme.colorScheme.surfaceContainerHighest
         }
+
+    val (connectColor, connectText) =
+        getConnectStateColorAndText(
+            syncRuntimeInfo,
+            syncHandler?.versionRelation,
+            refresh,
+            backgroundColor,
+        )
 
     var modifier =
         Modifier
