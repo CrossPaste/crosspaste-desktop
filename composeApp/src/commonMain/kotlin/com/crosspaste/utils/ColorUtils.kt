@@ -156,7 +156,7 @@ object ColorUtils {
         }
     }
 
-    // 计算对比色
+    // Calculate adaptive color based on background
     fun getAdaptiveColor(
         backgroundColor: Color,
         targetHue: Float,
@@ -166,19 +166,19 @@ object ColorUtils {
         val bgLuminance = backgroundColor.luminance()
         val bgHsl = backgroundColor.toHSL()
 
-        // 根据背景亮度调整目标颜色的亮度
+        // Adjust target color lightness based on background luminance
         val adjustedLightness =
             when {
-                bgLuminance > 0.7f -> baseLightness - 20f // 背景很亮，降低颜色亮度
-                bgLuminance < 0.3f -> baseLightness + 20f // 背景很暗，提高颜色亮度
+                bgLuminance > 0.7f -> baseLightness - 20f // Bright background, decrease color lightness
+                bgLuminance < 0.3f -> baseLightness + 20f // Dark background, increase color lightness
                 else -> baseLightness
             }
 
-        // 根据背景饱和度调整目标颜色的饱和度
+        // Adjust target color saturation based on background saturation
         val adjustedSaturation =
             when {
-                bgHsl[1] > 70f -> baseSaturation - 20f // 背景饱和度高，降低颜色饱和度
-                bgHsl[1] < 30f -> baseSaturation + 10f // 背景饱和度低，提高颜色饱和度
+                bgHsl[1] > 70f -> baseSaturation - 20f // High background saturation, decrease color saturation
+                bgHsl[1] < 30f -> baseSaturation + 10f // Low background saturation, increase color saturation
                 else -> baseSaturation
             }
 
