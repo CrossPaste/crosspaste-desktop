@@ -91,7 +91,7 @@ fun DeviceDetailContentView() {
                         Icon(
                             painter = alertCircle(),
                             contentDescription = "Warning",
-                            tint = unmatchedColor(),
+                            tint = unmatchedColor(MaterialTheme.colorScheme.errorContainer),
                             modifier = Modifier.size(20.dp),
                         )
                         Spacer(modifier = Modifier.width(16.dp))
@@ -100,7 +100,7 @@ fun DeviceDetailContentView() {
                                 "${copywriter.getText("current_software_version")}: ${appInfo.appVersion}\n" +
                                     "${copywriter.getText("connected_software_version")}: ${syncRuntimeInfo.appVersion}\n" +
                                     copywriter.getText("incompatible_info"),
-                            color = unmatchedColor(),
+                            color = unmatchedColor(MaterialTheme.colorScheme.errorContainer),
                             style =
                                 TextStyle(
                                     fontWeight = FontWeight.Light,

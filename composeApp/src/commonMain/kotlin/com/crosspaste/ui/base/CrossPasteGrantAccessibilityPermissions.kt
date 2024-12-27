@@ -43,7 +43,6 @@ import com.crosspaste.app.ExitMode
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.LocalExitApplication
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
-import com.crosspaste.ui.theme.CrossPasteTheme.grantPermissionColor
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 
@@ -78,7 +77,7 @@ fun CrossPasteGrantAccessibilityPermissions(
         Column(
             modifier =
                 Modifier.fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
+                    .background(MaterialTheme.colorScheme.surface),
         ) {
             Spacer(modifier = Modifier.height(24.dp))
             Row(
@@ -105,7 +104,7 @@ fun CrossPasteGrantAccessibilityPermissions(
                             fontSize = 25.sp,
                             fontWeight = MaterialTheme.typography.displayLarge.fontWeight,
                             fontFamily = FontFamily.SansSerif,
-                            color = MaterialTheme.colorScheme.onBackground,
+                            color = MaterialTheme.colorScheme.onSurface,
                         ),
                 )
             }
@@ -124,7 +123,7 @@ fun CrossPasteGrantAccessibilityPermissions(
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.SansSerif,
-                            color = MaterialTheme.colorScheme.onBackground,
+                            color = MaterialTheme.colorScheme.onSurface,
                             textDecoration = TextDecoration.Underline,
                         ),
                 )
@@ -152,7 +151,7 @@ fun CrossPasteGrantAccessibilityPermissions(
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = FontFamily.SansSerif,
-                                color = MaterialTheme.colorScheme.onBackground,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 textDecoration = TextDecoration.Underline,
                             ),
                     )
@@ -164,7 +163,7 @@ fun CrossPasteGrantAccessibilityPermissions(
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Light,
                                 fontFamily = FontFamily.SansSerif,
-                                color = MaterialTheme.colorScheme.onBackground,
+                                color = MaterialTheme.colorScheme.onSurface,
                             ),
                     )
                     Spacer(modifier = Modifier.height(6.dp))
@@ -176,9 +175,9 @@ fun CrossPasteGrantAccessibilityPermissions(
                                 uiSupport.jumpPrivacyAccessibility()
                             },
                             shape = RoundedCornerShape(4.dp),
-                            border = BorderStroke(1.dp, grantPermissionColor()),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiaryContainer),
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = grantPermissionColor()),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
                             elevation =
                                 ButtonDefaults.elevatedButtonElevation(
                                     defaultElevation = 0.dp,
@@ -189,7 +188,7 @@ fun CrossPasteGrantAccessibilityPermissions(
                         ) {
                             Text(
                                 text = copywriter.getText("grant_permission"),
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer,
                                 style =
                                     TextStyle(
                                         fontFamily = FontFamily.SansSerif,
@@ -200,7 +199,10 @@ fun CrossPasteGrantAccessibilityPermissions(
                         }
                     } else {
                         if (restarting) {
-                            CircularProgressIndicator(modifier = Modifier.size(28.dp))
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(28.dp),
+                                color = MaterialTheme.colorScheme.tertiaryContainer,
+                            )
                         } else {
                             Button(
                                 modifier = Modifier.height(28.dp),

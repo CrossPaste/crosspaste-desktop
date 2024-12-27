@@ -59,7 +59,6 @@ import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.base.moreVertical
 import com.crosspaste.ui.base.noFavorite
-import com.crosspaste.ui.theme.CrossPasteTheme.favoriteColor
 import com.crosspaste.utils.DateUtils.toLocalDateTime
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -321,7 +320,7 @@ fun PasteMenuView(
                                     },
                             painter = if (pasteData.favorite) favorite() else noFavorite(),
                             contentDescription = "Favorite",
-                            tint = MaterialTheme.colorScheme.favoriteColor(),
+                            tint = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }

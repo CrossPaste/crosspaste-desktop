@@ -64,7 +64,6 @@ import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.noFavorite
 import com.crosspaste.ui.model.PasteSearchViewModel
-import com.crosspaste.ui.theme.CrossPasteTheme.favoriteColor
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
@@ -214,7 +213,7 @@ fun SearchInputView(requestFocus: () -> Unit) {
                     PasteTooltipIconView(
                         painter = if (searchFavorite) favorite() else noFavorite(),
                         contentDescription = "Favorite",
-                        tint = MaterialTheme.colorScheme.favoriteColor(),
+                        tint = MaterialTheme.colorScheme.primary,
                         text = copywriter.getText("whether_to_search_only_favorites"),
                     ) {
                         pasteSearchViewModel.switchFavorite()
@@ -244,7 +243,7 @@ fun SearchInputView(requestFocus: () -> Unit) {
                                 TextStyle(
                                     fontWeight = FontWeight.Light,
                                     fontFamily = FontFamily.SansSerif,
-                                    color = MaterialTheme.colorScheme.onSurface,
+                                    color = MaterialTheme.colorScheme.primary,
                                     fontSize = 15.sp,
                                 ),
                         )
@@ -305,6 +304,7 @@ fun SearchInputView(requestFocus: () -> Unit) {
                                                 text = copywriter.getText(pasteType.name),
                                                 textStyle = textStyle,
                                                 paddingValues = paddingValues,
+                                                background = MaterialTheme.colorScheme.surfaceBright,
                                             ) {
                                                 pasteSearchViewModel.setPasteType(pasteType.type)
                                                 currentType = pasteType
