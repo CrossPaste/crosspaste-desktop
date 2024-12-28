@@ -1,11 +1,11 @@
 package com.crosspaste.notification
 
-import androidx.compose.runtime.State
 import com.crosspaste.ui.base.Toast
+import kotlinx.coroutines.flow.StateFlow
 
 interface ToastManager {
 
-    val toast: State<Toast?>
+    val toast: StateFlow<Toast?>
 
     fun setToast(toast: Toast)
 

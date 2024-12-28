@@ -25,11 +25,11 @@ enum class MessageType {
     }
 }
 
-enum class MessageStyle(val messageColor: Color) {
-    Error(Color.Red),
-    Info(Color.Blue),
-    Success(Color.Green),
-    Warning(Color.Yellow),
+enum class MessageStyle(val messageColor: Color, val targetHue: Float) {
+    Error(Color.Red, 0f),
+    Info(Color.Blue, 240f),
+    Success(Color.Green, 120f),
+    Warning(Color.Yellow, 60f),
 }
 
 @Composable
