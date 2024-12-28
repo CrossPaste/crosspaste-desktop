@@ -19,6 +19,11 @@ class DesktopCrossPasteLogger(
     override lateinit var logLevel: String
     override val loggerDebugPackages: String?
 
+    var rootLogger: ch.qos.logback.classic.Logger? = null
+
+    var jThemeLogger: ch.qos.logback.classic.Logger? = null
+    var jmDNSLogger: ch.qos.logback.classic.Logger? = null
+
     init {
         val systemProperty = getSystemProperty()
         systemProperty.getOption("loggerLevel")?.let {
@@ -59,12 +64,14 @@ class DesktopCrossPasteLogger(
         rollingFileAppender.rollingPolicy = rollingPolicy
         rollingFileAppender.start()
 
-        val rootLogger = context.getLogger(Logger.ROOT_LOGGER_NAME) as ch.qos.logback.classic.Logger
-        rootLogger.level = getLevel(logLevel)
-        rootLogger.addAppender(rollingFileAppender)
+        rootLogger = context.getLogger(Logger.ROOT_LOGGER_NAME) as ch.qos.logback.classic.Logger
+        rootLogger?.level = getLevel(logLevel)
+        rootLogger?.addAppender(rollingFileAppender)
 
-        val jThemeLogger = context.getLogger("com.jthemedetecor") as ch.qos.logback.classic.Logger
-        jThemeLogger.level = Level.OFF
+        jThemeLogger = context.getLogger("com.jthemedetecor") as ch.qos.logback.classic.Logger
+        jThemeLogger?.level = Level.OFF
+        jmDNSLogger = context.getLogger("javax.jmdns") as ch.qos.logback.classic.Logger
+        jmDNSLogger?.level = Level.OFF
 
         loggerDebugPackages = systemProperty.getOption("loggerDebugPackages")
 
@@ -77,15 +84,17 @@ class DesktopCrossPasteLogger(
     }
 
     override fun updateRootLogLevel(logLevel: String) {
-        val context = LoggerFactory.getILoggerFactory() as LoggerContext
-        val rootLogger = context.getLogger(Logger.ROOT_LOGGER_NAME) as ch.qos.logback.classic.Logger
         val level = getLevel(logLevel)
         if (level == Level.DEBUG) {
             configManager.updateConfig("enableDebugMode", true)
+            jThemeLogger?.level = Level.DEBUG
+            jmDNSLogger?.level = Level.DEBUG
         } else {
             configManager.updateConfig("enableDebugMode", false)
+            jThemeLogger?.level = Level.OFF
+            jmDNSLogger?.level = Level.OFF
         }
-        rootLogger.level = getLevel(logLevel)
+        rootLogger?.level = getLevel(logLevel)
     }
 
     private fun getLevel(logLevel: String): Level {
