@@ -49,7 +49,7 @@ fun CrossPasteMainWindowContent() {
     val appTokenApi = koinInject<AppTokenApi>()
     val toastManager = koinInject<ToastManager>()
     val dialogService = koinInject<DialogService>()
-    val toast by toastManager.toast
+    val toast by toastManager.toast.collectAsState()
 
     Theme {
         Box(

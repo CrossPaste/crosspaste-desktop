@@ -1,15 +1,14 @@
 package com.crosspaste.ui.base
 
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
 import com.crosspaste.notification.ToastManager
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class DesktopToastManager : ToastManager {
 
-    private var _toast: MutableState<Toast?> = mutableStateOf(null)
+    private val _toast: MutableStateFlow<Toast?> = MutableStateFlow(null)
 
-    override val toast: State<Toast?> get() = _toast
+    override val toast: StateFlow<Toast?> = _toast
 
     override fun setToast(toast: Toast) {
         this._toast.value = toast

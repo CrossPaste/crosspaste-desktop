@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -32,6 +33,7 @@ import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.ToastManager
 import com.crosspaste.notification.getMessagePainter
+import com.crosspaste.utils.ColorUtils
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 
@@ -71,10 +73,23 @@ fun ToastView(
                     .background(Color.Transparent)
                     .shadow(15.dp),
         ) {
+            val background =
+                if (toast.messageType == MessageType.Error) {
+                    MaterialTheme.colorScheme.errorContainer
+                } else {
+                    MaterialTheme.colorScheme.tertiaryContainer
+                }
+
+            val tint =
+                ColorUtils.getAdaptiveColor(
+                    background,
+                    messageStyle.targetHue,
+                )
+
             Row(
                 modifier =
                     Modifier
-                        .background(MaterialTheme.colorScheme.tertiaryContainer, shape = RoundedCornerShape(8.dp))
+                        .background(background, shape = RoundedCornerShape(8.dp))
                         .padding(all = 8.dp)
                         .width(280.dp)
                         .padding(horizontal = 12.dp),
@@ -83,7 +98,7 @@ fun ToastView(
                 Icon(
                     painter = getMessagePainter(messageStyle),
                     contentDescription = "toast icon",
-                    tint = messageStyle.messageColor,
+                    tint = tint,
                 )
                 Spacer(Modifier.width(12.dp))
                 Text(
@@ -91,7 +106,7 @@ fun ToastView(
                     style =
                         TextStyle(
                             fontWeight = FontWeight.Light,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                            color = MaterialTheme.colorScheme.contentColorFor(background),
                             fontSize = 16.sp,
                         ),
                 )
@@ -100,7 +115,7 @@ fun ToastView(
                     modifier = Modifier.clickable(onClick = onCancelTapped),
                     painter = close(),
                     contentDescription = "Cancel",
-                    tint = messageStyle.messageColor,
+                    tint = tint,
                 )
             }
         }
