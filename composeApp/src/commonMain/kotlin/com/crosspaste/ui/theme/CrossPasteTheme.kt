@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
+import com.crosspaste.ui.base.BaseColor
 import com.crosspaste.utils.ColorUtils.getAdaptiveColor
 import org.koin.compose.koinInject
 
@@ -33,22 +34,22 @@ object CrossPasteTheme {
     }
 
     fun connectedColor(backgroundColor: Color): Color {
-        return getAdaptiveColor(backgroundColor, 120f)
+        return getAdaptiveColor(backgroundColor, BaseColor.Green.targetHue)
     }
 
     fun connectingColor(backgroundColor: Color): Color {
-        return getAdaptiveColor(backgroundColor, 60f)
+        return getAdaptiveColor(backgroundColor, BaseColor.Yellow.targetHue)
     }
 
     fun disconnectedColor(backgroundColor: Color): Color {
-        return getAdaptiveColor(backgroundColor, 0f)
+        return getAdaptiveColor(backgroundColor, BaseColor.Red.targetHue)
     }
 
     fun unmatchedColor(backgroundColor: Color): Color {
-        return getAdaptiveColor(backgroundColor, 270f)
+        return getAdaptiveColor(backgroundColor, BaseColor.Purple.targetHue)
     }
 
     fun unverifiedColor(backgroundColor: Color): Color {
-        return getAdaptiveColor(backgroundColor, 240f)
+        return getAdaptiveColor(backgroundColor, BaseColor.Blue.targetHue)
     }
 }

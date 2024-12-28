@@ -83,7 +83,7 @@ fun ToastView(
             val tint =
                 ColorUtils.getAdaptiveColor(
                     background,
-                    messageStyle.targetHue,
+                    messageStyle.baseColor.targetHue,
                 )
 
             Row(

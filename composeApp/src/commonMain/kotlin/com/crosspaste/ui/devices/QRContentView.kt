@@ -49,8 +49,10 @@ import com.crosspaste.app.AppSize
 import com.crosspaste.app.AppTokenApi
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.QRCodeGenerator
+import com.crosspaste.ui.base.BaseColor
 import com.crosspaste.ui.base.autoRenew
 import com.crosspaste.ui.base.scan
+import com.crosspaste.utils.ColorUtils
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
@@ -137,7 +139,7 @@ fun QRContentView() {
                         painter = scan(),
                         contentDescription = "Scan",
                         modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = ColorUtils.getAdaptiveColor(Color.White, BaseColor.Blue.targetHue),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                 }

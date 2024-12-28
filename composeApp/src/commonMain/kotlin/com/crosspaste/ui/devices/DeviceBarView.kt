@@ -125,7 +125,7 @@ fun DeviceBarView(
                     style =
                         TextStyle(
                             fontWeight = FontWeight.Light,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                             fontSize = 11.sp,
                         ),
                     overflow = TextOverflow.Ellipsis,
