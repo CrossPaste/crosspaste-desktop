@@ -305,6 +305,8 @@ fun PasteMenuView(
                                 ),
                         contentAlignment = Alignment.Center,
                     ) {
+                        var currentFavorite by remember(pasteData.id) { mutableStateOf(pasteData.favorite) }
+
                         Icon(
                             modifier =
                                 Modifier.size(16.dp)
@@ -313,12 +315,13 @@ fun PasteMenuView(
                                             onTap = {
                                                 pasteRealm.setFavorite(
                                                     pasteData.id,
-                                                    !pasteData.favorite,
+                                                    !currentFavorite,
                                                 )
+                                                currentFavorite = !currentFavorite
                                             },
                                         )
                                     },
-                            painter = if (pasteData.favorite) favorite() else noFavorite(),
+                            painter = if (currentFavorite) favorite() else noFavorite(),
                             contentDescription = "Favorite",
                             tint = MaterialTheme.colorScheme.primary,
                         )

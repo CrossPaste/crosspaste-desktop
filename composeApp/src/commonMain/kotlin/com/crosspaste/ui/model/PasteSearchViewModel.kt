@@ -70,10 +70,17 @@ class PasteSearchViewModel(private val pasteRealm: PasteRealm) : ViewModel() {
                     sort = params.sort,
                     pasteType = params.pasteType,
                     limit = params.limit,
-                ).asFlow()
+                ).asFlow(
+                    // Ignore favorite, labels, and pasteSearchContent
+                    // their changes should not refresh the search
+                    listOf(
+                        "id", "appInstanceId", "pasteId", "pasteType", "source", "size", "hash",
+                        "createTime", "pasteAppearItem", "remote",
+                    ),
+                )
             }
             .map { changes ->
-                changes.list.toList()
+                changes.list
             }
             .stateIn(
                 scope = viewModelScope,
