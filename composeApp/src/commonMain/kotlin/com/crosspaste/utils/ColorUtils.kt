@@ -16,8 +16,8 @@ object ColorUtils {
     private const val HEX_PATTERN = """[0-9A-Fa-f]"""
 
     // Regex patterns for different color formats
-    private val HEX_6_PATTERN = """^#?(${HEX_PATTERN}{6})$""".toRegex()
-    private val HEX_8_PATTERN = """^#?(${HEX_PATTERN}{8})$""".toRegex()
+    private val HEX_6_PATTERN = """^(?:#|0[xX])?(${HEX_PATTERN}{6})$""".toRegex()
+    private val HEX_8_PATTERN = """^(?:#|0[xX])?(${HEX_PATTERN}{8})$""".toRegex()
     private val RGB_PATTERN = """^rgb\s*\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$""".toRegex()
     private val RGBA_PATTERN = """^rgba\s*\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(1|0|0?\.\d+|1\.0)\s*\)$""".toRegex()
 

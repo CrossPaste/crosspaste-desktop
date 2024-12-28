@@ -32,15 +32,15 @@ data class PasteType(
 
         val TEXT_TYPE = PasteType(TEXT, 0, "text")
 
-        val COLOR_TYPE = PasteType(COLOR, 1, "color")
+        val URL_TYPE = PasteType(URL, 1, "link")
 
-        val URL_TYPE = PasteType(URL, 2, "link")
+        val IMAGE_TYPE = PasteType(IMAGE, 2, "image")
 
-        val IMAGE_TYPE = PasteType(IMAGE, 3, "image")
+        val RTF_TYPE = PasteType(RTF, 3, "rtf")
 
-        val RTF_TYPE = PasteType(RTF, 4, "rtf")
+        val HTML_TYPE = PasteType(HTML, 4, "html")
 
-        val HTML_TYPE = PasteType(HTML, 5, "html")
+        val COLOR_TYPE = PasteType(COLOR, 5, "color")
 
         val FILE_TYPE = PasteType(FILE, 6, "file")
 

@@ -15,6 +15,7 @@ interface PasteColor {
     fun toHexString(): String =
         buildString {
             append('#')
+            append(getAlpha().toString(16).padStart(2, '0').uppercase())
             append(getRed().toString(16).padStart(2, '0').uppercase())
             append(getGreen().toString(16).padStart(2, '0').uppercase())
             append(getBlue().toString(16).padStart(2, '0').uppercase())

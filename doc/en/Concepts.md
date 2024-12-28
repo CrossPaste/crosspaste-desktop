@@ -38,10 +38,10 @@ The [default priority](https://github.com/CrossPaste/crosspaste-desktop/blob/mai
 | Priority | Paste Type   |
 |----------|--------------|
 | 6        | File         |
-| 5        | HTML         |
-| 4        | RTF          |
-| 3        | Image        |
-| 2        | Link         |
-| 1        | Color        |
+| 5        | Color        |
+| 4        | HTML         |
+| 3        | RTF          |
+| 2        | Image        |
+| 1        | Link         |
 | 0        | Text         |
 | -1       | Invalid Type |
