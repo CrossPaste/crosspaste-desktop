@@ -51,7 +51,7 @@ import org.koin.compose.koinInject
 import org.mongodb.kbson.ObjectId
 
 @Composable
-actual fun PasteboardScreen() {
+actual fun PasteboardScreen(openTopBar: () -> Unit) {
     val pasteDataViewModel = koinInject<PasteDataViewModel>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
 
