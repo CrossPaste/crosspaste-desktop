@@ -123,7 +123,11 @@ interface FileUtils {
     }
 
     fun existFile(path: Path): Boolean {
-        return fileSystem.exists(path)
+        val result =
+            runCatching {
+                fileSystem.exists(path)
+            }
+        return result.getOrDefault(false)
     }
 
     fun deleteFile(path: Path): Result<Unit> =
