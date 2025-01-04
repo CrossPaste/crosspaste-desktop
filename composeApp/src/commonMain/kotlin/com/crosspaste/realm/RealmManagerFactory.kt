@@ -23,6 +23,9 @@ import kotlin.reflect.KClass
 abstract class RealmManagerFactory {
 
     companion object {
+
+        const val CROSSPASTE_REALM_NAME = "crosspaste.realm"
+
         val DTO_TYPES: Set<KClass<out TypedRealmObject>> =
             setOf(
                 SyncRuntimeInfo::class,
@@ -54,24 +57,16 @@ abstract class RealmManagerFactory {
             )
     }
 
-    private val name = "crosspaste.realm"
-
     abstract val schemaVersion: Long
 
     abstract val userDataPathProvider: UserDataPathProvider
 
-    fun createRealmManager(): RealmManager {
+    open fun createRealmManager(): RealmManager {
         val path = userDataPathProvider.resolve(appFileType = AppFileType.DATA)
         return RealmManager(path, ::createRealmConfig)
     }
 
-    fun createRealmConfig(path: Path): RealmConfiguration {
-        return RealmConfiguration.Builder(getSchema())
-            .directory(path.toString())
-            .name(name)
-            .schemaVersion(schemaVersion)
-            .build()
-    }
+    abstract fun createRealmConfig(path: Path): RealmConfiguration
 
     abstract fun getSchema(): Set<KClass<out TypedRealmObject>>
 }
