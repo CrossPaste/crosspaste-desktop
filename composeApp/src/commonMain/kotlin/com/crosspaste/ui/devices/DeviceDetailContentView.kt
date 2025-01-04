@@ -161,7 +161,6 @@ fun DeviceDetailContentView() {
                                     }
                             }
                         },
-//                        checkedThumbColor = connectedColor(),
                     )
                 }
 
@@ -197,7 +196,6 @@ fun DeviceDetailContentView() {
                                     }
                             }
                         },
-//                        checkedThumbColor = connectedColor(),
                     )
                 }
             }

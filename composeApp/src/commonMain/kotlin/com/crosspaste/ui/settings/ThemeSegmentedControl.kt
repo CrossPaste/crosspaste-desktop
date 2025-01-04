@@ -171,7 +171,6 @@ private fun ThemeStyle() {
                 fontSize = 14.sp,
                 fontFamily = FontFamily.SansSerif,
                 style = TextStyle(fontWeight = FontWeight.Light),
-//                color = if (!themeDetector.isFollowSystem() && !themeDetector.isCurrentThemeDark()) Color.White else Color.Black,
             )
         }
 
@@ -199,7 +198,6 @@ private fun ThemeStyle() {
                 fontSize = 14.sp,
                 fontFamily = FontFamily.SansSerif,
                 style = TextStyle(fontWeight = FontWeight.Light),
-//                color = if (themeDetector.isFollowSystem()) Color.White else Color.Black,
             )
         }
 
@@ -233,7 +231,6 @@ private fun ThemeStyle() {
                 fontSize = 14.sp,
                 fontFamily = FontFamily.SansSerif,
                 style = TextStyle(fontWeight = FontWeight.Light),
-//                color = if (!themeDetector.isFollowSystem() && themeDetector.isCurrentThemeDark()) Color.White else Color.Black,
             )
         }
     }
