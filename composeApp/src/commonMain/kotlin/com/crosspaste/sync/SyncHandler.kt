@@ -14,6 +14,7 @@ import com.crosspaste.realm.sync.SyncRuntimeInfo
 import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
 import com.crosspaste.realm.sync.SyncState
 import com.crosspaste.secure.SecureStore
+import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.HostInfoFilter
 import com.crosspaste.utils.HostInfoFilterImpl
 import com.crosspaste.utils.NoFilter
@@ -29,7 +30,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.datetime.Clock
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.min
 
@@ -76,7 +76,7 @@ class SyncHandler(
 
     private suspend fun pollingResolve() {
         mutex.withLock {
-            if (recommendedRefreshTime > Clock.System.now().toEpochMilliseconds()) {
+            if (recommendedRefreshTime > nowEpochMilliseconds()) {
                 return@withLock
             }
             if (syncRuntimeInfo.connectState == SyncState.DISCONNECTED ||
@@ -123,7 +123,7 @@ class SyncHandler(
     }
 
     private suspend fun waitNext() {
-        if (recommendedRefreshTime <= Clock.System.now().toEpochMilliseconds()) {
+        if (recommendedRefreshTime <= nowEpochMilliseconds()) {
             mutex.withLock {
                 recommendedRefreshTime = computeRefreshTime()
             }
@@ -131,7 +131,7 @@ class SyncHandler(
 
         do {
             // if recommendedRefreshTime is updated, then we continue to wait for the new time
-            val waitTime = recommendedRefreshTime - Clock.System.now().toEpochMilliseconds()
+            val waitTime = recommendedRefreshTime - nowEpochMilliseconds()
             delay(waitTime)
         } while (waitTime > 0)
     }
@@ -142,7 +142,7 @@ class SyncHandler(
             val power = min(11, failTime)
             delayTime = 1000 + min(20L * (1L shl power), 59000L)
         }
-        return Clock.System.now().toEpochMilliseconds() + delayTime
+        return nowEpochMilliseconds() + delayTime
     }
 
     suspend fun getConnectHostAddress(): String? {

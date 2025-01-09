@@ -91,4 +91,8 @@ object DateUtils {
         val currentInstant: Instant = Clock.System.now()
         return currentInstant.toLocalDateTime(TIME_ZONE)
     }
+
+    fun nowEpochMilliseconds(): Long {
+        return Clock.System.now().toEpochMilliseconds()
+    }
 }

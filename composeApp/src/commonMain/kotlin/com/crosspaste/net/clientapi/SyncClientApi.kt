@@ -10,13 +10,13 @@ import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.CryptographyUtils
+import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.util.reflect.*
-import kotlinx.datetime.Clock
 
 class SyncClientApi(
     private val pasteClient: PasteClient,
@@ -84,7 +84,7 @@ class SyncClientApi(
                     signPublicKey,
                     cryptPublicKey,
                     token,
-                    Clock.System.now().toEpochMilliseconds(),
+                    nowEpochMilliseconds(),
                 )
             val sign =
                 CryptographyUtils.signPairingRequest(

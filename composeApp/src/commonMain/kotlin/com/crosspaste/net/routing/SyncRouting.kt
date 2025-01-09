@@ -13,13 +13,13 @@ import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.CryptographyUtils
+import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getAppInstanceId
 import com.crosspaste.utils.successResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
-import kotlinx.datetime.Clock
 
 fun Routing.syncRouting(
     appInfo: AppInfo,
@@ -104,7 +104,7 @@ fun Routing.syncRouting(
         getAppInstanceId(call)?.let { appInstanceId ->
             try {
                 val trustRequest = call.receive(TrustRequest::class)
-                val currentTimestamp = Clock.System.now().toEpochMilliseconds()
+                val currentTimestamp = nowEpochMilliseconds()
 
                 val receiveSignPublicKey =
                     secureKeyPairSerializer.decodeSignPublicKey(
