@@ -21,6 +21,7 @@ import com.crosspaste.realm.task.TaskType
 import com.crosspaste.sound.SoundService
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.DateUtils
+import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.DateUtils.toLocalDateTime
 import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.TaskUtils
@@ -30,7 +31,6 @@ import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import io.ktor.utils.io.*
-import kotlinx.datetime.Clock
 import org.mongodb.kbson.ObjectId
 
 class PullFileTaskExecutor(
@@ -186,7 +186,7 @@ class PullFileTaskExecutor(
         pasteData: PasteData,
         pullExtraInfo: PullExtraInfo,
         fails: Collection<FailureResult>,
-        startTime: Long = Clock.System.now().toEpochMilliseconds(),
+        startTime: Long = nowEpochMilliseconds(),
     ): PasteTaskResult {
         val needRetry = pullExtraInfo.executionHistories.size < 3
 

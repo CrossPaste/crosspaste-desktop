@@ -1,9 +1,9 @@
 package com.crosspaste.utils
 
+import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.datetime.Clock
 
 expect fun getControlUtils(): ControlUtils
 
@@ -13,9 +13,9 @@ interface ControlUtils {
         delayTime: Int = 20,
         action: suspend () -> T,
     ): T {
-        val start = Clock.System.now().toEpochMilliseconds()
+        val start = nowEpochMilliseconds()
         val result = action()
-        val end = Clock.System.now().toEpochMilliseconds()
+        val end = nowEpochMilliseconds()
 
         val remainingDelay = delayTime + start - end
 
@@ -53,7 +53,7 @@ fun <T> Flow<T>.equalDebounce(
         var lastEmitTime: Long = 0
 
         collect { value ->
-            val currentTime = Clock.System.now().toEpochMilliseconds()
+            val currentTime = nowEpochMilliseconds()
             val shouldEmit =
                 lastItem?.let { last ->
                     !isEqual(last, value) || (currentTime - lastEmitTime) >= durationMillis

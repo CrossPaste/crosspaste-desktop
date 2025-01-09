@@ -7,8 +7,8 @@ import com.crosspaste.realm.task.PasteTask
 import com.crosspaste.realm.task.PasteTaskExtraInfo
 import com.crosspaste.realm.task.TaskStatus
 import com.crosspaste.task.FailurePasteTaskResult
+import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import io.github.oshai.kotlinlogging.KLogger
-import kotlinx.datetime.Clock
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonArray
@@ -31,8 +31,9 @@ object TaskUtils {
             this.pasteDataId = pasteDataId
             this.taskType = taskType
             this.status = TaskStatus.PREPARING
-            this.createTime = Clock.System.now().toEpochMilliseconds()
-            this.modifyTime = Clock.System.now().toEpochMilliseconds()
+            val now = nowEpochMilliseconds()
+            this.createTime = now
+            this.modifyTime = now
             this.extraInfo = jsonUtils.JSON.encodeToString(extraInfo)
         }
     }
@@ -50,7 +51,7 @@ object TaskUtils {
         pasteTask: PasteTask,
         throwable: Throwable,
     ): String {
-        val currentTime = Clock.System.now().toEpochMilliseconds()
+        val currentTime = nowEpochMilliseconds()
         val executionHistory =
             ExecutionHistory(
                 startTime = pasteTask.modifyTime,
@@ -91,7 +92,7 @@ object TaskUtils {
         extraInfo.executionHistories.add(
             ExecutionHistory(
                 startTime,
-                Clock.System.now().toEpochMilliseconds(),
+                nowEpochMilliseconds(),
                 TaskStatus.FAILURE,
                 failMessage,
             ),

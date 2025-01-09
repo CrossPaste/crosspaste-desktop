@@ -11,6 +11,7 @@ import com.crosspaste.realm.task.BaseExtraInfo
 import com.crosspaste.realm.task.PasteTask
 import com.crosspaste.realm.task.TaskType
 import com.crosspaste.sync.SyncManager
+import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.buildUrl
@@ -21,7 +22,6 @@ import io.ktor.util.collections.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.datetime.Clock
 import okio.Path
 
 class PullIconTaskExecutor(
@@ -119,7 +119,7 @@ class PullIconTaskExecutor(
             return TaskUtils.createFailurePasteTaskResult(
                 logger = logger,
                 retryHandler = { baseExtraInfo.executionHistories.size < 2 },
-                startTime = Clock.System.now().toEpochMilliseconds(),
+                startTime = nowEpochMilliseconds(),
                 fails =
                     listOf(
                         createFailureResult(

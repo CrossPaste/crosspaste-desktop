@@ -1,6 +1,6 @@
 package com.crosspaste.utils
 
-import kotlinx.datetime.Clock
+import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 
 actual fun getControlUtils(): ControlUtils {
     return DesktopControlUtils
@@ -12,9 +12,9 @@ object DesktopControlUtils : ControlUtils {
         delayTime: Int = 20,
         action: () -> T,
     ): T {
-        val start = Clock.System.now().toEpochMilliseconds()
+        val start = nowEpochMilliseconds()
         val result = action()
-        val end = Clock.System.now().toEpochMilliseconds()
+        val end = nowEpochMilliseconds()
 
         val remainingDelay = delayTime + start - end
 

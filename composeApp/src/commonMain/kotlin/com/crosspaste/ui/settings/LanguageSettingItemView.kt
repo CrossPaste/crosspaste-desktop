@@ -43,8 +43,8 @@ import com.crosspaste.ui.base.arrowRight
 import com.crosspaste.ui.base.arrowUp
 import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.language
+import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import kotlinx.coroutines.delay
-import kotlinx.datetime.Clock
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -91,7 +91,7 @@ fun LanguageSettingItemView() {
                         interactionSource = MutableInteractionSource(),
                         indication = null,
                         onClick = {
-                            val currentTimeMillis = Clock.System.now().toEpochMilliseconds()
+                            val currentTimeMillis = nowEpochMilliseconds()
                             if (currentTimeMillis - languageOnDismissTime > 500) {
                                 showMoreLanguage = !showMoreLanguage
                                 hasBeenClicked = true
@@ -126,7 +126,7 @@ fun LanguageSettingItemView() {
                 onDismissRequest = {
                     if (showMoreLanguage) {
                         showMoreLanguage = false
-                        languageOnDismissTime = Clock.System.now().toEpochMilliseconds()
+                        languageOnDismissTime = nowEpochMilliseconds()
                     }
                 },
             ) {
