@@ -29,7 +29,7 @@ import com.crosspaste.ui.base.shield
 import org.koin.compose.koinInject
 
 @Composable
-fun MainSettingsView() {
+fun MainSettingsContentView() {
     val appInfo = koinInject<AppInfo>()
     val appWindowManager = koinInject<AppWindowManager>()
     val configManager = koinInject<ConfigManager>()

@@ -16,11 +16,13 @@ import com.crosspaste.paste.PasteSingleProcess
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.ui.base.PasteProgressbar
+import com.crosspaste.ui.paste.PasteboardViewProvider
 import org.koin.compose.koinInject
 import org.mongodb.kbson.ObjectId
 
 @Composable
 fun PrePreviewView(pasteData: PasteData) {
+    val pasteboardViewProvider = koinInject<PasteboardViewProvider>()
     val pasteSyncProcessManager = koinInject<PasteSyncProcessManager<ObjectId>>()
 
     val singleProcess: PasteSingleProcess? by remember(pasteData.id) { mutableStateOf(pasteSyncProcessManager.getProcess(pasteData.id)) }
@@ -45,7 +47,7 @@ fun PrePreviewView(pasteData: PasteData) {
                             .background(Color.Transparent)
                             .clip(RoundedCornerShape(5.dp)),
                 ) {
-                    PasteShimmer(singleProcess)
+                    pasteboardViewProvider.PasteShimmer(singleProcess)
                 }
             },
             pasteRightInfo = { toShow ->

@@ -51,19 +51,12 @@ import com.crosspaste.listen.DesktopShortcutKeys.Companion.SWITCH_MONITOR_PASTEB
 import com.crosspaste.listener.KeyboardKey
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysListener
-import com.crosspaste.ui.WindowDecoration
 import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.KeyboardView
 import com.crosspaste.ui.base.PasteDialog
 import com.crosspaste.ui.base.edit
 import org.koin.compose.koinInject
-
-@Composable
-fun ShortcutKeysScreen() {
-    WindowDecoration("shortcut_keys")
-    ShortcutKeysContentView()
-}
 
 @Composable
 fun ShortcutKeysContentView() {

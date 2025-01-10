@@ -36,7 +36,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-actual fun SettingsScreen() {
+fun SettingsContentView() {
     val scrollState = rememberScrollState()
 
     var isScrolling by remember { mutableStateOf(false) }
@@ -66,7 +66,7 @@ actual fun SettingsScreen() {
                     .fillMaxSize()
                     .padding(vertical = 25.dp),
         ) {
-            SettingsContentView()
+            SettingsCoreView()
         }
 
         VerticalScrollbar(

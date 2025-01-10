@@ -174,9 +174,10 @@ fun DevicesListView(
     syncRuntimeInfos: List<SyncRuntimeInfo>,
     onEdit: (SyncRuntimeInfo) -> Unit,
 ) {
+    val deviceViewProvider = koinInject<DeviceViewProvider>()
     Column(modifier = Modifier.fillMaxWidth()) {
         for ((index, syncRuntimeInfo) in syncRuntimeInfos.withIndex()) {
-            DeviceConnectView(syncRuntimeInfo, true, onEdit)
+            deviceViewProvider.DeviceConnectView(syncRuntimeInfo, true, onEdit)
             if (index != syncRuntimeInfos.size - 1) {
                 HorizontalDivider()
             }

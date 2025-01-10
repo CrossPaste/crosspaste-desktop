@@ -65,7 +65,7 @@ import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-actual fun DeviceConnectView(
+fun DeviceConnectContentView(
     syncRuntimeInfo: SyncRuntimeInfo,
     deviceInteractionEnabled: Boolean,
     onEdit: (SyncRuntimeInfo) -> Unit,

@@ -5,20 +5,23 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import org.koin.compose.koinInject
 
 @Composable
-fun SettingsContentView() {
-    MainSettingsView()
+fun SettingsCoreView() {
+    val settingsViewProvider = koinInject<SettingsViewProvider>()
+
+    settingsViewProvider.MainSettingsView()
 
     Spacer(modifier = Modifier.height(25.dp))
 
-    NetSettingsView()
+    settingsViewProvider.NetSettingsView()
 
     Spacer(modifier = Modifier.height(25.dp))
 
-    StoreSettingsView()
+    settingsViewProvider.StoreSettingsView()
 
     Spacer(modifier = Modifier.height(25.dp))
 
-    PasteboardSettingsView()
+    settingsViewProvider.PasteboardSettingsView()
 }

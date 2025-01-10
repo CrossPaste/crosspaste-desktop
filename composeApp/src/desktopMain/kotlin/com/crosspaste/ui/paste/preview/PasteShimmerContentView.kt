@@ -26,7 +26,7 @@ import com.crosspaste.paste.PasteSingleProcess
 import com.valentinilk.shimmer.shimmer
 
 @Composable
-actual fun PasteShimmer(singleProcess: PasteSingleProcess?) {
+fun PasteShimmerContentView(singleProcess: PasteSingleProcess?) {
     Row(
         modifier =
             Modifier

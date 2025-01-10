@@ -35,11 +35,13 @@ import org.koin.compose.koinInject
 fun NearbyDeviceView(syncInfo: SyncInfo) {
     val copywriter = koinInject<GlobalCopywriter>()
     val deviceManager = koinInject<DeviceManager>()
+    val deviceViewProvider = koinInject<DeviceViewProvider>()
     val syncRuntimeInfoRealm = koinInject<SyncRuntimeInfoRealm>()
     val configManager = koinInject<ConfigManager>()
     val jsonUtils = getJsonUtils()
     val scope = rememberCoroutineScope()
-    SyncDeviceView(syncInfo = syncInfo) { background ->
+
+    deviceViewProvider.SyncDeviceView(syncInfo = syncInfo) { background ->
         Button(
             modifier = Modifier.height(28.dp),
             onClick = {

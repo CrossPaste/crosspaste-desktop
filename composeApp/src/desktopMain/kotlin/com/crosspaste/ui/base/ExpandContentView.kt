@@ -56,7 +56,7 @@ import org.koin.compose.koinInject
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
-fun ExpandView(
+fun ExpandContentView(
     title: String,
     icon: @Composable () -> Painter? = { null },
     defaultExpand: Boolean = false,

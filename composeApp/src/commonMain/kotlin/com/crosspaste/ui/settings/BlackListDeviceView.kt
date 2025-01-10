@@ -13,14 +13,16 @@ import androidx.compose.ui.unit.dp
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.remove
-import com.crosspaste.ui.devices.SyncDeviceView
+import com.crosspaste.ui.devices.DeviceViewProvider
+import org.koin.compose.koinInject
 
 @Composable
 fun BlackListDeviceView(
     syncInfo: SyncInfo,
     clickable: () -> Unit,
 ) {
-    SyncDeviceView(syncInfo = syncInfo) {
+    val deviceViewProvider = koinInject<DeviceViewProvider>()
+    deviceViewProvider.SyncDeviceView(syncInfo = syncInfo) {
         PasteIconButton(
             size = 20.dp,
             onClick = clickable,
