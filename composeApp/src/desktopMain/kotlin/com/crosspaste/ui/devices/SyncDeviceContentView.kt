@@ -25,7 +25,7 @@ import com.crosspaste.realm.sync.createSyncRuntimeInfo
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-actual fun SyncDeviceView(
+fun SyncDeviceContentView(
     syncInfo: SyncInfo,
     action: @Composable (Color) -> Unit,
 ) {

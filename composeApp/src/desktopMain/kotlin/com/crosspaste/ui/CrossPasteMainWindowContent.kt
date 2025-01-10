@@ -47,8 +47,9 @@ fun CrossPasteMainWindowContent() {
     val appSize = koinInject<AppSize>() as DesktopAppSize
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val appTokenApi = koinInject<AppTokenApi>()
-    val toastManager = koinInject<ToastManager>()
     val dialogService = koinInject<DialogService>()
+    val screenProvider = koinInject<ScreenProvider>()
+    val toastManager = koinInject<ToastManager>()
     val toast by toastManager.toast.collectAsState()
 
     Theme {
@@ -97,7 +98,7 @@ fun CrossPasteMainWindowContent() {
                         .focusRequester(appWindowManager.mainFocusRequester),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    CrossPasteScreen()
+                    screenProvider.CrossPasteScreen()
                 }
 
                 toast?.let {

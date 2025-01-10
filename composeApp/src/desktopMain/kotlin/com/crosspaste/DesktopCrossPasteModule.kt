@@ -152,7 +152,11 @@ import com.crosspaste.task.PullIconTaskExecutor
 import com.crosspaste.task.Rtf2ImageTaskExecutor
 import com.crosspaste.task.SyncPasteTaskExecutor
 import com.crosspaste.task.TaskExecutor
+import com.crosspaste.ui.DesktopScreenProvider
 import com.crosspaste.ui.DesktopThemeDetector
+import com.crosspaste.ui.ScreenProvider
+import com.crosspaste.ui.base.BaseViewProvider
+import com.crosspaste.ui.base.DesktopBaseViewProvider
 import com.crosspaste.ui.base.DesktopIconStyle
 import com.crosspaste.ui.base.DesktopNotificationManager
 import com.crosspaste.ui.base.DesktopToastManager
@@ -160,9 +164,15 @@ import com.crosspaste.ui.base.DesktopUISupport
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.base.UISupport
+import com.crosspaste.ui.devices.DesktopDeviceViewProvider
+import com.crosspaste.ui.devices.DeviceViewProvider
 import com.crosspaste.ui.model.PasteDataViewModel
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
+import com.crosspaste.ui.paste.DesktopPasteboardViewProvider
+import com.crosspaste.ui.paste.PasteboardViewProvider
+import com.crosspaste.ui.settings.DesktopSettingsViewProvider
+import com.crosspaste.ui.settings.SettingsViewProvider
 import com.crosspaste.ui.theme.ThemeDetector
 import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DesktopLocaleUtils
@@ -388,10 +398,12 @@ class DesktopCrossPasteModule(
             single<AppSize> { DesktopAppSize }
             single<AppTokenApi> { DesktopAppTokenService(get()) }
             single<AppWindowManager> { get<DesktopAppWindowManager>() }
+            single<BaseViewProvider> { DesktopBaseViewProvider() }
             single<DesktopAppSize> { DesktopAppSize }
             single<DesktopAppWindowManager> { getDesktopAppWindowManager(get(), lazy { get() }, get(), get()) }
             single<DesktopMouseListener> { DesktopMouseListener }
             single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get()) }
+            single<DeviceViewProvider> { DesktopDeviceViewProvider() }
             single<DialogService> { DialogService }
             single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
             single<GlobalListener> { DesktopGlobalListener(get(), get(), get(), get(), get()) }
@@ -399,7 +411,10 @@ class DesktopCrossPasteModule(
             single<NativeKeyListener> { get<DesktopShortcutKeysListener>() }
             single<NativeMouseListener> { get<DesktopMouseListener>() }
             single<NotificationManager> { DesktopNotificationManager(get(), get(), get()) }
+            single<PasteboardViewProvider> { DesktopPasteboardViewProvider() }
             single<PlatformContext> { PlatformContext.INSTANCE }
+            single<ScreenProvider> { DesktopScreenProvider(get()) }
+            single<SettingsViewProvider> { DesktopSettingsViewProvider(get()) }
             single<ShortcutKeys> { DesktopShortcutKeys(get()) }
             single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get()) }
             single<ShortcutKeysListener> { get<DesktopShortcutKeysListener>() }

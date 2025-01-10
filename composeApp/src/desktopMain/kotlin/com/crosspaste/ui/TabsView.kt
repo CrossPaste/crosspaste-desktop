@@ -50,9 +50,6 @@ import com.crosspaste.notification.NotificationManager
 import com.crosspaste.realm.paste.PasteRealm
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.trash
-import com.crosspaste.ui.devices.DevicesScreen
-import com.crosspaste.ui.devices.QRScreen
-import com.crosspaste.ui.paste.PasteboardScreen
 import com.crosspaste.utils.getAppEnvUtils
 import org.koin.compose.koinInject
 
@@ -68,6 +65,7 @@ val tabTextStyle =
 fun TabsView() {
     val appWindowManager = koinInject<AppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
+    val screenProvider = koinInject<ScreenProvider>()
 
     val textMeasurer = rememberTextMeasurer()
 
@@ -180,11 +178,11 @@ fun TabsView() {
         }
 
         when (screen.screenType) {
-            ScreenType.PASTE_PREVIEW -> PasteboardScreen()
-            ScreenType.DEVICES -> DevicesScreen()
-            ScreenType.QR_CODE -> QRScreen()
+            ScreenType.PASTE_PREVIEW -> screenProvider.PasteboardScreen()
+            ScreenType.DEVICES -> screenProvider.DevicesScreen()
+            ScreenType.QR_CODE -> screenProvider.QRScreen()
             ScreenType.DEBUG -> DebugScreen()
-            else -> PasteboardScreen()
+            else -> screenProvider.PasteboardScreen()
         }
     }
 }

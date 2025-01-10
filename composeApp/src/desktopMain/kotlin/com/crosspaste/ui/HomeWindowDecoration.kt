@@ -51,6 +51,7 @@ import com.crosspaste.app.DesktopAppLaunchState
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.base.BaseViewProvider
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.menuItemReminderTextStyle
@@ -61,12 +62,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
-@Composable
-actual fun HomeScreen() {
-    HomeWindowDecoration()
-    TabsView()
-}
-
 @Preview
 @Composable
 fun HomeWindowDecoration() {
@@ -74,6 +69,7 @@ fun HomeWindowDecoration() {
     val appLaunchState = koinInject<DesktopAppLaunchState>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val appUpdateService = koinInject<AppUpdateService>()
+    val baseViewProvider = koinInject<BaseViewProvider>()
     val configManager = koinInject<ConfigManager>()
     val uiSupport = koinInject<UISupport>()
 
@@ -102,7 +98,7 @@ fun HomeWindowDecoration() {
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                CrossPasteLogoView(
+                baseViewProvider.CrossPasteLogoView(
                     modifier =
                         Modifier.padding(start = 13.dp, top = 13.dp, end = 10.dp, bottom = 13.dp)
                             .align(Alignment.CenterVertically)

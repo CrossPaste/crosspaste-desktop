@@ -16,11 +16,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.crosspaste.sync.SyncManager
-import com.crosspaste.ui.base.ExpandView
+import com.crosspaste.ui.base.BaseViewProvider
 import org.koin.compose.koinInject
 
 @Composable
-actual fun DevicesScreen() {
+fun DevicesContentView() {
+    val baseViewProvider = koinInject<BaseViewProvider>()
     val syncManager = koinInject<SyncManager>()
 
     LaunchedEffect(Unit) {
@@ -38,7 +39,7 @@ actual fun DevicesScreen() {
             val syncRuntimeInfos by syncManager.realTimeSyncRuntimeInfos.collectAsState()
 
             if (syncRuntimeInfos.isNotEmpty()) {
-                ExpandView(
+                baseViewProvider.ExpandView(
                     title = "my_devices",
                     horizontalPadding = 0.dp,
                     defaultExpand = true,
@@ -49,7 +50,7 @@ actual fun DevicesScreen() {
                 Spacer(modifier = Modifier.height(10.dp))
             }
 
-            ExpandView(
+            baseViewProvider.ExpandView(
                 title = "add_device_manually",
                 horizontalPadding = 0.dp,
                 defaultExpand = false,
@@ -58,7 +59,7 @@ actual fun DevicesScreen() {
                 AddDeviceManuallyView()
             }
             Spacer(modifier = Modifier.height(10.dp))
-            ExpandView(
+            baseViewProvider.ExpandView(
                 title = "nearby_devices",
                 horizontalPadding = 0.dp,
                 defaultExpand = true,

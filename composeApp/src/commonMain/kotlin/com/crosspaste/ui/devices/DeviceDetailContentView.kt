@@ -48,6 +48,7 @@ fun DeviceDetailContentView() {
     val appInfo = koinInject<AppInfo>()
     val appWindowManager = koinInject<AppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
+    val deviceViewProvider = koinInject<DeviceViewProvider>()
     val syncManager = koinInject<SyncManager>()
 
     val screen by appWindowManager.screenContext.collectAsState()
@@ -65,7 +66,7 @@ fun DeviceDetailContentView() {
     }
 
     Column {
-        DeviceConnectView(syncRuntimeInfo, false) { }
+        deviceViewProvider.DeviceConnectView(syncRuntimeInfo, false) { }
 
         Column(
             modifier =
