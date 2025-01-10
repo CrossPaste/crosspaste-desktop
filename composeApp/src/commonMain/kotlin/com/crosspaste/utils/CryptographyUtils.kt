@@ -8,7 +8,7 @@ import dev.whyoleg.cryptography.algorithms.EC
 import dev.whyoleg.cryptography.algorithms.ECDH
 import dev.whyoleg.cryptography.algorithms.ECDSA
 import dev.whyoleg.cryptography.algorithms.SHA256
-import io.ktor.utils.io.core.toByteArray
+import io.ktor.utils.io.core.*
 
 object CryptographyUtils {
 
@@ -29,20 +29,35 @@ object CryptographyUtils {
         return SecureKeyPair(signKeyPair, cryptKeyPair)
     }
 
+    fun signData(
+        privateKey: ECDSA.PrivateKey,
+        createSignData: () -> ByteArray,
+    ): ByteArray {
+        return privateKey.signatureGenerator(sha256.id, ECDSA.SignatureFormat.DER)
+            .generateSignatureBlocking(createSignData())
+    }
+
+    fun verifyData(
+        publicKey: ECDSA.PublicKey,
+        signature: ByteArray,
+        createVerifyData: () -> ByteArray,
+    ): Boolean {
+        return publicKey.signatureVerifier(sha256.id, ECDSA.SignatureFormat.DER)
+            .tryVerifySignatureBlocking(createVerifyData(), signature)
+    }
+
     fun signPairingRequest(
         privateKey: ECDSA.PrivateKey,
         pairingRequest: PairingRequest,
     ): ByteArray {
-        val dataToSign =
+        return signData(privateKey) {
             buildString {
                 append(codecsUtils.base64Encode(pairingRequest.signPublicKey))
                 append(codecsUtils.base64Encode(pairingRequest.cryptPublicKey))
                 append(pairingRequest.token)
                 append(pairingRequest.timestamp)
             }.toByteArray()
-
-        return privateKey.signatureGenerator(sha256.id, ECDSA.SignatureFormat.DER)
-            .generateSignatureBlocking(dataToSign)
+        }
     }
 
     fun verifyPairingRequest(
@@ -50,31 +65,27 @@ object CryptographyUtils {
         pairingRequest: PairingRequest,
         signature: ByteArray,
     ): Boolean {
-        val dataToVerify =
+        return verifyData(publicKey, signature) {
             buildString {
                 append(codecsUtils.base64Encode(pairingRequest.signPublicKey))
                 append(codecsUtils.base64Encode(pairingRequest.cryptPublicKey))
                 append(pairingRequest.token)
                 append(pairingRequest.timestamp)
             }.toByteArray()
-
-        return publicKey.signatureVerifier(sha256.id, ECDSA.SignatureFormat.DER)
-            .tryVerifySignatureBlocking(dataToVerify, signature)
+        }
     }
 
     fun signPairingResponse(
         privateKey: ECDSA.PrivateKey,
         pairingResponse: PairingResponse,
     ): ByteArray {
-        val dataToSign =
+        return signData(privateKey) {
             buildString {
                 append(codecsUtils.base64Encode(pairingResponse.signPublicKey))
                 append(codecsUtils.base64Encode(pairingResponse.cryptPublicKey))
                 append(pairingResponse.timestamp)
             }.toByteArray()
-
-        return privateKey.signatureGenerator(sha256.id, ECDSA.SignatureFormat.DER)
-            .generateSignatureBlocking(dataToSign)
+        }
     }
 
     fun verifyPairingResponse(
@@ -82,14 +93,12 @@ object CryptographyUtils {
         pairingResponse: PairingResponse,
         signature: ByteArray,
     ): Boolean {
-        val dataToVerify =
+        return verifyData(publicKey, signature) {
             buildString {
                 append(codecsUtils.base64Encode(pairingResponse.signPublicKey))
                 append(codecsUtils.base64Encode(pairingResponse.cryptPublicKey))
                 append(pairingResponse.timestamp)
             }.toByteArray()
-
-        return publicKey.signatureVerifier(sha256.id, ECDSA.SignatureFormat.DER)
-            .tryVerifySignatureBlocking(dataToVerify, signature)
+        }
     }
 }
