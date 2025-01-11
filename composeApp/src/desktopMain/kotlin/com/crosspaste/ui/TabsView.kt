@@ -178,11 +178,11 @@ fun TabsView() {
         }
 
         when (screen.screenType) {
-            ScreenType.PASTE_PREVIEW -> screenProvider.PasteboardScreen()
+            ScreenType.PASTE_PREVIEW -> screenProvider.PasteboardScreen {}
             ScreenType.DEVICES -> screenProvider.DevicesScreen()
             ScreenType.QR_CODE -> screenProvider.QRScreen()
             ScreenType.DEBUG -> DebugScreen()
-            else -> screenProvider.PasteboardScreen()
+            else -> screenProvider.PasteboardScreen {}
         }
     }
 }

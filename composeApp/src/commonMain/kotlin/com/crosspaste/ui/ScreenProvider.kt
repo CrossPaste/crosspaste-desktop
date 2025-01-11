@@ -22,7 +22,7 @@ interface ScreenProvider {
     // openTopBar is used on mobile to expand the top bar
     // Desktop does not need to do anything
     @Composable
-    fun PasteboardScreen(openTopBar: () -> Unit = {})
+    fun PasteboardScreen(openTopBar: () -> Unit)
 
     @Composable
     fun PasteTextEditScreen()
