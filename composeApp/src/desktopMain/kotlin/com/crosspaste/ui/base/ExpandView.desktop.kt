@@ -56,15 +56,15 @@ import org.koin.compose.koinInject
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
-fun ExpandContentView(
+actual fun ExpandView(
     title: String,
-    icon: @Composable () -> Painter? = { null },
-    defaultExpand: Boolean = false,
-    horizontalPadding: Dp = 16.dp,
-    titleBackgroundColor: Color = MaterialTheme.colorScheme.secondary,
-    onTitleBackgroundColor: Color = MaterialTheme.colorScheme.onSecondary,
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.72f),
-    content: @Composable () -> Unit,
+    icon: @Composable (() -> Painter?),
+    defaultExpand: Boolean,
+    horizontalPadding: Dp,
+    titleBackgroundColor: Color,
+    onTitleBackgroundColor: Color,
+    backgroundColor: Color,
+    content: @Composable (() -> Unit),
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
     var hover by remember { mutableStateOf(false) }

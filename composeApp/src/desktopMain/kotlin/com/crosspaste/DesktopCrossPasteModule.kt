@@ -155,8 +155,6 @@ import com.crosspaste.task.TaskExecutor
 import com.crosspaste.ui.DesktopScreenProvider
 import com.crosspaste.ui.DesktopThemeDetector
 import com.crosspaste.ui.ScreenProvider
-import com.crosspaste.ui.base.BaseViewProvider
-import com.crosspaste.ui.base.DesktopBaseViewProvider
 import com.crosspaste.ui.base.DesktopIconStyle
 import com.crosspaste.ui.base.DesktopNotificationManager
 import com.crosspaste.ui.base.DesktopToastManager
@@ -398,7 +396,6 @@ class DesktopCrossPasteModule(
             single<AppSize> { DesktopAppSize }
             single<AppTokenApi> { DesktopAppTokenService(get()) }
             single<AppWindowManager> { get<DesktopAppWindowManager>() }
-            single<BaseViewProvider> { DesktopBaseViewProvider() }
             single<DesktopAppSize> { DesktopAppSize }
             single<DesktopAppWindowManager> { getDesktopAppWindowManager(get(), lazy { get() }, get(), get()) }
             single<DesktopMouseListener> { DesktopMouseListener }
@@ -414,7 +411,7 @@ class DesktopCrossPasteModule(
             single<PasteboardViewProvider> { DesktopPasteboardViewProvider() }
             single<PlatformContext> { PlatformContext.INSTANCE }
             single<ScreenProvider> { DesktopScreenProvider(get()) }
-            single<SettingsViewProvider> { DesktopSettingsViewProvider(get()) }
+            single<SettingsViewProvider> { DesktopSettingsViewProvider() }
             single<ShortcutKeys> { DesktopShortcutKeys(get()) }
             single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get()) }
             single<ShortcutKeysListener> { get<DesktopShortcutKeysListener>() }

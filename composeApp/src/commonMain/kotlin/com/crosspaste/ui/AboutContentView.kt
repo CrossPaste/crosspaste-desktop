@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppUrls
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.ui.base.BaseViewProvider
+import com.crosspaste.ui.base.CrossPasteLogoView
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.chevronRight
 import com.crosspaste.ui.base.robotoFontFamily
@@ -39,7 +39,6 @@ import org.koin.compose.koinInject
 fun AboutContentView() {
     val appInfo = koinInject<AppInfo>()
     val appUrls = koinInject<AppUrls>()
-    val baseViewProvider = koinInject<BaseViewProvider>()
     val uiSupport = koinInject<UISupport>()
 
     Box(
@@ -59,7 +58,7 @@ fun AboutContentView() {
                 modifier = Modifier.align(Alignment.Center),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                baseViewProvider.CrossPasteLogoView(
+                CrossPasteLogoView(
                     modifier =
                         Modifier.clip(RoundedCornerShape(6.dp))
                             .background(MaterialTheme.colorScheme.primary)

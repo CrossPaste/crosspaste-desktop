@@ -1,14 +1,12 @@
 package com.crosspaste.ui.settings
 
 import androidx.compose.runtime.Composable
-import com.crosspaste.ui.base.BaseViewProvider
+import com.crosspaste.ui.base.ExpandView
 import com.crosspaste.ui.base.clipboard
 import com.crosspaste.ui.base.database
 import com.crosspaste.ui.base.network
 
-class DesktopSettingsViewProvider(
-    private val baseViewProvider: BaseViewProvider,
-) : SettingsViewProvider {
+class DesktopSettingsViewProvider : SettingsViewProvider {
 
     @Composable
     override fun MainSettingsView() {
@@ -17,7 +15,7 @@ class DesktopSettingsViewProvider(
 
     @Composable
     override fun NetSettingsView() {
-        baseViewProvider.ExpandView(
+        ExpandView(
             title = "network",
             icon = { network() },
         ) {
@@ -27,7 +25,7 @@ class DesktopSettingsViewProvider(
 
     @Composable
     override fun PasteboardSettingsView() {
-        baseViewProvider.ExpandView(
+        ExpandView(
             title = "pasteboard",
             icon = { clipboard() },
         ) {
@@ -37,7 +35,7 @@ class DesktopSettingsViewProvider(
 
     @Composable
     override fun StoreSettingsView() {
-        baseViewProvider.ExpandView(
+        ExpandView(
             title = "store",
             icon = { database() },
         ) {
