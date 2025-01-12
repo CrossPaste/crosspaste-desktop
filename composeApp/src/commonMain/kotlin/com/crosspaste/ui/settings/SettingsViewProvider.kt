@@ -5,6 +5,9 @@ import androidx.compose.runtime.Composable
 interface SettingsViewProvider {
 
     @Composable
+    fun AboutItemView()
+
+    @Composable
     fun MainSettingsView()
 
     @Composable
@@ -15,4 +18,7 @@ interface SettingsViewProvider {
 
     @Composable
     fun StoreSettingsView()
+
+    @Composable
+    fun SettingsCoreView()
 }

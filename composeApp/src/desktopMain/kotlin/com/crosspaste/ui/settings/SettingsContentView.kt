@@ -34,9 +34,11 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
 @Composable
 fun SettingsContentView() {
+    val settingsViewProvider = koinInject<SettingsViewProvider>()
     val scrollState = rememberScrollState()
 
     var isScrolling by remember { mutableStateOf(false) }
@@ -66,7 +68,7 @@ fun SettingsContentView() {
                     .fillMaxSize()
                     .padding(vertical = 25.dp),
         ) {
-            SettingsCoreView()
+            settingsViewProvider.SettingsCoreView()
         }
 
         VerticalScrollbar(

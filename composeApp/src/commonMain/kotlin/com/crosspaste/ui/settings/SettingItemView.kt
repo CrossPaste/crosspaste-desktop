@@ -36,7 +36,7 @@ fun SettingItemView(
         modifier =
             Modifier.fillMaxWidth()
                 .height(height)
-                .padding(horizontal = 12.dp, vertical = 5.dp),
+                .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
