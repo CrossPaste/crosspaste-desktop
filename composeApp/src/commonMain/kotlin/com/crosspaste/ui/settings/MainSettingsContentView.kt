@@ -1,9 +1,7 @@
 package com.crosspaste.ui.settings
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,28 +11,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.crosspaste.app.AppInfo
-import com.crosspaste.app.AppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.log.CrossPasteLogger
 import com.crosspaste.paste.PasteboardService
-import com.crosspaste.ui.ScreenType
 import com.crosspaste.ui.base.bell
 import com.crosspaste.ui.base.bolt
 import com.crosspaste.ui.base.clipboard
 import com.crosspaste.ui.base.debug
-import com.crosspaste.ui.base.info
 import com.crosspaste.ui.base.palette
 import com.crosspaste.ui.base.shield
 import org.koin.compose.koinInject
 
 @Composable
 fun MainSettingsContentView() {
-    val appInfo = koinInject<AppInfo>()
-    val appWindowManager = koinInject<AppWindowManager>()
     val configManager = koinInject<ConfigManager>()
     val crossPasteLogger = koinInject<CrossPasteLogger>()
     val pasteboardService = koinInject<PasteboardService>()
+    val settingsViewProvider = koinInject<SettingsViewProvider>()
 
     Column(
         modifier =
@@ -109,23 +102,6 @@ fun MainSettingsContentView() {
 
         HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
 
-        SettingItemView(
-            text = "about",
-            painter = info(),
-        ) {
-            Row(
-                modifier =
-                    Modifier
-                        .clip(RoundedCornerShape(5.dp))
-                        .clickable(onClick = {
-                            appWindowManager.toScreen(ScreenType.ABOUT)
-                        })
-                        .padding(horizontal = 10.dp, vertical = 5.dp),
-            ) {
-                SettingsText(
-                    text = "CrossPaste ${appInfo.displayVersion()}",
-                )
-            }
-        }
+        settingsViewProvider.AboutItemView()
     }
 }

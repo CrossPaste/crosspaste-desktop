@@ -411,7 +411,7 @@ class DesktopCrossPasteModule(
             single<PasteboardViewProvider> { DesktopPasteboardViewProvider() }
             single<PlatformContext> { PlatformContext.INSTANCE }
             single<ScreenProvider> { DesktopScreenProvider(get()) }
-            single<SettingsViewProvider> { DesktopSettingsViewProvider() }
+            single<SettingsViewProvider> { DesktopSettingsViewProvider(get(), get()) }
             single<ShortcutKeys> { DesktopShortcutKeys(get()) }
             single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get()) }
             single<ShortcutKeysListener> { get<DesktopShortcutKeysListener>() }
