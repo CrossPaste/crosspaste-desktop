@@ -64,13 +64,13 @@ class DesktopUISupport(
         }
     }
 
-    override fun openCrossPasteWebInBrowser(path: String) {
+    override fun getCrossPasteWebUrl(path: String): String {
         val webPath =
             when (val language = copywriter.language()) {
                 ZH -> path
                 else -> "$language/$path"
             }
-        openUrlInBrowser("${appUrls.homeUrl}/$webPath")
+        return "${appUrls.homeUrl}/$webPath"
     }
 
     override fun openEmailClient(email: String) {

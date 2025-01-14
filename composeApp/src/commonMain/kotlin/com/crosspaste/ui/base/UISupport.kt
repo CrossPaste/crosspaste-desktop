@@ -9,7 +9,11 @@ interface UISupport {
 
     fun openUrlInBrowser(url: String)
 
-    fun openCrossPasteWebInBrowser(path: String = "")
+    fun getCrossPasteWebUrl(path: String = ""): String
+
+    fun openCrossPasteWebInBrowser(path: String = "") {
+        openUrlInBrowser(getCrossPasteWebUrl(path))
+    }
 
     fun openEmailClient(email: String)
 
