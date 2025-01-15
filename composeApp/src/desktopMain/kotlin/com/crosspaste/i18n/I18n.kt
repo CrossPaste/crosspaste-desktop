@@ -68,7 +68,7 @@ class GlobalCopywriterImpl(private val configManager: ConfigManager) : GlobalCop
 
     override fun getText(
         id: String,
-        vararg args: String,
+        vararg args: Any?,
     ): String {
         return copywriter.getText(id, *args)
     }
@@ -134,16 +134,13 @@ class CopywriterImpl(private val language: String) : Copywriter {
 
     override fun getText(
         id: String,
-        vararg args: String,
+        vararg args: Any?,
     ): String {
         val value: String? = properties.getProperty(id)
         return if (value == null) {
             logger.error { "No value for $id" }
             "null"
-        } else if (args.isEmpty())
-            {
-                value
-            } else {
+        } else {
             value.format(*args)
         }
     }

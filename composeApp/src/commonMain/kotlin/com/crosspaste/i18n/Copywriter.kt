@@ -9,7 +9,7 @@ interface Copywriter {
 
     fun getText(
         id: String,
-        vararg args: String,
+        vararg args: Any?,
     ): String
 
     fun getKeys(): Set<String>
