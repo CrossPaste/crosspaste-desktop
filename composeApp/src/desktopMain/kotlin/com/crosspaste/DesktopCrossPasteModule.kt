@@ -216,7 +216,7 @@ class DesktopCrossPasteModule(
             single<EndpointInfoFactory> { EndpointInfoFactory(get(), lazy { get<Server>() }) }
             single<FileExtImageLoader> { DesktopFileExtLoader(get(), get()) }
             single<FilePersist> { FilePersist }
-            single<ImageLoaders> { ImageLoaders(get(), get(), get(), get(), get()) }
+            single<ImageLoaders> { ImageLoaders(get(), get(), get(), get(), get(), get()) }
             single<ImageWriter<BufferedImage>> { DesktopImageWriter }
             single<KLogger> { klogger }
             single<LocaleUtils> { DesktopLocaleUtils }

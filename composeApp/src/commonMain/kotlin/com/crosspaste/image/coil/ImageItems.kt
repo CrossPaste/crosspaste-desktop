@@ -1,13 +1,12 @@
 package com.crosspaste.image.coil
 
-import androidx.compose.ui.unit.Density
 import coil3.key.Keyer
 import coil3.request.Options
 import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.realm.paste.PasteData
 import okio.Path
 
-data class GenerateImageItem(val path: Path, val preview: Boolean, val density: Density)
+data class GenerateImageItem(val path: Path, val preview: Boolean, val density: Double)
 
 class GenerateImageKeyer : Keyer<GenerateImageItem> {
     override fun key(
