@@ -9,7 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.FixedScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -26,6 +26,7 @@ import coil3.request.crossfade
 import com.crosspaste.app.AppSize
 import com.crosspaste.image.coil.GenerateImageItem
 import com.crosspaste.image.coil.ImageLoaders
+import com.crosspaste.rendering.RenderingHelper
 import okio.Path
 import org.koin.compose.koinInject
 
@@ -36,23 +37,24 @@ fun GenerateImageView(
     text: String,
     preview: Boolean,
     alignment: Alignment = Alignment.Center,
-    contentScale: ContentScale = ContentScale.Fit,
 ) {
-    val density = LocalDensity.current
     val appSize = koinInject<AppSize>()
     val imageLoaders = koinInject<ImageLoaders>()
     val platformContext = koinInject<PlatformContext>()
+    val renderingHelper = koinInject<RenderingHelper>()
+
+    val density = LocalDensity.current
 
     SubcomposeAsyncImage(
         modifier = modifier,
         model =
             ImageRequest.Builder(platformContext)
-                .data(GenerateImageItem(imagePath, preview, density))
+                .data(GenerateImageItem(imagePath, preview, renderingHelper.scale))
                 .crossfade(true)
                 .build(),
         imageLoader = imageLoaders.generateImageLoader,
         alignment = alignment,
-        contentScale = contentScale,
+        contentScale = FixedScale(density.density / renderingHelper.scale.toFloat()),
         contentDescription = "generate Image to preview",
         content = {
             when (this.painter.state.collectAsState().value) {

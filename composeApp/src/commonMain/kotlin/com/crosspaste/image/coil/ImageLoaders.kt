@@ -5,12 +5,14 @@ import coil3.PlatformContext
 import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import com.crosspaste.app.AppFileType
+import com.crosspaste.app.AppSize
 import com.crosspaste.image.FaviconLoader
 import com.crosspaste.image.FileExtImageLoader
 import com.crosspaste.image.ThumbnailLoader
 import com.crosspaste.path.UserDataPathProvider
 
 class ImageLoaders(
+    private val appSize: AppSize,
     private val faviconLoader: FaviconLoader,
     private val fileExtLoader: FileExtImageLoader,
     private val thumbnailLoader: ThumbnailLoader,
@@ -53,7 +55,7 @@ class ImageLoaders(
     val generateImageLoader =
         ImageLoader.Builder(platformContext)
             .components {
-                add(GenerateImageFactory())
+                add(GenerateImageFactory(appSize))
                     .add(GenerateImageKeyer())
             }
             .memoryCache {

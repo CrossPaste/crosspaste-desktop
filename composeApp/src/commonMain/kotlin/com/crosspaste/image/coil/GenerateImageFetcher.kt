@@ -1,12 +1,12 @@
 package com.crosspaste.image.coil
 
-import androidx.compose.ui.unit.dp
 import coil3.ImageLoader
 import coil3.decode.DataSource
 import coil3.fetch.FetchResult
 import coil3.fetch.Fetcher
 import coil3.fetch.ImageFetchResult
 import coil3.request.Options
+import com.crosspaste.app.AppSize
 import com.crosspaste.utils.getCoilUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
@@ -14,6 +14,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 class GenerateImageFetcher(
+    private val appSize: AppSize,
     private val item: GenerateImageItem,
 ) : Fetcher {
 
@@ -33,8 +34,8 @@ class GenerateImageFetcher(
                             // todo not use hardcoded values
                             coilUtils.createImage(
                                 path,
-                                with(density) { 424.dp.toPx() }.toInt(),
-                                with(density) { 100.dp.toPx() }.toInt(),
+                                (appSize.mainPasteSize.width.value * density).toInt(),
+                                (appSize.mainPasteSize.height.value * density).toInt(),
                             )
                         } else {
                             coilUtils.createImage(path)
@@ -55,12 +56,14 @@ class GenerateImageFetcher(
     }
 }
 
-class GenerateImageFactory : Fetcher.Factory<GenerateImageItem> {
+class GenerateImageFactory(
+    private val appSize: AppSize,
+) : Fetcher.Factory<GenerateImageItem> {
     override fun create(
         data: GenerateImageItem,
         options: Options,
         imageLoader: ImageLoader,
     ): Fetcher {
-        return GenerateImageFetcher(data)
+        return GenerateImageFetcher(appSize, data)
     }
 }

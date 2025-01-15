@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import com.crosspaste.i18n.GlobalCopywriter
@@ -67,6 +68,7 @@ fun HtmlToImageDetailView(
                 imagePath = filePath,
                 text = pasteHtml.getText(),
                 preview = false,
+                alignment = Alignment.TopStart,
             )
         },
         detailInfoView = {

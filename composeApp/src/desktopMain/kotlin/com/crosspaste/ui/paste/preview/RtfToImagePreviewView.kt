@@ -13,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.item.PasteRtf
@@ -62,7 +61,6 @@ fun RtfToImagePreviewView(pasteData: PasteData) {
                                 text = pasteRtf.getText(),
                                 preview = true,
                                 alignment = Alignment.TopStart,
-                                contentScale = ContentScale.None,
                             )
                         }
                     }
