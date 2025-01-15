@@ -7,7 +7,10 @@ interface Copywriter {
 
     fun language(): String
 
-    fun getText(id: String): String
+    fun getText(
+        id: String,
+        vararg args: String,
+    ): String
 
     fun getKeys(): Set<String>
 
