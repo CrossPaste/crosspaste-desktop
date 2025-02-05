@@ -24,7 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.sync.DeviceManager
+import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.ui.base.magnifying
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -33,9 +33,9 @@ import org.koin.compose.koinInject
 @Composable
 fun SearchNearByDevices() {
     val copywriter = koinInject<GlobalCopywriter>()
-    val deviceManager = koinInject<DeviceManager>()
+    val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
 
-    val searching by deviceManager.searching.collectAsState()
+    val searching by nearbyDeviceManager.searching.collectAsState()
 
     val offsetX = remember { Animatable(0f) }
     val offsetY = remember { Animatable(0f) }

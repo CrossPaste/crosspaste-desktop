@@ -12,12 +12,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-class DeviceManager(
+class GeneralNearbyDeviceManager(
     private val appInfo: AppInfo,
     private val configManager: ConfigManager,
     private val syncManager: SyncManager,
     private val syncRuntimeInfoRealm: SyncRuntimeInfoRealm,
-) : DeviceListener {
+) : NearbyDeviceManager {
 
     private val logger = KotlinLogging.logger {}
 
@@ -25,7 +25,7 @@ class DeviceManager(
 
     private val _searching = MutableStateFlow<Boolean>(false)
 
-    val searching: StateFlow<Boolean> = _searching.asStateFlow()
+    override val searching: StateFlow<Boolean> = _searching.asStateFlow()
 
     private val _allSyncInfos = MutableStateFlow<Map<String, SyncInfo>>(mapOf())
 
@@ -49,7 +49,7 @@ class DeviceManager(
             .contains(appInstanceId)
     }
 
-    fun refresh() {
+    override fun refresh() {
         _searching.value = true
         try {
             val currentAllSyncInfos = _allSyncInfos.value

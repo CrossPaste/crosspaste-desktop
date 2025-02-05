@@ -28,6 +28,7 @@ import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.app.getDesktopAppWindowManager
 import com.crosspaste.clean.CleanPasteScheduler
 import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.DevConfig
 import com.crosspaste.config.ReadWriteConfig
 import com.crosspaste.config.ReadWritePort
 import com.crosspaste.i18n.GlobalCopywriter
@@ -138,9 +139,11 @@ import com.crosspaste.secure.SecureStoreFactory
 import com.crosspaste.sound.DesktopSoundService
 import com.crosspaste.sound.SoundService
 import com.crosspaste.sync.DesktopQRCodeGenerator
-import com.crosspaste.sync.DeviceListener
-import com.crosspaste.sync.DeviceManager
+import com.crosspaste.sync.GeneralNearbyDeviceManager
 import com.crosspaste.sync.GeneralSyncManager
+import com.crosspaste.sync.MarketingNearbyDeviceManager
+import com.crosspaste.sync.MarketingSyncManager
+import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.sync.TokenCache
@@ -164,6 +167,8 @@ import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.devices.DesktopDeviceViewProvider
 import com.crosspaste.ui.devices.DeviceViewProvider
+import com.crosspaste.ui.model.GeneralPasteDataViewModel
+import com.crosspaste.ui.model.MarketingPasteDataViewModel
 import com.crosspaste.ui.model.PasteDataViewModel
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
@@ -176,6 +181,7 @@ import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DesktopLocaleUtils
 import com.crosspaste.utils.DeviceUtils
 import com.crosspaste.utils.LocaleUtils
+import com.crosspaste.utils.getAppEnvUtils
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
 import com.github.kwhat.jnativehook.mouse.NativeMouseListener
 import io.github.oshai.kotlinlogging.KLogger
@@ -196,6 +202,9 @@ class DesktopCrossPasteModule(
     private val crossPasteLogger: CrossPasteLogger,
     private val klogger: KLogger,
 ) : CrossPasteModule {
+
+    val marketingMode = getAppEnvUtils().isDevelopment() && DevConfig.marketingMode
+
     override fun appModule() =
         module {
             single<AppEnv> { appEnv }
@@ -243,8 +252,13 @@ class DesktopCrossPasteModule(
     // NetworkModule.kt
     override fun networkModule() =
         module {
-            single<DeviceListener> { get<DeviceManager>() }
-            single<DeviceManager> { DeviceManager(get(), get(), get(), get()) }
+            single<NearbyDeviceManager> {
+                if (marketingMode) {
+                    MarketingNearbyDeviceManager()
+                } else {
+                    GeneralNearbyDeviceManager(get(), get(), get(), get())
+                }
+            }
             single<ExceptionHandler> { DesktopExceptionHandler() }
             single<FaviconLoader> { DesktopFaviconLoader(get()) }
             single<PasteBonjourService> { DesktopPasteBonjourService(get(), get(), get()) }
@@ -271,16 +285,20 @@ class DesktopCrossPasteModule(
             single<SyncApi> { SyncApi }
             single<SyncClientApi> { SyncClientApi(get(), get(), get(), get(), get()) }
             single<SyncManager> {
-                GeneralSyncManager(
-                    get(),
-                    get(),
-                    get(),
-                    get(),
-                    get(),
-                    get(),
-                    get(),
-                    lazy { get() },
-                )
+                if (marketingMode) {
+                    MarketingSyncManager()
+                } else {
+                    GeneralSyncManager(
+                        get(),
+                        get(),
+                        get(),
+                        get(),
+                        get(),
+                        get(),
+                        get(),
+                        lazy { get() },
+                    )
+                }
             }
             single<SyncRoutingApi> { get<SyncManager>() }
             single<TelnetHelper> { TelnetHelper(get(), get()) }
@@ -426,7 +444,13 @@ class DesktopCrossPasteModule(
     // ViewModelModule.kt
     override fun viewModelModule() =
         module {
-            single<PasteDataViewModel> { PasteDataViewModel(get()) }
+            single<PasteDataViewModel> {
+                if (marketingMode) {
+                    MarketingPasteDataViewModel(get(), get())
+                } else {
+                    GeneralPasteDataViewModel(get())
+                }
+            }
             single<PasteSearchViewModel> { PasteSearchViewModel(get()) }
             single<PasteSelectionViewModel> { PasteSelectionViewModel(get(), get(), get()) }
         }

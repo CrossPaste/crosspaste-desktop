@@ -23,18 +23,17 @@ import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.realm.sync.SyncRuntimeInfoRealm
 import com.crosspaste.realm.sync.createSyncRuntimeInfo
-import com.crosspaste.sync.DeviceManager
+import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.ui.theme.CrossPasteTheme.connectedColor
 import com.crosspaste.ui.theme.CrossPasteTheme.disconnectedColor
 import com.crosspaste.utils.getJsonUtils
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
 import org.koin.compose.koinInject
 
 @Composable
 fun NearbyDeviceView(syncInfo: SyncInfo) {
     val copywriter = koinInject<GlobalCopywriter>()
-    val deviceManager = koinInject<DeviceManager>()
+    val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
     val deviceViewProvider = koinInject<DeviceViewProvider>()
     val syncRuntimeInfoRealm = koinInject<SyncRuntimeInfoRealm>()
     val configManager = koinInject<ConfigManager>()
@@ -87,7 +86,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
                 val newBlackList = jsonUtils.JSON.encodeToString(blackSyncInfos)
                 configManager.updateConfig("blacklist", newBlackList)
                 scope.launch {
-                    deviceManager.refresh()
+                    nearbyDeviceManager.refresh()
                 }
             },
             shape = RoundedCornerShape(4.dp),

@@ -46,7 +46,7 @@ class GeneralSyncManager(
     private val secureStore: SecureStore,
     private val syncRuntimeInfoRealm: SyncRuntimeInfoRealm,
     private val tokenCache: TokenCache,
-    lazyDeviceManager: Lazy<DeviceManager>,
+    lazyNearbyDeviceManager: Lazy<NearbyDeviceManager>,
 ) : SyncManager {
 
     private val logger = KotlinLogging.logger {}
@@ -63,7 +63,7 @@ class GeneralSyncManager(
 
     override val realTimeSyncScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
-    private val deviceManager: DeviceManager by lazyDeviceManager
+    private val nearbyDeviceManager: NearbyDeviceManager by lazyNearbyDeviceManager
 
     init {
         realTimeSyncScope.launch {
@@ -75,7 +75,7 @@ class GeneralSyncManager(
             )
             withContext(mainDispatcher) {
                 _realTimeSyncRuntimeInfos.value = syncRuntimeInfos
-                deviceManager.refresh()
+                nearbyDeviceManager.refresh()
             }
             withContext(ioDispatcher) {
                 resolveSyncs()
@@ -113,7 +113,7 @@ class GeneralSyncManager(
                             }.toSet()
                         }
                         if (changes.insertions.isNotEmpty() || changes.deletions.isNotEmpty()) {
-                            deviceManager.refresh()
+                            nearbyDeviceManager.refresh()
                         }
                     }
                 }
@@ -151,8 +151,8 @@ class GeneralSyncManager(
             .launchIn(realTimeSyncScope)
     }
 
-    private fun createSyncHandler(syncRuntimeInfo: SyncRuntimeInfo): SyncHandler {
-        return SyncHandler(
+    override fun createSyncHandler(syncRuntimeInfo: SyncRuntimeInfo): SyncHandler {
+        return GeneralSyncHandler(
             syncRuntimeInfo,
             telnetHelper,
             syncInfoFactory,

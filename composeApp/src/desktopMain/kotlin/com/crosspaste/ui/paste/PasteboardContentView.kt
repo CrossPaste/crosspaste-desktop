@@ -60,7 +60,7 @@ fun PasteboardContentView(openTopBar: () -> Unit) {
     var showToTop by remember { mutableStateOf(false) }
     var scrollJob: Job? by remember { mutableStateOf(null) }
     val coroutineScope = rememberCoroutineScope()
-    val rememberPasteDataList by pasteDataViewModel.pasteDatas.collectAsState()
+    val rememberPasteDataList by pasteDataViewModel.pasteDataList.collectAsState()
     val showMainWindow by appWindowManager.showMainWindow.collectAsState()
 
     var previousFirstItemId by remember { mutableStateOf<ObjectId?>(null) }
