@@ -7,16 +7,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import com.crosspaste.sync.DeviceManager
+import com.crosspaste.sync.NearbyDeviceManager
 import org.koin.compose.koinInject
 
 @Composable
 fun NearbyDevicesView() {
-    val deviceManager = koinInject<DeviceManager>()
+    val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
 
-    val nearbyDevicesList by deviceManager.syncInfos.collectAsState()
+    val nearbyDevicesList by nearbyDeviceManager.syncInfos.collectAsState()
 
-    val searching by deviceManager.searching.collectAsState()
+    val searching by nearbyDeviceManager.searching.collectAsState()
 
     if (searching) {
         SearchNearByDevices()

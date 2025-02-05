@@ -3,7 +3,7 @@ package com.crosspaste.net
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.dto.sync.SyncInfo
-import com.crosspaste.sync.DeviceListener
+import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.utils.TxtRecordUtils
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
@@ -25,7 +25,7 @@ import javax.jmdns.impl.util.ByteWrangler
 class DesktopPasteBonjourService(
     private val appInfo: AppInfo,
     private val endpointInfoFactory: EndpointInfoFactory,
-    private val deviceListener: DeviceListener,
+    private val nearbyDeviceManager: NearbyDeviceManager,
 ) : PasteBonjourService {
 
     companion object {
@@ -47,7 +47,7 @@ class DesktopPasteBonjourService(
 
         val txtRecordDict = TxtRecordUtils.encodeToTxtRecordDict(syncInfo)
 
-        val serviceListener = DesktopServiceListener(deviceListener)
+        val serviceListener = DesktopServiceListener(nearbyDeviceManager)
 
         for (hostInfo in endpointInfo.hostInfoList) {
             scope.launch {
@@ -89,7 +89,7 @@ class DesktopPasteBonjourService(
 }
 
 class DesktopServiceListener(
-    private val deviceListener: DeviceListener,
+    private val nearbyDeviceManager: NearbyDeviceManager,
 ) : ServiceListener {
 
     private val logger = KotlinLogging.logger {}
@@ -105,7 +105,7 @@ class DesktopServiceListener(
         ByteWrangler.readProperties(map, event.info.textBytes)
         val syncInfo = TxtRecordUtils.decodeFromTxtRecordDict<SyncInfo>(map)
         coroutineScope.launch {
-            deviceListener.removeDevice(syncInfo)
+            nearbyDeviceManager.removeDevice(syncInfo)
         }
     }
 
@@ -114,7 +114,7 @@ class DesktopServiceListener(
         ByteWrangler.readProperties(map, event.info.textBytes)
         val syncInfo = TxtRecordUtils.decodeFromTxtRecordDict<SyncInfo>(map)
         coroutineScope.launch {
-            deviceListener.addDevice(syncInfo)
+            nearbyDeviceManager.addDevice(syncInfo)
         }
     }
 }

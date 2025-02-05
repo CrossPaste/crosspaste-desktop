@@ -1,6 +1,5 @@
 package com.crosspaste.ui.model
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteRealm
@@ -15,7 +14,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class PasteDataViewModel(private val pasteRealm: PasteRealm) : ViewModel() {
+class GeneralPasteDataViewModel(private val pasteRealm: PasteRealm) : PasteDataViewModel() {
 
     private val _limit = MutableStateFlow(50)
     val limit: StateFlow<Int> = _limit.asStateFlow()
@@ -23,7 +22,7 @@ class PasteDataViewModel(private val pasteRealm: PasteRealm) : ViewModel() {
     private val _isActive = MutableStateFlow(true)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val pasteDatas: StateFlow<List<PasteData>> =
+    override val pasteDataList: StateFlow<List<PasteData>> =
         _isActive.flatMapLatest { active ->
             if (active) {
                 limit.flatMapLatest { currentLimit ->
@@ -38,26 +37,26 @@ class PasteDataViewModel(private val pasteRealm: PasteRealm) : ViewModel() {
             initialValue = listOf(),
         )
 
-    fun loadMore() {
+    override fun loadMore() {
         viewModelScope.launch {
             val currentLimit = _limit.value
-            val currentSize = pasteDatas.value.size
+            val currentSize = pasteDataList.value.size
             if (currentLimit <= currentSize) {
                 _limit.value = currentLimit + 20
             }
         }
     }
 
-    fun pause() {
+    override fun pause() {
         _isActive.value = false
     }
 
-    fun resume() {
+    override fun resume() {
         _limit.value = 50
         _isActive.value = true
     }
 
-    fun cleanup() {
+    override fun cleanup() {
         pause()
         _limit.value = 50
     }

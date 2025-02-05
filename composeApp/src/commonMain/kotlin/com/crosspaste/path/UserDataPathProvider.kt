@@ -32,6 +32,7 @@ class UserDataPathProvider(
             AppFileType.FILE_EXT_ICON,
             AppFileType.VIDEO,
             AppFileType.TEMP,
+            AppFileType.MARKETING,
         )
 
     override fun resolve(
@@ -61,6 +62,7 @@ class UserDataPathProvider(
                 AppFileType.FILE_EXT_ICON -> basePath.resolve("file_ext_icons")
                 AppFileType.VIDEO -> basePath.resolve("videos")
                 AppFileType.TEMP -> basePath.resolve("temp")
+                AppFileType.MARKETING -> basePath.resolve("marketing")
                 else -> basePath
             }
 

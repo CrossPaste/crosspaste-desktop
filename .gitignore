@@ -13,6 +13,7 @@ selenium-manager.exe
 !src/**/build/
 build
 buildSrc/build/
+composeApp/.marketing/
 composeApp/.user*/
 composeApp/DawnCache/
 composeApp/GPUCache/
@@ -20,5 +21,6 @@ composeApp/build/
 composeApp/dylib/
 composeApp/jbr/
 logs/
+composeApp/.marketing/marketing/
 node_modules/
 output*/

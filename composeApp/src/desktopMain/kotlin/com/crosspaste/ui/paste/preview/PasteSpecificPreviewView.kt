@@ -8,13 +8,19 @@ import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteState
 import com.crosspaste.realm.paste.PasteType
 import io.realm.kotlin.ext.asFlow
+import io.realm.kotlin.ext.isManaged
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
 @Composable
 fun PasteSpecificPreviewView(pasteData: PasteData) {
     val pasteState by remember(pasteData) {
-        pasteData.asFlow().map { it.obj?.pasteState }.distinctUntilChanged()
+        if (pasteData.isManaged()) {
+            pasteData.asFlow().map { it.obj?.pasteState }.distinctUntilChanged()
+        } else {
+            MutableStateFlow(pasteData.pasteState)
+        }
     }.collectAsState(initial = pasteData.pasteState)
 
     pasteState?.let {

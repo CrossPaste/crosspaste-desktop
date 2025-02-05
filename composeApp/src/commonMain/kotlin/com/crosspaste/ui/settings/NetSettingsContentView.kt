@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.sp
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.sync.DeviceManager
+import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.link
 import com.crosspaste.ui.base.network
@@ -40,13 +40,12 @@ import com.crosspaste.ui.base.wifi
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.getNetUtils
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
 import org.koin.compose.koinInject
 
 @Composable
 fun NetSettingsContentView() {
     val configManager = koinInject<ConfigManager>()
-    val deviceManager = koinInject<DeviceManager>()
+    val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val netUtils = getNetUtils()
     val jsonUtils = getJsonUtils()
@@ -187,7 +186,7 @@ fun NetSettingsContentView() {
                             configManager.updateConfig("blacklist", newBlackList)
                             blacklist.remove(syncInfo)
                             scope.launch {
-                                deviceManager.refresh()
+                                nearbyDeviceManager.refresh()
                             }
                         }
                         if (index != blacklist.size - 1) {

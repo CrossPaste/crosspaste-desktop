@@ -1,7 +1,7 @@
 package com.crosspaste.path
 
+import com.crosspaste.config.DevConfig
 import com.crosspaste.platform.getPlatform
-import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.getAppEnvUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getSystemProperty
@@ -37,10 +37,8 @@ class DevelopmentPlatformUserDataPathProvider : PlatformUserDataPathProvider {
 
     private val composeAppDir = systemProperty.get("user.dir")
 
-    private val development = DesktopResourceUtils.loadProperties("development.properties")
-
     override fun getUserDefaultStoragePath(): Path {
-        return development.getProperty("pasteUserPath")?.let {
+        return DevConfig.pasteUserPath?.let {
             val path = it.toPath(normalize = true)
             if (path.isAbsolute) {
                 path

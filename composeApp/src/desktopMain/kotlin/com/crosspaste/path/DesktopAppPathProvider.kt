@@ -1,8 +1,8 @@
 package com.crosspaste.path
 
 import com.crosspaste.app.AppFileType
+import com.crosspaste.config.DevConfig
 import com.crosspaste.platform.getPlatform
-import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.getAppEnvUtils
 import com.crosspaste.utils.getSystemProperty
 import com.crosspaste.utils.noOptionParent
@@ -89,8 +89,6 @@ class DevelopmentAppPathProvider : AppPathProvider {
 
     private val composeAppDir = systemProperty.get("user.dir")
 
-    private val development = DesktopResourceUtils.loadProperties("development.properties")
-
     override val userHome: Path = Paths.get(systemProperty.get("user.home")).toOkioPath()
 
     override val pasteAppPath: Path = getAppPath()
@@ -102,7 +100,7 @@ class DevelopmentAppPathProvider : AppPathProvider {
     override val pasteUserPath: Path = getUserPath()
 
     private fun getAppPath(): Path {
-        return development.getProperty("pasteAppPath")?.let {
+        return DevConfig.pasteAppPath?.let {
             val path = it.toPath(normalize = true)
             if (path.isAbsolute) {
                 path
@@ -113,7 +111,7 @@ class DevelopmentAppPathProvider : AppPathProvider {
     }
 
     private fun getUserPath(): Path {
-        return development.getProperty("pasteUserPath")?.let {
+        return DevConfig.pasteUserPath?.let {
             val path = it.toPath(normalize = true)
             if (path.isAbsolute) {
                 path
