@@ -21,6 +21,5 @@ composeApp/build/
 composeApp/dylib/
 composeApp/jbr/
 logs/
-composeApp/.marketing/marketing/
 node_modules/
 output*/
