@@ -40,6 +40,7 @@ import com.crosspaste.ui.base.wifi
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.getNetUtils
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
 import org.koin.compose.koinInject
 
 @Composable

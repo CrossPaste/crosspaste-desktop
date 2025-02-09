@@ -28,6 +28,7 @@ import com.crosspaste.ui.theme.CrossPasteTheme.connectedColor
 import com.crosspaste.ui.theme.CrossPasteTheme.disconnectedColor
 import com.crosspaste.utils.getJsonUtils
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
 import org.koin.compose.koinInject
 
 @Composable
