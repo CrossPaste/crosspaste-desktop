@@ -39,17 +39,17 @@ object DesktopAppLaunch : AppLaunch, AppLock {
             if (lock == null) {
                 channel?.close()
                 logger.error { "Another instance of the application is already running." }
-                return AppLockState(false, firstLaunch)
+                return GeneralAppLockState(false, firstLaunch)
             }
             logger.info { "Application lock acquired." }
 
-            return AppLockState(true, firstLaunch)
+            return GeneralAppLockState(true, firstLaunch)
         } catch (e: OverlappingFileLockException) {
             logger.error(e) { "Another instance of the application is already running." }
-            return AppLockState(false, firstLaunch)
+            return GeneralAppLockState(false, firstLaunch)
         } catch (e: Exception) {
             logger.error(e) { "Failed to create and lock file" }
-            return AppLockState(false, firstLaunch)
+            return GeneralAppLockState(false, firstLaunch)
         }
     }
 
