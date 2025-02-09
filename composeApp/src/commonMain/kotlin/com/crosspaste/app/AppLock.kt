@@ -8,5 +8,3 @@ interface AppLock {
 
     fun resetFirstLaunchFlag()
 }
-
-data class AppLockState(val acquiredLock: Boolean, val firstLaunch: Boolean)
