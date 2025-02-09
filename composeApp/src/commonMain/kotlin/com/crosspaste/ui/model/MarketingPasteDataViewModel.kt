@@ -9,6 +9,7 @@ import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.realm.paste.PasteData
 import com.crosspaste.realm.paste.PasteState
 import com.crosspaste.realm.paste.PasteType
@@ -21,9 +22,10 @@ import io.realm.kotlin.types.RealmAny
 import io.realm.kotlin.types.RealmInstant
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.serialization.encodeToString
 
 class MarketingPasteDataViewModel(
-    private val copywriter: GlobalCopywriter,
+    copywriter: GlobalCopywriter,
     private val userDataPathProvider: UserDataPathProvider,
 ) : PasteDataViewModel() {
 
@@ -89,7 +91,7 @@ class MarketingPasteDataViewModel(
                     AppFileType.MARKETING,
                 )
             val fileInfoTree = fileUtils.getFileInfoTree(imagePath)
-            val fileInfoTrees = mapOf(imageName to fileInfoTree)
+            val fileInfoTrees: Map<String, FileInfoTree> = mapOf(imageName to fileInfoTree)
             val fileInfoTreeJsonString = jsonUtils.JSON.encodeToString(fileInfoTrees)
             val size = fileUtils.getFileSize(imagePath)
             val hash = fileUtils.getFileHash(imagePath)
@@ -99,7 +101,7 @@ class MarketingPasteDataViewModel(
             pasteAppearItem =
                 RealmAny.create(
                     ImagesPasteItem().apply {
-                        this.relativePathList = listOf<String>(imageName).toRealmList()
+                        this.relativePathList = listOf(imageName).toRealmList()
                         this.fileInfoTree = fileInfoTreeJsonString
                         this.count = 1
                         this.basePath = imagePath.noOptionParent.toString()
@@ -132,7 +134,7 @@ class MarketingPasteDataViewModel(
             pasteAppearItem =
                 RealmAny.create(
                     TextPasteItem().apply {
-                        this.text = String(byteArray)
+                        this.text = byteArray.contentToString()
                         this.size = size
                         this.hash = hash
                     },
@@ -168,7 +170,7 @@ class MarketingPasteDataViewModel(
                                     ),
                                 fileName = "html2Image.png",
                             )
-                        this.html = String(byteArray)
+                        this.html = byteArray.contentToString()
                         this.size = size
                         this.hash = hash
                     },
