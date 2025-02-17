@@ -32,7 +32,7 @@ semver = "2.0.0"
 system-tray = "4.4"
 theme-detector = "3.8"
 webp-imageio = "0.9.0"
-yaml = "2.3"
+yaml = "2.4"
 zxing = "3.5.3"
 
 [libraries]
