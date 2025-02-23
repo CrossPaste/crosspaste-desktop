@@ -1,0 +1,17 @@
+CREATE TABLE IF NOT EXISTS CryptPublicKey (
+    appInstanceId TEXT PRIMARY KEY NOT NULL,
+    serialized BLOB NOT NULL
+);
+
+saveCryptPublicKey:
+INSERT OR REPLACE INTO CryptPublicKey(appInstanceId, serialized)
+VALUES (?, ?);
+
+checkKeyExists:
+SELECT EXISTS(SELECT 1 FROM CryptPublicKey WHERE appInstanceId = ?) AS isExist;
+
+deleteCryptPublicKey:
+DELETE FROM CryptPublicKey WHERE appInstanceId = ?;
+
+getSerialized:
+SELECT serialized FROM CryptPublicKey WHERE appInstanceId = ?;

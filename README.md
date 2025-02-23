@@ -46,7 +46,7 @@
 
    ```bash
    cd crosspaste-desktop
-   ./gradlew composeApp:run
+   ./gradlew app:run
    ```
    
 First start will download [JBR](https://github.com/JetBrains/JetBrainsRuntime) / gradle dependencies.
@@ -91,7 +91,7 @@ Here are some [FAQs](doc/en/FQA.md) that have been collected. If you have other 
 ## 🤝 Support the project
 - **🌟 Star this repository**: This is the easiest way to support CrossPaste and costs nothing.
 - **🪲 Report bugs**: Report any bugs you find on the [issue tracker](https://github.com/CrossPaste/crosspaste-desktop/issues/new/choose).
-- **📖 Translate**: Help translate and polish CrossPaste into your [language](https://github.com/CrossPaste/crosspaste-desktop/tree/main/composeApp/src/desktopMain/resources/i18n).
+- **📖 Translate**: Help translate and polish CrossPaste into your [language](https://github.com/CrossPaste/crosspaste-desktop/tree/main/app/src/desktopMain/resources/i18n).
 - **📝 Contribute**: [Code](doc/en/Contributing.md), comment on issues, and any contributions that can help the project are welcome.
 - **💖 Sponsor**: Support financially via [GitHub Sponsors](https://github.com/sponsors/CrossPaste) to help with ongoing development and maintenance.
 

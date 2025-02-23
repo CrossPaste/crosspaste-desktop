@@ -1,0 +1,38 @@
+import kotlin.Int;
+
+CREATE TABLE IF NOT EXISTS PasteTaskEntity (
+    taskId INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    pasteDataId INTEGER,
+    taskType INTEGER AS Int NOT NULL,
+    status INTEGER AS Int NOT NULL,
+    createTime INTEGER NOT NULL,
+    modifyTime INTEGER NOT NULL,
+    extraInfo TEXT NOT NULL
+);
+
+createTask:
+INSERT INTO PasteTaskEntity (pasteDataId, taskType, status, createTime, modifyTime, extraInfo)
+VALUES (?, ?, ?, ?, ?, ?);
+
+getLastId:
+SELECT last_insert_rowid();
+
+getTask:
+SELECT * FROM PasteTaskEntity WHERE taskId = ?;
+
+executingTask:
+UPDATE PasteTaskEntity SET status = ?, modifyTime = ?
+WHERE taskId = ?;
+
+finishTask:
+UPDATE PasteTaskEntity SET
+  status = ?,
+  modifyTime = ?
+WHERE taskId = ?;
+
+finishTaskWithExtraInfo:
+UPDATE PasteTaskEntity SET
+  status = ?,
+  modifyTime = ?,
+  extraInfo = ?
+WHERE taskId = ?;

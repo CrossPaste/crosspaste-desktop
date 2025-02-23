@@ -1,0 +1,200 @@
+import kotlin.Boolean;
+
+CREATE VIRTUAL TABLE IF NOT EXISTS PasteDataEntityFts USING fts5(
+    pasteSearchContent,
+    content=PasteDataEntity,
+    content_rowid=id
+);
+
+CREATE TABLE IF NOT EXISTS PasteDataEntity (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    appInstanceId TEXT NOT NULL,
+    favorite INTEGER AS Boolean NOT NULL,
+    pasteId INTEGER NOT NULL,
+    pasteAppearItem TEXT,
+    pasteCollection TEXT NOT NULL,
+    pasteType INTEGER NOT NULL DEFAULT -1,
+    source TEXT,
+    size INTEGER NOT NULL,
+    hash TEXT NOT NULL,
+    createTime INTEGER NOT NULL,
+    pasteSearchContent TEXT,
+    pasteState INTEGER NOT NULL DEFAULT 0,
+    remote INTEGER AS Boolean NOT NULL
+);
+
+CREATE TRIGGER IF NOT EXISTS PasteDataEntityAI AFTER INSERT ON PasteDataEntity BEGIN
+    INSERT INTO PasteDataEntityFts(rowid, pasteSearchContent)
+    VALUES (new.id, new.pasteSearchContent);
+END;
+
+CREATE TRIGGER IF NOT EXISTS PasteData_AD AFTER DELETE ON PasteDataEntity BEGIN
+    INSERT INTO PasteDataEntityFts(PasteDataEntityFts, rowid, pasteSearchContent)
+    VALUES('delete', old.id, old.pasteSearchContent);
+END;
+
+CREATE TRIGGER IF NOT EXISTS PasteData_AU AFTER UPDATE ON PasteDataEntity BEGIN
+    INSERT INTO PasteDataEntityFts(PasteDataEntityFts, rowid, pasteSearchContent)
+    VALUES('delete', old.id, old.pasteSearchContent);
+    INSERT INTO PasteDataEntityFts(rowid, pasteSearchContent)
+    VALUES (new.id, new.pasteSearchContent);
+END;
+
+createPasteDataEntity:
+INSERT INTO PasteDataEntity(appInstanceId, favorite, pasteId, pasteAppearItem, pasteCollection, pasteType, source, size, hash, createTime, pasteSearchContent, pasteState, remote)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+getLastId:
+SELECT last_insert_rowid();
+
+getAllPasteData:
+SELECT * FROM PasteDataEntity WHERE pasteState != -1;
+
+getMaxPasteId:
+SELECT MAX(id) FROM PasteDataEntity;
+
+getLoadingPasteData:
+SELECT * FROM PasteDataEntity WHERE id = ? AND pasteState = 0;
+
+getPasteData:
+SELECT * FROM PasteDataEntity WHERE id = ? AND pasteState != -1;
+
+getPasteDataByAppInstanceIdAndPasteId:
+SELECT * FROM PasteDataEntity WHERE appInstanceId = ? AND pasteId = ? AND pasteState != -1;
+
+getPasteDataListLimit:
+SELECT * FROM PasteDataEntity WHERE pasteState != -1 ORDER BY createTime DESC LIMIT ?;
+
+updateFavorite:
+UPDATE PasteDataEntity SET favorite = ? WHERE id = ?;
+
+
+
+queryNoFavorite:
+SELECT id FROM PasteDataEntity
+WHERE favorite = 0 AND pasteState != -1
+ORDER BY createTime DESC
+LIMIT ?;
+
+queryByCleanTime:
+SELECT id
+FROM PasteDataEntity
+WHERE createTime < :cleanTime
+  AND pasteState != -1
+  AND (:pasteType IS NULL OR pasteType = :pasteType)
+ORDER BY createTime ASC
+LIMIT :limit;
+
+markDeletePasteData:
+UPDATE PasteDataEntity
+SET pasteState = -1
+WHERE id IN :ids;
+
+deletePasteData:
+DELETE FROM PasteDataEntity
+WHERE id IN :ids;
+
+getSize:
+SELECT SUM(size) FROM PasteDataEntity
+WHERE pasteState != -1;
+
+getFavoriteSize:
+SELECT SUM(size) FROM PasteDataEntity
+WHERE favorite = 1 AND pasteState != -1;
+
+getMinCreateTime:
+SELECT MIN(createTime) FROM PasteDataEntity
+WHERE pasteState != -1;
+
+getSizeByTimeLessThan:
+SELECT SUM(size) FROM PasteDataEntity
+WHERE createTime < :time AND pasteState != -1;
+
+getSameHashPasteDataIds:
+SELECT id FROM PasteDataEntity
+WHERE hash = :hash AND pasteType = :pasteType AND pasteState != -1 AND createTime > :createTime AND id != :id;
+
+searchPasteDataDesc:
+SELECT PasteDataEntity.*
+    FROM PasteDataEntity
+    JOIN PasteDataEntityFts ON PasteDataEntity.id = PasteDataEntityFts.rowid
+    WHERE
+        pasteState != -1 AND
+        CASE WHEN :searchQuery IS NOT NULL AND :searchQuery != ''
+            THEN PasteDataEntityFts MATCH :searchQuery
+            ELSE TRUE
+        END AND
+        CASE WHEN :appInstanceId IS NOT NULL
+            THEN CASE WHEN :local
+                THEN appInstanceId = :appInstanceId
+                ELSE appInstanceId != :appInstanceId
+            END
+            ELSE TRUE
+        END AND
+        CASE WHEN :favorite IS NOT NULL
+            THEN favorite = :favorite
+            ELSE TRUE
+        END AND
+        CASE WHEN :pasteType IS NOT NULL
+            THEN pasteType = :pasteType
+            ELSE TRUE
+        END
+    ORDER BY createTime DESC
+    LIMIT :number;
+
+searchPasteDataAsc:
+SELECT PasteDataEntity.*
+    FROM PasteDataEntity
+    JOIN PasteDataEntityFts ON PasteDataEntity.id = PasteDataEntityFts.rowid
+    WHERE
+        pasteState != -1 AND
+        CASE WHEN :searchQuery IS NOT NULL AND :searchQuery != ''
+            THEN PasteDataEntityFts MATCH :searchQuery
+            ELSE TRUE
+        END AND
+        CASE WHEN :appInstanceId IS NOT NULL
+            THEN CASE WHEN :local
+                THEN appInstanceId = :appInstanceId
+                ELSE appInstanceId != :appInstanceId
+            END
+            ELSE TRUE
+        END AND
+        CASE WHEN :favorite IS NOT NULL
+            THEN favorite = :favorite
+            ELSE TRUE
+        END AND
+        CASE WHEN :pasteType IS NOT NULL
+            THEN pasteType = :pasteType
+            ELSE TRUE
+        END
+    ORDER BY createTime ASC
+    LIMIT :number;
+
+updatePasteDataState:
+UPDATE PasteDataEntity
+SET pasteState = :state
+WHERE id = :id;
+
+updateCreateTime:
+UPDATE PasteDataEntity
+SET createTime = :time
+WHERE id = :id;
+
+updatePasteAppearItem:
+UPDATE PasteDataEntity
+SET pasteAppearItem = :pasteAppearItem
+WHERE id = :id;
+
+updatePasteDataToLoaded:
+UPDATE PasteDataEntity
+SET pasteAppearItem = :pasteAppearItem,
+    pasteCollection = :pasteCollection,
+    pasteState = 1,
+    pasteType = :pasteType,
+    pasteSearchContent = :pasteSearchContent,
+    size = :size,
+    hash = :hash
+WHERE id = :id;
+
+change:
+SELECT changes() AS changes;
