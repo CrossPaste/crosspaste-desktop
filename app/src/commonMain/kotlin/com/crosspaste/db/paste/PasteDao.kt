@@ -281,7 +281,7 @@ class PasteDao(
         if (!existFile) {
             tasks.addAll(markDeleteSameHash(id, pasteData.pasteType, pasteData.hash))
             if (pasteData.getType().isHtml()) {
-                tasks.add(taskDao.createTask(pasteData.id, TaskType.HTML_TO_IMAGE_TASK))
+                tasks.add(taskDao.createTask(id, TaskType.HTML_TO_IMAGE_TASK))
             } else if (pasteData.getType().isRtf()) {
                 tasks.add(taskDao.createTask(id, TaskType.RTF_TO_IMAGE_TASK))
             }
