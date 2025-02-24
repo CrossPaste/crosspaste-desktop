@@ -114,44 +114,34 @@ getSameHashPasteDataIds:
 SELECT id FROM PasteDataEntity
 WHERE hash = :hash AND pasteType = :pasteType AND pasteState != -1 AND createTime > :createTime AND id != :id;
 
-searchPasteDataDesc:
-SELECT PasteDataEntity.*
-    FROM PasteDataEntity
-    JOIN PasteDataEntityFts ON PasteDataEntity.id = PasteDataEntityFts.rowid
-    WHERE
-        pasteState != -1 AND
-        CASE WHEN :searchQuery IS NOT NULL AND :searchQuery != ''
-            THEN PasteDataEntityFts MATCH :searchQuery
-            ELSE TRUE
-        END AND
-        CASE WHEN :appInstanceId IS NOT NULL
-            THEN CASE WHEN :local
-                THEN appInstanceId = :appInstanceId
-                ELSE appInstanceId != :appInstanceId
-            END
+simpleSearch:
+SELECT * FROM PasteDataEntity
+WHERE
+    CASE WHEN :appInstanceId IS NOT NULL
+        THEN CASE WHEN :local
+            THEN appInstanceId = :appInstanceId
+            ELSE appInstanceId != :appInstanceId
+        END
             ELSE TRUE
         END AND
         CASE WHEN :favorite IS NOT NULL
-            THEN favorite = :favorite
-            ELSE TRUE
+          THEN favorite = :favorite
+          ELSE TRUE
         END AND
         CASE WHEN :pasteType IS NOT NULL
-            THEN pasteType = :pasteType
-            ELSE TRUE
+          THEN pasteType = :pasteType
+          ELSE TRUE
         END
-    ORDER BY createTime DESC
+    ORDER BY CASE WHEN :sort THEN createTime ELSE -createTime END DESC
     LIMIT :number;
 
-searchPasteDataAsc:
+complexSearch:
 SELECT PasteDataEntity.*
     FROM PasteDataEntity
     JOIN PasteDataEntityFts ON PasteDataEntity.id = PasteDataEntityFts.rowid
     WHERE
         pasteState != -1 AND
-        CASE WHEN :searchQuery IS NOT NULL AND :searchQuery != ''
-            THEN PasteDataEntityFts MATCH :searchQuery
-            ELSE TRUE
-        END AND
+        PasteDataEntityFts MATCH (:searchQuery) AND
         CASE WHEN :appInstanceId IS NOT NULL
             THEN CASE WHEN :local
                 THEN appInstanceId = :appInstanceId
@@ -167,7 +157,7 @@ SELECT PasteDataEntity.*
             THEN pasteType = :pasteType
             ELSE TRUE
         END
-    ORDER BY createTime ASC
+    ORDER BY CASE WHEN :sort THEN createTime ELSE -createTime END DESC
     LIMIT :number;
 
 updatePasteDataState:

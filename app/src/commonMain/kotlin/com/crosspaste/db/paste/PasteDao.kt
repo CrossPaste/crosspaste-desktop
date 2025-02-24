@@ -203,25 +203,26 @@ class PasteDao(
         limit: Int,
     ): Query<PasteData> {
         val appInstanceId: String? = local?.let { appInfo.appInstanceId }
-        val searchQuery = searchTerms.joinToString(" OR ")
+        val searchQuery = "pasteSearchContent:(${searchTerms.joinToString(" AND ") { "\"$it\"" }})"
 
-        return if (sort) {
-            pasteDatabaseQueries.searchPasteDataDesc(
+        return if (searchTerms.isNotEmpty()) {
+            pasteDatabaseQueries.complexSearch(
                 local = local == true,
                 appInstanceId = appInstanceId,
                 favorite = favorite,
                 pasteType = pasteType?.toLong(),
                 searchQuery = searchQuery,
+                sort = sort,
                 number = limit.toLong(),
                 mapper = PasteData::mapper,
             )
         } else {
-            pasteDatabaseQueries.searchPasteDataAsc(
+            pasteDatabaseQueries.simpleSearch(
                 local = local == true,
                 appInstanceId = appInstanceId,
                 favorite = favorite,
                 pasteType = pasteType?.toLong(),
-                searchQuery = searchQuery,
+                sort = sort,
                 number = limit.toLong(),
                 mapper = PasteData::mapper,
             )

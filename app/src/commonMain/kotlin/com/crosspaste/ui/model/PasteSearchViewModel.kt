@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteData
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +18,8 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 
 class PasteSearchViewModel(private val pasteDao: PasteDao) : ViewModel() {
+
+    private val logger = KotlinLogging.logger {}
 
     private val _inputSearch = MutableStateFlow("")
     val inputSearch = _inputSearch.asStateFlow()
@@ -63,6 +66,7 @@ class PasteSearchViewModel(private val pasteDao: PasteDao) : ViewModel() {
         searchParams
             .distinctUntilChanged()
             .flatMapLatest { params ->
+                logger.info { "to searchPasteDataFlow" }
                 pasteDao.searchPasteDataFlow(
                     searchTerms = params.searchTerms,
                     favorite = if (params.favorite) true else null,
