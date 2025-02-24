@@ -146,13 +146,6 @@ data class PasteData(
         return getPasteAppearItems().any { it is PasteFiles }
     }
 
-    fun markDeleteByCleanTime(
-        cleanTime: Long,
-        pasteType: Int? = null,
-    ) {
-
-    }
-
     fun getTypeText(): String {
         return PasteType.fromType(this.pasteType).name
     }
