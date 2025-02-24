@@ -24,7 +24,7 @@ sealed interface PasteItem {
                     PasteType.IMAGE_TYPE.type -> ImagesPasteItem(jsonObject)
                     PasteType.RTF_TYPE.type -> RtfPasteItem(jsonObject)
                     PasteType.TEXT_TYPE.type -> TextPasteItem(jsonObject)
-                    PasteType.URL_TYPE.type -> ImagesPasteItem(jsonObject)
+                    PasteType.URL_TYPE.type -> UrlPasteItem(jsonObject)
                     else -> throw IllegalArgumentException("Unknown paste type: $it")
                 }
             }
