@@ -327,23 +327,25 @@ class PasteDao(
                 val firstItem: PasteItem = pasteAppearItems.first()
                 val remainingItems: List<PasteItem> = pasteAppearItems.drop(1)
 
+                val hash = firstItem.hash
+                val pasteType = firstItem.getPasteType()
+
                 val change = database.transactionWithResult {
                     pasteDatabaseQueries.updatePasteDataToLoaded(
                         pasteAppearItem = firstItem.toJson(),
                         pasteCollection = PasteCollection(remainingItems).toJson(),
-                        pasteType = firstItem.getPasteType().type.toLong(),
+                        pasteType = pasteType.type.toLong(),
                         pasteSearchContent = PasteData.createSearchContent(
                             pasteData.source,
                             firstItem.getSearchContent(),
                         ),
                         size = size,
-                        hash = firstItem.hash,
+                        hash = hash,
                         id = id,
                     )
                     pasteDatabaseQueries.change().executeAsOne() > 0
                 }
 
-                val pasteType = firstItem.getPasteType()
                 if (change) {
                     val tasks = mutableListOf<Long>()
                     if (pasteType.isHtml()) {
@@ -354,9 +356,9 @@ class PasteDao(
                     if (!configManager.config.enabledSyncFileSizeLimit ||
                         fileUtils.bytesSize(configManager.config.maxSyncFileSize) > size
                     ) {
-                        tasks.add(taskDao.createTask(pasteData.id, TaskType.SYNC_PASTE_TASK, SyncExtraInfo()))
+                        tasks.add(taskDao.createTask(id, TaskType.SYNC_PASTE_TASK, SyncExtraInfo()))
                     }
-                    tasks.addAll(markDeleteSameHash(pasteData.id, pasteData.pasteType, pasteData.hash))
+                    tasks.addAll(markDeleteSameHash(id, pasteType.type, hash))
                     currentPaste.setPasteId(id)
                     taskExecutor.submitTasks(tasks)
                 }
