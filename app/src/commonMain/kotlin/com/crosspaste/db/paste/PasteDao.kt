@@ -308,7 +308,7 @@ class PasteDao(
             pasteDatabaseQueries.updatePasteDataState(PasteState.LOADING.toLong(), id)
             getPasteData(id)
         }?.let { pasteData ->
-            tasks.addAll(markDeleteSameHash(pasteData.id, pasteData.pasteType, pasteData.hash))
+            tasks.addAll(markDeleteSameHash(id, pasteData.pasteType, pasteData.hash))
             tryWritePasteboard(pasteData)
         }
         taskExecutor.submitTasks(tasks)
