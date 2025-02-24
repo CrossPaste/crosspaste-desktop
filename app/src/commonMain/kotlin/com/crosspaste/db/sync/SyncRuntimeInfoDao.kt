@@ -4,11 +4,15 @@ import app.cash.sqldelight.Query
 import app.cash.sqldelight.coroutines.asFlow
 import com.crosspaste.Database
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
+import com.crosspaste.utils.getJsonUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.encodeToString
 import kotlin.reflect.KProperty1
 
 class SyncRuntimeInfoDao(private val database: Database) {
+
+    private val jsonUtils = getJsonUtils()
 
     private val syncRuntimeInfoDatabaseQueries = database.syncRuntimeInfoDatabaseQueries
 
@@ -36,6 +40,9 @@ class SyncRuntimeInfoDao(private val database: Database) {
     fun update(syncRuntimeInfo: SyncRuntimeInfo, todo: () -> Unit = {}): String? {
         var change = false
         database.transactionWithResult {
+
+            val hostInfoArrayJson = jsonUtils.JSON.encodeToString(syncRuntimeInfo.hostInfoList)
+
             syncRuntimeInfoDatabaseQueries.updateSyncRuntimeInfo(
                 syncRuntimeInfo.appVersion,
                 syncRuntimeInfo.userName,
@@ -45,7 +52,7 @@ class SyncRuntimeInfoDao(private val database: Database) {
                 syncRuntimeInfo.platform.arch,
                 syncRuntimeInfo.platform.bitMode.toLong(),
                 syncRuntimeInfo.platform.version,
-                syncRuntimeInfo.hostInfoList.joinToString(","),
+                hostInfoArrayJson,
                 syncRuntimeInfo.port.toLong(),
                 syncRuntimeInfo.noteName,
                 syncRuntimeInfo.connectNetworkPrefixLength?.toLong(),
@@ -83,6 +90,7 @@ class SyncRuntimeInfoDao(private val database: Database) {
     fun insertOrUpdateSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo): ChangeType {
         return database.transactionWithResult {
             val now = nowEpochMilliseconds()
+            val hostInfoArrayJson = jsonUtils.JSON.encodeToString(syncRuntimeInfo.hostInfoList)
             syncRuntimeInfoDatabaseQueries.getSyncRuntimeInfo(
                 syncRuntimeInfo.appInstanceId,
                 SyncRuntimeInfo::mapper,
@@ -96,7 +104,7 @@ class SyncRuntimeInfoDao(private val database: Database) {
                     syncRuntimeInfo.platform.arch,
                     syncRuntimeInfo.platform.bitMode.toLong(),
                     syncRuntimeInfo.platform.version,
-                    syncRuntimeInfo.hostInfoList.joinToString(","),
+                    hostInfoArrayJson,
                     syncRuntimeInfo.port.toLong(),
                     syncRuntimeInfo.noteName,
                     syncRuntimeInfo.connectNetworkPrefixLength?.toLong(),
@@ -119,7 +127,7 @@ class SyncRuntimeInfoDao(private val database: Database) {
                     syncRuntimeInfo.platform.arch,
                     syncRuntimeInfo.platform.bitMode.toLong(),
                     syncRuntimeInfo.platform.version,
-                    syncRuntimeInfo.hostInfoList.joinToString(","),
+                    hostInfoArrayJson,
                     syncRuntimeInfo.port.toLong(),
                     syncRuntimeInfo.noteName,
                     syncRuntimeInfo.connectNetworkPrefixLength?.toLong(),
