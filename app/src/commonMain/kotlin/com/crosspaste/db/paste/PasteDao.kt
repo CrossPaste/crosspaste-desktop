@@ -305,7 +305,7 @@ class PasteDao(
     ) {
         val tasks = mutableListOf<Long>()
         database.transactionWithResult {
-            pasteDatabaseQueries.updatePasteDataState(PasteState.LOADING.toLong(), id)
+            pasteDatabaseQueries.updatePasteDataState(PasteState.LOADED.toLong(), id)
             getPasteData(id)
         }?.let { pasteData ->
             tasks.addAll(markDeleteSameHash(id, pasteData.pasteType, pasteData.hash))
