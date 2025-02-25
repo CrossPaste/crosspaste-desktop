@@ -108,27 +108,24 @@ class PasteCollector(
     suspend fun completeCollect(id: Long) {
         logSuspendExecutionTime(logger, "completeCollect") {
             if (preCollectors.isEmpty() || (existError && updateErrors.all { it != null })) {
-                try {
-                    pasteDao.markDeletePasteData(id)
-                } catch (e: Exception) {
-                    logger.error(e) { "Failed to mark delete paste $id" }
-                }
+                markDeletePasteData(id)
             } else {
                 try {
                     val pasteItems = preCollectors.flatMap { it.values }
                     pasteDao.releaseLocalPasteData(id, pasteItems)
                 } catch (e: Exception) {
                     logger.error(e) { "Failed to release paste $id" }
-                    // The following errors will be sent next
-                    // [RLM_ERR_WRONG_TRANSACTION_STATE]: The Realm is already in a write transaction
-                    // https://github.com/realm/realm-kotlin/pull/1621  wait new version release
-                    try {
-                        pasteDao.markDeletePasteData(id)
-                    } catch (e: Exception) {
-                        logger.error(e) { "Failed to mark delete paste $id" }
-                    }
+                    markDeletePasteData(id)
                 }
             }
+        }
+    }
+
+    private fun markDeletePasteData(id: Long) {
+        try {
+            pasteDao.markDeletePasteData(id)
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to mark delete paste $id" }
         }
     }
 }

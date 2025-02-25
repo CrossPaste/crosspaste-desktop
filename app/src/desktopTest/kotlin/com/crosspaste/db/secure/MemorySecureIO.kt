@@ -1,7 +1,6 @@
-package com.crosspaste.realm
+package com.crosspaste.db.secure
 
-import com.crosspaste.db.secure.SecureIO
-import io.ktor.util.collections.*
+import io.ktor.util.collections.ConcurrentMap
 
 class MemorySecureIO : SecureIO {
 
