@@ -71,7 +71,8 @@ UPDATE SyncRuntimeInfoEntity SET
   allowSend = ?,
   allowReceive = ?,
   modifyTime = ?
-WHERE appInstanceId = ?;
+WHERE appInstanceId = ?
+RETURNING appInstanceId;
 
 updateNoteName:
 UPDATE SyncRuntimeInfoEntity SET
@@ -81,6 +82,3 @@ WHERE appInstanceId = ?;
 
 deleteSyncRuntimeInfo:
 DELETE FROM SyncRuntimeInfoEntity WHERE appInstanceId = ?;
-
-change:
-SELECT changes() AS changes;
