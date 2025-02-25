@@ -1,0 +1,86 @@
+import kotlin.Boolean;
+
+CREATE TABLE IF NOT EXISTS SyncRuntimeInfoEntity (
+    appInstanceId TEXT PRIMARY KEY NOT NULL,
+    appVersion TEXT NOT NULL,
+    userName TEXT NOT NULL,
+    deviceId TEXT NOT NULL,
+    deviceName TEXT NOT NULL,
+    platformName TEXT NOT NULL,
+    platformArch TEXT NOT NULL,
+    platformBitMode INTEGER NOT NULL,
+    platformVersion TEXT NOT NULL,
+    hostInfo TEXT NOT NULL,
+    port INTEGER NOT NULL,
+    noteName TEXT,
+    connectNetworkPrefixLength INTEGER,
+    connectHostAddress TEXT,
+    connectState INTEGER NOT NULL,
+    allowSend INTEGER AS Boolean NOT NULL DEFAULT 1,
+    allowReceive INTEGER AS Boolean NOT NULL DEFAULT 1,
+    createTime INTEGER NOT NULL,
+    modifyTime INTEGER NOT NULL
+);
+
+createSyncRuntimeInfo:
+INSERT INTO SyncRuntimeInfoEntity(
+  appInstanceId,
+  appVersion,
+  userName,
+  deviceId,
+  deviceName,
+  platformName,
+  platformArch,
+  platformBitMode,
+  platformVersion,
+  hostInfo,
+  port,
+  noteName,
+  connectNetworkPrefixLength,
+  connectHostAddress,
+  connectState,
+  allowSend,
+  allowReceive,
+  createTime,
+  modifyTime
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+getAllSyncRuntimeInfos:
+SELECT * FROM SyncRuntimeInfoEntity ORDER BY createTime DESC;
+
+getSyncRuntimeInfo:
+SELECT * FROM SyncRuntimeInfoEntity WHERE appInstanceId = ?;
+
+updateSyncRuntimeInfo:
+UPDATE SyncRuntimeInfoEntity SET
+  appVersion = ?,
+  userName = ?,
+  deviceId = ?,
+  deviceName = ?,
+  platformName = ?,
+  platformArch = ?,
+  platformBitMode = ?,
+  platformVersion = ?,
+  hostInfo = ?,
+  port = ?,
+  noteName = ?,
+  connectNetworkPrefixLength = ?,
+  connectHostAddress = ?,
+  connectState = ?,
+  allowSend = ?,
+  allowReceive = ?,
+  modifyTime = ?
+WHERE appInstanceId = ?;
+
+updateNoteName:
+UPDATE SyncRuntimeInfoEntity SET
+  noteName = ?,
+  modifyTime = ?
+WHERE appInstanceId = ?;
+
+deleteSyncRuntimeInfo:
+DELETE FROM SyncRuntimeInfoEntity WHERE appInstanceId = ?;
+
+change:
+SELECT changes() AS changes;

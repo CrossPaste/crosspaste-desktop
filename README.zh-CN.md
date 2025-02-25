@@ -46,7 +46,7 @@
 
    ```bash
    cd crosspaste-desktop
-   ./gradlew clean composeApp:run
+   ./gradlew clean app:run
    ```
 
 首次启动将下载 [JBR](https://github.com/JetBrains/JetBrainsRuntime) / gradle 依赖.
@@ -91,7 +91,7 @@ CrossPaste 正在持续发展中！我们计划在未来的版本中添加更多
 ## 🤝 支持项目
 - **🌟 Star 这个项目**：这是支持 CrossPaste 最简单的方法。
 - **🪲 报告错误**：在[问题追踪器](https://github.com/CrossPaste/crosspaste-desktop/issues/new/choose)上报告你发现的任何错误。
-- **📖 翻译**：帮助 CrossPaste 翻译、润色到你的[语言](https://github.com/CrossPaste/crosspaste-desktop/tree/main/composeApp/src/desktopMain/resources/i18n)。
+- **📖 翻译**：帮助 CrossPaste 翻译、润色到你的[语言](https://github.com/CrossPaste/crosspaste-desktop/tree/main/app/src/desktopMain/resources/i18n)。
 - **📝 贡献**：[贡献代码](doc/zh/Contributing.md)、评论 issue，欢迎一切可以帮助到项目的贡献。
 - **💖 赞助支持**: 通过 [GitHub Sponsors](https://github.com/sponsors/CrossPaste) 在经济上支持项目，以帮助持续开发和维护。
 

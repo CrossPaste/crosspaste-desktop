@@ -18,7 +18,7 @@ jobs:
         id: cache-check-x86
         uses: actions/cache/restore@v4
         with:
-          path: ./composeApp/dylib/darwin-x86-64/libMacosApi.dylib
+          path: ./app/dylib/darwin-x86-64/libMacosApi.dylib
           key: mac-dylib-darwin-x86-64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
@@ -26,7 +26,7 @@ jobs:
         id: cache-check-aarch64
         uses: actions/cache/restore@v4
         with:
-          path: ./composeApp/dylib/darwin-aarch64/libMacosApi.dylib
+          path: ./app/dylib/darwin-aarch64/libMacosApi.dylib
           key: mac-dylib-darwin-aarch64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
@@ -42,25 +42,25 @@ jobs:
 
       - name: Build dylib for x86_64
         run: |
-          mkdir -p composeApp/dylib/darwin-x86-64
-          swiftc -emit-library composeApp/src/desktopMain/swift/MacosApi.swift -target x86_64-apple-macos10.15 -o composeApp/dylib/darwin-x86-64/libMacosApi.dylib
+          mkdir -p app/dylib/darwin-x86-64
+          swiftc -emit-library app/src/desktopMain/swift/MacosApi.swift -target x86_64-apple-macos10.15 -o app/dylib/darwin-x86-64/libMacosApi.dylib
 
       - name: Build dylib for arm64
         run: |
-          mkdir -p composeApp/dylib/darwin-aarch64
-          swiftc -emit-library composeApp/src/desktopMain/swift/MacosApi.swift -target arm64-apple-macos11 -o composeApp/dylib/darwin-aarch64/libMacosApi.dylib
+          mkdir -p app/dylib/darwin-aarch64
+          swiftc -emit-library app/src/desktopMain/swift/MacosApi.swift -target arm64-apple-macos11 -o app/dylib/darwin-aarch64/libMacosApi.dylib
 
       - name: Save dylib to cache for x86_64
         uses: actions/cache/save@v4
         with:
-          path: ./composeApp/dylib/darwin-x86-64/libMacosApi.dylib
+          path: ./app/dylib/darwin-x86-64/libMacosApi.dylib
           key: mac-dylib-darwin-x86-64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
       - name: Save dylib to cache for arm64
         uses: actions/cache/save@v4
         with:
-          path: ./composeApp/dylib/darwin-aarch64/libMacosApi.dylib
+          path: ./app/dylib/darwin-aarch64/libMacosApi.dylib
           key: mac-dylib-darwin-aarch64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
@@ -72,7 +72,7 @@ jobs:
       APPLE_ASP: ${{ secrets.APPLE_ASP }}
       AUTH_KEY_FILE_PATH: ${{ github.workspace }}/AuthKey.p8
       BUILD_FULL_PLATFORM: true
-      BUILD_MAIN_PATH: ${{ github.workspace }}/composeApp/build/classes/kotlin/desktop/main
+      BUILD_MAIN_PATH: ${{ github.workspace }}/app/build/classes/kotlin/desktop/main
       GITHUB_REF: ${{ github.ref }}
       ISSUER_ID: ${{ secrets.ISSUER_ID }}
       KEY_ID: ${{ secrets.KEY_ID }}
@@ -127,7 +127,7 @@ jobs:
           CALCULATED_REVISION=$(git rev-list --count HEAD)
           if [ "$CALCULATED_REVISION" = "${{ env.REVISION }}" ]; then
             echo "Calculated revision matches the one in GitHub environment."
-            echo -e "\nrevision=$CALCULATED_REVISION" >> composeApp/src/desktopMain/resources/crosspaste-version.properties
+            echo -e "\nrevision=$CALCULATED_REVISION" >> app/src/desktopMain/resources/crosspaste-version.properties
             echo "Revision has been written to properties file."
           else
             echo "Error: Calculated revision ($CALCULATED_REVISION) does not match the one in GitHub environment (${{ env.REVISION }})."
@@ -154,20 +154,20 @@ jobs:
       - name: Cache Jetbrains Runtime JDK
         uses: actions/cache@v4
         with:
-          path: ./composeApp/jbr
+          path: ./app/jbr
           key: jbr-${{ hashFiles('**/jbr.yaml') }}
 
       - name: check-darwin-x86-64-dylib-cache
         uses: actions/cache/restore@v4
         with:
-          path: ./composeApp/dylib/darwin-x86-64/libMacosApi.dylib
+          path: ./app/dylib/darwin-x86-64/libMacosApi.dylib
           key: mac-dylib-darwin-x86-64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
       - name: check-darwin-aarch64-dylib-cache
         uses: actions/cache/restore@v4
         with:
-          path: ./composeApp/dylib/darwin-aarch64/libMacosApi.dylib
+          path: ./app/dylib/darwin-aarch64/libMacosApi.dylib
           key: mac-dylib-darwin-aarch64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 

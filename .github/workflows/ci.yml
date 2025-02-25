@@ -33,13 +33,13 @@ jobs:
       - name: Cache Chrome Driver And Headless Shell
         uses: actions/cache@v4
         with:
-          path: ./composeApp/resources
+          path: ./app/resources
           key: chrome-driver-headless-shell-${{ hashFiles('**/webDriver.properties') }}
 
       - name: Cache Jetbrains Runtime JDK
         uses: actions/cache@v4
         with:
-          path: ./composeApp/jbr
+          path: ./app/jbr
           key: jbr-${{ hashFiles('**/jbr.yaml') }}
 
       - name: Build with Gradle
