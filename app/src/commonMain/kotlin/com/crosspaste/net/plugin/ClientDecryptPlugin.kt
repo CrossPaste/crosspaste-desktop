@@ -65,12 +65,7 @@ class ClientDecryptPlugin(private val secureStore: SecureStore) :
                                 while (!byteReadChannel.isClosedForRead) {
                                     val size = byteReadChannel.readInt()
                                     val byteArray = ByteArray(size)
-                                    var bytesRead = 0
-                                    while (bytesRead < size) {
-                                        val currentRead = byteReadChannel.readAvailable(byteArray, bytesRead, size - bytesRead)
-                                        if (currentRead == -1) break
-                                        bytesRead += currentRead
-                                    }
+                                    byteReadChannel.readFully(byteArray, 0, size)
                                     writeFully(processor.decrypt(byteArray))
                                 }
                             }
