@@ -73,7 +73,6 @@ fun PasteMenuView(
     val density = LocalDensity.current
     val pasteDao = koinInject<PasteDao>()
     val pasteMenuService = koinInject<DesktopPasteMenuService>()
-    val copywriter = koinInject<GlobalCopywriter>()
 
     var parentBounds by remember { mutableStateOf(Rect.Zero) }
     var cursorPosition by remember { mutableStateOf(Offset.Zero) }
@@ -86,6 +85,7 @@ fun PasteMenuView(
     var hoverMenu by remember { mutableStateOf(false) }
     var hoverCopy by remember { mutableStateOf(false) }
     var hoverFavorite by remember { mutableStateOf(false) }
+    var currentFavorite by remember(pasteData.id) { mutableStateOf(pasteData.favorite) }
     var hoverSource by remember { mutableStateOf(false) }
 
     fun startShowing() {
@@ -136,245 +136,58 @@ fun PasteMenuView(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        val menuText = copywriter.getText("menu")
-
-        PasteTooltipAreaView(
-            Modifier.fillMaxWidth().height(25.dp),
-            text = menuText,
-            computeTooltipPlacement = {
-                val textWidth = measureTextWidth(menuText, TOOLTIP_TEXT_STYLE)
-                TooltipPlacement.ComponentRect(
-                    anchor = Alignment.BottomStart,
-                    alignment = Alignment.BottomEnd,
-                    offset = DpOffset(-textWidth - 16.dp, (-20).dp),
-                )
-            },
+        MoreMenuItem(
+            background =
+                if (hoverMenu) {
+                    MaterialTheme.colorScheme.surfaceContainerLowest
+                } else {
+                    Color.Transparent
+                },
+            hoverMenu = { hoverMenu = it },
         ) {
-            Box(
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .onPointerEvent(
-                            eventType = PointerEventType.Enter,
-                            onEvent = {
-                                hoverMenu = true
-                            },
-                        )
-                        .onPointerEvent(
-                            eventType = PointerEventType.Exit,
-                            onEvent = {
-                                hoverMenu = false
-                            },
-                        ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Box(
-                    modifier =
-                        Modifier.fillMaxSize()
-                            .clip(RoundedCornerShape(5.dp))
-                            .background(
-                                if (hoverMenu) {
-                                    MaterialTheme.colorScheme.surfaceContainerLowest
-                                } else {
-                                    Color.Transparent
-                                },
-                            ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        painter = moreVertical(),
-                        contentDescription = "info",
-                        modifier =
-                            Modifier.size(18.dp)
-                                .pointerInput(Unit) {
-                                    detectTapGestures(
-                                        onTap = {
-                                            showPopup = !showPopup
-                                        },
-                                    )
-                                },
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                }
-            }
+            showPopup = !showPopup
         }
 
-        val copyText = copywriter.getText("copy")
-
         if (showMenu) {
-            PasteTooltipAreaView(
-                Modifier.fillMaxWidth().height(25.dp),
-                text = copyText,
-                computeTooltipPlacement = {
-                    val textWidth = measureTextWidth(copyText, TOOLTIP_TEXT_STYLE)
-                    TooltipPlacement.ComponentRect(
-                        anchor = Alignment.BottomStart,
-                        alignment = Alignment.BottomEnd,
-                        offset = DpOffset(-textWidth - 16.dp, (-20).dp),
-                    )
-                },
+            CopyMenuItem(
+                background =
+                    if (hoverCopy) {
+                        MaterialTheme.colorScheme.surfaceContainerLowest
+                    } else {
+                        Color.Transparent
+                    },
+                hoverCopy = { hoverCopy = it },
             ) {
-                Box(
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .onPointerEvent(
-                                eventType = PointerEventType.Enter,
-                                onEvent = {
-                                    hoverCopy = true
-                                },
-                            )
-                            .onPointerEvent(
-                                eventType = PointerEventType.Exit,
-                                onEvent = {
-                                    hoverCopy = false
-                                },
-                            ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Box(
-                        modifier =
-                            Modifier.fillMaxSize()
-                                .clip(RoundedCornerShape(5.dp))
-                                .background(
-                                    if (hoverCopy) {
-                                        MaterialTheme.colorScheme.surfaceContainerLowest
-                                    } else {
-                                        Color.Transparent
-                                    },
-                                ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            modifier =
-                                Modifier.size(16.dp)
-                                    .pointerInput(Unit) {
-                                        detectTapGestures(
-                                            onTap = {
-                                                pasteMenuService.copyPasteData(pasteData)
-                                            },
-                                        )
-                                    },
-                            painter = clipboard(),
-                            contentDescription = "Copy",
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                }
+                pasteMenuService.copyPasteData(pasteData)
             }
 
-            val favoriteText = copywriter.getText(if (pasteData.favorite) "delete_favorite" else "favorite")
-
-            PasteTooltipAreaView(
-                Modifier.fillMaxWidth().height(25.dp),
-                text = favoriteText,
-                computeTooltipPlacement = {
-                    val textWidth = measureTextWidth(favoriteText, TOOLTIP_TEXT_STYLE)
-                    TooltipPlacement.ComponentRect(
-                        anchor = Alignment.BottomStart,
-                        alignment = Alignment.BottomEnd,
-                        offset = DpOffset(-textWidth - 16.dp, (-20).dp),
-                    )
-                },
+            FavoriteMenuItem(
+                pasteData = pasteData,
+                background =
+                    if (hoverFavorite) {
+                        MaterialTheme.colorScheme.surfaceContainerLowest
+                    } else {
+                        Color.Transparent
+                    },
+                hoverFavorite = { hoverFavorite = it },
             ) {
-                Box(
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .onPointerEvent(
-                                eventType = PointerEventType.Enter,
-                                onEvent = {
-                                    hoverFavorite = true
-                                },
-                            )
-                            .onPointerEvent(
-                                eventType = PointerEventType.Exit,
-                                onEvent = {
-                                    hoverFavorite = false
-                                },
-                            ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Box(
-                        modifier =
-                            Modifier.fillMaxSize()
-                                .clip(RoundedCornerShape(5.dp))
-                                .background(
-                                    if (hoverFavorite) {
-                                        MaterialTheme.colorScheme.surfaceContainerLowest
-                                    } else {
-                                        Color.Transparent
-                                    },
-                                ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        var currentFavorite by remember(pasteData.id) { mutableStateOf(pasteData.favorite) }
-
-                        Icon(
-                            modifier =
-                                Modifier.size(16.dp)
-                                    .pointerInput(Unit) {
-                                        detectTapGestures(
-                                            onTap = {
-                                                pasteDao.setFavorite(
-                                                    pasteData.id,
-                                                    !currentFavorite,
-                                                )
-                                                currentFavorite = !currentFavorite
-                                            },
-                                        )
-                                    },
-                            painter = if (currentFavorite) favorite() else noFavorite(),
-                            contentDescription = "Favorite",
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                }
+                pasteDao.setFavorite(
+                    pasteData.id,
+                    !currentFavorite,
+                )
+                currentFavorite = !currentFavorite
             }
 
-            val detailInfo = getDetailInfo(copywriter, pasteData)
-            PasteTooltipAreaView(
-                Modifier.fillMaxWidth().height(25.dp),
-                text = detailInfo,
-                computeTooltipPlacement = {
-                    val textWidth = measureTextWidth(detailInfo, TOOLTIP_TEXT_STYLE)
-                    TooltipPlacement.ComponentRect(
-                        anchor = Alignment.BottomStart,
-                        alignment = Alignment.BottomEnd,
-                        offset = DpOffset(-textWidth - 16.dp, (-30).dp),
-                    )
-                },
+            DetailMenuItem(
+                pasteData = pasteData,
+                background =
+                    if (hoverSource) {
+                        MaterialTheme.colorScheme.surfaceContainerLowest
+                    } else {
+                        Color.Transparent
+                    },
             ) {
-                Box(
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .onPointerEvent(
-                                eventType = PointerEventType.Enter,
-                                onEvent = {
-                                    hoverSource = true
-                                },
-                            )
-                            .onPointerEvent(
-                                eventType = PointerEventType.Exit,
-                                onEvent = {
-                                    hoverSource = false
-                                },
-                            ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Box(
-                        modifier =
-                            Modifier.fillMaxSize()
-                                .clip(RoundedCornerShape(5.dp))
-                                .background(
-                                    if (hoverSource) {
-                                        MaterialTheme.colorScheme.surfaceContainerLowest
-                                    } else {
-                                        Color.Transparent
-                                    },
-                                ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        PasteTypeIconView(pasteData, size = 16.dp)
-                    }
-                }
+                hoverSource = it
             }
         }
     }
@@ -405,6 +218,255 @@ fun PasteMenuView(
                 showPopup = false
                 showMenu = false
                 toShow(false)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
+@Composable
+fun MoreMenuItem(
+    background: Color,
+    hoverMenu: (Boolean) -> Unit,
+    switchPopup: () -> Unit,
+) {
+    val copywriter = koinInject<GlobalCopywriter>()
+    val menuText = copywriter.getText("menu")
+
+    PasteTooltipAreaView(
+        Modifier.fillMaxWidth().height(25.dp),
+        text = menuText,
+        computeTooltipPlacement = {
+            val textWidth = measureTextWidth(menuText, TOOLTIP_TEXT_STYLE)
+            TooltipPlacement.ComponentRect(
+                anchor = Alignment.BottomStart,
+                alignment = Alignment.BottomEnd,
+                offset = DpOffset(-textWidth - 16.dp, (-20).dp),
+            )
+        },
+    ) {
+        Box(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .onPointerEvent(
+                        eventType = PointerEventType.Enter,
+                        onEvent = {
+                            hoverMenu(true)
+                        },
+                    )
+                    .onPointerEvent(
+                        eventType = PointerEventType.Exit,
+                        onEvent = {
+                            hoverMenu(false)
+                        },
+                    ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(background),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter = moreVertical(),
+                    contentDescription = "info",
+                    modifier =
+                        Modifier.size(18.dp)
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onTap = {
+                                        switchPopup()
+                                    },
+                                )
+                            },
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
+@Composable
+fun CopyMenuItem(
+    background: Color,
+    hoverCopy: (Boolean) -> Unit,
+    copyPasteDataAction: () -> Unit,
+) {
+    val copywriter = koinInject<GlobalCopywriter>()
+    val copyText = copywriter.getText("copy")
+
+    PasteTooltipAreaView(
+        Modifier.fillMaxWidth().height(25.dp),
+        text = copyText,
+        computeTooltipPlacement = {
+            val textWidth = measureTextWidth(copyText, TOOLTIP_TEXT_STYLE)
+            TooltipPlacement.ComponentRect(
+                anchor = Alignment.BottomStart,
+                alignment = Alignment.BottomEnd,
+                offset = DpOffset(-textWidth - 16.dp, (-20).dp),
+            )
+        },
+    ) {
+        Box(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .onPointerEvent(
+                        eventType = PointerEventType.Enter,
+                        onEvent = {
+                            hoverCopy(true)
+                        },
+                    )
+                    .onPointerEvent(
+                        eventType = PointerEventType.Exit,
+                        onEvent = {
+                            hoverCopy(false)
+                        },
+                    ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(background),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    modifier =
+                        Modifier.size(16.dp)
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onTap = {
+                                        copyPasteDataAction()
+                                    },
+                                )
+                            },
+                    painter = clipboard(),
+                    contentDescription = "Copy",
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
+@Composable
+fun FavoriteMenuItem(
+    pasteData: PasteData,
+    background: Color,
+    hoverFavorite: (Boolean) -> Unit,
+    setFavorite: () -> Unit,
+) {
+    val copywriter = koinInject<GlobalCopywriter>()
+    val favoriteText = copywriter.getText(if (pasteData.favorite) "delete_favorite" else "favorite")
+
+    PasteTooltipAreaView(
+        Modifier.fillMaxWidth().height(25.dp),
+        text = favoriteText,
+        computeTooltipPlacement = {
+            val textWidth = measureTextWidth(favoriteText, TOOLTIP_TEXT_STYLE)
+            TooltipPlacement.ComponentRect(
+                anchor = Alignment.BottomStart,
+                alignment = Alignment.BottomEnd,
+                offset = DpOffset(-textWidth - 16.dp, (-20).dp),
+            )
+        },
+    ) {
+        Box(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .onPointerEvent(
+                        eventType = PointerEventType.Enter,
+                        onEvent = {
+                            hoverFavorite(true)
+                        },
+                    )
+                    .onPointerEvent(
+                        eventType = PointerEventType.Exit,
+                        onEvent = {
+                            hoverFavorite(false)
+                        },
+                    ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(background),
+                contentAlignment = Alignment.Center,
+            ) {
+                var currentFavorite by remember(pasteData.id) { mutableStateOf(pasteData.favorite) }
+
+                Icon(
+                    modifier =
+                        Modifier.size(16.dp)
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onTap = {
+                                        setFavorite()
+                                    },
+                                )
+                            },
+                    painter = if (currentFavorite) favorite() else noFavorite(),
+                    contentDescription = "Favorite",
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
+@Composable
+fun DetailMenuItem(
+    pasteData: PasteData,
+    background: Color,
+    hoverSource: (Boolean) -> Unit,
+) {
+    val copywriter = koinInject<GlobalCopywriter>()
+    val detailInfo = getDetailInfo(copywriter, pasteData)
+    PasteTooltipAreaView(
+        Modifier.fillMaxWidth().height(25.dp),
+        text = detailInfo,
+        computeTooltipPlacement = {
+            val textWidth = measureTextWidth(detailInfo, TOOLTIP_TEXT_STYLE)
+            TooltipPlacement.ComponentRect(
+                anchor = Alignment.BottomStart,
+                alignment = Alignment.BottomEnd,
+                offset = DpOffset(-textWidth - 16.dp, (-30).dp),
+            )
+        },
+    ) {
+        Box(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .onPointerEvent(
+                        eventType = PointerEventType.Enter,
+                        onEvent = {
+                            hoverSource(true)
+                        },
+                    )
+                    .onPointerEvent(
+                        eventType = PointerEventType.Exit,
+                        onEvent = {
+                            hoverSource(false)
+                        },
+                    ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(background),
+                contentAlignment = Alignment.Center,
+            ) {
+                PasteTypeIconView(pasteData, size = 16.dp)
             }
         }
     }
