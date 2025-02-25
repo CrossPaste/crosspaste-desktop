@@ -181,4 +181,4 @@ SET pasteAppearItem = :pasteAppearItem,
     size = :size,
     hash = :hash
 WHERE id = :id
-RETURNING changes() AS changes;
+RETURNING id;

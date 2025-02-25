@@ -72,7 +72,7 @@ UPDATE SyncRuntimeInfoEntity SET
   allowReceive = ?,
   modifyTime = ?
 WHERE appInstanceId = ?
-RETURNING changes() AS changes;
+RETURNING appInstanceId;
 
 updateNoteName:
 UPDATE SyncRuntimeInfoEntity SET
