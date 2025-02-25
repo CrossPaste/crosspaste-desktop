@@ -24,8 +24,7 @@ class TaskDao(private val database: Database) {
                 now,
                 now,
                 jsonUtils.JSON.encodeToString(extraInfo),
-            )
-            pasteTaskDatabaseQueries.getLastId().executeAsOne()
+            ).executeAsOne()
         }
     }
 

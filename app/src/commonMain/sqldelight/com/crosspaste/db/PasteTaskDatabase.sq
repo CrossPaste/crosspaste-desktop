@@ -12,10 +12,8 @@ CREATE TABLE IF NOT EXISTS PasteTaskEntity (
 
 createTask:
 INSERT INTO PasteTaskEntity (pasteDataId, taskType, status, createTime, modifyTime, extraInfo)
-VALUES (?, ?, ?, ?, ?, ?);
-
-getLastId:
-SELECT last_insert_rowid();
+VALUES (?, ?, ?, ?, ?, ?)
+RETURNING taskId;
 
 getTask:
 SELECT * FROM PasteTaskEntity WHERE taskId = ?;
