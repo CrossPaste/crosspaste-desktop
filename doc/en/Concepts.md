@@ -33,7 +33,7 @@ CrossPaste's core design goal is to maximize the preservation of information fro
 
 ## Priority of Paste Types
 
-The [default priority](https://github.com/CrossPaste/crosspaste-desktop/blob/main/app/src/commonMain/kotlin/com/crosspaste/realm/paste/PasteType.kt) for previewing paste types is as follows:
+The [default priority](https://github.com/CrossPaste/crosspaste-desktop/blob/main/app/src/commonMain/kotlin/com/crosspaste/db/paste/PasteType.kt) for previewing paste types is as follows:
 
 | Priority | Paste Type   |
 |----------|--------------|

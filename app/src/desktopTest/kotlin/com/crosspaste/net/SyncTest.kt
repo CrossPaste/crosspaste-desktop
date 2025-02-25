@@ -6,6 +6,7 @@ import com.crosspaste.app.AppTokenService
 import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.config.ReadWriteConfig
 import com.crosspaste.config.TestReadWritePort
+import com.crosspaste.db.secure.MemorySecureIO
 import com.crosspaste.db.secure.SecureIO
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.net.clientapi.SuccessResult
@@ -18,7 +19,6 @@ import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
 import com.crosspaste.net.plugin.ServerEncryptPluginFactory
 import com.crosspaste.net.routing.SyncRoutingApi
 import com.crosspaste.net.routing.TestSyncRoutingApi
-import com.crosspaste.realm.MemorySecureIO
 import com.crosspaste.secure.GeneralSecureStore
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
