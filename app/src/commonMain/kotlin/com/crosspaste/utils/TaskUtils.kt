@@ -9,6 +9,7 @@ import com.crosspaste.task.FailurePasteTaskResult
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.serialization.InternalSerializationApi
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
