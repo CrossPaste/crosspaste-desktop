@@ -54,7 +54,7 @@ data class ImagesPasteItem(
         count = fileInfoTreeMap.values.sumOf { it.getCount() },
         hash = jsonObject["hash"]!!.jsonPrimitive.content,
         size = jsonObject["size"]!!.jsonPrimitive.content.toLong(),
-        basePath = jsonObject["bashPath"]?.jsonPrimitive?.content,
+        basePath = jsonObject["basePath"]?.jsonPrimitive?.content,
         relativePathList =
             jsonObject["relativePathList"]!!.jsonArray.map {
                 it.jsonPrimitive.content
