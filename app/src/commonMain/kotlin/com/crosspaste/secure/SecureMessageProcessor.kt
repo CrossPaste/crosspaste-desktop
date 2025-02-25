@@ -5,11 +5,14 @@ import com.crosspaste.exception.StandardErrorCode
 import dev.whyoleg.cryptography.CryptographyProvider
 import dev.whyoleg.cryptography.algorithms.AES
 import dev.whyoleg.cryptography.algorithms.ECDH
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 class SecureMessageProcessor(
     privateKey: ECDH.PrivateKey,
     publicKey: ECDH.PublicKey,
 ) {
+
+    private val logger = KotlinLogging.logger {}
 
     private val provider = CryptographyProvider.Default
 
@@ -30,6 +33,7 @@ class SecureMessageProcessor(
         try {
             return cipher.encryptBlocking(data)
         } catch (e: Throwable) {
+            logger.error(e) { "Encrypt fail" }
             throw PasteException(StandardErrorCode.ENCRYPT_FAIL.toErrorCode(), e)
         }
     }
@@ -38,6 +42,7 @@ class SecureMessageProcessor(
         try {
             return cipher.decryptBlocking(data)
         } catch (e: Throwable) {
+            logger.error(e) { "Decrypt fail" }
             throw PasteException(StandardErrorCode.DECRYPT_FAIL.toErrorCode(), e)
         }
     }
