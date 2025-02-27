@@ -57,11 +57,8 @@ SELECT * FROM PasteDataEntity WHERE pasteState != -1;
 getMaxPasteId:
 SELECT MAX(id) FROM PasteDataEntity;
 
-getLoadingPasteData:
-SELECT * FROM PasteDataEntity WHERE id = ? AND pasteState = 0;
-
 getPasteData:
-SELECT * FROM PasteDataEntity WHERE id = ? AND pasteState != -1;
+SELECT * FROM PasteDataEntity WHERE id = :id AND pasteState IN :states;
 
 getPasteDataByAppInstanceIdAndPasteId:
 SELECT * FROM PasteDataEntity WHERE appInstanceId = ? AND pasteId = ? AND pasteState != -1;

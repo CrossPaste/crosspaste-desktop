@@ -57,7 +57,7 @@ class PullFileTaskExecutor(
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         val pullExtraInfo: PullExtraInfo = TaskUtils.getExtraInfo(pasteTask, PullExtraInfo::class)
 
-        pasteDao.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
+        pasteDao.getNoDeletePasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
             val fileItems = pasteData.getPasteAppearItems().filter { it is PasteFiles }
             val appInstanceId = pasteData.appInstanceId
             val dateString = dateUtils.getYMD(dateUtils.epochMillisecondsToLocalDateTime(pasteData.createTime))
