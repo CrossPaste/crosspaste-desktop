@@ -110,7 +110,8 @@ class PasteDao(
                 pasteData.pasteSearchContent,
                 (pasteState ?: pasteData.pasteState).toLong(),
                 pasteData.remote,
-            ).executeAsOne()
+            )
+            pasteDatabaseQueries.getLastId().executeAsOne()
         }
     }
 
@@ -349,18 +350,21 @@ class PasteDao(
                 val hash = firstItem.hash
                 val pasteType = firstItem.getPasteType()
 
-                val change = pasteDatabaseQueries.updatePasteDataToLoaded(
-                    pasteAppearItem = firstItem.toJson(),
-                    pasteCollection = PasteCollection(remainingItems).toJson(),
-                    pasteType = pasteType.type.toLong(),
-                    pasteSearchContent = PasteData.createSearchContent(
-                        pasteData.source,
-                        firstItem.getSearchContent(),
-                    ),
-                    size = size,
-                    hash = hash,
-                    id = id,
-                ).executeAsOneOrNull()?.let { true } == true
+                val change = database.transactionWithResult {
+                    pasteDatabaseQueries.updatePasteDataToLoaded(
+                        pasteAppearItem = firstItem.toJson(),
+                        pasteCollection = PasteCollection(remainingItems).toJson(),
+                        pasteType = pasteType.type.toLong(),
+                        pasteSearchContent = PasteData.createSearchContent(
+                            pasteData.source,
+                            firstItem.getSearchContent(),
+                        ),
+                        size = size,
+                        hash = hash,
+                        id = id,
+                    )
+                    pasteDatabaseQueries.change().executeAsOne() > 0
+                }
 
                 if (change) {
                     val tasks = mutableListOf<Long>()

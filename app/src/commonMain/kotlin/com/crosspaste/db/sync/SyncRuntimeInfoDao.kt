@@ -38,11 +38,12 @@ class SyncRuntimeInfoDao(private val database: Database) {
     }
 
     fun update(syncRuntimeInfo: SyncRuntimeInfo, todo: () -> Unit = {}): String? {
-        val change = database.transactionWithResult {
+        var change = false
+        database.transactionWithResult {
 
             val hostInfoArrayJson = jsonUtils.JSON.encodeToString(syncRuntimeInfo.hostInfoList)
 
-            val change = syncRuntimeInfoDatabaseQueries.updateSyncRuntimeInfo(
+            syncRuntimeInfoDatabaseQueries.updateSyncRuntimeInfo(
                 syncRuntimeInfo.appVersion,
                 syncRuntimeInfo.userName,
                 syncRuntimeInfo.deviceId,
@@ -61,11 +62,11 @@ class SyncRuntimeInfoDao(private val database: Database) {
                 syncRuntimeInfo.allowReceive,
                 nowEpochMilliseconds(),
                 syncRuntimeInfo.appInstanceId,
-            ).executeAsOneOrNull()?.let { true } == true
+            )
+            change = syncRuntimeInfoDatabaseQueries.change().executeAsOne() > 0
             if (change) {
                 todo()
             }
-            change
         }
         return if (change) {
             syncRuntimeInfo.appInstanceId
