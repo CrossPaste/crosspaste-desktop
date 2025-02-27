@@ -48,8 +48,10 @@ CREATE INDEX IF NOT EXISTS IdxPasteDataType ON PasteDataEntity(pasteType) WHERE 
 
 createPasteDataEntity:
 INSERT INTO PasteDataEntity(appInstanceId, favorite, pasteId, pasteAppearItem, pasteCollection, pasteType, source, size, hash, createTime, pasteSearchContent, pasteState, remote)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-RETURNING id;
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+getLastId:
+SELECT last_insert_rowid();
 
 getAllPasteData:
 SELECT * FROM PasteDataEntity WHERE pasteState != -1;
@@ -68,6 +70,8 @@ SELECT * FROM PasteDataEntity WHERE pasteState != -1 ORDER BY createTime DESC LI
 
 updateFavorite:
 UPDATE PasteDataEntity SET favorite = ? WHERE id = ?;
+
+
 
 queryNoFavorite:
 SELECT id FROM PasteDataEntity
@@ -183,5 +187,7 @@ SET pasteAppearItem = :pasteAppearItem,
     pasteSearchContent = :pasteSearchContent,
     size = :size,
     hash = :hash
-WHERE id = :id
-RETURNING id;
+WHERE id = :id;
+
+change:
+SELECT changes() AS changes;
