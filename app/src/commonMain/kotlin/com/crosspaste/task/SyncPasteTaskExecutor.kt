@@ -39,7 +39,7 @@ class SyncPasteTaskExecutor(
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         val syncExtraInfo: SyncExtraInfo = TaskUtils.getExtraInfo(pasteTask, SyncExtraInfo::class)
         val mapResult =
-            pasteDao.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
+            pasteDao.getNoDeletePasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
                 val deferredResults: MutableList<Deferred<Pair<String, ClientApiResult>>> = mutableListOf()
                 for (entryHandler in syncManager.getSyncHandlers()) {
                     if (entryHandler.value.syncRuntimeInfo.allowSend &&

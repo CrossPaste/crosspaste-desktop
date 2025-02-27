@@ -48,8 +48,28 @@ class PasteDao(
         return pasteDatabaseQueries.getMaxPasteId().executeAsOne().MAX ?: 0L
     }
 
-    fun getPasteData(id: Long): PasteData? {
-        return pasteDatabaseQueries.getPasteData(id, PasteData::mapper).executeAsOneOrNull()
+    fun getNoDeletePasteData(id: Long): PasteData? {
+        return pasteDatabaseQueries.getPasteData(
+            id,
+            listOf(PasteState.LOADING.toLong(), PasteState.LOADED.toLong()),
+            PasteData::mapper,
+        ).executeAsOneOrNull()
+    }
+
+    fun getLoadingPasteData(id: Long): PasteData? {
+        return pasteDatabaseQueries.getPasteData(
+            id,
+            listOf(PasteState.LOADING.toLong()),
+            PasteData::mapper,
+        ).executeAsOneOrNull()
+    }
+
+    fun getDeletePasteData(id: Long): PasteData? {
+        return pasteDatabaseQueries.getPasteData(
+            id,
+            listOf(PasteState.DELETED.toLong()),
+            PasteData::mapper,
+        ).executeAsOneOrNull()
     }
 
     fun getAllPasteData(): List<PasteData> {
@@ -118,16 +138,17 @@ class PasteDao(
         }
     }
 
-    fun markDeletePasteData(id: Long) {
-        database.transaction {
+    suspend fun markDeletePasteData(id: Long) {
+        val taskId = database.transactionWithResult {
             pasteDatabaseQueries.markDeletePasteData(listOf(id))
             taskDao.createTask(id, TaskType.DELETE_PASTE_TASK)
         }
+        taskExecutor.submitTask(taskId)
     }
 
     fun deletePasteData(id: Long) {
         database.transaction {
-            getPasteData(id)?.clear(userDataPathProvider)
+            getDeletePasteData(id)?.clear(userDataPathProvider)
             pasteDatabaseQueries.deletePasteData(listOf(id))
         }
     }
@@ -305,7 +326,7 @@ class PasteDao(
         val tasks = mutableListOf<Long>()
         database.transactionWithResult {
             pasteDatabaseQueries.updatePasteDataState(PasteState.LOADED.toLong(), id)
-            getPasteData(id)
+            getNoDeletePasteData(id)
         }?.let { pasteData ->
             tasks.addAll(markDeleteSameHash(id, pasteData.pasteType, pasteData.hash))
             tryWritePasteboard(pasteData)
@@ -314,8 +335,7 @@ class PasteDao(
     }
 
     suspend fun releaseLocalPasteData(id: Long, pasteItems: List<PasteItem>) {
-        pasteDatabaseQueries.getLoadingPasteData(id, PasteData::mapper)
-            .executeAsOneOrNull()?.let { pasteData ->
+        getLoadingPasteData(id)?.let { pasteData ->
                 var pasteAppearItems = pasteItems
                 for (pastePlugin in pasteProcessPlugins) {
                     pasteAppearItems = pastePlugin.process(pasteAppearItems, pasteData.source)

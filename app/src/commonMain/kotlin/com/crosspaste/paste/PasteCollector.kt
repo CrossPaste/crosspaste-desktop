@@ -121,7 +121,7 @@ class PasteCollector(
         }
     }
 
-    private fun markDeletePasteData(id: Long) {
+    private suspend fun markDeletePasteData(id: Long) {
         try {
             pasteDao.markDeletePasteData(id)
         } catch (e: Exception) {

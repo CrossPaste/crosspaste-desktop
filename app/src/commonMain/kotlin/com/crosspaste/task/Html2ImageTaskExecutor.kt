@@ -44,7 +44,7 @@ class Html2ImageTaskExecutor(
         mutex.withLock {
             val htmlRenderingService = htmlRenderingServiceDeferred.await()
             try {
-                pasteDao.getPasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
+                pasteDao.getNoDeletePasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
                     pasteData.getPasteItem(PasteHtml::class)?.let { pasteHtml ->
                         val html2ImagePath = pasteHtml.getHtmlImagePath(userDataPathProvider)
                         if (!fileUtils.existFile(html2ImagePath)) {
