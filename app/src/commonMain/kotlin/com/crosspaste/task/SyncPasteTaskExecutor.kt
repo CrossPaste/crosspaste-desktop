@@ -42,42 +42,44 @@ class SyncPasteTaskExecutor(
             pasteDao.getNoDeletePasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
                 val deferredResults: MutableList<Deferred<Pair<String, ClientApiResult>>> = mutableListOf()
                 for (entryHandler in syncManager.getSyncHandlers()) {
-                    if (entryHandler.value.syncRuntimeInfo.allowSend &&
-                        entryHandler.value.versionRelation == VersionRelation.EQUAL_TO
+                    if (!entryHandler.value.syncRuntimeInfo.allowSend ||
+                        entryHandler.value.versionRelation != VersionRelation.EQUAL_TO ||
+                        (syncExtraInfo.syncFails.isNotEmpty() && !syncExtraInfo.syncFails.contains(entryHandler.key))
                     ) {
-                        val deferred =
-                            ioScope.async {
-                                try {
-                                    val clientHandler = entryHandler.value
-                                    val port = clientHandler.syncRuntimeInfo.port
-                                    val targetAppInstanceId = clientHandler.syncRuntimeInfo.appInstanceId
-                                    clientHandler.getConnectHostAddress()?.let {
-                                        val syncPasteResult =
-                                            sendPasteClientApi.sendPaste(pasteData, targetAppInstanceId) {
-                                                buildUrl(it, port)
-                                            }
-                                        return@async Pair(entryHandler.key, syncPasteResult)
-                                    } ?: run {
-                                        return@async Pair(
-                                            entryHandler.key,
-                                            createFailureResult(
-                                                StandardErrorCode.CANT_GET_SYNC_ADDRESS,
-                                                "Failed to get connect host address by ${entryHandler.key}",
-                                            ),
-                                        )
-                                    }
-                                } catch (_: Exception) {
+                        continue
+                    }
+                    val deferred =
+                        ioScope.async {
+                            try {
+                                val clientHandler = entryHandler.value
+                                val port = clientHandler.syncRuntimeInfo.port
+                                val targetAppInstanceId = clientHandler.syncRuntimeInfo.appInstanceId
+                                clientHandler.getConnectHostAddress()?.let {
+                                    val syncPasteResult =
+                                        sendPasteClientApi.sendPaste(pasteData, targetAppInstanceId) {
+                                            buildUrl(it, port)
+                                        }
+                                    return@async Pair(entryHandler.key, syncPasteResult)
+                                } ?: run {
                                     return@async Pair(
                                         entryHandler.key,
                                         createFailureResult(
-                                            StandardErrorCode.SYNC_PASTE_ERROR,
-                                            "Failed to sync paste to ${entryHandler.key}",
+                                            StandardErrorCode.CANT_GET_SYNC_ADDRESS,
+                                            "Failed to get connect host address by ${entryHandler.key}",
                                         ),
                                     )
                                 }
+                            } catch (_: Exception) {
+                                return@async Pair(
+                                    entryHandler.key,
+                                    createFailureResult(
+                                        StandardErrorCode.SYNC_PASTE_ERROR,
+                                        "Failed to sync paste to ${entryHandler.key}",
+                                    ),
+                                )
                             }
-                        deferredResults.add(deferred)
-                    }
+                        }
+                    deferredResults.add(deferred)
                 }
 
                 deferredResults.associate { it.await() }
