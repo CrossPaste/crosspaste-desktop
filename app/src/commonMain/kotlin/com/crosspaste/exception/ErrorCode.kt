@@ -27,7 +27,7 @@ class ErrorCode(
     }
 
     override fun hashCode(): Int {
-        return arrayOf(code, name, type).hashCode()
+        return arrayOf<Any>(code, name, type).hashCode()
     }
 }
 
