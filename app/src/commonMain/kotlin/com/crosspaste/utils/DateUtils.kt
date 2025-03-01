@@ -20,9 +20,11 @@ object DateUtils {
     @OptIn(FormatStringsInDatetimeFormats::class)
     val YMD_FORMAT = LocalDateTime.Format { byUnicodePattern("yyyy-MM-dd") }
 
-    fun getOffsetDay(days: Int): Long {
-        val now = Clock.System.now()
-        val offsetDay = now.plus(days.days)
+    fun getOffsetDay(
+        currentTime: Instant = nowInstant(),
+        days: Int,
+    ): Long {
+        val offsetDay = currentTime.plus(days.days)
         return offsetDay.toEpochMilliseconds()
     }
 
@@ -41,7 +43,7 @@ object DateUtils {
         }
 
         val yesterday =
-            Clock.System.now()
+            nowInstant()
                 .minus(1.days)
                 .toLocalDateTime(TimeZone.currentSystemDefault())
 
@@ -72,12 +74,16 @@ object DateUtils {
     }
 
     fun now(): LocalDateTime {
-        val currentInstant: Instant = Clock.System.now()
+        val currentInstant: Instant = nowInstant()
         return currentInstant.toLocalDateTime(TIME_ZONE)
     }
 
     fun nowEpochMilliseconds(): Long {
-        return Clock.System.now().toEpochMilliseconds()
+        return nowInstant().toEpochMilliseconds()
+    }
+
+    fun nowInstant(): Instant {
+        return Clock.System.now()
     }
 
     fun epochMillisecondsToLocalDateTime(epochMilliseconds: Long): LocalDateTime {
