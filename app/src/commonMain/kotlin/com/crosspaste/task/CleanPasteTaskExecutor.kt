@@ -35,11 +35,11 @@ class CleanPasteTaskExecutor(
             try {
                 cleanLock.withLock {
                     val imageCleanTime = CleanTime.entries[configManager.config.imageCleanTimeIndex]
-                    val imageCleanTimeInstant = dateUtils.getOffsetDay(-imageCleanTime.days)
+                    val imageCleanTimeInstant = dateUtils.getOffsetDay(days = -imageCleanTime.days)
                     pasteDao.markDeleteByCleanTime(imageCleanTimeInstant, PasteType.IMAGE_TYPE.type)
 
                     val fileCleanTime = CleanTime.entries[configManager.config.fileCleanTimeIndex]
-                    val fileCleanTimeInstant = dateUtils.getOffsetDay(-fileCleanTime.days)
+                    val fileCleanTimeInstant = dateUtils.getOffsetDay(days = -fileCleanTime.days)
                     pasteDao.markDeleteByCleanTime(fileCleanTimeInstant, PasteType.FILE_TYPE.type)
                 }
             } catch (e: Throwable) {

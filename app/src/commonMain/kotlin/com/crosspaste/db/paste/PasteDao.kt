@@ -172,7 +172,7 @@ class PasteDao(
         val idList = pasteDatabaseQueries.getSameHashPasteDataIds(
             newPasteDataHash,
             newPasteDataType.toLong(),
-            DateUtils.getOffsetDay(-1),
+            DateUtils.getOffsetDay(days = -1),
             newPasteDataId,
         ).executeAsList()
 
