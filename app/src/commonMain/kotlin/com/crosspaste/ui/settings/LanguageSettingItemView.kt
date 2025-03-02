@@ -46,6 +46,7 @@ import com.crosspaste.ui.base.language
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
+import java.awt.SystemColor.text
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -103,7 +104,7 @@ fun LanguageSettingItemView() {
                     },
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            SettingsText(copywriter.getText("current_language"))
+            SettingsText(text = copywriter.getText("current_language"))
 
             Icon(
                 modifier =

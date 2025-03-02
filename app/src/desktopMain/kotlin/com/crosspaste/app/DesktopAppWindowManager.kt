@@ -26,7 +26,6 @@ import okio.Path
 import okio.Path.Companion.toOkioPath
 import java.awt.Cursor
 import java.awt.Rectangle
-import java.io.File
 import javax.swing.JFileChooser
 
 fun getDesktopAppWindowManager(
@@ -199,34 +198,23 @@ abstract class DesktopAppWindowManager(
     }
 
     override fun openFileChooser(
-        fileChooserTitle: String,
-        currentStoragePath: String,
+        fileChooserTitle: String?,
+        currentStoragePath: Path?,
         action: (Path) -> Unit,
-        errorAction: (String) -> Unit,
     ) {
         mainComposeWindow?.let {
             _showFileDialog.value = true
             JFileChooser().apply {
                 fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
-                dialogTitle = fileChooserTitle
-                currentStoragePath.let {
-                    currentDirectory = File(it)
+                fileChooserTitle?.let {
+                    dialogTitle = it
+                }
+                currentStoragePath?.let {
+                    currentDirectory = it.toFile()
                 }
                 showOpenDialog(it)
                 selectedFile?.let { file ->
-                    val path = file.toOkioPath(normalize = true)
-                    if (path.toString().startsWith(currentStoragePath)) {
-                        errorAction("cant_select_child_directory")
-                    } else if (!file.exists()) {
-                        errorAction("directory_not_exist")
-                    } else if (file.listFiles { it ->
-                            !it.name.startsWith(".")
-                        }?.isNotEmpty() == true
-                    ) {
-                        errorAction("directory_not_empty")
-                    } else {
-                        action(path)
-                    }
+                    action(file.toOkioPath(true))
                 }
             }
             _showFileDialog.value = false

@@ -42,6 +42,7 @@ import com.crosspaste.utils.getNetUtils
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import org.koin.compose.koinInject
+import java.awt.SystemColor.text
 
 @Composable
 fun NetSettingsContentView() {
@@ -84,7 +85,7 @@ fun NetSettingsContentView() {
             tint = MaterialTheme.colorScheme.onSurface,
         ) {
             ip?.let {
-                SettingsText(it)
+                SettingsText(text = it)
             } ?: run {
                 CircularProgressIndicator(modifier = Modifier.size(25.dp))
             }
@@ -98,7 +99,7 @@ fun NetSettingsContentView() {
             tint = MaterialTheme.colorScheme.onSurface,
         ) {
             port?.let {
-                SettingsText(it)
+                SettingsText(text = it)
             } ?: run {
                 CircularProgressIndicator(modifier = Modifier.size(25.dp))
             }
@@ -173,7 +174,7 @@ fun NetSettingsContentView() {
                 }
 
             if (blacklist.isEmpty()) {
-                SettingsText(copywriter.getText("empty"))
+                SettingsText(text = copywriter.getText("empty"))
             } else {
                 Column(modifier = Modifier.fillMaxSize()) {
                     for ((index, syncInfo) in blacklist.withIndex()) {

@@ -56,6 +56,11 @@ SELECT last_insert_rowid();
 getAllPasteData:
 SELECT * FROM PasteDataEntity WHERE pasteState != -1;
 
+getBatchPasteData:
+SELECT * FROM PasteDataEntity WHERE id > :id
+ORDER BY id ASC
+LIMIT :limit;
+
 getMaxPasteId:
 SELECT MAX(id) FROM PasteDataEntity;
 

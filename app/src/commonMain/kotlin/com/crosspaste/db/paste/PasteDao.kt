@@ -388,7 +388,6 @@ class PasteDao(
 
     fun getPasteResourceInfo(favorite: Boolean? = null): PasteResourceInfo {
         val builder = PasteResourceInfoBuilder()
-        val pasteDataList = getAllPasteData()
         val doAdd: (PasteData) -> Unit = { pasteData ->
             favorite?.let {
                 if (pasteData.favorite != it) {
@@ -402,7 +401,23 @@ class PasteDao(
                 builder.add(item)
             }
         }
-        pasteDataList.forEach(doAdd)
+        batchReadPasteData(read = doAdd)
         return builder.build()
+    }
+
+    fun batchReadPasteData(batchNum: Long = 1000L, read: (PasteData) -> Unit): Long {
+        var id = -1L
+        var count = 0L
+        do {
+            val pasteDataList =
+                pasteDatabaseQueries.getBatchPasteData(id, batchNum, PasteData::mapper)
+                    .executeAsList()
+            for (pasteData in pasteDataList) {
+                read(pasteData)
+            }
+            count += pasteDataList.size
+            pasteDataList.lastOrNull()?.id?.let { id = it }
+        } while (pasteDataList.isNotEmpty())
+        return count
     }
 }

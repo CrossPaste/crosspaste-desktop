@@ -4,6 +4,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -13,25 +14,25 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun SettingsText(
-    text: String,
     modifier: Modifier = Modifier,
+    text: String,
+    color: Color = MaterialTheme.colorScheme.onSurface,
 ) {
     Text(
         modifier = modifier,
         text = text,
-        color = MaterialTheme.colorScheme.onSurface,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
-        style = SettingsTextStyle(),
+        style = SettingsTextStyle(color),
     )
 }
 
 @Composable
-fun SettingsTextStyle() =
+fun SettingsTextStyle(color: Color = MaterialTheme.colorScheme.onSurface) =
     TextStyle(
         textAlign = TextAlign.Start,
         fontWeight = FontWeight.Light,
         fontSize = 14.sp,
         fontFamily = FontFamily.SansSerif,
-        color = MaterialTheme.colorScheme.onSurface,
+        color = color,
     )

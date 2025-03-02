@@ -9,6 +9,8 @@ import com.crosspaste.serializer.PasteDataSerializer
 import com.crosspaste.utils.DateUtils
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
 
@@ -183,5 +185,19 @@ data class PasteData(
                 }
             }
         }
+    }
+
+    fun toJson(): String {
+        return buildJsonObject {
+            put("appInstanceId", appInstanceId)
+            put("favorite", favorite)
+            put("pasteId", pasteId)
+            pasteAppearItem?.toJson()?.let { put("pasteAppearItem", it) }
+            put("pasteCollection", pasteCollection.toJson())
+            put("pasteType", pasteType)
+            source?.let { put("source", it) }
+            put("size", size)
+            put("hash", hash)
+        }.toString()
     }
 }

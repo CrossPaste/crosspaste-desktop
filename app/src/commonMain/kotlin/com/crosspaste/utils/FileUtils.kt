@@ -8,6 +8,7 @@ import com.crosspaste.presist.FileInfoTreeBuilder
 import com.crosspaste.presist.FilesChunk
 import com.crosspaste.presist.SingleFileInfoTree
 import io.ktor.utils.io.*
+import okio.BufferedSink
 import okio.FileSystem
 import okio.Path
 import okio.buffer
@@ -122,6 +123,10 @@ interface FileUtils {
         }
     }
 
+    fun listFiles(path: Path, filter: (Path) -> Boolean = {true}): List<Path> {
+        return fileSystem.list(path).filter(filter)
+    }
+
     fun existFile(path: Path): Boolean {
         val result =
             runCatching {
@@ -197,6 +202,11 @@ interface FileUtils {
         path: Path,
         length: Long,
     ): Result<Unit>
+
+    fun writeFile(
+        path: Path,
+        writeSink: (BufferedSink) -> Unit,
+    )
 
     suspend fun writeFile(
         path: Path,

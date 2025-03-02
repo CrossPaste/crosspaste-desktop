@@ -29,7 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.crosspaste.ui.WindowDecoration
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -57,7 +56,6 @@ fun SettingsContentView() {
         }
     }
 
-    WindowDecoration("settings")
     Box(
         modifier =
             Modifier.fillMaxSize(),
@@ -66,7 +64,7 @@ fun SettingsContentView() {
             modifier =
                 Modifier.verticalScroll(scrollState)
                     .fillMaxSize()
-                    .padding(vertical = 25.dp),
+                    .padding(vertical = 16.dp),
         ) {
             settingsViewProvider.SettingsCoreView()
         }

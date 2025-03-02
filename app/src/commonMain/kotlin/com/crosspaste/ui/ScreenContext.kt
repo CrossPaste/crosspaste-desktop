@@ -32,9 +32,11 @@ class ScreenContext(val screenType: ScreenType, val nextScreenContext: ScreenCon
 
 enum class ScreenType {
     ABOUT,
+    EXPORT,
     DEBUG,
     DEVICES,
     DEVICE_DETAIL,
+    IMPORT,
     PASTE_PREVIEW,
     PASTE_TEXT_EDIT,
     QR_CODE,

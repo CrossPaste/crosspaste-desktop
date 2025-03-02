@@ -53,10 +53,9 @@ interface AppWindowManager {
     suspend fun toPaste()
 
     fun openFileChooser(
-        fileChooserTitle: String,
-        currentStoragePath: String,
+        fileChooserTitle: String?,
+        currentStoragePath: Path?,
         action: (Path) -> Unit,
-        errorAction: (String) -> Unit,
     )
 
     fun setScreen(screenContext: ScreenContext)

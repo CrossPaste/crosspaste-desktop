@@ -204,14 +204,14 @@ fun StoreSettingsContentView() {
                 modifier = Modifier.weight(0.2f),
                 horizontalArrangement = Arrangement.End,
             ) {
-                SettingsText(copywriter.getText("count"))
+                SettingsText(text = copywriter.getText("count"))
             }
 
             Row(
                 modifier = Modifier.weight(0.3f),
                 horizontalArrangement = Arrangement.End,
             ) {
-                SettingsText(copywriter.getText("size"))
+                SettingsText(text = copywriter.getText("size"))
             }
         }
 
@@ -234,8 +234,8 @@ fun StoreSettingsContentView() {
                 Spacer(modifier = Modifier.width(8.dp))
 
                 SettingsText(
-                    copywriter.getText(quadruple.first),
                     modifier = Modifier.width(nameMaxWidth),
+                    text = copywriter.getText(quadruple.first),
                 )
 
                 Row(
@@ -243,7 +243,7 @@ fun StoreSettingsContentView() {
                     horizontalArrangement = Arrangement.End,
                 ) {
                     if (quadruple.third != null) {
-                        SettingsText("${quadruple.third}")
+                        SettingsText(text = "${quadruple.third}")
                     } else {
                         CircularProgressIndicator(modifier = Modifier.size(25.dp))
                     }
@@ -254,7 +254,7 @@ fun StoreSettingsContentView() {
                     horizontalArrangement = Arrangement.End,
                 ) {
                     if (quadruple.fourth != null) {
-                        SettingsText(quadruple.fourth)
+                        SettingsText(text = quadruple.fourth)
                     } else {
                         CircularProgressIndicator(modifier = Modifier.size(25.dp))
                     }

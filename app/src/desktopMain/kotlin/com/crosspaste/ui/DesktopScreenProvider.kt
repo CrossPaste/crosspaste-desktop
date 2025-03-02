@@ -7,6 +7,8 @@ import com.crosspaste.app.AppWindowManager
 import com.crosspaste.ui.devices.DeviceDetailContentView
 import com.crosspaste.ui.devices.DevicesContentView
 import com.crosspaste.ui.devices.QRContentView
+import com.crosspaste.ui.paste.PasteExportContentView
+import com.crosspaste.ui.paste.PasteImportContentView
 import com.crosspaste.ui.paste.PasteboardContentView
 import com.crosspaste.ui.paste.edit.PasteTextEditContentView
 import com.crosspaste.ui.settings.SettingsContentView
@@ -43,6 +45,14 @@ class DesktopScreenProvider(
                 ShortcutKeysScreen()
             }
 
+            ScreenType.EXPORT -> {
+                ExportScreen()
+            }
+
+            ScreenType.IMPORT -> {
+                ImportScreen()
+            }
+
             ScreenType.ABOUT -> {
                 AboutScreen()
             }
@@ -71,9 +81,21 @@ class DesktopScreenProvider(
     }
 
     @Composable
+    override fun ExportScreen() {
+        WindowDecoration("export")
+        PasteExportContentView()
+    }
+
+    @Composable
     override fun HomeScreen() {
         HomeWindowDecoration()
         TabsView()
+    }
+
+    @Composable
+    override fun ImportScreen() {
+        WindowDecoration("import")
+        PasteImportContentView()
     }
 
     @Composable
@@ -100,6 +122,7 @@ class DesktopScreenProvider(
 
     @Composable
     override fun SettingsScreen() {
+        WindowDecoration("settings")
         SettingsContentView()
     }
 }
