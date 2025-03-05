@@ -79,8 +79,8 @@ data class FilesPasteItem(
     }
 
     override fun getSearchContent(): String {
-        return relativePathList.joinToString(separator = " ") { path ->
-            path.toPath().name.lowercase()
+        return fileInfoTreeMap.keys.joinToString(separator = " ") {
+            it.lowercase()
         }
     }
 

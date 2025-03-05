@@ -314,7 +314,6 @@ class PasteDao(
             val pasteCoordinate = pasteData.getPasteCoordinate(id)
             val pasteAppearItem = pasteData.pasteAppearItem
             val pasteCollection = pasteData.pasteCollection
-            val source = pasteData.source
 
             val newPasteAppearItem = pasteAppearItem?.bind(pasteCoordinate)
             val newPasteCollection = pasteCollection.bind(pasteCoordinate)
@@ -323,10 +322,6 @@ class PasteDao(
                 id = id,
                 pasteAppearItem = newPasteAppearItem,
                 pasteCollection = newPasteCollection,
-                pasteSearchContent = PasteData.createSearchContent(
-                    source,
-                    pasteAppearItem?.getSearchContent(),
-                ),
             )
 
             updateFilePath(newPasteData)
