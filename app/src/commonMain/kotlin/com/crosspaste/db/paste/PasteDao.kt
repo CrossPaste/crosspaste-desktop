@@ -6,6 +6,7 @@ import com.crosspaste.Database
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
 import com.crosspaste.config.ConfigManager
+import com.crosspaste.db.task.PullExtraInfo
 import com.crosspaste.db.task.SyncExtraInfo
 import com.crosspaste.db.task.TaskDao
 import com.crosspaste.paste.item.PasteItem
@@ -286,6 +287,7 @@ class PasteDao(
         pasteData: PasteData,
         tryWritePasteboard: (PasteData, Boolean) -> Unit,
     ) {
+        val remotePasteDataId = pasteData.id
         val tasks = mutableListOf<Long>()
         val existFile = pasteData.existFileResource()
         val existIconFile: Boolean? =
@@ -329,7 +331,13 @@ class PasteDao(
 
             updateFilePath(newPasteData)
 
-            tasks.add(taskDao.createTask(id, TaskType.PULL_FILE_TASK))
+            tasks.add(
+                taskDao.createTask(
+                    id,
+                    TaskType.PULL_FILE_TASK,
+                    PullExtraInfo(remotePasteDataId),
+                ),
+            )
         }
 
         existIconFile?.let {

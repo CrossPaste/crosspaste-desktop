@@ -21,7 +21,6 @@ import kotlin.reflect.cast
 
 @Serializable(with = PasteDataSerializer::class)
 data class PasteData(
-    @Transient
     val id: Long = -1L,
     val appInstanceId: String,
     val favorite: Boolean = false,

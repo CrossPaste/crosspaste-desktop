@@ -9,7 +9,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import io.ktor.util.reflect.*
 
-class SendPasteClientApi(
+class PasteClientApi(
     private val pasteClient: PasteClient,
     private val configManager: ConfigManager,
 ) {

@@ -131,7 +131,7 @@ class PullFileTaskExecutor(
                     {
                         try {
                             filesIndex.getChunk(chunkIndex)?.let { filesChunk ->
-                                val pullFileRequest = PullFileRequest(pasteData.id, chunkIndex)
+                                val pullFileRequest = PullFileRequest(pullExtraInfo.id, chunkIndex)
                                 val result = pullClientApi.pullFile(pullFileRequest, pasteData.appInstanceId, toUrl)
                                 if (result is SuccessResult) {
                                     val byteReadChannel = result.getResult<ByteReadChannel>()

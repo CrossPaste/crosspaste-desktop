@@ -17,6 +17,7 @@ import kotlinx.serialization.encoding.Encoder
 class PasteDataSerializer : KSerializer<PasteData> {
     override val descriptor: SerialDescriptor =
         buildClassSerialDescriptor("pasteData") {
+            element<Long>("id")
             element<String>("appInstanceId")
             element<Boolean>("favorite")
             element<PasteItem?>("pasteAppearItem")
@@ -30,6 +31,7 @@ class PasteDataSerializer : KSerializer<PasteData> {
     @OptIn(ExperimentalSerializationApi::class)
     override fun deserialize(decoder: Decoder): PasteData {
         val dec = decoder.beginStructure(descriptor)
+        var id = -1L
         var appInstanceId = ""
         var favorite = false
         var pasteAppearItem: PasteItem? = null
@@ -40,20 +42,22 @@ class PasteDataSerializer : KSerializer<PasteData> {
         var hash = ""
         loop@ while (true) {
             when (val index = dec.decodeElementIndex(descriptor)) {
-                0 -> appInstanceId = dec.decodeStringElement(descriptor, index)
-                1 -> favorite = dec.decodeBooleanElement(descriptor, index)
-                2 -> pasteAppearItem = dec.decodeSerializableElement(descriptor, index, PasteItem.serializer())
-                3 -> pasteCollection = dec.decodeSerializableElement(descriptor, index, PasteCollection.serializer())
-                4 -> pasteType = dec.decodeIntElement(descriptor, index)
-                5 -> source = dec.decodeNullableSerializableElement(descriptor, index, String.serializer())
-                6 -> size = dec.decodeLongElement(descriptor, index)
-                7 -> hash = dec.decodeStringElement(descriptor, index)
+                0 -> id = dec.decodeLongElement(descriptor, index)
+                1 -> appInstanceId = dec.decodeStringElement(descriptor, index)
+                2 -> favorite = dec.decodeBooleanElement(descriptor, index)
+                3 -> pasteAppearItem = dec.decodeSerializableElement(descriptor, index, PasteItem.serializer())
+                4 -> pasteCollection = dec.decodeSerializableElement(descriptor, index, PasteCollection.serializer())
+                5 -> pasteType = dec.decodeIntElement(descriptor, index)
+                6 -> source = dec.decodeNullableSerializableElement(descriptor, index, String.serializer())
+                7 -> size = dec.decodeLongElement(descriptor, index)
+                8 -> hash = dec.decodeStringElement(descriptor, index)
                 else -> break@loop
             }
         }
         dec.endStructure(descriptor)
 
         return PasteData(
+            id = id,
             appInstanceId = appInstanceId,
             favorite = favorite,
             pasteAppearItem = pasteAppearItem,
@@ -75,18 +79,19 @@ class PasteDataSerializer : KSerializer<PasteData> {
         value: PasteData,
     ) {
         val compositeOutput = encoder.beginStructure(descriptor)
-        compositeOutput.encodeStringElement(descriptor, 0, value.appInstanceId)
-        compositeOutput.encodeBooleanElement(descriptor, 1, value.favorite)
+        compositeOutput.encodeLongElement(descriptor, 0, value.id)
+        compositeOutput.encodeStringElement(descriptor, 1, value.appInstanceId)
+        compositeOutput.encodeBooleanElement(descriptor, 2, value.favorite)
         value.pasteAppearItem?.let {
-            compositeOutput.encodeSerializableElement(descriptor, 2, PasteItem.serializer(), it)
+            compositeOutput.encodeSerializableElement(descriptor, 3, PasteItem.serializer(), it)
         }
         value.pasteCollection.let {
-            compositeOutput.encodeSerializableElement(descriptor, 3, PasteCollection.serializer(), it)
+            compositeOutput.encodeSerializableElement(descriptor, 4, PasteCollection.serializer(), it)
         }
-        compositeOutput.encodeIntElement(descriptor, 4, value.pasteType)
-        compositeOutput.encodeNullableSerializableElement(descriptor, 5, String.serializer(), value.source)
-        compositeOutput.encodeLongElement(descriptor, 6, value.size)
-        compositeOutput.encodeStringElement(descriptor, 7, value.hash)
+        compositeOutput.encodeIntElement(descriptor, 5, value.pasteType)
+        compositeOutput.encodeNullableSerializableElement(descriptor, 6, String.serializer(), value.source)
+        compositeOutput.encodeLongElement(descriptor, 7, value.size)
+        compositeOutput.encodeStringElement(descriptor, 8, value.hash)
         compositeOutput.endStructure(descriptor)
     }
 }

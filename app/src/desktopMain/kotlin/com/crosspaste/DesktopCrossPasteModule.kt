@@ -75,8 +75,8 @@ import com.crosspaste.net.ServerModule
 import com.crosspaste.net.SyncApi
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.TelnetHelper
+import com.crosspaste.net.clientapi.PasteClientApi
 import com.crosspaste.net.clientapi.PullClientApi
-import com.crosspaste.net.clientapi.SendPasteClientApi
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.exception.DesktopExceptionHandler
 import com.crosspaste.net.exception.ExceptionHandler
@@ -281,7 +281,7 @@ class DesktopCrossPasteModule(
             single<PasteBonjourService> { DesktopPasteBonjourService(get(), get(), get()) }
             single<PasteClient> { PasteClient(get<AppInfo>(), get(), get()) }
             single<PullClientApi> { PullClientApi(get(), get()) }
-            single<SendPasteClientApi> { SendPasteClientApi(get(), get()) }
+            single<PasteClientApi> { PasteClientApi(get(), get()) }
             single<Server> {
                 DesktopPasteServer(
                     get(named("readWritePort")),

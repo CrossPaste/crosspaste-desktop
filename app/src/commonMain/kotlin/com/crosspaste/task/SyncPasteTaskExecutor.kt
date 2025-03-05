@@ -8,7 +8,7 @@ import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.VersionRelation
 import com.crosspaste.net.clientapi.ClientApiResult
 import com.crosspaste.net.clientapi.FailureResult
-import com.crosspaste.net.clientapi.SendPasteClientApi
+import com.crosspaste.net.clientapi.PasteClientApi
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.TaskUtils
@@ -20,11 +20,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
-import kotlinx.serialization.encodeToString
 
 class SyncPasteTaskExecutor(
     private val pasteDao: PasteDao,
-    private val sendPasteClientApi: SendPasteClientApi,
+    private val pasteClientApi: PasteClientApi,
     private val syncManager: SyncManager,
 ) : SingleTypeTaskExecutor {
 
@@ -56,7 +55,7 @@ class SyncPasteTaskExecutor(
                                 val targetAppInstanceId = clientHandler.syncRuntimeInfo.appInstanceId
                                 clientHandler.getConnectHostAddress()?.let {
                                     val syncPasteResult =
-                                        sendPasteClientApi.sendPaste(pasteData, targetAppInstanceId) {
+                                        pasteClientApi.sendPaste(pasteData, targetAppInstanceId) {
                                             buildUrl(it, port)
                                         }
                                     return@async Pair(entryHandler.key, syncPasteResult)
