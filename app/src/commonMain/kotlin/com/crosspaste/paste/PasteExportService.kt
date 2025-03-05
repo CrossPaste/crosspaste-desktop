@@ -61,7 +61,6 @@ class PasteExportService(
                                 } else {
                                     0.99f
                                 }
-                            logger.info { "progress $currentProgress" }
                             updateProgress(currentProgress)
                         },
                     )
