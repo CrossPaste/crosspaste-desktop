@@ -92,30 +92,24 @@ data class FilesPasteItem(
 
     // use to adapt relative paths when relative is no storage in crossPaste
     override fun bind(pasteCoordinate: PasteCoordinate): PasteItem {
-        val noStorageInCrossPaste = relativePathList.any { it.toPath().segments.size == 1 }
-        if (noStorageInCrossPaste) {
-            val fileUtils = getFileUtils()
-            val newRelativePathList =
-                relativePathList.map { relativePath ->
-                    val path = relativePath.toPath()
-                    val fileName = path.name
-                    fileUtils.createPasteRelativePath(
-                        pasteCoordinate = pasteCoordinate,
-                        fileName = fileName,
-                    )
-                }
-            return FilesPasteItem(
-                identifiers = identifiers,
-                count = count,
-                hash = hash,
-                size = size,
-                basePath = basePath,
-                relativePathList = newRelativePathList,
-                fileInfoTreeMap = fileInfoTreeMap,
-            )
-        } else {
-            return this
-        }
+        val newRelativePathList =
+            relativePathList.map { relativePath ->
+                val path = relativePath.toPath()
+                val fileName = path.name
+                fileUtils.createPasteRelativePath(
+                    pasteCoordinate = pasteCoordinate,
+                    fileName = fileName,
+                )
+            }
+        return FilesPasteItem(
+            identifiers = identifiers,
+            count = count,
+            hash = hash,
+            size = size,
+            basePath = basePath,
+            relativePathList = newRelativePathList,
+            fileInfoTreeMap = fileInfoTreeMap,
+        )
     }
 
     override fun update(
