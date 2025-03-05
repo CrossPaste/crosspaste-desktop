@@ -53,6 +53,8 @@ fun HomeMenuView(
                 copywriter.getText("check_for_updates"),
                 copywriter.getText("settings"),
                 copywriter.getText("shortcut_keys"),
+                copywriter.getText("export"),
+                copywriter.getText("import"),
                 copywriter.getText("about"),
                 copywriter.getText("fqa"),
                 copywriter.getText("quit"),
@@ -100,6 +102,22 @@ fun HomeMenuView(
                 reminder = existNewVersion,
             ) {
                 appUpdateService.jumpDownload()
+                close()
+            }
+            MenuItem(
+                text = copywriter.getText("export"),
+                background = MaterialTheme.colorScheme.surfaceBright,
+            ) {
+                openMainWindow()
+                appWindowManager.toScreen(ScreenType.EXPORT)
+                close()
+            }
+            MenuItem(
+                text = copywriter.getText("import"),
+                background = MaterialTheme.colorScheme.surfaceBright,
+            ) {
+                openMainWindow()
+                appWindowManager.toScreen(ScreenType.IMPORT)
                 close()
             }
             MenuItem(

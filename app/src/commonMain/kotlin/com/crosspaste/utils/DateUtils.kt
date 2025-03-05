@@ -20,6 +20,9 @@ object DateUtils {
     @OptIn(FormatStringsInDatetimeFormats::class)
     val YMD_FORMAT = LocalDateTime.Format { byUnicodePattern("yyyy-MM-dd") }
 
+    @OptIn(FormatStringsInDatetimeFormats::class)
+    val YMDHMS_FORMAT = LocalDateTime.Format { byUnicodePattern("yyyy-MM-dd HH:mm:ss") }
+
     fun getOffsetDay(
         currentTime: Instant = nowInstant(),
         days: Int,
@@ -56,6 +59,10 @@ object DateUtils {
 
     fun getYMD(date: LocalDateTime = now()): String {
         return YMD_FORMAT.format(date)
+    }
+
+    fun getYMDHMS(date: LocalDateTime = now()): String {
+        return YMDHMS_FORMAT.format(date)
     }
 
     @OptIn(FormatStringsInDatetimeFormats::class)

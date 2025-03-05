@@ -31,7 +31,6 @@ class DesktopColorTypePlugin : ColorTypePlugin {
     }
 
     override fun createPrePasteItem(
-        pasteId: Long,
         itemIndex: Int,
         identifier: String,
         pasteTransferable: PasteTransferable,

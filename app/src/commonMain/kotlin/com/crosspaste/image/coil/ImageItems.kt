@@ -58,6 +58,6 @@ class ImageKeyer : Keyer<ImageItem> {
         data: ImageItem,
         options: Options,
     ): String {
-        return "${data.pasteFileCoordinate.pasteId}_${data.pasteFileCoordinate.filePath}_${data.useThumbnail}"
+        return "${data.pasteFileCoordinate.id}_${data.pasteFileCoordinate.filePath}_${data.useThumbnail}"
     }
 }

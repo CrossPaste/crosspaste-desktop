@@ -69,10 +69,9 @@ fun ShortcutKeysContentView() {
         Column(
             modifier =
                 Modifier.verticalScroll(scrollState)
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    .padding(vertical = 16.dp),
         ) {
-            Spacer(modifier = Modifier.height(20.dp))
-
             Column(
                 modifier =
                     Modifier.fillMaxSize()
@@ -169,7 +168,7 @@ fun ShortcutKeyRow(name: String) {
                 .padding(horizontal = 12.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        SettingsText(copywriter.getText(name))
+        SettingsText(text = copywriter.getText(name))
         Spacer(modifier = Modifier.weight(1f))
 
         val shortcutKeysListener = koinInject<ShortcutKeysListener>()

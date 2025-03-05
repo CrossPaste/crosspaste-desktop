@@ -33,7 +33,6 @@ class SerializerTest {
 
         val pasteData =
             PasteData(
-                pasteId = 0,
                 pasteAppearItem = textPasteItem,
                 pasteCollection = PasteCollection(listOf()),
                 pasteType = PasteType.TEXT_TYPE.type,
@@ -48,7 +47,6 @@ class SerializerTest {
         val json = jsonUtils.JSON.encodeToString(pasteData)
         println(json)
         val newPasteData: PasteData = jsonUtils.JSON.decodeFromString(json)
-        assertEquals(pasteData.pasteId, newPasteData.pasteId)
         val newTextPasteItem = newPasteData.pasteAppearItem
         assertTrue(newTextPasteItem is TextPasteItem)
         assertEquals(textPasteItem.text, newTextPasteItem.text)

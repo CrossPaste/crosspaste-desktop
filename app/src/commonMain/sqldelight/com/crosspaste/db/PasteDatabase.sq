@@ -10,7 +10,6 @@ CREATE TABLE IF NOT EXISTS PasteDataEntity (
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     appInstanceId TEXT NOT NULL,
     favorite INTEGER AS Boolean NOT NULL,
-    pasteId INTEGER NOT NULL,
     pasteAppearItem TEXT,
     pasteCollection TEXT NOT NULL,
     pasteType INTEGER NOT NULL DEFAULT -1,
@@ -43,35 +42,45 @@ END;
 CREATE INDEX IF NOT EXISTS IdxPasteDataStateCreateTime ON PasteDataEntity(pasteState, createTime);
 CREATE INDEX IF NOT EXISTS IdxPasteDataFavorite ON PasteDataEntity(favorite) WHERE pasteState != -1;
 CREATE INDEX IF NOT EXISTS IdxPasteDataHashType ON PasteDataEntity(hash, pasteType) WHERE pasteState != -1;
-CREATE INDEX IF NOT EXISTS IdxPasteDataInstancePasteId ON PasteDataEntity(appInstanceId, pasteId) WHERE pasteState != -1;
+CREATE INDEX IF NOT EXISTS IdxPasteDataInstancePasteId ON PasteDataEntity(appInstanceId) WHERE pasteState != -1;
 CREATE INDEX IF NOT EXISTS IdxPasteDataType ON PasteDataEntity(pasteType) WHERE pasteState != -1;
 
 createPasteDataEntity:
-INSERT INTO PasteDataEntity(appInstanceId, favorite, pasteId, pasteAppearItem, pasteCollection, pasteType, source, size, hash, createTime, pasteSearchContent, pasteState, remote)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO PasteDataEntity(appInstanceId, favorite, pasteAppearItem, pasteCollection, pasteType, source, size, hash, createTime, pasteSearchContent, pasteState, remote)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 getLastId:
 SELECT last_insert_rowid();
 
-getAllPasteData:
-SELECT * FROM PasteDataEntity WHERE pasteState != -1;
+getBatchPasteData:
+SELECT * FROM PasteDataEntity
+WHERE id > :id
+ORDER BY id ASC
+LIMIT :limit;
 
-getMaxPasteId:
-SELECT MAX(id) FROM PasteDataEntity;
+getBatchExportPasteData:
+SELECT * FROM PasteDataEntity
+WHERE id > :id AND
+pasteState != -1 AND
+pasteType IN :types AND
+CASE WHEN :onlyFavorite THEN favorite = 1 ELSE TRUE END
+ORDER BY id ASC
+LIMIT :limit;
+
+getExportNum:
+SELECT count(*) FROM PasteDataEntity
+WHERE pasteState != -1 AND
+pasteType IN :types AND
+CASE WHEN :onlyFavorite THEN favorite = 1 ELSE TRUE END;
 
 getPasteData:
 SELECT * FROM PasteDataEntity WHERE id = :id AND pasteState IN :states;
-
-getPasteDataByAppInstanceIdAndPasteId:
-SELECT * FROM PasteDataEntity WHERE appInstanceId = ? AND pasteId = ? AND pasteState != -1;
 
 getPasteDataListLimit:
 SELECT * FROM PasteDataEntity WHERE pasteState != -1 ORDER BY createTime DESC LIMIT ?;
 
 updateFavorite:
 UPDATE PasteDataEntity SET favorite = ? WHERE id = ?;
-
-
 
 queryNoFavorite:
 SELECT id FROM PasteDataEntity
@@ -187,6 +196,13 @@ SET pasteAppearItem = :pasteAppearItem,
     pasteSearchContent = :pasteSearchContent,
     size = :size,
     hash = :hash
+WHERE id = :id;
+
+updateRemotePasteDataWithFile:
+UPDATE PasteDataEntity
+SET pasteAppearItem = :pasteAppearItem,
+    pasteCollection = :pasteCollection,
+    pasteSearchContent = :pasteSearchContent
 WHERE id = :id;
 
 change:

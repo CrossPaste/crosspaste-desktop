@@ -75,8 +75,8 @@ import com.crosspaste.net.ServerModule
 import com.crosspaste.net.SyncApi
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.TelnetHelper
+import com.crosspaste.net.clientapi.PasteClientApi
 import com.crosspaste.net.clientapi.PullClientApi
-import com.crosspaste.net.clientapi.SendPasteClientApi
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.exception.DesktopExceptionHandler
 import com.crosspaste.net.exception.ExceptionHandler
@@ -92,11 +92,11 @@ import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.DefaultPasteSyncProcessManager
 import com.crosspaste.paste.DesktopCacheManager
 import com.crosspaste.paste.DesktopCurrentPaste
-import com.crosspaste.paste.DesktopPasteIDGeneratorFactory
 import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.DesktopTransferableConsumer
 import com.crosspaste.paste.DesktopTransferableProducer
-import com.crosspaste.paste.PasteIDGenerator
+import com.crosspaste.paste.PasteExportService
+import com.crosspaste.paste.PasteImportService
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.TransferableConsumer
@@ -228,7 +228,6 @@ class DesktopCrossPasteModule(
             single<ImageWriter<BufferedImage>> { DesktopImageWriter }
             single<KLogger> { klogger }
             single<LocaleUtils> { DesktopLocaleUtils }
-            single<PasteIDGenerator> { DesktopPasteIDGeneratorFactory(get()).createIDGenerator() }
             single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
             single<ReadWriteConfig<Int>>(named("readWritePort")) { ReadWritePort(get()) }
             single<SyncInfoFactory> { SyncInfoFactory(get(), get()) }
@@ -282,7 +281,7 @@ class DesktopCrossPasteModule(
             single<PasteBonjourService> { DesktopPasteBonjourService(get(), get(), get()) }
             single<PasteClient> { PasteClient(get<AppInfo>(), get(), get()) }
             single<PullClientApi> { PullClientApi(get(), get()) }
-            single<SendPasteClientApi> { SendPasteClientApi(get(), get()) }
+            single<PasteClientApi> { PasteClientApi(get(), get()) }
             single<Server> {
                 DesktopPasteServer(
                     get(named("readWritePort")),
@@ -362,6 +361,8 @@ class DesktopCrossPasteModule(
             single<PasteboardService> {
                 getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get())
             }
+            single<PasteExportService> { PasteExportService(get(), get(), get(), get()) }
+            single<PasteImportService> { PasteImportService(get(), get(), get(), get()) }
             single<PasteSyncProcessManager<Long>> { DefaultPasteSyncProcessManager() }
             single<TaskExecutor> {
                 TaskExecutor(
@@ -388,7 +389,6 @@ class DesktopCrossPasteModule(
             }
             single<TransferableConsumer> {
                 DesktopTransferableConsumer(
-                    get(),
                     get(),
                     get(),
                     listOf(

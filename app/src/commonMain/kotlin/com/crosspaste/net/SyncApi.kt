@@ -2,7 +2,7 @@ package com.crosspaste.net
 
 object SyncApi {
 
-    const val VERSION: Int = 2
+    const val VERSION: Int = 3
 
     val SCHEMA =
         """

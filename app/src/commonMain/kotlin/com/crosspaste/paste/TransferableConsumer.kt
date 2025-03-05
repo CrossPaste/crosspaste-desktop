@@ -18,7 +18,6 @@ interface TransferableConsumer {
     fun getPlugin(identity: String): PasteTypePlugin?
 
     fun preCollect(
-        pasteId: Long,
         dataFlavorMap: Map<String, List<PasteDataFlavor>>,
         pasteTransferable: PasteTransferable,
         pasteCollector: PasteCollector,
@@ -30,7 +29,6 @@ interface TransferableConsumer {
                 val plugin = getPlugin(identity) ?: continue
                 if (pasteCollector.needPreCollectionItem(itemIndex, plugin::class)) {
                     plugin.createPrePasteItem(
-                        pasteId = pasteId,
                         itemIndex = itemIndex,
                         identifier = identity,
                         pasteTransferable = pasteTransferable,

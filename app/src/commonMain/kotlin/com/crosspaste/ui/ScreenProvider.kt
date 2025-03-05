@@ -17,7 +17,13 @@ interface ScreenProvider {
     fun DevicesScreen()
 
     @Composable
+    fun ExportScreen()
+
+    @Composable
     fun HomeScreen()
+
+    @Composable
+    fun ImportScreen()
 
     // openTopBar is used on mobile to expand the top bar
     // Desktop does not need to do anything

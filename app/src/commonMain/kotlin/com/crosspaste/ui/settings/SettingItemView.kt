@@ -53,7 +53,7 @@ fun SettingItemView(
                 Modifier.wrapContentWidth()
                     .horizontalScroll(rememberScrollState()),
         ) {
-            SettingsText(copywriter.getText(text))
+            SettingsText(text = copywriter.getText(text))
         }
         Spacer(modifier = Modifier.weight(1f).widthIn(min = 8.dp))
 

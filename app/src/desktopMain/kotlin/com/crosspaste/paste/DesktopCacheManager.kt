@@ -1,7 +1,6 @@
 package com.crosspaste.paste
 
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.dto.pull.PullFilesKey
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilesIndex
 import com.crosspaste.utils.DateUtils
@@ -21,23 +20,23 @@ class DesktopCacheManager(
 
     override val dateUtils: DateUtils = getDateUtils()
 
-    private val filesIndexCache: LoadingCache<PullFilesKey, FilesIndex> =
+    private val filesIndexCache: LoadingCache<Long, FilesIndex> =
         CacheBuilder.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(5, TimeUnit.MINUTES)
             .build(
-                object : CacheLoader<PullFilesKey, FilesIndex>() {
-                    override fun load(key: PullFilesKey): FilesIndex {
+                object : CacheLoader<Long, FilesIndex>() {
+                    override fun load(key: Long): FilesIndex {
                         return loadKey(key)
                     }
                 },
             )
 
-    override suspend fun getFilesIndex(pullFilesKey: PullFilesKey): FilesIndex? {
+    override suspend fun getFilesIndex(id: Long): FilesIndex? {
         return try {
-            filesIndexCache.get(pullFilesKey)
+            filesIndexCache.get(id)
         } catch (e: Exception) {
-            logger.warn(e) { "getFilesIndex failed: $pullFilesKey" }
+            logger.warn(e) { "getFilesIndex failed: $id" }
             null
         }
     }

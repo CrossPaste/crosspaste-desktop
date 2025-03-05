@@ -7,18 +7,23 @@ import com.crosspaste.paste.item.PasteText
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.serializer.PasteDataSerializer
 import com.crosspaste.utils.DateUtils
+import com.crosspaste.utils.getJsonUtils
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.long
+import kotlinx.serialization.json.put
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
 
 @Serializable(with = PasteDataSerializer::class)
 data class PasteData(
-    @Transient
     val id: Long = -1L,
     val appInstanceId: String,
     val favorite: Boolean = false,
-    val pasteId: Long,
     val pasteAppearItem: PasteItem? = null,
     val pasteCollection: PasteCollection,
     val pasteType: Int,
@@ -36,11 +41,31 @@ data class PasteData(
 ) {
 
     companion object {
+
+        private val jsonUtils = getJsonUtils()
+
+        fun fromJson(json: String): PasteData {
+            val jsonObject = jsonUtils.JSON.parseToJsonElement(json).jsonObject
+            return PasteData(
+                appInstanceId = jsonObject["appInstanceId"]!!.jsonPrimitive.content,
+                favorite = jsonObject["favorite"]!!.jsonPrimitive.boolean,
+                pasteAppearItem = jsonObject["pasteAppearItem"]?.let {
+                    PasteItem.fromJson(it.jsonPrimitive.content)
+                },
+                pasteCollection = PasteCollection.fromJson(
+                    jsonObject["pasteCollection"]!!.jsonPrimitive.content
+                ),
+                pasteType = jsonObject["pasteType"]!!.jsonPrimitive.long.toInt(),
+                source = jsonObject["source"]?.jsonPrimitive?.content,
+                size = jsonObject["size"]!!.jsonPrimitive.long,
+                hash = jsonObject["hash"]!!.jsonPrimitive.content,
+            )
+        }
+
         fun mapper(
             id: Long,
             appInstanceId: String,
             favorite: Boolean,
-            pasteId: Long,
             pasteAppearItem: String?,
             pasteCollection: String,
             pasteType: Long,
@@ -56,7 +81,6 @@ data class PasteData(
                 id,
                 appInstanceId,
                 favorite,
-                pasteId,
                 pasteAppearItem?.let { PasteItem.fromJson(it) },
                 PasteCollection.fromJson(pasteCollection),
                 pasteType.toInt(),
@@ -113,35 +137,6 @@ data class PasteData(
         return mutableList.toList()
     }
 
-    fun asSyncPasteData(): PasteData {
-        val now = DateUtils.nowEpochMilliseconds()
-
-        val pasteCoordinate = PasteCoordinate(appInstanceId, pasteId, now)
-
-        val newPasteAppearItem = pasteAppearItem?.bind(pasteCoordinate)
-
-        val newPasteCollection = pasteCollection.bind(pasteCoordinate)
-
-        return PasteData(
-            appInstanceId = appInstanceId,
-            favorite = favorite,
-            pasteId = pasteId,
-            pasteAppearItem = newPasteAppearItem,
-            pasteCollection = newPasteCollection,
-            pasteType = pasteType,
-            source = source,
-            size = size,
-            hash = hash,
-            createTime = now,
-            pasteSearchContent = createSearchContent(
-                source,
-                newPasteAppearItem?.getSearchContent(),
-            ),
-            pasteState = pasteState,
-            remote = true,
-        )
-    }
-
     fun existFileResource(): Boolean {
         return getPasteAppearItems().any { it is PasteFiles }
     }
@@ -150,8 +145,8 @@ data class PasteData(
         return PasteType.fromType(this.pasteType).name
     }
 
-    fun getPasteCoordinate(): PasteCoordinate {
-        return PasteCoordinate(appInstanceId, pasteId, createTime)
+    fun getPasteCoordinate(id: Long? = null): PasteCoordinate {
+        return PasteCoordinate(id ?: this.id, appInstanceId, createTime)
     }
 
     fun getTitle(): String {
@@ -183,5 +178,18 @@ data class PasteData(
                 }
             }
         }
+    }
+
+    fun toJson(): String {
+        return buildJsonObject {
+            put("appInstanceId", appInstanceId)
+            put("favorite", favorite)
+            pasteAppearItem?.toJson()?.let { put("pasteAppearItem", it) }
+            put("pasteCollection", pasteCollection.toJson())
+            put("pasteType", pasteType)
+            source?.let { put("source", it) }
+            put("size", size)
+            put("hash", hash)
+        }.toString()
     }
 }

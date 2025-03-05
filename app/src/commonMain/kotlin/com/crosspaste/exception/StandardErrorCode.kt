@@ -24,6 +24,7 @@ enum class StandardErrorCode(code: Int, errorType: ErrorType) : ErrorCodeSupplie
     PULL_FILE_CHUNK_TASK_FAIL(1008, ErrorType.EXTERNAL_ERROR),
     PULL_ICON_TASK_FAIL(1009, ErrorType.EXTERNAL_ERROR),
     NOT_FOUND_FILES_INDEX(1010, ErrorType.EXTERNAL_ERROR),
+    NOT_MATCH_APP_INSTANCE_ID(1011, ErrorType.EXTERNAL_ERROR),
 
     SIGN_INVALID(2000, ErrorType.EXTERNAL_ERROR),
     EXCHANGE_FAIL(2001, ErrorType.EXTERNAL_ERROR),
@@ -37,11 +38,13 @@ enum class StandardErrorCode(code: Int, errorType: ErrorType) : ErrorCodeSupplie
     SYNC_PASTE_ERROR(3000, ErrorType.EXTERNAL_ERROR),
     SYNC_PASTE_NOT_FOUND_RESOURCE(3001, ErrorType.EXTERNAL_ERROR),
     SYNC_PASTE_NOT_FOUND_DATA(3002, ErrorType.EXTERNAL_ERROR),
-    SYNC_NOT_MATCH_APP_INSTANCE_ID(3003, ErrorType.EXTERNAL_ERROR),
 
     SYNC_NOT_ALLOW_RECEIVE(4000, ErrorType.USER_ERROR),
     SYNC_NOT_ALLOW_SEND(4001, ErrorType.USER_ERROR),
     CANT_GET_SYNC_ADDRESS(4002, ErrorType.USER_ERROR),
+
+    EXPORT_FAIL(5000, ErrorType.INTERNAL_ERROR),
+    IMPORT_FAIL(5001, ErrorType.INTERNAL_ERROR),
     ;
 
     private val errorCode: ErrorCode = ErrorCode(code, name, errorType)

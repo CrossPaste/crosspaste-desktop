@@ -75,7 +75,6 @@ class PasteCollector(
     }
 
     suspend fun createPrePasteData(
-        pasteId: Long,
         source: String?,
         remote: Boolean,
     ): Long? {
@@ -91,7 +90,6 @@ class PasteCollector(
             val pasteData =
                 PasteData(
                     appInstanceId = appInfo.appInstanceId,
-                    pasteId = pasteId,
                     pasteCollection = pasteCollection,
                     pasteType = PasteType.INVALID_TYPE.type,
                     source = source,

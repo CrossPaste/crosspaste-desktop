@@ -15,9 +15,9 @@ interface PasteFiles {
 
     val relativePathList: List<String>
 
+    val size: Long
+
     fun getAppFileType(): AppFileType
 
     fun getFilePaths(userDataPathProvider: UserDataPathProvider): List<Path>
-
-    fun getPasteFiles(userDataPathProvider: UserDataPathProvider): List<PasteFile>
 }

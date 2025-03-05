@@ -9,7 +9,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 class DesktopTransferableConsumer(
     private val appInfo: AppInfo,
     private val pasteDao: PasteDao,
-    private val idGenerator: PasteIDGenerator,
     pasteTypePlugins: List<PasteTypePlugin>,
 ) : TransferableConsumer {
 
@@ -39,8 +38,6 @@ class DesktopTransferableConsumer(
         remote: Boolean,
     ) {
         logSuspendExecutionTime(logger, "consume") {
-            val pasteId = idGenerator.nextID()
-
             val dataFlavorMap: Map<String, List<PasteDataFlavor>> = createDataFlavorMap(pasteTransferable)
 
             dataFlavorMap[LocalOnlyFlavor.humanPresentableName]?.let {
@@ -51,10 +48,10 @@ class DesktopTransferableConsumer(
             val pasteCollector = PasteCollector(dataFlavorMap.size, appInfo, pasteDao)
 
             try {
-                preCollect(pasteId, dataFlavorMap, pasteTransferable, pasteCollector)
-                pasteCollector.createPrePasteData(pasteId, source, remote = remote)?.let {
-                    updatePasteData(pasteId, dataFlavorMap, pasteTransferable, pasteCollector)
-                    pasteCollector.completeCollect(it)
+                preCollect(dataFlavorMap, pasteTransferable, pasteCollector)
+                pasteCollector.createPrePasteData(source, remote = remote)?.let { id ->
+                    updatePasteData(id, dataFlavorMap, pasteTransferable, pasteCollector)
+                    pasteCollector.completeCollect(id)
                 }
             } catch (e: Exception) {
                 logger.error(e) { "Failed to consume transferable" }

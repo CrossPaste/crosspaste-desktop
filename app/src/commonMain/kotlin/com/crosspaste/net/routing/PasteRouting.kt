@@ -42,7 +42,7 @@ fun Routing.pasteRouting(
 
                 scope.launch {
                     pasteboardService.tryWriteRemotePasteboard(
-                        pasteData.asSyncPasteData(),
+                        pasteData,
                     )
                 }
                 logger.debug { "sync handler ($appInstanceId) receive pasteData: $pasteData" }

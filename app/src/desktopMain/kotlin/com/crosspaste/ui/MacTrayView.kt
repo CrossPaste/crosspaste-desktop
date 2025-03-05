@@ -147,6 +147,24 @@ object MacTrayView {
         )
 
         popup.add(
+            createMenuItem(copywriter.getText("export")) {
+                mainCoroutineDispatcher.launch(CoroutineName("Open export")) {
+                    appWindowManager.activeMainWindow()
+                    appWindowManager.toScreen(ScreenType.EXPORT)
+                }
+            },
+        )
+
+        popup.add(
+            createMenuItem(copywriter.getText("import")) {
+                mainCoroutineDispatcher.launch(CoroutineName("Open import")) {
+                    appWindowManager.activeMainWindow()
+                    appWindowManager.toScreen(ScreenType.IMPORT)
+                }
+            },
+        )
+
+        popup.add(
             createMenuItem(copywriter.getText("about")) {
                 mainCoroutineDispatcher.launch(CoroutineName("Open about")) {
                     appWindowManager.activeMainWindow()

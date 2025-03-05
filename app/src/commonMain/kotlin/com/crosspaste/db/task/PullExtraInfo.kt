@@ -5,7 +5,10 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 @SerialName("pull")
-class PullExtraInfo : PasteTaskExtraInfo {
+class PullExtraInfo(
+    @SerialName("id")
+    val id: Long,
+) : PasteTaskExtraInfo {
 
     @SerialName("executionHistories")
     override val executionHistories: MutableList<ExecutionHistory> = mutableListOf()

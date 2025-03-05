@@ -16,6 +16,7 @@ import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.long
 import kotlinx.serialization.json.put
 import okio.Path
 import okio.Path.Companion.toPath
@@ -53,7 +54,7 @@ data class ImagesPasteItem(
         identifiers = jsonObject["identifiers"]!!.jsonPrimitive.content.split(","),
         count = fileInfoTreeMap.values.sumOf { it.getCount() },
         hash = jsonObject["hash"]!!.jsonPrimitive.content,
-        size = jsonObject["size"]!!.jsonPrimitive.content.toLong(),
+        size = jsonObject["size"]!!.jsonPrimitive.long,
         basePath = jsonObject["basePath"]?.jsonPrimitive?.content,
         relativePathList =
             jsonObject["relativePathList"]!!.jsonArray.map {
@@ -73,20 +74,13 @@ data class ImagesPasteItem(
         }
     }
 
-    override fun getPasteFiles(userDataPathProvider: UserDataPathProvider): List<PasteFile> {
-        return getFilePaths(userDataPathProvider).flatMap { path ->
-            val fileTree = fileInfoTreeMap[path.name]!!
-            fileTree.getPasteFileList(path)
-        }
-    }
-
     override fun getPasteType(): PasteType {
         return PasteType.IMAGE_TYPE
     }
 
     override fun getSearchContent(): String {
-        return relativePathList.joinToString(separator = " ") { path ->
-            path.toPath().name.lowercase()
+        return fileInfoTreeMap.keys.joinToString(separator = " ") {
+            it.lowercase()
         }
     }
 
@@ -98,30 +92,24 @@ data class ImagesPasteItem(
 
     // use to adapt relative paths when relative is no storage in crossPaste
     override fun bind(pasteCoordinate: PasteCoordinate): PasteItem {
-        val noStorageInCrossPaste = relativePathList.any { it.toPath().segments.size == 1 }
-        if (noStorageInCrossPaste) {
-            val fileUtils = getFileUtils()
-            val newRelativePathList =
-                relativePathList.map { relativePath ->
-                    val path = relativePath.toPath()
-                    val fileName = path.name
-                    fileUtils.createPasteRelativePath(
-                        pasteCoordinate = pasteCoordinate,
-                        fileName = fileName,
-                    )
-                }
-            return FilesPasteItem(
-                identifiers = identifiers,
-                count = count,
-                hash = hash,
-                size = size,
-                basePath = basePath,
-                relativePathList = newRelativePathList,
-                fileInfoTreeMap = fileInfoTreeMap,
-            )
-        } else {
-            return this
-        }
+        val newRelativePathList =
+            relativePathList.map { relativePath ->
+                val path = relativePath.toPath()
+                val fileName = path.name
+                fileUtils.createPasteRelativePath(
+                    pasteCoordinate = pasteCoordinate,
+                    fileName = fileName,
+                )
+            }
+        return FilesPasteItem(
+            identifiers = identifiers,
+            count = count,
+            hash = hash,
+            size = size,
+            basePath = basePath,
+            relativePathList = newRelativePathList,
+            fileInfoTreeMap = fileInfoTreeMap,
+        )
     }
 
     override fun update(

@@ -40,7 +40,6 @@ class DesktopHtmlTypePlugin(
     }
 
     override fun createPrePasteItem(
-        pasteId: Long,
         itemIndex: Int,
         identifier: String,
         pasteTransferable: PasteTransferable,
@@ -75,8 +74,8 @@ class DesktopHtmlTypePlugin(
                 fileUtils.createPasteRelativePath(
                     pasteCoordinate =
                         PasteCoordinate(
+                            id = pasteId,
                             appInstanceId = appInfo.appInstanceId,
-                            pasteId = pasteId,
                         ),
                     fileName = "html2Image.png",
                 )

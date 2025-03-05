@@ -36,8 +36,8 @@ import com.crosspaste.app.AppExitService
 import com.crosspaste.app.AppRestartService
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.ExitMode
+import com.crosspaste.app.FileSelectionMode
 import com.crosspaste.config.ConfigManager
-import com.crosspaste.db.DriverFactory
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
@@ -64,6 +64,8 @@ fun SetStoragePathView() {
     val notificationManager = koinInject<NotificationManager>()
     val dialogService = koinInject<DialogService>()
 
+    val fileUtils = getFileUtils()
+
     Text(
         modifier =
             Modifier.wrapContentSize()
@@ -85,7 +87,7 @@ fun SetStoragePathView() {
 
         val currentStoragePath by remember {
             mutableStateOf(
-                userDataPathProvider.getUserDataPath().toString(),
+                userDataPathProvider.getUserDataPath(),
             )
         }
 
@@ -117,8 +119,7 @@ fun SetStoragePathView() {
                 modifier =
                     Modifier.fillMaxWidth().wrapContentHeight()
                         .clickable {
-                            val chooseText = copywriter.getText("selecting_storage_directory")
-                            appWindowManager.openFileChooser(chooseText, currentStoragePath, { path ->
+                            val action: (Path) -> Unit = { path ->
                                 dialogService.pushDialog(
                                     PasteDialog(
                                         key = "storagePath",
@@ -128,14 +129,36 @@ fun SetStoragePathView() {
                                         SetStoragePathDialogView(path)
                                     },
                                 )
-                            }) {
+                            }
+                            val errorAction: (String) -> Unit = { message ->
                                 notificationManager.sendNotification(
-                                    message = copywriter.getText(it),
+                                    message = copywriter.getText(message),
                                     messageType = MessageType.Error,
                                 )
                             }
+                            val chooseText = copywriter.getText("selecting_storage_directory")
+                            appWindowManager.openFileChooser(
+                                FileSelectionMode.DIRECTORY_ONLY,
+                                chooseText,
+                                currentStoragePath,
+                            ) { path ->
+                                if (path.toString()
+                                        .startsWith(currentStoragePath.normalized().toString())
+                                ) {
+                                    errorAction("cant_select_child_directory")
+                                } else if (!fileUtils.existFile(path)) {
+                                    errorAction("directory_not_exist")
+                                } else if (fileUtils.listFiles(path) { it ->
+                                        !it.name.startsWith(".")
+                                    }.isNotEmpty()
+                                ) {
+                                    errorAction("directory_not_empty")
+                                } else {
+                                    action(path)
+                                }
+                            }
                         },
-                value = currentStoragePath,
+                value = currentStoragePath.toString(),
                 onValueChange = {},
                 enabled = useDefaultStoragePath,
                 readOnly = useDefaultStoragePath,
@@ -169,7 +192,6 @@ fun SetStoragePathView() {
 fun SetStoragePathDialogView(path: Path) {
     val exitApplication = LocalExitApplication.current
     val dialogService = koinInject<DialogService>()
-    val driverFactory = koinInject<DriverFactory>()
     val userDataPathProvider = koinInject<UserDataPathProvider>()
     val appExitService = koinInject<AppExitService>()
     val appRestartService = koinInject<AppRestartService>()
@@ -177,8 +199,6 @@ fun SetStoragePathDialogView(path: Path) {
     var isMigration by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf(0.0f) }
     val coroutineScope = rememberCoroutineScope()
-
-    val fileUtils = getFileUtils()
 
     val confirmAction = {
         appExitService.beforeExitList.clear()

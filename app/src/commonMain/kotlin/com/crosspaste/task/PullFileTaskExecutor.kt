@@ -61,11 +61,11 @@ class PullFileTaskExecutor(
             val fileItems = pasteData.getPasteAppearItems().filter { it is PasteFiles }
             val appInstanceId = pasteData.appInstanceId
             val dateString = dateUtils.getYMD(dateUtils.epochMillisecondsToLocalDateTime(pasteData.createTime))
-            val pasteId = pasteData.pasteId
+            val id = pasteData.id
             val filesIndexBuilder = FilesIndexBuilder(CHUNK_SIZE)
             for (pasteAppearItem in fileItems) {
                 val pasteFiles = pasteAppearItem as PasteFiles
-                userDataPathProvider.resolve(appInstanceId, dateString, pasteId, pasteFiles, true, filesIndexBuilder)
+                userDataPathProvider.resolve(appInstanceId, dateString, id, pasteFiles, true, filesIndexBuilder)
             }
             val filesIndex = filesIndexBuilder.build()
 
@@ -131,8 +131,8 @@ class PullFileTaskExecutor(
                     {
                         try {
                             filesIndex.getChunk(chunkIndex)?.let { filesChunk ->
-                                val pullFileRequest = PullFileRequest(pasteData.appInstanceId, pasteData.pasteId, chunkIndex)
-                                val result = pullClientApi.pullFile(pullFileRequest, toUrl)
+                                val pullFileRequest = PullFileRequest(pullExtraInfo.id, chunkIndex)
+                                val result = pullClientApi.pullFile(pullFileRequest, pasteData.appInstanceId, toUrl)
                                 if (result is SuccessResult) {
                                     val byteReadChannel = result.getResult<ByteReadChannel>()
                                     fileUtils.writeFilesChunk(filesChunk, byteReadChannel)
