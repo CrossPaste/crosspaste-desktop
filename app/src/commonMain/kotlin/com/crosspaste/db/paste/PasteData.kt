@@ -145,8 +145,8 @@ data class PasteData(
         return PasteType.fromType(this.pasteType).name
     }
 
-    fun getPasteCoordinate(): PasteCoordinate {
-        return PasteCoordinate(id, appInstanceId, createTime)
+    fun getPasteCoordinate(id: Long? = null): PasteCoordinate {
+        return PasteCoordinate(id ?: this.id, appInstanceId, createTime)
     }
 
     fun getTitle(): String {

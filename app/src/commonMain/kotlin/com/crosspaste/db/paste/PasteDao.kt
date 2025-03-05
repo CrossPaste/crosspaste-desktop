@@ -311,7 +311,7 @@ class PasteDao(
                 tasks.add(taskDao.createTask(id, TaskType.RTF_TO_IMAGE_TASK))
             }
         } else {
-            val pasteCoordinate = pasteData.getPasteCoordinate()
+            val pasteCoordinate = pasteData.getPasteCoordinate(id)
             val pasteAppearItem = pasteData.pasteAppearItem
             val pasteCollection = pasteData.pasteCollection
             val source = pasteData.source
