@@ -36,6 +36,7 @@ import com.crosspaste.app.AppExitService
 import com.crosspaste.app.AppRestartService
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.ExitMode
+import com.crosspaste.app.FileSelectionMode
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
@@ -136,7 +137,11 @@ fun SetStoragePathView() {
                                 )
                             }
                             val chooseText = copywriter.getText("selecting_storage_directory")
-                            appWindowManager.openFileChooser(chooseText, currentStoragePath) { path ->
+                            appWindowManager.openFileChooser(
+                                FileSelectionMode.DIRECTORY_ONLY,
+                                chooseText,
+                                currentStoragePath,
+                            ) { path ->
                                 if (path.toString()
                                         .startsWith(currentStoragePath.normalized().toString())
                                 ) {

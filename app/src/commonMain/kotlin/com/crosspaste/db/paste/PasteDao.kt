@@ -12,6 +12,7 @@ import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.db.task.TaskType
 import com.crosspaste.paste.CurrentPaste
+import com.crosspaste.paste.PasteExportParam
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.task.TaskExecutor
 import com.crosspaste.utils.DateUtils
@@ -44,10 +45,6 @@ class PasteDao(
 
     private val markDeleteBatchNum = 50L
 
-    fun getMaxPasteId(): Long {
-        return pasteDatabaseQueries.getMaxPasteId().executeAsOne().MAX ?: 0L
-    }
-
     fun getNoDeletePasteData(id: Long): PasteData? {
         return pasteDatabaseQueries.getPasteData(
             id,
@@ -64,25 +61,18 @@ class PasteDao(
         ).executeAsOneOrNull()
     }
 
-    fun getDeletePasteData(id: Long): PasteData? {
+    fun getLoadedPasteData(id: Long): PasteData? {
         return pasteDatabaseQueries.getPasteData(
             id,
-            listOf(PasteState.DELETED.toLong()),
+            listOf(PasteState.LOADED.toLong()),
             PasteData::mapper,
         ).executeAsOneOrNull()
     }
 
-    fun getAllPasteData(): List<PasteData> {
-        return pasteDatabaseQueries.getAllPasteData(PasteData::mapper).executeAsList()
-    }
-
-    fun getPasteData(
-        appInstanceId: String,
-        pasteId: Long,
-    ): PasteData? {
-        return pasteDatabaseQueries.getPasteDataByAppInstanceIdAndPasteId(
-            appInstanceId,
-            pasteId,
+    fun getDeletePasteData(id: Long): PasteData? {
+        return pasteDatabaseQueries.getPasteData(
+            id,
+            listOf(PasteState.DELETED.toLong()),
             PasteData::mapper,
         ).executeAsOneOrNull()
     }
@@ -99,7 +89,6 @@ class PasteDao(
             pasteDatabaseQueries.createPasteDataEntity(
                 pasteData.appInstanceId,
                 pasteData.favorite,
-                pasteData.pasteId,
                 pasteData.pasteAppearItem?.toJson(),
                 pasteData.pasteCollection.toJson(),
                 pasteData.pasteType.toLong(),
@@ -113,6 +102,15 @@ class PasteDao(
             )
             pasteDatabaseQueries.getLastId().executeAsOne()
         }
+    }
+
+    fun updateFilePath(pasteData: PasteData) {
+        pasteDatabaseQueries.updateRemotePasteDataWithFile(
+            pasteData.pasteAppearItem?.toJson(),
+            pasteData.pasteCollection.toJson(),
+            pasteData.pasteSearchContent,
+            pasteData.id,
+        )
     }
 
     private suspend fun batchMarkDelete(doQuery: () -> Query<Long>) {
@@ -211,6 +209,10 @@ class PasteDao(
         pasteDatabaseQueries.updatePasteAppearItem(id = id, pasteAppearItem = pasteItem.toJson())
     }
 
+    fun updatePasteState(id: Long, pasteState: Int) {
+        pasteDatabaseQueries.updatePasteDataState(pasteState.toLong(), id)
+    }
+
     fun getSizeByTimeLessThan(time: Long): Long {
         return pasteDatabaseQueries.getSizeByTimeLessThan(time).executeAsOne().SUM ?: 0L
     }
@@ -307,6 +309,26 @@ class PasteDao(
                 tasks.add(taskDao.createTask(id, TaskType.RTF_TO_IMAGE_TASK))
             }
         } else {
+            val pasteCoordinate = pasteData.getPasteCoordinate()
+            val pasteAppearItem = pasteData.pasteAppearItem
+            val pasteCollection = pasteData.pasteCollection
+            val source = pasteData.source
+
+            val newPasteAppearItem = pasteAppearItem?.bind(pasteCoordinate)
+            val newPasteCollection = pasteCollection.bind(pasteCoordinate)
+
+            val newPasteData = pasteData.copy(
+                id = id,
+                pasteAppearItem = newPasteAppearItem,
+                pasteCollection = newPasteCollection,
+                pasteSearchContent = PasteData.createSearchContent(
+                    source,
+                    pasteAppearItem?.getSearchContent(),
+                ),
+            )
+
+            updateFilePath(newPasteData)
+
             tasks.add(taskDao.createTask(id, TaskType.PULL_FILE_TASK))
         }
 
@@ -326,7 +348,7 @@ class PasteDao(
     ) {
         val tasks = mutableListOf<Long>()
         database.transactionWithResult {
-            pasteDatabaseQueries.updatePasteDataState(PasteState.LOADED.toLong(), id)
+            updatePasteState(id, PasteState.LOADING)
             getNoDeletePasteData(id)
         }?.let { pasteData ->
             tasks.addAll(markDeleteSameHash(id, pasteData.pasteType, pasteData.hash))
@@ -401,23 +423,50 @@ class PasteDao(
                 builder.add(item)
             }
         }
-        batchReadPasteData(read = doAdd)
+        batchReadPasteData(
+            readPasteDataList = { id, limit ->
+                pasteDatabaseQueries.getBatchPasteData(id, limit, PasteData::mapper)
+                    .executeAsList()
+            },
+            dealPasteData = doAdd)
         return builder.build()
     }
 
-    fun batchReadPasteData(batchNum: Long = 1000L, read: (PasteData) -> Unit): Long {
+    fun batchReadPasteData(
+        batchNum: Long = 1000L,
+        readPasteDataList: (Long, Long) -> List<PasteData>,
+        dealPasteData: (PasteData) -> Unit): Long {
         var id = -1L
         var count = 0L
         do {
-            val pasteDataList =
-                pasteDatabaseQueries.getBatchPasteData(id, batchNum, PasteData::mapper)
-                    .executeAsList()
+            val pasteDataList = readPasteDataList(id, batchNum)
             for (pasteData in pasteDataList) {
-                read(pasteData)
+                dealPasteData(pasteData)
             }
             count += pasteDataList.size
             pasteDataList.lastOrNull()?.id?.let { id = it }
         } while (pasteDataList.isNotEmpty())
         return count
+    }
+
+    fun getExportPasteData(
+        id: Long,
+        limit: Long,
+        pasteExportParam: PasteExportParam,
+    ): List<PasteData>  {
+        return pasteDatabaseQueries.getBatchExportPasteData(
+            id,
+            pasteExportParam.types,
+            pasteExportParam.onlyFavorite,
+            limit,
+            PasteData::mapper,
+        ).executeAsList()
+    }
+
+    fun getExportNum(pasteExportParam: PasteExportParam): Long {
+        return pasteDatabaseQueries.getExportNum(
+            pasteExportParam.types,
+            pasteExportParam.onlyFavorite,
+        ).executeAsOne()
     }
 }

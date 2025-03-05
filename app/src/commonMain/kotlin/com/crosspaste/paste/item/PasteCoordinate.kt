@@ -5,15 +5,15 @@ import com.crosspaste.utils.DateUtils
 import okio.Path
 
 open class PasteCoordinate(
+    open val id: Long,
     open val appInstanceId: String,
-    open val pasteId: Long,
     open val createTime: Long = DateUtils.nowEpochMilliseconds(),
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is PasteCoordinate) return false
 
-        if (pasteId != other.pasteId) return false
+        if (id != other.id) return false
         if (appInstanceId != other.appInstanceId) return false
         if (createTime != other.createTime) return false
 
@@ -21,7 +21,7 @@ open class PasteCoordinate(
     }
 
     override fun hashCode(): Int {
-        var result = pasteId.hashCode()
+        var result = id.hashCode()
         result = 31 * result + appInstanceId.hashCode()
         result = 31 * result + createTime.hashCode()
         return result
@@ -29,21 +29,21 @@ open class PasteCoordinate(
 }
 
 open class PasteFileCoordinate(
+    override val id: Long,
     override val appInstanceId: String,
-    override val pasteId: Long,
     override val createTime: Long = DateUtils.nowEpochMilliseconds(),
     open val filePath: Path,
-) : PasteCoordinate(appInstanceId, pasteId, createTime) {
+) : PasteCoordinate(id, appInstanceId, createTime) {
 
     constructor(pasteCoordinate: PasteCoordinate, filePath: Path) : this(
+        pasteCoordinate.id,
         pasteCoordinate.appInstanceId,
-        pasteCoordinate.pasteId,
         pasteCoordinate.createTime,
         filePath,
     )
 
     fun toPasteCoordinate(): PasteCoordinate {
-        return PasteCoordinate(appInstanceId, pasteId, createTime)
+        return PasteCoordinate(id, appInstanceId, createTime)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -51,7 +51,7 @@ open class PasteFileCoordinate(
         if (other !is PasteFileCoordinate) return false
         if (!super.equals(other)) return false
 
-        if (pasteId != other.pasteId) return false
+        if (id != other.id) return false
         if (appInstanceId != other.appInstanceId) return false
         if (createTime != other.createTime) return false
         if (filePath != other.filePath) return false
@@ -61,7 +61,7 @@ open class PasteFileCoordinate(
 
     override fun hashCode(): Int {
         var result = super.hashCode()
-        result = 31 * result + pasteId.hashCode()
+        result = 31 * result + id.hashCode()
         result = 31 * result + appInstanceId.hashCode()
         result = 31 * result + createTime.hashCode()
         result = 31 * result + filePath.hashCode()
@@ -70,23 +70,23 @@ open class PasteFileCoordinate(
 }
 
 class PasteFileInfoTreeCoordinate(
+    override val id: Long,
     override val appInstanceId: String,
-    override val pasteId: Long,
     override val createTime: Long = DateUtils.nowEpochMilliseconds(),
     override val filePath: Path,
     val fileInfoTree: FileInfoTree,
-) : PasteFileCoordinate(appInstanceId, pasteId, createTime, filePath) {
+) : PasteFileCoordinate(id, appInstanceId, createTime, filePath) {
 
     constructor(pasteCoordinate: PasteCoordinate, filePath: Path, fileInfoTree: FileInfoTree) : this(
+        pasteCoordinate.id,
         pasteCoordinate.appInstanceId,
-        pasteCoordinate.pasteId,
         pasteCoordinate.createTime,
         filePath,
         fileInfoTree,
     )
 
     fun toPasteFileCoordinate(): PasteFileCoordinate {
-        return PasteFileCoordinate(appInstanceId, pasteId, createTime, filePath)
+        return PasteFileCoordinate(id, appInstanceId, createTime, filePath)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -94,7 +94,7 @@ class PasteFileInfoTreeCoordinate(
         if (other !is PasteFileInfoTreeCoordinate) return false
         if (!super.equals(other)) return false
 
-        if (pasteId != other.pasteId) return false
+        if (id != other.id) return false
         if (appInstanceId != other.appInstanceId) return false
         if (createTime != other.createTime) return false
         if (filePath != other.filePath) return false
@@ -105,7 +105,7 @@ class PasteFileInfoTreeCoordinate(
 
     override fun hashCode(): Int {
         var result = super.hashCode()
-        result = 31 * result + pasteId.hashCode()
+        result = 31 * result + id.hashCode()
         result = 31 * result + appInstanceId.hashCode()
         result = 31 * result + createTime.hashCode()
         result = 31 * result + filePath.hashCode()

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -35,10 +36,19 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.FileSelectionMode
 import com.crosspaste.config.ConfigManager
+import com.crosspaste.db.paste.PasteType.Companion.COLOR_TYPE
+import com.crosspaste.db.paste.PasteType.Companion.FILE_TYPE
+import com.crosspaste.db.paste.PasteType.Companion.HTML_TYPE
+import com.crosspaste.db.paste.PasteType.Companion.IMAGE_TYPE
+import com.crosspaste.db.paste.PasteType.Companion.RTF_TYPE
+import com.crosspaste.db.paste.PasteType.Companion.TEXT_TYPE
+import com.crosspaste.db.paste.PasteType.Companion.URL_TYPE
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteExportParam
 import com.crosspaste.paste.PasteExportService
+import com.crosspaste.ui.base.Counter
 import com.crosspaste.ui.base.color
 import com.crosspaste.ui.base.file
 import com.crosspaste.ui.base.htmlOrRtf
@@ -46,7 +56,12 @@ import com.crosspaste.ui.base.image
 import com.crosspaste.ui.base.link
 import com.crosspaste.ui.base.text
 import com.crosspaste.ui.settings.SettingsText
+import com.crosspaste.utils.MB
+import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.mainDispatcher
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 
 @Composable
@@ -57,7 +72,9 @@ fun PasteExportContentView() {
 
     val pasteExportService = koinInject<PasteExportService>()
 
-    var allTypesSelected by remember { mutableStateOf(false) }
+    val fileUtils = getFileUtils()
+
+    var allTypesSelected by remember { mutableStateOf(true) }
     var textTypeSelected by remember { mutableStateOf(true) }
     var urlTypeSelected by remember { mutableStateOf(true) }
     var htmlTypeSelected by remember { mutableStateOf(true) }
@@ -66,15 +83,15 @@ fun PasteExportContentView() {
     var rtfTypeSelected by remember { mutableStateOf(true) }
     var colorTypeSelected by remember { mutableStateOf(true) }
 
-    var favoritesSelected by remember { mutableStateOf(true) }
+    var favoritesSelected by remember { mutableStateOf(false) }
     var sizeFilterSelected by remember { mutableStateOf(false) }
 
-    var maxFileSizeFilter by remember { mutableStateOf(configManager.config.maxSyncFileSize) }
+    var maxFileSize by remember { mutableStateOf(configManager.config.maxSyncFileSize) }
 
     var progressing by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf(0f) }
 
-    var coroutine = rememberCoroutineScope()
+    val coroutine = rememberCoroutineScope()
 
     Box(
         modifier =
@@ -96,9 +113,8 @@ fun PasteExportContentView() {
                 PasteTypeCheckbox(
                     type = "all_types",
                     selected = allTypesSelected,
-                ) {
-                    allTypesSelected = it
-                }
+                    onSelectedChange = { allTypesSelected = it },
+                )
 
                 if (!allTypesSelected) {
                     PasteTypeCheckbox(
@@ -106,77 +122,80 @@ fun PasteExportContentView() {
                         icon = text(),
                         selected = textTypeSelected,
                         startPadding = 48.dp,
-                    ) {
-                        textTypeSelected = it
-                    }
+                        onSelectedChange = { textTypeSelected = it },
+                    )
 
                     PasteTypeCheckbox(
                         type = "link",
                         icon = link(),
                         selected = urlTypeSelected,
                         startPadding = 48.dp,
-                    ) {
-                        urlTypeSelected = it
-                    }
+                        onSelectedChange = { urlTypeSelected = it },
+                    )
 
                     PasteTypeCheckbox(
                         type = "html",
                         icon = htmlOrRtf(),
                         selected = htmlTypeSelected,
                         startPadding = 48.dp,
-                    ) {
-                        htmlTypeSelected = it
-                    }
+                        onSelectedChange = { htmlTypeSelected = it },
+                    )
 
                     PasteTypeCheckbox(
                         type = "file",
                         icon = file(),
                         selected = fileTypeSelected,
                         startPadding = 48.dp,
-                    ) {
-                        fileTypeSelected = it
-                    }
+                        onSelectedChange = { fileTypeSelected = it },
+                    )
 
                     PasteTypeCheckbox(
                         type = "image",
                         icon = image(),
                         selected = imageTypeSelected,
                         startPadding = 48.dp,
-                    ) {
-                        imageTypeSelected = it
-                    }
+                        onSelectedChange = { imageTypeSelected = it },
+                    )
 
                     PasteTypeCheckbox(
                         type = "rtf",
                         icon = htmlOrRtf(),
                         selected = rtfTypeSelected,
                         startPadding = 48.dp,
-                    ) {
-                        rtfTypeSelected = it
-                    }
+                        onSelectedChange = { rtfTypeSelected = it },
+                    )
 
                     PasteTypeCheckbox(
                         type = "color",
                         icon = color(),
                         selected = colorTypeSelected,
                         startPadding = 48.dp,
-                    ) {
-                        colorTypeSelected = it
-                    }
+                        onSelectedChange = { colorTypeSelected = it },
+                    )
                 }
 
                 PasteTypeCheckbox(
                     type = "favorite",
                     selected = favoritesSelected,
-                ) {
-                    favoritesSelected = it
-                }
+                    onSelectedChange = { favoritesSelected = it },
+                )
 
                 PasteTypeCheckbox(
                     type = "file_size_filter",
                     selected = sizeFilterSelected,
+                    onSelectedChange = { sizeFilterSelected = it },
                 ) {
-                    sizeFilterSelected = it
+                    if (sizeFilterSelected) {
+                        Row(
+                            modifier =
+                                Modifier.wrapContentWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Counter(defaultValue = maxFileSize, unit = MB, rule = { it > 0 }) {
+                                maxFileSize = it
+                            }
+                        }
+                    }
                 }
             }
 
@@ -200,34 +219,66 @@ fun PasteExportContentView() {
                 Button(
                     enabled = !progressing,
                     onClick = {
-
-                        coroutine.launch {
-                            appWindowManager.openFileChooser(chooseText, currentStoragePath, { path ->
-
+                        appWindowManager.openFileChooser(FileSelectionMode.DIRECTORY_ONLY) { path ->
+                            val types = mutableSetOf<Long>()
+                            if (allTypesSelected || textTypeSelected) {
+                                types.add(TEXT_TYPE.type.toLong())
                             }
-
-                            progress = 0f
-                            pasteExportService.export(PasteExportParam(
-                                textType = allTypesSelected || textTypeSelected,
-                                linkType = allTypesSelected || urlTypeSelected,
-                                htmlType = allTypesSelected || htmlTypeSelected,
-                                fileType = allTypesSelected || fileTypeSelected,
-                                imageType = allTypesSelected || imageTypeSelected,
-                                rtfType = allTypesSelected || rtfTypeSelected,
-                                colorType = allTypesSelected || colorTypeSelected,
-                                onlyFavorite = favoritesSelected,
-                                sizeFilter = maxFileSizeFilter,
-                            ))
-                            progressing = true
+                            if (allTypesSelected || urlTypeSelected) {
+                                types.add(URL_TYPE.type.toLong())
+                            }
+                            if (allTypesSelected || htmlTypeSelected) {
+                                types.add(HTML_TYPE.type.toLong())
+                            }
+                            if (allTypesSelected || fileTypeSelected) {
+                                types.add(FILE_TYPE.type.toLong())
+                            }
+                            if (allTypesSelected || imageTypeSelected) {
+                                types.add(IMAGE_TYPE.type.toLong())
+                            }
+                            if (allTypesSelected || rtfTypeSelected) {
+                                types.add(RTF_TYPE.type.toLong())
+                            }
+                            if (allTypesSelected || colorTypeSelected) {
+                                types.add(COLOR_TYPE.type.toLong())
+                            }
+                            val pasteExportParam =
+                                PasteExportParam(
+                                    types = types,
+                                    onlyFavorite = favoritesSelected,
+                                    maxFileSize =
+                                        if (sizeFilterSelected) {
+                                            fileUtils.bytesSize(maxFileSize)
+                                        } else {
+                                            null
+                                        },
+                                    exportPath = path,
+                                )
+                            coroutine.launch(ioDispatcher) {
+                                withContext(mainDispatcher) {
+                                    progress = 0f
+                                    progressing = true
+                                }
+                                pasteExportService.export(pasteExportParam) {
+                                    coroutine.launch(mainDispatcher) {
+                                        progress = it
+                                        if (progress == 1f) {
+                                            progressing = false
+                                            progress = 0f
+                                        }
+                                    }
+                                }
+                            }
                         }
-
                     },
                 ) {
-                    if (progressing) {
-                        Text("${progress.toInt()}%")
-                    } else {
-                        Text(copywriter.getText("export"))
-                    }
+                    Text(
+                        if (progressing) {
+                            "${(progress * 100).toInt()}%"
+                        } else {
+                            copywriter.getText("export")
+                        },
+                    )
                 }
             }
         }
@@ -242,6 +293,7 @@ fun PasteTypeCheckbox(
     height: Dp = 30.dp,
     startPadding: Dp = 16.dp,
     onSelectedChange: (Boolean) -> Unit,
+    content: (@Composable () -> Unit)? = null,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
 
@@ -283,5 +335,9 @@ fun PasteTypeCheckbox(
             text = copywriter.getText(type),
             color = color,
         )
+        content?.let {
+            Spacer(modifier = Modifier.width(12.dp))
+            it()
+        }
     }
 }

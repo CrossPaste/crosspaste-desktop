@@ -21,7 +21,9 @@ object DesktopCompressUtils : CompressUtils {
         return try {
             require(sourceDir.isDirectory) { "Source must be a directory" }
 
-            ZipOutputStream(BufferedOutputStream(targetZipPath.toFile().outputStream())).use { zipOut ->
+            val targetFile = targetZipPath.toFile()
+
+            ZipOutputStream(BufferedOutputStream(targetFile.outputStream())).use { zipOut ->
                 val basePath = sourceDir.toFile().absolutePath
                 sourceDir.toFile().walkTopDown().filter { it.isFile }.forEach { file ->
                     val entryPath =

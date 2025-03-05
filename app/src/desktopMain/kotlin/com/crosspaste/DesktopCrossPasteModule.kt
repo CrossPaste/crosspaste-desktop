@@ -92,11 +92,11 @@ import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.DefaultPasteSyncProcessManager
 import com.crosspaste.paste.DesktopCacheManager
 import com.crosspaste.paste.DesktopCurrentPaste
-import com.crosspaste.paste.DesktopPasteIDGeneratorFactory
 import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.DesktopTransferableConsumer
 import com.crosspaste.paste.DesktopTransferableProducer
-import com.crosspaste.paste.PasteIDGenerator
+import com.crosspaste.paste.PasteExportService
+import com.crosspaste.paste.PasteImportService
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.TransferableConsumer
@@ -228,7 +228,6 @@ class DesktopCrossPasteModule(
             single<ImageWriter<BufferedImage>> { DesktopImageWriter }
             single<KLogger> { klogger }
             single<LocaleUtils> { DesktopLocaleUtils }
-            single<PasteIDGenerator> { DesktopPasteIDGeneratorFactory(get()).createIDGenerator() }
             single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
             single<ReadWriteConfig<Int>>(named("readWritePort")) { ReadWritePort(get()) }
             single<SyncInfoFactory> { SyncInfoFactory(get(), get()) }
@@ -362,6 +361,8 @@ class DesktopCrossPasteModule(
             single<PasteboardService> {
                 getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get())
             }
+            single<PasteExportService> { PasteExportService(get(), get(), get(), get()) }
+            single<PasteImportService> { PasteImportService(get(), get(), get(), get()) }
             single<PasteSyncProcessManager<Long>> { DefaultPasteSyncProcessManager() }
             single<TaskExecutor> {
                 TaskExecutor(
@@ -388,7 +389,6 @@ class DesktopCrossPasteModule(
             }
             single<TransferableConsumer> {
                 DesktopTransferableConsumer(
-                    get(),
                     get(),
                     get(),
                     listOf(

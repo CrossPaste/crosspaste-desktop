@@ -21,13 +21,14 @@ class PullClientApi(
 
     suspend fun pullFile(
         pullFileRequest: PullFileRequest,
+        targetAppInstanceId: String,
         toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult {
         val response =
             pasteClient.post(
                 message = pullFileRequest,
                 messageType = typeInfo<PullFileRequest>(),
-                targetAppInstanceId = pullFileRequest.appInstanceId,
+                targetAppInstanceId = targetAppInstanceId,
                 encrypt = configManager.config.enableEncryptSync,
                 // pull file timeout is 50s
                 timeout = 50000L,

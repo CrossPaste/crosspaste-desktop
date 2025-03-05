@@ -37,7 +37,6 @@ class MarketingPasteDataViewModel(
             PasteData(
                 appInstanceId = "1",
                 favorite = false,
-                pasteId = 1,
                 pasteAppearItem =
                     UrlPasteItem(
                         identifiers = listOf(),
@@ -64,7 +63,6 @@ class MarketingPasteDataViewModel(
             PasteData(
                 appInstanceId = "1",
                 favorite = false,
-                pasteId = 2,
                 pasteAppearItem =
                     FilesPasteItem(
                         identifiers = listOf(),
@@ -99,7 +97,6 @@ class MarketingPasteDataViewModel(
             PasteData(
                 appInstanceId = "1",
                 favorite = false,
-                pasteId = 3,
                 pasteAppearItem =
                     ImagesPasteItem(
                         identifiers = listOf(),
@@ -137,7 +134,6 @@ class MarketingPasteDataViewModel(
             PasteData(
                 appInstanceId = "1",
                 favorite = false,
-                pasteId = 4,
                 pasteAppearItem =
                     TextPasteItem(
                         identifiers = listOf(),
@@ -169,7 +165,6 @@ class MarketingPasteDataViewModel(
             PasteData(
                 appInstanceId = "1",
                 favorite = false,
-                pasteId = if (language == "en") 5 else 6,
                 pasteAppearItem =
                     HtmlPasteItem(
                         identifiers = listOf(),
@@ -180,8 +175,8 @@ class MarketingPasteDataViewModel(
                             fileUtils.createPasteRelativePath(
                                 pasteCoordinate =
                                     PasteCoordinate(
+                                        id = if (language == "en") 5 else 6,
                                         appInstanceId = "1",
-                                        pasteId = if (language == "en") 5 else 6,
                                     ),
                                 fileName = "html2Image.png",
                             ),

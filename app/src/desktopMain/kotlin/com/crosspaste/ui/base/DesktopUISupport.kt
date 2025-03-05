@@ -231,9 +231,9 @@ class DesktopUISupport(
                 PasteType.RTF_TYPE -> openRtf(pasteData)
                 PasteType.FILE_TYPE -> {
                     item as PasteFiles
-                    val pasteFiles = item.getPasteFiles(userDataPathProvider)
-                    if (pasteFiles.isNotEmpty()) {
-                        val filepath = pasteFiles[index].getFilePath()
+                    val pathList = item.getFilePaths(userDataPathProvider)
+                    if (pathList.isNotEmpty()) {
+                        val filepath = pathList[index]
                         if (fileUtils.canPreviewImage(filepath.extension)) {
                             openImage(filepath)
                         } else {
@@ -243,12 +243,12 @@ class DesktopUISupport(
                 }
                 PasteType.IMAGE_TYPE -> {
                     item as PasteFiles
-                    val pasteFiles = item.getPasteFiles(userDataPathProvider)
-                    if (pasteFiles.isNotEmpty()) {
-                        if (pasteFiles.size == 1) {
-                            openImage(pasteFiles[0].getFilePath())
+                    val pathList = item.getFilePaths(userDataPathProvider)
+                    if (pathList.isNotEmpty()) {
+                        if (pathList.size == 1) {
+                            openImage(pathList[0])
                         } else {
-                            browseFile(pasteFiles[index].getFilePath())
+                            browseFile(pathList[index])
                         }
                     }
                 }

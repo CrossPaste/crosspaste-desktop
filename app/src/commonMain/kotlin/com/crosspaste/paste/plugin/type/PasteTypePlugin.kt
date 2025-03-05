@@ -14,7 +14,6 @@ interface PasteTypePlugin {
     fun getIdentifiers(): List<String>
 
     fun createPrePasteItem(
-        pasteId: Long,
         itemIndex: Int,
         identifier: String,
         pasteTransferable: PasteTransferable,

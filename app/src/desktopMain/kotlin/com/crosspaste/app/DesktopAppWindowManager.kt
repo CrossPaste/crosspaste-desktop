@@ -198,23 +198,32 @@ abstract class DesktopAppWindowManager(
     }
 
     override fun openFileChooser(
-        fileChooserTitle: String?,
-        currentStoragePath: Path?,
+        fileSelectionMode: FileSelectionMode,
+        title: String?,
+        initPath: Path?,
+        cancel: (() -> Unit)?,
         action: (Path) -> Unit,
     ) {
         mainComposeWindow?.let {
             _showFileDialog.value = true
             JFileChooser().apply {
-                fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
-                fileChooserTitle?.let {
+                this.fileSelectionMode =
+                    when (fileSelectionMode) {
+                        FileSelectionMode.FILE_ONLY -> JFileChooser.FILES_ONLY
+                        FileSelectionMode.DIRECTORY_ONLY -> JFileChooser.DIRECTORIES_ONLY
+                        FileSelectionMode.FILES_AND_DIRECTORIES -> JFileChooser.FILES_AND_DIRECTORIES
+                    }
+                title?.let {
                     dialogTitle = it
                 }
-                currentStoragePath?.let {
+                initPath?.let {
                     currentDirectory = it.toFile()
                 }
                 showOpenDialog(it)
                 selectedFile?.let { file ->
                     action(file.toOkioPath(true))
+                } ?: run {
+                    cancel?.let { it() }
                 }
             }
             _showFileDialog.value = false

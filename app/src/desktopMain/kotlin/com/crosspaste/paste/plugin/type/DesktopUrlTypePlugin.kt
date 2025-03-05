@@ -32,7 +32,6 @@ class DesktopUrlTypePlugin : UrlTypePlugin {
     }
 
     override fun createPrePasteItem(
-        pasteId: Long,
         itemIndex: Int,
         identifier: String,
         pasteTransferable: PasteTransferable,

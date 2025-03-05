@@ -41,7 +41,6 @@ class DesktopRtfTypePlugin(
     }
 
     override fun createPrePasteItem(
-        pasteId: Long,
         itemIndex: Int,
         identifier: String,
         pasteTransferable: PasteTransferable,
@@ -76,8 +75,8 @@ class DesktopRtfTypePlugin(
                 fileUtils.createPasteRelativePath(
                     pasteCoordinate =
                         PasteCoordinate(
+                            id = pasteId,
                             appInstanceId = appInfo.appInstanceId,
-                            pasteId = pasteId,
                         ),
                     fileName = "rtf2Image.png",
                 )

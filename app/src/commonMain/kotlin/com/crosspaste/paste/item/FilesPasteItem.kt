@@ -16,6 +16,7 @@ import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.long
 import kotlinx.serialization.json.put
 import okio.Path
 import okio.Path.Companion.toPath
@@ -53,7 +54,7 @@ data class FilesPasteItem(
         identifiers = jsonObject["identifiers"]!!.jsonPrimitive.content.split(","),
         count = fileInfoTreeMap.values.sumOf { it.getCount() },
         hash = jsonObject["hash"]!!.jsonPrimitive.content,
-        size = jsonObject["size"]!!.jsonPrimitive.content.toLong(),
+        size = jsonObject["size"]!!.jsonPrimitive.long,
         basePath = jsonObject["basePath"]?.jsonPrimitive?.content,
         relativePathList =
             jsonObject["relativePathList"]!!.jsonArray.map {
@@ -70,13 +71,6 @@ data class FilesPasteItem(
         val basePath = basePath?.toPath() ?: userDataPathProvider.resolve(appFileType = getAppFileType())
         return relativePathList.map { relativePath ->
             userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
-        }
-    }
-
-    override fun getPasteFiles(userDataPathProvider: UserDataPathProvider): List<PasteFile> {
-        return getFilePaths(userDataPathProvider).flatMap { path ->
-            val fileInfoTree = fileInfoTreeMap[path.name]!!
-            fileInfoTree.getPasteFileList(path)
         }
     }
 

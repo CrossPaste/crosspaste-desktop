@@ -53,8 +53,10 @@ interface AppWindowManager {
     suspend fun toPaste()
 
     fun openFileChooser(
-        fileChooserTitle: String?,
-        currentStoragePath: Path?,
+        fileSelectionMode: FileSelectionMode,
+        title: String? = null,
+        initPath: Path? = null,
+        cancel: (() -> Unit)? = null,
         action: (Path) -> Unit,
     )
 
@@ -66,4 +68,10 @@ interface AppWindowManager {
         screenType: ScreenType,
         context: Any = Unit,
     )
+}
+
+enum class FileSelectionMode {
+    FILE_ONLY,
+    DIRECTORY_ONLY,
+    FILES_AND_DIRECTORIES,
 }

@@ -3,7 +3,12 @@ package com.crosspaste.paste
 import com.crosspaste.app.AppFileType
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteData
-import com.crosspaste.paste.item.FilesPasteItem
+import com.crosspaste.exception.PasteException
+import com.crosspaste.exception.StandardErrorCode
+import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.notification.MessageObject
+import com.crosspaste.notification.MessageType
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.DateUtils
@@ -15,6 +20,8 @@ import okio.BufferedSink
 import okio.Path
 
 class PasteExportService(
+    private val copywriter: GlobalCopywriter,
+    private val notificationManager: NotificationManager,
     private val pasteDao: PasteDao,
     private val userDataPathProvider: UserDataPathProvider,
 ) {
@@ -26,46 +33,97 @@ class PasteExportService(
 
     private val fileUtils = getFileUtils()
 
-    fun export(pasteExportParam: PasteExportParam) {
-        val tempDir = userDataPathProvider.resolve(appFileType = AppFileType.TEMP)
-        val ymdhms = DateUtils.getYMDHMS()
-        val basePath = tempDir.resolve("export-$ymdhms")
-        userDataPathProvider.autoCreateDir(basePath)
-        var pasteDataFile = basePath.resolve("paste.data")
-        var count = 0L
-        fileUtils.writeFile(pasteDataFile) { sink ->
-            try {
-                pasteDao.batchReadPasteData { pasteData ->
-                    if (pasteExportParam.filterPasteData(pasteData)) {
-                        count += exportPasteData(basePath, pasteExportParam, pasteData, sink)
-                    }
+    fun export(
+        pasteExportParam: PasteExportParam,
+        updateProgress: (Float) -> Unit,
+    ) {
+        var exportTempPath: Path? = null
+        try {
+            val tempDir = userDataPathProvider.resolve(appFileType = AppFileType.TEMP)
+            val epochMilliseconds = DateUtils.nowEpochMilliseconds()
+            val basePath = tempDir.resolve("export-$epochMilliseconds", true)
+            exportTempPath = basePath
+            userDataPathProvider.autoCreateDir(basePath)
+            var pasteDataFile = basePath.resolve("paste.data")
+            var count = 0L
+            fileUtils.writeFile(pasteDataFile) { sink ->
+                try {
+                    val exportCount = pasteDao.getExportNum(pasteExportParam)
+                    pasteDao.batchReadPasteData(
+                        readPasteDataList = { id, limit ->
+                            pasteDao.getExportPasteData(id, limit, pasteExportParam)
+                        },
+                        dealPasteData = { pasteData ->
+                            count += exportPasteData(basePath, pasteExportParam, count, pasteData, sink)
+                            val currentProgress =
+                                if (count != exportCount) {
+                                    count.toFloat() / exportCount.toFloat()
+                                } else {
+                                    0.99f
+                                }
+                            logger.info { "progress $currentProgress" }
+                            updateProgress(currentProgress)
+                        },
+                    )
+                } catch (e: Exception) {
+                    logger.error(e) { "read pasteData list fail" }
                 }
-            } catch (e: Exception) {
-                logger.error(e) { "read pasteData list fail" }
             }
-        }
-        if (count > 0L) {
-            compressExportFile(basePath, pasteExportParam.exportPath, ymdhms)
+            val exportFileName = "crosspaste-export-$epochMilliseconds.data"
+            if (count > 0L) {
+                val countFile = basePath.resolve("$count.count")
+                fileUtils.createFile(countFile)
+                compressExportFile(basePath, pasteExportParam.exportPath, exportFileName)
+                notificationManager.sendNotification(
+                    MessageObject(
+                        title = copywriter.getText("export_successful"),
+                        message = exportFileName,
+                        messageType = MessageType.Success,
+                        duration = null,
+                    ),
+                )
+            } else {
+                notificationManager.sendNotification(
+                    MessageObject(
+                        message = copywriter.getText("no_data_found"),
+                        messageType = MessageType.Warning,
+                    ),
+                )
+            }
+            updateProgress(1f)
+        } catch (e: Exception) {
+            logger.error(e) { "export pasteData fail" }
+            notificationManager.sendNotification(
+                MessageObject(
+                    message = copywriter.getText("export_fail"),
+                    messageType = MessageType.Error,
+                ),
+            )
+        } finally {
+            exportTempPath?.let {
+                fileUtils.deleteFile(it)
+            }
         }
     }
 
     private fun exportPasteData(
         basePath: Path,
         pasteExportParam: PasteExportParam,
+        index: Long,
         pasteData: PasteData,
         sink: BufferedSink,
     ): Long {
         try {
             val pasteFilesList =
                 pasteData.getPasteAppearItems().filterIsInstance<PasteFiles>()
-                    .filter { it.size <= pasteExportParam.maxFileSize }
-
-            if (pasteFilesList.isEmpty()) {
-                return 0L
-            }
+                    .filter { pasteData ->
+                        pasteExportParam.maxFileSize?.let {
+                            pasteData.size <= pasteExportParam.maxFileSize
+                        } != false
+                    }
 
             for (pasteFiles in pasteFilesList) {
-                copyResourceByPasteFiles(basePath, pasteData, pasteFiles)
+                copyResource(basePath, index, pasteData, pasteFiles)
             }
 
             val json = pasteData.toJson()
@@ -79,43 +137,37 @@ class PasteExportService(
         }
     }
 
-    private fun copyResourceByPasteFiles(
+    private fun copyResource(
         basePath: Path,
+        index: Long,
         pasteData: PasteData,
         pasteFiles: PasteFiles,
     ) {
-        val dateString =
-            DateUtils.getYMD(
-                DateUtils.epochMillisecondsToLocalDateTime(pasteData.createTime),
-            )
-
-        val type =
-            if (pasteFiles is FilesPasteItem) {
-                "files"
-            } else {
-                "images"
-            }
-
         val path =
-            basePath.resolve(type)
-                .resolve(pasteData.appInstanceId)
-                .resolve(dateString)
-                .resolve(pasteData.pasteId.toString())
+            basePath.resolve(pasteData.appInstanceId)
+                .resolve(index.toString())
 
         userDataPathProvider.autoCreateDir(path)
 
-        for (pasteFile in pasteFiles.getPasteFiles(userDataPathProvider)) {
-            fileUtils.copyPath(pasteFile.getFilePath(), path.resolve(pasteFile.getFilePath().name))
+        for (filePath in pasteFiles.getFilePaths(userDataPathProvider)) {
+            fileUtils.copyPath(filePath, path.resolve(filePath.name))
         }
     }
 
-    fun compressExportFile(
+    private fun compressExportFile(
         basePath: Path,
         exportPath: Path,
-        ymdhms: String,
+        exportFileName: String,
     ) {
         userDataPathProvider.autoCreateDir(exportPath)
-        val targetZipFile = exportPath.resolve("crosspaste-export-$ymdhms.zip")
-        compressUtils.zipDir(basePath, targetZipFile)
+        val targetZipFile = exportPath.resolve(exportFileName)
+        val result = compressUtils.zipDir(basePath, targetZipFile)
+        if (result.isFailure) {
+            logger.error { "compress export file fail" }
+            throw PasteException(
+                StandardErrorCode.EXPORT_FAIL.toErrorCode(),
+                "compress export file fail",
+            )
+        }
     }
 }

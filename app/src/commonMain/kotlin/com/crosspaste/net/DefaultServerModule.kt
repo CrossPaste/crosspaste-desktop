@@ -77,6 +77,7 @@ open class DefaultServerModule(
                     syncRoutingApi,
                 )
                 pullRouting(
+                    appInfo,
                     cacheManager,
                     syncRoutingApi,
                     userDataPathProvider,

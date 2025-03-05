@@ -354,7 +354,7 @@ class GeneralSyncHandler(
             is FailureResult -> {
                 val failErrorCode = result.exception.getErrorCode().code
                 if (failErrorCode ==
-                    StandardErrorCode.SYNC_NOT_MATCH_APP_INSTANCE_ID.getCode()
+                    StandardErrorCode.NOT_MATCH_APP_INSTANCE_ID.getCode()
                 ) {
                     logger.info { "heartbeat return fail state to disconnect $host $port" }
                     return SyncState.DISCONNECTED

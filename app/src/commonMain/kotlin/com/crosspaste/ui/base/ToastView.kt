@@ -2,6 +2,7 @@ package com.crosspaste.ui.base
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -37,7 +38,7 @@ import com.crosspaste.utils.ColorUtils
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 
-data class Toast(val messageType: MessageType, val message: String, val duration: Long = 3000)
+data class Toast(val messageType: MessageType, val message: String, val duration: Long? = 3000)
 
 @Composable
 fun ToastView(
@@ -52,8 +53,8 @@ fun ToastView(
     }
 
     LaunchedEffect(Unit) {
-        if (toast.duration > 0) {
-            delay(toast.duration)
+        if ((toast.duration ?: 0) > 0) {
+            delay(toast.duration!!)
             toastManager.cancel()
         }
     }
@@ -94,6 +95,7 @@ fun ToastView(
                         .width(280.dp)
                         .padding(horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Icon(
                     painter = getMessagePainter(messageStyle),
@@ -102,6 +104,7 @@ fun ToastView(
                 )
                 Spacer(Modifier.width(12.dp))
                 Text(
+                    modifier = Modifier.weight(1f, fill = false),
                     text = toast.message,
                     style =
                         TextStyle(
@@ -110,7 +113,7 @@ fun ToastView(
                             fontSize = 16.sp,
                         ),
                 )
-                Spacer(Modifier.weight(1f))
+                Spacer(Modifier.width(12.dp))
                 Icon(
                     modifier = Modifier.clickable(onClick = onCancelTapped),
                     painter = close(),

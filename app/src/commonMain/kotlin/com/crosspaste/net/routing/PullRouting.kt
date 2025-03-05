@@ -1,8 +1,8 @@
 package com.crosspaste.net.routing
 
 import com.crosspaste.app.AppFileType
+import com.crosspaste.app.AppInfo
 import com.crosspaste.dto.pull.PullFileRequest
-import com.crosspaste.dto.pull.PullFilesKey
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.path.UserDataPathProvider
@@ -16,6 +16,7 @@ import io.ktor.server.routing.*
 import io.ktor.utils.io.*
 
 fun Routing.pullRouting(
+    appInfo: AppInfo,
     cacheManager: CacheManager,
     syncRoutingApi: SyncRoutingApi,
     userDataPathProvider: UserDataPathProvider,
@@ -26,9 +27,13 @@ fun Routing.pullRouting(
 
     post("/pull/file") {
         getAppInstanceId(call)?.let { fromAppInstanceId ->
+            val targetAppInstanceId = call.request.headers["targetAppInstanceId"]
+            if (targetAppInstanceId != appInfo.appInstanceId) {
+                logger.debug { "pull file targetAppInstanceId $targetAppInstanceId not match ${appInfo.appInstanceId}" }
+                failResponse(call, StandardErrorCode.NOT_MATCH_APP_INSTANCE_ID.toErrorCode())
+                return@let
+            }
             val pullFileRequest: PullFileRequest = call.receive()
-            val appInstanceId = pullFileRequest.appInstanceId
-            val pasteId = pullFileRequest.pasteId
 
             val syncHandler =
                 syncRoutingApi.getSyncHandler(fromAppInstanceId) ?: run {
@@ -44,8 +49,8 @@ fun Routing.pullRouting(
             }
 
             val filesIndex =
-                cacheManager.getFilesIndex(PullFilesKey(appInstanceId, pasteId)) ?: run {
-                    logger.error { "$fromAppInstanceId get $appInstanceId filesIndex not found" }
+                cacheManager.getFilesIndex(pullFileRequest.id) ?: run {
+                    logger.error { "$fromAppInstanceId get $targetAppInstanceId filesIndex not found" }
                     failResponse(call, StandardErrorCode.NOT_FOUND_FILES_INDEX.toErrorCode())
                     return@let
                 }
@@ -53,7 +58,7 @@ fun Routing.pullRouting(
             val chunk =
                 filesIndex.getChunk(pullFileRequest.chunkIndex) ?: run {
                     logger.error {
-                        "$fromAppInstanceId get $appInstanceId chunk out range: " +
+                        "$fromAppInstanceId get $targetAppInstanceId chunk out range: " +
                             "${pullFileRequest.chunkIndex}"
                     }
                     failResponse(

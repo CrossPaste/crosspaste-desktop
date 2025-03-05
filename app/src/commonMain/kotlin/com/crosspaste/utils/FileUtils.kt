@@ -123,7 +123,10 @@ interface FileUtils {
         }
     }
 
-    fun listFiles(path: Path, filter: (Path) -> Boolean = {true}): List<Path> {
+    fun listFiles(
+        path: Path,
+        filter: (Path) -> Boolean = { true },
+    ): List<Path> {
         return fileSystem.list(path).filter(filter)
     }
 
@@ -217,6 +220,18 @@ interface FileUtils {
         filesChunk: FilesChunk,
         byteReadChannel: ByteReadChannel,
     )
+
+    fun readByLines(
+        path: Path,
+        readLine: (String) -> Unit,
+    ) {
+        fileSystem.source(path).buffer().use { bufferedSource ->
+            while (true) {
+                val line = bufferedSource.readUtf8Line() ?: break
+                readLine(line)
+            }
+        }
+    }
 
     suspend fun readFile(
         path: Path,

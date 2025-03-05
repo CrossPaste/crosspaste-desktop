@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.long
 import kotlinx.serialization.json.put
 
 @Serializable
@@ -20,7 +21,7 @@ class ColorPasteItem(
     constructor(jsonObject: JsonObject) : this(
         identifiers = jsonObject["identifiers"]!!.jsonPrimitive.content.split(","),
         hash = jsonObject["hash"]!!.jsonPrimitive.content,
-        size = jsonObject["size"]!!.jsonPrimitive.content.toLong(),
+        size = jsonObject["size"]!!.jsonPrimitive.long,
         color = jsonObject["color"]!!.jsonPrimitive.content.toLong(),
     )
 

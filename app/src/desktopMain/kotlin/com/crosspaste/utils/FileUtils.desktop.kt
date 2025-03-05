@@ -66,7 +66,7 @@ object DesktopFileUtils : FileUtils {
         return Paths.get(
             pasteCoordinate.appInstanceId,
             dateYYYYMMDD,
-            pasteCoordinate.pasteId.toString(),
+            pasteCoordinate.id.toString(),
             fileName,
         ).pathString
     }
@@ -89,7 +89,7 @@ object DesktopFileUtils : FileUtils {
         path: Path,
         writeSink: (BufferedSink) -> Unit,
     ) {
-        fileSystem.sink(path).buffer().use { writeSink }
+        fileSystem.sink(path).buffer().use(writeSink)
     }
 
     override suspend fun writeFile(

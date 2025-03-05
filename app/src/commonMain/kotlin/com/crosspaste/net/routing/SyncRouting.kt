@@ -38,7 +38,7 @@ fun Routing.syncRouting(
             val targetAppInstanceId = call.request.headers["targetAppInstanceId"]
             if (targetAppInstanceId != appInfo.appInstanceId) {
                 logger.debug { "heartbeat targetAppInstanceId $targetAppInstanceId not match ${appInfo.appInstanceId}" }
-                failResponse(call, StandardErrorCode.SYNC_NOT_MATCH_APP_INSTANCE_ID.toErrorCode())
+                failResponse(call, StandardErrorCode.NOT_MATCH_APP_INSTANCE_ID.toErrorCode())
                 return@let
             }
             successResponse(call, syncApi.VERSION)
@@ -50,7 +50,7 @@ fun Routing.syncRouting(
             val targetAppInstanceId = call.request.headers["targetAppInstanceId"]
             if (targetAppInstanceId != appInfo.appInstanceId) {
                 logger.debug { "heartbeat targetAppInstanceId $targetAppInstanceId not match ${appInfo.appInstanceId}" }
-                failResponse(call, StandardErrorCode.SYNC_NOT_MATCH_APP_INSTANCE_ID.toErrorCode())
+                failResponse(call, StandardErrorCode.NOT_MATCH_APP_INSTANCE_ID.toErrorCode())
                 return@let
             }
 
