@@ -209,7 +209,9 @@ interface FileUtils {
     fun writeFile(
         path: Path,
         writeSink: (BufferedSink) -> Unit,
-    )
+    ) {
+        fileSystem.sink(path).buffer().use(writeSink)
+    }
 
     suspend fun writeFile(
         path: Path,

@@ -3,10 +3,8 @@ package com.crosspaste.utils
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.presist.FilesChunk
 import io.ktor.utils.io.*
-import okio.BufferedSink
 import okio.FileSystem
 import okio.Path
-import okio.buffer
 import java.io.RandomAccessFile
 import java.nio.file.Paths
 import java.text.DecimalFormat
@@ -84,13 +82,6 @@ object DesktopFileUtils : FileUtils {
                 file.setLength(length)
             }
         }
-
-    override fun writeFile(
-        path: Path,
-        writeSink: (BufferedSink) -> Unit,
-    ) {
-        fileSystem.sink(path).buffer().use(writeSink)
-    }
 
     override suspend fun writeFile(
         path: Path,
