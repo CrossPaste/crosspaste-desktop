@@ -67,7 +67,7 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]?.showToken()
+        syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]?.showToken(syncRuntimeInfo)
         focusRequesters.firstOrNull()?.requestFocus()
     }
 
