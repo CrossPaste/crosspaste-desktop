@@ -20,7 +20,7 @@ interface SyncHandler {
     // use user input token to trust
     suspend fun trustByToken(token: Int)
 
-    suspend fun showToken()
+    suspend fun showToken(syncRuntimeInfo: SyncRuntimeInfo)
 
     suspend fun notifyExit()
 

@@ -456,7 +456,7 @@ class GeneralSyncHandler(
         return false
     }
 
-    override suspend fun showToken() {
+    override suspend fun showToken(syncRuntimeInfo: SyncRuntimeInfo) {
         if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
             syncRuntimeInfo.connectHostAddress?.let { host ->
                 val result =

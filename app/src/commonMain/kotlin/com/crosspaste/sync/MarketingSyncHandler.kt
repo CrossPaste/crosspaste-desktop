@@ -26,7 +26,7 @@ class MarketingSyncHandler(
     override suspend fun trustByToken(token: Int) {
     }
 
-    override suspend fun showToken() {
+    override suspend fun showToken(syncRuntimeInfo: SyncRuntimeInfo) {
     }
 
     override suspend fun notifyExit() {
