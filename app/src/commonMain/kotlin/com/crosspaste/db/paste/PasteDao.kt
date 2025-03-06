@@ -9,18 +9,19 @@ import com.crosspaste.config.ConfigManager
 import com.crosspaste.db.task.PullExtraInfo
 import com.crosspaste.db.task.SyncExtraInfo
 import com.crosspaste.db.task.TaskDao
-import com.crosspaste.paste.item.PasteItem
-import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.db.task.TaskType
 import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.PasteExportParam
+import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.task.TaskExecutor
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.LoggerExtension.logExecutionTime
 import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 
 class PasteDao(
@@ -157,6 +158,10 @@ class PasteDao(
         return pasteDatabaseQueries.getPasteDataListLimit(limit, PasteData::mapper)
             .asFlow()
             .map { it.executeAsList() }
+            .catch { e ->
+                logger.error(e) { "Error executing getPasteDataFlow query: ${e.message}" }
+                emit(listOf())
+            }
     }
 
     private fun markDeleteSameHash(
@@ -227,7 +232,7 @@ class PasteDao(
         limit: Int,
     ): Query<PasteData> {
         val appInstanceId: String? = local?.let { appInfo.appInstanceId }
-        val searchQuery = "pasteSearchContent:(${searchTerms.joinToString(" AND ") { "\"$it\"" }})"
+        val searchQuery = "pasteSearchContent:(${searchTerms.joinToString(" AND ") { "$it*" }})"
 
         return if (searchTerms.isNotEmpty()) {
             pasteDatabaseQueries.complexSearch(
@@ -280,6 +285,12 @@ class PasteDao(
             createSearchPasteQuery(searchTerms, local, favorite, pasteType, sort, limit)
                 .asFlow()
                 .map { it.executeAsList() }
+                .catch { e ->
+                    logger.error(e) { "Error executing search query: ${e.message}\n" +
+                            "searchTerms=$searchTerms local=$local favorite=$favorite " +
+                            "pasteType=$pasteType sort=$sort" }
+                    emit(searchPasteData(listOf(), local, favorite, pasteType, sort, limit))
+                }
         }
     }
 
