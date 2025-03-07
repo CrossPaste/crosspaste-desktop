@@ -300,7 +300,7 @@ fun StoreSettingsContentView() {
 
         SettingItemView(
             painter = clock(),
-            text = "image_expiry_period",
+            text = "image_retention_period",
             tint = MaterialTheme.colorScheme.onSurface,
         ) {
             var selectImageCleanTimeIndex by remember { mutableStateOf(configManager.config.imageCleanTimeIndex) }
@@ -373,7 +373,7 @@ fun StoreSettingsContentView() {
 
         SettingItemView(
             painter = file(),
-            text = "file_expiry_period",
+            text = "file_retention_period",
             tint = MaterialTheme.colorScheme.onSurface,
         ) {
             var selectFileCleanTimeIndex by remember { mutableStateOf(configManager.config.fileCleanTimeIndex) }

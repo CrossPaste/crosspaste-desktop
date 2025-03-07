@@ -46,8 +46,8 @@ import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_PRIMARY_TYPE
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_REMOTE_LAST
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.SHOW_MAIN
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.SHOW_SEARCH
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.SWITCH_ENCRYPT
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.SWITCH_MONITOR_PASTEBOARD
+import com.crosspaste.listen.DesktopShortcutKeys.Companion.TOGGLE_ENCRYPT
+import com.crosspaste.listen.DesktopShortcutKeys.Companion.TOGGLE_PASTEBOARD_MONITORING
 import com.crosspaste.listener.KeyboardKey
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysListener
@@ -131,11 +131,11 @@ fun ShortcutKeysContentView() {
                         .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colorScheme.surfaceContainerHighest),
             ) {
-                ShortcutKeyRow(SWITCH_MONITOR_PASTEBOARD)
+                ShortcutKeyRow(TOGGLE_PASTEBOARD_MONITORING)
 
                 HorizontalDivider(modifier = Modifier.padding(start = 15.dp))
 
-                ShortcutKeyRow(SWITCH_ENCRYPT)
+                ShortcutKeyRow(TOGGLE_ENCRYPT)
             }
         }
     }

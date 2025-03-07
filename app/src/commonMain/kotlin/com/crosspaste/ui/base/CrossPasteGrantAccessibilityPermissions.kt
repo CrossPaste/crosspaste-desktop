@@ -187,7 +187,7 @@ fun CrossPasteGrantAccessibilityPermissions(
                                 ),
                         ) {
                             Text(
-                                text = copywriter.getText("grant_permission"),
+                                text = copywriter.getText("grant_permissions"),
                                 color = MaterialTheme.colorScheme.onTertiaryContainer,
                                 style =
                                     TextStyle(

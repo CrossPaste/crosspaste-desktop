@@ -174,8 +174,8 @@ object MacTrayView {
         )
 
         popup.add(
-            createMenuItem(copywriter.getText("fqa")) {
-                uiSupport.openUrlInBrowser("https://www.crosspaste.com/FQA")
+            createMenuItem(copywriter.getText("faq")) {
+                uiSupport.openUrlInBrowser("https://www.crosspaste.com/FAQ")
             },
         )
 

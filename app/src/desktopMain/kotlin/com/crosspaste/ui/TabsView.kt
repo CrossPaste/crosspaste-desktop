@@ -111,7 +111,7 @@ fun TabsView() {
                             painter = trash(),
                             background = MaterialTheme.colorScheme.primaryContainer,
                             hover = MaterialTheme.colorScheme.surfaceContainerLowest,
-                            text = copywriter.getText("clean_all_pasteboard"),
+                            text = copywriter.getText("clean_pasteboard_entries"),
                             contentDescription = "clean all paste",
                         ) {
                             appWindowManager.doLongTaskInMain(

@@ -220,8 +220,7 @@ fun AddDeviceManuallyForm() {
                                     "${copywriter.getText("addition_failed")}\n" +
                                         "1. ${copywriter.getText("please_check_if_the_ip_and_port_are_correct")}\n" +
                                         "2. ${copywriter.getText(
-                                            "check_if_there_is_a_firewall_" +
-                                                "or_antivirus_software_blocking_the_connection",
+                                            "check_if_there_is_a_firewall_or_antivirus_software_blocking_the_connection",
                                         )}",
                                 messageType = MessageType.Error,
                             )

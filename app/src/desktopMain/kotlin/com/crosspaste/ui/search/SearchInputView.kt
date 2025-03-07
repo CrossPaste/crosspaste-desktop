@@ -125,7 +125,7 @@ fun SearchInputView(requestFocus: () -> Unit) {
                 placeholder = {
                     Text(
                         modifier = Modifier.wrapContentSize(),
-                        text = copywriter.getText("type_to_search_history"),
+                        text = copywriter.getText("search_pasteboard"),
                         style =
                             TextStyle(
                                 fontWeight = FontWeight.Light,

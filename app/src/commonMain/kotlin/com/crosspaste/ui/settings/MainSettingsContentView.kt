@@ -81,7 +81,7 @@ fun MainSettingsContentView() {
         HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
 
         SettingSwitchItemView(
-            text = "boot_start_up",
+            text = "launch_at_startup",
             painter = bolt(),
             getCurrentSwitchValue = { configManager.config.enableAutoStartUp },
         ) {

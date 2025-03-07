@@ -36,7 +36,7 @@ fun PasteEmptyScreenView() {
                     Modifier
                         .fillMaxWidth(0.8f),
                 textAlign = TextAlign.Center,
-                text = copywriter.getText("haven't_listened_to_any_pasteboard_data_yet"),
+                text = copywriter.getText("no_pasteboard_activity_detected_yet"),
                 maxLines = 3,
                 style =
                     TextStyle(

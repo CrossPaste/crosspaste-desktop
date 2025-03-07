@@ -362,7 +362,7 @@ fun FavoriteMenuItem(
     setFavorite: () -> Unit,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
-    val favoriteText = copywriter.getText(if (pasteData.favorite) "delete_favorite" else "favorite")
+    val favoriteText = copywriter.getText(if (pasteData.favorite) "remove_from_favorites" else "favorite")
 
     PasteTooltipAreaView(
         Modifier.fillMaxWidth().height(25.dp),
