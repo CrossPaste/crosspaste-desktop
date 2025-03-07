@@ -9,6 +9,7 @@ import okio.Path.Companion.toOkioPath
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class GlobalCopywriterTest {
 
@@ -42,7 +43,11 @@ class GlobalCopywriterTest {
         // Verify that all keys are the same
         val keys = copywriterMap.values.first().getKeys()
         copywriterMap.values.forEach { copywriter ->
-            assertEquals(keys, copywriter.getKeys())
+            var diff = keys - copywriter.getKeys()
+            assertTrue(diff.isEmpty(), diff.joinToString(","))
+
+            diff = copywriter.getKeys() - keys
+            assertTrue(diff.isEmpty(), diff.joinToString(","))
         }
     }
 }
