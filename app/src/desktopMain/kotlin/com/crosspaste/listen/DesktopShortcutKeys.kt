@@ -35,8 +35,8 @@ class DesktopShortcutKeys(
         const val SHOW_MAIN = "show_main"
         const val SHOW_SEARCH = "show_search"
         const val HIDE_WINDOW = "hide_window"
-        const val SWITCH_MONITOR_PASTEBOARD = "switch_monitor_pasteboard"
-        const val SWITCH_ENCRYPT = "switch_encrypt"
+        const val TOGGLE_PASTEBOARD_MONITORING = "toggle_pasteboard_monitoring"
+        const val TOGGLE_ENCRYPT = "toggle_encrypt"
     }
 
     private val logger: KLogger = KotlinLogging.logger {}

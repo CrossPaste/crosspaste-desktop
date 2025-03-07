@@ -57,7 +57,7 @@ class DesktopUISupport(
             Desktop.getDesktop().browse(URI(url))
         } else {
             notificationManager.sendNotification(
-                message = "${copywriter.getText("cant_open_browser")}  $url",
+                message = "${copywriter.getText("failed_to_open_browser")}  $url",
                 messageType = MessageType.Error,
             )
         }

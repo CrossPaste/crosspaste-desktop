@@ -10,8 +10,8 @@ import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_PRIMARY_TYPE
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_REMOTE_LAST
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.SHOW_MAIN
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.SHOW_SEARCH
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.SWITCH_ENCRYPT
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.SWITCH_MONITOR_PASTEBOARD
+import com.crosspaste.listen.DesktopShortcutKeys.Companion.TOGGLE_ENCRYPT
+import com.crosspaste.listen.DesktopShortcutKeys.Companion.TOGGLE_PASTEBOARD_MONITORING
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.PasteboardService
@@ -41,8 +41,8 @@ class DesktopShortKeysAction(
             SHOW_MAIN -> showMainWindow()
             SHOW_SEARCH -> showSearchWindow()
             HIDE_WINDOW -> hideWindow()
-            SWITCH_MONITOR_PASTEBOARD -> switchMonitorPasteboard()
-            SWITCH_ENCRYPT -> switchEncrypt()
+            TOGGLE_PASTEBOARD_MONITORING -> togglePasteboardMonitoring()
+            TOGGLE_ENCRYPT -> toggleEncrypt()
         }
     }
 
@@ -136,16 +136,16 @@ class DesktopShortKeysAction(
         }
     }
 
-    private fun switchMonitorPasteboard() {
-        logger.info { "Switch Monitor Pasteboard" }
-        mainCoroutineDispatcher.launch(CoroutineName("SwitchMonitorPasteboard")) {
+    private fun togglePasteboardMonitoring() {
+        logger.info { "Toggle Pasteboard Monitoring" }
+        mainCoroutineDispatcher.launch(CoroutineName("ToggleMonitorPasteboard")) {
             pasteboardService.toggle()
         }
     }
 
-    private fun switchEncrypt() {
-        logger.info { "Switch Encrypt" }
-        mainCoroutineDispatcher.launch(CoroutineName("SwitchEncrypt")) {
+    private fun toggleEncrypt() {
+        logger.info { "Toggle Encrypt ${!configManager.config.enableEncryptSync}" }
+        mainCoroutineDispatcher.launch(CoroutineName("ToggleEncrypt")) {
             configManager.updateConfig("isEncryptSync", !configManager.config.enableEncryptSync)
         }
     }

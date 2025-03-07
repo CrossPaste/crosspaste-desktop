@@ -70,7 +70,7 @@ fun SetStoragePathView() {
         modifier =
             Modifier.wrapContentSize()
                 .padding(start = 16.dp, top = 5.dp, bottom = 5.dp),
-        text = copywriter.getText("storage_path"),
+        text = copywriter.getText("storage_directory"),
         color = MaterialTheme.colorScheme.onBackground,
         style = MaterialTheme.typography.headlineSmall,
         fontFamily = FontFamily.SansSerif,

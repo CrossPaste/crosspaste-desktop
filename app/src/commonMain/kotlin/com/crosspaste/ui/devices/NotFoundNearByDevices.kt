@@ -36,7 +36,7 @@ fun NotFoundNearByDevices() {
                     Modifier
                         .fillMaxWidth(0.8f),
                 textAlign = TextAlign.Center,
-                text = copywriter.getText("no_other_devices_found_with_crosspaste_enabled"),
+                text = copywriter.getText("no_nearby_devices_found_with_crosspaste_enabled"),
                 maxLines = 3,
                 style =
                     TextStyle(

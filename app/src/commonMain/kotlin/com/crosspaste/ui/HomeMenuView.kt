@@ -56,7 +56,7 @@ fun HomeMenuView(
                 copywriter.getText("export"),
                 copywriter.getText("import"),
                 copywriter.getText("about"),
-                copywriter.getText("fqa"),
+                copywriter.getText("faq"),
                 copywriter.getText("quit"),
             )
 
@@ -129,10 +129,10 @@ fun HomeMenuView(
                 close()
             }
             MenuItem(
-                text = copywriter.getText("fqa"),
+                text = copywriter.getText("faq"),
                 background = MaterialTheme.colorScheme.surfaceBright,
             ) {
-                uiSupport.openCrossPasteWebInBrowser(path = "FQA")
+                uiSupport.openCrossPasteWebInBrowser(path = "FAQ")
                 close()
             }
             HorizontalDivider()
