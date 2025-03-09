@@ -34,7 +34,7 @@ abstract class NotificationManager {
         title: String? = null,
         message: String,
         messageType: MessageType,
-        duration: Long = 3000,
+        duration: Long? = 3000,
     ) {
         sendNotification(MessageObject(title, message, messageType, duration))
     }
