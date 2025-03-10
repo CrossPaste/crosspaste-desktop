@@ -2,6 +2,7 @@ package com.crosspaste.task
 
 import com.crosspaste.app.AppControl
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteData
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.SyncExtraInfo
 import com.crosspaste.db.task.TaskType
@@ -12,6 +13,7 @@ import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.PasteClientApi
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.createFailureResult
+import com.crosspaste.sync.SyncHandler
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.buildUrl
@@ -40,85 +42,131 @@ class SyncPasteTaskExecutor(
 
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         val syncExtraInfo: SyncExtraInfo = TaskUtils.getExtraInfo(pasteTask, SyncExtraInfo::class)
-        val mapResult =
-            pasteDao.getNoDeletePasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
-                val deferredResults: MutableList<Deferred<Pair<String, ClientApiResult>>> = mutableListOf()
-                for (entryHandler in syncManager.getSyncHandlers()) {
-                    if (!entryHandler.value.syncRuntimeInfo.allowSend ||
-                        entryHandler.value.versionRelation != VersionRelation.EQUAL_TO ||
-                        (syncExtraInfo.syncFails.isNotEmpty() && !syncExtraInfo.syncFails.contains(entryHandler.key))
-                    ) {
-                        continue
+        return pasteDao.getNoDeletePasteData(pasteTask.pasteDataId!!)?.let {
+                pasteData ->
+            val syncResults = executeSyncTasks(pasteData, syncExtraInfo)
+            processResults(syncResults, syncExtraInfo, pasteTask.modifyTime)
+        } ?: run {
+            createEmptyResult(syncExtraInfo)
+        }
+    }
+
+    private fun createEmptyResult(syncExtraInfo: SyncExtraInfo): PasteTaskResult {
+        syncExtraInfo.syncFails.clear()
+        return SuccessPasteTaskResult(jsonUtils.JSON.encodeToString(syncExtraInfo))
+    }
+
+    private suspend fun executeSyncTasks(
+        pasteData: PasteData,
+        syncExtraInfo: SyncExtraInfo,
+    ): Map<String, ClientApiResult> {
+        val deferredResults: MutableList<Deferred<Pair<String, ClientApiResult>>> = mutableListOf()
+
+        for (handler in getEligibleSyncHandlers(syncExtraInfo)) {
+            val deferred = createSyncTask(handler.key, handler.value, pasteData)
+            deferredResults.add(deferred)
+        }
+
+        return deferredResults.associate { it.await() }
+    }
+
+    private fun getEligibleSyncHandlers(syncExtraInfo: SyncExtraInfo): Map<String, SyncHandler> {
+        return syncManager.getSyncHandlers().filter { (key, handler) ->
+            handler.syncRuntimeInfo.allowSend &&
+                handler.versionRelation == VersionRelation.EQUAL_TO &&
+                (syncExtraInfo.syncFails.isEmpty() || syncExtraInfo.syncFails.contains(key))
+        }
+    }
+
+    private fun createSyncTask(
+        handlerKey: String,
+        handler: SyncHandler,
+        pasteData: PasteData,
+    ): Deferred<Pair<String, ClientApiResult>> {
+        return ioScope.async {
+            try {
+                handler.getConnectHostAddress()?.let {
+                    val hostAddress = it
+                    val result = syncPasteToTarget(handlerKey, handler, pasteData, hostAddress)
+
+                    if (result is SuccessResult) {
+                        appControl.completeSendOperation()
                     }
-                    val deferred =
-                        ioScope.async {
-                            try {
-                                val clientHandler = entryHandler.value
-                                val port = clientHandler.syncRuntimeInfo.port
-                                val targetAppInstanceId = clientHandler.syncRuntimeInfo.appInstanceId
-                                clientHandler.getConnectHostAddress()?.let {
-                                    val syncPasteResult =
-                                        if (appControl.isSendEnabled()) {
-                                            pasteClientApi.sendPaste(
-                                                pasteData,
-                                                targetAppInstanceId,
-                                            ) {
-                                                buildUrl(it, port)
-                                            }
-                                        } else {
-                                            createFailureResult(
-                                                StandardErrorCode.SYNC_NOT_ALLOW_SEND_BY_APP,
-                                                "Failed to send paste to ${entryHandler.key}",
-                                            )
-                                        }
 
-                                    if (syncPasteResult is SuccessResult) {
-                                        appControl.completeSendOperation()
-                                    }
-
-                                    return@async Pair(entryHandler.key, syncPasteResult)
-                                } ?: run {
-                                    return@async Pair(
-                                        entryHandler.key,
-                                        createFailureResult(
-                                            StandardErrorCode.CANT_GET_SYNC_ADDRESS,
-                                            "Failed to get connect host address by ${entryHandler.key}",
-                                        ),
-                                    )
-                                }
-                            } catch (_: Exception) {
-                                return@async Pair(
-                                    entryHandler.key,
-                                    createFailureResult(
-                                        StandardErrorCode.SYNC_PASTE_ERROR,
-                                        "Failed to sync paste to ${entryHandler.key}",
-                                    ),
-                                )
-                            }
-                        }
-                    deferredResults.add(deferred)
+                    return@async Pair(handlerKey, result)
+                } ?: run {
+                    return@async createNoHostAddressResult(handlerKey)
                 }
-
-                deferredResults.associate { it.await() }
-            } ?: run {
-                mapOf()
+            } catch (_: Exception) {
+                createExceptionResult(handlerKey)
             }
+        }
+    }
 
+    private fun createNoHostAddressResult(handlerKey: String): Pair<String, ClientApiResult> {
+        return Pair(
+            handlerKey,
+            createFailureResult(
+                StandardErrorCode.CANT_GET_SYNC_ADDRESS,
+                "Failed to get connect host address by $handlerKey",
+            ),
+        )
+    }
+
+    private fun createExceptionResult(handlerKey: String): Pair<String, ClientApiResult> {
+        return Pair(
+            handlerKey,
+            createFailureResult(
+                StandardErrorCode.SYNC_PASTE_ERROR,
+                "Failed to sync paste to $handlerKey",
+            ),
+        )
+    }
+
+    private suspend fun syncPasteToTarget(
+        handlerKey: String,
+        handler: SyncHandler,
+        pasteData: PasteData,
+        hostAddress: String,
+    ): ClientApiResult {
+        val port = handler.syncRuntimeInfo.port
+        val targetAppInstanceId = handler.syncRuntimeInfo.appInstanceId
+
+        return if (appControl.isSendEnabled()) {
+            pasteClientApi.sendPaste(
+                pasteData,
+                targetAppInstanceId,
+            ) {
+                buildUrl(hostAddress, port)
+            }
+        } else {
+            createFailureResult(
+                StandardErrorCode.SYNC_NOT_ALLOW_SEND_BY_APP,
+                "Failed to send paste to $handlerKey",
+            )
+        }
+    }
+
+    private fun processResults(
+        results: Map<String, ClientApiResult>,
+        syncExtraInfo: SyncExtraInfo,
+        startTime: Long,
+    ): PasteTaskResult {
         val fails: Map<String, FailureResult> =
-            mapResult
+            results
                 .filter { it.value is FailureResult }
                 .mapValues { it.value as FailureResult }
 
         syncExtraInfo.syncFails.clear()
 
-        if (fails.isEmpty()) {
-            return SuccessPasteTaskResult(jsonUtils.JSON.encodeToString(syncExtraInfo))
+        return if (fails.isEmpty()) {
+            SuccessPasteTaskResult(jsonUtils.JSON.encodeToString(syncExtraInfo))
         } else {
             syncExtraInfo.syncFails.addAll(fails.keys)
-            return TaskUtils.createFailurePasteTaskResult(
+            TaskUtils.createFailurePasteTaskResult(
                 logger = logger,
                 retryHandler = { syncExtraInfo.executionHistories.size < 3 },
-                startTime = pasteTask.modifyTime,
+                startTime = startTime,
                 fails = fails.values,
                 extraInfo = syncExtraInfo,
             )
