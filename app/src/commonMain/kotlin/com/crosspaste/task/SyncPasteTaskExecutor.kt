@@ -1,5 +1,6 @@
 package com.crosspaste.task
 
+import com.crosspaste.app.AppControl
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.SyncExtraInfo
@@ -9,6 +10,7 @@ import com.crosspaste.net.VersionRelation
 import com.crosspaste.net.clientapi.ClientApiResult
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.PasteClientApi
+import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.TaskUtils
@@ -22,6 +24,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 
 class SyncPasteTaskExecutor(
+    private val appControl: AppControl,
     private val pasteDao: PasteDao,
     private val pasteClientApi: PasteClientApi,
     private val syncManager: SyncManager,
@@ -55,9 +58,24 @@ class SyncPasteTaskExecutor(
                                 val targetAppInstanceId = clientHandler.syncRuntimeInfo.appInstanceId
                                 clientHandler.getConnectHostAddress()?.let {
                                     val syncPasteResult =
-                                        pasteClientApi.sendPaste(pasteData, targetAppInstanceId) {
-                                            buildUrl(it, port)
+                                        if (appControl.isSendEnabled()) {
+                                            pasteClientApi.sendPaste(
+                                                pasteData,
+                                                targetAppInstanceId,
+                                            ) {
+                                                buildUrl(it, port)
+                                            }
+                                        } else {
+                                            createFailureResult(
+                                                StandardErrorCode.SYNC_NOT_ALLOW_SEND_BY_APP,
+                                                "Failed to send paste to ${entryHandler.key}",
+                                            )
                                         }
+
+                                    if (syncPasteResult is SuccessResult) {
+                                        appControl.completeSendOperation()
+                                    }
+
                                     return@async Pair(entryHandler.key, syncPasteResult)
                                 } ?: run {
                                     return@async Pair(

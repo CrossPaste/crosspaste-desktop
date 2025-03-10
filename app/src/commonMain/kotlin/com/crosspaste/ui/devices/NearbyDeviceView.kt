@@ -18,25 +18,28 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.crosspaste.app.AppControl
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.db.sync.SyncRuntimeInfo.Companion.createSyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.NearbyDeviceManager
+import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.theme.CrossPasteTheme.connectedColor
 import com.crosspaste.ui.theme.CrossPasteTheme.disconnectedColor
 import com.crosspaste.utils.getJsonUtils
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
 import org.koin.compose.koinInject
 
 @Composable
 fun NearbyDeviceView(syncInfo: SyncInfo) {
+    val appControl = koinInject<AppControl>()
     val copywriter = koinInject<GlobalCopywriter>()
     val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
     val deviceViewProvider = koinInject<DeviceViewProvider>()
     val syncRuntimeInfoDao = koinInject<SyncRuntimeInfoDao>()
+    val syncManager = koinInject<SyncManager>()
     val configManager = koinInject<ConfigManager>()
     val jsonUtils = getJsonUtils()
     val scope = rememberCoroutineScope()
@@ -45,8 +48,10 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
         Button(
             modifier = Modifier.height(28.dp),
             onClick = {
-                val newSyncRuntimeInfo = createSyncRuntimeInfo(syncInfo)
-                syncRuntimeInfoDao.insertOrUpdateSyncRuntimeInfo(newSyncRuntimeInfo)
+                if (appControl.isDeviceConnectionEnabled(syncManager.getSyncHandlers().size + 1)) {
+                    val newSyncRuntimeInfo = createSyncRuntimeInfo(syncInfo)
+                    syncRuntimeInfoDao.insertOrUpdateSyncRuntimeInfo(newSyncRuntimeInfo)
+                }
             },
             shape = RoundedCornerShape(4.dp),
             border = BorderStroke(1.dp, connectedColor(background)),

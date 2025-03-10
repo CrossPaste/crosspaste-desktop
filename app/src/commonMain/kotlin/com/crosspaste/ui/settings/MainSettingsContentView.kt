@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import com.crosspaste.app.AppControl
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.log.CrossPasteLogger
 import com.crosspaste.paste.PasteboardService
@@ -24,6 +25,7 @@ import org.koin.compose.koinInject
 
 @Composable
 fun MainSettingsContentView() {
+    val appControl = koinInject<AppControl>()
     val configManager = koinInject<ConfigManager>()
     val crossPasteLogger = koinInject<CrossPasteLogger>()
     val pasteboardService = koinInject<PasteboardService>()
@@ -65,7 +67,9 @@ fun MainSettingsContentView() {
             painter = shield(),
             getCurrentSwitchValue = { configManager.config.enableEncryptSync },
         ) {
-            configManager.updateConfig("enableEncryptSync", it)
+            if (appControl.isEncryptionEnabled()) {
+                configManager.updateConfig("enableEncryptSync", it)
+            }
         }
 
         HorizontalDivider(modifier = Modifier.padding(start = 35.dp))

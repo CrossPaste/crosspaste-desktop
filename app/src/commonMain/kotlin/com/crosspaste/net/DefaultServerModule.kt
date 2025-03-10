@@ -1,5 +1,6 @@
 package com.crosspaste.net
 
+import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenApi
 import com.crosspaste.app.EndpointInfoFactory
@@ -27,6 +28,7 @@ import io.ktor.server.request.*
 import io.ktor.server.routing.*
 
 open class DefaultServerModule(
+    private val appControl: AppControl,
     private val appInfo: AppInfo,
     private val appTokenApi: AppTokenApi,
     private val cacheManager: CacheManager,
@@ -73,6 +75,7 @@ open class DefaultServerModule(
                     syncRoutingApi,
                 )
                 pasteRouting(
+                    appControl,
                     pasteboardService,
                     syncRoutingApi,
                 )

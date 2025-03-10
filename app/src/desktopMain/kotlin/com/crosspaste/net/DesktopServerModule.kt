@@ -1,5 +1,6 @@
 package com.crosspaste.net
 
+import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenApi
 import com.crosspaste.app.EndpointInfoFactory
@@ -16,6 +17,7 @@ import io.ktor.server.application.*
 import io.ktor.server.plugins.compression.*
 
 class DesktopServerModule(
+    appControl: AppControl,
     appInfo: AppInfo,
     appTokenApi: AppTokenApi,
     cacheManager: CacheManager,
@@ -30,6 +32,7 @@ class DesktopServerModule(
     serverDecryptionPluginFactory: ServerDecryptionPluginFactory,
     userDataPathProvider: UserDataPathProvider,
 ) : DefaultServerModule(
+        appControl,
         appInfo,
         appTokenApi,
         cacheManager,

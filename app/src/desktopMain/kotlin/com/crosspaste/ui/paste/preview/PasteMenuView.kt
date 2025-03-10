@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import com.crosspaste.app.AppControl
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.i18n.Copywriter
@@ -71,6 +72,7 @@ fun PasteMenuView(
     toShow: (Boolean) -> Unit,
 ) {
     val density = LocalDensity.current
+    val appControl = koinInject<AppControl>()
     val pasteDao = koinInject<PasteDao>()
     val pasteMenuService = koinInject<DesktopPasteMenuService>()
 
@@ -171,11 +173,13 @@ fun PasteMenuView(
                     },
                 hoverFavorite = { hoverFavorite = it },
             ) {
-                pasteDao.setFavorite(
-                    pasteData.id,
-                    !currentFavorite,
-                )
-                currentFavorite = !currentFavorite
+                if (appControl.isFavoriteEnabled()) {
+                    pasteDao.setFavorite(
+                        pasteData.id,
+                        !currentFavorite,
+                    )
+                    currentFavorite = !currentFavorite
+                }
             }
 
             DetailMenuItem(

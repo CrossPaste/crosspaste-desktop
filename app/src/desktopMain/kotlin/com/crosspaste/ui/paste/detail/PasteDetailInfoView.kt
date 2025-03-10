@@ -41,6 +41,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppFileType
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteData
@@ -66,6 +67,7 @@ fun PasteDetailInfoView(
     pasteData: PasteData,
     items: List<PasteDetailInfoItem>,
 ) {
+    val appControl = koinInject<AppControl>()
     val iconStyle = koinInject<IconStyle>()
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteDao = koinInject<PasteDao>()
@@ -97,8 +99,10 @@ fun PasteDetailInfoView(
             tint = MaterialTheme.colorScheme.primary,
             text = copywriter.getText("whether_to_search_only_favorites"),
         ) {
-            pasteDao.setFavorite(pasteData.id, !favorite)
-            favorite = !favorite
+            if (appControl.isFavoriteEnabled()) {
+                pasteDao.setFavorite(pasteData.id, !favorite)
+                favorite = !favorite
+            }
         }
         Spacer(modifier = Modifier.weight(1f))
         pasteData.source?.let { source ->
