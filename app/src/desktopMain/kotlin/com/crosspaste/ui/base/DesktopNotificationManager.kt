@@ -6,16 +6,20 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.notification.MessageObject
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.notification.Toast
 import com.crosspaste.notification.ToastManager
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.platform.linux.api.NotificationSender.sendNotification
 import com.crosspaste.sound.SoundService
+import java.util.concurrent.atomic.AtomicInteger
 
 class DesktopNotificationManager(
     private val appWindowManager: DesktopAppWindowManager,
     private val soundService: SoundService,
     private val toastManager: ToastManager,
 ) : NotificationManager() {
+
+    val idGenerator = AtomicInteger(0)
 
     val platform = getPlatform()
 
@@ -37,8 +41,9 @@ class DesktopNotificationManager(
     }
 
     private fun notifyToast(messageObject: MessageObject) {
-        toastManager.setToast(
+        toastManager.pushToast(
             Toast(
+                messageId = idGenerator.getAndAdd(1),
                 message = messageObject.message,
                 messageType = messageObject.messageType,
                 duration = messageObject.duration,
