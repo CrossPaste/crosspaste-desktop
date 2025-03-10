@@ -46,9 +46,21 @@ import org.koin.compose.koinInject
 
 @Composable
 fun TokenView() {
-    val density = LocalDensity.current
-    val copywriter = koinInject<GlobalCopywriter>()
     val appTokenApi = koinInject<AppTokenApi>()
+
+    val showToken by appTokenApi.showToken.collectAsState()
+
+    if (showToken) {
+        RealTokenView()
+    }
+}
+
+@Composable
+private fun RealTokenView() {
+    val appTokenApi = koinInject<AppTokenApi>()
+    val copywriter = koinInject<GlobalCopywriter>()
+
+    val density = LocalDensity.current
 
     val offsetY =
         IntOffset(
@@ -136,7 +148,7 @@ fun TokenView() {
 }
 
 @Composable
-fun OTPCodeBox() {
+private fun OTPCodeBox() {
     val appTokenApi = koinInject<AppTokenApi>()
     val token by appTokenApi.token.collectAsState()
 
