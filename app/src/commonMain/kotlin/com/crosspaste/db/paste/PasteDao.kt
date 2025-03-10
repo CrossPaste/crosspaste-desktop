@@ -3,15 +3,16 @@ package com.crosspaste.db.paste
 import app.cash.sqldelight.Query
 import app.cash.sqldelight.coroutines.asFlow
 import com.crosspaste.Database
+import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
-import com.crosspaste.config.ConfigManager
 import com.crosspaste.db.task.PullExtraInfo
 import com.crosspaste.db.task.SyncExtraInfo
 import com.crosspaste.db.task.TaskDao
 import com.crosspaste.db.task.TaskType
 import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.PasteExportParam
+import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.path.UserDataPathProvider
@@ -25,8 +26,8 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 
 class PasteDao(
+    private val appControl: AppControl,
     private val appInfo: AppInfo,
-    private val configManager: ConfigManager,
     private val currentPaste: CurrentPaste,
     private val database: Database,
     private val lazyTaskExecutor: Lazy<TaskExecutor>,
@@ -373,51 +374,58 @@ class PasteDao(
 
     suspend fun releaseLocalPasteData(id: Long, pasteItems: List<PasteItem>) {
         getLoadingPasteData(id)?.let { pasteData ->
-                var pasteAppearItems = pasteItems
-                for (pastePlugin in pasteProcessPlugins) {
-                    pasteAppearItems = pastePlugin.process(pasteAppearItems, pasteData.source)
+            var pasteAppearItems = pasteItems
+            for (pastePlugin in pasteProcessPlugins) {
+                pasteAppearItems = pastePlugin.process(pasteAppearItems, pasteData.source)
+            }
+            val size = pasteAppearItems.sumOf { it.size }
+            val maxFileSize = pasteAppearItems.filter { it is PasteFiles }
+                .maxByOrNull { it.size }
+                ?.size ?: 0
+            // first item as pasteAppearItem
+            // remaining items as pasteContent
+            val firstItem: PasteItem = pasteAppearItems.first()
+            val remainingItems: List<PasteItem> = pasteAppearItems.drop(1)
+
+            val hash = firstItem.hash
+            val pasteType = firstItem.getPasteType()
+
+            val change = database.transactionWithResult {
+                pasteDatabaseQueries.updatePasteDataToLoaded(
+                    pasteAppearItem = firstItem.toJson(),
+                    pasteCollection = PasteCollection(remainingItems).toJson(),
+                    pasteType = pasteType.type.toLong(),
+                    pasteSearchContent = PasteData.createSearchContent(
+                        pasteData.source,
+                        firstItem.getSearchContent(),
+                    ),
+                    size = size,
+                    hash = hash,
+                    id = id,
+                )
+                pasteDatabaseQueries.change().executeAsOne() > 0
+            }
+
+            if (change) {
+                val tasks = mutableListOf<Long>()
+                if (pasteType.isHtml()) {
+                    tasks.add(taskDao.createTask(id, TaskType.HTML_TO_IMAGE_TASK))
+                } else if (pasteType.isRtf()) {
+                    tasks.add(taskDao.createTask(id, TaskType.RTF_TO_IMAGE_TASK))
                 }
-                val size = pasteAppearItems.sumOf { it.size }
-                // first item as pasteAppearItem
-                // remaining items as pasteContent
-                val firstItem: PasteItem = pasteAppearItems.first()
-                val remainingItems: List<PasteItem> = pasteAppearItems.drop(1)
-
-                val hash = firstItem.hash
-                val pasteType = firstItem.getPasteType()
-
-                val change = database.transactionWithResult {
-                    pasteDatabaseQueries.updatePasteDataToLoaded(
-                        pasteAppearItem = firstItem.toJson(),
-                        pasteCollection = PasteCollection(remainingItems).toJson(),
-                        pasteType = pasteType.type.toLong(),
-                        pasteSearchContent = PasteData.createSearchContent(
-                            pasteData.source,
-                            firstItem.getSearchContent(),
-                        ),
-                        size = size,
-                        hash = hash,
-                        id = id,
+                if (appControl.isFileSizeSyncEnabled(maxFileSize)) {
+                    tasks.add(
+                        taskDao.createTask(
+                            id,
+                            TaskType.SYNC_PASTE_TASK,
+                            SyncExtraInfo()
+                        )
                     )
-                    pasteDatabaseQueries.change().executeAsOne() > 0
                 }
-
-                if (change) {
-                    val tasks = mutableListOf<Long>()
-                    if (pasteType.isHtml()) {
-                        tasks.add(taskDao.createTask(id, TaskType.HTML_TO_IMAGE_TASK))
-                    } else if (pasteType.isRtf()) {
-                        tasks.add(taskDao.createTask(id, TaskType.RTF_TO_IMAGE_TASK))
-                    }
-                    if (!configManager.config.enabledSyncFileSizeLimit ||
-                        fileUtils.bytesSize(configManager.config.maxSyncFileSize) > size
-                    ) {
-                        tasks.add(taskDao.createTask(id, TaskType.SYNC_PASTE_TASK, SyncExtraInfo()))
-                    }
-                    tasks.addAll(markDeleteSameHash(id, pasteType.type, hash))
-                    currentPaste.setPasteId(id)
-                    taskExecutor.submitTasks(tasks)
-                }
+                tasks.addAll(markDeleteSameHash(id, pasteType.type, hash))
+                currentPaste.setPasteId(id)
+                taskExecutor.submitTasks(tasks)
+            }
         }
 
     }

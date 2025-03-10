@@ -44,7 +44,7 @@ fun Routing.pullRouting(
 
             if (!syncHandler.syncRuntimeInfo.allowSend) {
                 logger.debug { "sync handler ($fromAppInstanceId) not allow send" }
-                failResponse(call, StandardErrorCode.SYNC_NOT_ALLOW_SEND.toErrorCode())
+                failResponse(call, StandardErrorCode.SYNC_NOT_ALLOW_SEND_BY_USER.toErrorCode())
                 return@let
             }
 

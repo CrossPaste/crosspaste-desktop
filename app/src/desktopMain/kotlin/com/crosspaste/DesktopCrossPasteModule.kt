@@ -1,6 +1,7 @@
 package com.crosspaste
 
 import coil3.PlatformContext
+import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppEnv
 import com.crosspaste.app.AppExitService
 import com.crosspaste.app.AppInfo
@@ -13,6 +14,7 @@ import com.crosspaste.app.AppTokenApi
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.AppUrls
 import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.DesktopAppControl
 import com.crosspaste.app.DesktopAppExitService
 import com.crosspaste.app.DesktopAppInfoFactory
 import com.crosspaste.app.DesktopAppLaunch
@@ -206,6 +208,7 @@ class DesktopCrossPasteModule(
 
     override fun appModule() =
         module {
+            single<AppControl> { DesktopAppControl(configManager) }
             single<AppEnv> { appEnv }
             single<AppExitService> { DesktopAppExitService }
             single<AppInfo> { get<AppInfoFactory>().createAppInfo() }
@@ -296,7 +299,7 @@ class DesktopCrossPasteModule(
             single<ServerModule> {
                 DesktopServerModule(
                     get(), get(), get(), get(), get(), get(), get(), get(),
-                    get(), get(), get(), get(), get(),
+                    get(), get(), get(), get(), get(), get(),
                 )
             }
             single<SyncApi> { SyncApi }
@@ -382,7 +385,7 @@ class DesktopCrossPasteModule(
                             get(),
                             get(),
                         ),
-                        SyncPasteTaskExecutor(get(), get(), get()),
+                        SyncPasteTaskExecutor(get(), get(), get(), get()),
                     ),
                     get(),
                 )

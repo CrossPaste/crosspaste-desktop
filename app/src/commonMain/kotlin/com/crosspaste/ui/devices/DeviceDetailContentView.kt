@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.db.sync.SyncRuntimeInfo
@@ -45,6 +46,7 @@ import org.koin.compose.koinInject
 
 @Composable
 fun DeviceDetailContentView() {
+    val appControl = koinInject<AppControl>()
     val appInfo = koinInject<AppInfo>()
     val appWindowManager = koinInject<AppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
@@ -154,12 +156,14 @@ fun DeviceDetailContentView() {
                         checked = syncRuntimeInfo.allowSend,
                         onCheckedChange = {
                             runBlocking {
-                                syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
-                                    ?.update { syncRuntimeInfo ->
-                                        syncRuntimeInfo.copy(allowSend = it)
-                                    }?.let {
-                                        syncRuntimeInfo = it
-                                    }
+                                if (appControl.isDeviceControlEnabled()) {
+                                    syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
+                                        ?.update { syncRuntimeInfo ->
+                                            syncRuntimeInfo.copy(allowSend = it)
+                                        }?.let {
+                                            syncRuntimeInfo = it
+                                        }
+                                }
                             }
                         },
                     )
@@ -189,12 +193,14 @@ fun DeviceDetailContentView() {
                         checked = syncRuntimeInfo.allowReceive,
                         onCheckedChange = {
                             runBlocking {
-                                syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
-                                    ?.update { syncRuntimeInfo ->
-                                        syncRuntimeInfo.copy(allowReceive = it)
-                                    }?.let {
-                                        syncRuntimeInfo = it
-                                    }
+                                if (appControl.isDeviceControlEnabled()) {
+                                    syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
+                                        ?.update { syncRuntimeInfo ->
+                                            syncRuntimeInfo.copy(allowReceive = it)
+                                        }?.let {
+                                            syncRuntimeInfo = it
+                                        }
+                                }
                             }
                         },
                     )
