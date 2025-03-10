@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,10 +21,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppSize
-import com.crosspaste.app.AppTokenApi
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.ui.base.DialogService
+import com.crosspaste.ui.base.DialogView
 import com.crosspaste.ui.base.ToastListView
 import com.crosspaste.ui.devices.TokenView
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
@@ -45,8 +42,6 @@ fun hideWindow(appWindowManager: DesktopAppWindowManager) {
 fun CrossPasteMainWindowContent() {
     val appSize = koinInject<AppSize>() as DesktopAppSize
     val appWindowManager = koinInject<DesktopAppWindowManager>()
-    val appTokenApi = koinInject<AppTokenApi>()
-    val dialogService = koinInject<DialogService>()
     val screenProvider = koinInject<ScreenProvider>()
 
     Theme {
@@ -78,7 +73,11 @@ fun CrossPasteMainWindowContent() {
                     Modifier
                         .shadow(appSize.mainShadowSize, appSize.appRoundedCornerShape)
                         .fillMaxSize()
-                        .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), RoundedCornerShape(10.dp))
+                        .border(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(10.dp),
+                        )
                         .pointerInput(Unit) {
                             // Avoid click-through
                             detectTapGestures()
@@ -100,15 +99,9 @@ fun CrossPasteMainWindowContent() {
 
                 ToastListView()
 
-                val dialog by dialogService.dialogs.collectAsState()
+                DialogView()
 
-                dialog.firstOrNull()?.content()
-
-                val showToken by appTokenApi.showToken.collectAsState()
-
-                if (showToken) {
-                    TokenView()
-                }
+                TokenView()
             }
         }
     }
