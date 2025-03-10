@@ -1,13 +1,12 @@
 package com.crosspaste.notification
 
-import com.crosspaste.ui.base.Toast
 import kotlinx.coroutines.flow.StateFlow
 
 interface ToastManager {
 
-    val toast: StateFlow<Toast?>
+    val toastList: StateFlow<List<Toast>>
 
-    fun setToast(toast: Toast)
+    fun pushToast(toast: Toast)
 
-    fun cancel()
+    fun removeToast(messageId: Int)
 }
