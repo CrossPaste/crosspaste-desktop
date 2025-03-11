@@ -10,13 +10,13 @@ interface AppControl {
 
     fun isDeviceControlEnabled(): Boolean
 
-    fun isSendEnabled(): Boolean
+    suspend fun isSendEnabled(): Boolean
 
-    fun isReceiveEnabled(): Boolean
+    suspend fun isReceiveEnabled(): Boolean
 
-    fun completeSendOperation()
+    suspend fun completeSendOperation()
 
-    fun completeReceiveOperation()
+    suspend fun completeReceiveOperation()
 
     fun isFileSizeSyncEnabled(size: Long): Boolean
 }

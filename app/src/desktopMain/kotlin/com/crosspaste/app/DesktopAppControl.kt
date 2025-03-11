@@ -23,19 +23,19 @@ class DesktopAppControl(private val configManager: ConfigManager) : AppControl {
         return true
     }
 
-    override fun isSendEnabled(): Boolean {
+    override suspend fun isSendEnabled(): Boolean {
         return true
     }
 
-    override fun isReceiveEnabled(): Boolean {
+    override suspend fun isReceiveEnabled(): Boolean {
         return true
     }
 
-    override fun completeSendOperation() {
+    override suspend fun completeSendOperation() {
         // do nothing
     }
 
-    override fun completeReceiveOperation() {
+    override suspend fun completeReceiveOperation() {
         // do nothing
     }
 

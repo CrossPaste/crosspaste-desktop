@@ -54,7 +54,7 @@ fun Routing.pasteRouting(
                     )
                 }
                 logger.debug { "sync handler ($appInstanceId) receive pasteData: $pasteData" }
-                appControl.isReceiveEnabled()
+                appControl.completeReceiveOperation()
                 successResponse(call)
             } catch (e: Exception) {
                 logger.error(e) { "sync handler ($appInstanceId) receive pasteData error" }
