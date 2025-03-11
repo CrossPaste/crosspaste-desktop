@@ -163,7 +163,6 @@ import com.crosspaste.ui.DesktopThemeDetector
 import com.crosspaste.ui.ScreenProvider
 import com.crosspaste.ui.base.DesktopIconStyle
 import com.crosspaste.ui.base.DesktopNotificationManager
-import com.crosspaste.ui.base.DesktopToastManager
 import com.crosspaste.ui.base.DesktopUISupport
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.IconStyle
@@ -448,7 +447,7 @@ class DesktopCrossPasteModule(
             single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get()) }
             single<SoundService> { DesktopSoundService(get()) }
             single<ThemeDetector> { DesktopThemeDetector(get()) }
-            single<ToastManager> { DesktopToastManager() }
+            single<ToastManager> { ToastManager() }
             single<TokenCache> { TokenCache }
             single<UISupport> { DesktopUISupport(get(), get(), get(), get(), get(), get(), get()) }
         }
