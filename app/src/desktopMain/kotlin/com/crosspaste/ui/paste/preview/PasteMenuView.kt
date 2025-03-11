@@ -164,7 +164,7 @@ fun PasteMenuView(
             }
 
             FavoriteMenuItem(
-                pasteData = pasteData,
+                currentFavorite = currentFavorite,
                 background =
                     if (hoverFavorite) {
                         MaterialTheme.colorScheme.surfaceContainerLowest
@@ -360,13 +360,13 @@ fun CopyMenuItem(
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun FavoriteMenuItem(
-    pasteData: PasteData,
+    currentFavorite: Boolean,
     background: Color,
     hoverFavorite: (Boolean) -> Unit,
     setFavorite: () -> Unit,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
-    val favoriteText = copywriter.getText(if (pasteData.favorite) "remove_from_favorites" else "favorite")
+    val favoriteText = copywriter.getText(if (currentFavorite) "remove_from_favorites" else "favorite")
 
     PasteTooltipAreaView(
         Modifier.fillMaxWidth().height(25.dp),
@@ -404,8 +404,6 @@ fun FavoriteMenuItem(
                         .background(background),
                 contentAlignment = Alignment.Center,
             ) {
-                var currentFavorite by remember(pasteData.id) { mutableStateOf(pasteData.favorite) }
-
                 Icon(
                     modifier =
                         Modifier.size(16.dp)
