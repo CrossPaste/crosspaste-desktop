@@ -98,7 +98,14 @@ fun StoreSettingsContentView() {
     var allOrFavorite by remember { mutableStateOf(true) }
 
     val refresh: (Boolean) -> Unit = {
-        val pasteResourceInfo = pasteDao.getPasteResourceInfo(it)
+        val pasteResourceInfo =
+            pasteDao.getPasteResourceInfo(
+                if (it) {
+                    null
+                } else {
+                    true
+                },
+            )
         pasteCount = pasteResourceInfo.pasteCount
         pasteFormatSize = fileUtils.formatBytes(pasteResourceInfo.pasteSize)
 

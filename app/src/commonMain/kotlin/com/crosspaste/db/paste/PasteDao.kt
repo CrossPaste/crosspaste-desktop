@@ -433,16 +433,13 @@ class PasteDao(
     fun getPasteResourceInfo(favorite: Boolean? = null): PasteResourceInfo {
         val builder = PasteResourceInfoBuilder()
         val doAdd: (PasteData) -> Unit = { pasteData ->
-            favorite?.let {
-                if (pasteData.favorite != it) {
-                    return@let
+            if (favorite == null || favorite == pasteData.favorite) {
+                pasteData.pasteAppearItem?.let {
+                    builder.add(it)
                 }
-            }
-            pasteData.pasteAppearItem?.let {
-                builder.add(it)
-            }
-            for (item in pasteData.pasteCollection.pasteItems) {
-                builder.add(item)
+                for (item in pasteData.pasteCollection.pasteItems) {
+                    builder.add(item)
+                }
             }
         }
         batchReadPasteData(
