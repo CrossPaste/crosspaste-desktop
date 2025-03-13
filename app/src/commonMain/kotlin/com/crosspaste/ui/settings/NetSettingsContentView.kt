@@ -42,7 +42,6 @@ import com.crosspaste.utils.getNetUtils
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import org.koin.compose.koinInject
-import java.awt.SystemColor.text
 
 @Composable
 fun NetSettingsContentView() {
