@@ -11,11 +11,11 @@ class ToastManager {
 
     private val coroutineScope = CoroutineScope(mainDispatcher)
 
-    private val _toastList: MutableStateFlow<List<Toast>> = MutableStateFlow(listOf())
+    private val _toastList: MutableStateFlow<List<Message>> = MutableStateFlow(listOf())
 
-    val toastList: StateFlow<List<Toast>> = _toastList
+    val toastList: StateFlow<List<Message>> = _toastList
 
-    fun pushToast(toast: Toast) {
+    fun pushToast(toast: Message) {
         this._toastList.value = listOf(toast) + this._toastList.value
 
         toast.duration?.let { duration ->

@@ -1,7 +1,6 @@
 package com.crosspaste.listen
 
 import com.crosspaste.app.DesktopAppLaunchState
-import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.listener.GlobalListener
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
@@ -18,7 +17,6 @@ class DesktopGlobalListener(
     private val shortcutKeysListener: NativeKeyListener,
     private val mouseListener: NativeMouseListener,
     private val notificationManager: NotificationManager,
-    private val copywriter: GlobalCopywriter,
 ) : GlobalListener {
 
     private val logger = KotlinLogging.logger {}
@@ -44,9 +42,8 @@ class DesktopGlobalListener(
                     grantAccessibilityPermissions()
                 } else {
                     notificationManager.sendNotification(
-                        message =
-                            "${copywriter.getText("failed_to_register_keyboard_listener")}. " +
-                                "${copywriter.getText("error_Code")} ${e.code}",
+                        title = { it.getText("failed_to_register_keyboard_listener") },
+                        message = { "${it.getText("error_Code")} ${e.code}" },
                         messageType = MessageType.Error,
                     )
                 }

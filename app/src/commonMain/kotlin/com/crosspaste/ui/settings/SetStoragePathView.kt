@@ -132,7 +132,7 @@ fun SetStoragePathView() {
                             }
                             val errorAction: (String) -> Unit = { message ->
                                 notificationManager.sendNotification(
-                                    message = copywriter.getText(message),
+                                    title = { it.getText(message) },
                                     messageType = MessageType.Error,
                                 )
                             }

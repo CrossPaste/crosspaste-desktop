@@ -216,12 +216,13 @@ fun AddDeviceManuallyForm() {
                         }
                         else -> {
                             notificationManager.sendNotification(
-                                message =
-                                    "${copywriter.getText("addition_failed")}\n" +
-                                        "1. ${copywriter.getText("please_check_if_the_ip_and_port_are_correct")}\n" +
-                                        "2. ${copywriter.getText(
+                                title = { it.getText("addition_failed") },
+                                message = {
+                                    "1. ${it.getText("please_check_if_the_ip_and_port_are_correct")}\n" +
+                                        "2. ${it.getText(
                                             "check_if_there_is_a_firewall_or_antivirus_software_blocking_the_connection",
-                                        )}",
+                                        )}"
+                                },
                                 messageType = MessageType.Error,
                             )
                         }

@@ -6,8 +6,6 @@ import com.crosspaste.db.paste.PasteData
 import com.crosspaste.db.paste.PasteState
 import com.crosspaste.exception.PasteException
 import com.crosspaste.exception.StandardErrorCode
-import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.notification.MessageObject
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.item.PasteFiles
@@ -20,7 +18,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import okio.Path
 
 class PasteImportService(
-    private val copywriter: GlobalCopywriter,
     private val notificationManager: NotificationManager,
     private val pasteDao: PasteDao,
     private val userDataPathProvider: UserDataPathProvider,
@@ -74,27 +71,21 @@ class PasteImportService(
             }
             if (count > 0) {
                 notificationManager.sendNotification(
-                    MessageObject(
-                        message = copywriter.getText("import_successful"),
-                        messageType = MessageType.Success,
-                    ),
+                    title = { it.getText("import_successful") },
+                    messageType = MessageType.Success,
                 )
             } else {
                 notificationManager.sendNotification(
-                    MessageObject(
-                        message = copywriter.getText("no_data_import"),
-                        messageType = MessageType.Warning,
-                    ),
+                    title = { it.getText("no_data_import") },
+                    messageType = MessageType.Warning,
                 )
             }
             updateProgress(1f)
         } catch (e: Exception) {
             logger.error(e) { "Error importing paste data" }
             notificationManager.sendNotification(
-                MessageObject(
-                    message = copywriter.getText("import_fail"),
-                    messageType = MessageType.Error,
-                ),
+                title = { it.getText("import_fail") },
+                messageType = MessageType.Error,
             )
         } finally {
             importTempPath?.let { fileUtils.deleteFile(it) }

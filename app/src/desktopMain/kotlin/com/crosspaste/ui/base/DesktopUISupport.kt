@@ -57,7 +57,8 @@ class DesktopUISupport(
             Desktop.getDesktop().browse(URI(url))
         } else {
             notificationManager.sendNotification(
-                message = "${copywriter.getText("failed_to_open_browser")}  $url",
+                title = { it.getText("failed_to_open_browser") },
+                message = { url },
                 messageType = MessageType.Error,
             )
         }
@@ -80,7 +81,8 @@ class DesktopUISupport(
             Desktop.getDesktop().mail(mailURI)
         } else {
             notificationManager.sendNotification(
-                message = "${copywriter.getText("cant_open_email_client")} $email",
+                title = { it.getText("cant_open_email_client") },
+                message = { email },
                 messageType = MessageType.Error,
             )
         }
@@ -100,7 +102,7 @@ class DesktopUISupport(
             Desktop.getDesktop().browse(file.toURI())
         } else {
             notificationManager.sendNotification(
-                message = copywriter.getText("failed_to_open_html_pasteboard"),
+                title = { it.getText("failed_to_open_html_pasteboard") },
                 messageType = MessageType.Error,
             )
         }
@@ -116,13 +118,13 @@ class DesktopUISupport(
                     return
                 }
                 notificationManager.sendNotification(
-                    message = copywriter.getText("failed_to_browse_file_pasteboard"),
+                    title = { it.getText("failed_to_browse_file_pasteboard") },
                     messageType = MessageType.Error,
                 )
             }
         } else {
             notificationManager.sendNotification(
-                message = copywriter.getText("file_not_found"),
+                title = { it.getText("file_not_found") },
                 messageType = MessageType.Error,
             )
         }
@@ -182,13 +184,13 @@ class DesktopUISupport(
                 Desktop.getDesktop().open(imagePath.toFile())
             } else {
                 notificationManager.sendNotification(
-                    message = copywriter.getText("failed_to_open_image_pasteboard"),
+                    title = { it.getText("failed_to_open_image_pasteboard") },
                     messageType = MessageType.Error,
                 )
             }
         } else {
             notificationManager.sendNotification(
-                message = copywriter.getText("file_not_found"),
+                title = { it.getText("file_not_found") },
                 messageType = MessageType.Error,
             )
         }
@@ -211,7 +213,7 @@ class DesktopUISupport(
             Desktop.getDesktop().browse(file.toURI())
         } else {
             notificationManager.sendNotification(
-                message = copywriter.getText("failed_to_open_rtf_pasteboard"),
+                title = { it.getText("failed_to_open_rtf_pasteboard") },
                 messageType = MessageType.Error,
             )
         }

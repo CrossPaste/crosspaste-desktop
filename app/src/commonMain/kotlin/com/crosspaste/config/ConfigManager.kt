@@ -1,6 +1,5 @@
 package com.crosspaste.config
 
-import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.utils.DeviceUtils
 
@@ -11,8 +10,6 @@ interface ConfigManager {
     var config: AppConfig
 
     var notificationManager: NotificationManager?
-
-    var copywriter: GlobalCopywriter?
 
     fun loadConfig(): AppConfig?
 

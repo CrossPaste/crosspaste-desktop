@@ -3,7 +3,6 @@ package com.crosspaste.config
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.presist.OneFilePersist
@@ -25,8 +24,6 @@ class DefaultConfigManager(
     )
 
     override var notificationManager: NotificationManager? = null
-
-    override var copywriter: GlobalCopywriter? = null
 
     override fun loadConfig(): AppConfig? {
         return configFilePersist.read(AppConfig::class)
@@ -50,12 +47,10 @@ class DefaultConfigManager(
             saveConfig(key, value, config)
         } catch (_: Exception) {
             notificationManager?.let { manager ->
-                copywriter?.let {
-                    manager.sendNotification(
-                        message = it.getText("failed_to_save_config"),
-                        messageType = MessageType.Error,
-                    )
-                }
+                manager.sendNotification(
+                    title = { it.getText("failed_to_save_config") },
+                    messageType = MessageType.Error,
+                )
             }
             config = oldConfig
         }

@@ -23,7 +23,6 @@ import com.crosspaste.app.generated.resources.crosspaste_mac
 import com.crosspaste.clean.CleanPasteScheduler
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.config.DefaultConfigManager
-import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.listener.GlobalListener
 import com.crosspaste.log.DesktopCrossPasteLogger
 import com.crosspaste.net.PasteBonjourService
@@ -114,8 +113,6 @@ class CrossPaste {
                 if (appLaunchState.acquireLock) {
                     val configManager = koin.get<ConfigManager>()
                     val notificationManager = koin.get<NotificationManager>()
-                    val copywriter = koin.get<GlobalCopywriter>()
-                    configManager.copywriter = copywriter
                     configManager.notificationManager = notificationManager
                     if (configManager.config.enablePasteboardListening) {
                         koin.get<PasteboardService>().start()

@@ -5,8 +5,6 @@ import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.exception.PasteException
 import com.crosspaste.exception.StandardErrorCode
-import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.notification.MessageObject
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.item.PasteFiles
@@ -20,7 +18,6 @@ import okio.BufferedSink
 import okio.Path
 
 class PasteExportService(
-    private val copywriter: GlobalCopywriter,
     private val notificationManager: NotificationManager,
     private val pasteDao: PasteDao,
     private val userDataPathProvider: UserDataPathProvider,
@@ -74,29 +71,23 @@ class PasteExportService(
                 fileUtils.createFile(countFile)
                 compressExportFile(basePath, pasteExportParam.exportPath, exportFileName)
                 notificationManager.sendNotification(
-                    MessageObject(
-                        title = copywriter.getText("export_successful"),
-                        message = exportFileName,
-                        messageType = MessageType.Success,
-                        duration = null,
-                    ),
+                    title = { it.getText("export_successful") },
+                    message = { exportFileName },
+                    messageType = MessageType.Success,
+                    duration = null,
                 )
             } else {
                 notificationManager.sendNotification(
-                    MessageObject(
-                        message = copywriter.getText("no_data_found"),
-                        messageType = MessageType.Warning,
-                    ),
+                    title = { it.getText("no_data_found") },
+                    messageType = MessageType.Warning,
                 )
             }
             updateProgress(1f)
         } catch (e: Exception) {
             logger.error(e) { "export pasteData fail" }
             notificationManager.sendNotification(
-                MessageObject(
-                    message = copywriter.getText("export_fail"),
-                    messageType = MessageType.Error,
-                ),
+                title = { it.getText("export_fail") },
+                messageType = MessageType.Error,
             )
         } finally {
             exportTempPath?.let {

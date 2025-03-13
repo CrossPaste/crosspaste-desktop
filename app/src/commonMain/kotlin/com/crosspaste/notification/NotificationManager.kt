@@ -1,5 +1,6 @@
 package com.crosspaste.notification
 
+import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.utils.GlobalCoroutineScope.ioCoroutineDispatcher
 import com.crosspaste.utils.equalDebounce
 import kotlinx.coroutines.FlowPreview
@@ -10,7 +11,7 @@ import kotlinx.coroutines.launch
 @OptIn(FlowPreview::class)
 abstract class NotificationManager {
 
-    private val notificationChannel = Channel<MessageObject>()
+    private val notificationChannel = Channel<Message>()
 
     init {
         ioCoroutineDispatcher.launch {
@@ -26,18 +27,22 @@ abstract class NotificationManager {
         }
     }
 
-    fun sendNotification(messageObject: MessageObject) {
-        notificationChannel.trySend(messageObject)
+    protected fun sendNotification(message: Message) {
+        notificationChannel.trySend(message)
     }
 
+    abstract fun getMessageId(): Int
+
     fun sendNotification(
-        title: String? = null,
-        message: String,
+        title: (GlobalCopywriter) -> String,
+        message: ((GlobalCopywriter) -> String)? = null,
         messageType: MessageType,
         duration: Long? = 3000,
     ) {
-        sendNotification(MessageObject(title, message, messageType, duration))
+        sendNotification(
+            Message(getMessageId(), title, message, messageType, duration),
+        )
     }
 
-    abstract fun doSendNotification(messageObject: MessageObject)
+    abstract fun doSendNotification(message: Message)
 }
