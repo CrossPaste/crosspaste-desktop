@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
@@ -26,16 +27,19 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.notification.Message
 import com.crosspaste.notification.MessageType
-import com.crosspaste.notification.Toast
 import com.crosspaste.notification.getMessagePainter
 import com.crosspaste.utils.ColorUtils
+import org.koin.compose.koinInject
 
 @Composable
 fun ToastView(
-    toast: Toast,
+    toast: Message,
     onCancelTapped: () -> Unit,
 ) {
+    val copywriter = koinInject<GlobalCopywriter>()
     val messageStyle by remember {
         mutableStateOf(toast.messageType.getMessageStyle())
     }
@@ -59,40 +63,64 @@ fun ToastView(
                 background,
                 messageStyle.baseColor.targetHue,
             )
-
-        Row(
+        Column(
             modifier =
-                Modifier
-                    .background(background, shape = RoundedCornerShape(8.dp))
+                Modifier.background(background, shape = RoundedCornerShape(8.dp))
                     .padding(all = 8.dp)
-                    .width(280.dp)
-                    .padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
+                    .width(280.dp),
         ) {
-            Icon(
-                painter = getMessagePainter(messageStyle),
-                contentDescription = "toast icon",
-                tint = tint,
-            )
-            Spacer(Modifier.width(12.dp))
-            Text(
-                modifier = Modifier.weight(1f, fill = false),
-                text = toast.message,
-                style =
-                    TextStyle(
-                        fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colorScheme.contentColorFor(background),
-                        fontSize = 16.sp,
-                    ),
-            )
-            Spacer(Modifier.width(12.dp))
-            Icon(
-                modifier = Modifier.clickable(onClick = onCancelTapped),
-                painter = close(),
-                contentDescription = "Cancel",
-                tint = tint,
-            )
+            Row(
+                modifier =
+                    Modifier
+                        .width(280.dp)
+                        .padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Icon(
+                    painter = getMessagePainter(messageStyle),
+                    contentDescription = "toast icon",
+                    tint = tint,
+                )
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    modifier = Modifier.weight(1f, fill = false),
+                    text = toast.title(copywriter),
+                    style =
+                        TextStyle(
+                            fontWeight = FontWeight.Light,
+                            color = MaterialTheme.colorScheme.contentColorFor(background),
+                            fontSize = 16.sp,
+                        ),
+                )
+                Spacer(Modifier.width(12.dp))
+                Icon(
+                    modifier = Modifier.clickable(onClick = onCancelTapped),
+                    painter = close(),
+                    contentDescription = "Cancel",
+                    tint = tint,
+                )
+            }
+
+            toast.message?.let { message ->
+                Row(
+                    modifier =
+                        Modifier.width(280.dp)
+                            .padding(top = 12.dp, bottom = 4.dp)
+                            .padding(horizontal = 12.dp),
+                ) {
+                    Text(
+                        modifier = Modifier.weight(1f, fill = false),
+                        text = message(copywriter),
+                        style =
+                            TextStyle(
+                                fontWeight = FontWeight.Light,
+                                color = MaterialTheme.colorScheme.contentColorFor(background),
+                                fontSize = 12.sp,
+                            ),
+                    )
+                }
+            }
         }
     }
 }

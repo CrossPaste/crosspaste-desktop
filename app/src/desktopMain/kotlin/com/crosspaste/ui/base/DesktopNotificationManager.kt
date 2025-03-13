@@ -1,20 +1,19 @@
 package com.crosspaste.ui.base
 
 import androidx.compose.ui.window.Notification
-import com.crosspaste.app.AppName
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.notification.MessageObject
+import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.notification.Message
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
-import com.crosspaste.notification.Toast
 import com.crosspaste.notification.ToastManager
 import com.crosspaste.platform.getPlatform
-import com.crosspaste.platform.linux.api.NotificationSender.sendNotification
 import com.crosspaste.sound.SoundService
 import java.util.concurrent.atomic.AtomicInteger
 
 class DesktopNotificationManager(
     private val appWindowManager: DesktopAppWindowManager,
+    private val copywriter: GlobalCopywriter,
     private val soundService: SoundService,
     private val toastManager: ToastManager,
 ) : NotificationManager() {
@@ -25,38 +24,35 @@ class DesktopNotificationManager(
 
     val trayState = CrossPasteTrayState()
 
-    override fun doSendNotification(messageObject: MessageObject) {
+    override fun getMessageId(): Int {
+        return idGenerator.incrementAndGet()
+    }
+
+    override fun doSendNotification(message: Message) {
         if (appWindowManager.getShowMainWindow()) {
-            notifyToast(messageObject)
+            notifyToast(message)
         } else if (platform.isLinux()) {
-            sendNotification(AppName, messageObject.message)
+            sendNotification(message)
         } else {
-            notifyTray(messageObject)
+            notifyTray(message)
         }
-        if (messageObject.messageType == MessageType.Error) {
+        if (message.messageType == MessageType.Error) {
             soundService.errorSound()
-        } else if (messageObject.messageType == MessageType.Success) {
+        } else if (message.messageType == MessageType.Success) {
             soundService.successSound()
         }
     }
 
-    private fun notifyToast(messageObject: MessageObject) {
-        toastManager.pushToast(
-            Toast(
-                messageId = idGenerator.getAndAdd(1),
-                message = messageObject.message,
-                messageType = messageObject.messageType,
-                duration = messageObject.duration,
-            ),
-        )
+    private fun notifyToast(message: Message) {
+        toastManager.pushToast(message)
     }
 
-    private fun notifyTray(messageObject: MessageObject) {
+    private fun notifyTray(message: Message) {
         trayState.sendNotification(
             Notification(
-                messageObject.title ?: AppName,
-                messageObject.message,
-                when (messageObject.messageType) {
+                message.title(copywriter),
+                message.message?.let { it(copywriter) } ?: "",
+                when (message.messageType) {
                     MessageType.Error -> Notification.Type.Error
                     MessageType.Info -> Notification.Type.Info
                     MessageType.Success -> Notification.Type.None

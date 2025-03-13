@@ -155,7 +155,8 @@ fun DeviceConnectContentView(
                                         delay(1000)
                                     } catch (e: Exception) {
                                         notificationManager.sendNotification(
-                                            message = "${copywriter.getText("refresh_connection_failed")}:\n${e.message}",
+                                            title = { it.getText("refresh_connection_failed") },
+                                            message = e.message?.let { message -> { message } },
                                             messageType = MessageType.Error,
                                         )
                                     } finally {

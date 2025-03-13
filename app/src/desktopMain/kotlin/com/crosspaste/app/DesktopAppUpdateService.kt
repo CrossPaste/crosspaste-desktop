@@ -3,7 +3,6 @@ package com.crosspaste.app
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.DesktopProxy
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
@@ -29,7 +28,6 @@ import java.util.concurrent.TimeUnit
 class DesktopAppUpdateService(
     appInfo: AppInfo,
     private val appUrls: AppUrls,
-    private val copywriter: GlobalCopywriter,
     private val uiSupport: UISupport,
     private val notificationManager: NotificationManager,
 ) : AppUpdateService {
@@ -76,7 +74,7 @@ class DesktopAppUpdateService(
             uiSupport.openCrossPasteWebInBrowser(path = "download")
         } else {
             notificationManager.sendNotification(
-                message = copywriter.getText("no_new_version_available"),
+                title = { it.getText("no_new_version_available") },
                 messageType = MessageType.Info,
             )
         }

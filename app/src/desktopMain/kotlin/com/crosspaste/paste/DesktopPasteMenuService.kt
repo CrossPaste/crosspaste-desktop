@@ -43,7 +43,7 @@ class DesktopPasteMenuService(
             },
             success = {
                 notificationManager.sendNotification(
-                    message = copywriter.getText("copy_successful"),
+                    title = { it.getText("copy_successful") },
                     messageType = MessageType.Success,
                 )
             },
@@ -61,7 +61,7 @@ class DesktopPasteMenuService(
             },
             success = {
                 notificationManager.sendNotification(
-                    message = copywriter.getText("copy_successful"),
+                    title = { it.getText("copy_successful") },
                     messageType = MessageType.Success,
                 )
             },

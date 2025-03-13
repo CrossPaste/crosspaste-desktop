@@ -9,7 +9,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.db.paste.PasteType
-import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.PasteboardService
@@ -38,7 +37,6 @@ fun DetailPasteDataView() {
     currentPasteData?.let { pasteData ->
         pasteData.pasteAppearItem?.let {
             val appWindowManager = koinInject<AppWindowManager>()
-            val copywriter = koinInject<GlobalCopywriter>()
             val pasteboardService = koinInject<PasteboardService>()
             val notificationManager = koinInject<NotificationManager>()
             val scope = rememberCoroutineScope()
@@ -54,7 +52,7 @@ fun DetailPasteDataView() {
                     },
                     success = {
                         notificationManager.sendNotification(
-                            message = copywriter.getText("copy_successful"),
+                            title = { it.getText("copy_successful") },
                             messageType = MessageType.Success,
                         )
                     },

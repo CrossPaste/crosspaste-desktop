@@ -119,7 +119,7 @@ fun TabsView() {
                                 task = { pasteDao.markAllDeleteExceptFavorite() },
                                 success = {
                                     notificationManager.sendNotification(
-                                        message = copywriter.getText("clean_successful"),
+                                        title = { it.getText("clean_successful") },
                                         messageType = MessageType.Success,
                                     )
                                 },

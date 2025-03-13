@@ -216,7 +216,7 @@ class DesktopCrossPasteModule(
             single<AppPathProvider> { appPathProvider }
             single<AppRestartService> { DesktopAppRestartService }
             single<AppStartUpService> { DesktopAppStartUpService(get(), get()) }
-            single<AppUpdateService> { DesktopAppUpdateService(get(), get(), get(), get(), get()) }
+            single<AppUpdateService> { DesktopAppUpdateService(get(), get(), get(), get()) }
             single<AppUrls> { DesktopAppUrls }
             single<CacheManager> { DesktopCacheManager(get(), get()) }
             single<ConfigManager> { configManager }
@@ -363,8 +363,8 @@ class DesktopCrossPasteModule(
             single<PasteboardService> {
                 getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get())
             }
-            single<PasteExportService> { PasteExportService(get(), get(), get(), get()) }
-            single<PasteImportService> { PasteImportService(get(), get(), get(), get()) }
+            single<PasteExportService> { PasteExportService(get(), get(), get()) }
+            single<PasteImportService> { PasteImportService(get(), get(), get()) }
             single<PasteSyncProcessManager<Long>> { DefaultPasteSyncProcessManager() }
             single<TaskExecutor> {
                 TaskExecutor(
@@ -432,11 +432,11 @@ class DesktopCrossPasteModule(
             single<DeviceViewProvider> { DesktopDeviceViewProvider() }
             single<DialogService> { DialogService }
             single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
-            single<GlobalListener> { DesktopGlobalListener(get(), get(), get(), get(), get()) }
+            single<GlobalListener> { DesktopGlobalListener(get(), get(), get(), get()) }
             single<IconStyle> { DesktopIconStyle(get()) }
             single<NativeKeyListener> { get<DesktopShortcutKeysListener>() }
             single<NativeMouseListener> { get<DesktopMouseListener>() }
-            single<NotificationManager> { DesktopNotificationManager(get(), get(), get()) }
+            single<NotificationManager> { DesktopNotificationManager(get(), get(), get(), get()) }
             single<PasteboardViewProvider> { DesktopPasteboardViewProvider() }
             single<PlatformContext> { PlatformContext.INSTANCE }
             single<ScreenProvider> { DesktopScreenProvider(get()) }
