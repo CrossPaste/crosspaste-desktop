@@ -85,7 +85,7 @@ fun HomeMenuView(
                 background = MaterialTheme.colorScheme.surfaceBright,
             ) {
                 openMainWindow()
-                appWindowManager.toScreen(ScreenType.SETTINGS)
+                appWindowManager.toScreen(Settings)
                 close()
             }
             MenuItem(
@@ -93,7 +93,7 @@ fun HomeMenuView(
                 background = MaterialTheme.colorScheme.surfaceBright,
             ) {
                 openMainWindow()
-                appWindowManager.toScreen(ScreenType.SHORTCUT_KEYS)
+                appWindowManager.toScreen(ShortcutKeys)
                 close()
             }
             MenuItem(
@@ -109,7 +109,7 @@ fun HomeMenuView(
                 background = MaterialTheme.colorScheme.surfaceBright,
             ) {
                 openMainWindow()
-                appWindowManager.toScreen(ScreenType.EXPORT)
+                appWindowManager.toScreen(Export)
                 close()
             }
             MenuItem(
@@ -117,7 +117,7 @@ fun HomeMenuView(
                 background = MaterialTheme.colorScheme.surfaceBright,
             ) {
                 openMainWindow()
-                appWindowManager.toScreen(ScreenType.IMPORT)
+                appWindowManager.toScreen(Import)
                 close()
             }
             MenuItem(
@@ -125,7 +125,7 @@ fun HomeMenuView(
                 background = MaterialTheme.colorScheme.surfaceBright,
             ) {
                 openMainWindow()
-                appWindowManager.toScreen(ScreenType.ABOUT)
+                appWindowManager.toScreen(About)
                 close()
             }
             MenuItem(

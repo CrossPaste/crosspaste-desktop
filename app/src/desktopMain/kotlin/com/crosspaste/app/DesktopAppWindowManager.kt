@@ -11,6 +11,7 @@ import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.getPlatform
+import com.crosspaste.ui.PastePreview
 import com.crosspaste.ui.ScreenContext
 import com.crosspaste.ui.ScreenType
 import com.crosspaste.utils.Memoize
@@ -78,7 +79,7 @@ abstract class DesktopAppWindowManager(
 
     protected val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
-    private val _screenContext = MutableStateFlow(ScreenContext(ScreenType.PASTE_PREVIEW))
+    private val _screenContext = MutableStateFlow(ScreenContext(PastePreview))
     override val screenContext: StateFlow<ScreenContext> = _screenContext.asStateFlow()
 
     private val _firstLaunchCompleted = MutableStateFlow(false)

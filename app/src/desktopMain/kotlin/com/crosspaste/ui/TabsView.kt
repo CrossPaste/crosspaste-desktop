@@ -74,10 +74,10 @@ fun TabsView() {
     val tabs =
         remember {
             listOfNotNull(
-                Pair(listOf(ScreenType.PASTE_PREVIEW), "pasteboard"),
-                Pair(listOf(ScreenType.DEVICES), "devices"),
-                Pair(listOf(ScreenType.QR_CODE), "scan"),
-                if (getAppEnvUtils().isDevelopment()) Pair(listOf(ScreenType.DEBUG), "debug") else null,
+                Pair(listOf(PastePreview), "pasteboard"),
+                Pair(listOf(Devices), "devices"),
+                Pair(listOf(QrCode), "scan"),
+                if (getAppEnvUtils().isDevelopment()) Pair(listOf(Debug), "debug") else null,
             )
         }
 
@@ -103,7 +103,7 @@ fun TabsView() {
                         TabView(pair.first, copywriter.getText(pair.second))
                     }
                     Spacer(modifier = Modifier.weight(1f))
-                    if (screen.screenType == ScreenType.PASTE_PREVIEW) {
+                    if (screen.screenType == PastePreview) {
                         val notificationManager = koinInject<NotificationManager>()
                         val pasteDao = koinInject<PasteDao>()
                         val scope = rememberCoroutineScope()
@@ -178,10 +178,10 @@ fun TabsView() {
         }
 
         when (screen.screenType) {
-            ScreenType.PASTE_PREVIEW -> screenProvider.PasteboardScreen {}
-            ScreenType.DEVICES -> screenProvider.DevicesScreen()
-            ScreenType.QR_CODE -> screenProvider.QRScreen()
-            ScreenType.DEBUG -> DebugScreen()
+            PastePreview -> screenProvider.PasteboardScreen {}
+            Devices -> screenProvider.DevicesScreen()
+            QrCode -> screenProvider.QRScreen()
+            Debug -> DebugScreen()
             else -> screenProvider.PasteboardScreen {}
         }
     }

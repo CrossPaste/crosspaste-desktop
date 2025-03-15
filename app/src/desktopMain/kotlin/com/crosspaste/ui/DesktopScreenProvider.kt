@@ -29,39 +29,39 @@ class DesktopScreenProvider(
         val screen by appWindowManager.screenContext.collectAsState()
 
         when (screen.screenType) {
-            ScreenType.PASTE_PREVIEW,
-            ScreenType.DEVICES,
-            ScreenType.QR_CODE,
-            ScreenType.DEBUG,
+            PastePreview,
+            Devices,
+            QrCode,
+            Debug,
             -> {
                 HomeScreen()
             }
 
-            ScreenType.SETTINGS -> {
+            Settings -> {
                 SettingsScreen()
             }
 
-            ScreenType.SHORTCUT_KEYS -> {
+            ShortcutKeys -> {
                 ShortcutKeysScreen()
             }
 
-            ScreenType.EXPORT -> {
+            Export -> {
                 ExportScreen()
             }
 
-            ScreenType.IMPORT -> {
+            Import -> {
                 ImportScreen()
             }
 
-            ScreenType.ABOUT -> {
+            About -> {
                 AboutScreen()
             }
 
-            ScreenType.DEVICE_DETAIL -> {
+            DeviceDetail -> {
                 DeviceDetailScreen()
             }
 
-            ScreenType.PASTE_TEXT_EDIT -> {
+            PasteTextEdit -> {
                 PasteTextEditScreen()
             }
 

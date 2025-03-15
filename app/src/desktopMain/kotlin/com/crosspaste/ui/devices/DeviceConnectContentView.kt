@@ -54,7 +54,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.sync.SyncManager
-import com.crosspaste.ui.ScreenType
+import com.crosspaste.ui.DeviceDetail
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.getMenWidth
@@ -124,7 +124,7 @@ fun DeviceConnectContentView(
                 if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
                     syncManager.toVerify(syncRuntimeInfo.appInstanceId)
                 } else {
-                    appWindowManager.toScreen(ScreenType.DEVICE_DETAIL, syncRuntimeInfo)
+                    appWindowManager.toScreen(DeviceDetail, syncRuntimeInfo)
                 }
             }
     }

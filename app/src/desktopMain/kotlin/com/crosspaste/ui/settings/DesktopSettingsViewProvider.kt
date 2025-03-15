@@ -12,7 +12,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppWindowManager
-import com.crosspaste.ui.ScreenType
+import com.crosspaste.ui.About
 import com.crosspaste.ui.base.ExpandView
 import com.crosspaste.ui.base.clipboard
 import com.crosspaste.ui.base.database
@@ -35,7 +35,7 @@ class DesktopSettingsViewProvider(
                     Modifier
                         .clip(RoundedCornerShape(5.dp))
                         .clickable(onClick = {
-                            appWindowManager.toScreen(ScreenType.ABOUT)
+                            appWindowManager.toScreen(About)
                         })
                         .padding(horizontal = 5.dp, vertical = 5.dp),
             ) {
