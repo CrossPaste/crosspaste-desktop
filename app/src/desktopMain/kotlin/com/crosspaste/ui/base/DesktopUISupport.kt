@@ -20,7 +20,7 @@ import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.paste.plugin.type.ColorTypePlugin
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.getPlatform
-import com.crosspaste.ui.ScreenType
+import com.crosspaste.ui.PasteTextEdit
 import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
 import com.google.common.io.Files
@@ -197,7 +197,7 @@ class DesktopUISupport(
     }
 
     override fun openText(pasteData: PasteData) {
-        appWindowManager.toScreen(ScreenType.PASTE_TEXT_EDIT, pasteData)
+        appWindowManager.toScreen(PasteTextEdit, pasteData)
     }
 
     override fun openRtf(pasteData: PasteData) {

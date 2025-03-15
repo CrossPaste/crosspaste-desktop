@@ -7,7 +7,7 @@ class ScreenContext(val screenType: ScreenType, val nextScreenContext: ScreenCon
     constructor(screenType: ScreenType, nextScreenContext: ScreenContext) : this(screenType, nextScreenContext, Unit)
 
     fun returnNext(): ScreenContext {
-        return nextScreenContext ?: ScreenContext(ScreenType.PASTE_PREVIEW)
+        return nextScreenContext ?: ScreenContext(PastePreview)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -28,19 +28,4 @@ class ScreenContext(val screenType: ScreenType, val nextScreenContext: ScreenCon
         result = 31 * result + context.hashCode()
         return result
     }
-}
-
-enum class ScreenType {
-    ABOUT,
-    EXPORT,
-    DEBUG,
-    DEVICES,
-    DEVICE_DETAIL,
-    IMPORT,
-    PASTE_PREVIEW,
-    PASTE_TEXT_EDIT,
-    QR_CODE,
-    QR_SCANNER, // use in mobile
-    SETTINGS,
-    SHORTCUT_KEYS,
 }

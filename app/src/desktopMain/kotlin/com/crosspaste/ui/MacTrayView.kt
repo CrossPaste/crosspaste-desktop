@@ -132,7 +132,7 @@ object MacTrayView {
             createMenuItem(copywriter.getText("settings")) {
                 mainCoroutineDispatcher.launch(CoroutineName("Open settings")) {
                     appWindowManager.activeMainWindow()
-                    appWindowManager.toScreen(ScreenType.SETTINGS)
+                    appWindowManager.toScreen(Settings)
                 }
             },
         )
@@ -141,7 +141,7 @@ object MacTrayView {
             createMenuItem(copywriter.getText("shortcut_keys")) {
                 mainCoroutineDispatcher.launch(CoroutineName("Open shortcut keys")) {
                     appWindowManager.activeMainWindow()
-                    appWindowManager.toScreen(ScreenType.SHORTCUT_KEYS)
+                    appWindowManager.toScreen(ShortcutKeys)
                 }
             },
         )
@@ -150,7 +150,7 @@ object MacTrayView {
             createMenuItem(copywriter.getText("export")) {
                 mainCoroutineDispatcher.launch(CoroutineName("Open export")) {
                     appWindowManager.activeMainWindow()
-                    appWindowManager.toScreen(ScreenType.EXPORT)
+                    appWindowManager.toScreen(Export)
                 }
             },
         )
@@ -159,7 +159,7 @@ object MacTrayView {
             createMenuItem(copywriter.getText("import")) {
                 mainCoroutineDispatcher.launch(CoroutineName("Open import")) {
                     appWindowManager.activeMainWindow()
-                    appWindowManager.toScreen(ScreenType.IMPORT)
+                    appWindowManager.toScreen(Import)
                 }
             },
         )
@@ -168,7 +168,7 @@ object MacTrayView {
             createMenuItem(copywriter.getText("about")) {
                 mainCoroutineDispatcher.launch(CoroutineName("Open about")) {
                     appWindowManager.activeMainWindow()
-                    appWindowManager.toScreen(ScreenType.ABOUT)
+                    appWindowManager.toScreen(About)
                 }
             },
         )
