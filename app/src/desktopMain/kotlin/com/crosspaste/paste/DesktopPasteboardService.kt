@@ -3,47 +3,52 @@ package com.crosspaste.paste
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.sound.SoundService
 
 fun getDesktopPasteboardService(
     appWindowManager: DesktopAppWindowManager,
-    pasteDao: PasteDao,
     configManager: ConfigManager,
     currentPaste: CurrentPaste,
+    notificationManager: NotificationManager,
     pasteConsumer: TransferableConsumer,
     pasteProducer: TransferableProducer,
+    pasteDao: PasteDao,
     soundService: SoundService,
 ): AbstractPasteboardService {
     val currentPlatform = getPlatform()
     return if (currentPlatform.isMacos()) {
         MacosPasteboardService(
             appWindowManager,
-            pasteDao,
             configManager,
             currentPaste,
+            notificationManager,
             pasteConsumer,
             pasteProducer,
+            pasteDao,
             soundService,
         )
     } else if (currentPlatform.isWindows()) {
         WindowsPasteboardService(
             appWindowManager,
-            pasteDao,
             configManager,
             currentPaste,
+            notificationManager,
             pasteConsumer,
             pasteProducer,
+            pasteDao,
             soundService,
         )
     } else if (currentPlatform.isLinux()) {
         LinuxPasteboardService(
             appWindowManager,
-            pasteDao,
             configManager,
             currentPaste,
+            notificationManager,
             pasteConsumer,
             pasteProducer,
+            pasteDao,
             soundService,
         )
     } else {

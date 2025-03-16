@@ -2,6 +2,8 @@ package com.crosspaste.paste
 
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.db.paste.PasteData
+import com.crosspaste.notification.MessageType
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.sound.SoundService
 import com.crosspaste.utils.ioDispatcher
@@ -20,6 +22,8 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
 
     abstract val appWindowManager: AppWindowManager
 
+    abstract val notificationManager: NotificationManager
+
     abstract val pasteConsumer: TransferableConsumer
 
     abstract val pasteProducer: TransferableProducer
@@ -28,7 +32,7 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
 
     abstract val currentPaste: CurrentPaste
 
-    override val pasteboardChannel: Channel<suspend () -> Unit> = Channel(Channel.UNLIMITED)
+    override val pasteboardChannel: Channel<suspend () -> Result<Unit>> = Channel(Channel.UNLIMITED)
 
     override val serviceScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
@@ -51,8 +55,8 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
         localOnly: Boolean,
         filterFile: Boolean,
         updateCreateTime: Boolean,
-    ) {
-        try {
+    ): Result<Unit> {
+        return try {
             pasteProducer.produce(pasteItem, localOnly, filterFile)?.let {
                 it as DesktopWriteTransferable
                 systemClipboard.setContents(it, this)
@@ -60,8 +64,10 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
                 owner = true
                 currentPaste.setPasteId(id, updateCreateTime)
             }
+            Result.success(Unit)
         } catch (e: Exception) {
             logger.error(e) { "tryWritePasteboard error" }
+            Result.failure(e)
         }
     }
 
@@ -71,8 +77,8 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
         filterFile: Boolean,
         primary: Boolean,
         updateCreateTime: Boolean,
-    ) {
-        try {
+    ): Result<Unit> {
+        return try {
             pasteProducer.produce(pasteData, localOnly, filterFile, primary)?.let {
                 it as DesktopWriteTransferable
                 systemClipboard.setContents(it, this)
@@ -80,25 +86,45 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
                 owner = true
                 currentPaste.setPasteId(pasteData.id, updateCreateTime)
             }
+            Result.success(Unit)
         } catch (e: Exception) {
             logger.error(e) { "tryWritePasteboard error" }
+            Result.failure(e)
         }
     }
 
-    override suspend fun tryWriteRemotePasteboard(pasteData: PasteData) {
-        pasteDao.releaseRemotePasteData(pasteData) { storePasteData, filterFile ->
-            pasteboardChannel.trySend { tryWritePasteboard(storePasteData, localOnly = true, filterFile = filterFile) }
+    override suspend fun tryWriteRemotePasteboard(pasteData: PasteData): Result<Unit> {
+        return pasteDao.releaseRemotePasteData(pasteData) { storePasteData, filterFile ->
+            pasteboardChannel.trySend {
+                tryWritePasteboard(storePasteData, localOnly = true, filterFile = filterFile)
+                    .onFailure {
+                        notificationManager.sendNotification(
+                            title = { it.getText("copy_failed") },
+                            message = it.message?.let { message -> { it -> message } },
+                            messageType = MessageType.Error,
+                        )
+                    }
+            }
         }
     }
 
-    override suspend fun tryWriteRemotePasteboardWithFile(pasteData: PasteData) {
-        pasteDao.releaseRemotePasteDataWithFile(pasteData.id) { storePasteData ->
-            pasteboardChannel.trySend { tryWritePasteboard(storePasteData, localOnly = true, filterFile = false) }
+    override suspend fun tryWriteRemotePasteboardWithFile(pasteData: PasteData): Result<Unit> {
+        return pasteDao.releaseRemotePasteDataWithFile(pasteData.id) { storePasteData ->
+            pasteboardChannel.trySend {
+                tryWritePasteboard(storePasteData, localOnly = true, filterFile = false)
+                    .onFailure {
+                        notificationManager.sendNotification(
+                            title = { it.getText("copy_failed") },
+                            message = it.message?.let { message -> { it -> message } },
+                            messageType = MessageType.Error,
+                        )
+                    }
+            }
         }
     }
 
-    override suspend fun clearRemotePasteboard(pasteData: PasteData) {
-        pasteDao.markDeletePasteData(pasteData.id)
+    override suspend fun clearRemotePasteboard(pasteData: PasteData): Result<Unit> {
+        return pasteDao.markDeletePasteData(pasteData.id)
     }
 
     @Synchronized

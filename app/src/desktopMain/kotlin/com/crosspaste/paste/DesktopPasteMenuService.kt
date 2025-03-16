@@ -47,6 +47,13 @@ class DesktopPasteMenuService(
                     messageType = MessageType.Success,
                 )
             },
+            fail = {
+                notificationManager.sendNotification(
+                    title = { it.getText("copy_failed") },
+                    message = it.message?.let { message -> { it -> message } },
+                    messageType = MessageType.Error,
+                )
+            },
         )
     }
 
@@ -63,6 +70,13 @@ class DesktopPasteMenuService(
                 notificationManager.sendNotification(
                     title = { it.getText("copy_successful") },
                     messageType = MessageType.Success,
+                )
+            },
+            fail = {
+                notificationManager.sendNotification(
+                    title = { it.getText("copy_failed") },
+                    message = it.message?.let { message -> { it -> message } },
+                    messageType = MessageType.Error,
                 )
             },
         )
@@ -96,8 +110,7 @@ class DesktopPasteMenuService(
                         pasteData = pasteData,
                         localOnly = true,
                         updateCreateTime = true,
-                    )
-                    true
+                    ).isSuccess
                 }
             }
         }

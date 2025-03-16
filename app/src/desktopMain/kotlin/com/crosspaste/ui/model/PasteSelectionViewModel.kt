@@ -67,9 +67,8 @@ class PasteSelectionViewModel(
                         pasteData = pasteData,
                         localOnly = true,
                         updateCreateTime = true,
-                    )
+                    ).isSuccess
                 }
-                true
             } == true
         }
         _selectedIndex.value = 0

@@ -3,6 +3,7 @@ package com.crosspaste.paste
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.platform.getPlatform
 import com.crosspaste.platform.windows.api.User32
 import com.crosspaste.sound.SoundService
@@ -28,11 +29,12 @@ import java.awt.datatransfer.Transferable
 
 class WindowsPasteboardService(
     override val appWindowManager: DesktopAppWindowManager,
-    override val pasteDao: PasteDao,
     override val configManager: ConfigManager,
     override val currentPaste: CurrentPaste,
+    override val notificationManager: NotificationManager,
     override val pasteConsumer: TransferableConsumer,
     override val pasteProducer: TransferableProducer,
+    override val pasteDao: PasteDao,
     override val soundService: SoundService,
 ) : AbstractPasteboardService(), User32.WNDPROC {
     override val logger: KLogger = KotlinLogging.logger {}

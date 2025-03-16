@@ -56,6 +56,13 @@ fun DetailPasteDataView() {
                             messageType = MessageType.Success,
                         )
                     },
+                    fail = {
+                        notificationManager.sendNotification(
+                            title = { it.getText("copy_failed") },
+                            message = it.message?.let { message -> { it -> message } },
+                            messageType = MessageType.Error,
+                        )
+                    },
                 )
             }
 

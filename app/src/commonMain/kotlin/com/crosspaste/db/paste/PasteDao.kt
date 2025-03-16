@@ -134,18 +134,30 @@ class PasteDao(
         taskExecutor.submitTasks(tasks)
     }
 
-    suspend fun markAllDeleteExceptFavorite() {
-        batchMarkDelete {
-            pasteDatabaseQueries.queryNoFavorite(markDeleteBatchNum)
+    suspend fun markAllDeleteExceptFavorite(): Result<Unit> {
+        return try {
+            batchMarkDelete {
+                pasteDatabaseQueries.queryNoFavorite(markDeleteBatchNum)
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            logger.error(e) { "Mark all delete except favorite failed" }
+            Result.failure(e)
         }
     }
 
-    suspend fun markDeletePasteData(id: Long) {
-        val taskId = database.transactionWithResult {
-            pasteDatabaseQueries.markDeletePasteData(listOf(id))
-            taskDao.createTask(id, TaskType.DELETE_PASTE_TASK)
+    suspend fun markDeletePasteData(id: Long): Result<Unit> {
+        return try {
+            val taskId = database.transactionWithResult {
+                pasteDatabaseQueries.markDeletePasteData(listOf(id))
+                taskDao.createTask(id, TaskType.DELETE_PASTE_TASK)
+            }
+            taskExecutor.submitTask(taskId)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            logger.error(e) { "Mark delete paste data failed" }
+            Result.failure(e)
         }
-        taskExecutor.submitTask(taskId)
     }
 
     fun deletePasteData(id: Long) {
@@ -298,78 +310,90 @@ class PasteDao(
     suspend fun releaseRemotePasteData(
         pasteData: PasteData,
         tryWritePasteboard: (PasteData, Boolean) -> Unit,
-    ) {
-        val remotePasteDataId = pasteData.id
-        val tasks = mutableListOf<Long>()
-        val existFile = pasteData.existFileResource()
-        val existIconFile: Boolean? =
-            pasteData.source?.let {
-                fileUtils.existFile(userDataPathProvider.resolve("$it.png", AppFileType.ICON))
+    ): Result<Unit> {
+        return try {
+            val remotePasteDataId = pasteData.id
+            val tasks = mutableListOf<Long>()
+            val existFile = pasteData.existFileResource()
+            val existIconFile: Boolean? =
+                pasteData.source?.let {
+                    fileUtils.existFile(userDataPathProvider.resolve("$it.png", AppFileType.ICON))
+                }
+
+            val pasteState = if (existFile) {
+                PasteState.LOADING
+            } else {
+                PasteState.LOADED
             }
 
-        val pasteState = if (existFile) {
-            PasteState.LOADING
-        } else {
-            PasteState.LOADED
-        }
+            val id = createPasteData(pasteData, pasteState)
 
-        val id = createPasteData(pasteData, pasteState)
+            if (!existFile) {
+                tasks.addAll(markDeleteSameHash(id, pasteData.pasteType, pasteData.hash))
+                if (pasteData.getType().isHtml()) {
+                    tasks.add(taskDao.createTask(id, TaskType.HTML_TO_IMAGE_TASK))
+                } else if (pasteData.getType().isRtf()) {
+                    tasks.add(taskDao.createTask(id, TaskType.RTF_TO_IMAGE_TASK))
+                }
+            } else {
+                val pasteCoordinate = pasteData.getPasteCoordinate(id)
+                val pasteAppearItem = pasteData.pasteAppearItem
+                val pasteCollection = pasteData.pasteCollection
 
-        if (!existFile) {
-            tasks.addAll(markDeleteSameHash(id, pasteData.pasteType, pasteData.hash))
-            if (pasteData.getType().isHtml()) {
-                tasks.add(taskDao.createTask(id, TaskType.HTML_TO_IMAGE_TASK))
-            } else if (pasteData.getType().isRtf()) {
-                tasks.add(taskDao.createTask(id, TaskType.RTF_TO_IMAGE_TASK))
+                val newPasteAppearItem = pasteAppearItem?.bind(pasteCoordinate)
+                val newPasteCollection = pasteCollection.bind(pasteCoordinate)
+
+                val newPasteData = pasteData.copy(
+                    id = id,
+                    pasteAppearItem = newPasteAppearItem,
+                    pasteCollection = newPasteCollection,
+                )
+
+                updateFilePath(newPasteData)
+
+                tasks.add(
+                    taskDao.createTask(
+                        id,
+                        TaskType.PULL_FILE_TASK,
+                        PullExtraInfo(remotePasteDataId),
+                    ),
+                )
             }
-        } else {
-            val pasteCoordinate = pasteData.getPasteCoordinate(id)
-            val pasteAppearItem = pasteData.pasteAppearItem
-            val pasteCollection = pasteData.pasteCollection
 
-            val newPasteAppearItem = pasteAppearItem?.bind(pasteCoordinate)
-            val newPasteCollection = pasteCollection.bind(pasteCoordinate)
-
-            val newPasteData = pasteData.copy(
-                id = id,
-                pasteAppearItem = newPasteAppearItem,
-                pasteCollection = newPasteCollection,
-            )
-
-            updateFilePath(newPasteData)
-
-            tasks.add(
-                taskDao.createTask(
-                    id,
-                    TaskType.PULL_FILE_TASK,
-                    PullExtraInfo(remotePasteDataId),
-                ),
-            )
-        }
-
-        existIconFile?.let {
-            if (!it) {
-                tasks.add(taskDao.createTask(id, TaskType.PULL_ICON_TASK))
+            existIconFile?.let {
+                if (!it) {
+                    tasks.add(taskDao.createTask(id, TaskType.PULL_ICON_TASK))
+                }
             }
-        }
 
-        tryWritePasteboard(pasteData, existFile)
-        taskExecutor.submitTasks(tasks)
+            tryWritePasteboard(pasteData, existFile)
+            taskExecutor.submitTasks(tasks)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            logger.error(e) { "Release remote paste data failed" }
+            Result.failure(e)
+        }
     }
 
     suspend fun releaseRemotePasteDataWithFile(
         id: Long,
         tryWritePasteboard: (PasteData) -> Unit,
-    ) {
-        val tasks = mutableListOf<Long>()
-        database.transactionWithResult {
-            updatePasteState(id, PasteState.LOADED)
-            getNoDeletePasteData(id)
-        }?.let { pasteData ->
-            tasks.addAll(markDeleteSameHash(id, pasteData.pasteType, pasteData.hash))
-            tryWritePasteboard(pasteData)
+    ): Result<Unit> {
+        return try {
+            val tasks = mutableListOf<Long>()
+            database.transactionWithResult {
+                updatePasteState(id, PasteState.LOADED)
+                getNoDeletePasteData(id)
+            }?.let { pasteData ->
+                tasks.addAll(markDeleteSameHash(id, pasteData.pasteType, pasteData.hash))
+                tryWritePasteboard(pasteData)
+            }
+            taskExecutor.submitTasks(tasks)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            logger.error(e) { "Release remote paste data with file failed" }
+            Result.failure(e)
         }
-        taskExecutor.submitTasks(tasks)
     }
 
     suspend fun releaseLocalPasteData(id: Long, pasteItems: List<PasteItem>) {
