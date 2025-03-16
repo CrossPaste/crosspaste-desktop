@@ -13,6 +13,8 @@ import com.crosspaste.listen.DesktopShortcutKeys.Companion.SHOW_SEARCH
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.TOGGLE_ENCRYPT
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.TOGGLE_PASTEBOARD_MONITORING
 import com.crosspaste.listener.ShortcutKeysAction
+import com.crosspaste.notification.MessageType
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.PasteText
@@ -23,11 +25,12 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch
 
 class DesktopShortKeysAction(
-    private val pasteDao: PasteDao,
+    private val appWindowManager: DesktopAppWindowManager,
     private val configManager: ConfigManager,
     private val currentPaste: CurrentPaste,
-    private val appWindowManager: DesktopAppWindowManager,
+    private val notificationManager: NotificationManager,
     private val pasteboardService: PasteboardService,
+    private val pasteDao: PasteDao,
 ) : ShortcutKeysAction {
 
     private val logger = KotlinLogging.logger {}
@@ -82,13 +85,15 @@ class DesktopShortKeysAction(
             currentPaste.getCurrentPaste()?.let { pasteData ->
                 mainCoroutineDispatcher.launch(ioDispatcher) {
                     pasteData.getPasteAppearItems().firstOrNull { it is PasteText }?.let {
-                        pasteboardService.tryWritePasteboard(
-                            id = pasteData.id,
-                            pasteItem = it,
-                            localOnly = true,
-                            updateCreateTime = true,
+                        handleCopyResult(
+                            result =
+                                pasteboardService.tryWritePasteboard(
+                                    id = pasteData.id,
+                                    pasteItem = it,
+                                    localOnly = true,
+                                    updateCreateTime = true,
+                                ),
                         )
-                        appWindowManager.toPaste()
                     }
                 }
             }
@@ -100,13 +105,15 @@ class DesktopShortKeysAction(
         mainCoroutineDispatcher.launch(CoroutineName("PastePrimaryType")) {
             currentPaste.getCurrentPaste()?.let {
                 mainCoroutineDispatcher.launch(ioDispatcher) {
-                    pasteboardService.tryWritePasteboard(
-                        pasteData = it,
-                        localOnly = true,
-                        primary = true,
-                        updateCreateTime = true,
+                    handleCopyResult(
+                        result =
+                            pasteboardService.tryWritePasteboard(
+                                pasteData = it,
+                                localOnly = true,
+                                primary = true,
+                                updateCreateTime = true,
+                            ),
                     )
-                    appWindowManager.toPaste()
                 }
             }
         }
@@ -125,14 +132,28 @@ class DesktopShortKeysAction(
 
             if (result.isNotEmpty()) {
                 mainCoroutineDispatcher.launch(ioDispatcher) {
-                    pasteboardService.tryWritePasteboard(
-                        pasteData = result[0],
-                        localOnly = true,
-                        updateCreateTime = true,
+                    handleCopyResult(
+                        result =
+                            pasteboardService.tryWritePasteboard(
+                                pasteData = result[0],
+                                localOnly = true,
+                                updateCreateTime = true,
+                            ),
                     )
-                    appWindowManager.toPaste()
                 }
             }
+        }
+    }
+
+    private suspend fun handleCopyResult(result: Result<Unit>) {
+        result.onSuccess {
+            appWindowManager.toPaste()
+        }.onFailure {
+            notificationManager.sendNotification(
+                title = { it.getText("copy_failed") },
+                message = it.message?.let { message -> { it -> message } },
+                messageType = MessageType.Error,
+            )
         }
     }
 

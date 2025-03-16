@@ -4,6 +4,7 @@ import com.crosspaste.app.AppName
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.platform.macos.api.MacosApi
 import com.crosspaste.sound.SoundService
 import com.crosspaste.utils.getControlUtils
@@ -22,11 +23,12 @@ import java.awt.datatransfer.Transferable
 
 class MacosPasteboardService(
     override val appWindowManager: DesktopAppWindowManager,
-    override val pasteDao: PasteDao,
     override val configManager: ConfigManager,
     override val currentPaste: CurrentPaste,
+    override val notificationManager: NotificationManager,
     override val pasteConsumer: TransferableConsumer,
     override val pasteProducer: TransferableProducer,
+    override val pasteDao: PasteDao,
     override val soundService: SoundService,
 ) : AbstractPasteboardService() {
     override val logger: KLogger = KotlinLogging.logger {}
@@ -43,7 +45,7 @@ class MacosPasteboardService(
 
     override val systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
 
-    override val pasteboardChannel: Channel<suspend () -> Unit> = Channel(Channel.UNLIMITED)
+    override val pasteboardChannel: Channel<suspend () -> Result<Unit>> = Channel(Channel.UNLIMITED)
 
     private var job: Job? = null
 

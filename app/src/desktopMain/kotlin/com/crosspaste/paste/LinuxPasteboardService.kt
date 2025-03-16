@@ -3,6 +3,7 @@ package com.crosspaste.paste
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.platform.linux.api.X11Api
 import com.crosspaste.platform.linux.api.XFixes
 import com.crosspaste.platform.linux.api.XFixesSelectionNotifyEvent
@@ -25,11 +26,12 @@ import java.awt.datatransfer.Transferable
 
 class LinuxPasteboardService(
     override val appWindowManager: DesktopAppWindowManager,
-    override val pasteDao: PasteDao,
     override val configManager: ConfigManager,
     override val currentPaste: CurrentPaste,
+    override val notificationManager: NotificationManager,
     override val pasteConsumer: TransferableConsumer,
     override val pasteProducer: TransferableProducer,
+    override val pasteDao: PasteDao,
     override val soundService: SoundService,
 ) : AbstractPasteboardService() {
 

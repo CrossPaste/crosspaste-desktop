@@ -21,7 +21,7 @@ interface PasteboardService : PasteboardMonitor {
 
     val configManager: ConfigManager
 
-    val pasteboardChannel: Channel<suspend () -> Unit>
+    val pasteboardChannel: Channel<suspend () -> Result<Unit>>
 
     val serviceScope: CoroutineScope
 
@@ -51,7 +51,7 @@ interface PasteboardService : PasteboardMonitor {
         localOnly: Boolean = false,
         filterFile: Boolean = false,
         updateCreateTime: Boolean = false,
-    )
+    ): Result<Unit>
 
     suspend fun tryWritePasteboard(
         pasteData: PasteData,
@@ -59,11 +59,11 @@ interface PasteboardService : PasteboardMonitor {
         filterFile: Boolean = false,
         primary: Boolean = false,
         updateCreateTime: Boolean = false,
-    )
+    ): Result<Unit>
 
-    suspend fun tryWriteRemotePasteboard(pasteData: PasteData)
+    suspend fun tryWriteRemotePasteboard(pasteData: PasteData): Result<Unit>
 
-    suspend fun tryWriteRemotePasteboardWithFile(pasteData: PasteData)
+    suspend fun tryWriteRemotePasteboardWithFile(pasteData: PasteData): Result<Unit>
 
-    suspend fun clearRemotePasteboard(pasteData: PasteData)
+    suspend fun clearRemotePasteboard(pasteData: PasteData): Result<Unit>
 }

@@ -21,23 +21,17 @@ interface AppWindowManager {
 
     fun doLongTaskInMain(
         scope: CoroutineScope,
-        task: suspend () -> Unit,
+        task: suspend () -> Result<Unit>,
         success: () -> Unit = {},
         fail: (Throwable) -> Unit = {},
     ) {
         setMainCursorWait()
         scope.launch {
-            try {
-                task()
-                withContext(mainDispatcher) {
-                    resetMainCursor()
-                    success()
-                }
-            } catch (e: Throwable) {
-                withContext(mainDispatcher) {
-                    resetMainCursor()
-                    fail(e)
-                }
+            val result = task()
+            withContext(mainDispatcher) {
+                resetMainCursor()
+                result.onSuccess { success() }
+                    .onFailure { fail(it) }
             }
         }
     }

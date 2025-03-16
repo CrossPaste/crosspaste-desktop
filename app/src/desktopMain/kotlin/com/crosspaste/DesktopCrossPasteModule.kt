@@ -361,7 +361,7 @@ class DesktopCrossPasteModule(
             }
             single<DesktopPasteMenuService> { DesktopPasteMenuService(get(), get(), get(), get(), get(), get()) }
             single<PasteboardService> {
-                getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get())
+                getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get(), get())
             }
             single<PasteExportService> { PasteExportService(get(), get(), get()) }
             single<PasteImportService> { PasteImportService(get(), get(), get()) }
@@ -442,7 +442,7 @@ class DesktopCrossPasteModule(
             single<ScreenProvider> { DesktopScreenProvider(get()) }
             single<SettingsViewProvider> { DesktopSettingsViewProvider(get(), get()) }
             single<ShortcutKeys> { DesktopShortcutKeys(get()) }
-            single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get()) }
+            single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get()) }
             single<ShortcutKeysListener> { get<DesktopShortcutKeysListener>() }
             single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get()) }
             single<SoundService> { DesktopSoundService(get()) }
