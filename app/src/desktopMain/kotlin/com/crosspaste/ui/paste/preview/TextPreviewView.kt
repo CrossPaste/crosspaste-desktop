@@ -47,7 +47,7 @@ fun TextPreviewView(pasteData: PasteData) {
                     ) {
                         Text(
                             modifier = Modifier.fillMaxSize(),
-                            text = pasteText.text,
+                            text = pasteText.previewText(),
                             fontFamily = FontFamily.SansSerif,
                             maxLines = 4,
                             softWrap = true,
