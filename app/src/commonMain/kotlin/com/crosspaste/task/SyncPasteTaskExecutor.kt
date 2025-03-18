@@ -162,10 +162,16 @@ class SyncPasteTaskExecutor(
         return if (fails.isEmpty()) {
             SuccessPasteTaskResult(jsonUtils.JSON.encodeToString(syncExtraInfo))
         } else {
+            val noNeedRetry =
+                fails.values.any {
+                    it.exception.match(StandardErrorCode.SYNC_NOT_ALLOW_RECEIVE_BY_APP) ||
+                        it.exception.match(StandardErrorCode.SYNC_NOT_ALLOW_RECEIVE_BY_APP)
+                }
+
             syncExtraInfo.syncFails.addAll(fails.keys)
             TaskUtils.createFailurePasteTaskResult(
                 logger = logger,
-                retryHandler = { syncExtraInfo.executionHistories.size < 3 },
+                retryHandler = { !noNeedRetry && syncExtraInfo.executionHistories.size < 3 },
                 startTime = startTime,
                 fails = fails.values,
                 extraInfo = syncExtraInfo,
