@@ -1,11 +1,9 @@
 package com.crosspaste.notification
 
-import com.crosspaste.i18n.GlobalCopywriter
-
 data class Message(
     val messageId: Int,
-    val title: (GlobalCopywriter) -> String,
-    val message: ((GlobalCopywriter) -> String)? = null,
+    val title: String,
+    val message: String? = null,
     val messageType: MessageType,
     val duration: Long? = 3000,
 ) {

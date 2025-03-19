@@ -27,19 +27,16 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.Message
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.getMessagePainter
 import com.crosspaste.utils.ColorUtils
-import org.koin.compose.koinInject
 
 @Composable
 fun ToastView(
     toast: Message,
     onCancelTapped: () -> Unit,
 ) {
-    val copywriter = koinInject<GlobalCopywriter>()
     val messageStyle by remember {
         mutableStateOf(toast.messageType.getMessageStyle())
     }
@@ -85,7 +82,7 @@ fun ToastView(
                 Spacer(Modifier.width(12.dp))
                 Text(
                     modifier = Modifier.weight(1f, fill = false),
-                    text = toast.title(copywriter),
+                    text = toast.title,
                     style =
                         TextStyle(
                             fontWeight = FontWeight.Light,
@@ -111,7 +108,7 @@ fun ToastView(
                 ) {
                     Text(
                         modifier = Modifier.weight(1f, fill = false),
-                        text = message(copywriter),
+                        text = message,
                         style =
                             TextStyle(
                                 fontWeight = FontWeight.Light,
