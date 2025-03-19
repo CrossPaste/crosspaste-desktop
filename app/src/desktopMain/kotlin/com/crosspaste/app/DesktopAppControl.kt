@@ -19,7 +19,7 @@ class DesktopAppControl(private val configManager: ConfigManager) : AppControl {
         return true
     }
 
-    override fun isDeviceControlEnabled(): Boolean {
+    override fun isSyncControlEnabled(notify: Boolean): Boolean {
         return true
     }
 
