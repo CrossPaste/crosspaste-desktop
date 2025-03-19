@@ -42,7 +42,7 @@ data class ImagesPasteItem(
     constructor(jsonObject: JsonObject) : this(
         jsonObject = jsonObject,
         fileInfoTreeMap =
-            FilesPasteItem.Companion.jsonUtils.JSON.decodeFromJsonElement<Map<String, FileInfoTree>>(
+            jsonUtils.JSON.decodeFromJsonElement<Map<String, FileInfoTree>>(
                 jsonObject["fileInfoTreeMap"]!!.jsonObject,
             ),
     )
@@ -101,7 +101,7 @@ data class ImagesPasteItem(
                     fileName = fileName,
                 )
             }
-        return FilesPasteItem(
+        return ImagesPasteItem(
             identifiers = identifiers,
             count = count,
             hash = hash,
