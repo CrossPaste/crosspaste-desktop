@@ -59,14 +59,24 @@ class PullFileTaskExecutor(
 
         pasteDao.getNoDeletePasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
             val fileItems = pasteData.getPasteAppearItems().filter { it is PasteFiles }
+            check(fileItems.isNotEmpty() && fileItems.size == 1)
+            val fileItem = fileItems.first()
             val appInstanceId = pasteData.appInstanceId
-            val dateString = dateUtils.getYMD(dateUtils.epochMillisecondsToLocalDateTime(pasteData.createTime))
+            val dateString =
+                dateUtils.getYMD(
+                    dateUtils.epochMillisecondsToLocalDateTime(pasteData.createTime),
+                )
             val id = pasteData.id
             val filesIndexBuilder = FilesIndexBuilder(CHUNK_SIZE)
-            for (pasteAppearItem in fileItems) {
-                val pasteFiles = pasteAppearItem as PasteFiles
-                userDataPathProvider.resolve(appInstanceId, dateString, id, pasteFiles, true, filesIndexBuilder)
-            }
+            val pasteFiles = fileItem as PasteFiles
+            userDataPathProvider.resolve(
+                appInstanceId,
+                dateString,
+                id,
+                pasteFiles,
+                true,
+                filesIndexBuilder,
+            )
             val filesIndex = filesIndexBuilder.build()
 
             if (filesIndex.getChunkCount() == 0) {
@@ -132,7 +142,12 @@ class PullFileTaskExecutor(
                         try {
                             filesIndex.getChunk(chunkIndex)?.let { filesChunk ->
                                 val pullFileRequest = PullFileRequest(pullExtraInfo.id, chunkIndex)
-                                val result = pullClientApi.pullFile(pullFileRequest, pasteData.appInstanceId, toUrl)
+                                val result =
+                                    pullClientApi.pullFile(
+                                        pullFileRequest,
+                                        pasteData.appInstanceId,
+                                        toUrl,
+                                    )
                                 if (result is SuccessResult) {
                                     val byteReadChannel = result.getResult<ByteReadChannel>()
                                     fileUtils.writeFilesChunk(filesChunk, byteReadChannel)
