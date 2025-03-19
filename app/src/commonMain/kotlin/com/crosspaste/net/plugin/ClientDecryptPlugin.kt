@@ -63,7 +63,7 @@ class ClientDecryptPlugin(private val secureStore: SecureStore) :
                         val result =
                             buildPacket {
                                 try {
-                                    while (!byteReadChannel.isClosedForRead && byteReadChannel.availableForRead > 0) {
+                                    while (!byteReadChannel.isClosedForRead) {
                                         val size = byteReadChannel.readInt()
                                         val byteArray = ByteArray(size)
                                         byteReadChannel.readFully(byteArray, 0, size)
