@@ -13,10 +13,10 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class DesktopNotificationManager(
     private val appWindowManager: DesktopAppWindowManager,
-    private val copywriter: GlobalCopywriter,
+    copywriter: GlobalCopywriter,
     private val soundService: SoundService,
     private val toastManager: ToastManager,
-) : NotificationManager() {
+) : NotificationManager(copywriter) {
 
     val idGenerator = AtomicInteger(0)
 
@@ -50,8 +50,8 @@ class DesktopNotificationManager(
     private fun notifyTray(message: Message) {
         trayState.sendNotification(
             Notification(
-                message.title(copywriter),
-                message.message?.let { it(copywriter) } ?: "",
+                message.title,
+                message.message ?: "",
                 when (message.messageType) {
                     MessageType.Error -> Notification.Type.Error
                     MessageType.Info -> Notification.Type.Info

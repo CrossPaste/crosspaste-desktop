@@ -9,8 +9,9 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 @OptIn(FlowPreview::class)
-abstract class NotificationManager {
-
+abstract class NotificationManager(
+    private val copywriter: GlobalCopywriter,
+) {
     private val notificationChannel = Channel<Message>()
 
     init {
@@ -40,7 +41,13 @@ abstract class NotificationManager {
         duration: Long? = 3000,
     ) {
         sendNotification(
-            Message(getMessageId(), title, message, messageType, duration),
+            Message(
+                messageId = getMessageId(),
+                title = title(copywriter),
+                message = message?.let { it(copywriter) },
+                messageType = messageType,
+                duration = duration,
+            ),
         )
     }
 
