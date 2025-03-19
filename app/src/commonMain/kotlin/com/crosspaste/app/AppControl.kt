@@ -8,7 +8,7 @@ interface AppControl {
 
     fun isDeviceConnectionEnabled(deviceCount: Int): Boolean
 
-    fun isDeviceControlEnabled(): Boolean
+    fun isSyncControlEnabled(notify: Boolean = false): Boolean
 
     suspend fun isSendEnabled(): Boolean
 

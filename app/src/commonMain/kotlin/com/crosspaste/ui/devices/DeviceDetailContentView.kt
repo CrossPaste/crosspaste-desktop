@@ -153,10 +153,10 @@ fun DeviceDetailContentView() {
                             Modifier.align(Alignment.CenterVertically)
                                 .width(32.dp)
                                 .height(20.dp),
-                        checked = syncRuntimeInfo.allowSend,
+                        checked = !appControl.isSyncControlEnabled(false) || syncRuntimeInfo.allowSend,
                         onCheckedChange = {
                             runBlocking {
-                                if (appControl.isDeviceControlEnabled()) {
+                                if (appControl.isSyncControlEnabled()) {
                                     syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
                                         ?.update { syncRuntimeInfo ->
                                             syncRuntimeInfo.copy(allowSend = it)
@@ -190,10 +190,10 @@ fun DeviceDetailContentView() {
                             Modifier.align(Alignment.CenterVertically)
                                 .width(32.dp)
                                 .height(20.dp),
-                        checked = syncRuntimeInfo.allowReceive,
+                        checked = !appControl.isSyncControlEnabled(false) || syncRuntimeInfo.allowReceive,
                         onCheckedChange = {
                             runBlocking {
-                                if (appControl.isDeviceControlEnabled()) {
+                                if (appControl.isSyncControlEnabled()) {
                                     syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
                                         ?.update { syncRuntimeInfo ->
                                             syncRuntimeInfo.copy(allowReceive = it)
