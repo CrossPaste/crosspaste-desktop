@@ -10,6 +10,7 @@ import com.crosspaste.image.FileExtImageLoader
 import com.crosspaste.utils.getCoilUtils
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.isDirectory
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.withContext
 
 class FileExtFetcher(
@@ -17,12 +18,14 @@ class FileExtFetcher(
     private val fileExtLoader: FileExtImageLoader,
 ) : Fetcher {
 
+    private val logger = KotlinLogging.logger {}
+
     private val coilUtils = getCoilUtils()
 
     override suspend fun fetch(): FetchResult? {
         return withContext(ioDispatcher) {
             val path = data.path
-            try {
+            runCatching {
                 if (!path.isDirectory) {
                     fileExtLoader.load(path)?.let {
                         ImageFetchResult(
@@ -34,9 +37,9 @@ class FileExtFetcher(
                 } else {
                     null
                 }
-            } catch (_: Exception) {
-                null
-            }
+            }.onFailure {
+                logger.error(it) { "Error while fetching file ext" }
+            }.getOrNull()
         }
     }
 }

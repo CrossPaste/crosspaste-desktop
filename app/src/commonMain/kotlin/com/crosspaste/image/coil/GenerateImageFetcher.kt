@@ -7,31 +7,34 @@ import coil3.fetch.Fetcher
 import coil3.fetch.ImageFetchResult
 import coil3.request.Options
 import com.crosspaste.app.AppSize
+import com.crosspaste.image.GenerateImageService
 import com.crosspaste.utils.getCoilUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
-import kotlinx.coroutines.delay
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.withContext
 
 class GenerateImageFetcher(
     private val appSize: AppSize,
+    private val generateImageService: GenerateImageService,
     private val item: GenerateImageItem,
 ) : Fetcher {
+
+    private val logger = KotlinLogging.logger {}
 
     private val coilUtils = getCoilUtils()
     private val fileUtils = getFileUtils()
 
     override suspend fun fetch(): FetchResult? {
         return withContext(ioDispatcher) {
-            var waitTime = 0
-            while (waitTime < 10000) {
-                val path = item.path
-                val preview = item.preview
-                val density = item.density
+            val path = item.path
+            val preview = item.preview
+            val density = item.density
+            runCatching {
+                generateImageService.awaitGeneration(path)
                 if (fileUtils.existFile(path)) {
                     val image =
                         if (preview) {
-                            // todo not use hardcoded values
                             coilUtils.createImage(
                                 path,
                                 (appSize.mainPasteSize.width.value * density).toInt(),
@@ -41,29 +44,30 @@ class GenerateImageFetcher(
                             coilUtils.createImage(path)
                         }
 
-                    return@withContext ImageFetchResult(
+                    ImageFetchResult(
                         dataSource = DataSource.MEMORY_CACHE,
                         isSampled = false,
                         image = image,
                     )
                 } else {
-                    delay(100)
-                    waitTime += 100
+                    null
                 }
-            }
-            return@withContext null
+            }.onFailure {
+                logger.error(it) { "Failed to generate image $path" }
+            }.getOrNull()
         }
     }
 }
 
 class GenerateImageFactory(
     private val appSize: AppSize,
+    private val generateImageService: GenerateImageService,
 ) : Fetcher.Factory<GenerateImageItem> {
     override fun create(
         data: GenerateImageItem,
         options: Options,
         imageLoader: ImageLoader,
     ): Fetcher {
-        return GenerateImageFetcher(appSize, data)
+        return GenerateImageFetcher(appSize, generateImageService, data)
     }
 }

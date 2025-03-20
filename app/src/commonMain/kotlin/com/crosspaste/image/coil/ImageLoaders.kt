@@ -8,6 +8,7 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppSize
 import com.crosspaste.image.FaviconLoader
 import com.crosspaste.image.FileExtImageLoader
+import com.crosspaste.image.GenerateImageService
 import com.crosspaste.image.ThumbnailLoader
 import com.crosspaste.path.UserDataPathProvider
 
@@ -16,6 +17,7 @@ class ImageLoaders(
     private val faviconLoader: FaviconLoader,
     private val fileExtLoader: FileExtImageLoader,
     private val thumbnailLoader: ThumbnailLoader,
+    private val generateImageService: GenerateImageService,
     platformContext: PlatformContext,
     userDataPathProvider: UserDataPathProvider,
 ) {
@@ -55,7 +57,7 @@ class ImageLoaders(
     val generateImageLoader =
         ImageLoader.Builder(platformContext)
             .components {
-                add(GenerateImageFactory(appSize))
+                add(GenerateImageFactory(appSize, generateImageService))
                     .add(GenerateImageKeyer())
             }
             .memoryCache {

@@ -5,6 +5,7 @@ import com.crosspaste.db.task.BaseExtraInfo
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.TaskType
 import com.crosspaste.exception.StandardErrorCode
+import com.crosspaste.image.GenerateImageService
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.paste.item.PasteRtf
 import com.crosspaste.path.UserDataPathProvider
@@ -17,6 +18,7 @@ import kotlinx.coroutines.sync.withLock
 
 class Rtf2ImageTaskExecutor(
     lazyRtfRenderingService: Lazy<RenderingService<String>>,
+    private val generateImageService: GenerateImageService,
     private val pasteDao: PasteDao,
     private val userDataPathProvider: UserDataPathProvider,
 ) : SingleTypeTaskExecutor {
@@ -39,6 +41,7 @@ class Rtf2ImageTaskExecutor(
                         val rtf2ImagePath = pasteRtf.getRtfImagePath(userDataPathProvider)
                         if (!fileUtils.existFile(rtf2ImagePath)) {
                             rtfRenderingService.saveRenderImage(pasteRtf.rtf, rtf2ImagePath)
+                            generateImageService.getGenerateState(rtf2ImagePath).emit(Unit)
                         }
                     }
                 }

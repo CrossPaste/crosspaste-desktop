@@ -11,6 +11,7 @@ import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.paste.item.PasteUrl
 import com.crosspaste.utils.getCoilUtils
 import com.crosspaste.utils.ioDispatcher
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.withContext
 
 class FaviconFetcher(
@@ -18,23 +19,28 @@ class FaviconFetcher(
     private val faviconLoader: FaviconLoader,
 ) : Fetcher {
 
+    private val logger = KotlinLogging.logger {}
+
     private val coilUtils = getCoilUtils()
 
     override suspend fun fetch(): FetchResult? {
         return withContext(ioDispatcher) {
             val pasteData = data.pasteData
-            pasteData.getPasteItem(PasteUrl::class)?.let {
-                faviconLoader.load(it.url)?.let { path ->
-                    val pasteFileCoordinate =
-                        PasteFileCoordinate(pasteData.getPasteCoordinate(), path)
-                    return@withContext ImageFetchResult(
-                        dataSource = DataSource.MEMORY_CACHE,
-                        isSampled = false,
-                        image = coilUtils.createImage(pasteFileCoordinate.filePath),
-                    )
+            runCatching {
+                pasteData.getPasteItem(PasteUrl::class)?.let {
+                    faviconLoader.load(it.url)?.let { path ->
+                        val pasteFileCoordinate =
+                            PasteFileCoordinate(pasteData.getPasteCoordinate(), path)
+                        ImageFetchResult(
+                            dataSource = DataSource.MEMORY_CACHE,
+                            isSampled = false,
+                            image = coilUtils.createImage(pasteFileCoordinate.filePath),
+                        )
+                    }
                 }
-            }
-            return@withContext null
+            }.onFailure {
+                logger.error(it) { "Error while fetching favicon" }
+            }.getOrNull()
         }
     }
 }

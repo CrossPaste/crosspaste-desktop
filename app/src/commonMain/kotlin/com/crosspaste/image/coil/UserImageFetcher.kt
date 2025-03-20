@@ -12,12 +12,15 @@ import com.crosspaste.image.ThumbnailLoader
 import com.crosspaste.utils.getCoilUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.withContext
 
 class UserImageFetcher(
     private val data: ImageItem,
     private val thumbnailLoader: ThumbnailLoader,
 ) : Fetcher {
+
+    private val logger = KotlinLogging.logger {}
 
     private val coilUtils = getCoilUtils()
     private val fileUtils = getFileUtils()
@@ -26,10 +29,10 @@ class UserImageFetcher(
         return withContext(ioDispatcher) {
             val pasteFileCoordinate = data.pasteFileCoordinate
             val fileName = pasteFileCoordinate.filePath.name
-            try {
+            runCatching {
                 when (fileName.substringAfterLast(".")) {
                     "svg" -> {
-                        return@withContext SourceFetchResult(
+                        SourceFetchResult(
                             dataSource = DataSource.MEMORY_CACHE,
                             source =
                                 ImageSource(
@@ -42,7 +45,7 @@ class UserImageFetcher(
                     else -> {
                         if (data.useThumbnail) {
                             thumbnailLoader.load(pasteFileCoordinate)?.let {
-                                return@withContext ImageFetchResult(
+                                ImageFetchResult(
                                     dataSource = DataSource.MEMORY_CACHE,
                                     isSampled = false,
                                     image = coilUtils.createImage(it),
@@ -50,7 +53,7 @@ class UserImageFetcher(
                             }
                         } else {
                             val path = pasteFileCoordinate.filePath
-                            return@withContext ImageFetchResult(
+                            ImageFetchResult(
                                 dataSource = DataSource.MEMORY_CACHE,
                                 isSampled = false,
                                 image = coilUtils.createImage(path),
@@ -58,9 +61,9 @@ class UserImageFetcher(
                         }
                     }
                 }
-            } catch (_: Exception) {
-                return@withContext null
-            }
+            }.onFailure {
+                logger.error(it) { "Error while fetching user image" }
+            }.getOrNull()
         }
     }
 }

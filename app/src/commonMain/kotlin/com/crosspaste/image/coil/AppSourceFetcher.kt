@@ -11,12 +11,15 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getCoilUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.withContext
 
 class AppSourceFetcher(
     private val data: PasteDataItem,
     private val userDataPathProvider: UserDataPathProvider,
 ) : Fetcher {
+
+    private val logger = KotlinLogging.logger {}
 
     private val coilUtils = getCoilUtils()
     private val fileUtils = getFileUtils()
@@ -25,16 +28,21 @@ class AppSourceFetcher(
         return withContext(ioDispatcher) {
             val pasteData = data.pasteData
             pasteData.source?.let {
-                val path = userDataPathProvider.resolve("$it.png", AppFileType.ICON)
-                if (fileUtils.existFile(path)) {
-                    return@withContext ImageFetchResult(
-                        dataSource = DataSource.MEMORY_CACHE,
-                        isSampled = false,
-                        image = coilUtils.createImage(path),
-                    )
-                }
+                runCatching {
+                    val path = userDataPathProvider.resolve("$it.png", AppFileType.ICON)
+                    if (fileUtils.existFile(path)) {
+                        ImageFetchResult(
+                            dataSource = DataSource.MEMORY_CACHE,
+                            isSampled = false,
+                            image = coilUtils.createImage(path),
+                        )
+                    } else {
+                        null
+                    }
+                }.onFailure {
+                    logger.error(it) { "Error while fetching app source" }
+                }.getOrNull()
             }
-            return@withContext null
         }
     }
 }
