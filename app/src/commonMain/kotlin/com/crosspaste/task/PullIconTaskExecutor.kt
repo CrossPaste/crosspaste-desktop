@@ -5,6 +5,7 @@ import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.task.BaseExtraInfo
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.TaskType
+import com.crosspaste.exception.ErrorCodeSupplier
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.PullClientApi
 import com.crosspaste.net.clientapi.SuccessResult
@@ -18,7 +19,6 @@ import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
-import io.ktor.util.collections.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -39,14 +39,14 @@ class PullIconTaskExecutor(
 
     override val taskType: Int = TaskType.PULL_ICON_TASK
 
-    private val locks: MutableMap<String, Mutex> = ConcurrentMap()
+    private val lock = Mutex()
 
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         val baseExtraInfo: BaseExtraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class)
 
         pasteDao.getNoDeletePasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
             pasteData.source?.let { source ->
-                locks.getOrPut(source) { Mutex() }.withLock {
+                return@doExecuteTask lock.withLock(source) {
                     try {
                         val appInstanceId = pasteData.appInstanceId
 
@@ -55,40 +55,30 @@ class PullIconTaskExecutor(
                             syncManager.getSyncHandlers()[appInstanceId]?.let {
                                 val port = it.syncRuntimeInfo.port
                                 it.getConnectHostAddress()?.let { host ->
-                                    return pullIcon(source, iconPath, host, port, baseExtraInfo)
+                                    pullIcon(source, iconPath, host, port, baseExtraInfo)
                                 } ?: run {
-                                    return TaskUtils.createFailurePasteTaskResult(
-                                        logger = logger,
-                                        retryHandler = { baseExtraInfo.executionHistories.size < 2 },
-                                        startTime = pasteTask.modifyTime,
-                                        fails =
-                                            listOf(
-                                                createFailureResult(
-                                                    StandardErrorCode.CANT_GET_SYNC_ADDRESS,
-                                                    "Failed to get connect host address by $appInstanceId",
-                                                ),
-                                            ),
-                                        extraInfo = baseExtraInfo,
+                                    createFailurePasteTaskResult(
+                                        baseExtraInfo = baseExtraInfo,
+                                        errorCodeSupplier = StandardErrorCode.CANT_GET_SYNC_ADDRESS,
+                                        errorMessage = "Failed to get connect host address by $appInstanceId",
                                     )
                                 }
                             } ?: run {
-                                return TaskUtils.createFailurePasteTaskResult(
-                                    logger = logger,
-                                    retryHandler = { baseExtraInfo.executionHistories.size < 2 },
-                                    startTime = pasteTask.modifyTime,
-                                    fails =
-                                        listOf(
-                                            createFailureResult(
-                                                StandardErrorCode.PULL_ICON_TASK_FAIL,
-                                                "Failed to sync paste to $appInstanceId",
-                                            ),
-                                        ),
-                                    extraInfo = baseExtraInfo,
+                                createFailurePasteTaskResult(
+                                    baseExtraInfo = baseExtraInfo,
+                                    errorCodeSupplier = StandardErrorCode.PULL_ICON_TASK_FAIL,
+                                    errorMessage = "Failed to sync paste to $appInstanceId",
                                 )
                             }
+                        } else {
+                            SuccessPasteTaskResult()
                         }
-                    } finally {
-                        locks.remove(source)
+                    } catch (e: Exception) {
+                        createFailurePasteTaskResult(
+                            baseExtraInfo = baseExtraInfo,
+                            errorCodeSupplier = StandardErrorCode.PULL_ICON_TASK_FAIL,
+                            errorMessage = "Failed to pull icon $source, ${e.message}",
+                        )
                     }
                 }
             }
@@ -108,27 +98,38 @@ class PullIconTaskExecutor(
         }
 
         val result = pullClientApi.pullIcon(source, toUrl)
-        if (result is SuccessResult) {
+        return if (result is SuccessResult) {
             val byteReadChannel = result.getResult<ByteReadChannel>()
             fileUtils.writeFile(iconPath, byteReadChannel)
 
             logger.info { "Success to pull icon" }
 
-            return SuccessPasteTaskResult()
+            SuccessPasteTaskResult()
         } else {
-            return TaskUtils.createFailurePasteTaskResult(
-                logger = logger,
-                retryHandler = { baseExtraInfo.executionHistories.size < 2 },
-                startTime = nowEpochMilliseconds(),
-                fails =
-                    listOf(
-                        createFailureResult(
-                            StandardErrorCode.PULL_ICON_TASK_FAIL,
-                            "Failed to pull icon $source",
-                        ),
-                    ),
-                extraInfo = baseExtraInfo,
+            createFailurePasteTaskResult(
+                baseExtraInfo = baseExtraInfo,
+                errorMessage = "Failed to pull icon $source",
             )
         }
+    }
+
+    private fun createFailurePasteTaskResult(
+        baseExtraInfo: BaseExtraInfo,
+        errorCodeSupplier: ErrorCodeSupplier = StandardErrorCode.PULL_ICON_TASK_FAIL,
+        errorMessage: String,
+    ): FailurePasteTaskResult {
+        return TaskUtils.createFailurePasteTaskResult(
+            logger = logger,
+            retryHandler = { baseExtraInfo.executionHistories.size < 2 },
+            startTime = nowEpochMilliseconds(),
+            fails =
+                listOf(
+                    createFailureResult(
+                        errorCodeSupplier,
+                        errorMessage,
+                    ),
+                ),
+            extraInfo = baseExtraInfo,
+        )
     }
 }

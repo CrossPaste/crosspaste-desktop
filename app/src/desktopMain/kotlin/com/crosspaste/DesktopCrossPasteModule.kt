@@ -49,6 +49,7 @@ import com.crosspaste.image.DesktopImageWriter
 import com.crosspaste.image.DesktopThumbnailLoader
 import com.crosspaste.image.FaviconLoader
 import com.crosspaste.image.FileExtImageLoader
+import com.crosspaste.image.GenerateImageService
 import com.crosspaste.image.ImageWriter
 import com.crosspaste.image.ThumbnailLoader
 import com.crosspaste.image.coil.ImageLoaders
@@ -226,7 +227,7 @@ class DesktopCrossPasteModule(
             single<EndpointInfoFactory> { EndpointInfoFactory(get(), lazy { get<Server>() }) }
             single<FileExtImageLoader> { DesktopFileExtLoader(get(), get()) }
             single<FilePersist> { FilePersist }
-            single<ImageLoaders> { ImageLoaders(get(), get(), get(), get(), get(), get()) }
+            single<ImageLoaders> { ImageLoaders(get(), get(), get(), get(), get(), get(), get()) }
             single<ImageWriter<BufferedImage>> { DesktopImageWriter }
             single<KLogger> { klogger }
             single<LocaleUtils> { DesktopLocaleUtils }
@@ -360,6 +361,7 @@ class DesktopCrossPasteModule(
                 DesktopRtfRenderingService(get(), get())
             }
             single<DesktopPasteMenuService> { DesktopPasteMenuService(get(), get(), get(), get(), get(), get()) }
+            single<GenerateImageService> { GenerateImageService() }
             single<PasteboardService> {
                 getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get(), get())
             }
@@ -376,11 +378,13 @@ class DesktopCrossPasteModule(
                             get(),
                             get(),
                             get(),
+                            get(),
                         ),
                         PullFileTaskExecutor(get(), get(), get(), get(), get(), get(), get()),
                         PullIconTaskExecutor(get(), get(), get(), get()),
                         Rtf2ImageTaskExecutor(
                             lazy { get<RenderingService<String>>(named("rtfRendering")) },
+                            get(),
                             get(),
                             get(),
                         ),

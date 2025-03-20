@@ -5,6 +5,7 @@ import com.crosspaste.db.task.BaseExtraInfo
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.TaskType
 import com.crosspaste.exception.StandardErrorCode
+import com.crosspaste.image.GenerateImageService
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.paste.plugin.type.HtmlTypePlugin
@@ -22,8 +23,9 @@ import kotlinx.coroutines.sync.withLock
 
 class Html2ImageTaskExecutor(
     private val lazyHtmlRenderingService: Lazy<RenderingService<String>>,
-    private val pasteDao: PasteDao,
+    private val generateImageService: GenerateImageService,
     private val htmlTypePlugin: HtmlTypePlugin,
+    private val pasteDao: PasteDao,
     private val userDataPathProvider: UserDataPathProvider,
 ) : SingleTypeTaskExecutor {
 
@@ -48,8 +50,13 @@ class Html2ImageTaskExecutor(
                     pasteData.getPasteItem(PasteHtml::class)?.let { pasteHtml ->
                         val html2ImagePath = pasteHtml.getHtmlImagePath(userDataPathProvider)
                         if (!fileUtils.existFile(html2ImagePath)) {
-                            val normalizeHtml = htmlTypePlugin.normalizeHtml(pasteHtml.html, pasteData.source)
+                            val normalizeHtml =
+                                htmlTypePlugin.normalizeHtml(
+                                    pasteHtml.html,
+                                    pasteData.source,
+                                )
                             htmlRenderingService.saveRenderImage(normalizeHtml, html2ImagePath)
+                            generateImageService.getGenerateState(html2ImagePath).emit(Unit)
                         }
                     }
                 }
