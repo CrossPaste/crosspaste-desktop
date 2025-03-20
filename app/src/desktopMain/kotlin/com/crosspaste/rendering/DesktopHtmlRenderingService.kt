@@ -115,8 +115,7 @@ class DesktopHtmlRenderingService(
         return false
     }
 
-    @Synchronized
-    override fun saveRenderImage(
+    override suspend fun saveRenderImage(
         input: String,
         savePath: Path,
     ) {
