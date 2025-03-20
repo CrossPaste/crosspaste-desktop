@@ -4,7 +4,7 @@ import okio.Path
 
 interface RenderingService<T> {
 
-    fun saveRenderImage(
+    suspend fun saveRenderImage(
         input: T,
         savePath: Path,
     )

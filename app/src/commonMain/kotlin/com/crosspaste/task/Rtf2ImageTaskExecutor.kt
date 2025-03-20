@@ -34,14 +34,14 @@ class Rtf2ImageTaskExecutor(
     private val mutex = Mutex()
 
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
-        mutex.withLock {
+        mutex.withLock(pasteTask.pasteDataId) {
             try {
                 pasteDao.getNoDeletePasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
                     pasteData.getPasteItem(PasteRtf::class)?.let { pasteRtf ->
                         val rtf2ImagePath = pasteRtf.getRtfImagePath(userDataPathProvider)
                         if (!fileUtils.existFile(rtf2ImagePath)) {
                             rtfRenderingService.saveRenderImage(pasteRtf.rtf, rtf2ImagePath)
-                            generateImageService.getGenerateState(rtf2ImagePath).emit(Unit)
+                            generateImageService.getGenerateState(rtf2ImagePath).emit(true)
                         }
                     }
                 }

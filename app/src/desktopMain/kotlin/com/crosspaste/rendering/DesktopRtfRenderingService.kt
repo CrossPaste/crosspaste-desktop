@@ -15,8 +15,7 @@ class DesktopRtfRenderingService(
     private val renderingHelper: RenderingHelper,
 ) : RenderingService<String> {
 
-    @Synchronized
-    override fun saveRenderImage(
+    override suspend fun saveRenderImage(
         input: String,
         savePath: Path,
     ) {

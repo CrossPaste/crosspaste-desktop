@@ -18,7 +18,7 @@ class GenerateImageService {
 
     private val fileUtils = getFileUtils()
 
-    private val generateMap: MutableMap<Path, MutableStateFlow<Unit>> = mutableMapOf()
+    private val generateMap: MutableMap<Path, MutableStateFlow<Boolean>> = mutableMapOf()
 
     private val mutex = Mutex()
 
@@ -39,9 +39,11 @@ class GenerateImageService {
                 generateCheckScope.launch {
                     withTimeoutOrNull(timeoutMillis) {
                         stateFlow.collect { state ->
-                            continuation.resume(Unit)
-                            removeGenerateState(path)
-                            cancel()
+                            if (state) {
+                                continuation.resume(Unit)
+                                removeGenerateState(path)
+                                cancel()
+                            }
                         }
                     } ?: run {
                         if (continuation.isActive) {
@@ -63,10 +65,10 @@ class GenerateImageService {
         }
     }
 
-    suspend fun getGenerateState(path: Path): MutableStateFlow<Unit> {
+    suspend fun getGenerateState(path: Path): MutableStateFlow<Boolean> {
         return mutex.withLock(path) {
             generateMap.getOrPut(path) {
-                MutableStateFlow(Unit)
+                MutableStateFlow(false)
             }
         }
     }

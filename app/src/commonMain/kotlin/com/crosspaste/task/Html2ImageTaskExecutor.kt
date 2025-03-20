@@ -43,7 +43,7 @@ class Html2ImageTaskExecutor(
         }
 
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
-        mutex.withLock {
+        mutex.withLock(pasteTask.pasteDataId) {
             val htmlRenderingService = htmlRenderingServiceDeferred.await()
             try {
                 pasteDao.getNoDeletePasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
@@ -56,7 +56,7 @@ class Html2ImageTaskExecutor(
                                     pasteData.source,
                                 )
                             htmlRenderingService.saveRenderImage(normalizeHtml, html2ImagePath)
-                            generateImageService.getGenerateState(html2ImagePath).emit(Unit)
+                            generateImageService.getGenerateState(html2ImagePath).emit(true)
                         }
                     }
                 }
