@@ -1,13 +1,12 @@
 package com.crosspaste.image
 
 import com.crosspaste.utils.Loader
-import com.crosspaste.utils.PlatformLock
-import com.crosspaste.utils.createPlatformLock
-import io.ktor.util.collections.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 interface ConcurrentLoader<T, R> : Loader<T, R> {
 
-    val lockMap: ConcurrentMap<String, PlatformLock>
+    val mutex: Mutex
 
     fun resolve(
         key: String,
@@ -16,7 +15,7 @@ interface ConcurrentLoader<T, R> : Loader<T, R> {
 
     fun loggerWarning(
         value: T,
-        e: Exception,
+        e: Throwable,
     )
 
     fun exist(result: R): Boolean
@@ -29,31 +28,28 @@ interface ConcurrentLoader<T, R> : Loader<T, R> {
 
     fun convertToKey(value: T): String
 
-    override fun load(value: T): R? {
-        try {
+    override suspend fun load(value: T): R? {
+        return runCatching {
             val key = convertToKey(value)
             val result = resolve(key, value)
             if (exist(result)) {
-                return result
-            }
-            val lock = lockMap.computeIfAbsent(key) { createPlatformLock() }
-            lock.lock()
-            try {
-                if (exist(result)) {
-                    return result
+                result
+            } else {
+                mutex.withLock(key) {
+                    if (exist(result)) {
+                        result
+                    } else {
+                        save(key, value, result)
+                        if (exist(result)) {
+                            result
+                        } else {
+                            null
+                        }
+                    }
                 }
-                save(key, value, result)
-                return if (exist(result)) {
-                    result
-                } else {
-                    null
-                }
-            } finally {
-                lock.unlock()
             }
-        } catch (e: Exception) {
-            loggerWarning(value, e)
-            return null
-        }
+        }.onFailure {
+            loggerWarning(value, it)
+        }.getOrNull()
     }
 }

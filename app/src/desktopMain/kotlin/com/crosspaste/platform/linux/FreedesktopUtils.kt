@@ -40,14 +40,13 @@ object FreedesktopUtils {
             )
 
         for (command in commands) {
-            try {
+            runCatching {
                 val result =
                     Runtime.getRuntime().exec(command)
                         .inputStream.bufferedReader().readText().trim().removeSurrounding("'")
                 if (result.isNotEmpty()) {
                     return result
                 }
-            } catch (_: Exception) {
             }
         }
 

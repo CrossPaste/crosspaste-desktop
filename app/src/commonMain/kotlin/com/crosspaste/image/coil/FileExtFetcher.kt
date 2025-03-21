@@ -37,8 +37,8 @@ class FileExtFetcher(
                 } else {
                     null
                 }
-            }.onFailure {
-                logger.error(it) { "Error while fetching file ext" }
+            }.onFailure { e ->
+                logger.error(e) { "Error while fetching file ext" }
             }.getOrNull()
         }
     }

@@ -16,9 +16,9 @@ class DefaultConfigManager(
 ) : ConfigManager {
 
     override var config by mutableStateOf(
-        try {
+        runCatching {
             loadConfig() ?: createDefaultAppConfig()
-        } catch (_: Exception) {
+        }.getOrElse {
             createDefaultAppConfig()
         },
     )
@@ -43,9 +43,9 @@ class DefaultConfigManager(
     ) {
         val oldConfig = config
         config = oldConfig.copy(key, value)
-        try {
+        runCatching {
             saveConfig(key, value, config)
-        } catch (_: Exception) {
+        }.onFailure {
             notificationManager?.let { manager ->
                 manager.sendNotification(
                     title = { it.getText("failed_to_save_config") },

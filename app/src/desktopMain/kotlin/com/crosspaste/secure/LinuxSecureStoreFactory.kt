@@ -26,10 +26,10 @@ class LinuxSecureStoreFactory(
         if (file.exists()) {
             logger.info { "Found secureKeyPair encrypt file" }
             filePersist.readBytes()?.let {
-                try {
+                runCatching {
                     val secureKeyPair = secureKeyPairSerializer.decodeSecureKeyPair(it)
                     return@createSecureStore GeneralSecureStore(secureKeyPair, secureKeyPairSerializer, secureIO)
-                } catch (e: Exception) {
+                }.onFailure { e ->
                     logger.error(e) { "Failed to read secureKeyPair" }
                 }
             }

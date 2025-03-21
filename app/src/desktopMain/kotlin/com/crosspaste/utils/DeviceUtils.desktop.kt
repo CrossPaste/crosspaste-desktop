@@ -6,7 +6,6 @@ import com.sun.jna.platform.win32.Kernel32Util
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.BufferedReader
 import java.io.File
-import java.io.IOException
 import java.io.InputStreamReader
 import java.util.UUID
 
@@ -41,7 +40,7 @@ object WindowsDeviceUtils : DeviceUtils {
     private val logger = KotlinLogging.logger {}
 
     private fun getProductUUID(): String? {
-        try {
+        runCatching {
             val command = "wmic csproduct get UUID"
             val process = Runtime.getRuntime().exec(command)
             val reader = BufferedReader(InputStreamReader(process.inputStream))
@@ -51,7 +50,7 @@ object WindowsDeviceUtils : DeviceUtils {
                     return line.trim { it <= ' ' }
                 }
             }
-        } catch (e: IOException) {
+        }.onFailure { e ->
             logger.error(e) { "Failed to get product UUID" }
         }
         return null

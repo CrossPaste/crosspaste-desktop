@@ -117,10 +117,10 @@ class CopywriterImpl(private val language: String) : Copywriter {
     private fun loadProperties(): Properties {
         val properties = Properties()
         currentLanguage =
-            try {
+            runCatching {
                 load(properties, language)
                 language
-            } catch (e: Exception) {
+            }.getOrElse { e ->
                 logger.error(e) { "Error loading $language properties" }
                 load(properties, EN)
                 EN

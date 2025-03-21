@@ -1,7 +1,6 @@
 package com.crosspaste.platform.windows
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import java.io.IOException
 
 object WinProcessUtils {
 
@@ -29,7 +28,7 @@ object WinProcessUtils {
 
     fun killProcessSet(pids: Set<Long>) {
         for (pid in pids) {
-            try {
+            runCatching {
                 // Build the taskkill command to forcefully terminate the specified PID
                 val command = "taskkill /F /PID $pid"
                 val process = Runtime.getRuntime().exec(command)
@@ -39,10 +38,11 @@ object WinProcessUtils {
                 } else {
                     logger.error { "Failed to terminate process PID: $pid" }
                 }
-            } catch (e: IOException) {
-                logger.error(e) { "Error trying to terminate process PID: $pid" }
-            } catch (e: InterruptedException) {
-                logger.error(e) { "Error trying to terminate process PID: $pid" }
+            }.onFailure { e ->
+                when (e) {
+                    is InterruptedException -> logger.error(e) { "Error trying to terminate process PID: $pid" }
+                    else -> logger.error(e) { "Error trying to terminate process PID: $pid" }
+                }
             }
         }
     }

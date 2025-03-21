@@ -68,7 +68,7 @@ object JIconExtract {
 
         val bitmap = BITMAP()
 
-        try {
+        runCatching {
             val s: Int = GDI32.INSTANCE.GetObject(hbitmap, bitmap.size(), bitmap.pointer)
 
             if (s > 0) {
@@ -123,7 +123,7 @@ object JIconExtract {
 
                 return bi
             }
-        } finally {
+        }.apply {
             GDI32.INSTANCE.DeleteObject(hbitmap)
         }
 

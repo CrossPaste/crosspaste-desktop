@@ -87,7 +87,7 @@ class DesktopAppUpdateService(
 
         val proxy = desktopProxy.getProxy(uri)
 
-        try {
+        runCatching {
             val builder =
                 HttpClient.newBuilder()
                     .followRedirects(HttpClient.Redirect.NORMAL) // Enable following redirects
@@ -115,7 +115,7 @@ class DesktopAppUpdateService(
                     return@readLastVersion Version.parse(versionString)
                 }
             }
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.warn(e) { "Failed to get last version" }
         }
         return null

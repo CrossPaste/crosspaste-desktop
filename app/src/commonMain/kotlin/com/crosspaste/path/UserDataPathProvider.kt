@@ -74,7 +74,7 @@ class UserDataPathProvider(
     }
 
     fun migration(migrationPath: Path) {
-        try {
+        runCatching {
             for (type in types) {
                 val originTypePath = resolve(appFileType = type)
                 val migrationTypePath =
@@ -83,19 +83,18 @@ class UserDataPathProvider(
                     }
                 fileUtils.copyPath(originTypePath, migrationTypePath)
             }
-            try {
+            runCatching {
                 for (type in types) {
                     val originTypePath = resolve(appFileType = type)
                     fileUtils.fileSystem.deleteRecursively(originTypePath)
                 }
-            } catch (_: Exception) {
             }
             configManager.updateConfig(
                 listOf("storagePath", "useDefaultStoragePath"),
                 listOf(migrationPath.toString(), false),
             )
-        } catch (e: Exception) {
-            try {
+        }.onFailure {
+            runCatching {
                 val fileSystem = fileUtils.fileSystem
                 fileSystem.list(migrationPath).forEach { subPath ->
                     if (fileSystem.metadata(subPath).isDirectory) {
@@ -104,17 +103,15 @@ class UserDataPathProvider(
                         fileSystem.delete(subPath)
                     }
                 }
-            } catch (_: Exception) {
             }
-            throw e
+            throw it
         }
     }
 
     fun cleanTemp() {
-        try {
+        runCatching {
             val tempPath = resolve(appFileType = AppFileType.TEMP)
             fileUtils.fileSystem.deleteRecursively(tempPath)
-        } catch (_: Exception) {
         }
     }
 

@@ -54,12 +54,13 @@ fun Routing.syncRouting(
                 return@let
             }
 
-            try {
+            runCatching {
                 val syncInfo = call.receive(SyncInfo::class)
                 syncRoutingApi.updateSyncInfo(syncInfo)
                 logger.info { "$appInstanceId heartbeat to ${appInfo.appInstanceId} success" }
+            }.onSuccess {
                 successResponse(call, syncApi.VERSION)
-            } catch (e: Exception) {
+            }.onFailure { e ->
                 logger.error(e) { "$appInstanceId heartbeat to ${appInfo.appInstanceId} fail" }
                 if (exceptionHandler.isDecryptFail(e)) {
                     failResponse(call, StandardErrorCode.DECRYPT_FAIL.toErrorCode())
@@ -102,7 +103,7 @@ fun Routing.syncRouting(
 
     post("/sync/trust") {
         getAppInstanceId(call)?.let { appInstanceId ->
-            try {
+            runCatching {
                 val trustRequest = call.receive(TrustRequest::class)
                 val currentTimestamp = nowEpochMilliseconds()
 
@@ -142,18 +143,17 @@ fun Routing.syncRouting(
                         currentTimestamp,
                     )
 
-                val trustResponse =
-                    TrustResponse(
-                        pairingResponse = pairingResponse,
-                        signature =
-                            CryptographyUtils.signPairingResponse(
-                                secureStore.secureKeyPair.signKeyPair.privateKey,
-                                pairingResponse,
-                            ),
-                    )
-
+                TrustResponse(
+                    pairingResponse = pairingResponse,
+                    signature =
+                        CryptographyUtils.signPairingResponse(
+                            secureStore.secureKeyPair.signKeyPair.privateKey,
+                            pairingResponse,
+                        ),
+                )
+            }.onSuccess { trustResponse ->
                 successResponse(call, trustResponse)
-            } catch (_: Exception) {
+            }.onFailure {
                 failResponse(call, StandardErrorCode.TRUST_FAIL.toErrorCode())
             }
         }

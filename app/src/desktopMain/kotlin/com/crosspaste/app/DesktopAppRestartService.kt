@@ -52,7 +52,7 @@ class MacAppRestartService : AppRestartService {
                 scriptPath.toString(),
                 pid.toString(),
             )
-        try {
+        runCatching {
             val process =
                 ProcessBuilder(command)
                     .redirectOutput(restartLogPath.toFile())
@@ -60,7 +60,7 @@ class MacAppRestartService : AppRestartService {
                     .start()
             logger.info { "restart process pid: ${process.pid()} active: ${process.isAlive}" }
             exitApplication()
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.error(e) { "Failed to restart app" }
         }
     }
@@ -88,7 +88,7 @@ class WindowsAppRestartService : AppRestartService {
                 scriptPath.toString(),
                 pid.toString(),
             )
-        try {
+        runCatching {
             val process =
                 ProcessBuilder(command)
                     .redirectOutput(restartLogPath.toFile())
@@ -96,7 +96,7 @@ class WindowsAppRestartService : AppRestartService {
                     .start()
             logger.info { "restart process pid: ${process.pid()} active: ${process.isAlive}" }
             exitApplication()
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.error(e) { "Failed to restart app" }
         }
     }
@@ -122,7 +122,7 @@ class LinuxAppRestartService : AppRestartService {
                 scriptPath.toString(),
                 pid.toString(),
             )
-        try {
+        runCatching {
             val process =
                 ProcessBuilder(command)
                     .redirectOutput(restartLogPath.toFile())
@@ -130,7 +130,7 @@ class LinuxAppRestartService : AppRestartService {
                     .start()
             logger.info { "restart process pid: ${process.pid()} active: ${process.isAlive}" }
             exitApplication()
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.error(e) { "Failed to restart app" }
         }
     }

@@ -43,9 +43,9 @@ class Html2ImageTaskExecutor(
         }
 
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
-        mutex.withLock(pasteTask.pasteDataId) {
+        return mutex.withLock(pasteTask.pasteDataId) {
             val htmlRenderingService = htmlRenderingServiceDeferred.await()
-            try {
+            runCatching {
                 pasteDao.getNoDeletePasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
                     pasteData.getPasteItem(PasteHtml::class)?.let { pasteHtml ->
                         val html2ImagePath = pasteHtml.getHtmlImagePath(userDataPathProvider)
@@ -60,16 +60,22 @@ class Html2ImageTaskExecutor(
                         }
                     }
                 }
-            } catch (e: Throwable) {
-                return TaskUtils.createFailurePasteTaskResult(
+                SuccessPasteTaskResult()
+            }.getOrElse {
+                TaskUtils.createFailurePasteTaskResult(
                     logger = logger,
                     retryHandler = { false },
                     startTime = pasteTask.modifyTime,
-                    fails = listOf(createFailureResult(StandardErrorCode.HTML_2_IMAGE_TASK_FAIL, e)),
+                    fails =
+                        listOf(
+                            createFailureResult(
+                                StandardErrorCode.HTML_2_IMAGE_TASK_FAIL,
+                                it,
+                            ),
+                        ),
                     extraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class),
                 )
             }
         }
-        return SuccessPasteTaskResult()
     }
 }

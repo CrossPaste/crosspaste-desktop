@@ -51,7 +51,7 @@ class GeneralNearbyDeviceManager(
 
     override fun refresh() {
         _searching.value = true
-        try {
+        runCatching {
             val currentAllSyncInfos = _allSyncInfos.value
 
             // Handle existing sync infos
@@ -72,7 +72,7 @@ class GeneralNearbyDeviceManager(
                     .toList()
 
             _syncInfos.value = newSyncInfos
-        } finally {
+        }.apply {
             _searching.value = false
         }
     }

@@ -39,8 +39,8 @@ class AppSourceFetcher(
                     } else {
                         null
                     }
-                }.onFailure {
-                    logger.error(it) { "Error while fetching app source" }
+                }.onFailure { e ->
+                    logger.error(e) { "Error while fetching app source" }
                 }.getOrNull()
             }
         }

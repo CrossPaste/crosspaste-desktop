@@ -33,11 +33,10 @@ class DesktopCacheManager(
             )
 
     override suspend fun getFilesIndex(id: Long): FilesIndex? {
-        return try {
+        return runCatching {
             filesIndexCache.get(id)
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.warn(e) { "getFilesIndex failed: $id" }
-            null
-        }
+        }.getOrNull()
     }
 }

@@ -21,13 +21,13 @@ interface PasteboardService : PasteboardMonitor {
 
     val configManager: ConfigManager
 
-    val pasteboardChannel: Channel<suspend () -> Result<Unit>>
+    val pasteboardChannel: Channel<suspend () -> Result<Unit?>>
 
     val serviceScope: CoroutineScope
 
     fun startRemotePasteboardListener() {
         serviceScope.launch {
-            try {
+            runCatching {
                 for (task in pasteboardChannel) {
                     try {
                         task()
@@ -35,12 +35,14 @@ interface PasteboardService : PasteboardMonitor {
                         logger.error(e) { "Run write remote pasteboard" }
                     }
                 }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logger.error(e) { "Channel write remote failed" }
-                delay(1000)
-                startRemotePasteboardListener()
+            }.onFailure { e ->
+                if (e !is CancellationException) {
+                    logger.error(e) { "Channel write remote failed" }
+                    delay(1000)
+                    startRemotePasteboardListener()
+                } else {
+                    throw e
+                }
             }
         }
     }
@@ -51,7 +53,7 @@ interface PasteboardService : PasteboardMonitor {
         localOnly: Boolean = false,
         filterFile: Boolean = false,
         updateCreateTime: Boolean = false,
-    ): Result<Unit>
+    ): Result<Unit?>
 
     suspend fun tryWritePasteboard(
         pasteData: PasteData,
@@ -59,11 +61,11 @@ interface PasteboardService : PasteboardMonitor {
         filterFile: Boolean = false,
         primary: Boolean = false,
         updateCreateTime: Boolean = false,
-    ): Result<Unit>
+    ): Result<Unit?>
 
-    suspend fun tryWriteRemotePasteboard(pasteData: PasteData): Result<Unit>
+    suspend fun tryWriteRemotePasteboard(pasteData: PasteData): Result<Unit?>
 
-    suspend fun tryWriteRemotePasteboardWithFile(pasteData: PasteData): Result<Unit>
+    suspend fun tryWriteRemotePasteboardWithFile(pasteData: PasteData): Result<Unit?>
 
-    suspend fun clearRemotePasteboard(pasteData: PasteData): Result<Unit>
+    suspend fun clearRemotePasteboard(pasteData: PasteData): Result<Unit?>
 }

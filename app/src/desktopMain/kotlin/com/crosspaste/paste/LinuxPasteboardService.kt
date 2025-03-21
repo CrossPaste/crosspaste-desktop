@@ -67,7 +67,7 @@ class LinuxPasteboardService(
 
             val x11 = X11Api.INSTANCE
             x11.XOpenDisplay(null)?.let { display ->
-                try {
+                runCatching {
                     val rootWindow = x11.XDefaultRootWindow(display)
                     val clipboardAtom = x11.XInternAtom(display, "CLIPBOARD", false)
 
@@ -95,7 +95,7 @@ class LinuxPasteboardService(
 
                     val event = X11.XEvent()
                     while (isActive) {
-                        try {
+                        runCatching {
                             x11.XNextEvent(display, event)
 
                             if (event.type == (eventBaseReturn + XFixes.XFixesSelectionNotify)) {
@@ -109,11 +109,11 @@ class LinuxPasteboardService(
                                 }
                                 selectionNotify.clear()
                             }
-                        } catch (e: Exception) {
+                        }.onFailure { e ->
                             logger.error(e) { "Failed to consume transferable" }
                         }
                     }
-                } finally {
+                }.apply {
                     x11.XCloseDisplay(display)
                 }
             }

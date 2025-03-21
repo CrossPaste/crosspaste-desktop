@@ -215,7 +215,7 @@ fun SetStoragePathDialogView(path: Path) {
         }
 
         appExitService.beforeReleaseLockList.add {
-            try {
+            runCatching {
                 userDataPathProvider.migration(path)
                 coroutineScope.launch {
                     progress = 1f
@@ -223,7 +223,7 @@ fun SetStoragePathDialogView(path: Path) {
                     isMigration = false
                 }
                 isMigration = false
-            } catch (_: Exception) {
+            }.onFailure {
                 coroutineScope.launch {
                     isMigration = false
                     isError = true

@@ -84,7 +84,7 @@ class SyncPasteTaskExecutor(
         pasteData: PasteData,
     ): Deferred<Pair<String, ClientApiResult>> {
         return ioScope.async {
-            try {
+            runCatching {
                 handler.getConnectHostAddress()?.let {
                     val hostAddress = it
                     val result = syncPasteToTarget(handlerKey, handler, pasteData, hostAddress)
@@ -93,11 +93,11 @@ class SyncPasteTaskExecutor(
                         appControl.completeSendOperation()
                     }
 
-                    return@async Pair(handlerKey, result)
+                    Pair(handlerKey, result)
                 } ?: run {
-                    return@async createNoHostAddressResult(handlerKey)
+                    createNoHostAddressResult(handlerKey)
                 }
-            } catch (_: Exception) {
+            }.getOrElse {
                 createExceptionResult(handlerKey)
             }
         }

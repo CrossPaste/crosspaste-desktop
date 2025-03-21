@@ -48,11 +48,11 @@ class DesktopShortcutKeys(
     override var shortcutKeysCore by mutableStateOf(defaultKeysCore())
 
     init {
-        try {
+        runCatching {
             loadKeysCore()?.let {
                 shortcutKeysCore = it
             }
-        } catch (_: Exception) {
+        }.onFailure {
             defaultKeysCore()
         }
     }
@@ -62,7 +62,7 @@ class DesktopShortcutKeys(
     }
 
     private fun loadKeysCore(): ShortcutKeysCore? {
-        try {
+        return runCatching {
             val shortcutKeysPropertiesPath =
                 DesktopAppPathProvider
                     .resolve("shortcut-keys.properties", AppFileType.USER)
@@ -88,11 +88,10 @@ class DesktopShortcutKeys(
 
             val path = shortcutKeysPropertiesPath.toFile().toOkioPath()
 
-            return shortcutKeysLoader.load(path)
-        } catch (e: Exception) {
+            shortcutKeysLoader.load(path)
+        }.onFailure { e ->
             logger.error(e) { "Failed to load shortcut keys" }
-            return null
-        }
+        }.getOrNull()
     }
 
     private fun writeProperties(
@@ -110,7 +109,7 @@ class DesktopShortcutKeys(
         keyName: String,
         keys: List<KeyboardKey>,
     ) {
-        try {
+        runCatching {
             val shortcutKeysPropertiesPath =
                 DesktopAppPathProvider
                     .resolve("shortcut-keys.properties", AppFileType.USER)
@@ -128,7 +127,7 @@ class DesktopShortcutKeys(
                 }
             }
             shortcutKeysCore = shortcutKeysLoader.load(shortcutKeysPropertiesPath)
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.error(e) { "Failed to update shortcut keys" }
         }
     }

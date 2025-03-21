@@ -85,7 +85,7 @@ class MacAppStartUpService(private val configManager: ConfigManager) : AppStartU
     }
 
     override fun makeAutoStartUp() {
-        try {
+        runCatching {
             if (!isAutoStartUp()) {
                 logger.info { "Make auto startup" }
                 val plistPath = pathProvider.userHome.resolve("Library/LaunchAgents/$plist")
@@ -112,18 +112,18 @@ class MacAppStartUpService(private val configManager: ConfigManager) : AppStartU
                         """.trimIndent().toByteArray(),
                     )
             }
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.error(e) { "Failed to make auto startup" }
         }
     }
 
     override fun removeAutoStartUp() {
-        try {
+        runCatching {
             if (isAutoStartUp()) {
                 logger.info { "Remove auto startup" }
                 pathProvider.userHome.resolve("Library/LaunchAgents/$plist").toFile().delete()
             }
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.error(e) { "Failed to remove auto startup" }
         }
     }
@@ -167,7 +167,7 @@ class WindowsAppStartUpService(
 
     override fun isAutoStartUp(): Boolean {
         val command = "reg query \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v \"$AppName\""
-        try {
+        runCatching {
             val process = Runtime.getRuntime().exec(command)
             val reader = BufferedReader(InputStreamReader(process.inputStream))
             var line: String?
@@ -183,7 +183,7 @@ class WindowsAppStartUpService(
                     }
                 }
             }
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.error(e) { "Failed to check if $AppName is set to start on boot." }
         }
         logger.info { "$AppName is not set to start on boot." }
@@ -191,7 +191,7 @@ class WindowsAppStartUpService(
     }
 
     override fun makeAutoStartUp() {
-        try {
+        runCatching {
             if (!isAutoStartUp()) {
                 val command = (
                     "reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v " +
@@ -201,20 +201,20 @@ class WindowsAppStartUpService(
                 process.waitFor()
                 logger.info { "Command executed successfully: $command" }
             }
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.error(e) { "Failed to make auto startup" }
         }
     }
 
     override fun removeAutoStartUp() {
-        try {
+        runCatching {
             if (isAutoStartUp()) {
                 val command = "reg delete \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v \"$AppName\" /f"
                 val process = Runtime.getRuntime().exec(command)
                 process.waitFor()
                 logger.info { "Command executed successfully: $command" }
             }
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.error(e) { "Failed to remove auto startup" }
         }
     }
@@ -248,7 +248,7 @@ class LinuxAppStartUpService(private val configManager: ConfigManager) : AppStar
     }
 
     override fun makeAutoStartUp() {
-        try {
+        runCatching {
             if (!isAutoStartUp()) {
                 logger.info { "Make auto startup" }
                 val desktopFilePath = pathProvider.userHome.resolve(".config/autostart/$desktopFile")
@@ -268,7 +268,7 @@ class LinuxAppStartUpService(private val configManager: ConfigManager) : AppStar
                         """.trimIndent().toByteArray(),
                     )
             }
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.error(e) { "Failed to make auto startup" }
         }
     }

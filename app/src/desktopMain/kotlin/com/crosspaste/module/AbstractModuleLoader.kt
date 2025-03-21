@@ -29,7 +29,7 @@ abstract class AbstractModuleLoader : ModuleLoader {
         url: String,
         path: Path,
     ): Boolean {
-        return try {
+        return runCatching {
             fileUtils.deleteFile(path)
 
             logger.info { "Downloading: $url" }
@@ -89,7 +89,7 @@ abstract class AbstractModuleLoader : ModuleLoader {
                 logger.error { "Failed to download. Status code: ${response.statusCode()}" }
                 false
             }
-        } catch (e: Exception) {
+        }.getOrElse { e ->
             logger.error(e) { "Error during download" }
             false
         }

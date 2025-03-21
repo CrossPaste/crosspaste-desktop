@@ -149,17 +149,17 @@ fun DeviceConnectContentView(
                                 syncManager.toVerify(syncRuntimeInfo.appInstanceId)
                             } else {
                                 scope.launch {
-                                    try {
+                                    runCatching {
                                         refresh = true
                                         syncManager.resolveSync(syncRuntimeInfo.appInstanceId)
                                         delay(1000)
-                                    } catch (e: Exception) {
+                                    }.onFailure { e ->
                                         notificationManager.sendNotification(
                                             title = { it.getText("refresh_connection_failed") },
                                             message = e.message?.let { message -> { message } },
                                             messageType = MessageType.Error,
                                         )
-                                    } finally {
+                                    }.apply {
                                         refresh = false
                                     }
                                 }

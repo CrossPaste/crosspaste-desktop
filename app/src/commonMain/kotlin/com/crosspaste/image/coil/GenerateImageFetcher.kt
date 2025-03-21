@@ -52,8 +52,8 @@ class GenerateImageFetcher(
                 } else {
                     null
                 }
-            }.onFailure {
-                logger.error(it) { "Failed to generate image $path" }
+            }.onFailure { e ->
+                logger.error(e) { "Failed to generate image $path" }
             }.getOrNull()
         }
     }

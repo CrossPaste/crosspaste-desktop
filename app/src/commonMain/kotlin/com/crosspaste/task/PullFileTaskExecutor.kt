@@ -139,7 +139,7 @@ class PullFileTaskExecutor(
                 .filter { pullExtraInfo.pullChunks[it] == 0 }
                 .map { chunkIndex ->
                     {
-                        try {
+                        runCatching {
                             filesIndex.getChunk(chunkIndex)?.let { filesChunk ->
                                 val pullFileRequest = PullFileRequest(pullExtraInfo.id, chunkIndex)
                                 val result =
@@ -160,12 +160,12 @@ class PullFileTaskExecutor(
                                     "chunkIndex $chunkIndex out of range",
                                 ),
                             )
-                        } catch (e: Exception) {
+                        }.getOrElse {
                             Pair(
                                 chunkIndex,
                                 createFailureResult(
                                     StandardErrorCode.PULL_FILE_CHUNK_TASK_FAIL,
-                                    "pull chunk fail: ${e.message}",
+                                    "pull chunk fail: ${it.message}",
                                 ),
                             )
                         }

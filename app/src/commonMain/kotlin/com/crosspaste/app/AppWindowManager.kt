@@ -21,7 +21,7 @@ interface AppWindowManager {
 
     fun doLongTaskInMain(
         scope: CoroutineScope,
-        task: suspend () -> Result<Unit>,
+        task: suspend () -> Result<Unit?>,
         success: () -> Unit = {},
         fail: (Throwable) -> Unit = {},
     ) {

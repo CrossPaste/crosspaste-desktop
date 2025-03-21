@@ -35,7 +35,7 @@ class PasteImportService(
         updateProgress: (Float) -> Unit,
     ) {
         var importTempPath: Path? = null
-        try {
+        runCatching {
             val tempDir = userDataPathProvider.resolve(appFileType = AppFileType.TEMP)
             val epochMilliseconds = DateUtils.nowEpochMilliseconds()
             val basePath = tempDir.resolve("import-$epochMilliseconds", true)
@@ -58,13 +58,13 @@ class PasteImportService(
             var failCount = 0L
 
             fileUtils.readByLines(pasteDataFile) { line ->
-                try {
+                runCatching {
                     val pasteData = readPasteData(line)
                     if (importPasteData(basePath, count, pasteData)) {
                         count++
                         updateProgress(count.toFloat() / importCount.toFloat())
                     }
-                } catch (e: Exception) {
+                }.onFailure { e ->
                     logger.error(e) { "Error importing paste data, index = $count" }
                     failCount++
                 }
@@ -81,13 +81,13 @@ class PasteImportService(
                 )
             }
             updateProgress(1f)
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.error(e) { "Error importing paste data" }
             notificationManager.sendNotification(
                 title = { it.getText("import_fail") },
                 messageType = MessageType.Error,
             )
-        } finally {
+        }.apply {
             importTempPath?.let { fileUtils.deleteFile(it) }
         }
     }
@@ -97,7 +97,7 @@ class PasteImportService(
         index: Long,
         pasteData: PasteData,
     ): Boolean {
-        try {
+        return runCatching {
             val id = pasteDao.createPasteData(pasteData)
 
             val pasteCoordinate = pasteData.getPasteCoordinate()
@@ -129,11 +129,9 @@ class PasteImportService(
             }
 
             pasteDao.updatePasteState(id, PasteState.LOADED)
-            return true
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.error(e) { "Error importing paste data, index = $index" }
-            return false
-        }
+        }.isSuccess
     }
 
     private fun moveResource(

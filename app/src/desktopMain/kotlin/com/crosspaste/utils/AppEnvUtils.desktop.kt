@@ -15,9 +15,9 @@ object DesktopAppEnvUtils : AppEnvUtils {
 
     private fun getAppEnv(): AppEnv {
         return SYSTEM_PROPERTY.getOption("appEnv")?.let {
-            try {
+            runCatching {
                 AppEnv.valueOf(it)
-            } catch (_: Throwable) {
+            }.getOrElse {
                 PRODUCTION
             }
         } ?: PRODUCTION

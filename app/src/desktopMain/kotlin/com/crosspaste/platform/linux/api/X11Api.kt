@@ -95,7 +95,7 @@ interface X11Api : X11 {
             keyCodes: List<Int>,
         ) {
             val xTest = X11.XTest.INSTANCE
-            try {
+            runCatching {
                 for (keyCode in keyCodes) {
                     xTest.XTestFakeKeyEvent(display, keyCode, true, NativeLong(0))
                 }
@@ -104,7 +104,7 @@ interface X11Api : X11 {
                 for (keyCode in keyCodes.reversed()) {
                     xTest.XTestFakeKeyEvent(display, keyCode, false, NativeLong(0))
                 }
-            } catch (e: Exception) {
+            }.onFailure { e ->
                 logger.error(e) { "toPaste error" }
             }
         }

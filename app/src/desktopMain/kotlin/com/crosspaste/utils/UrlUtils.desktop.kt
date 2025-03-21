@@ -1,6 +1,5 @@
 package com.crosspaste.utils
 
-import java.net.MalformedURLException
 import java.net.URL
 
 actual fun getUrlUtils(): UrlUtils {
@@ -9,11 +8,9 @@ actual fun getUrlUtils(): UrlUtils {
 
 object DesktopUrlUtils : UrlUtils {
     override fun isValidUrl(string: String): Boolean {
-        return try {
+        return runCatching {
             URL(string)
             true
-        } catch (_: MalformedURLException) {
-            false
-        }
+        }.getOrElse { false }
     }
 }

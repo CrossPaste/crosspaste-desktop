@@ -47,7 +47,7 @@ class PullIconTaskExecutor(
         pasteDao.getNoDeletePasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
             pasteData.source?.let { source ->
                 return@doExecuteTask lock.withLock(source) {
-                    try {
+                    runCatching {
                         val appInstanceId = pasteData.appInstanceId
 
                         val iconPath = userDataPathProvider.resolve("$source.png", AppFileType.ICON)
@@ -73,11 +73,11 @@ class PullIconTaskExecutor(
                         } else {
                             SuccessPasteTaskResult()
                         }
-                    } catch (e: Exception) {
+                    }.getOrElse {
                         createFailurePasteTaskResult(
                             baseExtraInfo = baseExtraInfo,
                             errorCodeSupplier = StandardErrorCode.PULL_ICON_TASK_FAIL,
-                            errorMessage = "Failed to pull icon $source, ${e.message}",
+                            errorMessage = "Failed to pull icon $source, ${it.message}",
                         )
                     }
                 }

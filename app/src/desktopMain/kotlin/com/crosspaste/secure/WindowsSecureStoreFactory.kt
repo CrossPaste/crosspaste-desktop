@@ -24,13 +24,17 @@ class WindowsSecureStoreFactory(
         if (file.exists()) {
             logger.info { "Found secureKeyPair encrypt file" }
             filePersist.readBytes()?.let {
-                try {
+                runCatching {
                     val decryptData = WindowDapiHelper.decryptData(it)
                     decryptData?.let { byteArray ->
                         val secureKeyPair = secureKeyPairSerializer.decodeSecureKeyPair(byteArray)
-                        return@createSecureStore GeneralSecureStore(secureKeyPair, secureKeyPairSerializer, secureIO)
+                        return@createSecureStore GeneralSecureStore(
+                            secureKeyPair,
+                            secureKeyPairSerializer,
+                            secureIO,
+                        )
                     }
-                } catch (e: Exception) {
+                }.onFailure { e ->
                     logger.error(e) { "Failed to decrypt secureKeyPair" }
                 }
             }

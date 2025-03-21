@@ -45,7 +45,7 @@ fun Routing.pasteRouting(
                 return@let
             }
 
-            try {
+            runCatching {
                 val pasteData = call.receive<PasteData>()
 
                 scope.launch {
@@ -55,8 +55,9 @@ fun Routing.pasteRouting(
                 }
                 logger.debug { "sync handler ($appInstanceId) receive pasteData: $pasteData" }
                 appControl.completeReceiveOperation()
+            }.onSuccess {
                 successResponse(call)
-            } catch (e: Exception) {
+            }.onFailure { e ->
                 logger.error(e) { "sync handler ($appInstanceId) receive pasteData error" }
                 failResponse(call, StandardErrorCode.UNKNOWN_ERROR.toErrorCode())
             }

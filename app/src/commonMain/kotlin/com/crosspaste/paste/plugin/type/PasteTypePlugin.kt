@@ -28,7 +28,7 @@ interface PasteTypePlugin {
         pasteTransferable: PasteTransferable,
         pasteCollector: PasteCollector,
     ) {
-        try {
+        runCatching {
             val transferData = pasteTransferable.getTransferData(dataFlavor)
             if (transferData != NoneTransferData) {
                 doLoadRepresentation(
@@ -41,8 +41,8 @@ interface PasteTypePlugin {
                     pasteCollector,
                 )
             }
-        } catch (e: Exception) {
-            collectError(e, pasteId, itemIndex, pasteCollector)
+        }.onFailure {
+            collectError(it, pasteId, itemIndex, pasteCollector)
         }
     }
 
@@ -57,7 +57,7 @@ interface PasteTypePlugin {
     )
 
     fun collectError(
-        error: Exception,
+        error: Throwable,
         pasteId: Long,
         itemIndex: Int,
         pasteCollector: PasteCollector,

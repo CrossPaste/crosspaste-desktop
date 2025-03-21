@@ -24,16 +24,15 @@ class ChromeModuleLoader(
             return false
         }
 
-        try {
+        return runCatching {
             // Decompress the downloaded file to installPath,
             // this function needs to be idempotent and can be executed repeatedly
             unzipFile(downloadPath, installPath)
             logger.info { "$fileName installed successfully" }
-            return true
-        } catch (e: Exception) {
+            true
+        }.onFailure { e ->
             logger.error(e) { "Error during $fileName installation" }
-            return false
-        }
+        }.getOrElse { false }
     }
 
     private fun unzipFile(

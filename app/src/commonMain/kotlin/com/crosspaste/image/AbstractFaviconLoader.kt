@@ -2,22 +2,21 @@ package com.crosspaste.image
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.utils.PlatformLock
 import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KLogger
 import io.ktor.http.*
-import io.ktor.util.collections.*
+import kotlinx.coroutines.sync.Mutex
 import okio.Path
 
 abstract class AbstractFaviconLoader(
     private val userDataPathProvider: UserDataPathProvider,
 ) : ConcurrentLoader<String, Path>, FaviconLoader {
 
-    abstract val logger: KLogger
+    protected abstract val logger: KLogger
 
     protected val fileUtils = getFileUtils()
 
-    override val lockMap: ConcurrentMap<String, PlatformLock> = ConcurrentMap()
+    override val mutex = Mutex()
 
     private fun getGoogleIconUrl(host: String): String {
         return "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://$host&size=32"
@@ -45,7 +44,7 @@ abstract class AbstractFaviconLoader(
 
     override fun loggerWarning(
         value: String,
-        e: Exception,
+        e: Throwable,
     ) {
         logger.warn(e) { "Failed to get favicon for $value" }
     }

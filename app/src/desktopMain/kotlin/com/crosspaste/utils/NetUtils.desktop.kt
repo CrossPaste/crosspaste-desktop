@@ -6,7 +6,6 @@ import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.InterfaceAddress
 import java.net.NetworkInterface
-import java.net.SocketException
 import java.nio.ByteBuffer
 import java.util.Collections
 
@@ -37,27 +36,25 @@ object DesktopNetUtils : NetUtils {
         return Collections.list(NetworkInterface.getNetworkInterfaces())
             .asSequence()
             .mapNotNull { nic ->
-                try {
+                runCatching {
                     if (!nic.isUp || nic.isLoopback || nic.isVirtual) {
                         null
                     } else {
                         nic
                     }
-                } catch (e: SocketException) {
+                }.onFailure { e ->
                     logger.warn(e) { "Failed to check network interface status: ${nic.name}" }
-                    null
-                }
+                }.getOrNull()
             }
             .flatMap { nic ->
                 nic.interfaceAddresses.asSequence().map { Pair(it, nic.name) }
             }
             .mapNotNull { (addr, nicName) ->
-                try {
+                runCatching {
                     processAddress(addr, nicName)
-                } catch (e: Exception) {
+                }.onFailure { e ->
                     logger.warn(e) { "Failed to process address for interface: $nicName" }
-                    null
-                }
+                }.getOrNull()
             }
     }
 
@@ -149,13 +146,11 @@ object DesktopNetUtils : NetUtils {
     // Get the preferred local IP address
     override fun getPreferredLocalIPAddress(): String? {
         return preferredLocalIPAddress.getValue {
-            try {
+            runCatching {
                 sortAddresses(getAllLocalAddresses())
                     .map { (hostInfo, _) -> hostInfo.hostAddress }
                     .firstOrNull()
-            } catch (_: Exception) {
-                null
-            }
+            }.getOrNull()
         }
     }
 

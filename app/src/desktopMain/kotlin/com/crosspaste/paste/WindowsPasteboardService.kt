@@ -155,7 +155,7 @@ class WindowsPasteboardService(
     }
 
     private fun onChange(firstChange: Boolean = false) {
-        try {
+        runCatching {
             val source =
                 if (firstChange) {
                     null
@@ -184,7 +184,7 @@ class WindowsPasteboardService(
                     }
                 }
             }
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.error(e) { "Failed to consume transferable" }
         }
     }
@@ -213,13 +213,13 @@ class WindowsPasteboardService(
             User32.WM_DRAWCLIPBOARD -> {
                 if (existNew) {
                     existNew = false
-                    try {
+                    runCatching {
                         val clipboardSequenceNumber = User32.INSTANCE.GetClipboardSequenceNumber()
                         if (changeCount != clipboardSequenceNumber) {
                             changeCount = clipboardSequenceNumber
                             onChange()
                         }
-                    } finally {
+                    }.apply {
                         User32.INSTANCE.SendMessage(nextViewer, uMsg, uParam, lParam)
                     }
                 }

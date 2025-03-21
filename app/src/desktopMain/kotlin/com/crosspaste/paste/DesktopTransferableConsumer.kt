@@ -47,13 +47,13 @@ class DesktopTransferableConsumer(
 
             val pasteCollector = PasteCollector(dataFlavorMap.size, appInfo, pasteDao)
 
-            try {
+            runCatching {
                 preCollect(dataFlavorMap, pasteTransferable, pasteCollector)
                 pasteCollector.createPrePasteData(source, remote = remote)?.let { id ->
                     updatePasteData(id, dataFlavorMap, pasteTransferable, pasteCollector)
                     pasteCollector.completeCollect(id)
                 }
-            } catch (e: Exception) {
+            }.onFailure { e ->
                 logger.error(e) { "Failed to consume transferable" }
             }
         }

@@ -45,7 +45,7 @@ class TaskExecutor(
 
     private suspend fun executeTask(taskId: Long) {
         var currentTask: PasteTask? = null
-        try {
+        runCatching {
             taskDao.getTask(taskId)?.let { task ->
                 currentTask = task
                 taskDao.executingTask(taskId)
@@ -58,10 +58,10 @@ class TaskExecutor(
                     submitTask(taskId)
                 })
             }
-        } catch (e: Throwable) {
+        }.onFailure { e ->
             logger.error(e) { "execute task error: $taskId" }
-            currentTask?.let {
-                taskDao.failureTask(taskId, false, TaskUtils.createFailExtraInfo(it, e))
+            currentTask?.let { task ->
+                taskDao.failureTask(taskId, false, TaskUtils.createFailExtraInfo(task, e))
             }
         }
     }

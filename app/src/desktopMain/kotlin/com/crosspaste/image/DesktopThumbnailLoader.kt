@@ -32,13 +32,13 @@ class DesktopThumbnailLoader(
         pasteFileCoordinate: PasteFileCoordinate,
         imageInfoBuilder: ImageInfoBuilder,
     ) {
-        try {
+        runCatching {
             val properties = Properties()
             properties.load(getOriginMetaPath(pasteFileCoordinate).toNioPath().inputStream().buffered())
             properties.getProperty(DIMENSIONS)?.let {
                 imageInfoBuilder.add(createPasteInfoWithoutConverter(DIMENSIONS, it))
             }
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.warn(e) { "Failed to read meta data for file: ${pasteFileCoordinate.filePath}" }
         }
     }

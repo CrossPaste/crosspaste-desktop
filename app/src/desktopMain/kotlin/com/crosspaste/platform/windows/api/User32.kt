@@ -147,7 +147,7 @@ interface User32 : com.sun.jna.platform.win32.User32 {
         private val logger = KotlinLogging.logger {}
 
         fun getActiveWindowProcessFilePath(): String? {
-            INSTANCE.GetForegroundWindow()?.let { hwnd ->
+            return INSTANCE.GetForegroundWindow()?.let { hwnd ->
                 val processIdRef = IntByReference()
                 INSTANCE.GetWindowThreadProcessId(hwnd, processIdRef)
                 val processHandle =
@@ -157,7 +157,7 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                         processIdRef.value,
                     )
 
-                try {
+                runCatching {
                     val bufferSize = 1024
                     val memory = Memory((bufferSize * 2).toLong())
                     if (Psapi.INSTANCE.GetModuleFileNameEx(
@@ -167,13 +167,14 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                             bufferSize,
                         ) > 0
                     ) {
-                        return memory.getWideString(0)
+                        memory.getWideString(0)
+                    } else {
+                        null
                     }
-                } finally {
+                }.apply {
                     Kernel32.INSTANCE.CloseHandle(processHandle)
-                }
+                }.getOrNull()
             }
-            return null
         }
 
         fun getFileDescription(filePath: String): String? {
@@ -273,7 +274,7 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             val user32 = INSTANCE
             val gdi32 = GDI32.INSTANCE
 
-            try {
+            return runCatching {
                 val info = ICONINFO()
                 if (!user32.GetIconInfo(hicon, info)) return null
 
@@ -320,16 +321,16 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                         val image = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
                         image.setRGB(0, 0, width, height, colorArray, 0, width)
 
-                        return image
+                        image
                     }
+                } else {
+                    null
                 }
-            } finally {
+            }.apply {
                 gdi32.DeleteObject(hicon)
                 Optional.ofNullable(bitmapHandle)
                     .ifPresent { hObject: HANDLE? -> gdi32.DeleteObject(hObject) }
-            }
-
-            return null
+            }.getOrNull()
         }
 
         fun getForegroundWindowAppInfoAndPid(
@@ -355,7 +356,7 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                             processIdRef.value,
                         )
 
-                    try {
+                    return runCatching {
                         val bufferSize = 1024
                         val memory = Memory((bufferSize * 2).toLong())
                         if (Psapi.INSTANCE.GetModuleFileNameEx(
@@ -366,11 +367,13 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                             ) > 0
                         ) {
                             val filePath = memory.getWideString(0)
-                            return Pair(WinAppInfo(previousHwnd, filePath), pid)
+                            Pair(WinAppInfo(previousHwnd, filePath), pid)
+                        } else {
+                            null
                         }
-                    } finally {
+                    }.apply {
                         Kernel32.INSTANCE.CloseHandle(processHandle)
-                    }
+                    }.getOrNull()
                 }
             }
             return null

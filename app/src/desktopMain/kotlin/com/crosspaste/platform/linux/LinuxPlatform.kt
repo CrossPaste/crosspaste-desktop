@@ -2,7 +2,6 @@ package com.crosspaste.platform.linux
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.File
-import java.io.IOException
 
 object LinuxPlatform {
 
@@ -15,7 +14,7 @@ object LinuxPlatform {
             return "Unknown"
         }
 
-        return try {
+        return runCatching {
             when {
                 commandExists() -> getLsbReleaseInfo()
                 File("/etc/os-release").exists() -> getOsReleaseInfo()
@@ -23,18 +22,17 @@ object LinuxPlatform {
                 File("/etc/redhat-release").exists() -> getRedHatVersion()
                 else -> getGenericLinuxInfo()
             }
-        } catch (e: IOException) {
+        }.onFailure { e ->
             logger.warn(e) { "Unable to determine Linux version" }
+        }.getOrElse {
             "Unknown"
         }
     }
 
     private fun commandExists(): Boolean {
-        return try {
+        return runCatching {
             ProcessBuilder("which", "lsb_release").start().waitFor() == 0
-        } catch (_: IOException) {
-            false
-        }
+        }.getOrElse { false }
     }
 
     private fun getLsbReleaseInfo(): String {

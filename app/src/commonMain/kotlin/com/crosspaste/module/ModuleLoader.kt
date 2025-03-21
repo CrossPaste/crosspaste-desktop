@@ -53,7 +53,7 @@ interface ModuleLoader : Loader<ModuleLoaderConfig, Boolean> {
         return fileUtils.existFile(installPath.resolve(".success"))
     }
 
-    override fun load(value: ModuleLoaderConfig): Boolean {
+    override suspend fun load(value: ModuleLoaderConfig): Boolean {
         val installPath = value.installPath
 
         if (!installed(installPath)) {

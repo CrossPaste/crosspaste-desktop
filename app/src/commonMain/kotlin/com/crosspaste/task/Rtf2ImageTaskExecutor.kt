@@ -34,8 +34,8 @@ class Rtf2ImageTaskExecutor(
     private val mutex = Mutex()
 
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
-        mutex.withLock(pasteTask.pasteDataId) {
-            try {
+        return mutex.withLock(pasteTask.pasteDataId) {
+            runCatching {
                 pasteDao.getNoDeletePasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
                     pasteData.getPasteItem(PasteRtf::class)?.let { pasteRtf ->
                         val rtf2ImagePath = pasteRtf.getRtfImagePath(userDataPathProvider)
@@ -45,16 +45,16 @@ class Rtf2ImageTaskExecutor(
                         }
                     }
                 }
-            } catch (e: Throwable) {
-                return TaskUtils.createFailurePasteTaskResult(
+                SuccessPasteTaskResult()
+            }.getOrElse {
+                TaskUtils.createFailurePasteTaskResult(
                     logger = logger,
                     retryHandler = { false },
                     startTime = pasteTask.modifyTime,
-                    fails = listOf(createFailureResult(StandardErrorCode.HTML_2_IMAGE_TASK_FAIL, e)),
+                    fails = listOf(createFailureResult(StandardErrorCode.HTML_2_IMAGE_TASK_FAIL, it)),
                     extraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class),
                 )
             }
         }
-        return SuccessPasteTaskResult()
     }
 }

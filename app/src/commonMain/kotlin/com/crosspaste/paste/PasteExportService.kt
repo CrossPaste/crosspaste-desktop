@@ -35,7 +35,7 @@ class PasteExportService(
         updateProgress: (Float) -> Unit,
     ) {
         var exportTempPath: Path? = null
-        try {
+        runCatching {
             val tempDir = userDataPathProvider.resolve(appFileType = AppFileType.TEMP)
             val epochMilliseconds = DateUtils.nowEpochMilliseconds()
             val basePath = tempDir.resolve("export-$epochMilliseconds", true)
@@ -44,7 +44,7 @@ class PasteExportService(
             var pasteDataFile = basePath.resolve("paste.data")
             var count = 0L
             fileUtils.writeFile(pasteDataFile) { sink ->
-                try {
+                runCatching {
                     val exportCount = pasteDao.getExportNum(pasteExportParam)
                     pasteDao.batchReadPasteData(
                         readPasteDataList = { id, limit ->
@@ -61,7 +61,7 @@ class PasteExportService(
                             updateProgress(currentProgress)
                         },
                     )
-                } catch (e: Exception) {
+                }.onFailure { e ->
                     logger.error(e) { "read pasteData list fail" }
                 }
             }
@@ -83,13 +83,13 @@ class PasteExportService(
                 )
             }
             updateProgress(1f)
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.error(e) { "export pasteData fail" }
             notificationManager.sendNotification(
                 title = { it.getText("export_fail") },
                 messageType = MessageType.Error,
             )
-        } finally {
+        }.apply {
             exportTempPath?.let {
                 fileUtils.deleteFile(it)
             }
@@ -103,7 +103,7 @@ class PasteExportService(
         pasteData: PasteData,
         sink: BufferedSink,
     ): Long {
-        try {
+        return runCatching {
             val pasteFilesList =
                 pasteData.getPasteAppearItems().filterIsInstance<PasteFiles>()
                     .filter { pasteData ->
@@ -120,10 +120,10 @@ class PasteExportService(
             val base64 = codecsUtils.base64Encode(json.encodeToByteArray())
             sink.write(base64.encodeToByteArray())
             sink.writeUtf8("\n")
-            return 1L
-        } catch (e: Exception) {
+            1L
+        }.getOrElse { e ->
             logger.error(e) { "export pasteData fail, id = ${pasteData.id}" }
-            return 0L
+            0L
         }
     }
 

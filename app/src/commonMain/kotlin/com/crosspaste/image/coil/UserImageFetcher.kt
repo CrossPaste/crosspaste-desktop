@@ -61,8 +61,8 @@ class UserImageFetcher(
                         }
                     }
                 }
-            }.onFailure {
-                logger.error(it) { "Error while fetching user image" }
+            }.onFailure { e ->
+                logger.error(e) { "Error while fetching user image" }
             }.getOrNull()
         }
     }

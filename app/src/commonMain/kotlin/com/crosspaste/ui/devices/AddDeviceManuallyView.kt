@@ -123,11 +123,9 @@ fun AddDeviceManuallyForm() {
                 // remove leading zeros
                 val newIp =
                     ipArray.joinToString(".") {
-                        try {
+                        runCatching {
                             it.toInt().toString()
-                        } catch (_: NumberFormatException) {
-                            ""
-                        }
+                        }.getOrElse { "" }
                     }
                 ip = newIp
             }
@@ -162,17 +160,15 @@ fun AddDeviceManuallyForm() {
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             contentPadding = PaddingValues(horizontal = 8.dp),
         ) { newValue ->
-            try {
+            runCatching {
                 if (newValue.isEmpty()) {
                     port = ""
-                    return@DefaultTextField
+                } else {
+                    val intPort = newValue.toInt()
+                    if (intPort > 0) {
+                        port = intPort.toString()
+                    }
                 }
-                val intPort = newValue.toInt()
-                if (intPort > 0) {
-                    port = intPort.toString()
-                }
-            } catch (_: NumberFormatException) {
-                return@DefaultTextField
             }
         }
 

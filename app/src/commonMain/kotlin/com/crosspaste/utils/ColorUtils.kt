@@ -50,29 +50,27 @@ object ColorUtils {
     private fun tryConvertRGB(rgb: String): Long? {
         val match = RGB_PATTERN.find(rgb) ?: return null
 
-        return try {
+        return runCatching {
             val (r, g, b) = match.destructured
             val red = r.toInt()
             val green = g.toInt()
             val blue = b.toInt()
 
             if (red !in 0..255 || green !in 0..255 || blue !in 0..255) {
-                return null
+                null
+            } else {
+                0xFF000000L or
+                    (red.toLong() shl 16) or
+                    (green.toLong() shl 8) or
+                    blue.toLong()
             }
-
-            0xFF000000L or
-                (red.toLong() shl 16) or
-                (green.toLong() shl 8) or
-                blue.toLong()
-        } catch (_: Exception) {
-            null
-        }
+        }.getOrNull()
     }
 
     private fun tryConvertRGBA(rgba: String): Long? {
         val match = RGBA_PATTERN.find(rgba) ?: return null
 
-        return try {
+        return runCatching {
             val (r, g, b, a) = match.destructured
             val red = r.toInt()
             val green = g.toInt()
@@ -80,16 +78,14 @@ object ColorUtils {
             val alpha = (a.toFloat() * 255).roundToInt()
 
             if (red !in 0..255 || green !in 0..255 || blue !in 0..255 || alpha !in 0..255) {
-                return null
+                null
+            } else {
+                (alpha.toLong() shl 24) or
+                    (red.toLong() shl 16) or
+                    (green.toLong() shl 8) or
+                    blue.toLong()
             }
-
-            (alpha.toLong() shl 24) or
-                (red.toLong() shl 16) or
-                (green.toLong() shl 8) or
-                blue.toLong()
-        } catch (_: Exception) {
-            null
-        }
+        }.getOrNull()
     }
 
     fun Color.toHSL(): FloatArray {

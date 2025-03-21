@@ -29,7 +29,7 @@ class DesktopGlobalListener(
 
     override fun start() {
         if (systemProperty.get("globalListener", false.toString()).toBoolean()) {
-            try {
+            runCatching {
                 if (appLaunchState.accessibilityPermissions && !isRegistered()) {
                     GlobalScreen.registerNativeHook()
                     GlobalScreen.addNativeKeyListener(shortcutKeysListener)
@@ -37,15 +37,17 @@ class DesktopGlobalListener(
                 } else {
                     grantAccessibilityPermissions()
                 }
-            } catch (e: NativeHookException) {
-                if (e.code == DARWIN_AXAPI_DISABLED) {
-                    grantAccessibilityPermissions()
-                } else {
-                    notificationManager.sendNotification(
-                        title = { it.getText("failed_to_register_keyboard_listener") },
-                        message = { "${it.getText("error_Code")} ${e.code}" },
-                        messageType = MessageType.Error,
-                    )
+            }.onFailure { e ->
+                if (e is NativeHookException) {
+                    if (e.code == DARWIN_AXAPI_DISABLED) {
+                        grantAccessibilityPermissions()
+                    } else {
+                        notificationManager.sendNotification(
+                            title = { it.getText("failed_to_register_keyboard_listener") },
+                            message = { "${it.getText("error_Code")} ${e.code}" },
+                            messageType = MessageType.Error,
+                        )
+                    }
                 }
                 logger.error(e) { "There was a problem registering the native hook" }
             }
@@ -58,13 +60,13 @@ class DesktopGlobalListener(
 
     override fun stop() {
         if (systemProperty.get("globalListener", false.toString()).toBoolean()) {
-            try {
+            runCatching {
                 if (isRegistered()) {
                     GlobalScreen.removeNativeKeyListener(shortcutKeysListener)
                     GlobalScreen.removeNativeMouseListener(mouseListener)
                     GlobalScreen.unregisterNativeHook()
                 }
-            } catch (e: NativeHookException) {
+            }.onFailure { e ->
                 logger.error(e) { "There was a problem unregistering the native hook" }
             }
         }

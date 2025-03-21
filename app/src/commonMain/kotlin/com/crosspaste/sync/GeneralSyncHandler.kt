@@ -62,11 +62,11 @@ class GeneralSyncHandler(
         job =
             syncHandlerScope.launch {
                 while (isActive) {
-                    try {
+                    runCatching {
                         pollingResolve()
-                    } catch (e: Exception) {
+                    }.onFailure { e ->
                         if (e !is CancellationException) {
-                            logger.error(e) { "resolve error" }
+                            logger.error(e) { "polling error" }
                         }
                     }
                 }

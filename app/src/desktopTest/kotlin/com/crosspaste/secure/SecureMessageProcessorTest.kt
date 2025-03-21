@@ -80,7 +80,7 @@ class SecureMessageProcessorTest {
             )
 
         for (message in testMessages) {
-            try {
+            runCatching {
                 val messageBytes = message.toByteArray()
                 val encryptedMessage = aProcessor.encrypt(messageBytes)
                 val decryptedMessage = bProcessor.decrypt(encryptedMessage)
@@ -90,11 +90,18 @@ class SecureMessageProcessorTest {
                     decryptedMessage,
                     "Failed for message length ${messageBytes.size}: $message",
                 )
-            } catch (e: IllegalBlockSizeException) {
-                println("IllegalBlockSizeException caught for message length ${message.length}: $message")
-                throw e
-            } catch (e: Exception) {
-                println("Unexpected exception for message length ${message.length}: ${e.javaClass.simpleName} - ${e.message}")
+            }.onFailure { e ->
+                when (e) {
+                    is IllegalBlockSizeException -> {
+                        println("IllegalBlockSizeException caught for message length ${message.length}: $message")
+                    }
+                    else -> {
+                        println(
+                            "Unexpected exception for message length " +
+                                "${message.length}: ${e.javaClass.simpleName} - ${e.message}",
+                        )
+                    }
+                }
                 throw e
             }
         }
@@ -182,9 +189,9 @@ class SecureMessageProcessorTest {
             val modifiedEncrypted = encrypted.clone()
             modifiedEncrypted[i] = (modifiedEncrypted[i] + 1).toByte()
 
-            try {
+            runCatching {
                 bProcessor.decrypt(modifiedEncrypted)
-            } catch (e: Exception) {
+            }.onFailure { e ->
                 println("Expected exception with modified data at position $i: ${e.javaClass.name} - ${e.message}")
             }
         }

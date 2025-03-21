@@ -25,7 +25,6 @@ import java.awt.datatransfer.DataFlavor
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.File
-import java.net.MalformedURLException
 import java.net.URL
 import java.nio.charset.StandardCharsets
 import javax.imageio.ImageIO
@@ -160,7 +159,7 @@ class DesktopImageTypePlugin(
     }
 
     private fun getLastPathSegment(urlString: String): String? {
-        try {
+        return runCatching {
             val url = URL(urlString)
             var path: String = url.path
             // Remove trailing slash from the path (if it exists)
@@ -168,9 +167,7 @@ class DesktopImageTypePlugin(
             // Get the last path segment
             val lastSegment = path.substring(path.lastIndexOf('/') + 1)
             return lastSegment
-        } catch (_: MalformedURLException) {
-            return null
-        }
+        }.getOrNull()
     }
 
     private fun toBufferedImage(img: Image): BufferedImage {
@@ -218,13 +215,13 @@ class DesktopImageTypePlugin(
                 }
 
             if (fileList.size == 1) {
-                try {
+                runCatching {
                     val start = System.currentTimeMillis()
                     val image: BufferedImage? = ImageIO.read(fileList[0])
                     image?.let { map[DataFlavor.imageFlavor.toPasteDataFlavor()] = it }
                     val end = System.currentTimeMillis()
                     logger.debug { "read image ${fileList[0].absolutePath} use time: ${end - start} ms" }
-                } catch (e: Exception) {
+                }.onFailure { e ->
                     logger.error(e) { "read image fail" }
                 }
             }

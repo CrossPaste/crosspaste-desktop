@@ -79,12 +79,10 @@ class DesktopShortcutKeysLoader(
 
     private fun parseKeys(define: String): List<KeyboardKey> {
         return define.split("+").filter { it != "" }.mapNotNull {
-            try {
+            runCatching {
                 val code = it.toInt()
                 map[code]
-            } catch (_: NumberFormatException) {
-                null
-            }
+            }.getOrNull()
         }.sortedWith(comparator)
     }
 }
