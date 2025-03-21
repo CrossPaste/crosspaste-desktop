@@ -1,10 +1,9 @@
 package com.crosspaste.image
 
-import com.crosspaste.utils.PlatformLock
-import io.ktor.util.collections.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
@@ -15,7 +14,7 @@ class ConcurrentLoaderTest {
     fun testLoad() {
         val loader = TestConcurrentLoader()
         val key = "key"
-        loader.load(key)
+        runBlocking { loader.load(key) }
         assert(loader.saveKeys.contains(key))
     }
 
@@ -43,9 +42,10 @@ class ConcurrentLoaderTest {
 }
 
 class TestConcurrentLoader : ConcurrentLoader<String, String> {
-    override val lockMap: ConcurrentMap<String, PlatformLock> = ConcurrentMap()
 
     val saveKeys: MutableList<String> = mutableListOf()
+
+    override val mutex: Mutex = Mutex()
 
     override fun resolve(
         key: String,
@@ -72,7 +72,7 @@ class TestConcurrentLoader : ConcurrentLoader<String, String> {
 
     override fun loggerWarning(
         value: String,
-        e: Exception,
+        e: Throwable,
     ) {
         assertFails { throw e }
     }
