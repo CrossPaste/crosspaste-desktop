@@ -19,7 +19,7 @@ class PlatformTest {
 
     @Test
     fun testWindowsPlatform() {
-        try {
+        runCatching {
             mockkObject(DesktopSystemProperty)
             every { DesktopSystemProperty.get("os.name") } returns "Windows 10"
             every { DesktopSystemProperty.get("os.version") } returns "10.0"
@@ -30,7 +30,7 @@ class PlatformTest {
             assertEquals("amd64", platform.arch)
             assertEquals(64, platform.bitMode)
             assertEquals("10", platform.version)
-        } finally {
+        }.apply {
             unmockkAll()
         }
     }
@@ -38,7 +38,7 @@ class PlatformTest {
     @Test
     fun testMacOSIntelPlatform() {
         mockkObject(DesktopSystemProperty)
-        try {
+        runCatching {
             every { DesktopSystemProperty.get("os.name") } returns "Mac OS X"
             every { DesktopSystemProperty.get("os.version") } returns "10.15.7"
             every { DesktopSystemProperty.get("os.arch") } returns "x86_64"
@@ -48,7 +48,7 @@ class PlatformTest {
             assertEquals("x86_64", platform.arch)
             assertEquals(64, platform.bitMode)
             assertEquals("10.15.7", platform.version)
-        } finally {
+        }.apply {
             unmockkAll()
         }
     }
@@ -56,7 +56,7 @@ class PlatformTest {
     @Test
     fun testMacOSARMPlatform() {
         mockkObject(DesktopSystemProperty)
-        try {
+        runCatching {
             every { DesktopSystemProperty.get("os.name") } returns "Mac OS X"
             every { DesktopSystemProperty.get("os.version") } returns "11.2"
             every { DesktopSystemProperty.get("os.arch") } returns "arm64"
@@ -66,7 +66,7 @@ class PlatformTest {
             assertEquals("arm64", platform.arch)
             assertEquals(64, platform.bitMode)
             assertEquals("11.2", platform.version)
-        } finally {
+        }.apply {
             unmockkAll()
         }
     }
@@ -74,7 +74,7 @@ class PlatformTest {
     @Test
     fun testLinuxPlatform() {
         mockkObject(DesktopSystemProperty)
-        try {
+        runCatching {
             every { DesktopSystemProperty.get("os.name") } returns "Linux"
             every { DesktopSystemProperty.get("os.version") } returns "6.5.0-35-generic"
             every { DesktopSystemProperty.get("os.arch") } returns "x86_64"
@@ -84,7 +84,7 @@ class PlatformTest {
             assertEquals("x86_64", platform.arch)
             assertEquals(64, platform.bitMode)
             assertEquals(LinuxPlatform.getOsVersion(), platform.version)
-        } finally {
+        }.apply {
             unmockkAll()
         }
     }

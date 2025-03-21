@@ -72,7 +72,7 @@ class DesktopUrlTypePlugin : UrlTypePlugin {
     }
 
     override fun collectError(
-        error: Exception,
+        error: Throwable,
         pasteId: Long,
         itemIndex: Int,
         pasteCollector: PasteCollector,

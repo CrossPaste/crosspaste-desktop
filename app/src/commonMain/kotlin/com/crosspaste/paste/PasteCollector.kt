@@ -27,7 +27,7 @@ class PasteCollector(
     private val updateCollectors: Array<MutableSet<KClass<out PasteTypePlugin>>> =
         Array(itemCount) { mutableSetOf() }
 
-    private val updateErrors: Array<Exception?> = Array(itemCount) { null }
+    private val updateErrors: Array<Throwable?> = Array(itemCount) { null }
 
     private var existError = false
 
@@ -67,7 +67,7 @@ class PasteCollector(
     fun collectError(
         pasteId: Long,
         itemIndex: Int,
-        error: Exception,
+        error: Throwable,
     ) {
         logger.error(error) { "Failed to collect item $itemIndex of pasteId $pasteId" }
         updateErrors[itemIndex] = error
@@ -108,11 +108,11 @@ class PasteCollector(
             if (preCollectors.isEmpty() || (existError && updateErrors.all { it != null })) {
                 markDeletePasteData(id)
             } else {
-                try {
+                runCatching {
                     val pasteItems = preCollectors.flatMap { it.values }
                     pasteDao.releaseLocalPasteData(id, pasteItems)
-                } catch (e: Exception) {
-                    logger.error(e) { "Failed to release paste $id" }
+                }.onFailure { e ->
+                    logger.error(e) { "Failed to complete paste $id" }
                     markDeletePasteData(id)
                 }
             }
@@ -120,9 +120,9 @@ class PasteCollector(
     }
 
     private suspend fun markDeletePasteData(id: Long) {
-        try {
+        runCatching {
             pasteDao.markDeletePasteData(id)
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.error(e) { "Failed to mark delete paste $id" }
         }
     }

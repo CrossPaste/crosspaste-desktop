@@ -38,8 +38,8 @@ class FaviconFetcher(
                         )
                     }
                 }
-            }.onFailure {
-                logger.error(it) { "Error while fetching favicon" }
+            }.onFailure { e ->
+                logger.error(e) { "Error while fetching favicon" }
             }.getOrNull()
         }
     }

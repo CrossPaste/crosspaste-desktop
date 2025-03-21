@@ -61,16 +61,17 @@ class DesktopHtmlRenderingService(
 
         val optLoaderConfig = chromeServiceModule.getModuleLoaderConfig()
 
-        try {
+        runCatching {
             optLoaderConfig?.let { loaderConfig ->
-                if (chromeModuleLoader.load(loaderConfig)) {
+                val loadSuccess = runBlocking { chromeModuleLoader.load(loaderConfig) }
+                if (loadSuccess) {
                     startByLoaderModule(loaderConfig)
                     logger.info { "chromeDriver & chromeHeadlessShell start success" }
                 }
             } ?: run {
                 logger.warn { "chromeDriver & chromeHeadlessShell not found" }
             }
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.error(e) { "chromeDriver & chromeHeadlessShell start fail" }
         }
     }
@@ -144,7 +145,7 @@ class DesktopHtmlRenderingService(
                     }
 
                 runBlocking {
-                    try {
+                    runCatching {
                         val result =
                             withTimeoutOrNull(1000) {
                                 deferred.await()
@@ -152,7 +153,7 @@ class DesktopHtmlRenderingService(
                         if (result == null) {
                             killProcessSet(shellPids)
                         }
-                    } catch (e: Exception) {
+                    }.onFailure { e ->
                         logger.error(e) { "chromeDriver & chromeHeadlessShell quit fail" }
                     }
                 }

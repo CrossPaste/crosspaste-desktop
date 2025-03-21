@@ -62,7 +62,7 @@ class ClientDecryptPlugin(private val secureStore: SecureStore) :
                     } else if (contentType?.match(ContentType.Application.OctetStream) == true) {
                         val result =
                             buildPacket {
-                                try {
+                                runCatching {
                                     while (!byteReadChannel.isClosedForRead) {
                                         val size = byteReadChannel.readInt()
                                         val byteArray = ByteArray(size)
@@ -70,7 +70,7 @@ class ClientDecryptPlugin(private val secureStore: SecureStore) :
                                         val decryptByteArray = processor.decrypt(byteArray)
                                         writeFully(decryptByteArray)
                                     }
-                                } catch (e: Exception) {
+                                }.onFailure { e ->
                                     logger.error(e) { "Error decrypting content" }
                                 }
                             }

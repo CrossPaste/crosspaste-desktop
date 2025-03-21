@@ -32,7 +32,7 @@ class CleanPasteTaskExecutor(
 
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         if (configManager.config.enableThresholdCleanup) {
-            try {
+            runCatching {
                 cleanLock.withLock {
                     val imageCleanTime = CleanTime.entries[configManager.config.imageCleanTimeIndex]
                     val imageCleanTimeInstant = dateUtils.getOffsetDay(days = -imageCleanTime.days)
@@ -42,20 +42,20 @@ class CleanPasteTaskExecutor(
                     val fileCleanTimeInstant = dateUtils.getOffsetDay(days = -fileCleanTime.days)
                     pasteDao.markDeleteByCleanTime(fileCleanTimeInstant, PasteType.FILE_TYPE.type)
                 }
-            } catch (e: Throwable) {
+            }.onFailure {
                 val baseExtraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class)
                 return TaskUtils.createFailurePasteTaskResult(
                     logger = logger,
                     retryHandler = { baseExtraInfo.executionHistories.size < 2 },
                     startTime = pasteTask.modifyTime,
-                    fails = listOf(createFailureResult(StandardErrorCode.CLEAN_TASK_FAIL, e)),
+                    fails = listOf(createFailureResult(StandardErrorCode.CLEAN_TASK_FAIL, it)),
                     extraInfo = baseExtraInfo,
                 )
             }
         }
 
         if (configManager.config.enableThresholdCleanup) {
-            try {
+            runCatching {
                 cleanLock.withLock {
                     val allSize = pasteDao.getSize(true)
                     val favoriteSize = pasteDao.getSize(false)
@@ -66,13 +66,13 @@ class CleanPasteTaskExecutor(
                         deleteStorageOfApproximateSize(cleanSize, noFavoriteSize)
                     }
                 }
-            } catch (e: Throwable) {
+            }.onFailure {
                 val baseExtraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class)
                 return TaskUtils.createFailurePasteTaskResult(
                     logger = logger,
                     retryHandler = { baseExtraInfo.executionHistories.size < 2 },
                     startTime = pasteTask.modifyTime,
-                    fails = listOf(createFailureResult(StandardErrorCode.CLEAN_TASK_FAIL, e)),
+                    fails = listOf(createFailureResult(StandardErrorCode.CLEAN_TASK_FAIL, it)),
                     extraInfo = baseExtraInfo,
                 )
             }

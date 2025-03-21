@@ -145,7 +145,7 @@ class DesktopShortKeysAction(
         }
     }
 
-    private suspend fun handleCopyResult(result: Result<Unit>) {
+    private suspend fun handleCopyResult(result: Result<Unit?>) {
         result.onSuccess {
             appWindowManager.toPaste()
         }.onFailure {

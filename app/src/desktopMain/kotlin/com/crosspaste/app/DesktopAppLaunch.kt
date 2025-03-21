@@ -33,28 +33,34 @@ object DesktopAppLaunch : AppLaunch, AppLock {
     override fun acquireLock(): AppLockState {
         val appLock = pathProvider.pasteUserPath.resolve("app.lock").toFile()
         val firstLaunch = !appLock.exists()
-        try {
+        return runCatching {
             channel = FileChannel.open(appLock.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE)
             lock = channel?.tryLock()
             if (lock == null) {
                 channel?.close()
                 logger.error { "Another instance of the application is already running." }
-                return GeneralAppLockState(false, firstLaunch)
-            }
-            logger.info { "Application lock acquired." }
+                GeneralAppLockState(false, firstLaunch)
+            } else {
+                logger.info { "Application lock acquired." }
 
-            return GeneralAppLockState(true, firstLaunch)
-        } catch (e: OverlappingFileLockException) {
-            logger.error(e) { "Another instance of the application is already running." }
-            return GeneralAppLockState(false, firstLaunch)
-        } catch (e: Exception) {
-            logger.error(e) { "Failed to create and lock file" }
-            return GeneralAppLockState(false, firstLaunch)
+                GeneralAppLockState(true, firstLaunch)
+            }
+        }.getOrElse { e ->
+            when (e) {
+                is OverlappingFileLockException -> {
+                    logger.error(e) { "Another instance of the application is already running." }
+                    GeneralAppLockState(false, firstLaunch)
+                }
+                else -> {
+                    logger.error { "Failed to create and lock file" }
+                    GeneralAppLockState(false, firstLaunch)
+                }
+            }
         }
     }
 
     override fun releaseLock() {
-        try {
+        runCatching {
             lock?.release()
             channel?.close()
             if (resetLock) {
@@ -63,7 +69,7 @@ object DesktopAppLaunch : AppLaunch, AppLock {
             } else {
                 logger.info { "Application lock released." }
             }
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.error(e) { "Failed to release lock" }
         }
     }

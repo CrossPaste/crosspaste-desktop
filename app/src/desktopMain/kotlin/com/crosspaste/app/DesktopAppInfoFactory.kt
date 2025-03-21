@@ -4,7 +4,6 @@ import com.crosspaste.config.ConfigManager
 import com.crosspaste.utils.getAppEnvUtils
 import com.crosspaste.utils.getSystemProperty
 import io.github.oshai.kotlinlogging.KotlinLogging
-import java.io.IOException
 import java.nio.file.Paths
 import java.util.Properties
 
@@ -15,19 +14,16 @@ class DesktopAppInfoFactory(private val configManager: ConfigManager) : AppInfoF
     private val systemProperty = getSystemProperty()
 
     private val properties: Properties? =
-        run {
-            try {
-                val properties = Properties()
-                properties.load(
-                    Thread.currentThread().contextClassLoader
-                        .getResourceAsStream("crosspaste-version.properties"),
-                )
-                properties
-            } catch (e: IOException) {
-                logger.error(e) { "Failed to read version" }
-                null
-            }
-        }
+        runCatching {
+            val properties = Properties()
+            properties.load(
+                Thread.currentThread().contextClassLoader
+                    .getResourceAsStream("crosspaste-version.properties"),
+            )
+            properties
+        }.onFailure { e ->
+            logger.error(e) { "Failed to read version" }
+        }.getOrNull()
 
     override fun createAppInfo(): AppInfo {
         val appInstanceId = configManager.config.appInstanceId

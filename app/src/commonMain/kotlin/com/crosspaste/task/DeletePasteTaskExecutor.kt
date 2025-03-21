@@ -16,15 +16,15 @@ class DeletePasteTaskExecutor(private val pasteDao: PasteDao) : SingleTypeTaskEx
     override val taskType: Int = TaskType.DELETE_PASTE_TASK
 
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
-        try {
+        return runCatching {
             pasteDao.deletePasteData(pasteTask.pasteDataId!!)
-            return SuccessPasteTaskResult()
-        } catch (e: Throwable) {
-            return TaskUtils.createFailurePasteTaskResult(
+            SuccessPasteTaskResult()
+        }.getOrElse {
+            TaskUtils.createFailurePasteTaskResult(
                 logger = logger,
                 retryHandler = { false },
                 startTime = pasteTask.modifyTime,
-                fails = listOf(createFailureResult(StandardErrorCode.DELETE_TASK_FAIL, e)),
+                fails = listOf(createFailureResult(StandardErrorCode.DELETE_TASK_FAIL, it)),
                 extraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class),
             )
         }

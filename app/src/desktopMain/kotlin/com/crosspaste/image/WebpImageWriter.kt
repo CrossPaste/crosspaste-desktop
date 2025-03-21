@@ -6,7 +6,6 @@ import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import okio.Path
 import java.awt.image.BufferedImage
-import java.io.IOException
 import javax.imageio.IIOImage
 import javax.imageio.ImageIO
 import javax.imageio.stream.FileImageOutputStream
@@ -20,7 +19,7 @@ class WebpImageWriter : ImageWriter<BufferedImage> {
         formatName: String,
         imagePath: Path,
     ): Boolean {
-        try {
+        return runCatching {
             val writer = ImageIO.getImageWritersByMIMEType("image/webp").next()
 
             // Configure encoding parameters
@@ -36,10 +35,10 @@ class WebpImageWriter : ImageWriter<BufferedImage> {
 
             // Encode
             writer.write(null, IIOImage(image, null, null), writeParam)
-            return true
-        } catch (e: IOException) {
-            logger.warn(e) { "Failed to write image to webp" }
-            return false
+            true
+        }.getOrElse {
+            logger.warn(it) { "Failed to write image to webp" }
+            false
         }
     }
 }

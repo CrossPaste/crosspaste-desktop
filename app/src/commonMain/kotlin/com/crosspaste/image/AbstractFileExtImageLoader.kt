@@ -2,11 +2,10 @@ package com.crosspaste.image
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.utils.PlatformLock
 import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.util.collections.*
+import kotlinx.coroutines.sync.Mutex
 import okio.Path
 
 abstract class AbstractFileExtImageLoader(
@@ -15,9 +14,9 @@ abstract class AbstractFileExtImageLoader(
 
     private val logger = KotlinLogging.logger {}
 
-    override val lockMap: ConcurrentMap<String, PlatformLock> = ConcurrentMap()
-
     private val fileUtils = getFileUtils()
+
+    override val mutex = Mutex()
 
     override fun resolve(
         key: String,
@@ -32,7 +31,7 @@ abstract class AbstractFileExtImageLoader(
 
     override fun loggerWarning(
         value: Path,
-        e: Exception,
+        e: Throwable,
     ) {
         logger.warn { "Failed to load icon for file extension: $value" }
     }

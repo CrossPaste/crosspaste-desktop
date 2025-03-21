@@ -29,7 +29,7 @@ class DesktopFaviconLoader(
 
         val proxy = DesktopProxy.getProxy(uri)
 
-        try {
+        return runCatching {
             val builder = HttpClient.newBuilder()
 
             (proxy.address() as InetSocketAddress?)?.let { address ->
@@ -52,11 +52,14 @@ class DesktopFaviconLoader(
                         input.copyTo(output)
                     }
                 }
-                return path
+                path
+            } else {
+                logger.warn { "Failed to save favicon for $url" }
+                null
             }
-        } catch (e: Exception) {
+        }.getOrElse { e ->
             logger.warn(e) { "Failed to save favicon for $url" }
+            null
         }
-        return null
     }
 }

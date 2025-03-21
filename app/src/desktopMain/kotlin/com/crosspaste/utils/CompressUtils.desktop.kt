@@ -18,7 +18,7 @@ object DesktopCompressUtils : CompressUtils {
         sourceDir: Path,
         targetZipPath: Path,
     ): Result<Unit> {
-        return try {
+        return runCatching {
             require(sourceDir.isDirectory) { "Source must be a directory" }
 
             val targetFile = targetZipPath.toFile()
@@ -41,10 +41,6 @@ object DesktopCompressUtils : CompressUtils {
                     zipOut.closeEntry()
                 }
             }
-
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
         }
     }
 
@@ -52,7 +48,7 @@ object DesktopCompressUtils : CompressUtils {
         sourceFile: Path,
         targetZipPath: Path,
     ): Result<Unit> {
-        return try {
+        return runCatching {
             require(!sourceFile.isDirectory) { "Source must be a file, not a directory" }
 
             ZipOutputStream(BufferedOutputStream(targetZipPath.toFile().outputStream())).use { zipOut ->
@@ -65,10 +61,6 @@ object DesktopCompressUtils : CompressUtils {
 
                 zipOut.closeEntry()
             }
-
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
         }
     }
 
@@ -76,7 +68,7 @@ object DesktopCompressUtils : CompressUtils {
         zipFile: Path,
         targetDir: Path,
     ): Result<Unit> {
-        return try {
+        return runCatching {
             ZipInputStream(BufferedInputStream(zipFile.toFile().inputStream())).use { zipIn ->
                 var entry = zipIn.nextEntry
                 while (entry != null) {
@@ -94,10 +86,6 @@ object DesktopCompressUtils : CompressUtils {
                     entry = zipIn.nextEntry
                 }
             }
-
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
         }
     }
 }

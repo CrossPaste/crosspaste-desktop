@@ -19,9 +19,9 @@ object DesktopProxy {
 
     fun getProxy(uri: URI): Proxy {
         systemProperty.set("java.net.useSystemProxies", "true")
-        try {
+        return runCatching {
             val proxyList = ProxySelector.getDefault().select(uri)
-            return proxyList.firstOrNull { proxy ->
+            proxyList.firstOrNull { proxy ->
                 proxy.type() == Proxy.Type.HTTP &&
                     proxy.address() != null &&
                     proxy.address() is InetSocketAddress &&
@@ -34,7 +34,7 @@ object DesktopProxy {
                         "HTTP_PROXY"
                     }
                 System.getenv(proxyName)?.let {
-                    try {
+                    runCatching {
                         val proxyUri = URI(it)
                         val proxyHost = proxyUri.host
                         val proxyPort = proxyUri.port
@@ -44,14 +44,17 @@ object DesktopProxy {
                         } else {
                             Proxy.NO_PROXY
                         }
-                    } catch (e: Exception) {
+                    }.getOrElse { e ->
                         logger.warn(e) { "Invalid proxy configuration in environment variable" }
                         Proxy.NO_PROXY
                     }
                 } ?: Proxy.NO_PROXY
             }
-        } finally {
+        }.apply {
             systemProperty.set("java.net.useSystemProxies", "false")
+        }.getOrElse {
+            logger.warn(it) { "Failed to get proxy" }
+            Proxy.NO_PROXY
         }
     }
 
@@ -73,7 +76,7 @@ object DesktopProxy {
         return when (proxy.type()) {
             Proxy.Type.DIRECT -> null
             Proxy.Type.HTTP -> {
-                try {
+                runCatching {
                     proxy.address()?.let { address ->
                         (address as? InetSocketAddress)?.let { inetSocketAddress ->
                             val port = inetSocketAddress.port
@@ -86,10 +89,9 @@ object DesktopProxy {
                             }
                         }
                     }
-                } catch (e: Exception) {
+                }.onFailure { e ->
                     logger.warn(e) { "Invalid proxy configuration" }
-                    null
-                }
+                }.getOrNull()
             }
             else -> null
         }

@@ -83,9 +83,9 @@ object MacAppUtils {
     }
 
     fun List<WindowInfo>.useAll(block: (List<WindowInfo>) -> Unit) {
-        try {
+        runCatching {
             block(this)
-        } finally {
+        }.let {
             this.forEach { it.close() }
         }
     }

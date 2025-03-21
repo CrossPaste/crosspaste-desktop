@@ -20,10 +20,10 @@ class DesktopPasteServer(
     private val logger = KotlinLogging.logger {}
 
     override fun start() {
-        try {
+        runCatching {
             server = createServer(port = readWritePort.getValue())
             server?.start(wait = false)
-        } catch (e: Exception) {
+        }.onFailure { e ->
             if (exceptionHandler.isPortAlreadyInUse(e)) {
                 logger.warn { "Port ${readWritePort.getValue()} is already in use" }
                 server = createServer(port = 0)

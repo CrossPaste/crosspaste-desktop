@@ -167,15 +167,14 @@ class DesktopUISupport(
     }
 
     private fun openFileInExplorer(file: File): Boolean {
-        try {
+        return runCatching {
             val filePath = file.absolutePath
             val command = "explorer.exe /select,\"$filePath\""
             Runtime.getRuntime().exec(command)
-            return true
-        } catch (e: Exception) {
+            true
+        }.onFailure { e ->
             logger.error(e) { "Failed to open file in explorer" }
-            return false
-        }
+        }.getOrElse { false }
     }
 
     override fun openImage(imagePath: Path) {

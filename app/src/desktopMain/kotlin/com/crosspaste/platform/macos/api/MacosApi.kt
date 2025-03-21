@@ -91,11 +91,11 @@ interface MacosApi : Library {
 
         fun getString(ptr: Pointer?): String? {
             val pointer = ptr ?: return null
-            try {
+            return runCatching {
                 return pointer.getString(0)
-            } finally {
+            }.apply {
                 Native.free(Pointer.nativeValue(pointer))
-            }
+            }.getOrNull()
         }
     }
 }

@@ -45,7 +45,7 @@ class MacosPasteboardService(
 
     override val systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
 
-    override val pasteboardChannel: Channel<suspend () -> Result<Unit>> = Channel(Channel.UNLIMITED)
+    override val pasteboardChannel: Channel<suspend () -> Result<Unit?>> = Channel(Channel.UNLIMITED)
 
     private var job: Job? = null
 
@@ -57,7 +57,7 @@ class MacosPasteboardService(
         return serviceScope.launch(CoroutineName("MacPasteboardService")) {
             var firstRead = true
             while (isActive) {
-                try {
+                runCatching {
                     val remote = IntByReference()
                     val isCrossPaste = IntByReference()
                     MacosApi.INSTANCE.getPasteboardChangeCount(changeCount, remote, isCrossPaste)
@@ -108,7 +108,7 @@ class MacosPasteboardService(
                             }
                         }
                     firstRead = false
-                } catch (e: Exception) {
+                }.onFailure { e ->
                     logger.error(e) { "Failed to consume transferable" }
                 }
                 delay(280L)

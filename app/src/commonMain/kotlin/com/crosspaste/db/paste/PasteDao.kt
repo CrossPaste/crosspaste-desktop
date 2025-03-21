@@ -135,28 +135,24 @@ class PasteDao(
     }
 
     suspend fun markAllDeleteExceptFavorite(): Result<Unit> {
-        return try {
+        return runCatching {
             batchMarkDelete {
                 pasteDatabaseQueries.queryNoFavorite(markDeleteBatchNum)
             }
-            Result.success(Unit)
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.error(e) { "Mark all delete except favorite failed" }
-            Result.failure(e)
         }
     }
 
     suspend fun markDeletePasteData(id: Long): Result<Unit> {
-        return try {
+        return runCatching {
             val taskId = database.transactionWithResult {
                 pasteDatabaseQueries.markDeletePasteData(listOf(id))
                 taskDao.createTask(id, TaskType.DELETE_PASTE_TASK)
             }
             taskExecutor.submitTask(taskId)
-            Result.success(Unit)
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.error(e) { "Mark delete paste data failed" }
-            Result.failure(e)
         }
     }
 
@@ -311,7 +307,7 @@ class PasteDao(
         pasteData: PasteData,
         tryWritePasteboard: (PasteData, Boolean) -> Unit,
     ): Result<Unit> {
-        return try {
+        return runCatching {
             val remotePasteDataId = pasteData.id
             val tasks = mutableListOf<Long>()
             val existFile = pasteData.existFileResource()
@@ -368,10 +364,8 @@ class PasteDao(
 
             tryWritePasteboard(pasteData, existFile)
             taskExecutor.submitTasks(tasks)
-            Result.success(Unit)
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.error(e) { "Release remote paste data failed" }
-            Result.failure(e)
         }
     }
 
@@ -379,7 +373,7 @@ class PasteDao(
         id: Long,
         tryWritePasteboard: (PasteData) -> Unit,
     ): Result<Unit> {
-        return try {
+        return runCatching {
             val tasks = mutableListOf<Long>()
             database.transactionWithResult {
                 updatePasteState(id, PasteState.LOADED)
@@ -389,10 +383,8 @@ class PasteDao(
                 tryWritePasteboard(pasteData)
             }
             taskExecutor.submitTasks(tasks)
-            Result.success(Unit)
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.error(e) { "Release remote paste data with file failed" }
-            Result.failure(e)
         }
     }
 

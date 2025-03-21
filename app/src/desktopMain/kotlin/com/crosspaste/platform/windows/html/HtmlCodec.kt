@@ -6,7 +6,6 @@ import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
-import java.io.UnsupportedEncodingException
 import java.util.Arrays
 import java.util.Locale
 
@@ -134,7 +133,7 @@ internal class HTMLCodec(
                 }
                 iHeadSize += stLine.length + iCRSize
                 val stValue: String = stLine.substring(astEntries[iEntry].length).trim { it <= ' ' }
-                try {
+                runCatching {
                     when (iEntry) {
                         0 -> stVersion = stValue
                         1 -> iHTMLStart = stValue.toInt().toLong()
@@ -145,8 +144,13 @@ internal class HTMLCodec(
                         6 -> iSelEnd = stValue.toInt().toLong()
                         7 -> stBaseURL = stValue
                     }
-                } catch (e: NumberFormatException) {
-                    throw IOException(FAILURE_MSG + astEntries[iEntry] + " value " + e + INVALID_MSG)
+                }.onFailure { e ->
+                    when (e) {
+                        is NumberFormatException ->
+                            throw IOException(FAILURE_MSG + astEntries[iEntry] + " value " + e + INVALID_MSG)
+                        else ->
+                            throw IOException(FAILURE_MSG + astEntries[iEntry] + " value " + e)
+                    }
                 }
                 break
             }
@@ -452,10 +456,9 @@ internal class HTMLCodec(
             var headerBytes: ByteArray? = null
             var trailerBytes: ByteArray? = null
 
-            try {
+            runCatching {
                 headerBytes = header.toString().toByteArray(charset(ENCODING))
                 trailerBytes = htmlSuffix.toByteArray(charset(ENCODING))
-            } catch (_: UnsupportedEncodingException) {
             }
 
             val retval =

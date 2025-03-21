@@ -31,8 +31,8 @@ class MacAppWindowManager(
     }
 
     override fun getCurrentActiveAppName(): String? {
-        return try {
-            return MacAppUtils.getCurrentActiveApp()?.let {
+        return runCatching {
+            MacAppUtils.getCurrentActiveApp()?.let {
                 createMacAppInfo(info = it)?.let { macAppInfo ->
                     ioScope.launch {
                         saveImagePathByApp(macAppInfo.bundleIdentifier, macAppInfo.localizedName)
@@ -40,7 +40,7 @@ class MacAppWindowManager(
                     macAppInfo.localizedName
                 }
             }
-        } catch (e: Exception) {
+        }.getOrElse { e ->
             logger.error(e) { "Failed to get current active app name" }
             null
         }

@@ -11,7 +11,7 @@ object TestAppPathProviderMock {
 
     @Synchronized
     fun useMockAppPathProvider(testAction: (Path, Path, Path, Path) -> Unit) {
-        try {
+        runCatching {
             mockkObject(DesktopAppPathProvider)
 
             // Create temporary directories
@@ -31,7 +31,7 @@ object TestAppPathProviderMock {
             every { DesktopAppPathProvider.pasteUserPath } returns tempUserPath
 
             testAction(tempPasteAppPath, tempUserHome, tempPasteAppJarPath, tempUserPath)
-        } finally {
+        }.apply {
             unmockkObject(DesktopAppPathProvider)
         }
     }

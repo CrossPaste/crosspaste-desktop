@@ -38,7 +38,7 @@ class DesktopSoundService(private val configManager: ConfigManager) : SoundServi
             return
         }
         scope.launch {
-            try {
+            runCatching {
                 withContext(ioDispatcher) {
                     val byteArray = DesktopResourceUtils.readResourceBytes(filePath)
 
@@ -66,7 +66,7 @@ class DesktopSoundService(private val configManager: ConfigManager) : SoundServi
                         }
                     }
                 }
-            } catch (e: Exception) {
+            }.onFailure { e ->
                 logger.error(e) { "Error playing sound $filePath" }
             }
         }

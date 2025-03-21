@@ -107,7 +107,7 @@ class CrossPaste {
 
         @Throws(Exception::class)
         private fun startApplication() {
-            try {
+            runCatching {
                 val koin = koinApplication.koin
                 val appLaunchState = koin.get<DesktopAppLaunchState>()
                 if (appLaunchState.acquireLock) {
@@ -131,8 +131,8 @@ class CrossPaste {
                 } else {
                     exitProcess(0)
                 }
-            } catch (throwable: Throwable) {
-                logger.error(throwable) { "cant start crosspaste" }
+            }.onFailure { e ->
+                logger.error(e) { "cant start crosspaste" }
                 exitProcess(0)
             }
         }
@@ -198,11 +198,12 @@ class CrossPaste {
             qualifier: Qualifier? = null,
             stopAction: (T) -> Unit,
         ) {
-            try {
+            runCatching {
                 val service = koinApplication.koin.get<T>(qualifier = qualifier)
                 stopAction(service)
+            }.onSuccess {
                 logger.info { "$serviceName stop completed" }
-            } catch (e: Exception) {
+            }.onFailure { e ->
                 logger.error(e) { "Error stopping $serviceName" }
             }
         }

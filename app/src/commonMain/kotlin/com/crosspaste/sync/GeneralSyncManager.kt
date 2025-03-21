@@ -181,9 +181,9 @@ class GeneralSyncManager(
     }
 
     private suspend fun doResolveSync(syncHandler: SyncHandler) {
-        try {
+        runCatching {
             syncHandler.forceResolve()
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.error(e) { "resolve sync error" }
         }
     }
@@ -224,7 +224,7 @@ class GeneralSyncManager(
     override fun refresh(ids: List<String>) {
         realTimeSyncScope.launch(CoroutineName("SyncManagerRefresh")) {
             logger.info { "start launch" }
-            try {
+            runCatching {
                 if (ids.isEmpty()) {
                     resolveSyncs()
                 } else {
@@ -232,11 +232,12 @@ class GeneralSyncManager(
                         resolveSync(id)
                     }
                 }
-            } catch (e: Exception) {
+            }.onFailure { e ->
                 logger.error(e) { "checkConnects error" }
+            }.apply {
+                delay(1000)
+                logger.info { "set refreshing false" }
             }
-            delay(1000)
-            logger.info { "set refreshing false" }
         }
     }
 }

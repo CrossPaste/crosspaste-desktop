@@ -36,9 +36,9 @@ val Path.isDirectory: Boolean
 
 val Path.safeIsDirectory: Boolean
     get() {
-        return try {
+        return runCatching {
             this.isDirectory
-        } catch (_: Exception) {
+        }.getOrElse {
             false
         }
     }

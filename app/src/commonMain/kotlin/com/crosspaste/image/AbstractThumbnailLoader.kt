@@ -3,12 +3,11 @@ package com.crosspaste.image
 import com.crosspaste.app.AppFileType
 import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.utils.PlatformLock
 import com.crosspaste.utils.fileNameRemoveExtension
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.noOptionParent
 import io.github.oshai.kotlinlogging.KLogger
-import io.ktor.util.collections.*
+import kotlinx.coroutines.sync.Mutex
 import okio.Path
 
 abstract class AbstractThumbnailLoader(
@@ -19,9 +18,9 @@ abstract class AbstractThumbnailLoader(
 
     protected val fileUtils = getFileUtils()
 
-    abstract val thumbnailSize: Int
+    override val mutex = Mutex()
 
-    override val lockMap: ConcurrentMap<String, PlatformLock> = ConcurrentMap()
+    abstract val thumbnailSize: Int
 
     protected val basePath = userDataPathProvider.resolve(appFileType = AppFileType.IMAGE)
 
@@ -70,7 +69,7 @@ abstract class AbstractThumbnailLoader(
 
     override fun loggerWarning(
         value: PasteFileCoordinate,
-        e: Exception,
+        e: Throwable,
     ) {
         logger.warn { "Failed to create thumbnail for file: $value" }
     }

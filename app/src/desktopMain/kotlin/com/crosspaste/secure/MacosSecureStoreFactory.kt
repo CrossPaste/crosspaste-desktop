@@ -35,12 +35,12 @@ class MacosSecureStoreFactory(
             val password = MacosKeychainHelper.getPassword(service, appInfo.userName)
             password?.let {
                 logger.info { "Found password in keychain by $service ${appInfo.userName}" }
-                try {
+                runCatching {
                     val secretKey = EncryptUtils.stringToSecretKey(it)
                     val decryptData = EncryptUtils.decryptData(secretKey, bytes)
                     val secureKeyPair = secureKeyPairSerializer.decodeSecureKeyPair(decryptData)
                     return@createSecureStore GeneralSecureStore(secureKeyPair, secureKeyPairSerializer, secureIO)
-                } catch (e: Exception) {
+                }.onFailure { e ->
                     logger.error(e) { "Decrypt secureKeyPair error" }
                 }
             }
