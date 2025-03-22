@@ -339,7 +339,7 @@ class PasteDao(
     ): List<PasteData> {
         return pasteDatabaseQueries.searchByAllMatch(
             pasteType = pasteType,
-            pasteSearchContent = pasteSearchContent,
+            pasteSearchContent = pasteSearchContent.lowercase(),
             mapper = PasteData::mapper
         ).executeAsList()
     }
