@@ -435,6 +435,12 @@ class PasteDao(
             for (pastePlugin in pasteProcessPlugins) {
                 pasteAppearItems = pastePlugin.process(pasteAppearItems, pasteData.source)
             }
+
+            if (pasteAppearItems.isEmpty()) {
+                markDeletePasteData(id)
+                return@let
+            }
+
             val size = pasteAppearItems.sumOf { it.size }
             val maxFileSize = pasteAppearItems.filter { it is PasteFiles }
                 .maxByOrNull { it.size }
@@ -484,7 +490,6 @@ class PasteDao(
                 taskExecutor.submitTasks(tasks)
             }
         }
-
     }
 
     fun getPasteResourceInfo(favorite: Boolean? = null): PasteResourceInfo {
