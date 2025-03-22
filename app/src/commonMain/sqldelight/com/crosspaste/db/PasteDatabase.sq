@@ -172,6 +172,14 @@ SELECT PasteDataEntity.*
     ORDER BY CASE WHEN :sort THEN createTime ELSE -createTime END DESC
     LIMIT :number;
 
+searchByAllMatch:
+SELECT PasteDataEntity.*
+FROM PasteDataEntity
+WHERE
+    pasteState != -1 AND
+    pasteType = :pasteType AND
+    pasteSearchContent = :pasteSearchContent;
+
 updatePasteDataState:
 UPDATE PasteDataEntity
 SET pasteState = :state
