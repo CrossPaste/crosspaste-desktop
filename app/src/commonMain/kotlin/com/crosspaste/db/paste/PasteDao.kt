@@ -303,6 +303,47 @@ class PasteDao(
         }
     }
 
+    fun searchSingleFile(
+        source: String? = null,
+        fileName: String,
+    ): List<PasteData> {
+        val searchContent = if (source == null) {
+            fileName
+        } else {
+            "$source $fileName"
+        }
+        return searchByAllMatch(
+            pasteType = PasteType.FILE_TYPE.type.toLong(),
+            pasteSearchContent = searchContent,
+        )
+    }
+
+    fun searchSingleImage(
+        source: String? = null,
+        fileName: String,
+    ): List<PasteData> {
+        val searchContent = if (source == null) {
+            fileName
+        } else {
+            "$source $fileName"
+        }
+        return searchByAllMatch(
+            pasteType = PasteType.IMAGE_TYPE.type.toLong(),
+            pasteSearchContent = searchContent,
+        )
+    }
+
+    fun searchByAllMatch(
+        pasteType: Long,
+        pasteSearchContent: String
+    ): List<PasteData> {
+        return pasteDatabaseQueries.searchByAllMatch(
+            pasteType = pasteType,
+            pasteSearchContent = pasteSearchContent,
+            mapper = PasteData::mapper
+        ).executeAsList()
+    }
+
     suspend fun releaseRemotePasteData(
         pasteData: PasteData,
         tryWritePasteboard: (PasteData, Boolean) -> Unit,
