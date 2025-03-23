@@ -76,7 +76,14 @@ fun PasteExportContentView() {
     val coroutineScope = rememberCoroutineScope()
 
     // State for type filters
-    val typeFilterState = rememberTypeFilterState()
+    var allTypesSelected by remember { mutableStateOf(true) }
+    var textTypeSelected by remember { mutableStateOf(true) }
+    var urlTypeSelected by remember { mutableStateOf(true) }
+    var htmlTypeSelected by remember { mutableStateOf(true) }
+    var fileTypeSelected by remember { mutableStateOf(true) }
+    var imageTypeSelected by remember { mutableStateOf(true) }
+    var rtfTypeSelected by remember { mutableStateOf(true) }
+    var colorTypeSelected by remember { mutableStateOf(true) }
 
     // State for additional filters
     var favoritesSelected by remember { mutableStateOf(false) }
@@ -109,7 +116,24 @@ fun PasteExportContentView() {
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 // Type filters section
-                TypeFiltersSection(typeFilterState)
+                TypeFiltersSection(
+                    allTypesSelected = allTypesSelected,
+                    onAllTypesSelectedChange = { allTypesSelected = it },
+                    textTypeSelected = textTypeSelected,
+                    onTextTypeSelectedChange = { textTypeSelected = it },
+                    urlTypeSelected = urlTypeSelected,
+                    onUrlTypeSelectedChange = { urlTypeSelected = it },
+                    htmlTypeSelected = htmlTypeSelected,
+                    onHtmlTypeSelectedChange = { htmlTypeSelected = it },
+                    fileTypeSelected = fileTypeSelected,
+                    onFileTypeSelectedChange = { fileTypeSelected = it },
+                    imageTypeSelected = imageTypeSelected,
+                    onImageTypeSelectedChange = { imageTypeSelected = it },
+                    rtfTypeSelected = rtfTypeSelected,
+                    onRtfTypeSelectedChange = { rtfTypeSelected = it },
+                    colorTypeSelected = colorTypeSelected,
+                    onColorTypeSelectedChange = { colorTypeSelected = it },
+                )
 
                 // Additional filters section
                 AdditionalFiltersSection(
@@ -133,7 +157,17 @@ fun PasteExportContentView() {
                 onClick = {
                     handleExportClick(
                         appWindowManager = appWindowManager,
-                        typeFilterState = typeFilterState,
+                        types =
+                            collectSelectedTypes(
+                                allTypesSelected,
+                                textTypeSelected,
+                                urlTypeSelected,
+                                htmlTypeSelected,
+                                fileTypeSelected,
+                                imageTypeSelected,
+                                rtfTypeSelected,
+                                colorTypeSelected,
+                            ),
                         favoritesSelected = favoritesSelected,
                         sizeFilterSelected = sizeFilterSelected,
                         maxFileSize = maxFileSize,
@@ -159,104 +193,81 @@ fun PasteExportContentView() {
 }
 
 /**
- * Data class to hold the state of all paste type filters
- */
-private data class TypeFilterState(
-    var allTypesSelected: Boolean,
-    var textTypeSelected: Boolean,
-    var urlTypeSelected: Boolean,
-    var htmlTypeSelected: Boolean,
-    var fileTypeSelected: Boolean,
-    var imageTypeSelected: Boolean,
-    var rtfTypeSelected: Boolean,
-    var colorTypeSelected: Boolean,
-)
-
-/**
- * Remember the state of type filters
- */
-@Composable
-private fun rememberTypeFilterState(): TypeFilterState {
-    var allTypesSelected by remember { mutableStateOf(true) }
-    var textTypeSelected by remember { mutableStateOf(true) }
-    var urlTypeSelected by remember { mutableStateOf(true) }
-    var htmlTypeSelected by remember { mutableStateOf(true) }
-    var fileTypeSelected by remember { mutableStateOf(true) }
-    var imageTypeSelected by remember { mutableStateOf(true) }
-    var rtfTypeSelected by remember { mutableStateOf(true) }
-    var colorTypeSelected by remember { mutableStateOf(true) }
-
-    return TypeFilterState(
-        allTypesSelected = allTypesSelected,
-        textTypeSelected = textTypeSelected,
-        urlTypeSelected = urlTypeSelected,
-        htmlTypeSelected = htmlTypeSelected,
-        fileTypeSelected = fileTypeSelected,
-        imageTypeSelected = imageTypeSelected,
-        rtfTypeSelected = rtfTypeSelected,
-        colorTypeSelected = colorTypeSelected,
-    )
-}
-
-/**
  * Section displaying all type filter checkboxes
  */
 @Composable
-private fun TypeFiltersSection(state: TypeFilterState) {
+private fun TypeFiltersSection(
+    allTypesSelected: Boolean,
+    onAllTypesSelectedChange: (Boolean) -> Unit,
+    textTypeSelected: Boolean,
+    onTextTypeSelectedChange: (Boolean) -> Unit,
+    urlTypeSelected: Boolean,
+    onUrlTypeSelectedChange: (Boolean) -> Unit,
+    htmlTypeSelected: Boolean,
+    onHtmlTypeSelectedChange: (Boolean) -> Unit,
+    fileTypeSelected: Boolean,
+    onFileTypeSelectedChange: (Boolean) -> Unit,
+    imageTypeSelected: Boolean,
+    onImageTypeSelectedChange: (Boolean) -> Unit,
+    rtfTypeSelected: Boolean,
+    onRtfTypeSelectedChange: (Boolean) -> Unit,
+    colorTypeSelected: Boolean,
+    onColorTypeSelectedChange: (Boolean) -> Unit,
+) {
     PasteTypeCheckbox(
         type = "all_types",
-        selected = state.allTypesSelected,
-        onSelectedChange = { state.allTypesSelected = it },
+        selected = allTypesSelected,
+        onSelectedChange = onAllTypesSelectedChange,
     )
 
-    if (!state.allTypesSelected) {
+    if (!allTypesSelected) {
         PasteTypeWithIconCheckbox(
             type = "text",
             icon = text(),
-            selected = state.textTypeSelected,
-            onSelectedChange = { state.textTypeSelected = it },
+            selected = textTypeSelected,
+            onSelectedChange = onTextTypeSelectedChange,
         )
 
         PasteTypeWithIconCheckbox(
             type = "link",
             icon = link(),
-            selected = state.urlTypeSelected,
-            onSelectedChange = { state.urlTypeSelected = it },
+            selected = urlTypeSelected,
+            onSelectedChange = onUrlTypeSelectedChange,
         )
 
         PasteTypeWithIconCheckbox(
             type = "html",
             icon = htmlOrRtf(),
-            selected = state.htmlTypeSelected,
-            onSelectedChange = { state.htmlTypeSelected = it },
+            selected = htmlTypeSelected,
+            onSelectedChange = onHtmlTypeSelectedChange,
         )
 
         PasteTypeWithIconCheckbox(
             type = "file",
             icon = file(),
-            selected = state.fileTypeSelected,
-            onSelectedChange = { state.fileTypeSelected = it },
+            selected = fileTypeSelected,
+            onSelectedChange = onFileTypeSelectedChange,
         )
 
         PasteTypeWithIconCheckbox(
             type = "image",
             icon = image(),
-            selected = state.imageTypeSelected,
-            onSelectedChange = { state.imageTypeSelected = it },
+            selected = imageTypeSelected,
+            onSelectedChange = onImageTypeSelectedChange,
         )
 
         PasteTypeWithIconCheckbox(
             type = "rtf",
             icon = htmlOrRtf(),
-            selected = state.rtfTypeSelected,
-            onSelectedChange = { state.rtfTypeSelected = it },
+            selected = rtfTypeSelected,
+            onSelectedChange = onRtfTypeSelectedChange,
         )
 
         PasteTypeWithIconCheckbox(
             type = "color",
             icon = color(),
-            selected = state.colorTypeSelected,
-            onSelectedChange = { state.colorTypeSelected = it },
+            selected = colorTypeSelected,
+            onSelectedChange = onColorTypeSelectedChange,
         )
     }
 }
@@ -378,7 +389,7 @@ private fun ExportButtonSection(
  */
 private fun handleExportClick(
     appWindowManager: AppWindowManager,
-    typeFilterState: TypeFilterState,
+    types: Set<Long>,
     favoritesSelected: Boolean,
     sizeFilterSelected: Boolean,
     maxFileSize: Long,
@@ -389,7 +400,6 @@ private fun handleExportClick(
     onExportStart: () -> Unit,
 ) {
     appWindowManager.openFileChooser(FileSelectionMode.DIRECTORY_ONLY) { path ->
-        val types = collectSelectedTypes(typeFilterState)
 
         val pasteExportParam =
             PasteExportParam(
@@ -420,28 +430,37 @@ private fun handleExportClick(
 /**
  * Collect all selected paste types
  */
-private fun collectSelectedTypes(state: TypeFilterState): MutableSet<Long> {
+private fun collectSelectedTypes(
+    allTypesSelected: Boolean,
+    textTypeSelected: Boolean,
+    urlTypeSelected: Boolean,
+    htmlTypeSelected: Boolean,
+    fileTypeSelected: Boolean,
+    imageTypeSelected: Boolean,
+    rtfTypeSelected: Boolean,
+    colorTypeSelected: Boolean,
+): MutableSet<Long> {
     val types = mutableSetOf<Long>()
 
-    if (state.allTypesSelected || state.textTypeSelected) {
+    if (allTypesSelected || textTypeSelected) {
         types.add(TEXT_TYPE.type.toLong())
     }
-    if (state.allTypesSelected || state.urlTypeSelected) {
+    if (allTypesSelected || urlTypeSelected) {
         types.add(URL_TYPE.type.toLong())
     }
-    if (state.allTypesSelected || state.htmlTypeSelected) {
+    if (allTypesSelected || htmlTypeSelected) {
         types.add(HTML_TYPE.type.toLong())
     }
-    if (state.allTypesSelected || state.fileTypeSelected) {
+    if (allTypesSelected || fileTypeSelected) {
         types.add(FILE_TYPE.type.toLong())
     }
-    if (state.allTypesSelected || state.imageTypeSelected) {
+    if (allTypesSelected || imageTypeSelected) {
         types.add(IMAGE_TYPE.type.toLong())
     }
-    if (state.allTypesSelected || state.rtfTypeSelected) {
+    if (allTypesSelected || rtfTypeSelected) {
         types.add(RTF_TYPE.type.toLong())
     }
-    if (state.allTypesSelected || state.colorTypeSelected) {
+    if (allTypesSelected || colorTypeSelected) {
         types.add(COLOR_TYPE.type.toLong())
     }
 
