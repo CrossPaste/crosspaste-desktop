@@ -36,3 +36,13 @@ UPDATE PasteTaskEntity SET
   modifyTime = ?,
   extraInfo = ?
 WHERE taskId = ?;
+
+cleanSuccess:
+DELETE FROM PasteTaskEntity
+WHERE status = 2 AND
+modifyTime <= :time;
+
+cleanFail:
+DELETE FROM PasteTaskEntity
+WHERE status = 3 AND
+modifyTime <= :time;

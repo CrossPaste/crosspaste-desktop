@@ -28,7 +28,7 @@ import com.crosspaste.app.DesktopAppUrls
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.app.getDesktopAppWindowManager
-import com.crosspaste.clean.CleanPasteScheduler
+import com.crosspaste.clean.CleanScheduler
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.config.DevConfig
 import com.crosspaste.config.ReadWriteConfig
@@ -152,6 +152,7 @@ import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.sync.TokenCache
 import com.crosspaste.task.CleanPasteTaskExecutor
+import com.crosspaste.task.CleanTaskTaskExecutor
 import com.crosspaste.task.DeletePasteTaskExecutor
 import com.crosspaste.task.Html2ImageTaskExecutor
 import com.crosspaste.task.PullFileTaskExecutor
@@ -351,7 +352,7 @@ class DesktopCrossPasteModule(
     // PasteComponentModule.kt
     override fun pasteComponentModule() =
         module {
-            single<CleanPasteScheduler> { CleanPasteScheduler(get(), get(), get()) }
+            single<CleanScheduler> { CleanScheduler(get(), get(), get()) }
             single<CurrentPaste> { DesktopCurrentPaste(lazy { get() }) }
             single<RenderingHelper> { DesktopRenderingHelper(get()) }
             single<RenderingService<String>>(named("htmlRendering")) {
@@ -372,6 +373,7 @@ class DesktopCrossPasteModule(
                 TaskExecutor(
                     listOf(
                         CleanPasteTaskExecutor(get(), get()),
+                        CleanTaskTaskExecutor(get()),
                         DeletePasteTaskExecutor(get()),
                         Html2ImageTaskExecutor(
                             lazy { get<RenderingService<String>>(named("htmlRendering")) },
