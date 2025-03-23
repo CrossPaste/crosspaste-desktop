@@ -8,6 +8,8 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emitAll
@@ -16,6 +18,7 @@ import kotlinx.coroutines.launch
 class TaskExecutor(
     singleTypeTaskExecutors: List<SingleTypeTaskExecutor>,
     private val taskDao: TaskDao,
+    maxConcurrentTasks: Int = 10,
 ) {
     private val logger = KotlinLogging.logger {}
 
@@ -23,13 +26,20 @@ class TaskExecutor(
 
     private val taskShardedFlow = MutableSharedFlow<Long>()
 
+    private val executionSemaphore = Channel<Unit>(maxConcurrentTasks)
+
     private val scope = CoroutineScope(cpuDispatcher + SupervisorJob())
 
     init {
         scope.launch(CoroutineName("TaskExecutor")) {
             taskShardedFlow.collect { taskId ->
+                executionSemaphore.send(Unit)
                 launch {
-                    executeTask(taskId)
+                    try {
+                        executeTask(taskId)
+                    } finally {
+                        executionSemaphore.receive()
+                    }
                 }
             }
         }
@@ -72,5 +82,10 @@ class TaskExecutor(
 
     suspend fun submitTasks(taskIds: List<Long>) {
         taskShardedFlow.emitAll(taskIds.asFlow())
+    }
+
+    fun shutdown() {
+        scope.cancel()
+        logger.info { "TaskExecutor shutdown complete" }
     }
 }
