@@ -468,7 +468,7 @@ fun DetailMenuItem(
                         .background(background),
                 contentAlignment = Alignment.Center,
             ) {
-                PasteTypeIconView(pasteData, size = 16.dp)
+                PasteTypeIconView(pasteData, background, size = 16.dp)
             }
         }
     }

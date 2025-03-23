@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,6 +49,13 @@ fun PasteTitleView(
         title = pasteData.getTitle(loading, unknown)
     }
 
+    val backgroundColor =
+        if (selected) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            MaterialTheme.colorScheme.surface
+        }
+
     Box(
         modifier = Modifier.fillMaxWidth().height(40.dp),
         contentAlignment = Alignment.Center,
@@ -58,13 +66,7 @@ fun PasteTitleView(
                     .fillMaxHeight()
                     .padding(horizontal = 10.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(
-                        if (selected) {
-                            MaterialTheme.colorScheme.primaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.surface
-                        },
-                    )
+                    .background(backgroundColor)
                     .clickable(onClick = onClick),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
@@ -74,14 +76,14 @@ fun PasteTitleView(
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                PasteTypeIconView(pasteData)
+                PasteTypeIconView(pasteData, backgroundColor)
 
                 Text(
                     modifier = Modifier.padding(start = 10.dp),
                     text = title,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.contentColorFor(backgroundColor),
                     style =
                         TextStyle(
                             textAlign = TextAlign.Start,
