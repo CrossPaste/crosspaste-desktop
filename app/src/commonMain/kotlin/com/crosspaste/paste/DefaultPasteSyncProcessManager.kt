@@ -5,6 +5,7 @@ import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import com.crosspaste.utils.createPlatformLock
 import com.crosspaste.utils.ioDispatcher
+import io.ktor.util.collections.ConcurrentMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -20,8 +21,8 @@ class DefaultPasteSyncProcessManager : PasteSyncProcessManager<Long> {
 
     private val semaphore = Semaphore(10)
 
-    private val _processMap: MutableStateFlow<MutableMap<Long, PasteSingleProcess>> =
-        MutableStateFlow(mutableMapOf())
+    private val _processMap: MutableStateFlow<ConcurrentMap<Long, PasteSingleProcess>> =
+        MutableStateFlow(ConcurrentMap())
 
     override val processMap: StateFlow<Map<Long, PasteSingleProcess>> = _processMap
 

@@ -43,7 +43,7 @@ class DefaultConfigManager(
         key: String,
         value: Any,
     ) {
-        val oldConfig = config.value
+        val oldConfig = _config.value
         _config.value = oldConfig.copy(key, value)
         runCatching {
             saveConfig(key, value, _config.value)
