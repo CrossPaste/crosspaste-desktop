@@ -85,4 +85,12 @@ class TaskDao(private val database: Database) {
             )
         }
     }
+
+    fun cleanSuccessTask(time: Long) {
+        pasteTaskDatabaseQueries.cleanSuccess(time)
+    }
+
+    fun cleanFailureTask(time: Long) {
+        pasteTaskDatabaseQueries.cleanFail(time)
+    }
 }

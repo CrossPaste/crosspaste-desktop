@@ -48,7 +48,7 @@ class CleanPasteTaskExecutor(
                     logger = logger,
                     retryHandler = { baseExtraInfo.executionHistories.size < 2 },
                     startTime = pasteTask.modifyTime,
-                    fails = listOf(createFailureResult(StandardErrorCode.CLEAN_TASK_FAIL, it)),
+                    fails = listOf(createFailureResult(StandardErrorCode.CLEAN_PASTE_TASK_FAIL, it)),
                     extraInfo = baseExtraInfo,
                 )
             }
@@ -72,7 +72,7 @@ class CleanPasteTaskExecutor(
                     logger = logger,
                     retryHandler = { baseExtraInfo.executionHistories.size < 2 },
                     startTime = pasteTask.modifyTime,
-                    fails = listOf(createFailureResult(StandardErrorCode.CLEAN_TASK_FAIL, it)),
+                    fails = listOf(createFailureResult(StandardErrorCode.CLEAN_PASTE_TASK_FAIL, it)),
                     extraInfo = baseExtraInfo,
                 )
             }

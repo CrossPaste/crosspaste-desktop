@@ -20,7 +20,7 @@ import com.crosspaste.app.ExitMode
 import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.app.generated.resources.crosspaste
 import com.crosspaste.app.generated.resources.crosspaste_mac
-import com.crosspaste.clean.CleanPasteScheduler
+import com.crosspaste.clean.CleanScheduler
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.config.DefaultConfigManager
 import com.crosspaste.listener.GlobalListener
@@ -124,7 +124,7 @@ class CrossPaste {
                     // bonjour service should be registered after paste server started
                     // only server started, bonjour service can get the port
                     koin.get<PasteBonjourService>().registerService()
-                    koin.get<CleanPasteScheduler>().start()
+                    koin.get<CleanScheduler>().start()
                     koin.get<AppStartUpService>().followConfig()
                     koin.get<AppUpdateService>().start()
                     koin.get<RenderingService<String>>(named("htmlRendering")).start()
@@ -188,7 +188,7 @@ class CrossPaste {
                         async { stopService<PasteBonjourService>("PasteBonjourService") { it.unregisterService() } },
                         async { stopService<Server>("PasteServer") { it.stop() } },
                         async { stopService<SyncManager>("SyncManager") { it.notifyExit() } },
-                        async { stopService<CleanPasteScheduler>("CleanPasteScheduler") { it.stop() } },
+                        async { stopService<CleanScheduler>("CleanPasteScheduler") { it.stop() } },
                         async { stopService<GlobalListener>("GlobalListener") { it.stop() } },
                         async { stopService<UserDataPathProvider>("UserDataPathProvider") { it.cleanTemp() } },
                     )

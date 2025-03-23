@@ -12,7 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
-class CleanPasteScheduler(
+class CleanScheduler(
     private val taskDao: TaskDao,
     private val taskExecutor: TaskExecutor,
     private val configManager: ConfigManager,
@@ -25,18 +25,33 @@ class CleanPasteScheduler(
     fun start() {
         coroutineScope.launch {
             while (isActive) {
-                if (configManager.config.enableExpirationCleanup) {
-                    val taskId =
-                        taskDao.createTask(
-                            pasteDataId = null,
-                            taskType = TaskType.CLEAN_PASTE_TASK,
-                        )
-                    taskExecutor.submitTask(taskId)
-                    logger.info { "submit clean paste task: $taskId" }
-                }
+                cleanPaste()
+                cleanTask()
                 delay(5 * 60 * 1000)
             }
         }
+    }
+
+    private suspend fun cleanPaste() {
+        if (configManager.config.enableExpirationCleanup) {
+            val taskId =
+                taskDao.createTask(
+                    pasteDataId = null,
+                    taskType = TaskType.CLEAN_PASTE_TASK,
+                )
+            taskExecutor.submitTask(taskId)
+            logger.info { "submit clean paste task: $taskId" }
+        }
+    }
+
+    private suspend fun cleanTask() {
+        val taskId =
+            taskDao.createTask(
+                pasteDataId = null,
+                taskType = TaskType.CLEAN_TASK_TASK,
+            )
+        taskExecutor.submitTask(taskId)
+        logger.info { "submit clean task task: $taskId" }
     }
 
     fun stop() {
