@@ -87,7 +87,10 @@ class DesktopFilesTypePlugin(
 
             val sumFileSize = files.sumOf { it.length() }
 
-            val copySizeExceeding = fileUtils.bytesSize(configManager.config.maxBackupFileSize) < sumFileSize
+            val copySizeExceeding =
+                fileUtils.bytesSize(
+                    configManager.getCurrentConfig().maxBackupFileSize,
+                ) < sumFileSize
 
             val copyFromCrossPaste =
                 files.any {

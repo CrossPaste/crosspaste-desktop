@@ -26,16 +26,17 @@ class DesktopCrossPasteLogger(
 
     init {
         val systemProperty = getSystemProperty()
+        val config = configManager.getCurrentConfig()
         systemProperty.getOption("loggerLevel")?.let {
             logLevel = it
-            if (logLevel == "debug" && !configManager.config.enableDebugMode) {
+            if (logLevel == "debug" && !config.enableDebugMode) {
                 configManager.updateConfig("enableDebugMode", true)
-            } else if (logLevel != "debug" && configManager.config.enableDebugMode) {
+            } else if (logLevel != "debug" && config.enableDebugMode) {
                 configManager.updateConfig("enableDebugMode", false)
             }
         } ?: run {
             logLevel =
-                if (configManager.config.enableDebugMode) {
+                if (config.enableDebugMode) {
                     "debug"
                 } else {
                     "info"

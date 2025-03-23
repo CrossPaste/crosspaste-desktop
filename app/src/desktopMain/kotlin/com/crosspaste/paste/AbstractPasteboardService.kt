@@ -124,7 +124,7 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
 
     @Synchronized
     override fun toggle() {
-        val enablePasteboardListening = configManager.config.enablePasteboardListening
+        val enablePasteboardListening = configManager.getCurrentConfig().enablePasteboardListening
         if (enablePasteboardListening) {
             stop()
             soundService.disablePasteboardListening()

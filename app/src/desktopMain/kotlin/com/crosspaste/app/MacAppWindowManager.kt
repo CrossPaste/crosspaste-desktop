@@ -1,8 +1,5 @@
 package com.crosspaste.app
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.window.WindowState
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listener.ShortcutKeys
@@ -11,6 +8,9 @@ import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.platform.macos.MacPasteUtils
 import com.crosspaste.utils.getSystemProperty
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class MacAppWindowManager(
@@ -22,12 +22,14 @@ class MacAppWindowManager(
 
     private val crosspasteBundleID = getSystemProperty().get("mac.bundleID")
 
-    private var prevMacAppInfo: MacAppInfo? by mutableStateOf(null)
+    private var prevMacAppInfo: MutableStateFlow<MacAppInfo?> = MutableStateFlow(null)
 
     private val macPasteUtils: MacPasteUtils by lazy { MacPasteUtils(lazyShortcutKeys.value) }
 
-    override fun getPrevAppName(): String? {
-        return prevMacAppInfo?.localizedName
+    override fun getPrevAppName(): Flow<String?> {
+        return prevMacAppInfo.map { appInfo ->
+            appInfo?.localizedName
+        }
     }
 
     override fun getCurrentActiveAppName(): String? {
@@ -73,7 +75,7 @@ class MacAppWindowManager(
         MacAppUtils.bringToFront(MAIN_WINDOW_TITLE).let {
             createMacAppInfo(it)?.let { macAppInfo ->
                 if (macAppInfo.bundleIdentifier != crosspasteBundleID) {
-                    prevMacAppInfo = macAppInfo
+                    prevMacAppInfo.value = macAppInfo
                     logger.info { "save prevAppName $macAppInfo" }
                 }
             }
@@ -85,7 +87,7 @@ class MacAppWindowManager(
     override suspend fun unActiveMainWindow(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive main window" }
         val toPaste = preparePaste()
-        val prevAppId = prevMacAppInfo?.bundleIdentifier ?: ""
+        val prevAppId = prevMacAppInfo.value?.bundleIdentifier ?: ""
         if (toPaste) {
             val pair = macPasteUtils.getPasteMemory()
             MacAppUtils.mainToBackAndPaste(
@@ -117,7 +119,7 @@ class MacAppWindowManager(
         MacAppUtils.bringToFront(SEARCH_WINDOW_TITLE).let {
             createMacAppInfo(it)?.let { macAppInfo ->
                 if (macAppInfo.bundleIdentifier != crosspasteBundleID) {
-                    prevMacAppInfo = macAppInfo
+                    prevMacAppInfo.value = macAppInfo
                     logger.info { "save prevAppName $macAppInfo" }
                 }
             }
@@ -130,7 +132,7 @@ class MacAppWindowManager(
     override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive search window" }
         val toPaste = preparePaste()
-        val prevAppId = prevMacAppInfo?.bundleIdentifier ?: ""
+        val prevAppId = prevMacAppInfo.value?.bundleIdentifier ?: ""
         if (toPaste) {
             val pair = macPasteUtils.getPasteMemory()
             MacAppUtils.searchToBackAndPaste(

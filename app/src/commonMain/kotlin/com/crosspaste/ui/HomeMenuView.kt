@@ -10,9 +10,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -39,7 +38,7 @@ fun HomeMenuView(
     val uiSupport = koinInject<UISupport>()
     val appUpdateService = koinInject<AppUpdateService>()
 
-    val existNewVersion by remember { mutableStateOf(appUpdateService.existNewVersion()) }
+    val existNewVersion by appUpdateService.existNewVersion().collectAsState(false)
 
     Box(
         modifier =

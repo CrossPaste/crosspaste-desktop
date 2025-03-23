@@ -34,7 +34,7 @@ class DesktopSoundService(private val configManager: ConfigManager) : SoundServi
     }
 
     private fun playSound(filePath: String) {
-        if (!configManager.config.enableSoundEffect) {
+        if (!configManager.getCurrentConfig().enableSoundEffect) {
             return
         }
         scope.launch {

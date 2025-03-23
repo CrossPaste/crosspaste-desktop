@@ -1,8 +1,5 @@
 package com.crosspaste.app
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.window.WindowState
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
@@ -11,6 +8,9 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.linux.api.X11Api
 import com.sun.jna.platform.unix.X11.Window
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class LinuxAppWindowManager(
@@ -20,7 +20,7 @@ class LinuxAppWindowManager(
     private val userDataPathProvider: UserDataPathProvider,
 ) : DesktopAppWindowManager(appSize) {
 
-    private var prevLinuxAppInfo: LinuxAppInfo? by mutableStateOf(null)
+    private val prevLinuxAppInfo: MutableStateFlow<LinuxAppInfo?> = MutableStateFlow(null)
 
     private val classNameSet: MutableSet<String> = mutableSetOf()
 
@@ -30,9 +30,11 @@ class LinuxAppWindowManager(
         }
     }
 
-    override fun getPrevAppName(): String? {
-        return prevLinuxAppInfo?.let {
-            getAppName(it)
+    override fun getPrevAppName(): Flow<String?> {
+        return prevLinuxAppInfo.map { appInfo ->
+            appInfo?.let {
+                getAppName(appInfo)
+            }
         }
     }
 
@@ -61,7 +63,7 @@ class LinuxAppWindowManager(
     override suspend fun activeMainWindow() {
         logger.info { "active main window" }
         setShowMainWindow(true)
-        prevLinuxAppInfo = X11Api.bringToFront(MAIN_WINDOW_TITLE)
+        prevLinuxAppInfo.value = X11Api.bringToFront(MAIN_WINDOW_TITLE)
         delay(500)
         mainFocusRequester.requestFocus()
     }
@@ -86,7 +88,7 @@ class LinuxAppWindowManager(
             )
         }
 
-        prevLinuxAppInfo = X11Api.bringToFront(SEARCH_WINDOW_TITLE)
+        prevLinuxAppInfo.value = X11Api.bringToFront(SEARCH_WINDOW_TITLE)
 
         delay(500)
         searchFocusRequester.requestFocus()
@@ -102,18 +104,18 @@ class LinuxAppWindowManager(
     private suspend fun bringToBack(toPaste: Boolean) {
         if (toPaste) {
             val keyCodes =
-                lazyShortcutKeys.value.shortcutKeysCore.keys[PASTE]?.let {
+                lazyShortcutKeys.value.shortcutKeysCore.value.keys[PASTE]?.let {
                     it.map { key -> key.rawCode }
                 } ?: listOf()
-            X11Api.bringToBack(prevLinuxAppInfo, keyCodes)
+            X11Api.bringToBack(prevLinuxAppInfo.value, keyCodes)
         } else {
-            X11Api.bringToBack(prevLinuxAppInfo)
+            X11Api.bringToBack(prevLinuxAppInfo.value)
         }
     }
 
     override suspend fun toPaste() {
         val keyCodes =
-            lazyShortcutKeys.value.shortcutKeysCore.keys[PASTE]?.let {
+            lazyShortcutKeys.value.shortcutKeysCore.value.keys[PASTE]?.let {
                 it.map { key -> key.rawCode }
             } ?: listOf()
         X11Api.toPaste(keyCodes)

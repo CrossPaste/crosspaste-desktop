@@ -44,7 +44,7 @@ class WindowsPasteboardService(
     @Volatile
     private var existNew = false
 
-    private var changeCount = configManager.config.lastPasteboardChangeCount
+    private var changeCount = configManager.getCurrentConfig().lastPasteboardChangeCount
 
     @Volatile
     override var owner = false
@@ -139,8 +139,16 @@ class WindowsPasteboardService(
         if (job?.isActive != true) {
             job =
                 serviceScope.launch(CoroutineName("WindowsPasteboardService")) {
-                    val firstChange = changeCount == configManager.config.lastPasteboardChangeCount
-                    if (firstChange && !configManager.config.enableSkipPriorPasteboardContent) {
+                    val firstChange =
+                        changeCount ==
+                            configManager
+                                .getCurrentConfig()
+                                .lastPasteboardChangeCount
+                    if (firstChange &&
+                        !configManager
+                            .getCurrentConfig()
+                            .enableSkipPriorPasteboardContent
+                    ) {
                         onChange(true)
                     }
                     run()

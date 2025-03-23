@@ -40,7 +40,7 @@ class DesktopAppControl(private val configManager: ConfigManager) : AppControl {
     }
 
     override fun isFileSizeSyncEnabled(size: Long): Boolean {
-        return !configManager.config.enabledSyncFileSizeLimit ||
-            fileUtils.bytesSize(configManager.config.maxSyncFileSize) > size
+        return !configManager.getCurrentConfig().enabledSyncFileSizeLimit ||
+            fileUtils.bytesSize(configManager.getCurrentConfig().maxSyncFileSize) > size
     }
 }

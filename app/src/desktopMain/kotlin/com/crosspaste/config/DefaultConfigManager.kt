@@ -1,13 +1,12 @@
 package com.crosspaste.config
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.presist.OneFilePersist
 import com.crosspaste.utils.DeviceUtils
 import com.crosspaste.utils.LocaleUtils
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class DefaultConfigManager(
     private val configFilePersist: OneFilePersist,
@@ -15,13 +14,16 @@ class DefaultConfigManager(
     private val localeUtils: LocaleUtils,
 ) : ConfigManager {
 
-    override var config by mutableStateOf(
-        runCatching {
-            loadConfig() ?: createDefaultAppConfig()
-        }.getOrElse {
-            createDefaultAppConfig()
-        },
-    )
+    private val _config: MutableStateFlow<AppConfig> =
+        MutableStateFlow(
+            runCatching {
+                loadConfig() ?: createDefaultAppConfig()
+            }.getOrElse {
+                createDefaultAppConfig()
+            },
+        )
+
+    override val config: StateFlow<AppConfig> = _config
 
     override var notificationManager: NotificationManager? = null
 
@@ -41,10 +43,10 @@ class DefaultConfigManager(
         key: String,
         value: Any,
     ) {
-        val oldConfig = config
-        config = oldConfig.copy(key, value)
+        val oldConfig = config.value
+        _config.value = oldConfig.copy(key, value)
         runCatching {
-            saveConfig(key, value, config)
+            saveConfig(key, value, _config.value)
         }.onFailure {
             notificationManager?.let { manager ->
                 manager.sendNotification(
@@ -52,7 +54,7 @@ class DefaultConfigManager(
                     messageType = MessageType.Error,
                 )
             }
-            config = oldConfig
+            _config.value = oldConfig
         }
     }
 

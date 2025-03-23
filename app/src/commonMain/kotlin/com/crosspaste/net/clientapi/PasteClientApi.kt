@@ -26,7 +26,7 @@ class PasteClientApi(
                 message = pasteData,
                 messageType = typeInfo<PasteData>(),
                 targetAppInstanceId = targetAppInstanceId,
-                encrypt = configManager.config.enableEncryptSync,
+                encrypt = configManager.getCurrentConfig().enableEncryptSync,
                 urlBuilder = {
                     toUrl()
                     buildUrl("sync", "paste")

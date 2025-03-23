@@ -43,7 +43,7 @@ class LinuxPasteboardService(
 
     private val controlUtils = getControlUtils()
 
-    private var changeCount = configManager.config.lastPasteboardChangeCount
+    private var changeCount = configManager.getCurrentConfig().lastPasteboardChangeCount
 
     override var owner: Boolean = false
 
@@ -59,9 +59,9 @@ class LinuxPasteboardService(
 
     private fun run(): Job {
         return serviceScope.launch(CoroutineName("LinuxPasteboardService")) {
-            val firstChange = changeCount == configManager.config.lastPasteboardChangeCount
+            val firstChange = changeCount == configManager.getCurrentConfig().lastPasteboardChangeCount
 
-            if (firstChange && !configManager.config.enableSkipPriorPasteboardContent) {
+            if (firstChange && !configManager.getCurrentConfig().enableSkipPriorPasteboardContent) {
                 onChange(this, true)
             }
 
@@ -153,7 +153,7 @@ class LinuxPasteboardService(
     }
 
     override fun start() {
-        if (configManager.config.enablePasteboardListening) {
+        if (configManager.getCurrentConfig().enablePasteboardListening) {
             if (job?.isActive != true) {
                 job = run()
             }

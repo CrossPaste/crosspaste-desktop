@@ -175,10 +175,10 @@ class UserDataPathProvider(
     }
 
     fun getUserDataPath(): Path {
-        return if (configManager.config.useDefaultStoragePath) {
+        return if (configManager.getCurrentConfig().useDefaultStoragePath) {
             platformUserDataPathProvider.getUserDefaultStoragePath()
         } else {
-            configManager.config.storagePath.toPath(normalize = true)
+            configManager.getCurrentConfig().storagePath.toPath(normalize = true)
         }
     }
 }

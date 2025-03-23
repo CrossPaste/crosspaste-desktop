@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -66,6 +67,8 @@ fun SetStoragePathView() {
 
     val fileUtils = getFileUtils()
 
+    val config by configManager.config.collectAsState()
+
     Text(
         modifier =
             Modifier.wrapContentSize()
@@ -83,15 +86,15 @@ fun SetStoragePathView() {
                 .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
-        var useDefaultStoragePath by remember { mutableStateOf(configManager.config.useDefaultStoragePath) }
+        var useDefaultStoragePath by remember { mutableStateOf(config.useDefaultStoragePath) }
 
-        val currentStoragePath by remember {
+        val currentStoragePath by remember(config) {
             mutableStateOf(
                 userDataPathProvider.getUserDataPath(),
             )
         }
 
-        if (configManager.config.useDefaultStoragePath) {
+        if (useDefaultStoragePath) {
             SettingItemView(
                 painter = archive(),
                 text = "use_default_storage_path",

@@ -34,7 +34,7 @@ class GlobalCopywriterImpl(private val configManager: ConfigManager) : GlobalCop
     }
 
     init {
-        val language = configManager.config.language
+        val language = configManager.getCurrentConfig().language
         if (!languageList.contains(language)) {
             configManager.updateConfig("language", EN)
         }
@@ -42,8 +42,8 @@ class GlobalCopywriterImpl(private val configManager: ConfigManager) : GlobalCop
 
     private var copywriter: Copywriter by mutableStateOf(
         languageMap
-            .computeIfAbsent(configManager.config.language) {
-                CopywriterImpl(configManager.config.language)
+            .computeIfAbsent(configManager.getCurrentConfig().language) {
+                CopywriterImpl(configManager.getCurrentConfig().language)
             },
     )
 

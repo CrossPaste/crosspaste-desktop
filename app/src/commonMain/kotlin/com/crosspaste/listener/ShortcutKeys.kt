@@ -1,8 +1,10 @@
 package com.crosspaste.listener
 
+import kotlinx.coroutines.flow.StateFlow
+
 interface ShortcutKeys {
 
-    var shortcutKeysCore: ShortcutKeysCore
+    val shortcutKeysCore: StateFlow<ShortcutKeysCore>
 
     fun update(
         keyName: String,

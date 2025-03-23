@@ -115,7 +115,7 @@ class CrossPaste {
                     val configManager = koin.get<ConfigManager>()
                     val notificationManager = koin.get<NotificationManager>()
                     configManager.notificationManager = notificationManager
-                    if (configManager.config.enablePasteboardListening) {
+                    if (configManager.getCurrentConfig().enablePasteboardListening) {
                         koin.get<PasteboardService>().start()
                     }
                     koin.get<QRCodeGenerator>()

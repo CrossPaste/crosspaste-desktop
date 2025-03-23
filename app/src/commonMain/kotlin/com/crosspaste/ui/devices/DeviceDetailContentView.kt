@@ -17,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,16 +56,20 @@ fun DeviceDetailContentView() {
 
     val screen by appWindowManager.screenContext.collectAsState()
 
-    var syncRuntimeInfo by remember(screen) {
-        mutableStateOf(screen.context as SyncRuntimeInfo)
-    }
+    var syncRuntimeInfo by remember { mutableStateOf(screen.context as SyncRuntimeInfo) }
 
-    var syncHandler by remember(screen) {
+    var syncHandler by remember {
         mutableStateOf(syncManager.getSyncHandler(syncRuntimeInfo.appInstanceId))
     }
 
-    var versionRelation by remember(screen) {
+    var versionRelation by remember {
         mutableStateOf(syncHandler?.versionRelation)
+    }
+
+    LaunchedEffect(screen) {
+        syncRuntimeInfo = screen.context as SyncRuntimeInfo
+        syncHandler = syncManager.getSyncHandler(syncRuntimeInfo.appInstanceId)
+        versionRelation = syncHandler?.versionRelation
     }
 
     Column {

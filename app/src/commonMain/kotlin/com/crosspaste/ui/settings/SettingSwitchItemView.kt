@@ -4,10 +4,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
@@ -27,16 +23,13 @@ fun SettingSwitchItemView(
         text = text,
         tint = tint,
     ) {
-        var value by remember { mutableStateOf(getCurrentSwitchValue()) }
-
         CustomSwitch(
             modifier =
                 Modifier.width(32.dp)
                     .height(20.dp),
-            checked = value,
+            checked = getCurrentSwitchValue(),
             onCheckedChange = {
                 onChange(it)
-                value = getCurrentSwitchValue()
             },
         )
     }

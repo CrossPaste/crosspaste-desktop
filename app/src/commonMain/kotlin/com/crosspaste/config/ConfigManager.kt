@@ -2,14 +2,19 @@ package com.crosspaste.config
 
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.utils.DeviceUtils
+import kotlinx.coroutines.flow.StateFlow
 
 interface ConfigManager {
 
     val deviceUtils: DeviceUtils
 
-    var config: AppConfig
+    val config: StateFlow<AppConfig>
 
     var notificationManager: NotificationManager?
+
+    fun getCurrentConfig(): AppConfig {
+        return config.value
+    }
 
     fun loadConfig(): AppConfig?
 

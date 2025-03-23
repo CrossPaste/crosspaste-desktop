@@ -8,6 +8,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
@@ -30,6 +32,8 @@ fun MainSettingsContentView() {
     val crossPasteLogger = koinInject<CrossPasteLogger>()
     val pasteboardService = koinInject<PasteboardService>()
     val settingsViewProvider = koinInject<SettingsViewProvider>()
+
+    val config by configManager.config.collectAsState()
 
     Column(
         modifier =
@@ -55,7 +59,7 @@ fun MainSettingsContentView() {
         SettingSwitchItemView(
             text = "pasteboard_listening",
             painter = clipboard(),
-            getCurrentSwitchValue = { configManager.config.enablePasteboardListening },
+            getCurrentSwitchValue = { config.enablePasteboardListening },
         ) {
             pasteboardService.toggle()
         }
@@ -65,7 +69,7 @@ fun MainSettingsContentView() {
         SettingSwitchItemView(
             text = "encrypted_sync",
             painter = shield(),
-            getCurrentSwitchValue = { configManager.config.enableEncryptSync },
+            getCurrentSwitchValue = { config.enableEncryptSync },
         ) {
             if (appControl.isEncryptionEnabled()) {
                 configManager.updateConfig("enableEncryptSync", it)
@@ -77,7 +81,7 @@ fun MainSettingsContentView() {
         SettingSwitchItemView(
             text = "sound_effect",
             painter = bell(),
-            getCurrentSwitchValue = { configManager.config.enableSoundEffect },
+            getCurrentSwitchValue = { config.enableSoundEffect },
         ) {
             configManager.updateConfig("enableSoundEffect", it)
         }
@@ -87,7 +91,7 @@ fun MainSettingsContentView() {
         SettingSwitchItemView(
             text = "launch_at_startup",
             painter = bolt(),
-            getCurrentSwitchValue = { configManager.config.enableAutoStartUp },
+            getCurrentSwitchValue = { config.enableAutoStartUp },
         ) {
             configManager.updateConfig("enableAutoStartUp", it)
         }
@@ -97,7 +101,7 @@ fun MainSettingsContentView() {
         SettingSwitchItemView(
             text = "debug_mode",
             painter = debug(),
-            getCurrentSwitchValue = { configManager.config.enableDebugMode },
+            getCurrentSwitchValue = { config.enableDebugMode },
         ) {
             crossPasteLogger.updateRootLogLevel(
                 if (it) "debug" else "info",

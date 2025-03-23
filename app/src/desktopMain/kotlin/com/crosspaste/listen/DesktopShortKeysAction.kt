@@ -165,9 +165,12 @@ class DesktopShortKeysAction(
     }
 
     private fun toggleEncrypt() {
-        logger.info { "Toggle Encrypt ${!configManager.config.enableEncryptSync}" }
+        logger.info { "Toggle Encrypt ${!configManager.getCurrentConfig().enableEncryptSync}" }
         mainCoroutineDispatcher.launch(CoroutineName("ToggleEncrypt")) {
-            configManager.updateConfig("isEncryptSync", !configManager.config.enableEncryptSync)
+            configManager.updateConfig(
+                "isEncryptSync",
+                !configManager.getCurrentConfig().enableEncryptSync,
+            )
         }
     }
 }

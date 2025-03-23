@@ -1,8 +1,5 @@
 package com.crosspaste.app
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import com.crosspaste.net.DesktopProxy
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
@@ -13,6 +10,10 @@ import io.github.z4kn4fein.semver.Version
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.io.ByteArrayInputStream
 import java.net.InetSocketAddress
@@ -36,9 +37,16 @@ class DesktopAppUpdateService(
 
     private val coroutineScope = CoroutineScope(cpuDispatcher)
 
-    override var currentVersion: Version = Version.parse(appInfo.appVersion)
+    private val _currentVersion: MutableStateFlow<Version> =
+        MutableStateFlow(
+            Version.parse(appInfo.appVersion),
+        )
 
-    override var lastVersion: Version? by mutableStateOf(null)
+    override val currentVersion: StateFlow<Version> = _currentVersion
+
+    private val _lastVersion: MutableStateFlow<Version?> = MutableStateFlow(null)
+
+    override val lastVersion: StateFlow<Version?> = _lastVersion
 
     private val desktopProxy = DesktopProxy
 
@@ -54,11 +62,13 @@ class DesktopAppUpdateService(
     }
 
     override fun checkForUpdate() {
-        lastVersion = readLastVersion()
+        _lastVersion.value = readLastVersion()
     }
 
-    override fun existNewVersion(): Boolean {
-        return lastVersion?.let { it > currentVersion } == true
+    override fun existNewVersion(): Flow<Boolean> {
+        return combine(currentVersion, lastVersion) { current, last ->
+            last?.let { it > current } == true
+        }
     }
 
     override fun start() {
@@ -70,7 +80,11 @@ class DesktopAppUpdateService(
     }
 
     override fun jumpDownload() {
-        if (existNewVersion()) {
+        val last = lastVersion.value
+        val current = currentVersion.value
+        val nowExistNewVersion = last?.let { it > current } == true
+
+        if (nowExistNewVersion) {
             uiSupport.openCrossPasteWebInBrowser(path = "download")
         } else {
             notificationManager.sendNotification(

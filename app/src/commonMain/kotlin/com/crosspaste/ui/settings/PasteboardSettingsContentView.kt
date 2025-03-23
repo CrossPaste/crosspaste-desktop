@@ -14,10 +14,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +35,8 @@ import org.koin.compose.koinInject
 fun PasteboardSettingsContentView() {
     val configManager = koinInject<ConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
+
+    val config by configManager.config.collectAsState()
 
     Text(
         modifier =
@@ -59,20 +59,13 @@ fun PasteboardSettingsContentView() {
             painter = skipForward(),
             text = "skip_prior_pasteboard_content",
         ) {
-            var enableSkipPriorPasteboardContent by remember {
-                mutableStateOf(
-                    configManager.config.enableSkipPriorPasteboardContent,
-                )
-            }
-
             CustomSwitch(
                 modifier =
                     Modifier.width(32.dp)
                         .height(20.dp),
-                checked = enableSkipPriorPasteboardContent,
+                checked = config.enableSkipPriorPasteboardContent,
                 onCheckedChange = { newEnableSkipPriorPasteboardContent ->
                     configManager.updateConfig("enableSkipPriorPasteboardContent", newEnableSkipPriorPasteboardContent)
-                    enableSkipPriorPasteboardContent = configManager.config.enableSkipPriorPasteboardContent
                 },
             )
         }
@@ -88,9 +81,7 @@ fun PasteboardSettingsContentView() {
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                val maxStorage by remember { mutableStateOf(configManager.config.maxBackupFileSize) }
-
-                Counter(defaultValue = maxStorage, unit = "MB", rule = {
+                Counter(defaultValue = config.maxBackupFileSize, unit = "MB", rule = {
                     it >= 0
                 }) { currentMaxStorage ->
                     configManager.updateConfig("maxBackupFileSize", currentMaxStorage)
@@ -104,25 +95,18 @@ fun PasteboardSettingsContentView() {
             painter = sync(),
             text = "sync_file_size_limit",
         ) {
-            var enabledSyncFileSizeLimit by remember {
-                mutableStateOf(
-                    configManager.config.enabledSyncFileSizeLimit,
-                )
-            }
-
             CustomSwitch(
                 modifier =
                     Modifier.width(32.dp)
                         .height(20.dp),
-                checked = enabledSyncFileSizeLimit,
+                checked = config.enabledSyncFileSizeLimit,
                 onCheckedChange = { newEnabledSyncFileSizeLimit ->
                     configManager.updateConfig("enabledSyncFileSizeLimit", newEnabledSyncFileSizeLimit)
-                    enabledSyncFileSizeLimit = configManager.config.enabledSyncFileSizeLimit
                 },
             )
         }
 
-        if (configManager.config.enabledSyncFileSizeLimit) {
+        if (config.enabledSyncFileSizeLimit) {
             HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
 
             SettingItemView(
@@ -134,9 +118,7 @@ fun PasteboardSettingsContentView() {
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    val maxSyncFileSize by remember { mutableStateOf(configManager.config.maxSyncFileSize) }
-
-                    Counter(defaultValue = maxSyncFileSize, unit = "MB", rule = {
+                    Counter(defaultValue = config.maxSyncFileSize, unit = "MB", rule = {
                         it >= 0
                     }) { currentMaxSyncFileSize ->
                         configManager.updateConfig("maxSyncFileSize", currentMaxSyncFileSize)

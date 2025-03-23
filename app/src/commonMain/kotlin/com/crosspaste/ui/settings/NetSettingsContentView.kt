@@ -17,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -55,9 +56,11 @@ fun NetSettingsContentView() {
     var port: String? by remember { mutableStateOf(null) }
     val scope = rememberCoroutineScope()
 
+    val config by configManager.config.collectAsState()
+
     LaunchedEffect(Unit) {
         ip = netUtils.getPreferredLocalIPAddress() ?: "N/A"
-        val currentPort = configManager.config.port
+        val currentPort = config.port
         port = if (currentPort == 0) "N/A" else currentPort.toString()
     }
 
@@ -127,16 +130,13 @@ fun NetSettingsContentView() {
             text = "allow_discovery_by_new_devices",
             tint = MaterialTheme.colorScheme.onSurface,
         ) {
-            var isAllowDiscovery by remember { mutableStateOf(configManager.config.enableDiscovery) }
-
             CustomSwitch(
                 modifier =
                     Modifier.width(32.dp)
                         .height(20.dp),
-                checked = isAllowDiscovery,
+                checked = config.enableDiscovery,
                 onCheckedChange = { newIsAllowDiscovery ->
                     configManager.updateConfig("enableDiscovery", newIsAllowDiscovery)
-                    isAllowDiscovery = configManager.config.enableDiscovery
                 },
             )
         }
@@ -167,8 +167,8 @@ fun NetSettingsContentView() {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             val blacklist =
-                remember(configManager.config) {
-                    val list: List<SyncInfo> = jsonUtils.JSON.decodeFromString(configManager.config.blacklist)
+                remember(config) {
+                    val list: List<SyncInfo> = jsonUtils.JSON.decodeFromString(config.blacklist)
                     mutableStateListOf(*list.toTypedArray())
                 }
 
@@ -180,7 +180,7 @@ fun NetSettingsContentView() {
                         BlackListDeviceView(syncInfo) {
                             val blackSyncInfos: List<SyncInfo> =
                                 jsonUtils.JSON.decodeFromString<List<SyncInfo>>(
-                                    configManager.config.blacklist,
+                                    config.blacklist,
                                 ).filter { it.appInfo.appInstanceId != syncInfo.appInfo.appInstanceId }
 
                             val newBlackList = jsonUtils.JSON.encodeToString(blackSyncInfos)
