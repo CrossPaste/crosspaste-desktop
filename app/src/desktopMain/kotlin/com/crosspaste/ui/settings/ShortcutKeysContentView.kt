@@ -278,7 +278,7 @@ fun ShortcutKeyItemView(keys: List<KeyboardKey>) {
                 Spacer(modifier = Modifier.width(5.dp))
                 Text(
                     text = "+",
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style =
                         TextStyle(
                             fontSize = 14.sp,

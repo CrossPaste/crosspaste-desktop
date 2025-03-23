@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -11,6 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.PlatformContext
@@ -31,6 +33,7 @@ import org.koin.compose.koinInject
 @Composable
 fun PasteTypeIconView(
     pasteData: PasteData,
+    backgroundColor: Color,
     padding: Dp = 2.dp,
     size: Dp = 20.dp,
 ) {
@@ -60,7 +63,7 @@ fun PasteTypeIconView(
                             painter = link(),
                             contentDescription = "Paste Icon",
                             modifier = Modifier.padding(padding).size(size),
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = MaterialTheme.colorScheme.contentColorFor(backgroundColor),
                         )
                     }
                     else -> {
@@ -93,7 +96,7 @@ fun PasteTypeIconView(
                                         painter = file(),
                                         contentDescription = "Paste Icon",
                                         modifier = Modifier.padding(padding).size(size),
-                                        tint = MaterialTheme.colorScheme.primary,
+                                        tint = MaterialTheme.colorScheme.contentColorFor(backgroundColor),
                                     )
                                 }
 
@@ -108,7 +111,7 @@ fun PasteTypeIconView(
                         painter = folder(),
                         contentDescription = "folder",
                         modifier = Modifier.padding(padding).size(size),
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = MaterialTheme.colorScheme.contentColorFor(backgroundColor),
                     )
                 }
             } else {
@@ -116,7 +119,7 @@ fun PasteTypeIconView(
                     painter = fileSlash(),
                     contentDescription = "fileSlash",
                     modifier = Modifier.padding(padding).size(size),
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = MaterialTheme.colorScheme.contentColorFor(backgroundColor),
                 )
             }
         }
@@ -125,7 +128,7 @@ fun PasteTypeIconView(
             painter = pasteType.IconPainter(),
             contentDescription = "Paste Icon",
             modifier = Modifier.padding(padding).size(size),
-            tint = MaterialTheme.colorScheme.primary,
+            tint = MaterialTheme.colorScheme.contentColorFor(backgroundColor),
         )
     } else {
         pasteData.source?.let {
@@ -154,7 +157,7 @@ fun PasteTypeIconView(
                                 painter = htmlOrRtf(),
                                 contentDescription = "Paste Icon",
                                 modifier = Modifier.padding(imagePaddingSize).size(imageSize),
-                                tint = MaterialTheme.colorScheme.primary,
+                                tint = MaterialTheme.colorScheme.contentColorFor(backgroundColor),
                             )
                         }
                         else -> {
@@ -168,7 +171,7 @@ fun PasteTypeIconView(
                 painter = htmlOrRtf(),
                 contentDescription = "Paste Icon",
                 modifier = Modifier.padding(padding).size(size),
-                tint = MaterialTheme.colorScheme.primary,
+                tint = MaterialTheme.colorScheme.contentColorFor(backgroundColor),
             )
         }
     }
