@@ -20,6 +20,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -68,6 +70,8 @@ fun CrossPasteSearchWindowContent() {
     }
 
     val scope = rememberCoroutineScope()
+
+    val existNewVersion by appUpdateService.existNewVersion().collectAsState(false)
 
     Theme {
         Box(
@@ -165,7 +169,7 @@ fun CrossPasteSearchWindowContent() {
                                 ),
                         )
 
-                        if (appUpdateService.existNewVersion()) {
+                        if (existNewVersion) {
                             Spacer(modifier = Modifier.width(10.dp))
                             Row(
                                 modifier =
@@ -189,7 +193,9 @@ fun CrossPasteSearchWindowContent() {
 
                         Spacer(modifier = Modifier.weight(1f))
 
-                        appWindowManager.getPrevAppName()?.let {
+                        val prevAppName by appWindowManager.getPrevAppName().collectAsState(null)
+
+                        prevAppName?.let {
                             Text(
                                 text = "${copywriter.getText("paste_to")} $it",
                                 style =

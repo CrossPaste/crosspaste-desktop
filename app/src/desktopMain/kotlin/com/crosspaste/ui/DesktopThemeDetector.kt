@@ -19,13 +19,13 @@ class DesktopThemeDetector(private val configManager: ConfigManager) : ThemeDete
 
     private val _currentThemeColor =
         MutableStateFlow(
-            CrossPasteTheme.getThemeColor(configManager.config.themeColor),
+            CrossPasteTheme.getThemeColor(configManager.getCurrentConfig().themeColor),
         )
     override val currentThemeColor: StateFlow<ThemeColor> = _currentThemeColor
 
     private val _colorContrast =
         MutableStateFlow(
-            ColorContrast.valueOf(configManager.config.colorContrast),
+            ColorContrast.valueOf(configManager.getCurrentConfig().colorContrast),
         )
     override val colorContrast: StateFlow<ColorContrast> = _colorContrast
 
@@ -35,11 +35,15 @@ class DesktopThemeDetector(private val configManager: ConfigManager) : ThemeDete
     private val _darkColorScheme = MutableStateFlow(getDarkColorSchema(currentThemeColor.value))
     override val darkColorScheme: StateFlow<ColorScheme> = _darkColorScheme
 
-    private var _isFollowSystem: Boolean by mutableStateOf(configManager.config.isFollowSystemTheme)
+    private var _isFollowSystem: Boolean by mutableStateOf(
+        configManager.getCurrentConfig().isFollowSystemTheme,
+    )
 
     private var _isSystemInDark: Boolean by mutableStateOf(detector.isDark)
 
-    private var _isUserInDark: Boolean by mutableStateOf(configManager.config.isDarkTheme)
+    private var _isUserInDark: Boolean by mutableStateOf(
+        configManager.getCurrentConfig().isDarkTheme,
+    )
 
     init {
         detector.registerListener { isDark: Boolean ->

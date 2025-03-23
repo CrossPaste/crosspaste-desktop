@@ -31,14 +31,17 @@ class CleanPasteTaskExecutor(
     private val cleanLock = Mutex()
 
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
-        if (configManager.config.enableThresholdCleanup) {
+        val config = configManager.getCurrentConfig()
+        if (config.enableThresholdCleanup) {
             runCatching {
                 cleanLock.withLock {
-                    val imageCleanTime = CleanTime.entries[configManager.config.imageCleanTimeIndex]
+                    val imageCleanTimeIndex = config.imageCleanTimeIndex
+                    val imageCleanTime = CleanTime.entries[imageCleanTimeIndex]
                     val imageCleanTimeInstant = dateUtils.getOffsetDay(days = -imageCleanTime.days)
                     pasteDao.markDeleteByCleanTime(imageCleanTimeInstant, PasteType.IMAGE_TYPE.type)
 
-                    val fileCleanTime = CleanTime.entries[configManager.config.fileCleanTimeIndex]
+                    val fileCleanTimeIndex = config.fileCleanTimeIndex
+                    val fileCleanTime = CleanTime.entries[fileCleanTimeIndex]
                     val fileCleanTimeInstant = dateUtils.getOffsetDay(days = -fileCleanTime.days)
                     pasteDao.markDeleteByCleanTime(fileCleanTimeInstant, PasteType.FILE_TYPE.type)
                 }
@@ -54,14 +57,14 @@ class CleanPasteTaskExecutor(
             }
         }
 
-        if (configManager.config.enableThresholdCleanup) {
+        if (config.enableThresholdCleanup) {
             runCatching {
                 cleanLock.withLock {
                     val allSize = pasteDao.getSize(true)
                     val favoriteSize = pasteDao.getSize(false)
                     val noFavoriteSize = allSize - favoriteSize
-                    if (noFavoriteSize > configManager.config.maxStorage * 1024 * 1024) {
-                        val cleanSize = noFavoriteSize * configManager.config.cleanupPercentage / 100
+                    if (noFavoriteSize > config.maxStorage * 1024 * 1024) {
+                        val cleanSize = noFavoriteSize * config.cleanupPercentage / 100
 
                         deleteStorageOfApproximateSize(cleanSize, noFavoriteSize)
                     }

@@ -26,7 +26,7 @@ class DesktopAppInfoFactory(private val configManager: ConfigManager) : AppInfoF
         }.getOrNull()
 
     override fun createAppInfo(): AppInfo {
-        val appInstanceId = configManager.config.appInstanceId
+        val appInstanceId = configManager.getCurrentConfig().appInstanceId
         return AppInfo(
             appInstanceId = appInstanceId,
             appVersion = getVersion(),

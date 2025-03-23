@@ -249,7 +249,7 @@ fun ShortcutKeyRow(name: String) {
 
         Spacer(modifier = Modifier.width(10.dp))
 
-        shortcutKeys.shortcutKeysCore.keys[name]?.let { keys ->
+        shortcutKeys.shortcutKeysCore.value.keys[name]?.let { keys ->
             ShortcutKeyItemView(keys)
         } ?: run {
             Text(

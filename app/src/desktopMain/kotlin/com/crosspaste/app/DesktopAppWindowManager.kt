@@ -20,6 +20,7 @@ import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -249,7 +250,7 @@ abstract class DesktopAppWindowManager(
 
     abstract suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean = { false })
 
-    abstract fun getPrevAppName(): String?
+    abstract fun getPrevAppName(): Flow<String?>
 
     override fun returnScreen() {
         _screenContext.value = screenContext.value.returnNext()

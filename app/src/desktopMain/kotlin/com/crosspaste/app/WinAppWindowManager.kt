@@ -1,8 +1,5 @@
 package com.crosspaste.app
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.window.WindowState
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
@@ -14,6 +11,9 @@ import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
 import com.sun.jna.platform.win32.WinDef.HWND
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class WinAppWindowManager(
@@ -23,7 +23,7 @@ class WinAppWindowManager(
     private val userDataPathProvider: UserDataPathProvider,
 ) : DesktopAppWindowManager(appSize) {
 
-    private var prevWinAppInfo: WinAppInfo? by mutableStateOf(null)
+    private var prevWinAppInfo: MutableStateFlow<WinAppInfo?> = MutableStateFlow(null)
 
     private val mainHWND: HWND? by lazy {
         User32.findPasteWindow(MAIN_WINDOW_TITLE)
@@ -61,9 +61,11 @@ class WinAppWindowManager(
         }
     }
 
-    override fun getPrevAppName(): String? {
-        return prevWinAppInfo?.filePath?.let {
-            fileDescriptorCache[it].ifEmpty { null }
+    override fun getPrevAppName(): Flow<String?> {
+        return prevWinAppInfo.map { appInfo ->
+            appInfo?.filePath?.let {
+                fileDescriptorCache[it].ifEmpty { null }
+            }
         }
     }
 
@@ -79,7 +81,7 @@ class WinAppWindowManager(
         val pair = User32.getForegroundWindowAppInfoAndPid(mainHWND, searchHWND)
 
         pair?.let {
-            prevWinAppInfo = it.first
+            prevWinAppInfo.value = it.first
         }
 
         setShowMainWindow(true)
@@ -100,7 +102,7 @@ class WinAppWindowManager(
         val pair = User32.getForegroundWindowAppInfoAndPid(mainHWND, searchHWND)
 
         pair?.let {
-            prevWinAppInfo = it.first
+            prevWinAppInfo.value = it.first
         }
 
         activeGraphicsDevice.getGraphicsDevice()?.let { graphicsDevice ->
@@ -135,22 +137,22 @@ class WinAppWindowManager(
     ) {
         if (toPaste) {
             val keyCodes =
-                lazyShortcutKeys.value.shortcutKeysCore.keys[PASTE]?.let {
+                lazyShortcutKeys.value.shortcutKeysCore.value.keys[PASTE]?.let {
                     it.map { key -> key.rawCode }
                 } ?: listOf()
             User32.bringToBackAndPaste(
                 backHWND,
-                prevWinAppInfo?.hwnd,
+                prevWinAppInfo.value?.hwnd,
                 keyCodes,
             )
         } else {
-            User32.backToBack(backHWND, prevWinAppInfo?.hwnd)
+            User32.backToBack(backHWND, prevWinAppInfo.value?.hwnd)
         }
     }
 
     override suspend fun toPaste() {
         val keyCodes =
-            lazyShortcutKeys.value.shortcutKeysCore.keys[PASTE]?.let {
+            lazyShortcutKeys.value.shortcutKeysCore.value.keys[PASTE]?.let {
                 it.map { key -> key.rawCode }
             } ?: listOf()
 

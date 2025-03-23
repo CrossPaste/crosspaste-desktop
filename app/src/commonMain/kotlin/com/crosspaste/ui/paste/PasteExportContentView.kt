@@ -23,6 +23,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -80,7 +81,10 @@ fun PasteExportContentView() {
     // State for additional filters
     var favoritesSelected by remember { mutableStateOf(false) }
     var sizeFilterSelected by remember { mutableStateOf(false) }
-    var maxFileSize by remember { mutableStateOf(configManager.config.maxSyncFileSize) }
+
+    val config by configManager.config.collectAsState()
+
+    var maxFileSize by remember { mutableStateOf(config.maxSyncFileSize) }
 
     // Export progress state
     var progressing by remember { mutableStateOf(false) }

@@ -1,19 +1,18 @@
 package com.crosspaste.paste
 
 import com.crosspaste.net.clientapi.ClientApiResult
+import kotlinx.coroutines.flow.StateFlow
 
 interface PasteSyncProcessManager<T> {
 
-    val processMap: MutableMap<T, PasteSingleProcess>
+    val processMap: StateFlow<Map<Long, PasteSingleProcess>>
 
-    fun getProcess(key: Long): PasteSingleProcess?
-
-    fun getProcess(
+    suspend fun getProcess(
         key: T,
         taskNum: Int,
     ): PasteSingleProcess
 
-    fun cleanProcess(key: T)
+    suspend fun cleanProcess(key: T)
 
     suspend fun runTask(
         pasteDataId: Long,
@@ -23,7 +22,7 @@ interface PasteSyncProcessManager<T> {
 
 interface PasteSingleProcess {
 
-    var process: Float
+    var process: StateFlow<Float>
 
     fun success(index: Int)
 }

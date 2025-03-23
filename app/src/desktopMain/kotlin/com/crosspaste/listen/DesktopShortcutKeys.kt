@@ -1,8 +1,5 @@
 package com.crosspaste.listen
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import com.crosspaste.app.AppFileType
 import com.crosspaste.listener.KeyboardKey
 import com.crosspaste.listener.ShortcutKeys
@@ -13,6 +10,8 @@ import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import okio.Path
 import okio.Path.Companion.toOkioPath
 import java.io.FileOutputStream
@@ -45,12 +44,15 @@ class DesktopShortcutKeys(
 
     private val fileUtils = getFileUtils()
 
-    override var shortcutKeysCore by mutableStateOf(defaultKeysCore())
+    private val _shortcutKeysCore: MutableStateFlow<ShortcutKeysCore> =
+        MutableStateFlow(defaultKeysCore())
+
+    override var shortcutKeysCore: StateFlow<ShortcutKeysCore> = _shortcutKeysCore
 
     init {
         runCatching {
             loadKeysCore()?.let {
-                shortcutKeysCore = it
+                _shortcutKeysCore.value = it
             }
         }.onFailure {
             defaultKeysCore()
@@ -126,7 +128,7 @@ class DesktopShortcutKeys(
                     properties.store(writer, "Comments")
                 }
             }
-            shortcutKeysCore = shortcutKeysLoader.load(shortcutKeysPropertiesPath)
+            _shortcutKeysCore.value = shortcutKeysLoader.load(shortcutKeysPropertiesPath)
         }.onFailure { e ->
             logger.error(e) { "Failed to update shortcut keys" }
         }

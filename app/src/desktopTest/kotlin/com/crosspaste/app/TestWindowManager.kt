@@ -3,19 +3,21 @@ package com.crosspaste.app
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 
 class TestWindowManager(
     appSize: AppSize,
     private val mockOS: MockOS,
 ) : DesktopAppWindowManager(appSize) {
 
-    private var prevApp: String? by mutableStateOf(null)
+    private var prevApp: MutableStateFlow<String?> = MutableStateFlow(null)
 
     var pasterId: Int = 0
 
     private var currentTitle: String? by mutableStateOf(null)
 
-    override fun getPrevAppName(): String? {
+    override fun getPrevAppName(): Flow<String?> {
         return prevApp
     }
 
@@ -48,7 +50,7 @@ class TestWindowManager(
     private fun bringToFront(windowTitle: String) {
         currentTitle = windowTitle
         if (mockOS.currentApp != "CrossPaste") {
-            prevApp = mockOS.currentApp
+            prevApp.value = mockOS.currentApp
         }
         mockOS.currentApp = "CrossPaste"
     }
@@ -58,7 +60,7 @@ class TestWindowManager(
         toPaste: Boolean,
     ) {
         currentTitle = windowTitle
-        mockOS.currentApp = prevApp
+        mockOS.currentApp = prevApp.value
         if (toPaste) {
             toPaste()
         }

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -27,6 +28,8 @@ import com.valentinilk.shimmer.shimmer
 
 @Composable
 fun PasteShimmerContentView(singleProcess: PasteSingleProcess?) {
+    val process = singleProcess?.process?.collectAsState()
+
     Row(
         modifier =
             Modifier
@@ -43,9 +46,9 @@ fun PasteShimmerContentView(singleProcess: PasteSingleProcess?) {
                     .background(MaterialTheme.colorScheme.secondaryContainer),
             contentAlignment = Alignment.Center,
         ) {
-            singleProcess?.process?.let {
+            process?.let {
                 Text(
-                    text = "${(it * 100).toInt()}%",
+                    text = "${(it.value * 100).toInt()}%",
                     color = MaterialTheme.colorScheme.onSurface,
                     style =
                         TextStyle(

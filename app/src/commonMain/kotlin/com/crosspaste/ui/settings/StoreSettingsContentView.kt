@@ -21,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -289,6 +290,8 @@ fun StoreSettingsContentView() {
         fontSize = 12.sp,
     )
 
+    val config by configManager.config.collectAsState()
+
     Column(
         modifier =
             Modifier.wrapContentSize()
@@ -298,7 +301,7 @@ fun StoreSettingsContentView() {
         SettingSwitchItemView(
             text = "expiration_cleanup",
             painter = trash(),
-            getCurrentSwitchValue = { configManager.config.enableExpirationCleanup },
+            getCurrentSwitchValue = { config.enableExpirationCleanup },
         ) {
             configManager.updateConfig("enableExpirationCleanup", it)
         }
@@ -310,11 +313,10 @@ fun StoreSettingsContentView() {
             text = "image_retention_period",
             tint = MaterialTheme.colorScheme.onSurface,
         ) {
-            var selectImageCleanTimeIndex by remember { mutableStateOf(configManager.config.imageCleanTimeIndex) }
-
-            val imageCleanTime = CleanTime.entries[selectImageCleanTimeIndex]
+            var selectImageCleanTimeIndex = config.imageCleanTimeIndex
 
             var imageCleanTimeValue by remember(copywriter.language()) {
+                val imageCleanTime = CleanTime.entries[selectImageCleanTimeIndex]
                 mutableStateOf("${imageCleanTime.quantity} ${copywriter.getText(imageCleanTime.unit)}")
             }
             val imageCleanTimeWidth = measureTextWidth(imageCleanTimeValue, SettingsTextStyle())
@@ -366,8 +368,7 @@ fun StoreSettingsContentView() {
                 ) {
                     CleanTimeMenuView(selectImageCleanTimeIndex) { index ->
                         configManager.updateConfig("imageCleanTimeIndex", index)
-                        selectImageCleanTimeIndex = configManager.config.imageCleanTimeIndex
-                        val currentImageCleanTime = CleanTime.entries[selectImageCleanTimeIndex]
+                        val currentImageCleanTime = CleanTime.entries[index]
                         imageCleanTimeValue =
                             "${currentImageCleanTime.quantity} ${copywriter.getText(currentImageCleanTime.unit)}"
                         showImageCleanTimeMenu = false
@@ -383,11 +384,10 @@ fun StoreSettingsContentView() {
             text = "file_retention_period",
             tint = MaterialTheme.colorScheme.onSurface,
         ) {
-            var selectFileCleanTimeIndex by remember { mutableStateOf(configManager.config.fileCleanTimeIndex) }
+            var selectFileCleanTimeIndex = config.fileCleanTimeIndex
 
-            val fileCleanTime = CleanTime.entries[selectFileCleanTimeIndex]
-
-            var fileCleanTimeValue by remember(copywriter.language()) {
+            var fileCleanTimeValue by remember(copywriter.language(), config) {
+                val fileCleanTime = CleanTime.entries[selectFileCleanTimeIndex]
                 mutableStateOf("${fileCleanTime.quantity} ${copywriter.getText(fileCleanTime.unit)}")
             }
             val fileCleanTimeWidth = measureTextWidth(fileCleanTimeValue, SettingsTextStyle())
@@ -440,8 +440,7 @@ fun StoreSettingsContentView() {
                 ) {
                     CleanTimeMenuView(selectFileCleanTimeIndex) { index ->
                         configManager.updateConfig("fileCleanTimeIndex", index)
-                        selectFileCleanTimeIndex = configManager.config.fileCleanTimeIndex
-                        val currentFileCleanTime = CleanTime.entries[selectFileCleanTimeIndex]
+                        val currentFileCleanTime = CleanTime.entries[index]
                         fileCleanTimeValue =
                             "${currentFileCleanTime.quantity} ${copywriter.getText(currentFileCleanTime.unit)}"
                         showFileCleanTimeMenu = false
@@ -462,7 +461,7 @@ fun StoreSettingsContentView() {
         SettingSwitchItemView(
             text = "threshold_cleanup",
             painter = trash(),
-            getCurrentSwitchValue = { configManager.config.enableThresholdCleanup },
+            getCurrentSwitchValue = { config.enableThresholdCleanup },
         ) {
             configManager.updateConfig("enableThresholdCleanup", it)
         }
@@ -474,7 +473,7 @@ fun StoreSettingsContentView() {
             painter = database(),
             unit = "MB",
             rule = { it >= 256 },
-            getCurrentCounterValue = { configManager.config.maxStorage },
+            getCurrentCounterValue = { config.maxStorage },
         ) {
             configManager.updateConfig("maxStorage", it)
         }
@@ -486,7 +485,7 @@ fun StoreSettingsContentView() {
             painter = percent(),
             unit = "%",
             rule = { it in 10..50 },
-            getCurrentCounterValue = { configManager.config.cleanupPercentage.toLong() },
+            getCurrentCounterValue = { config.cleanupPercentage.toLong() },
         ) {
             configManager.updateConfig("cleanupPercentage", it.toInt())
         }

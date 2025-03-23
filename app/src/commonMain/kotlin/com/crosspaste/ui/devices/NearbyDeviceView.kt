@@ -11,6 +11,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
@@ -43,6 +45,8 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
     val configManager = koinInject<ConfigManager>()
     val jsonUtils = getJsonUtils()
     val scope = rememberCoroutineScope()
+
+    val config by configManager.config.collectAsState()
 
     deviceViewProvider.SyncDeviceView(syncInfo = syncInfo) { background ->
         Button(
@@ -82,7 +86,10 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
         Button(
             modifier = Modifier.height(28.dp),
             onClick = {
-                val blackSyncInfos: MutableList<SyncInfo> = jsonUtils.JSON.decodeFromString(configManager.config.blacklist)
+                val blackSyncInfos: MutableList<SyncInfo> =
+                    jsonUtils.JSON.decodeFromString(
+                        config.blacklist,
+                    )
                 for (blackSyncInfo in blackSyncInfos) {
                     if (blackSyncInfo.appInfo.appInstanceId == syncInfo.appInfo.appInstanceId) {
                         return@Button

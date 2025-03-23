@@ -118,7 +118,9 @@ fun PasteDetailInfoView(
             }
 
             if (iconExist) {
-                val isMacStyleIcon by remember(source) { mutableStateOf(iconStyle.isMacStyleIcon(source)) }
+                val isMacStyleIcon by remember(source) {
+                    mutableStateOf(iconStyle.isMacStyleIcon(source))
+                }
                 AppImageIcon(iconPath, isMacStyleIcon, 30.dp)
             }
 

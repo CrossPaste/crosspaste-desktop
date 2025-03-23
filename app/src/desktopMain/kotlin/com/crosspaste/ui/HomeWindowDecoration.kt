@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -76,9 +77,11 @@ fun HomeWindowDecoration() {
 
     var showPopup by remember { mutableStateOf(false) }
 
-    var showTutorial by remember { mutableStateOf(configManager.config.showTutorial) }
+    val config by configManager.config.collectAsState()
 
     val density = LocalDensity.current
+
+    val existNewVersion by appUpdateService.existNewVersion().collectAsState(false)
 
     Box(
         modifier =
@@ -131,7 +134,7 @@ fun HomeWindowDecoration() {
                                     fontWeight = FontWeight.Bold,
                                 ),
                         )
-                        if (appUpdateService.existNewVersion()) {
+                        if (existNewVersion) {
                             Row(
                                 modifier =
                                     Modifier
@@ -164,7 +167,7 @@ fun HomeWindowDecoration() {
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (appLaunchState.firstLaunch && showTutorial) {
+                if (appLaunchState.firstLaunch && config.showTutorial) {
                     val infiniteTransition = rememberInfiniteTransition()
                     val scale by infiniteTransition.animateFloat(
                         initialValue = 1f,
@@ -186,7 +189,6 @@ fun HomeWindowDecoration() {
                                 .clickable {
                                     uiSupport.openCrossPasteWebInBrowser("tutorial/pasteboard")
                                     configManager.updateConfig("showTutorial", false)
-                                    showTutorial = configManager.config.showTutorial
                                 },
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically,

@@ -35,7 +35,7 @@ class MacosPasteboardService(
 
     private val controlUtils = getControlUtils()
 
-    private var changeCount = configManager.config.lastPasteboardChangeCount
+    private var changeCount = configManager.getCurrentConfig().lastPasteboardChangeCount
 
     @Volatile
     override var owner = false
@@ -64,10 +64,19 @@ class MacosPasteboardService(
                         .let { currentChangeCount ->
                             if (changeCount != currentChangeCount) {
                                 logger.info { "currentChangeCount $currentChangeCount changeCount $changeCount" }
-                                val firstChange = firstRead && changeCount == configManager.config.lastPasteboardChangeCount
+                                val firstChange =
+                                    firstRead && changeCount ==
+                                        configManager
+                                            .getCurrentConfig()
+                                            .lastPasteboardChangeCount
+
                                 changeCount = currentChangeCount
 
-                                if (firstChange && configManager.config.enableSkipPriorPasteboardContent) {
+                                if (firstChange &&
+                                    configManager
+                                        .getCurrentConfig()
+                                        .enableSkipPriorPasteboardContent
+                                ) {
                                     logger.debug { "Ignoring prior pasteboard" }
                                     return@let
                                 }

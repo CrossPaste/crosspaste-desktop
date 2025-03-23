@@ -33,7 +33,7 @@ class CleanScheduler(
     }
 
     private suspend fun cleanPaste() {
-        if (configManager.config.enableExpirationCleanup) {
+        if (configManager.getCurrentConfig().enableExpirationCleanup) {
             val taskId =
                 taskDao.createTask(
                     pasteDataId = null,

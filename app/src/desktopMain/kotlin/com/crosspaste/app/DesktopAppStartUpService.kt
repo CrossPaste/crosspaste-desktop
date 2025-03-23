@@ -73,7 +73,7 @@ class MacAppStartUpService(private val configManager: ConfigManager) : AppStartU
     private val filePersist = FilePersist
 
     override fun followConfig() {
-        if (configManager.config.enableAutoStartUp) {
+        if (configManager.getCurrentConfig().enableAutoStartUp) {
             makeAutoStartUp()
         } else {
             removeAutoStartUp()
@@ -158,7 +158,7 @@ class WindowsAppStartUpService(
     }
 
     override fun followConfig() {
-        if (configManager.config.enableAutoStartUp) {
+        if (configManager.getCurrentConfig().enableAutoStartUp) {
             makeAutoStartUp()
         } else {
             removeAutoStartUp()
@@ -236,7 +236,7 @@ class LinuxAppStartUpService(private val configManager: ConfigManager) : AppStar
             .resolve("crosspaste")
 
     override fun followConfig() {
-        if (configManager.config.enableAutoStartUp) {
+        if (configManager.getCurrentConfig().enableAutoStartUp) {
             makeAutoStartUp()
         } else {
             removeAutoStartUp()

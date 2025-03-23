@@ -43,7 +43,7 @@ class GeneralNearbyDeviceManager(
     private val isBlackListed: (String) -> Boolean = { appInstanceId ->
         val blackSyncInfos: List<SyncInfo> =
             jsonUtils.JSON.decodeFromString(
-                configManager.config.blacklist,
+                configManager.getCurrentConfig().blacklist,
             )
         blackSyncInfos.map { it.appInfo.appInstanceId }
             .contains(appInstanceId)

@@ -13,7 +13,7 @@ class MacPasteUtils(private val shortcutKeys: ShortcutKeys) {
 
     @Synchronized
     fun getPasteMemory(): Pair<Memory, Int> {
-        val currentKeys = shortcutKeys.shortcutKeysCore.keys["paste"] ?: emptyList()
+        val currentKeys = shortcutKeys.shortcutKeysCore.value.keys["paste"] ?: emptyList()
         if (memory == null || this.keys != currentKeys) {
             this.keys = currentKeys
             memory = createMemory(currentKeys)

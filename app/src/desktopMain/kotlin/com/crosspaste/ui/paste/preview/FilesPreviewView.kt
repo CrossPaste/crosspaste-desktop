@@ -51,10 +51,17 @@ fun FilesPreviewView(pasteData: PasteData) {
                             },
                 ) {
                     items(pasteFilePaths.size) { index ->
-                        val itemWidthSize = if (pasteFilePaths.size > 1) appSize.mainPasteSize.width / 2 else appSize.mainPasteSize.width
+                        val itemWidthSize =
+                            if (pasteFilePaths.size > 1) {
+                                appSize.mainPasteSize.width / 2
+                            } else {
+                                appSize.mainPasteSize.width
+                            }
                         val filepath = pasteFilePaths[index]
                         val fileInfoTree = fileInfoTreeMap[filepath.name]!!
-                        val isImage by remember(filepath) { mutableStateOf(fileUtils.canPreviewImage(filepath.extension)) }
+                        val isImage by remember(filepath) {
+                            mutableStateOf(fileUtils.canPreviewImage(filepath.extension))
+                        }
 
                         PasteContextMenuView(
                             items =

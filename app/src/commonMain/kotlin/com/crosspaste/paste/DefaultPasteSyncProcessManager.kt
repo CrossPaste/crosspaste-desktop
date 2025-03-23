@@ -1,16 +1,16 @@
 package com.crosspaste.paste
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import com.crosspaste.net.clientapi.ClientApiResult
 import com.crosspaste.net.clientapi.SuccessResult
+import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import com.crosspaste.utils.createPlatformLock
 import com.crosspaste.utils.ioDispatcher
-import io.ktor.util.collections.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 
@@ -20,23 +20,26 @@ class DefaultPasteSyncProcessManager : PasteSyncProcessManager<Long> {
 
     private val semaphore = Semaphore(10)
 
-    override val processMap: ConcurrentMap<Long, PasteSingleProcess> = ConcurrentMap()
+    private val _processMap: MutableStateFlow<MutableMap<Long, PasteSingleProcess>> =
+        MutableStateFlow(mutableMapOf())
 
-    override fun cleanProcess(key: Long) {
-        processMap.remove(key)
+    override val processMap: StateFlow<Map<Long, PasteSingleProcess>> = _processMap
+
+    override suspend fun cleanProcess(key: Long) {
+        mainCoroutineDispatcher.launch {
+            _processMap.value.remove(key)
+        }
     }
 
-    override fun getProcess(key: Long): PasteSingleProcess? {
-        return processMap[key]
-    }
-
-    override fun getProcess(
+    override suspend fun getProcess(
         key: Long,
         taskNum: Int,
     ): PasteSingleProcess {
-        return processMap.computeIfAbsent(key) {
-            PasteSingleProcessImpl(taskNum)
-        }
+        return mainCoroutineDispatcher.async {
+            _processMap.value.computeIfAbsent(key) {
+                PasteSingleProcessImpl(taskNum)
+            }
+        }.await()
     }
 
     override suspend fun runTask(
@@ -62,7 +65,9 @@ class DefaultPasteSyncProcessManager : PasteSyncProcessManager<Long> {
 
 class PasteSingleProcessImpl(private val taskNum: Int) : PasteSingleProcess {
 
-    override var process: Float by mutableStateOf(0.0f)
+    private val _process = MutableStateFlow<Float>(0.0f)
+
+    override var process: StateFlow<Float> = _process
 
     private var successNum = 0
 
@@ -76,7 +81,7 @@ class PasteSingleProcessImpl(private val taskNum: Int) : PasteSingleProcess {
             if (!tasks[index]) {
                 tasks[index] = true
                 successNum += 1
-                process = successNum / taskNum.toFloat()
+                _process.value = successNum / taskNum.toFloat()
             }
         } finally {
             platformLock.unlock()
