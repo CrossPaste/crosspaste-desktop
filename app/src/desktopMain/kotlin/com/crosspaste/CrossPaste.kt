@@ -37,6 +37,7 @@ import com.crosspaste.presist.FilePersist
 import com.crosspaste.rendering.RenderingService
 import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.sync.SyncManager
+import com.crosspaste.task.TaskExecutor
 import com.crosspaste.ui.CrossPasteMainWindow
 import com.crosspaste.ui.CrossPasteSearchWindow
 import com.crosspaste.ui.GrantAccessibilityPermissionsWindow
@@ -167,6 +168,9 @@ class CrossPaste {
                     listOf(
                         async {
                             stopService<AppUpdateService>("AppUpdateService") { it.stop() }
+                        },
+                        async {
+                            stopService<TaskExecutor>("TaskExecutor") { it.shutdown() }
                         },
                         async {
                             stopService<RenderingService<String>>(
