@@ -14,6 +14,7 @@ import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getCompressUtils
 import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.noOptionParent
 import io.github.oshai.kotlinlogging.KotlinLogging
 import okio.Path
 
@@ -31,7 +32,7 @@ class PasteImportService(
     private val fileUtils = getFileUtils()
 
     fun import(
-        importFilePath: Path,
+        pasteImportParam: PasteImportParam,
         updateProgress: (Float) -> Unit,
     ) {
         var importTempPath: Path? = null
@@ -41,7 +42,7 @@ class PasteImportService(
             val basePath = tempDir.resolve("import-$epochMilliseconds", true)
             importTempPath = basePath
             userDataPathProvider.autoCreateDir(basePath)
-            decompress(importFilePath, basePath)
+            decompress(pasteImportParam, basePath)
             val importCount =
                 fileUtils.listFiles(basePath) {
                     it.name.endsWith(".count")
@@ -58,10 +59,10 @@ class PasteImportService(
             var failCount = 0L
 
             fileUtils.readByLines(pasteDataFile) { line ->
+                count++
                 runCatching {
                     val pasteData = readPasteData(line)
                     if (importPasteData(basePath, count, pasteData)) {
-                        count++
                         updateProgress(count.toFloat() / importCount.toFloat())
                     }
                 }.onFailure { e ->
@@ -82,6 +83,7 @@ class PasteImportService(
             }
             updateProgress(1f)
         }.onFailure { e ->
+            updateProgress(-1f)
             logger.error(e) { "Error importing paste data" }
             notificationManager.sendNotification(
                 title = { it.getText("import_fail") },
@@ -100,7 +102,7 @@ class PasteImportService(
         return runCatching {
             val id = pasteDao.createPasteData(pasteData)
 
-            val pasteCoordinate = pasteData.getPasteCoordinate()
+            val pasteCoordinate = pasteData.getPasteCoordinate(id = index)
             val pasteAppearItem = pasteData.pasteAppearItem
             val pasteCollection = pasteData.pasteCollection
 
@@ -115,7 +117,7 @@ class PasteImportService(
                     pasteSearchContent =
                         PasteData.createSearchContent(
                             pasteData.source,
-                            pasteData.pasteAppearItem?.getSearchContent(),
+                            newPasteAppearItem?.getSearchContent(),
                         ),
                 )
 
@@ -146,6 +148,7 @@ class PasteImportService(
 
         for (filePath in pasteFiles.getFilePaths(userDataPathProvider)) {
             val importFilePath = path.resolve(filePath.name)
+            userDataPathProvider.autoCreateDir(filePath.noOptionParent)
             fileUtils.moveFile(importFilePath, filePath)
         }
     }
@@ -156,14 +159,27 @@ class PasteImportService(
     }
 
     private fun decompress(
-        importFilePath: Path,
+        pasteImportParam: PasteImportParam,
         decompressPath: Path,
     ) {
-        val result = compressUtils.unzip(importFilePath, decompressPath)
-        if (result.isFailure) {
+        pasteImportParam.importBufferedSource()?.let { bufferSource ->
+            compressUtils.unzip(bufferSource, decompressPath)
+                .onSuccess {
+                    if (bufferSource.isOpen) {
+                        bufferSource.close()
+                    }
+                }
+                .onFailure {
+                    logger.error(it) { "Failed to decompress the file" }
+                    throw PasteException(
+                        errorCode = StandardErrorCode.IMPORT_FAIL.toErrorCode(),
+                        message = "Failed to decompress the file",
+                    )
+                }
+        } ?: run {
             throw PasteException(
                 errorCode = StandardErrorCode.IMPORT_FAIL.toErrorCode(),
-                message = "Failed to decompress the file",
+                message = "Failed to read the file",
             )
         }
     }

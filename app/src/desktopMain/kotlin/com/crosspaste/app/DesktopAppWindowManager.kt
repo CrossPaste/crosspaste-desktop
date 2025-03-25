@@ -24,11 +24,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import okio.Path
-import okio.Path.Companion.toOkioPath
 import java.awt.Cursor
 import java.awt.Rectangle
-import javax.swing.JFileChooser
 
 fun getDesktopAppWindowManager(
     appSize: AppSize,
@@ -84,7 +81,7 @@ abstract class DesktopAppWindowManager(
     override val screenContext: StateFlow<ScreenContext> = _screenContext.asStateFlow()
 
     private val _firstLaunchCompleted = MutableStateFlow(false)
-    override var firstLaunchCompleted: StateFlow<Boolean> = _firstLaunchCompleted
+    override val firstLaunchCompleted: StateFlow<Boolean> = _firstLaunchCompleted
 
     private val _showMainWindow = MutableStateFlow(false)
     val showMainWindow: StateFlow<Boolean> = _showMainWindow
@@ -105,9 +102,6 @@ abstract class DesktopAppWindowManager(
 
     private val _showMainDialog = MutableStateFlow(false)
     override val showMainDialog: StateFlow<Boolean> = _showMainDialog
-
-    private val _showFileDialog = MutableStateFlow(false)
-    override val showFileDialog: StateFlow<Boolean> = _showFileDialog
 
     private val _showSearchWindow = MutableStateFlow(false)
     var showSearchWindow: StateFlow<Boolean> = _showSearchWindow
@@ -139,24 +133,12 @@ abstract class DesktopAppWindowManager(
         _firstLaunchCompleted.value = firstLaunchCompleted
     }
 
-    fun getFirstLaunchCompleted(): Boolean {
-        return firstLaunchCompleted.value
-    }
-
     fun setShowMainWindow(showMainWindow: Boolean) {
         _showMainWindow.value = showMainWindow
     }
 
-    fun getShowMainWindow(): Boolean {
-        return showMainWindow.value
-    }
-
     fun setShowSearchWindow(showSearchWindow: Boolean) {
         _showSearchWindow.value = showSearchWindow
-    }
-
-    fun getShowSearchWindow(): Boolean {
-        return showSearchWindow.value
     }
 
     fun setMainWindowState(windowState: WindowState) {
@@ -175,14 +157,6 @@ abstract class DesktopAppWindowManager(
         return searchWindowState.value
     }
 
-    fun getShowMainDialog(): Boolean {
-        return showMainDialog.value
-    }
-
-    fun getShowFileDialog(): Boolean {
-        return showFileDialog.value
-    }
-
     override fun resetMainCursor() {
         mainComposeWindow?.cursor = Cursor.getDefaultCursor()
     }
@@ -197,39 +171,6 @@ abstract class DesktopAppWindowManager(
 
     override fun setSearchCursorWait() {
         searchComposeWindow?.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
-    }
-
-    override fun openFileChooser(
-        fileSelectionMode: FileSelectionMode,
-        title: String?,
-        initPath: Path?,
-        cancel: (() -> Unit)?,
-        action: (Path) -> Unit,
-    ) {
-        mainComposeWindow?.let {
-            _showFileDialog.value = true
-            JFileChooser().apply {
-                this.fileSelectionMode =
-                    when (fileSelectionMode) {
-                        FileSelectionMode.FILE_ONLY -> JFileChooser.FILES_ONLY
-                        FileSelectionMode.DIRECTORY_ONLY -> JFileChooser.DIRECTORIES_ONLY
-                        FileSelectionMode.FILES_AND_DIRECTORIES -> JFileChooser.FILES_AND_DIRECTORIES
-                    }
-                title?.let {
-                    dialogTitle = it
-                }
-                initPath?.let {
-                    currentDirectory = it.toFile()
-                }
-                showOpenDialog(it)
-                selectedFile?.let { file ->
-                    action(file.toOkioPath(true))
-                } ?: run {
-                    cancel?.let { it() }
-                }
-            }
-            _showFileDialog.value = false
-        }
     }
 
     abstract fun getCurrentActiveAppName(): String?

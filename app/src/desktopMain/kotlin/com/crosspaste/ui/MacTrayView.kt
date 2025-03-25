@@ -3,6 +3,7 @@ package com.crosspaste.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,6 +68,9 @@ object MacTrayView {
         }
         val frame by remember { mutableStateOf(TransparentFrame()) }
 
+        val firstLaunchCompleted by appWindowManager.firstLaunchCompleted.collectAsState()
+        val showMainWindow by appWindowManager.showMainWindow.collectAsState()
+
         DisposableEffect(copywriter.language()) {
             frame.removeAll()
             menu = createPopupMenu(appWindowManager, copywriter, uiSupport, applicationExit)
@@ -87,7 +91,7 @@ object MacTrayView {
                 (windowInfos.firstOrNull { it.contained(screenDevice) } ?: windowInfos.firstOrNull())?.let {
                     logger.debug { "windowInfo: $it" }
                     refreshWindowPosition(appWindowManager, it)
-                    if (appLaunchState.firstLaunch && !appWindowManager.getFirstLaunchCompleted()) {
+                    if (appLaunchState.firstLaunch && !firstLaunchCompleted) {
                         appWindowManager.setShowMainWindow(true)
                         appWindowManager.setFirstLaunchCompleted(true)
                     }
@@ -108,7 +112,7 @@ object MacTrayView {
                         }
                     } else {
                         mainCoroutineDispatcher.launch(CoroutineName("Hide CrossPaste")) {
-                            if (appWindowManager.getShowMainWindow()) {
+                            if (showMainWindow) {
                                 appWindowManager.unActiveMainWindow()
                             }
                         }

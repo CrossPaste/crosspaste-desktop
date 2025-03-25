@@ -3,6 +3,7 @@ package com.crosspaste.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,6 +53,8 @@ object LinuxTrayView {
             mutableStateOf(innerTray)
         }
 
+        val firstLaunchCompleted by appWindowManager.firstLaunchCompleted.collectAsState()
+
         LaunchedEffect(Unit) {
             tray?.setImage(URL(Res.getUri("drawable/crosspaste.png")).openStream())
             tray?.setTooltip("CrossPaste")
@@ -72,7 +75,7 @@ object LinuxTrayView {
 
             refreshWindowPosition(appWindowManager)
 
-            if (appLaunchState.firstLaunch && !appWindowManager.getFirstLaunchCompleted()) {
+            if (appLaunchState.firstLaunch && !firstLaunchCompleted) {
                 appWindowManager.setShowMainWindow(true)
                 appWindowManager.setFirstLaunchCompleted(true)
             }

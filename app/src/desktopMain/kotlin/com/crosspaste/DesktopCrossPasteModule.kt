@@ -4,6 +4,7 @@ import coil3.PlatformContext
 import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppEnv
 import com.crosspaste.app.AppExitService
+import com.crosspaste.app.AppFileChooser
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppInfoFactory
 import com.crosspaste.app.AppLock
@@ -16,6 +17,7 @@ import com.crosspaste.app.AppUrls
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopAppControl
 import com.crosspaste.app.DesktopAppExitService
+import com.crosspaste.app.DesktopAppFileChooser
 import com.crosspaste.app.DesktopAppInfoFactory
 import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppLaunchState
@@ -95,10 +97,14 @@ import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.DefaultPasteSyncProcessManager
 import com.crosspaste.paste.DesktopCacheManager
 import com.crosspaste.paste.DesktopCurrentPaste
+import com.crosspaste.paste.DesktopPasteExportParamFactory
+import com.crosspaste.paste.DesktopPasteImportParamFactory
 import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.DesktopTransferableConsumer
 import com.crosspaste.paste.DesktopTransferableProducer
+import com.crosspaste.paste.PasteExportParamFactory
 import com.crosspaste.paste.PasteExportService
+import com.crosspaste.paste.PasteImportParamFactory
 import com.crosspaste.paste.PasteImportService
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.paste.PasteboardService
@@ -366,7 +372,9 @@ class DesktopCrossPasteModule(
             single<PasteboardService> {
                 getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get(), get())
             }
+            single<PasteExportParamFactory> { DesktopPasteExportParamFactory() }
             single<PasteExportService> { PasteExportService(get(), get(), get()) }
+            single<PasteImportParamFactory> { DesktopPasteImportParamFactory() }
             single<PasteImportService> { PasteImportService(get(), get(), get()) }
             single<PasteSyncProcessManager<Long>> { DefaultPasteSyncProcessManager() }
             single<TaskExecutor> {
@@ -428,6 +436,7 @@ class DesktopCrossPasteModule(
     override fun uiModule() =
         module {
             single<ActiveGraphicsDevice> { get<DesktopMouseListener>() }
+            single<AppFileChooser> { DesktopAppFileChooser(get()) }
             single<AppSize> { DesktopAppSize }
             single<AppTokenApi> { DesktopAppTokenService(get()) }
             single<AppWindowManager> { get<DesktopAppWindowManager>() }
@@ -448,7 +457,7 @@ class DesktopCrossPasteModule(
             single<ScreenProvider> { DesktopScreenProvider(get()) }
             single<SettingsViewProvider> { DesktopSettingsViewProvider(get(), get()) }
             single<ShortcutKeys> { DesktopShortcutKeys(get()) }
-            single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get()) }
+            single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get(), get()) }
             single<ShortcutKeysListener> { get<DesktopShortcutKeysListener>() }
             single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get()) }
             single<SoundService> { DesktopSoundService(get()) }

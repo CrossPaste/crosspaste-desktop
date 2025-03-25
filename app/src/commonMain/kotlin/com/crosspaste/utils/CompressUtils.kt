@@ -1,5 +1,7 @@
 package com.crosspaste.utils
 
+import okio.BufferedSink
+import okio.BufferedSource
 import okio.Path
 
 expect fun getCompressUtils(): CompressUtils
@@ -8,16 +10,16 @@ interface CompressUtils {
 
     fun zipDir(
         sourceDir: Path,
-        targetZipPath: Path,
+        targetBufferedSink: BufferedSink,
     ): Result<Unit>
 
     fun zipFile(
         sourceFile: Path,
-        targetZipPath: Path,
+        targetBufferedSink: BufferedSink,
     ): Result<Unit>
 
     fun unzip(
-        zipFile: Path,
+        bufferSource: BufferedSource,
         targetDir: Path,
     ): Result<Unit>
 }

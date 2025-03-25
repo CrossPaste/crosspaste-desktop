@@ -1,5 +1,7 @@
 package com.crosspaste.utils
 
+import okio.BufferedSink
+import okio.BufferedSource
 import okio.Path
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
@@ -16,14 +18,14 @@ object DesktopCompressUtils : CompressUtils {
 
     override fun zipDir(
         sourceDir: Path,
-        targetZipPath: Path,
+        targetBufferedSink: BufferedSink,
     ): Result<Unit> {
         return runCatching {
             require(sourceDir.isDirectory) { "Source must be a directory" }
 
-            val targetFile = targetZipPath.toFile()
-
-            ZipOutputStream(BufferedOutputStream(targetFile.outputStream())).use { zipOut ->
+            ZipOutputStream(
+                BufferedOutputStream(targetBufferedSink.outputStream()),
+            ).use { zipOut ->
                 val basePath = sourceDir.toFile().absolutePath
                 sourceDir.toFile().walkTopDown().filter { it.isFile }.forEach { file ->
                     val entryPath =
@@ -46,12 +48,14 @@ object DesktopCompressUtils : CompressUtils {
 
     override fun zipFile(
         sourceFile: Path,
-        targetZipPath: Path,
+        targetBufferedSink: BufferedSink,
     ): Result<Unit> {
         return runCatching {
             require(!sourceFile.isDirectory) { "Source must be a file, not a directory" }
 
-            ZipOutputStream(BufferedOutputStream(targetZipPath.toFile().outputStream())).use { zipOut ->
+            ZipOutputStream(
+                BufferedOutputStream(targetBufferedSink.outputStream()),
+            ).use { zipOut ->
                 val entry = ZipEntry(sourceFile.name)
                 zipOut.putNextEntry(entry)
 
@@ -65,11 +69,13 @@ object DesktopCompressUtils : CompressUtils {
     }
 
     override fun unzip(
-        zipFile: Path,
+        bufferSource: BufferedSource,
         targetDir: Path,
     ): Result<Unit> {
         return runCatching {
-            ZipInputStream(BufferedInputStream(zipFile.toFile().inputStream())).use { zipIn ->
+            ZipInputStream(
+                BufferedInputStream(bufferSource.inputStream()),
+            ).use { zipIn ->
                 var entry = zipIn.nextEntry
                 while (entry != null) {
                     val filePath = targetDir.resolve(entry.name)

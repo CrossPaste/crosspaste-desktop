@@ -42,7 +42,7 @@ class PasteExportService(
             exportTempPath = basePath
             userDataPathProvider.autoCreateDir(basePath)
             var pasteDataFile = basePath.resolve("paste.data")
-            var count = 0L
+            var count = 1L
             fileUtils.writeFile(pasteDataFile) { sink ->
                 runCatching {
                     val exportCount = pasteDao.getExportNum(pasteExportParam)
@@ -69,7 +69,7 @@ class PasteExportService(
             if (count > 0L) {
                 val countFile = basePath.resolve("$count.count")
                 fileUtils.createFile(countFile)
-                compressExportFile(basePath, pasteExportParam.exportPath, exportFileName)
+                compressExportFile(basePath, pasteExportParam, exportFileName)
                 notificationManager.sendNotification(
                     title = { it.getText("export_successful") },
                     message = { exportFileName },
@@ -84,7 +84,9 @@ class PasteExportService(
             }
             updateProgress(1f)
         }.onFailure { e ->
-            logger.error(e) { "export pasteData fail" }
+            // to set export failed
+            updateProgress(-1f)
+            logger.error(e) { "export pasteData failed" }
             notificationManager.sendNotification(
                 title = { it.getText("export_fail") },
                 messageType = MessageType.Error,
@@ -146,17 +148,29 @@ class PasteExportService(
 
     private fun compressExportFile(
         basePath: Path,
-        exportPath: Path,
+        pasteExportParam: PasteExportParam,
         exportFileName: String,
     ) {
-        userDataPathProvider.autoCreateDir(exportPath)
-        val targetZipFile = exportPath.resolve(exportFileName)
-        val result = compressUtils.zipDir(basePath, targetZipFile)
-        if (result.isFailure) {
-            logger.error { "compress export file fail" }
+        pasteExportParam.exportBufferedSink(exportFileName)?.let { bufferedSink ->
+            compressUtils.zipDir(basePath, bufferedSink)
+                .onSuccess {
+                    if (bufferedSink.isOpen) {
+                        bufferedSink.flush()
+                        bufferedSink.close()
+                    }
+                }
+                .onFailure {
+                    logger.error { "compress export file fail" }
+                    throw PasteException(
+                        StandardErrorCode.EXPORT_FAIL.toErrorCode(),
+                        "compress export file fail",
+                    )
+                }
+        } ?: run {
+            logger.error { "cant to write fail" }
             throw PasteException(
                 StandardErrorCode.EXPORT_FAIL.toErrorCode(),
-                "compress export file fail",
+                "cant to write fail",
             )
         }
     }

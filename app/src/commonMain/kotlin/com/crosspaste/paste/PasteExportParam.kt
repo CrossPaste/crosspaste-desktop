@@ -1,10 +1,12 @@
 package com.crosspaste.paste
 
-import okio.Path
+import okio.BufferedSink
 
-data class PasteExportParam(
+abstract class PasteExportParam(
     val types: Set<Long>,
     val onlyFavorite: Boolean,
     val maxFileSize: Long?,
-    val exportPath: Path,
-)
+) {
+
+    abstract fun exportBufferedSink(fileName: String): BufferedSink?
+}

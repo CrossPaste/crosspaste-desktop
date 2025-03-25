@@ -77,7 +77,9 @@ class DesktopSettingsViewProvider(
             title = "store",
             icon = { database() },
         ) {
-            StoreSettingsContentView()
+            StoreSettingsContentView {
+                SetStoragePathView()
+            }
         }
     }
 
