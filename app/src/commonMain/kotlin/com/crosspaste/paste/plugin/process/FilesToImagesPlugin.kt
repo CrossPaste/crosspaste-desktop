@@ -61,7 +61,7 @@ class FilesToImagesPlugin(
                         count = count,
                         hash = hash,
                         size = size,
-                        basePath = imageBasePath.toString(),
+                        basePath = basePath,
                         relativePathList = relativePathList,
                         fileInfoTreeMap = fileInfoTreeMap,
                     )
