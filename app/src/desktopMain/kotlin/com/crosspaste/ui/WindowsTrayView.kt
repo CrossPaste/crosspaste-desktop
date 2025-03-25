@@ -11,6 +11,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -68,6 +69,8 @@ object WindowsTrayView {
 
         var showMenu by remember { mutableStateOf(false) }
 
+        val firstLaunchCompleted by appWindowManager.firstLaunchCompleted.collectAsState()
+
         val menuWindowState =
             rememberWindowState(
                 placement = WindowPlacement.Floating,
@@ -77,7 +80,7 @@ object WindowsTrayView {
         LaunchedEffect(Unit) {
             delay(1000)
             refreshWindowPosition(appWindowManager, null) { _, _, _ -> }
-            if (appLaunchState.firstLaunch && !appWindowManager.getFirstLaunchCompleted()) {
+            if (appLaunchState.firstLaunch && !firstLaunchCompleted) {
                 appWindowManager.setShowMainWindow(true)
                 appWindowManager.setFirstLaunchCompleted(true)
             }

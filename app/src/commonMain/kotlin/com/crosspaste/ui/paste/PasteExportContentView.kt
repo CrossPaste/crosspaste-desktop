@@ -36,8 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.crosspaste.app.AppWindowManager
-import com.crosspaste.app.FileSelectionMode
+import com.crosspaste.app.AppFileChooser
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.db.paste.PasteType.Companion.COLOR_TYPE
 import com.crosspaste.db.paste.PasteType.Companion.FILE_TYPE
@@ -47,7 +46,7 @@ import com.crosspaste.db.paste.PasteType.Companion.RTF_TYPE
 import com.crosspaste.db.paste.PasteType.Companion.TEXT_TYPE
 import com.crosspaste.db.paste.PasteType.Companion.URL_TYPE
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.paste.PasteExportParam
+import com.crosspaste.paste.PasteExportParamFactory
 import com.crosspaste.paste.PasteExportService
 import com.crosspaste.ui.base.Counter
 import com.crosspaste.ui.base.color
@@ -69,9 +68,10 @@ import org.koin.compose.koinInject
 
 @Composable
 fun PasteExportContentView() {
-    val appWindowManager = koinInject<AppWindowManager>()
+    val appFileChooser = koinInject<AppFileChooser>()
     val configManager = koinInject<ConfigManager>()
     val pasteExportService = koinInject<PasteExportService>()
+    val pasteExportParamFactory = koinInject<PasteExportParamFactory>()
     val fileUtils = getFileUtils()
     val coroutineScope = rememberCoroutineScope()
 
@@ -156,7 +156,7 @@ fun PasteExportContentView() {
                 enabled = !progressing,
                 onClick = {
                     handleExportClick(
-                        appWindowManager = appWindowManager,
+                        appFileChooser = appFileChooser,
                         types =
                             collectSelectedTypes(
                                 allTypesSelected,
@@ -173,10 +173,13 @@ fun PasteExportContentView() {
                         maxFileSize = maxFileSize,
                         fileUtils = fileUtils,
                         pasteExportService = pasteExportService,
+                        pasteExportParamFactory = pasteExportParamFactory,
                         coroutineScope = coroutineScope,
                         onProgressChange = {
                             progress = it
-                            if (progress == 1f) {
+                            // 1f means export finished
+                            // < 0f means export failed
+                            if (progress == 1f || progress < 0f) {
                                 progressing = false
                                 progress = 0f
                             }
@@ -388,21 +391,21 @@ private fun ExportButtonSection(
  * Handle export button click and directory selection
  */
 private fun handleExportClick(
-    appWindowManager: AppWindowManager,
+    appFileChooser: AppFileChooser,
     types: Set<Long>,
     favoritesSelected: Boolean,
     sizeFilterSelected: Boolean,
     maxFileSize: Long,
     fileUtils: FileUtils,
     pasteExportService: PasteExportService,
+    pasteExportParamFactory: PasteExportParamFactory,
     coroutineScope: CoroutineScope,
     onProgressChange: (Float) -> Unit,
     onExportStart: () -> Unit,
 ) {
-    appWindowManager.openFileChooser(FileSelectionMode.DIRECTORY_ONLY) { path ->
-
+    appFileChooser.openFileChooserToExport { path ->
         val pasteExportParam =
-            PasteExportParam(
+            pasteExportParamFactory.createPasteExportParam(
                 types = types,
                 onlyFavorite = favoritesSelected,
                 maxFileSize =

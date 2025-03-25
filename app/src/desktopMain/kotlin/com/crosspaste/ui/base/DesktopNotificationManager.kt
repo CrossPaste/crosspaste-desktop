@@ -29,7 +29,7 @@ class DesktopNotificationManager(
     }
 
     override fun doSendNotification(message: Message) {
-        if (appWindowManager.getShowMainWindow()) {
+        if (appWindowManager.showMainWindow.value) {
             notifyToast(message)
         } else if (platform.isLinux()) {
             sendNotification(message)

@@ -7,7 +7,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okio.Path
 
 interface AppWindowManager {
 
@@ -16,8 +15,6 @@ interface AppWindowManager {
     val firstLaunchCompleted: StateFlow<Boolean>
 
     val showMainDialog: StateFlow<Boolean>
-
-    val showFileDialog: StateFlow<Boolean>
 
     fun doLongTaskInMain(
         scope: CoroutineScope,
@@ -46,14 +43,6 @@ interface AppWindowManager {
 
     suspend fun toPaste()
 
-    fun openFileChooser(
-        fileSelectionMode: FileSelectionMode,
-        title: String? = null,
-        initPath: Path? = null,
-        cancel: (() -> Unit)? = null,
-        action: (Path) -> Unit,
-    )
-
     fun setScreen(screenContext: ScreenContext)
 
     fun returnScreen()
@@ -62,10 +51,4 @@ interface AppWindowManager {
         screenType: ScreenType,
         context: Any = Unit,
     )
-}
-
-enum class FileSelectionMode {
-    FILE_ONLY,
-    DIRECTORY_ONLY,
-    FILES_AND_DIRECTORIES,
 }

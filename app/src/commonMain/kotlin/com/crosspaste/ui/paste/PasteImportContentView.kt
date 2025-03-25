@@ -24,9 +24,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.crosspaste.app.AppWindowManager
-import com.crosspaste.app.FileSelectionMode
+import com.crosspaste.app.AppFileChooser
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.paste.PasteImportParamFactory
 import com.crosspaste.paste.PasteImportService
 import com.crosspaste.ui.settings.SettingsText
 import com.crosspaste.utils.ioDispatcher
@@ -37,8 +37,9 @@ import org.koin.compose.koinInject
 
 @Composable
 fun PasteImportContentView() {
-    val appWindowManager = koinInject<AppWindowManager>()
+    val appFileChooser = koinInject<AppFileChooser>()
     val copywriter = koinInject<GlobalCopywriter>()
+    val pasteImportParamFactory = koinInject<PasteImportParamFactory>()
 
     val pasteImportService = koinInject<PasteImportService>()
 
@@ -80,15 +81,17 @@ fun PasteImportContentView() {
 
                 Button(
                     onClick = {
-                        appWindowManager.openFileChooser(FileSelectionMode.FILE_ONLY) { path ->
+                        appFileChooser.openFileChooserToImport { path ->
+                            val importParam = pasteImportParamFactory.createPasteImportParam(path)
+
                             coroutine.launch(ioDispatcher) {
                                 withContext(mainDispatcher) {
                                     progress = 0f
                                     progressing = true
                                 }
-                                pasteImportService.import(path) {
+                                pasteImportService.import(importParam) {
                                     progress = it
-                                    if (progress == 1f) {
+                                    if (progress == 1f || progress < 0f) {
                                         progressing = false
                                         progress = 0f
                                     }

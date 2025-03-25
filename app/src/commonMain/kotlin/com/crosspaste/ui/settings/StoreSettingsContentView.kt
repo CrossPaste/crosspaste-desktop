@@ -43,7 +43,6 @@ import com.crosspaste.clean.CleanTime
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.platform.getPlatform
 import com.crosspaste.ui.base.CustomTextSwitch
 import com.crosspaste.ui.base.anglesUpDown
 import com.crosspaste.ui.base.clock
@@ -63,14 +62,13 @@ import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
 
 @Composable
-fun StoreSettingsContentView() {
+fun StoreSettingsContentView(extContent: @Composable () -> Unit) {
     val density = LocalDensity.current
     val configManager = koinInject<ConfigManager>()
     val pasteDao = koinInject<PasteDao>()
     val copywriter = koinInject<GlobalCopywriter>()
 
     val fileUtils = getFileUtils()
-    val platform = getPlatform()
 
     var pasteCount: Long? by remember { mutableStateOf(null) }
     var pasteFormatSize: String? by remember { mutableStateOf(null) }
@@ -275,9 +273,7 @@ fun StoreSettingsContentView() {
         }
     }
 
-    if (platform.isDesktop()) {
-        SetStoragePathView()
-    }
+    extContent()
 
     Text(
         modifier =

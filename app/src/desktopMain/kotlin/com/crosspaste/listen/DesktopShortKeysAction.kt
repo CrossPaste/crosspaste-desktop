@@ -1,5 +1,6 @@
 package com.crosspaste.listen
 
+import com.crosspaste.app.AppFileChooser
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.db.paste.PasteDao
@@ -25,6 +26,7 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch
 
 class DesktopShortKeysAction(
+    private val appFileChooser: AppFileChooser,
     private val appWindowManager: DesktopAppWindowManager,
     private val configManager: ConfigManager,
     private val currentPaste: CurrentPaste,
@@ -66,14 +68,14 @@ class DesktopShortKeysAction(
     private fun hideWindow() {
         logger.info { "Hide window" }
         mainCoroutineDispatcher.launch(CoroutineName("HideWindow")) {
-            if (appWindowManager.getShowMainWindow() &&
-                !appWindowManager.getShowMainDialog() &&
-                !appWindowManager.getShowFileDialog()
+            if (appWindowManager.showMainWindow.value &&
+                !appWindowManager.showMainDialog.value &&
+                !appFileChooser.showFileDialog.value
             ) {
                 appWindowManager.unActiveMainWindow()
             }
 
-            if (appWindowManager.getShowSearchWindow()) {
+            if (appWindowManager.showSearchWindow.value) {
                 appWindowManager.unActiveSearchWindow()
             }
         }

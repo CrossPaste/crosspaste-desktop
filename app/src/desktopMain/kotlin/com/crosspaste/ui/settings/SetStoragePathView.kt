@@ -34,8 +34,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppExitService
+import com.crosspaste.app.AppFileChooser
 import com.crosspaste.app.AppRestartService
-import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.ExitMode
 import com.crosspaste.app.FileSelectionMode
 import com.crosspaste.config.ConfigManager
@@ -58,7 +58,7 @@ import org.koin.compose.koinInject
 
 @Composable
 fun SetStoragePathView() {
-    val appWindowManager = koinInject<AppWindowManager>()
+    val appFileChooser = koinInject<AppFileChooser>()
     val configManager = koinInject<ConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val userDataPathProvider = koinInject<UserDataPathProvider>()
@@ -140,11 +140,12 @@ fun SetStoragePathView() {
                                 )
                             }
                             val chooseText = copywriter.getText("selecting_storage_directory")
-                            appWindowManager.openFileChooser(
+                            appFileChooser.openFileChooser(
                                 FileSelectionMode.DIRECTORY_ONLY,
                                 chooseText,
                                 currentStoragePath,
                             ) { path ->
+                                path as Path
                                 if (path.toString()
                                         .startsWith(currentStoragePath.normalized().toString())
                                 ) {
