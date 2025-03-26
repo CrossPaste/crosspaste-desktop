@@ -42,13 +42,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppControl
-import com.crosspaste.app.AppFileType
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.ui.base.AppImageIcon
-import com.crosspaste.ui.base.IconStyle
+import com.crosspaste.ui.base.AppSourceIcon
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.noFavorite
@@ -68,10 +65,8 @@ fun PasteDetailInfoView(
     items: List<PasteDetailInfoItem>,
 ) {
     val appControl = koinInject<AppControl>()
-    val iconStyle = koinInject<IconStyle>()
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteDao = koinInject<PasteDao>()
-    val userDataPathProvider = koinInject<UserDataPathProvider>()
 
     var favorite by remember(pasteData.id) {
         mutableStateOf(pasteData.favorite)
@@ -107,22 +102,12 @@ fun PasteDetailInfoView(
         Spacer(modifier = Modifier.weight(1f))
         pasteData.source?.let { source ->
 
-            val iconPath by remember(source) {
-                mutableStateOf(
-                    userDataPathProvider.resolve("$source.png", AppFileType.ICON),
-                )
-            }
-
-            val iconExist by remember(source) {
-                mutableStateOf(iconPath.toFile().exists())
-            }
-
-            if (iconExist) {
-                val isMacStyleIcon by remember(source) {
-                    mutableStateOf(iconStyle.isMacStyleIcon(source))
-                }
-                AppImageIcon(iconPath, isMacStyleIcon, 30.dp)
-            }
+            AppSourceIcon(
+                pasteData = pasteData,
+                source = source,
+                iconColor = MaterialTheme.colorScheme.primary,
+                size = 30.dp,
+            )
 
             Spacer(modifier = Modifier.width(5.dp))
 
