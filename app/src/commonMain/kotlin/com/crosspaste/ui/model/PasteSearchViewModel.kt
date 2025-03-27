@@ -19,6 +19,10 @@ import kotlinx.coroutines.flow.stateIn
 
 class PasteSearchViewModel(private val pasteDao: PasteDao) : ViewModel() {
 
+    companion object {
+        const val QUERY_BATCH_SIZE = 50
+    }
+
     private val logger = KotlinLogging.logger {}
 
     private val _inputSearch = MutableStateFlow("")
@@ -33,10 +37,10 @@ class PasteSearchViewModel(private val pasteDao: PasteDao) : ViewModel() {
     private val _searchPasteType = MutableStateFlow<Int?>(null)
     val searchPasteType = _searchPasteType.asStateFlow()
 
-    private val _searchLimit = MutableStateFlow(50)
+    private val _searchLimit = MutableStateFlow(QUERY_BATCH_SIZE)
 
     @OptIn(FlowPreview::class)
-    private val searchParams =
+    val searchParams =
         combine(
             _inputSearch.debounce(500),
             _searchFavorite,
@@ -100,7 +104,7 @@ class PasteSearchViewModel(private val pasteDao: PasteDao) : ViewModel() {
     fun tryAddLimit(): Boolean {
         val currentResults = searchResults.value
         return if (_searchLimit.value == currentResults.size) {
-            _searchLimit.value += 50
+            _searchLimit.value += QUERY_BATCH_SIZE
             true
         } else {
             false
@@ -111,6 +115,6 @@ class PasteSearchViewModel(private val pasteDao: PasteDao) : ViewModel() {
         _inputSearch.value = ""
         _searchFavorite.value = false
         _searchSort.value = true
-        _searchLimit.value = 50
+        _searchLimit.value = QUERY_BATCH_SIZE
     }
 }

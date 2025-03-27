@@ -39,12 +39,15 @@ import com.crosspaste.ui.base.PasteTitleView
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
+@OptIn(FlowPreview::class)
 @Composable
 fun SearchListView(setSelectedIndex: (Int) -> Unit) {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
@@ -57,13 +60,21 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
 
     val coroutineScope = rememberCoroutineScope()
 
+    val inputSearch by pasteSearchViewModel.inputSearch.debounce(500).collectAsState("")
+
+    val searchFavorite by pasteSearchViewModel.searchFavorite.collectAsState()
+
+    val searchSort by pasteSearchViewModel.searchSort.collectAsState()
+
+    val searchPasteType by pasteSearchViewModel.searchPasteType.collectAsState()
+
     val searchResult by pasteSearchViewModel.searchResults.collectAsState()
 
     val selectedIndex by pasteSelectionViewModel.selectedIndex.collectAsState()
 
     val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
 
-    LaunchedEffect(showSearchWindow, searchResult) {
+    LaunchedEffect(showSearchWindow, inputSearch, searchFavorite, searchSort, searchPasteType) {
         if (showSearchWindow) {
             pasteSelectionViewModel.setSelectedIndex(0)
             delay(32)
@@ -83,9 +94,9 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
                     searchListState.animateScrollToItem(selectedIndex)
                 }
 
-                if (searchResult.size - lastIndex <= 10) {
-                    pasteSearchViewModel.tryAddLimit()
-                }
+//                if (searchResult.size - lastIndex <= 10) {
+//                    pasteSearchViewModel.tryAddLimit()
+//                }
             }
         }
     }
