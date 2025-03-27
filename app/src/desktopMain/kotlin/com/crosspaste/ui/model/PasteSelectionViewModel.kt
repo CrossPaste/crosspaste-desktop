@@ -26,7 +26,11 @@ class PasteSelectionViewModel(
             searchViewModel.searchResults,
             _selectedIndex,
         ) { results, index ->
-            if (index >= results.size) 0 else index
+            if (index >= results.size) {
+                0
+            } else {
+                index
+            }
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
