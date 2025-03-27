@@ -93,10 +93,6 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
                 } else if (visibleItems.first().index > selectedIndex) {
                     searchListState.animateScrollToItem(selectedIndex)
                 }
-
-//                if (searchResult.size - lastIndex <= 10) {
-//                    pasteSearchViewModel.tryAddLimit()
-//                }
             }
         }
     }
