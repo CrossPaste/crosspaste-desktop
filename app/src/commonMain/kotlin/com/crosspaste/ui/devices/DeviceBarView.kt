@@ -13,9 +13,11 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -55,8 +57,9 @@ fun PlatformPainter(syncRuntimeInfo: SyncRuntimeInfo): Painter {
 @Composable
 fun DeviceBarView(
     modifier: Modifier = Modifier,
+    background: Color,
     syncRuntimeInfo: SyncRuntimeInfo,
-    deviceViewProvider: @Composable () -> Unit,
+    deviceViewProvider: @Composable (Color) -> Unit,
 ) {
     Row(
         modifier = modifier,
@@ -72,7 +75,7 @@ fun DeviceBarView(
                 modifier = Modifier.padding(horizontal = 12.dp).size(36.dp),
                 painter = PlatformPainter(syncRuntimeInfo),
                 contentDescription = "OS Icon",
-                tint = MaterialTheme.colorScheme.onSurface,
+                tint = MaterialTheme.colorScheme.contentColorFor(background),
             )
 
             Column(
@@ -93,7 +96,7 @@ fun DeviceBarView(
                         style =
                             TextStyle(
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface,
+                                color = MaterialTheme.colorScheme.contentColorFor(background),
                                 fontSize = 13.sp,
                             ),
                     )
@@ -105,7 +108,7 @@ fun DeviceBarView(
                         style =
                             TextStyle(
                                 fontWeight = FontWeight.Light,
-                                color = MaterialTheme.colorScheme.onSurface,
+                                color = MaterialTheme.colorScheme.contentColorFor(background),
                                 fontSize = 11.sp,
                             ),
                     )
@@ -118,7 +121,7 @@ fun DeviceBarView(
                     style =
                         TextStyle(
                             fontWeight = FontWeight.Light,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                            color = MaterialTheme.colorScheme.contentColorFor(background).copy(alpha = 0.8f),
                             fontSize = 11.sp,
                         ),
                     overflow = TextOverflow.Ellipsis,
@@ -131,7 +134,7 @@ fun DeviceBarView(
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            deviceViewProvider()
+            deviceViewProvider(background)
         }
     }
 }

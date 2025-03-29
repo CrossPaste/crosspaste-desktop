@@ -56,7 +56,8 @@ fun SyncDeviceContentView(
                         hover = false
                     },
                 ),
-        syncRuntimeInfo,
+        background = backgroundColor,
+        syncRuntimeInfo = syncRuntimeInfo,
     ) {
         Row(
             modifier =

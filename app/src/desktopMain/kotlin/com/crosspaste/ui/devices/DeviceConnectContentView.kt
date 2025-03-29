@@ -20,6 +20,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -131,7 +132,8 @@ fun DeviceConnectContentView(
 
     DeviceBarView(
         modifier = modifier,
-        syncRuntimeInfo,
+        background = backgroundColor,
+        syncRuntimeInfo = syncRuntimeInfo,
     ) {
         Row(
             modifier =
@@ -226,7 +228,7 @@ fun DeviceConnectContentView(
                         painter = moreVertical(),
                         contentDescription = "info",
                         modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = MaterialTheme.colorScheme.contentColorFor(backgroundColor),
                     )
                 }
 
