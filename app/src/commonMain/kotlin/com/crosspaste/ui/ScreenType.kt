@@ -1,25 +1,49 @@
 package com.crosspaste.ui
 
-interface ScreenType
+interface ScreenType {
+    val name: String
+}
 
-object About : ScreenType
+object About : ScreenType {
+    override val name: String = "About"
+}
 
-object Export : ScreenType
+object Export : ScreenType {
+    override val name: String = "Export"
+}
 
-object Debug : ScreenType
+object Debug : ScreenType {
+    override val name: String = "Debug"
+}
 
-object Devices : ScreenType
+object Devices : ScreenType {
+    override val name: String = "Devices"
+}
 
-object DeviceDetail : ScreenType
+object DeviceDetail : ScreenType {
+    override val name: String = "DeviceDetail"
+}
 
-object Import : ScreenType
+object Import : ScreenType {
+    override val name: String = "Import"
+}
 
-object PastePreview : ScreenType
+object PastePreview : ScreenType {
+    override val name: String = "PastePreview"
+}
 
-object PasteTextEdit : ScreenType
+object PasteTextEdit : ScreenType {
+    override val name: String = "PasteTextEdit"
+}
 
-object QrCode : ScreenType
+object QrCode : ScreenType {
+    override val name: String = "QrCode"
+}
 
-object Settings : ScreenType
+object Settings : ScreenType {
+    override val name: String = "Settings"
+}
 
-object ShortcutKeys : ScreenType
+object ShortcutKeys : ScreenType {
+    override val name: String = "ShortcutKeys"
+}
