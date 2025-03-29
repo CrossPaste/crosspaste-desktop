@@ -56,7 +56,10 @@ import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
-fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
+fun DeviceVerifyView(
+    syncRuntimeInfo: SyncRuntimeInfo,
+    background: Color = MaterialTheme.colorScheme.background,
+) {
     val syncManager = koinInject<SyncManager>()
     val dialogService = koinInject<DialogService>()
 
@@ -73,20 +76,38 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
 
     val setError = { value: Boolean -> isError = value }
 
-    val confirmAction = { confirmToken(tokens, tokenCount, setError, syncManager, syncRuntimeInfo, dialogService, coroutineScope) }
-    val cancelAction = { cancelVerification(syncManager, syncRuntimeInfo, dialogService) }
+    val confirmAction = {
+        confirmToken(
+            tokens = tokens,
+            tokenCount = tokenCount,
+            setError = setError,
+            syncManager = syncManager,
+            syncRuntimeInfo = syncRuntimeInfo,
+            dialogService = dialogService,
+            coroutineScope = coroutineScope,
+        )
+    }
+    val cancelAction = {
+        cancelVerification(syncManager, syncRuntimeInfo, dialogService)
+    }
 
     Box(
         Modifier.fillMaxWidth()
             .wrapContentHeight()
-            .background(MaterialTheme.colorScheme.background),
+            .background(background),
         contentAlignment = Alignment.Center,
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            VerificationContent(syncRuntimeInfo, tokens, isError, focusRequesters, confirmAction, cancelAction)
-            Spacer(modifier = Modifier.height(10.dp))
+            VerificationContent(
+                syncRuntimeInfo,
+                tokens,
+                isError,
+                focusRequesters,
+                confirmAction,
+                cancelAction,
+            )
+            Spacer(modifier = Modifier.height(12.dp))
             DialogButtonsView(
-                height = 50.dp,
                 cancelAction = cancelAction,
                 confirmAction = confirmAction,
             )
@@ -106,11 +127,10 @@ fun VerificationContent(
     Column(
         modifier =
             Modifier.fillMaxWidth()
-                .wrapContentHeight()
-                .padding(10.dp),
+                .wrapContentHeight(),
     ) {
         DeviceInfoHeader(syncRuntimeInfo)
-        Spacer(modifier = Modifier.size(8.dp))
+        Spacer(modifier = Modifier.size(24.dp))
         TokenInputRow(tokens, isError, focusRequesters, confirmAction, cancelAction)
     }
 }
@@ -145,7 +165,13 @@ fun TokenInputRow(
     confirmAction: () -> Unit,
     cancelAction: () -> Unit,
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    Row(
+        modifier =
+            Modifier.fillMaxWidth()
+                .wrapContentHeight()
+                .padding(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
         tokens.forEachIndexed { index, token ->
             TokenInputBox(
                 token = token,

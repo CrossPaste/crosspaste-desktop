@@ -180,7 +180,6 @@ fun ShortcutKeyRow(name: String) {
                         dialogService.pushDialog(
                             PasteDialog(
                                 key = name,
-                                width = 300.dp,
                                 title = "please_directly_enter_the_new_shortcut_key_you_wish_to_set",
                             ) {
                                 DisposableEffect(Unit) {
@@ -199,13 +198,12 @@ fun ShortcutKeyRow(name: String) {
                                     Row(
                                         modifier =
                                             Modifier.fillMaxWidth()
-                                                .height(60.dp)
-                                                .padding(15.dp)
+                                                .height(40.dp)
                                                 .border(1.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(5.dp)),
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
                                         Row(
-                                            modifier = Modifier.fillMaxWidth().padding(horizontal = 5.dp),
+                                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                                             verticalAlignment = Alignment.CenterVertically,
                                         ) {
                                             Icon(

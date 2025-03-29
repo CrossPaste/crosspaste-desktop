@@ -1,6 +1,6 @@
 package com.crosspaste.sync
 
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
 import com.crosspaste.db.sync.ChangeType
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfo.Companion.createSyncRuntimeInfo
@@ -131,9 +131,12 @@ class GeneralSyncManager(
                     PasteDialog(
                         key = info.deviceId,
                         title = "do_you_trust_this_device?",
-                        width = 320.dp,
+                        onDismissRequest = { dialogService.popDialog() },
                     ) {
-                        DeviceVerifyView(info)
+                        DeviceVerifyView(
+                            syncRuntimeInfo = info,
+                            background = Color.Transparent,
+                        )
                     }
                 dialogService.pushDialog(dialog)
             }

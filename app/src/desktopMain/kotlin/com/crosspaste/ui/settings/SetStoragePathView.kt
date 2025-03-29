@@ -127,7 +127,6 @@ fun SetStoragePathView() {
                                     PasteDialog(
                                         key = "storagePath",
                                         title = "determining_the_new_storage_path",
-                                        width = 320.dp,
                                     ) {
                                         SetStoragePathDialogView(path)
                                     },
@@ -277,7 +276,6 @@ fun SetStoragePathDialogView(path: Path) {
             } else {
                 DialogButtonsView(
                     confirmTitle = "migrate_and_then_restart_the_app",
-                    height = 40.dp,
                     cancelAction = cancelAction,
                     confirmAction = confirmAction,
                 )

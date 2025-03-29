@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.HorizontalDivider
@@ -49,7 +48,6 @@ fun MyDevicesView(syncRuntimeInfos: List<SyncRuntimeInfo>) {
                 PasteDialog(
                     key = syncRuntimeInfo.deviceId,
                     title = "input_note_name",
-                    width = 260.dp,
                 ) {
                     val syncRuntimeInfoDao = koinInject<SyncRuntimeInfoDao>()
                     var inputNoteName by remember { mutableStateOf("") }
@@ -79,7 +77,7 @@ fun MyDevicesView(syncRuntimeInfos: List<SyncRuntimeInfo>) {
                             Modifier.fillMaxWidth()
                                 .wrapContentHeight(),
                     ) {
-                        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth()) {
                             CustomTextField(
                                 modifier =
                                     Modifier.fillMaxWidth()

@@ -69,7 +69,7 @@ fun DeviceBarView(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                modifier = Modifier.padding(12.dp).size(36.dp),
+                modifier = Modifier.padding(horizontal = 12.dp).size(36.dp),
                 painter = PlatformPainter(syncRuntimeInfo),
                 contentDescription = "OS Icon",
                 tint = MaterialTheme.colorScheme.onSurface,
