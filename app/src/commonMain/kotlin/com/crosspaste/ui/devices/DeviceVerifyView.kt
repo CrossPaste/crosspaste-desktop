@@ -103,6 +103,7 @@ fun DeviceVerifyView(
                 tokens,
                 isError,
                 focusRequesters,
+                background,
                 confirmAction,
                 cancelAction,
             )
@@ -121,6 +122,7 @@ fun VerificationContent(
     tokens: MutableList<String>,
     isError: Boolean,
     focusRequesters: List<FocusRequester>,
+    background: Color,
     confirmAction: () -> Unit,
     cancelAction: () -> Unit,
 ) {
@@ -129,17 +131,21 @@ fun VerificationContent(
             Modifier.fillMaxWidth()
                 .wrapContentHeight(),
     ) {
-        DeviceInfoHeader(syncRuntimeInfo)
+        DeviceInfoHeader(syncRuntimeInfo, background)
         Spacer(modifier = Modifier.size(24.dp))
         TokenInputRow(tokens, isError, focusRequesters, confirmAction, cancelAction)
     }
 }
 
 @Composable
-fun DeviceInfoHeader(syncRuntimeInfo: SyncRuntimeInfo) {
+fun DeviceInfoHeader(
+    syncRuntimeInfo: SyncRuntimeInfo,
+    background: Color,
+) {
     DeviceBarView(
         modifier = Modifier,
-        syncRuntimeInfo,
+        background = background,
+        syncRuntimeInfo = syncRuntimeInfo,
     ) {
         Row(horizontalArrangement = Arrangement.End) {
             Text(
