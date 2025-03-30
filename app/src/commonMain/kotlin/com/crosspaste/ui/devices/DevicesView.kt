@@ -36,16 +36,17 @@ import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
-import com.crosspaste.ui.base.PasteDialog
+import com.crosspaste.ui.base.PasteDialogFactory
 import org.koin.compose.koinInject
 
 @Composable
 fun MyDevicesView(syncRuntimeInfos: List<SyncRuntimeInfo>) {
     val dialogService = koinInject<DialogService>()
+    val pasteDialogFactory = koinInject<PasteDialogFactory>()
     Box(contentAlignment = Alignment.TopCenter) {
         DevicesListView(syncRuntimeInfos) { syncRuntimeInfo ->
             dialogService.pushDialog(
-                PasteDialog(
+                pasteDialogFactory.createDialog(
                     key = syncRuntimeInfo.deviceId,
                     title = "input_note_name",
                 ) {
@@ -63,7 +64,10 @@ fun MyDevicesView(syncRuntimeInfos: List<SyncRuntimeInfo>) {
                         if (inputNoteName == "") {
                             isError = true
                         } else {
-                            syncRuntimeInfoDao.updateNoteName(syncRuntimeInfo.appInstanceId, inputNoteName)
+                            syncRuntimeInfoDao.updateNoteName(
+                                syncRuntimeInfo.appInstanceId,
+                                inputNoteName,
+                            )
                             dialogService.popDialog()
                         }
                     }

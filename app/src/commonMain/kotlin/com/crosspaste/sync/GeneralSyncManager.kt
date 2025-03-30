@@ -12,7 +12,7 @@ import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.ui.base.DialogService
-import com.crosspaste.ui.base.PasteDialog
+import com.crosspaste.ui.base.PasteDialogFactory
 import com.crosspaste.ui.devices.DeviceVerifyView
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
@@ -37,6 +37,7 @@ import kotlinx.coroutines.withContext
 
 class GeneralSyncManager(
     private val dialogService: DialogService,
+    private val pasteDialogFactory: PasteDialogFactory,
     private val telnetHelper: TelnetHelper,
     private val syncInfoFactory: SyncInfoFactory,
     private val syncClientApi: SyncClientApi,
@@ -128,7 +129,7 @@ class GeneralSyncManager(
             .filterNotNull()
             .onEach { info ->
                 val dialog =
-                    PasteDialog(
+                    pasteDialogFactory.createDialog(
                         key = info.deviceId,
                         title = "do_you_trust_this_device?",
                         onDismissRequest = { dialogService.popDialog() },
