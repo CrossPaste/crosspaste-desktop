@@ -171,9 +171,11 @@ import com.crosspaste.ui.DesktopThemeDetector
 import com.crosspaste.ui.ScreenProvider
 import com.crosspaste.ui.base.DesktopIconStyle
 import com.crosspaste.ui.base.DesktopNotificationManager
+import com.crosspaste.ui.base.DesktopPasteDialogFactory
 import com.crosspaste.ui.base.DesktopUISupport
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.IconStyle
+import com.crosspaste.ui.base.PasteDialogFactory
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.devices.DesktopDeviceViewProvider
 import com.crosspaste.ui.devices.DeviceViewProvider
@@ -316,14 +318,8 @@ class DesktopCrossPasteModule(
                     MarketingSyncManager()
                 } else {
                     GeneralSyncManager(
-                        get(),
-                        get(),
-                        get(),
-                        get(),
-                        get(),
-                        get(),
-                        get(),
-                        lazy { get() },
+                        get(), get(), get(), get(), get(), get(), get(),
+                        get(), lazy { get() },
                     )
                 }
             }
@@ -441,7 +437,9 @@ class DesktopCrossPasteModule(
             single<AppTokenApi> { DesktopAppTokenService(get()) }
             single<AppWindowManager> { get<DesktopAppWindowManager>() }
             single<DesktopAppSize> { DesktopAppSize }
-            single<DesktopAppWindowManager> { getDesktopAppWindowManager(get(), lazy { get() }, get(), get()) }
+            single<DesktopAppWindowManager> {
+                getDesktopAppWindowManager(get(), lazy { get() }, get(), get())
+            }
             single<DesktopMouseListener> { DesktopMouseListener }
             single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get()) }
             single<DeviceViewProvider> { DesktopDeviceViewProvider() }
@@ -453,11 +451,14 @@ class DesktopCrossPasteModule(
             single<NativeMouseListener> { get<DesktopMouseListener>() }
             single<NotificationManager> { DesktopNotificationManager(get(), get(), get(), get()) }
             single<PasteboardViewProvider> { DesktopPasteboardViewProvider() }
+            single<PasteDialogFactory> { DesktopPasteDialogFactory() }
             single<PlatformContext> { PlatformContext.INSTANCE }
             single<ScreenProvider> { DesktopScreenProvider(get()) }
             single<SettingsViewProvider> { DesktopSettingsViewProvider(get(), get()) }
             single<ShortcutKeys> { DesktopShortcutKeys(get()) }
-            single<ShortcutKeysAction> { DesktopShortKeysAction(get(), get(), get(), get(), get(), get(), get()) }
+            single<ShortcutKeysAction> {
+                DesktopShortKeysAction(get(), get(), get(), get(), get(), get(), get())
+            }
             single<ShortcutKeysListener> { get<DesktopShortcutKeysListener>() }
             single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get()) }
             single<SoundService> { DesktopSoundService(get()) }

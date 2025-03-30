@@ -48,7 +48,7 @@ import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
-import com.crosspaste.ui.base.PasteDialog
+import com.crosspaste.ui.base.PasteDialogFactory
 import com.crosspaste.ui.base.archive
 import com.crosspaste.utils.getFileUtils
 import kotlinx.coroutines.delay
@@ -61,9 +61,10 @@ fun SetStoragePathView() {
     val appFileChooser = koinInject<AppFileChooser>()
     val configManager = koinInject<ConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
-    val userDataPathProvider = koinInject<UserDataPathProvider>()
-    val notificationManager = koinInject<NotificationManager>()
     val dialogService = koinInject<DialogService>()
+    val notificationManager = koinInject<NotificationManager>()
+    val pasteDialogFactory = koinInject<PasteDialogFactory>()
+    val userDataPathProvider = koinInject<UserDataPathProvider>()
 
     val fileUtils = getFileUtils()
 
@@ -124,7 +125,7 @@ fun SetStoragePathView() {
                         .clickable {
                             val action: (Path) -> Unit = { path ->
                                 dialogService.pushDialog(
-                                    PasteDialog(
+                                    pasteDialogFactory.createDialog(
                                         key = "storagePath",
                                         title = "determining_the_new_storage_path",
                                     ) {

@@ -54,7 +54,7 @@ import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.KeyboardView
-import com.crosspaste.ui.base.PasteDialog
+import com.crosspaste.ui.base.PasteDialogFactory
 import com.crosspaste.ui.base.edit
 import org.koin.compose.koinInject
 
@@ -145,8 +145,9 @@ fun ShortcutKeysContentView() {
 @Composable
 fun ShortcutKeyRow(name: String) {
     val copywriter = koinInject<GlobalCopywriter>()
-    val shortcutKeys = koinInject<ShortcutKeys>()
     val dialogService = koinInject<DialogService>()
+    val pasteDialogFactory = koinInject<PasteDialogFactory>()
+    val shortcutKeys = koinInject<ShortcutKeys>()
 
     var hover by remember { mutableStateOf(false) }
 
@@ -178,7 +179,7 @@ fun ShortcutKeyRow(name: String) {
                 Modifier.size(16.dp)
                     .clickable {
                         dialogService.pushDialog(
-                            PasteDialog(
+                            pasteDialogFactory.createDialog(
                                 key = name,
                                 title = "please_directly_enter_the_new_shortcut_key_you_wish_to_set",
                             ) {
