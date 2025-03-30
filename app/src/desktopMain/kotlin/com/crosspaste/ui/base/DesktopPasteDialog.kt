@@ -25,7 +25,7 @@ class DesktopPasteDialog(
 ) : PasteDialog {
 
     override fun onDismissRequest() {
-        return onDismissRequest()
+        return onDismissRequest.invoke()
     }
 
     @Composable
