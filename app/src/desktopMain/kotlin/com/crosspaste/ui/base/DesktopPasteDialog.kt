@@ -24,10 +24,6 @@ class DesktopPasteDialog(
     private val content: @Composable () -> Unit,
 ) : PasteDialog {
 
-    override fun onDismissRequest() {
-        return onDismissRequest.invoke()
-    }
-
     @Composable
     override fun content() {
         Dialog(

@@ -8,8 +8,6 @@ interface PasteDialog {
 
     val title: String
 
-    fun onDismissRequest()
-
     @Composable
     fun content()
 }
