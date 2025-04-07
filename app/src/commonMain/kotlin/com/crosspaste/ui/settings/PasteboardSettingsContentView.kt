@@ -64,8 +64,11 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
                     Modifier.width(32.dp)
                         .height(20.dp),
                 checked = config.enableSkipPreLaunchPasteboardContent,
-                onCheckedChange = { newEnableSkipPriorPasteboardContent ->
-                    configManager.updateConfig("enableSkipPriorPasteboardContent", newEnableSkipPriorPasteboardContent)
+                onCheckedChange = { newEnableSkipPreLaunchPasteboardContent ->
+                    configManager.updateConfig(
+                        "enableSkipPreLaunchPasteboardContent",
+                        newEnableSkipPreLaunchPasteboardContent,
+                    )
                 },
             )
         }
