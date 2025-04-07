@@ -45,7 +45,7 @@ import kotlinx.serialization.encodeToString
 import org.koin.compose.koinInject
 
 @Composable
-fun NetSettingsContentView() {
+fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
     val configManager = koinInject<ConfigManager>()
     val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
     val copywriter = koinInject<GlobalCopywriter>()
@@ -198,4 +198,6 @@ fun NetSettingsContentView() {
             }
         }
     }
+
+    extContent()
 }

@@ -62,7 +62,7 @@ import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
 
 @Composable
-fun StoreSettingsContentView(extContent: @Composable () -> Unit) {
+fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
     val density = LocalDensity.current
     val configManager = koinInject<ConfigManager>()
     val pasteDao = koinInject<PasteDao>()
