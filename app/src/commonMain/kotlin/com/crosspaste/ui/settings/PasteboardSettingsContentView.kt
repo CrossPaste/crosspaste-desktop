@@ -32,7 +32,7 @@ import com.crosspaste.ui.base.sync
 import org.koin.compose.koinInject
 
 @Composable
-fun PasteboardSettingsContentView() {
+fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
     val configManager = koinInject<ConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
 
@@ -126,5 +126,7 @@ fun PasteboardSettingsContentView() {
                 }
             }
         }
+
+        extContent()
     }
 }
