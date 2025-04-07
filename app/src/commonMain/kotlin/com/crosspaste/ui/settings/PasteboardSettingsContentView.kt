@@ -57,13 +57,13 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
     ) {
         SettingItemView(
             painter = skipForward(),
-            text = "skip_prior_pasteboard_content",
+            text = "skip_pre_launch_pasteboard_content",
         ) {
             CustomSwitch(
                 modifier =
                     Modifier.width(32.dp)
                         .height(20.dp),
-                checked = config.enableSkipPriorPasteboardContent,
+                checked = config.enableSkipPreLaunchPasteboardContent,
                 onCheckedChange = { newEnableSkipPriorPasteboardContent ->
                     configManager.updateConfig("enableSkipPriorPasteboardContent", newEnableSkipPriorPasteboardContent)
                 },

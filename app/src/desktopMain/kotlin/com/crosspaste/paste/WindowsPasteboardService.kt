@@ -147,7 +147,7 @@ class WindowsPasteboardService(
                     if (firstChange &&
                         !configManager
                             .getCurrentConfig()
-                            .enableSkipPriorPasteboardContent
+                            .enableSkipPreLaunchPasteboardContent
                     ) {
                         onChange(true)
                     }
