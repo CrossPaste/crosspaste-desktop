@@ -75,7 +75,7 @@ class MacosPasteboardService(
                                 if (firstChange &&
                                     configManager
                                         .getCurrentConfig()
-                                        .enableSkipPriorPasteboardContent
+                                        .enableSkipPreLaunchPasteboardContent
                                 ) {
                                     logger.debug { "Ignoring prior pasteboard" }
                                     return@let

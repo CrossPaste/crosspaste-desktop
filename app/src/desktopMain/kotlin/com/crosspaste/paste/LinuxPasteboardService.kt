@@ -61,7 +61,7 @@ class LinuxPasteboardService(
         return serviceScope.launch(CoroutineName("LinuxPasteboardService")) {
             val firstChange = changeCount == configManager.getCurrentConfig().lastPasteboardChangeCount
 
-            if (firstChange && !configManager.getCurrentConfig().enableSkipPriorPasteboardContent) {
+            if (firstChange && !configManager.getCurrentConfig().enableSkipPreLaunchPasteboardContent) {
                 onChange(this, true)
             }
 

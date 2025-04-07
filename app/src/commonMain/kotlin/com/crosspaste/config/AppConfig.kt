@@ -25,7 +25,7 @@ data class AppConfig(
     val cleanupPercentage: Int = 20,
     val enableDiscovery: Boolean = true,
     val blacklist: String = "[]",
-    val enableSkipPriorPasteboardContent: Boolean = true,
+    val enableSkipPreLaunchPasteboardContent: Boolean = true,
     val lastPasteboardChangeCount: Int = -1,
     val enablePasteboardListening: Boolean = true,
     val showTutorial: Boolean = true,
@@ -60,11 +60,11 @@ data class AppConfig(
             cleanupPercentage = if (key == "cleanupPercentage") toInt(value) else cleanupPercentage,
             enableDiscovery = if (key == "enableDiscovery") toBoolean(value) else enableDiscovery,
             blacklist = if (key == "blacklist") toString(value) else blacklist,
-            enableSkipPriorPasteboardContent =
-                if (key == "enableSkipPriorPasteboardContent") {
+            enableSkipPreLaunchPasteboardContent =
+                if (key == "enableSkipPreLaunchPasteboardContent") {
                     toBoolean(value)
                 } else {
-                    enableSkipPriorPasteboardContent
+                    enableSkipPreLaunchPasteboardContent
                 },
             lastPasteboardChangeCount = if (key == "lastPasteboardChangeCount") toInt(value) else lastPasteboardChangeCount,
             enablePasteboardListening = if (key == "enablePasteboardListening") toBoolean(value) else enablePasteboardListening,
