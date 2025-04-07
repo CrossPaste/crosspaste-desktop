@@ -14,7 +14,6 @@ jna = "5.17.0"
 jnativehook = "2.2.2"
 jsoup = "1.19.1"
 koin = "4.0.4"
-koin-compose = "4.0.4"
 kotlin = "2.1.20"
 kotlin-logging = "7.0.6"
 kotlinx-coroutines = "1.10.1"
@@ -54,7 +53,7 @@ jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
 jnativehook = { module = "com.github.kwhat:jnativehook", version.ref = "jnativehook" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
-koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin-compose" }
+koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
 kotlin-logging = { module = "io.github.oshai:kotlin-logging", version.ref = "kotlin-logging" }
