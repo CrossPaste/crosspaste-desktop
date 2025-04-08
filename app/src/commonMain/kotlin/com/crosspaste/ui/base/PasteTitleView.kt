@@ -49,7 +49,7 @@ fun PasteTitleView(
         title = pasteData.getTitle(loading, unknown)
     }
 
-    val backgroundColor =
+    val background =
         if (selected) {
             MaterialTheme.colorScheme.primaryContainer
         } else {
@@ -66,7 +66,7 @@ fun PasteTitleView(
                     .fillMaxHeight()
                     .padding(horizontal = 10.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(backgroundColor)
+                    .background(background)
                     .clickable(onClick = onClick),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
@@ -76,14 +76,18 @@ fun PasteTitleView(
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                PasteTypeIconView(pasteData, backgroundColor)
+                PasteTypeIconView(
+                    pasteData = pasteData,
+                    tint = MaterialTheme.colorScheme.contentColorFor(background),
+                    background = background,
+                )
 
                 Text(
                     modifier = Modifier.padding(start = 10.dp),
                     text = title,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.contentColorFor(backgroundColor),
+                    color = MaterialTheme.colorScheme.contentColorFor(background),
                     style =
                         TextStyle(
                             textAlign = TextAlign.Start,

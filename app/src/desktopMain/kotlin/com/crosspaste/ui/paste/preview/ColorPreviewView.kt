@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -26,7 +25,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.db.paste.PasteData
-import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.ui.base.UISupport
 import org.koin.compose.koinInject
@@ -34,98 +32,68 @@ import org.koin.compose.koinInject
 @Composable
 fun ColorPreviewView(pasteData: PasteData) {
     pasteData.getPasteItem(ColorPasteItem::class)?.let { pasteColor ->
-        val uiSupport = koinInject<UISupport>()
-        val pasteMenuService = koinInject<DesktopPasteMenuService>()
-
-        PasteSpecificPreviewContentView(
-            pasteMainContent = {
-                Row(
-                    modifier =
-                        Modifier.fillMaxSize()
-                            .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onTap = {
-                                        pasteMenuService.copyPasteData(pasteData)
-                                    },
-                                    onDoubleTap = {
-                                        pasteMenuService.quickPaste(pasteData)
-                                    },
-                                )
+        SimplePreviewContentView(pasteData) {
+            val uiSupport = koinInject<UISupport>()
+            Row(
+                modifier =
+                    Modifier.pointerInput(Unit) {
+                        detectTapGestures(
+                            onTap = {
+                                uiSupport.openColorPicker(pasteData)
                             },
+                        )
+                    },
+            ) {
+                Box(
+                    modifier =
+                        Modifier
+                            .size(100.dp)
+                            .clip(RoundedCornerShape(5.dp))
+                            .background(Color(pasteColor.color).copy(alpha = 0.3f)),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    PasteContextMenuView(
-                        items =
-                            pasteMenuService.fileMenuItemsProvider(
-                                pasteData = pasteData,
-                                pasteItem = pasteColor,
-                            ),
-                    ) {
-                        Row(
-                            modifier =
-                                Modifier.pointerInput(Unit) {
-                                    detectTapGestures(
-                                        onTap = {
-                                            uiSupport.openColorPicker(pasteData)
-                                        },
-                                    )
-                                },
-                        ) {
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .size(100.dp)
-                                        .clip(RoundedCornerShape(5.dp))
-                                        .background(Color(pasteColor.color).copy(alpha = 0.3f)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Box(
-                                    modifier =
-                                        Modifier
-                                            .size(80.dp)
-                                            .shadow(
-                                                elevation = 1.dp,
-                                                shape = RoundedCornerShape(5.dp),
-                                                spotColor = Color.Black.copy(alpha = 0.1f),
-                                            )
-                                            .clip(RoundedCornerShape(5.dp))
-                                            .background(Color(pasteColor.color)),
+                    Box(
+                        modifier =
+                            Modifier
+                                .size(80.dp)
+                                .shadow(
+                                    elevation = 1.dp,
+                                    shape = RoundedCornerShape(5.dp),
+                                    spotColor = Color.Black.copy(alpha = 0.1f),
                                 )
-                            }
-
-                            Column(
-                                modifier =
-                                    Modifier.fillMaxHeight()
-                                        .wrapContentWidth()
-                                        .padding(horizontal = 8.dp)
-                                        .padding(bottom = 8.dp),
-                                verticalArrangement = Arrangement.Bottom,
-                            ) {
-                                Text(
-                                    text = pasteColor.toHexString(),
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    style =
-                                        TextStyle(
-                                            fontWeight = FontWeight.Light,
-                                            fontSize = 10.sp,
-                                        ),
-                                )
-                                Text(
-                                    text = pasteColor.toRGBAString(),
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    style =
-                                        TextStyle(
-                                            fontWeight = FontWeight.Light,
-                                            fontSize = 10.sp,
-                                        ),
-                                )
-                            }
-                        }
-                    }
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(Color(pasteColor.color)),
+                    )
                 }
-            },
-            pasteRightInfo = { toShow ->
-                PasteMenuView(pasteData = pasteData, toShow = toShow)
-            },
-        )
+
+                Column(
+                    modifier =
+                        Modifier.fillMaxHeight()
+                            .wrapContentWidth()
+                            .padding(horizontal = 8.dp)
+                            .padding(bottom = 8.dp),
+                    verticalArrangement = Arrangement.Bottom,
+                ) {
+                    Text(
+                        text = pasteColor.toHexString(),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style =
+                            TextStyle(
+                                fontWeight = FontWeight.Light,
+                                fontSize = 10.sp,
+                            ),
+                    )
+                    Text(
+                        text = pasteColor.toRGBAString(),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style =
+                            TextStyle(
+                                fontWeight = FontWeight.Light,
+                                fontSize = 10.sp,
+                            ),
+                    )
+                }
+            }
+        }
     }
 }
