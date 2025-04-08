@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -79,17 +81,20 @@ fun ColorPreviewView(pasteData: PasteData) {
                         color = MaterialTheme.colorScheme.onSurface,
                         style =
                             TextStyle(
-                                fontWeight = FontWeight.Light,
-                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp,
                             ),
                     )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
                     Text(
                         text = pasteColor.toRGBAString(),
                         color = MaterialTheme.colorScheme.onSurface,
                         style =
                             TextStyle(
-                                fontWeight = FontWeight.Light,
-                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp,
                             ),
                     )
                 }
