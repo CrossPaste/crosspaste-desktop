@@ -31,6 +31,10 @@ data class RtfPasteItem(
         val rtfUtils = getRtfUtils()
     }
 
+    private val rtfTextCache by lazy {
+        rtfUtils.getRtfText(rtf)
+    }
+
     constructor(jsonObject: JsonObject) : this(
         identifiers = jsonObject["identifiers"]!!.jsonPrimitive.content.split(","),
         hash = jsonObject["hash"]!!.jsonPrimitive.content,
@@ -63,11 +67,11 @@ data class RtfPasteItem(
     }
 
     override fun getSearchContent(): String {
-        return rtfUtils.getRtfText(rtf).lowercase()
+        return rtfTextCache.lowercase()
     }
 
     override fun getTitle(): String {
-        return rtfUtils.getRtfText(rtf)
+        return rtfTextCache
     }
 
     override fun update(

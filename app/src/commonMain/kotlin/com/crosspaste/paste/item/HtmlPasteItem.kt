@@ -31,6 +31,10 @@ class HtmlPasteItem(
         val htmlUtils = getHtmlUtils()
     }
 
+    private val htmlTextCache by lazy {
+        htmlUtils.getHtmlText(html)
+    }
+
     constructor(jsonObject: JsonObject) : this(
         identifiers = jsonObject["identifiers"]!!.jsonPrimitive.content.split(","),
         hash = jsonObject["hash"]!!.jsonPrimitive.content,
@@ -63,11 +67,11 @@ class HtmlPasteItem(
     }
 
     override fun getSearchContent(): String {
-        return htmlUtils.getHtmlText(html).lowercase()
+        return htmlTextCache.lowercase()
     }
 
     override fun getTitle(): String {
-        return htmlUtils.getHtmlText(html)
+        return htmlTextCache
     }
 
     override fun update(

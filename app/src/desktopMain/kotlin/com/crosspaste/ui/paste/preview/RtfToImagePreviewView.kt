@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.paste.item.PasteRtf
+import com.crosspaste.paste.item.PasteText
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.paste.GenerateImageView
 import org.koin.compose.koinInject
@@ -24,11 +25,15 @@ fun RtfToImagePreviewView(pasteData: PasteData) {
             )
         }
 
+        val previewText =
+            pasteData.getPasteItem(PasteText::class)?.previewText()
+                ?: pasteRtf.getText()
+
         SimplePreviewContentView(pasteData) {
             GenerateImageView(
                 modifier = Modifier.fillMaxSize(),
                 imagePath = filePath,
-                text = pasteRtf.getText(),
+                text = previewText,
                 preview = true,
                 alignment = Alignment.TopStart,
             )

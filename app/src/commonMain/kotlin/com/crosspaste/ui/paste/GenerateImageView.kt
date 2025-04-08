@@ -1,8 +1,8 @@
 package com.crosspaste.ui.paste
 
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,7 +23,6 @@ import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.crosspaste.app.AppSize
 import com.crosspaste.image.coil.GenerateImageItem
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.rendering.RenderingHelper
@@ -38,7 +37,6 @@ fun GenerateImageView(
     preview: Boolean,
     alignment: Alignment = Alignment.Center,
 ) {
-    val appSize = koinInject<AppSize>()
     val imageLoaders = koinInject<ImageLoaders>()
     val platformContext = koinInject<PlatformContext>()
     val renderingHelper = koinInject<RenderingHelper>()
@@ -63,20 +61,26 @@ fun GenerateImageView(
                 -> {
                     Row(
                         modifier =
-                            Modifier.size(appSize.searchWindowDetailViewDpSize)
+                            Modifier.fillMaxSize()
                                 .padding(10.dp),
                     ) {
                         Text(
                             text = text,
                             fontFamily = FontFamily.SansSerif,
-                            maxLines = 4,
+                            maxLines =
+                                if (preview) {
+                                    4
+                                } else {
+                                    Int.MAX_VALUE
+                                },
                             softWrap = true,
                             overflow = TextOverflow.Ellipsis,
                             style =
                                 TextStyle(
                                     fontWeight = FontWeight.Normal,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    fontSize = 16.sp,
+                                    lineHeight = 20.sp,
                                 ),
                         )
                     }
