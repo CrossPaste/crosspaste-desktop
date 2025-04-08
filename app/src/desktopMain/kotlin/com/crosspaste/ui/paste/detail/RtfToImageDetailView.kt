@@ -20,6 +20,7 @@ import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteRtf
+import com.crosspaste.paste.item.PasteText
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.paste.GenerateImageView
@@ -66,7 +67,7 @@ fun RtfToImageDetailView(
                             )
                         },
                 imagePath = filePath,
-                text = pasteRtf.getText(),
+                text = pasteData.getPasteItem(PasteText::class)?.text ?: pasteRtf.getText(),
                 preview = false,
                 alignment = Alignment.TopStart,
             )
