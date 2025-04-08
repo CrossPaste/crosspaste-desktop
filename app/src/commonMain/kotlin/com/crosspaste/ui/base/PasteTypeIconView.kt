@@ -11,12 +11,13 @@ import com.crosspaste.db.paste.PasteData
 @Composable
 fun PasteTypeIconView(
     pasteData: PasteData,
-    backgroundColor: Color,
+    tint: Color? = null,
+    background: Color,
     size: Dp = 20.dp,
 ) {
     val pasteType = pasteData.getType()
 
-    val iconColor = MaterialTheme.colorScheme.contentColorFor(backgroundColor)
+    val iconColor = tint ?: MaterialTheme.colorScheme.contentColorFor(background)
 
     if (pasteType.isUrl()) {
         PasteUrlIcon(

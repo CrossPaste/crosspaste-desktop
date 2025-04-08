@@ -1,13 +1,14 @@
 package com.crosspaste.ui.paste.preview
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,7 +26,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
@@ -46,9 +46,7 @@ import com.crosspaste.image.ThumbnailLoader
 import com.crosspaste.image.coil.ImageItem
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.info.PasteInfos.DIMENSIONS
-import com.crosspaste.info.PasteInfos.FILE_NAME
 import com.crosspaste.info.PasteInfos.MISSING_FILE
-import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.ui.base.TransparentBackground
 import com.crosspaste.ui.base.UISupport
@@ -82,7 +80,6 @@ fun SingleImagePreviewView(
             Modifier.width(width)
                 .wrapContentHeight()
                 .clip(RoundedCornerShape(5.dp))
-                .background(MaterialTheme.colorScheme.background)
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onDoubleTap = {
@@ -125,7 +122,7 @@ fun SingleImagePreviewView(
                                     modifier = Modifier.size(100.dp),
                                     painter = imageSlash(),
                                     contentDescription = filePath.name,
-                                    tint = MaterialTheme.colorScheme.onBackground,
+                                    tint = MaterialTheme.colorScheme.onSurface,
                                 )
                             }
 
@@ -149,15 +146,16 @@ fun SingleImagePreviewView(
                                 .padding(bottom = 8.dp),
                         verticalArrangement = Arrangement.Bottom,
                     ) {
+                        // Filename property
                         Text(
-                            text = "${copywriter.getText(FILE_NAME)}: ${filePath.name}",
-                            maxLines = 3,
-                            overflow = TextOverflow.Visible,
-                            color = MaterialTheme.colorScheme.onBackground,
+                            text = filePath.name,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            color = MaterialTheme.colorScheme.onSurface,
                             style =
                                 TextStyle(
-                                    fontWeight = FontWeight.Light,
-                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 11.sp,
                                 ),
                         )
 
@@ -166,35 +164,37 @@ fun SingleImagePreviewView(
                             thumbnailLoader.readOriginMeta(pasteFileCoordinate, builder)
                             val imageInfo = builder.build()
                             imageInfo.map[DIMENSIONS]?.let {
+                                Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = "${copywriter.getText(DIMENSIONS)}: ${it.getTextByCopyWriter(copywriter)}",
+                                    text = it.getTextByCopyWriter(copywriter),
                                     maxLines = 1,
-                                    overflow = TextOverflow.Visible,
-                                    color = MaterialTheme.colorScheme.onBackground,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     style =
                                         TextStyle(
-                                            fontWeight = FontWeight.Light,
-                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 11.sp,
                                         ),
                                 )
                             }
                         }
+
+                        Spacer(modifier = Modifier.height(4.dp))
 
                         if (existFile) {
                             val imageSize =
                                 remember(filePath) {
                                     fileUtils.formatBytes(fileUtils.getFileSize(filePath))
                                 }
-
                             Text(
-                                text = "${copywriter.getText(SIZE)}: $imageSize",
+                                text = imageSize,
                                 maxLines = 1,
-                                overflow = TextOverflow.Visible,
-                                color = MaterialTheme.colorScheme.onBackground,
+                                overflow = TextOverflow.Ellipsis,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 style =
                                     TextStyle(
-                                        fontWeight = FontWeight.Light,
-                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
                                     ),
                             )
                         } else {
@@ -205,9 +205,8 @@ fun SingleImagePreviewView(
                                 color = MaterialTheme.colorScheme.error,
                                 style =
                                     TextStyle(
-                                        fontWeight = FontWeight.Normal,
-                                        color = Color.Red,
-                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
                                     ),
                             )
                         }

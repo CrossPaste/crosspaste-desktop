@@ -1,14 +1,15 @@
 package com.crosspaste.ui.paste.preview
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,9 +41,7 @@ import coil3.request.crossfade
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.coil.FileExtItem
 import com.crosspaste.image.coil.ImageLoaders
-import com.crosspaste.info.PasteInfos.FILE_NAME
 import com.crosspaste.info.PasteInfos.MISSING_FILE
-import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.paste.item.PasteFileInfoTreeCoordinate
 import com.crosspaste.ui.base.FileIcon
 import com.crosspaste.ui.base.FileSlashIcon
@@ -76,7 +76,6 @@ fun SingleFilePreviewView(
             Modifier.width(width)
                 .wrapContentHeight()
                 .clip(RoundedCornerShape(5.dp))
-                .background(MaterialTheme.colorScheme.background)
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onTap = {
@@ -130,40 +129,45 @@ fun SingleFilePreviewView(
             verticalArrangement = Arrangement.Bottom,
         ) {
             Text(
-                text = "${copywriter.getText(FILE_NAME)}: ${filePath.name}",
-                color = MaterialTheme.colorScheme.onBackground,
+                text = filePath.name,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurface,
                 style =
                     TextStyle(
-                        fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp,
                     ),
             )
+
+            Spacer(modifier = Modifier.height(4.dp))
 
             if (existFile) {
                 val fileSize =
                     remember(filePath) {
                         fileUtils.formatBytes(fileUtils.getFileSize(filePath))
                     }
-
                 Text(
-                    text = "${copywriter.getText(SIZE)}: $fileSize",
-                    color = MaterialTheme.colorScheme.onBackground,
+                    text = fileSize,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style =
                         TextStyle(
-                            fontWeight = FontWeight.Light,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp,
                         ),
                 )
             } else {
                 Text(
                     text = copywriter.getText(MISSING_FILE),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.error,
                     style =
                         TextStyle(
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp,
                         ),
                 )
             }

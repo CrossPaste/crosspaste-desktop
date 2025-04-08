@@ -152,6 +152,7 @@ fun PasteMenuView(
 
         if (showMenu) {
             CopyMenuItem(
+                tint = MaterialTheme.colorScheme.primary,
                 background =
                     if (hoverCopy) {
                         MaterialTheme.colorScheme.surfaceContainerLowest
@@ -165,6 +166,7 @@ fun PasteMenuView(
 
             FavoriteMenuItem(
                 currentFavorite = currentFavorite,
+                tint = MaterialTheme.colorScheme.primary,
                 background =
                     if (hoverFavorite) {
                         MaterialTheme.colorScheme.surfaceContainerLowest
@@ -184,6 +186,7 @@ fun PasteMenuView(
 
             DetailMenuItem(
                 pasteData = pasteData,
+                tint = MaterialTheme.colorScheme.primary,
                 background =
                     if (hoverSource) {
                         MaterialTheme.colorScheme.surfaceContainerLowest
@@ -295,6 +298,7 @@ fun MoreMenuItem(
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun CopyMenuItem(
+    tint: Color,
     background: Color,
     hoverCopy: (Boolean) -> Unit,
     copyPasteDataAction: () -> Unit,
@@ -350,7 +354,7 @@ fun CopyMenuItem(
                             },
                     painter = clipboard(),
                     contentDescription = "Copy",
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = tint,
                 )
             }
         }
@@ -361,6 +365,7 @@ fun CopyMenuItem(
 @Composable
 fun FavoriteMenuItem(
     currentFavorite: Boolean,
+    tint: Color,
     background: Color,
     hoverFavorite: (Boolean) -> Unit,
     setFavorite: () -> Unit,
@@ -416,7 +421,7 @@ fun FavoriteMenuItem(
                             },
                     painter = if (currentFavorite) favorite() else noFavorite(),
                     contentDescription = "Favorite",
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = tint,
                 )
             }
         }
@@ -427,6 +432,7 @@ fun FavoriteMenuItem(
 @Composable
 fun DetailMenuItem(
     pasteData: PasteData,
+    tint: Color,
     background: Color,
     hoverSource: (Boolean) -> Unit,
 ) {
@@ -468,7 +474,12 @@ fun DetailMenuItem(
                         .background(background),
                 contentAlignment = Alignment.Center,
             ) {
-                PasteTypeIconView(pasteData, background, size = 16.dp)
+                PasteTypeIconView(
+                    pasteData = pasteData,
+                    tint = tint,
+                    background = background,
+                    size = 16.dp,
+                )
             }
         }
     }
