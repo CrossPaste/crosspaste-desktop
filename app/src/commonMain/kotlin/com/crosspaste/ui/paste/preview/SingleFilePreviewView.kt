@@ -162,7 +162,7 @@ fun SingleFilePreviewView(
                 Text(
                     text = copywriter.getText(MISSING_FILE),
                     maxLines = 1,
-                    overflow = TextOverflow.Visible,
+                    overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.error,
                     style =
                         TextStyle(
