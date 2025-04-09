@@ -24,66 +24,6 @@ object WMCtrl {
 
     private val logger = KotlinLogging.logger {}
 
-    private val x11 = Native.load("X11", X11::class.java)
-
-    private fun findWindow(
-        x11: X11,
-        display: X11.Display,
-        root: X11.Window,
-        depth: Int,
-        findPid: Int,
-    ): X11.Window? {
-        val windowRef = X11.WindowByReference()
-        val parentRef = X11.WindowByReference()
-        val childrenRef = PointerByReference()
-        val childCountRef = IntByReference()
-
-        x11.XQueryTree(display, root, windowRef, parentRef, childrenRef, childCountRef)
-        if (childrenRef.value == null) {
-            return null
-        }
-
-        val ids: LongArray
-
-        when (Native.LONG_SIZE) {
-            java.lang.Long.BYTES -> {
-                ids = childrenRef.value.getLongArray(0, childCountRef.value)
-            }
-            Integer.BYTES -> {
-                val intIds = childrenRef.value.getIntArray(0, childCountRef.value)
-                ids = LongArray(intIds.size)
-                for (i in intIds.indices) {
-                    ids[i] = intIds[i].toLong()
-                }
-            }
-            else -> {
-                throw IllegalStateException("Unexpected size for Native.LONG_SIZE" + Native.LONG_SIZE)
-            }
-        }
-
-        for (id in ids) {
-            if (id == 0L) {
-                continue
-            }
-            val window: X11.Window = X11.Window(id)
-            val name = X11.XTextProperty()
-            x11.XGetWMName(display, window, name)
-            if (name.value == null || name.value.trim { it <= ' ' } === "") continue
-
-            val wPid: Int = getWindowPid(display, window)
-            if (wPid == findPid) {
-                return window
-            }
-
-            x11.XFree(name.pointer)
-
-            val rec: X11.Window? = findWindow(x11, display, window, depth + 1, findPid)
-            if (rec != null) return rec
-        }
-
-        return null
-    }
-
     fun findWindowByTitle(
         display: X11.Display,
         rootWindow: X11.Window,
@@ -152,7 +92,7 @@ object WMCtrl {
         }
         if (clientMsg(
                 display,
-                x11.XDefaultRootWindow(display),
+                INSTANCE.XDefaultRootWindow(display),
                 "_NET_CURRENT_DESKTOP",
                 target,
                 0,
@@ -161,7 +101,7 @@ object WMCtrl {
                 0,
             )
         ) {
-            x11.XFlush(display)
+            INSTANCE.XFlush(display)
             return true
         }
         return false
@@ -194,7 +134,7 @@ object WMCtrl {
     }
 
     private fun getCurrentDesktop(display: X11.Display): Int {
-        val root: X11.Window = x11.XDefaultRootWindow(display)
+        val root: X11.Window = INSTANCE.XDefaultRootWindow(display)
         var curDesktop: Int?
         if ((
                 getPropertyAsInt(
@@ -216,14 +156,14 @@ object WMCtrl {
             }
         }
 
-        return if ((curDesktop == null)) -1 else curDesktop!!
+        return curDesktop ?: -1
     }
 
     fun activeWindow(
         display: X11.Display,
         win: X11.Window,
     ): Boolean {
-        x11.XMapRaised(display, win)
+        INSTANCE.XMapRaised(display, win)
         clientMsg(display, win, "_NET_ACTIVE_WINDOW", 0, 0, 0, 0, 0)
 
         return true
@@ -233,7 +173,7 @@ object WMCtrl {
         display: X11.Display?,
         win: X11.Window?,
     ): Boolean {
-        return X11Ext.INSTANCE.XIconifyWindow(display, win, x11.XDefaultScreen(display)) == TRUE
+        return X11Ext.INSTANCE.XIconifyWindow(display, win, INSTANCE.XDefaultScreen(display)) == TRUE
     }
 
     fun closeWindow(
@@ -254,7 +194,7 @@ object WMCtrl {
             return null
         }
 
-        return g_strdup(iconNameReturn.pointer)
+        return getString(iconNameReturn.pointer)
     }
 
     fun getActiveWindowInstanceAndClass(display: X11.Display): Pair<String?, String?>? {
@@ -326,7 +266,7 @@ object WMCtrl {
     fun getActiveWindow(display: X11.Display): X11.Window? {
         return getPropertyAsWindow(
             display,
-            x11.XDefaultRootWindow(display),
+            INSTANCE.XDefaultRootWindow(display),
         )
     }
 
@@ -432,7 +372,7 @@ object WMCtrl {
         val retBytesAfter = NativeLongByReference()
         val retProp = PointerByReference()
 
-        val xaPropName = x11.XInternAtom(display, propName, false)
+        val xaPropName = INSTANCE.XInternAtom(display, propName, false)
 
         /*
          * MAX_PROPERTY_VALUE_LEN / 4 explanation (XGetWindowProperty manpage):
@@ -449,7 +389,7 @@ object WMCtrl {
          * IDs, atoms, etc, were kept as longs in the client side APIs, even
          * when long was changed to 64 bit.
          */
-        if (x11.XGetWindowProperty(
+        if (INSTANCE.XGetWindowProperty(
                 display, window, xaPropName, NativeLong(0),
                 NativeLong(MAX_PROPERTY_VALUE_LEN / 4), false,
                 xaPropType, xaRetType, retFormat, retNitems,
@@ -509,7 +449,7 @@ object WMCtrl {
         xclient.type = X11.ClientMessage
         xclient.serial = NativeLong(0)
         xclient.send_event = TRUE
-        xclient.message_type = x11.XInternAtom(display, msg, false)
+        xclient.message_type = INSTANCE.XInternAtom(display, msg, false)
         xclient.window = win
         xclient.format = 32
         xclient.data.setType(Array<NativeLong>::class.java)
@@ -522,8 +462,8 @@ object WMCtrl {
         val event = XEvent()
         event.setTypedValue(xclient)
 
-        if (x11.XSendEvent(
-                display, x11.XDefaultRootWindow(display), FALSE, mask,
+        if (INSTANCE.XSendEvent(
+                display, INSTANCE.XDefaultRootWindow(display), FALSE, mask,
                 event,
             ) != FALSE
         ) {
@@ -534,14 +474,13 @@ object WMCtrl {
         }
     }
 
-    private fun g_strdup(pointer: Pointer): String {
-        val value = pointer.getString(0)
-        return value
+    private fun getString(pointer: Pointer): String {
+        return pointer.getString(0)
     }
 
     private fun free(pointer: Pointer?) {
         if (pointer != null) {
-            x11.XFree(pointer)
+            INSTANCE.XFree(pointer)
         }
     }
 }

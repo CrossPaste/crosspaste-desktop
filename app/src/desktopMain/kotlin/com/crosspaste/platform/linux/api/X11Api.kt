@@ -27,31 +27,35 @@ interface X11Api : X11 {
         private var searchWindow: Window? = null
 
         fun getActiveWindow(): LinuxAppInfo? {
-            INSTANCE.XOpenDisplay(null)?.let { display ->
+            val display = INSTANCE.XOpenDisplay(null) ?: return null
+            return try {
                 getActiveWindow(display)?.let { previousWindow ->
                     WMCtrl.getWindowClass(display, previousWindow)?.let {
-                        return@getActiveWindow LinuxAppInfo(previousWindow, it.second)
+                        LinuxAppInfo(previousWindow, it.second)
                     }
                 }
+            } finally {
                 INSTANCE.XCloseDisplay(display)
             }
-            return null
         }
 
         fun saveAppIcon(
             window: Window,
             iconPath: Path,
         ) {
-            INSTANCE.XOpenDisplay(null)?.let { display ->
+            val display = INSTANCE.XOpenDisplay(null) ?: return
+            try {
                 WMCtrl.getPropertyAsIcon(display, window)?.let { buffer ->
                     ImageIO.write(buffer, "png", iconPath.toFile())
                 }
+            } finally {
                 INSTANCE.XCloseDisplay(display)
             }
         }
 
         fun bringToFront(windowTitle: String): LinuxAppInfo? {
-            return INSTANCE.XOpenDisplay(null)?.let { display ->
+            val display = INSTANCE.XOpenDisplay(null) ?: return null
+            return try {
                 val linuxAppInfo: LinuxAppInfo? =
                     getActiveWindow(display)?.let { previousWindow ->
                         WMCtrl.getWindowClass(display, previousWindow)?.let {
@@ -62,17 +66,19 @@ interface X11Api : X11 {
                 getWindow(windowTitle)?.let { window ->
                     WMCtrl.activeWindow(display, window)
                 }
-
+                linuxAppInfo
+            } finally {
                 INSTANCE.XCloseDisplay(display)
-                return linuxAppInfo
             }
         }
 
         fun bringToBack(prevLinuxAppInfo: LinuxAppInfo?) {
-            INSTANCE.XOpenDisplay(null)?.let { display ->
+            val display = INSTANCE.XOpenDisplay(null) ?: return
+            try {
                 prevLinuxAppInfo?.let {
                     WMCtrl.activeWindow(display, it.window)
                 }
+            } finally {
                 INSTANCE.XCloseDisplay(display)
             }
         }
@@ -81,11 +87,13 @@ interface X11Api : X11 {
             prevLinuxAppInfo: LinuxAppInfo?,
             keyCodes: List<Int>,
         ) {
-            INSTANCE.XOpenDisplay(null)?.let { display ->
+            val display = INSTANCE.XOpenDisplay(null) ?: return
+            try {
                 prevLinuxAppInfo?.let {
                     WMCtrl.activeWindow(display, it.window)
                     toPaste(display, keyCodes)
                 }
+            } finally {
                 INSTANCE.XCloseDisplay(display)
             }
         }
@@ -110,8 +118,10 @@ interface X11Api : X11 {
         }
 
         suspend fun toPaste(keyCodes: List<Int>) {
-            INSTANCE.XOpenDisplay(null)?.let { display ->
+            val display = INSTANCE.XOpenDisplay(null) ?: return
+            try {
                 toPaste(display, keyCodes)
+            } finally {
                 INSTANCE.XCloseDisplay(display)
             }
         }
@@ -127,11 +137,14 @@ interface X11Api : X11 {
 
         private fun findMainWindow(): Window? {
             if (mainWindow == null) {
-                INSTANCE.XOpenDisplay(null)?.let { display ->
+                val display = INSTANCE.XOpenDisplay(null) ?: return null
+                try {
                     val rootWindow = INSTANCE.XDefaultRootWindow(display)
                     WMCtrl.findWindowByTitle(display, rootWindow, MAIN_WINDOW_TITLE)?.let {
                         mainWindow = it
                     }
+                } finally {
+                    INSTANCE.XCloseDisplay(display)
                 }
             }
             return mainWindow
@@ -139,11 +152,14 @@ interface X11Api : X11 {
 
         private fun findSearchWindow(): Window? {
             if (searchWindow == null) {
-                INSTANCE.XOpenDisplay(null)?.let { display ->
+                val display = INSTANCE.XOpenDisplay(null) ?: return null
+                try {
                     val rootWindow = INSTANCE.XDefaultRootWindow(display)
                     WMCtrl.findWindowByTitle(display, rootWindow, SEARCH_WINDOW_TITLE)?.let {
                         searchWindow = it
                     }
+                } finally {
+                    INSTANCE.XCloseDisplay(display)
                 }
             }
             return searchWindow
