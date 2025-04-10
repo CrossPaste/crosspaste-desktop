@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.notification.Message
@@ -83,11 +84,13 @@ fun ToastView(
                 Text(
                     modifier = Modifier.weight(1f, fill = false),
                     text = toast.title,
+                    textAlign = TextAlign.Center,
                     style =
                         TextStyle(
                             fontWeight = FontWeight.Light,
                             color = MaterialTheme.colorScheme.contentColorFor(background),
                             fontSize = 16.sp,
+                            lineHeight = 20.sp,
                         ),
                 )
                 Spacer(Modifier.width(12.dp))
