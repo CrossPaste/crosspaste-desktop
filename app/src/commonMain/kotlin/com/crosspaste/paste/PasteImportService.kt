@@ -165,7 +165,7 @@ class PasteImportService(
         pasteImportParam.importBufferedSource()?.let { bufferSource ->
             compressUtils.unzip(bufferSource, decompressPath)
                 .onSuccess {
-                    if (bufferSource.isOpen) {
+                    runCatching {
                         bufferSource.close()
                     }
                 }
