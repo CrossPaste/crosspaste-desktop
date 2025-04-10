@@ -154,7 +154,7 @@ class PasteExportService(
         pasteExportParam.exportBufferedSink(exportFileName)?.let { bufferedSink ->
             compressUtils.zipDir(basePath, bufferedSink)
                 .onSuccess {
-                    if (bufferedSink.isOpen) {
+                    runCatching {
                         bufferedSink.flush()
                         bufferedSink.close()
                     }
