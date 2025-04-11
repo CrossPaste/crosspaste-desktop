@@ -1,7 +1,6 @@
 package com.crosspaste.ui.base
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -87,14 +86,11 @@ fun CrossPasteGrantAccessibilityPermissions(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Image(
+                CrossPasteLogoView(
                     modifier =
-                        Modifier
-                            .align(Alignment.CenterVertically)
-                            .clip(RoundedCornerShape(6.dp))
+                        Modifier.clip(RoundedCornerShape(9.dp))
+                            .background(MaterialTheme.colorScheme.primary)
                             .size(36.dp),
-                    painter = crosspasteIcon(),
-                    contentDescription = "crosspaste icon",
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(

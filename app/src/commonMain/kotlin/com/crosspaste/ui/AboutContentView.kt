@@ -60,7 +60,7 @@ fun AboutContentView() {
             ) {
                 CrossPasteLogoView(
                     modifier =
-                        Modifier.clip(RoundedCornerShape(6.dp))
+                        Modifier.clip(RoundedCornerShape(18.dp))
                             .background(MaterialTheme.colorScheme.primary)
                             .size(72.dp),
                 )
