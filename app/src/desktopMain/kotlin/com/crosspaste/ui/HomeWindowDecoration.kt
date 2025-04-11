@@ -104,7 +104,7 @@ fun HomeWindowDecoration() {
                     modifier =
                         Modifier.padding(start = 13.dp, top = 13.dp, end = 10.dp, bottom = 13.dp)
                             .align(Alignment.CenterVertically)
-                            .clip(RoundedCornerShape(3.dp))
+                            .clip(RoundedCornerShape(9.dp))
                             .background(MaterialTheme.colorScheme.primary)
                             .size(36.dp),
                 )

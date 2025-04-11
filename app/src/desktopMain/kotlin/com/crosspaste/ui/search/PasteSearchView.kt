@@ -1,7 +1,6 @@
 package com.crosspaste.ui.search
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -44,8 +43,8 @@ import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.base.CrossPasteLogoView
 import com.crosspaste.ui.base.KeyboardView
-import com.crosspaste.ui.base.crosspasteIcon
 import com.crosspaste.ui.base.enter
 import com.crosspaste.ui.base.menuItemReminderTextStyle
 import com.crosspaste.ui.model.PasteSelectionViewModel
@@ -148,12 +147,11 @@ fun CrossPasteSearchWindowContent() {
                         horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Image(
-                            painter = crosspasteIcon(),
-                            contentDescription = "CrossPaste",
+                        CrossPasteLogoView(
                             modifier =
-                                Modifier.size(25.dp)
-                                    .clip(RoundedCornerShape(5.dp)),
+                                Modifier.clip(RoundedCornerShape(6.dp))
+                                    .background(MaterialTheme.colorScheme.primary)
+                                    .size(24.dp),
                         )
 
                         Spacer(modifier = Modifier.width(10.dp))
