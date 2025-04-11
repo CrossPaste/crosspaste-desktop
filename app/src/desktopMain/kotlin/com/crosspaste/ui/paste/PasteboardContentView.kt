@@ -78,6 +78,7 @@ fun PasteboardContentView(openTopBar: () -> Unit) {
                 listState.firstVisibleItemIndex == 1
             ) {
                 listState.animateScrollToItem(0)
+                showToTop = false
             }
             previousFirstItemId = currentFirstItemId
         }
@@ -88,6 +89,7 @@ fun PasteboardContentView(openTopBar: () -> Unit) {
             pasteDataViewModel.resume()
             if (rememberPasteDataList.isNotEmpty()) {
                 listState.scrollToItem(0)
+                showToTop = false
             }
         } else {
             pasteDataViewModel.cleanup()
