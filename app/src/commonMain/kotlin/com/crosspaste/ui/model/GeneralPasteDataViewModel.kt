@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -26,6 +27,9 @@ class GeneralPasteDataViewModel(private val pasteDao: PasteDao) : PasteDataViewM
             if (active) {
                 limit.flatMapLatest { currentLimit ->
                     pasteDao.getPasteDataFlow(limit = currentLimit)
+                        .map { pasteDataList ->
+                            pasteDataList.filter { it.isValid() }
+                        }
                 }
             } else {
                 flow { emit(listOf()) }

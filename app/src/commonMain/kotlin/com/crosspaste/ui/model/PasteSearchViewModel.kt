@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 class PasteSearchViewModel(private val pasteDao: PasteDao) : ViewModel() {
@@ -77,7 +78,9 @@ class PasteSearchViewModel(private val pasteDao: PasteDao) : ViewModel() {
                     sort = params.sort,
                     pasteType = params.pasteType,
                     limit = params.limit,
-                )
+                ).map { pasteDataList ->
+                    pasteDataList.filter { it.isValid() }
+                }
             }
             .stateIn(
                 scope = viewModelScope,

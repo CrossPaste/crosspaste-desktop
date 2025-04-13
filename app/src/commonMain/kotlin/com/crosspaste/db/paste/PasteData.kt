@@ -1,9 +1,14 @@
 package com.crosspaste.db.paste
 
+import com.crosspaste.paste.item.PasteColor
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteFiles
+import com.crosspaste.paste.item.PasteHtml
+import com.crosspaste.paste.item.PasteImages
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.PasteRtf
 import com.crosspaste.paste.item.PasteText
+import com.crosspaste.paste.item.PasteUrl
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.serializer.PasteDataSerializer
 import com.crosspaste.utils.DateUtils
@@ -135,6 +140,25 @@ data class PasteData(
         mutableList.addAll(pasteCollection.pasteItems)
 
         return mutableList.toList()
+    }
+
+    fun isValid(): Boolean {
+        return if (pasteState == PasteState.LOADED) {
+            val pasteItem =
+                when (getType()) {
+                    PasteType.TEXT_TYPE -> getPasteItem(PasteText::class)
+                    PasteType.COLOR_TYPE -> getPasteItem(PasteColor::class)
+                    PasteType.URL_TYPE -> getPasteItem(PasteUrl::class)
+                    PasteType.HTML_TYPE -> getPasteItem(PasteHtml::class)
+                    PasteType.RTF_TYPE -> getPasteItem(PasteRtf::class)
+                    PasteType.IMAGE_TYPE -> getPasteItem(PasteImages::class)
+                    PasteType.FILE_TYPE -> getPasteItem(PasteFiles::class)
+                    else -> null
+                }
+            pasteItem != null && (pasteItem as PasteItem).isValid()
+        } else {
+            true
+        }
     }
 
     fun existFileResource(): Boolean {
