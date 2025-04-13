@@ -155,7 +155,7 @@ data class PasteData(
                     PasteType.FILE_TYPE -> getPasteItem(PasteFiles::class)
                     else -> null
                 }
-            pasteItem != null && (pasteItem as PasteItem).isValid()
+            (pasteItem as? PasteItem)?.isValid() ?: false
         } else {
             true
         }
