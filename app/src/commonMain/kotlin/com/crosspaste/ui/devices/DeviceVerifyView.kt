@@ -66,12 +66,11 @@ fun DeviceVerifyView(
     val tokenCount = 6
     val tokens = remember { mutableStateListOf(*Array(tokenCount) { "" }) }
     var isError by remember { mutableStateOf(false) }
-    val focusRequesters = List(tokenCount) { FocusRequester() }
+    val focusRequesters = remember { List(tokenCount) { FocusRequester() } }
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]?.showToken(syncRuntimeInfo)
-        focusRequesters.firstOrNull()?.requestFocus()
     }
 
     val setError = { value: Boolean -> isError = value }
@@ -247,6 +246,13 @@ fun TokenInputBox(
             colors = textFieldColors(),
             contentPadding = PaddingValues(horizontal = 4.dp, vertical = 10.dp),
         )
+
+        if (index == 0) {
+            LaunchedEffect(focusRequesters[index]) {
+                kotlinx.coroutines.delay(10)
+                focusRequesters[index].requestFocus()
+            }
+        }
     }
 }
 
