@@ -6,17 +6,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.info.PasteInfos.DATE
@@ -25,6 +20,7 @@ import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteText
+import com.crosspaste.ui.paste.PasteboardViewProvider.Companion.previewTextStyle
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
@@ -60,13 +56,7 @@ fun PasteTextDetailView(
                         Modifier.fillMaxSize()
                             .verticalScroll(rememberScrollState()),
                     overflow = TextOverflow.Ellipsis,
-                    style =
-                        TextStyle(
-                            fontWeight = FontWeight.Normal,
-                            fontFamily = FontFamily.SansSerif,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = 14.sp,
-                        ),
+                    style = previewTextStyle,
                 )
             }
         },

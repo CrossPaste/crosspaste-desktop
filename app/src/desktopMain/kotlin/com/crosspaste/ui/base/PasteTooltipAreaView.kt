@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,18 +16,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-
-val TOOLTIP_TEXT_STYLE =
-    TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        lineHeight = 16.sp,
-        fontSize = 12.sp,
-    )
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -63,7 +55,10 @@ fun PasteTooltipAreaView(
                     Text(
                         text = text,
                         modifier = Modifier.padding(4.dp),
-                        style = TOOLTIP_TEXT_STYLE,
+                        style =
+                            MaterialTheme.typography.bodySmall.copy(
+                                lineHeight = TextUnit.Unspecified,
+                            ),
                     )
                 }
             }

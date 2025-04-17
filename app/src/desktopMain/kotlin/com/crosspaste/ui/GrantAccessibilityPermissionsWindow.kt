@@ -19,7 +19,7 @@ import com.crosspaste.ui.base.CrossPasteGrantAccessibilityPermissions
 fun ApplicationScope.GrantAccessibilityPermissionsWindow(windowIcon: Painter?) {
     val windowState =
         rememberDialogState(
-            size = DpSize(width = 360.dp, height = 200.dp),
+            size = DpSize(width = 360.dp, height = 280.dp),
         )
 
     var alwaysOnTop by remember { mutableStateOf(true) }

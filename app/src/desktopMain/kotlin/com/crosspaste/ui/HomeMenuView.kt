@@ -1,39 +1,33 @@
 package com.crosspaste.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.ExitMode
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.MenuItem
+import com.crosspaste.ui.base.NewVersionButton
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.measureTextWidth
-import com.crosspaste.ui.base.menuItemReminderTextStyle
 import org.koin.compose.koinInject
 
 @Composable
@@ -68,7 +62,12 @@ fun HomeMenuView(
                 copywriter.getText("quit"),
             )
 
-        val newWidth = measureTextWidth("new!", menuItemReminderTextStyle)
+        val newWidth =
+            measureTextWidth(
+                "new!",
+                MaterialTheme.typography.bodySmall
+                    .copy(fontStyle = FontStyle.Italic),
+            )
 
         val maxWidth =
             getMenWidth(menuTexts, extendFunction = {
@@ -110,23 +109,7 @@ fun HomeMenuView(
                     if (existNewVersion) {
                         {
                             Spacer(modifier = Modifier.width(8.dp))
-                            Row(
-                                modifier =
-                                    Modifier
-                                        .wrapContentWidth()
-                                        .height(16.dp)
-                                        .clip(RoundedCornerShape(4.dp))
-                                        .background(Color.Red)
-                                        .padding(horizontal = 4.dp),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    text = "new!",
-                                    color = Color.White,
-                                    style = menuItemReminderTextStyle,
-                                )
-                            }
+                            NewVersionButton()
                         }
                     } else {
                         null

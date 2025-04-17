@@ -22,10 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.ui.base.UISupport
@@ -79,11 +76,7 @@ fun ColorPreviewView(pasteData: PasteData) {
                     Text(
                         text = pasteColor.toHexString(),
                         color = MaterialTheme.colorScheme.onSurface,
-                        style =
-                            TextStyle(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp,
-                            ),
+                        style = MaterialTheme.typography.labelMedium,
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
@@ -91,11 +84,7 @@ fun ColorPreviewView(pasteData: PasteData) {
                     Text(
                         text = pasteColor.toRGBAString(),
                         color = MaterialTheme.colorScheme.onSurface,
-                        style =
-                            TextStyle(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp,
-                            ),
+                        style = MaterialTheme.typography.labelMedium,
                     )
                 }
             }

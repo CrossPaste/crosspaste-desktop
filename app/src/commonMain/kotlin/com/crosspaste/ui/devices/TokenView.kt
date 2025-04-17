@@ -31,6 +31,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
@@ -41,7 +42,6 @@ import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.app.AppTokenApi
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.close
-import com.crosspaste.ui.base.robotoFontFamily
 import org.koin.compose.koinInject
 
 @Composable
@@ -106,9 +106,10 @@ private fun RealTokenView() {
                         modifier = Modifier.align(Alignment.Center),
                         text = copywriter.getText("token"),
                         color = MaterialTheme.colorScheme.onBackground,
-                        fontSize = 25.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = robotoFontFamily(),
+                        style =
+                            MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                            ),
                     )
 
                     Box(
@@ -166,9 +167,12 @@ private fun OTPCodeBox() {
                     Text(
                         text = char.toString(),
                         color = MaterialTheme.colorScheme.primary,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace,
+                        style =
+                            TextStyle(
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace,
+                            ),
                     )
                 }
             }

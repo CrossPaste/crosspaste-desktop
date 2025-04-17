@@ -4,8 +4,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -53,7 +54,7 @@ fun Counter(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Button(
-            modifier = Modifier.wrapContentHeight().width(36.dp),
+            modifier = Modifier.size(30.dp),
             shape = RectangleShape,
             contentPadding = PaddingValues(0.dp),
             onClick = {
@@ -79,7 +80,9 @@ fun Counter(
             )
 
         DefaultTextField(
-            modifier = Modifier.width(width + 16.dp),
+            modifier =
+                Modifier.width(width + 16.dp)
+                    .height(30.dp),
             value = "$count",
             contentPadding = PaddingValues(horizontal = 8.dp),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -101,7 +104,7 @@ fun Counter(
         )
         Spacer(modifier = Modifier.width(4.dp))
         Button(
-            modifier = Modifier.wrapContentHeight().width(36.dp),
+            modifier = Modifier.size(30.dp),
             shape = RectangleShape,
             contentPadding = PaddingValues(0.dp),
             onClick = {

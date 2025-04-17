@@ -15,34 +15,30 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 const val enter: String = "↵"
 
 @Composable
 fun KeyboardView(
-    textStyle: TextStyle =
-        TextStyle(
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Light,
-            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-        ),
+    textStyle: TextStyle = MaterialTheme.typography.labelMedium,
     keyboardValue: String,
     backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
 ) {
     val textMeasurer = rememberTextMeasurer()
     val size = textMeasurer.measure(keyboardValue, textStyle).size
-    val dpSize = with(LocalDensity.current) { DpSize(size.width.toDp(), size.height.toDp()) }
+    val dpSize =
+        with(LocalDensity.current) {
+            DpSize(size.width.toDp(), size.height.toDp())
+        }
 
     Row(
         modifier =
             Modifier.size(dpSize.plus(DpSize(10.dp, 10.dp)))
-                .background(backgroundColor)
-                .clip(RoundedCornerShape(2.dp)),
+                .clip(RoundedCornerShape(2.dp))
+                .background(backgroundColor),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {

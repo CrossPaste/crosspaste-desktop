@@ -38,7 +38,6 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -149,12 +148,7 @@ fun DeviceInfoHeader(
         Row(horizontalArrangement = Arrangement.End) {
             Text(
                 text = syncRuntimeInfo.connectHostAddress ?: "unknown",
-                style =
-                    TextStyle(
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Light,
-                        fontFamily = FontFamily.SansSerif,
-                    ),
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground,
             )
             Spacer(modifier = Modifier.width(12.dp))

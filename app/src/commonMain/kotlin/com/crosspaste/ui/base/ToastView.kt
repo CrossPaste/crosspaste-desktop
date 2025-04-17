@@ -23,11 +23,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.crosspaste.notification.Message
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.getMessagePainter
@@ -85,12 +83,10 @@ fun ToastView(
                     modifier = Modifier.weight(1f, fill = false),
                     text = toast.title,
                     textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.contentColorFor(background),
                     style =
-                        TextStyle(
-                            fontWeight = FontWeight.Light,
-                            color = MaterialTheme.colorScheme.contentColorFor(background),
-                            fontSize = 16.sp,
-                            lineHeight = 20.sp,
+                        MaterialTheme.typography.titleMedium.copy(
+                            lineHeight = TextUnit.Unspecified,
                         ),
                 )
                 Spacer(Modifier.width(12.dp))
@@ -112,12 +108,8 @@ fun ToastView(
                     Text(
                         modifier = Modifier.weight(1f, fill = false),
                         text = message,
-                        style =
-                            TextStyle(
-                                fontWeight = FontWeight.Light,
-                                color = MaterialTheme.colorScheme.contentColorFor(background),
-                                fontSize = 12.sp,
-                            ),
+                        textAlign = TextAlign.Start,
+                        style = MaterialTheme.typography.bodyMedium,
                     )
                 }
             }

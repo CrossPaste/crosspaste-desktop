@@ -43,11 +43,11 @@ import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
@@ -126,12 +126,8 @@ fun SearchInputView(requestFocus: () -> Unit) {
                     Text(
                         modifier = Modifier.wrapContentSize(),
                         text = copywriter.getText("search_pasteboard"),
-                        style =
-                            TextStyle(
-                                fontWeight = FontWeight.Light,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                                fontSize = 15.sp,
-                            ),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        style = MaterialTheme.typography.bodyLarge,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -169,11 +165,8 @@ fun SearchInputView(requestFocus: () -> Unit) {
             )
 
             val textStyle =
-                TextStyle(
-                    fontWeight = FontWeight.Light,
-                    fontFamily = FontFamily.SansSerif,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 15.sp,
+                MaterialTheme.typography.labelLarge.copy(
+                    lineHeight = TextUnit.Unspecified,
                 )
 
             var showTypes by remember { mutableStateOf(false) }
@@ -239,13 +232,8 @@ fun SearchInputView(requestFocus: () -> Unit) {
                     ) {
                         Text(
                             text = currentType?.let { copywriter.getText(it.name) } ?: copywriter.getText(ALL_TYPES),
-                            style =
-                                TextStyle(
-                                    fontWeight = FontWeight.Light,
-                                    fontFamily = FontFamily.SansSerif,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontSize = 15.sp,
-                                ),
+                            color = MaterialTheme.colorScheme.primary,
+                            style = textStyle,
                         )
                     }
 

@@ -30,12 +30,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppLock
 import com.crosspaste.app.AppRestartService
 import com.crosspaste.app.ExitMode
@@ -76,7 +74,8 @@ fun CrossPasteGrantAccessibilityPermissions(
         Column(
             modifier =
                 Modifier.fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surface),
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
             Spacer(modifier = Modifier.height(24.dp))
             Row(
@@ -95,13 +94,8 @@ fun CrossPasteGrantAccessibilityPermissions(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = copywriter.getText("permission"),
-                    style =
-                        TextStyle(
-                            fontSize = 25.sp,
-                            fontWeight = MaterialTheme.typography.displayLarge.fontWeight,
-                            fontFamily = FontFamily.SansSerif,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        ),
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
@@ -114,14 +108,13 @@ fun CrossPasteGrantAccessibilityPermissions(
             ) {
                 Text(
                     text = copywriter.getText("absolutely_no_personal_information_is_collected_or_stored"),
+                    textAlign = TextAlign.Center,
                     style =
-                        TextStyle(
-                            fontSize = 15.sp,
+                        MaterialTheme.typography.bodyMedium.copy(
                             fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.SansSerif,
-                            color = MaterialTheme.colorScheme.onSurface,
                             textDecoration = TextDecoration.Underline,
                         ),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
             Spacer(modifier = Modifier.height(4.dp))
@@ -143,29 +136,24 @@ fun CrossPasteGrantAccessibilityPermissions(
                     Text(
                         text = copywriter.getText("accessibility"),
                         style =
-                            TextStyle(
-                                fontSize = 20.sp,
+                            MaterialTheme.typography.headlineMedium.copy(
                                 fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.SansSerif,
-                                color = MaterialTheme.colorScheme.onSurface,
                                 textDecoration = TextDecoration.Underline,
                             ),
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
-                    Spacer(modifier = Modifier.height(3.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = copywriter.getText("crosspaste_needs_your_permission_to_support_global_shortcuts"),
-                        style =
-                            TextStyle(
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Light,
-                                fontFamily = FontFamily.SansSerif,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            ),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
-                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Spacer(modifier = Modifier.height(12.dp))
                     if (!toRestart) {
                         Button(
-                            modifier = Modifier.height(28.dp),
+                            modifier = Modifier.height(36.dp),
                             onClick = {
                                 setOnTop(false)
                                 uiSupport.jumpPrivacyAccessibility()
@@ -185,12 +173,7 @@ fun CrossPasteGrantAccessibilityPermissions(
                             Text(
                                 text = copywriter.getText("grant_permissions"),
                                 color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                style =
-                                    TextStyle(
-                                        fontFamily = FontFamily.SansSerif,
-                                        fontWeight = FontWeight.Light,
-                                        fontSize = 14.sp,
-                                    ),
+                                style = MaterialTheme.typography.labelMedium,
                             )
                         }
                     } else {
@@ -201,7 +184,7 @@ fun CrossPasteGrantAccessibilityPermissions(
                             )
                         } else {
                             Button(
-                                modifier = Modifier.height(28.dp),
+                                modifier = Modifier.height(36.dp),
                                 onClick = {
                                     restarting = true
                                     appLock.resetFirstLaunchFlag()
@@ -224,17 +207,12 @@ fun CrossPasteGrantAccessibilityPermissions(
                                 Text(
                                     text = copywriter.getText("restart_application"),
                                     color = Color.White,
-                                    style =
-                                        TextStyle(
-                                            fontFamily = FontFamily.SansSerif,
-                                            fontWeight = FontWeight.Light,
-                                            fontSize = 14.sp,
-                                        ),
+                                    style = MaterialTheme.typography.labelMedium,
                                 )
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
             }
         }

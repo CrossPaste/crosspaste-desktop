@@ -28,12 +28,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
@@ -152,11 +149,7 @@ fun SingleImagePreviewView(
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             color = MaterialTheme.colorScheme.onSurface,
-                            style =
-                                TextStyle(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp,
-                                ),
+                            style = MaterialTheme.typography.labelMedium,
                         )
 
                         if (state is AsyncImagePainter.State.Success) {
@@ -170,11 +163,7 @@ fun SingleImagePreviewView(
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     color = MaterialTheme.colorScheme.onSurface,
-                                    style =
-                                        TextStyle(
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 11.sp,
-                                        ),
+                                    style = MaterialTheme.typography.labelMedium,
                                 )
                             }
                         }
@@ -191,11 +180,7 @@ fun SingleImagePreviewView(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 color = MaterialTheme.colorScheme.onSurface,
-                                style =
-                                    TextStyle(
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 11.sp,
-                                    ),
+                                style = MaterialTheme.typography.labelMedium,
                             )
                         } else {
                             Text(
@@ -203,11 +188,7 @@ fun SingleImagePreviewView(
                                 maxLines = 1,
                                 overflow = TextOverflow.Visible,
                                 color = MaterialTheme.colorScheme.error,
-                                style =
-                                    TextStyle(
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 11.sp,
-                                    ),
+                                style = MaterialTheme.typography.labelMedium,
                             )
                         }
                     }

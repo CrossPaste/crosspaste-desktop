@@ -32,11 +32,9 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppSize
 import com.crosspaste.app.AppUpdateService
@@ -45,8 +43,8 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.CrossPasteLogoView
 import com.crosspaste.ui.base.KeyboardView
+import com.crosspaste.ui.base.NewVersionButton
 import com.crosspaste.ui.base.enter
-import com.crosspaste.ui.base.menuItemReminderTextStyle
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import com.crosspaste.utils.mainDispatcher
@@ -158,35 +156,16 @@ fun CrossPasteSearchWindowContent() {
 
                         Text(
                             text = "CrossPaste ${appInfo.appVersion}",
+                            color = MaterialTheme.colorScheme.onSurface,
                             style =
-                                TextStyle(
-                                    fontWeight = FontWeight.Normal,
-                                    fontFamily = FontFamily.SansSerif,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    fontSize = 14.sp,
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    lineHeight = TextUnit.Unspecified,
                                 ),
                         )
 
                         if (existNewVersion) {
                             Spacer(modifier = Modifier.width(10.dp))
-                            Row(
-                                modifier =
-                                    Modifier.width(32.dp)
-                                        .height(16.dp)
-                                        .clip(RoundedCornerShape(4.dp))
-                                        .background(Color.Red)
-                                        .clickable {
-                                            appUpdateService.jumpDownload()
-                                        },
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    text = "new!",
-                                    color = Color.White,
-                                    style = menuItemReminderTextStyle,
-                                )
-                            }
+                            NewVersionButton()
                         }
 
                         Spacer(modifier = Modifier.weight(1f))
@@ -196,12 +175,11 @@ fun CrossPasteSearchWindowContent() {
                         prevAppName?.let {
                             Text(
                                 text = "${copywriter.getText("paste_to")} $it",
+                                color = MaterialTheme.colorScheme.onSurface,
                                 style =
-                                    TextStyle(
-                                        fontWeight = FontWeight.Normal,
-                                        fontFamily = FontFamily.SansSerif,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        fontSize = 14.sp,
+                                    MaterialTheme.typography.bodyMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        lineHeight = TextUnit.Unspecified,
                                     ),
                             )
                             Spacer(modifier = Modifier.width(8.dp))

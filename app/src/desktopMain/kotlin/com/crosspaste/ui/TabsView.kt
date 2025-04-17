@@ -28,21 +28,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
@@ -52,14 +46,6 @@ import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.trash
 import com.crosspaste.utils.getAppEnvUtils
 import org.koin.compose.koinInject
-
-val tabTextStyle =
-    TextStyle(
-        fontSize = 14.sp,
-        fontWeight = FontWeight.Normal,
-        fontFamily = FontFamily.SansSerif,
-        lineHeight = 0.sp,
-    )
 
 @Composable
 fun TabsView() {
@@ -131,8 +117,8 @@ fun TabsView() {
                 val widthArray =
                     tabs.map {
                         textMeasurer.measure(
-                            copywriter.getText(it.second),
-                            tabTextStyle,
+                            text = copywriter.getText(it.second),
+                            style = MaterialTheme.typography.titleMedium,
                         ).size.width
                     }
 
@@ -206,25 +192,11 @@ fun SingleTabView(
     title: String,
     onClick: () -> Unit,
 ) {
-    var hover by remember { mutableStateOf(false) }
-
     Box(
         modifier =
             Modifier
                 .height(30.dp)
                 .wrapContentWidth()
-                .onPointerEvent(
-                    eventType = PointerEventType.Enter,
-                    onEvent = {
-                        hover = true
-                    },
-                )
-                .onPointerEvent(
-                    eventType = PointerEventType.Exit,
-                    onEvent = {
-                        hover = false
-                    },
-                )
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onTap = {
@@ -245,7 +217,10 @@ fun SingleTabView(
             Text(
                 text = title,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
-                style = tabTextStyle,
+                style =
+                    MaterialTheme.typography.titleMedium.copy(
+                        lineHeight = TextUnit.Unspecified,
+                    ),
             )
         }
     }

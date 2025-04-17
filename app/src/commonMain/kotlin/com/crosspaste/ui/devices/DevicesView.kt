@@ -109,10 +109,9 @@ fun MyDevicesView(syncRuntimeInfos: List<SyncRuntimeInfo>) {
                                         modifier = Modifier.wrapContentSize(),
                                         text = syncRuntimeInfo.noteName ?: syncRuntimeInfo.deviceName,
                                         style =
-                                            TextStyle(
+                                            MaterialTheme.typography.titleMedium.copy(
                                                 fontWeight = FontWeight.Light,
                                                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-                                                fontSize = 15.sp,
                                             ),
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,

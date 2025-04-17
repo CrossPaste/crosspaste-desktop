@@ -19,11 +19,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.ui.base.android
 import com.crosspaste.ui.base.ipad
@@ -93,11 +92,14 @@ fun DeviceBarView(
                         modifier = Modifier.wrapContentSize(),
                         text = syncRuntimeInfo.platform.name,
                         maxLines = 1,
+                        color =
+                            MaterialTheme.colorScheme.contentColorFor(
+                                background,
+                            ),
                         style =
-                            TextStyle(
+                            MaterialTheme.typography.titleSmall.copy(
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.contentColorFor(background),
-                                fontSize = 13.sp,
+                                lineHeight = TextUnit.Unspecified,
                             ),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -105,11 +107,14 @@ fun DeviceBarView(
                         modifier = Modifier.wrapContentSize(),
                         text = syncRuntimeInfo.platform.version,
                         maxLines = 1,
+                        color =
+                            MaterialTheme.colorScheme.contentColorFor(
+                                background,
+                            ),
                         style =
-                            TextStyle(
+                            MaterialTheme.typography.labelMedium.copy(
                                 fontWeight = FontWeight.Light,
-                                color = MaterialTheme.colorScheme.contentColorFor(background),
-                                fontSize = 11.sp,
+                                lineHeight = TextUnit.Unspecified,
                             ),
                     )
                 }
@@ -118,11 +123,11 @@ fun DeviceBarView(
                     modifier = Modifier.wrapContentSize(),
                     text = syncRuntimeInfo.getDeviceDisplayName(),
                     maxLines = 1,
+                    color = MaterialTheme.colorScheme.contentColorFor(background).copy(alpha = 0.8f),
                     style =
-                        TextStyle(
+                        MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Light,
-                            color = MaterialTheme.colorScheme.contentColorFor(background).copy(alpha = 0.8f),
-                            fontSize = 11.sp,
+                            lineHeight = TextUnit.Unspecified,
                         ),
                     overflow = TextOverflow.Ellipsis,
                 )

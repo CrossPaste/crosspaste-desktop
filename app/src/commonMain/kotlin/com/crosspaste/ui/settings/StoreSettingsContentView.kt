@@ -137,12 +137,10 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
     Text(
         modifier =
             Modifier.wrapContentSize()
-                .padding(start = 16.dp, top = 5.dp, bottom = 5.dp),
+                .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
         text = copywriter.getText("store_info"),
         color = MaterialTheme.colorScheme.onSurface,
-        style = MaterialTheme.typography.headlineSmall,
-        fontFamily = FontFamily.SansSerif,
-        fontSize = 12.sp,
+        style = MaterialTheme.typography.titleSmall,
     )
 
     var nameMaxWidth by remember { mutableStateOf(96.dp) }
@@ -195,12 +193,6 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
                         allOrFavorite = newAllOrFavorite
                         refresh(allOrFavorite)
                     },
-                    textStyle =
-                        TextStyle(
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Light,
-                            fontFamily = FontFamily.SansSerif,
-                        ),
                     checkedText = copywriter.getText("all"),
                     uncheckedText = copywriter.getText("favorite"),
                 )
@@ -278,12 +270,10 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
     Text(
         modifier =
             Modifier.wrapContentSize()
-                .padding(start = 16.dp, top = 5.dp, bottom = 5.dp),
+                .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
         text = copywriter.getText("auto_cleanup_settings"),
         color = MaterialTheme.colorScheme.onSurface,
-        style = MaterialTheme.typography.headlineSmall,
-        fontFamily = FontFamily.SansSerif,
-        fontSize = 12.sp,
+        style = MaterialTheme.typography.titleSmall,
     )
 
     val config by configManager.config.collectAsState()
@@ -309,7 +299,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
             text = "image_retention_period",
             tint = MaterialTheme.colorScheme.onSurface,
         ) {
-            var selectImageCleanTimeIndex = config.imageCleanTimeIndex
+            val selectImageCleanTimeIndex = config.imageCleanTimeIndex
 
             var imageCleanTimeValue by remember(copywriter.language()) {
                 val imageCleanTime = CleanTime.entries[selectImageCleanTimeIndex]
@@ -380,7 +370,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
             text = "file_retention_period",
             tint = MaterialTheme.colorScheme.onSurface,
         ) {
-            var selectFileCleanTimeIndex = config.fileCleanTimeIndex
+            val selectFileCleanTimeIndex = config.fileCleanTimeIndex
 
             var fileCleanTimeValue by remember(copywriter.language(), config) {
                 val fileCleanTime = CleanTime.entries[selectFileCleanTimeIndex]
