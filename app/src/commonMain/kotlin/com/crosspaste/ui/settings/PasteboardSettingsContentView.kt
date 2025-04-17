@@ -19,9 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.Counter
@@ -41,12 +39,10 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
     Text(
         modifier =
             Modifier.wrapContentSize()
-                .padding(start = 16.dp, top = 5.dp, bottom = 5.dp),
+                .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
         text = copywriter.getText("paste_control"),
         color = MaterialTheme.colorScheme.onBackground,
-        style = MaterialTheme.typography.headlineSmall,
-        fontFamily = FontFamily.SansSerif,
-        fontSize = 12.sp,
+        style = MaterialTheme.typography.titleSmall,
     )
 
     Column(

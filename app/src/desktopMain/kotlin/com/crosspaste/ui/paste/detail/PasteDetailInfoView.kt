@@ -36,11 +36,10 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppControl
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteData
@@ -79,12 +78,10 @@ fun PasteDetailInfoView(
     ) {
         Text(
             text = copywriter.getText("information") + (indexInfo?.let { " - $it" } ?: ""),
+            color = MaterialTheme.colorScheme.onSurface,
             style =
-                TextStyle(
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.SansSerif,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 20.sp,
+                MaterialTheme.typography.titleLarge.copy(
+                    lineHeight = TextUnit.Unspecified,
                 ),
         )
         Spacer(modifier = Modifier.width(8.dp))
@@ -113,12 +110,11 @@ fun PasteDetailInfoView(
 
             Text(
                 text = source,
+                color = MaterialTheme.colorScheme.onSurface,
                 style =
-                    TextStyle(
+                    MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Light,
-                        fontFamily = FontFamily.SansSerif,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 12.sp,
+                        lineHeight = TextUnit.Unspecified,
                     ),
             )
         }
@@ -161,23 +157,22 @@ fun PasteDetailInfoView(
                 ) {
                     Text(
                         text = copywriter.getText(item.key),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         style =
-                            TextStyle(
+                            MaterialTheme.typography.labelMedium.copy(
                                 fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.SansSerif,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                                fontSize = 12.sp,
+                                lineHeight = TextUnit.Unspecified,
                             ),
                     )
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
                         text = item.value,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                         style =
-                            TextStyle(
-                                fontWeight = FontWeight.Normal,
+                            MaterialTheme.typography.bodyMedium.copy(
                                 fontFamily = FontFamily.Monospace,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Normal,
+                                lineHeight = TextUnit.Unspecified,
                             ),
                     )
                 }

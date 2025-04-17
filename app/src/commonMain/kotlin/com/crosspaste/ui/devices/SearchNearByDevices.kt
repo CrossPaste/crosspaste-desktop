@@ -22,7 +22,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.ui.base.magnifying
@@ -92,10 +91,9 @@ fun SearchNearByDevices() {
                         .fillMaxWidth(0.8f),
                 textAlign = TextAlign.Center,
                 text = copywriter.getText("searching_for_nearby_devices"),
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 28.sp,
                 maxLines = 3,
-                lineHeight = 32.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.bodyLarge,
             )
         }
     }

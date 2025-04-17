@@ -22,33 +22,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-
-val menuItemTextStyle =
-    TextStyle(
-        fontSize = 12.sp,
-        fontWeight = FontWeight.Light,
-        fontFamily = FontFamily.SansSerif,
-    )
-
-val menuItemReminderTextStyle =
-    TextStyle(
-        fontSize = 10.sp,
-        fontStyle = FontStyle.Italic,
-        fontWeight = FontWeight.Light,
-        fontFamily = FontFamily.SansSerif,
-    )
 
 @Composable
 fun MenuItem(
     text: String,
-    textStyle: TextStyle = menuItemTextStyle,
+    textStyle: TextStyle =
+        MaterialTheme.typography.bodyMedium.copy(
+            fontWeight = FontWeight.Light,
+            lineHeight = TextUnit.Unspecified,
+        ),
     background: Color = MaterialTheme.colorScheme.surface,
     paddingValues: PaddingValues = PaddingValues(16.dp, 8.dp, 16.dp, 8.dp),
     enabledInteraction: Boolean = true,
@@ -95,7 +82,7 @@ fun MenuItem(
 @Composable
 fun getMenWidth(
     array: Array<String>,
-    textStyle: TextStyle = menuItemTextStyle,
+    textStyle: TextStyle = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Light),
     paddingValues: PaddingValues = PaddingValues(16.dp, 8.dp, 16.dp, 8.dp),
     extendFunction: (Int) -> Dp = { 0.dp },
 ): Dp {

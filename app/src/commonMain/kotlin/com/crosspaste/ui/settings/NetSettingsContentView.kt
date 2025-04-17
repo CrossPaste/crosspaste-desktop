@@ -27,9 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
@@ -67,12 +65,10 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
     Text(
         modifier =
             Modifier.wrapContentSize()
-                .padding(start = 16.dp, top = 5.dp, bottom = 5.dp),
+                .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
         text = copywriter.getText("network_info"),
         color = MaterialTheme.colorScheme.onSurface,
-        style = MaterialTheme.typography.headlineSmall,
-        fontFamily = FontFamily.SansSerif,
-        fontSize = 12.sp,
+        style = MaterialTheme.typography.titleSmall,
     )
 
     Column(
@@ -111,12 +107,10 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
     Text(
         modifier =
             Modifier.wrapContentSize()
-                .padding(start = 16.dp, top = 5.dp, bottom = 5.dp),
+                .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
         text = copywriter.getText("service_discovery"),
         color = MaterialTheme.colorScheme.onSurface,
-        style = MaterialTheme.typography.headlineSmall,
-        fontFamily = FontFamily.SansSerif,
-        fontSize = 12.sp,
+        style = MaterialTheme.typography.titleSmall,
     )
 
     Column(
@@ -145,12 +139,10 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
     Text(
         modifier =
             Modifier.wrapContentSize()
-                .padding(start = 16.dp, top = 5.dp, bottom = 5.dp),
+                .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
         text = copywriter.getText("blacklist"),
         color = MaterialTheme.colorScheme.onSurface,
-        style = MaterialTheme.typography.headlineSmall,
-        fontFamily = FontFamily.SansSerif,
-        fontSize = 12.sp,
+        style = MaterialTheme.typography.titleSmall,
     )
 
     Column(

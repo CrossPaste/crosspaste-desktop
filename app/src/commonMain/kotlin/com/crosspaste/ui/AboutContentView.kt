@@ -155,9 +155,8 @@ fun AboutInfoItem(
         Text(
             modifier = Modifier.wrapContentSize().padding(start = 5.dp),
             text = copywriter.getText(title),
-            style = MaterialTheme.typography.titleLarge.copy(lineHeight = 24.sp),
+            style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onBackground,
-            fontSize = 15.sp,
         )
 
         Spacer(modifier = Modifier.weight(1f))

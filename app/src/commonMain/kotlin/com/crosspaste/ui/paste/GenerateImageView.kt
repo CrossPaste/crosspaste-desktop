@@ -11,12 +11,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.FixedScale
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
@@ -26,6 +22,7 @@ import coil3.request.crossfade
 import com.crosspaste.image.coil.GenerateImageItem
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.rendering.RenderingHelper
+import com.crosspaste.ui.paste.PasteboardViewProvider.Companion.previewTextStyle
 import okio.Path
 import org.koin.compose.koinInject
 
@@ -66,7 +63,6 @@ fun GenerateImageView(
                     ) {
                         Text(
                             text = text,
-                            fontFamily = FontFamily.SansSerif,
                             maxLines =
                                 if (preview) {
                                     4
@@ -75,13 +71,8 @@ fun GenerateImageView(
                                 },
                             softWrap = true,
                             overflow = TextOverflow.Ellipsis,
-                            style =
-                                TextStyle(
-                                    fontWeight = FontWeight.Normal,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    fontSize = 16.sp,
-                                    lineHeight = 20.sp,
-                                ),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = previewTextStyle,
                         )
                     }
                 }

@@ -73,12 +73,10 @@ fun SetStoragePathView() {
     Text(
         modifier =
             Modifier.wrapContentSize()
-                .padding(start = 16.dp, top = 5.dp, bottom = 5.dp),
+                .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
         text = copywriter.getText("storage_directory"),
         color = MaterialTheme.colorScheme.onBackground,
-        style = MaterialTheme.typography.headlineSmall,
-        fontFamily = FontFamily.SansSerif,
-        fontSize = 12.sp,
+        style = MaterialTheme.typography.titleSmall,
     )
 
     Column(
@@ -199,7 +197,6 @@ fun SetStoragePathDialogView(path: Path) {
     val userDataPathProvider = koinInject<UserDataPathProvider>()
     val appExitService = koinInject<AppExitService>()
     val appRestartService = koinInject<AppRestartService>()
-    var isError by remember { mutableStateOf(false) }
     var isMigration by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf(0.0f) }
     val coroutineScope = rememberCoroutineScope()
@@ -230,7 +227,6 @@ fun SetStoragePathDialogView(path: Path) {
             }.onFailure {
                 coroutineScope.launch {
                     isMigration = false
-                    isError = true
                 }
             }
         }

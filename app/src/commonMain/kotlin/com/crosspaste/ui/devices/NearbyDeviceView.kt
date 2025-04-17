@@ -15,11 +15,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppControl
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.db.sync.SyncRuntimeInfo.Companion.createSyncRuntimeInfo
@@ -72,12 +68,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
             Text(
                 text = copywriter.getText("add"),
                 color = connectedColor(background),
-                style =
-                    TextStyle(
-                        fontFamily = FontFamily.SansSerif,
-                        fontWeight = FontWeight.Light,
-                        fontSize = 14.sp,
-                    ),
+                style = MaterialTheme.typography.labelMedium,
             )
         }
 
@@ -117,12 +108,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
             Text(
                 text = copywriter.getText("block"),
                 color = disconnectedColor(background),
-                style =
-                    TextStyle(
-                        fontFamily = FontFamily.SansSerif,
-                        fontWeight = FontWeight.Light,
-                        fontSize = 14.sp,
-                    ),
+                style = MaterialTheme.typography.labelMedium,
             )
         }
         Spacer(modifier = Modifier.width(16.dp))

@@ -27,6 +27,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -74,7 +75,10 @@ fun CustomTextSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    textStyle: TextStyle,
+    textStyle: TextStyle =
+        MaterialTheme.typography.labelMedium.copy(
+            fontWeight = FontWeight.Light,
+        ),
     checkedText: String = "ON",
     uncheckedText: String = "OFF",
     checkedThumbColor: Color = MaterialTheme.colorScheme.primary,

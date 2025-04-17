@@ -30,11 +30,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.arrowBack
@@ -107,13 +105,13 @@ fun WindowDecoration(title: String) {
                         )
 
                         Text(
+                            modifier = Modifier.align(Alignment.CenterVertically),
                             text = copywriter.getText("return_"),
+                            color = MaterialTheme.colorScheme.contentColorFor(returnBackground),
                             style =
-                                TextStyle(
+                                MaterialTheme.typography.headlineSmall.copy(
                                     fontWeight = FontWeight.Light,
-                                    color = MaterialTheme.colorScheme.contentColorFor(returnBackground),
-                                    fontFamily = FontFamily.SansSerif,
-                                    fontSize = 22.sp,
+                                    lineHeight = TextUnit.Unspecified,
                                 ),
                         )
                         Spacer(modifier = Modifier.width(10.dp).height(40.dp))
@@ -125,9 +123,10 @@ fun WindowDecoration(title: String) {
                         modifier = Modifier,
                         text = copywriter.getText(title),
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        fontSize = 22.sp,
-                        style = TextStyle(fontWeight = FontWeight.Bold),
-                        fontFamily = FontFamily.SansSerif,
+                        style =
+                            MaterialTheme.typography.headlineSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                            ),
                     )
                 }
             }

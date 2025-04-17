@@ -42,12 +42,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.crosspaste.i18n.GlobalCopywriter
 import org.koin.compose.koinInject
 
@@ -138,9 +135,10 @@ fun MobileExpandView(
             Text(
                 text = copywriter.getText(title),
                 color = onTitleBackgroundColor,
-                fontSize = 14.sp,
-                fontFamily = FontFamily.SansSerif,
-                style = TextStyle(fontWeight = FontWeight.Light),
+                style =
+                    MaterialTheme.typography.labelLarge.copy(
+                        lineHeight = TextUnit.Unspecified,
+                    ),
             )
 
             Spacer(modifier = Modifier.weight(1f))

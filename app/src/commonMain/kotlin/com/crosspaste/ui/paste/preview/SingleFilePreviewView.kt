@@ -26,12 +26,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
@@ -133,11 +130,7 @@ fun SingleFilePreviewView(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 color = MaterialTheme.colorScheme.onSurface,
-                style =
-                    TextStyle(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 11.sp,
-                    ),
+                style = MaterialTheme.typography.labelMedium,
             )
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -152,11 +145,7 @@ fun SingleFilePreviewView(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onSurface,
-                    style =
-                        TextStyle(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 11.sp,
-                        ),
+                    style = MaterialTheme.typography.labelMedium,
                 )
             } else {
                 Text(
@@ -164,11 +153,7 @@ fun SingleFilePreviewView(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.error,
-                    style =
-                        TextStyle(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 11.sp,
-                        ),
+                    style = MaterialTheme.typography.labelMedium,
                 )
             }
         }

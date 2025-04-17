@@ -34,10 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_LOCAL_LAST
@@ -254,12 +251,7 @@ fun ShortcutKeyRow(name: String) {
             Text(
                 text = copywriter.getText("unassigned"),
                 color = MaterialTheme.colorScheme.onSurface,
-                style =
-                    TextStyle(
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Light,
-                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                    ),
+                style = MaterialTheme.typography.labelMedium,
             )
         }
     }
@@ -278,12 +270,7 @@ fun ShortcutKeyItemView(keys: List<KeyboardKey>) {
                 Text(
                     text = "+",
                     color = MaterialTheme.colorScheme.onSurface,
-                    style =
-                        TextStyle(
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Light,
-                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                        ),
+                    style = MaterialTheme.typography.labelMedium,
                 )
                 Spacer(modifier = Modifier.width(5.dp))
             }

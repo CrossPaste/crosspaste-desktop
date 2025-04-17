@@ -32,20 +32,14 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.app.AppWindowManager
@@ -196,20 +190,16 @@ fun DeviceConnectContentView(
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = copywriter.getText(connectText),
+                color = connectColor,
                 style =
-                    TextStyle(
-                        fontFamily = FontFamily.SansSerif,
+                    MaterialTheme.typography.labelLarge.copy(
                         fontWeight = FontWeight.Bold,
-                        color = connectColor,
-                        fontSize = 14.sp,
+                        lineHeight = TextUnit.Unspecified,
                     ),
             )
 
             if (deviceInteractionEnabled) {
                 var showPopup by remember { mutableStateOf(false) }
-
-                var buttonPosition by remember { mutableStateOf(Offset.Zero) }
-                var buttonSize by remember { mutableStateOf(Size(0.0f, 0.0f)) }
 
                 PasteIconButton(
                     size = 20.dp,
@@ -219,10 +209,7 @@ fun DeviceConnectContentView(
                     modifier =
                         Modifier
                             .background(Color.Transparent, CircleShape)
-                            .onGloballyPositioned { coordinates ->
-                                buttonPosition = coordinates.localToWindow(Offset.Zero)
-                                buttonSize = coordinates.size.toSize()
-                            }.padding(horizontal = 8.dp),
+                            .padding(horizontal = 8.dp),
                 ) {
                     Icon(
                         painter = moreVertical(),
@@ -237,8 +224,8 @@ fun DeviceConnectContentView(
                         alignment = Alignment.TopEnd,
                         offset =
                             IntOffset(
-                                with(density) { ((-40).dp).roundToPx() },
-                                with(density) { (20.dp).roundToPx() },
+                                x = with(density) { ((-40).dp).roundToPx() },
+                                y = with(density) { (20.dp).roundToPx() },
                             ),
                         onDismissRequest = {
                             if (showPopup) {

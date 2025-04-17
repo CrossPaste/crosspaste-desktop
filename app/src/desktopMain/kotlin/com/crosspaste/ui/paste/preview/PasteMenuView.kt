@@ -53,7 +53,6 @@ import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.PasteTypeIconView
-import com.crosspaste.ui.base.TOOLTIP_TEXT_STYLE
 import com.crosspaste.ui.base.clipboard
 import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.getMenWidth
@@ -77,7 +76,6 @@ fun PasteMenuView(
     val pasteMenuService = koinInject<DesktopPasteMenuService>()
 
     var parentBounds by remember { mutableStateOf(Rect.Zero) }
-    var cursorPosition by remember { mutableStateOf(Offset.Zero) }
     var showMenu by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     var job: Job? by remember { mutableStateOf(null) }
@@ -119,13 +117,11 @@ fun PasteMenuView(
             Modifier.fillMaxSize()
                 .onGloballyPositioned { parentBounds = it.boundsInWindow() }
                 .onPointerEvent(PointerEventType.Enter) {
-                    cursorPosition = it.position
                     if (!showMenu && !it.buttons.areAnyPressed) {
                         startShowing()
                     }
                 }
                 .onPointerEvent(PointerEventType.Move) {
-                    cursorPosition = it.position
                     if (!showMenu && !it.buttons.areAnyPressed) {
                         startShowing()
                     }
@@ -244,7 +240,7 @@ fun MoreMenuItem(
         Modifier.fillMaxWidth().height(25.dp),
         text = menuText,
         computeTooltipPlacement = {
-            val textWidth = measureTextWidth(menuText, TOOLTIP_TEXT_STYLE)
+            val textWidth = measureTextWidth(menuText, MaterialTheme.typography.bodySmall)
             TooltipPlacement.ComponentRect(
                 anchor = Alignment.BottomStart,
                 alignment = Alignment.BottomEnd,
@@ -310,7 +306,7 @@ fun CopyMenuItem(
         Modifier.fillMaxWidth().height(25.dp),
         text = copyText,
         computeTooltipPlacement = {
-            val textWidth = measureTextWidth(copyText, TOOLTIP_TEXT_STYLE)
+            val textWidth = measureTextWidth(copyText, MaterialTheme.typography.bodySmall)
             TooltipPlacement.ComponentRect(
                 anchor = Alignment.BottomStart,
                 alignment = Alignment.BottomEnd,
@@ -377,7 +373,7 @@ fun FavoriteMenuItem(
         Modifier.fillMaxWidth().height(25.dp),
         text = favoriteText,
         computeTooltipPlacement = {
-            val textWidth = measureTextWidth(favoriteText, TOOLTIP_TEXT_STYLE)
+            val textWidth = measureTextWidth(favoriteText, MaterialTheme.typography.bodySmall)
             TooltipPlacement.ComponentRect(
                 anchor = Alignment.BottomStart,
                 alignment = Alignment.BottomEnd,
@@ -442,7 +438,7 @@ fun DetailMenuItem(
         Modifier.fillMaxWidth().height(25.dp),
         text = detailInfo,
         computeTooltipPlacement = {
-            val textWidth = measureTextWidth(detailInfo, TOOLTIP_TEXT_STYLE)
+            val textWidth = measureTextWidth(detailInfo, MaterialTheme.typography.bodySmall)
             TooltipPlacement.ComponentRect(
                 anchor = Alignment.BottomStart,
                 alignment = Alignment.BottomEnd,

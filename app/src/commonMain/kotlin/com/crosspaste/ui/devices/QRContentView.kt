@@ -38,13 +38,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppSize
 import com.crosspaste.app.AppTokenApi
 import com.crosspaste.i18n.GlobalCopywriter
@@ -112,11 +109,11 @@ fun QRContentView() {
                         Modifier.align(Alignment.CenterHorizontally)
                             .width(appSize.qrCodeSize.width)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(Color.White),
+                            .background(Color.White)
+                            .padding(horizontal = 16.dp, vertical = 6.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         modifier =
                             Modifier.weight(1f, fill = false)
@@ -124,13 +121,11 @@ fun QRContentView() {
                         textAlign = TextAlign.Center,
                         text = copywriter.getText("please_scan_the_binding_device"),
                         maxLines = 3,
+                        color = Color.Black,
                         softWrap = true,
                         style =
-                            TextStyle(
-                                fontFamily = FontFamily.SansSerif,
+                            MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.Light,
-                                color = Color.Black,
-                                fontSize = 20.sp,
                                 lineBreak = LineBreak.Paragraph,
                             ),
                     )
@@ -141,7 +136,6 @@ fun QRContentView() {
                         modifier = Modifier.size(20.dp),
                         tint = ColorUtils.getAdaptiveColor(Color.White, BaseColor.Blue.targetHue),
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
                 }
                 Spacer(modifier = Modifier.height(20.dp))
                 qrImage?.let {

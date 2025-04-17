@@ -11,11 +11,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -26,11 +29,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppWindowManager
@@ -41,7 +41,6 @@ import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.alertCircle
 import com.crosspaste.ui.base.measureTextWidth
-import com.crosspaste.ui.theme.CrossPasteTheme.unmatchedColor
 import kotlinx.coroutines.runBlocking
 import org.koin.compose.koinInject
 
@@ -81,6 +80,7 @@ fun DeviceDetailContentView() {
                     .padding(16.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                    .verticalScroll(rememberScrollState())
                     .padding(16.dp),
         ) {
             if (versionRelation != null && versionRelation != VersionRelation.EQUAL_TO) {
@@ -99,7 +99,10 @@ fun DeviceDetailContentView() {
                         Icon(
                             painter = alertCircle(),
                             contentDescription = "Warning",
-                            tint = unmatchedColor(MaterialTheme.colorScheme.errorContainer),
+                            tint =
+                                MaterialTheme.colorScheme.contentColorFor(
+                                    MaterialTheme.colorScheme.errorContainer,
+                                ),
                             modifier = Modifier.size(20.dp),
                         )
                         Spacer(modifier = Modifier.width(16.dp))
@@ -108,17 +111,15 @@ fun DeviceDetailContentView() {
                                 "${copywriter.getText("current_software_version")}: ${appInfo.appVersion}\n" +
                                     "${copywriter.getText("connected_software_version")}: ${syncRuntimeInfo.appVersion}\n" +
                                     copywriter.getText("incompatible_info"),
-                            color = unmatchedColor(MaterialTheme.colorScheme.errorContainer),
-                            style =
-                                TextStyle(
-                                    fontWeight = FontWeight.Light,
-                                    lineHeight = 20.sp,
+                            color =
+                                MaterialTheme.colorScheme.contentColorFor(
+                                    MaterialTheme.colorScheme.errorContainer,
                                 ),
-                            fontFamily = FontFamily.SansSerif,
-                            fontSize = 14.sp,
+                            style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.weight(1f),
                         )
                     }
+                    Spacer(Modifier.height(16.dp))
                 }
             }
 
@@ -129,9 +130,7 @@ fun DeviceDetailContentView() {
                         .padding(start = 15.dp, bottom = 5.dp),
                 text = copywriter.getText("sync_control"),
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.headlineSmall,
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.titleSmall,
             )
             Column(
                 modifier =
@@ -148,9 +147,7 @@ fun DeviceDetailContentView() {
                     Text(
                         text = "${copywriter.getText("allow_send_to")} ${syncRuntimeInfo.getDeviceDisplayName()}",
                         color = MaterialTheme.colorScheme.onSurface,
-                        style = TextStyle(fontWeight = FontWeight.Light),
-                        fontFamily = FontFamily.SansSerif,
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light),
                         modifier = Modifier.weight(1f),
                     )
                     CustomSwitch(
@@ -159,12 +156,12 @@ fun DeviceDetailContentView() {
                                 .width(32.dp)
                                 .height(20.dp),
                         checked = !appControl.isSyncControlEnabled(false) || syncRuntimeInfo.allowSend,
-                        onCheckedChange = {
+                        onCheckedChange = { allowSend ->
                             runBlocking {
                                 if (appControl.isSyncControlEnabled()) {
                                     syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
                                         ?.update { syncRuntimeInfo ->
-                                            syncRuntimeInfo.copy(allowSend = it)
+                                            syncRuntimeInfo.copy(allowSend = allowSend)
                                         }?.let {
                                             syncRuntimeInfo = it
                                         }
@@ -185,9 +182,7 @@ fun DeviceDetailContentView() {
                     Text(
                         text = "${copywriter.getText("allow_receive_from")} ${syncRuntimeInfo.getDeviceDisplayName()}",
                         color = MaterialTheme.colorScheme.onSurface,
-                        style = TextStyle(fontWeight = FontWeight.Light),
-                        fontFamily = FontFamily.SansSerif,
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light),
                         modifier = Modifier.weight(1f),
                     )
                     CustomSwitch(
@@ -196,12 +191,12 @@ fun DeviceDetailContentView() {
                                 .width(32.dp)
                                 .height(20.dp),
                         checked = !appControl.isSyncControlEnabled(false) || syncRuntimeInfo.allowReceive,
-                        onCheckedChange = {
+                        onCheckedChange = { allowReceive ->
                             runBlocking {
                                 if (appControl.isSyncControlEnabled()) {
                                     syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
                                         ?.update { syncRuntimeInfo ->
-                                            syncRuntimeInfo.copy(allowReceive = it)
+                                            syncRuntimeInfo.copy(allowReceive = allowReceive)
                                         }?.let {
                                             syncRuntimeInfo = it
                                         }
@@ -229,9 +224,8 @@ fun DeviceDetailContentView() {
                 }
 
             val textStyle =
-                TextStyle(
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Normal,
+                MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.Bold,
                 )
 
             for (property in properties) {
@@ -245,9 +239,7 @@ fun DeviceDetailContentView() {
                         .padding(start = 15.dp, bottom = 5.dp),
                 text = copywriter.getText("base_info"),
                 color = MaterialTheme.colorScheme.onSurface,
-                fontFamily = FontFamily.SansSerif,
-                style = MaterialTheme.typography.headlineSmall,
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.titleSmall,
             )
 
             Column(
@@ -266,17 +258,13 @@ fun DeviceDetailContentView() {
                         Text(
                             modifier = Modifier.width(maxWidth + 16.dp),
                             text = copywriter.getText(pair.first),
-                            style = TextStyle(fontWeight = FontWeight.Light),
-                            fontFamily = FontFamily.SansSerif,
+                            style = textStyle,
                             color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = 14.sp,
                         )
                         Text(
                             text = pair.second,
-                            style = TextStyle(fontWeight = FontWeight.Light),
-                            fontFamily = FontFamily.SansSerif,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = 12.sp,
                         )
                     }
                     if (index < properties.size - 1) {

@@ -10,11 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.sp
 import com.crosspaste.i18n.GlobalCopywriter
 import org.koin.compose.koinInject
 
@@ -38,14 +34,8 @@ fun PasteEmptyScreenView() {
                 textAlign = TextAlign.Center,
                 text = copywriter.getText("no_pasteboard_activity_detected_yet"),
                 maxLines = 3,
-                style =
-                    TextStyle(
-                        fontFamily = FontFamily.SansSerif,
-                        fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontSize = 20.sp,
-                        lineHeight = 24.sp,
-                    ),
+                color = MaterialTheme.colorScheme.onBackground,
+                style = MaterialTheme.typography.bodyLarge,
             )
         }
     }

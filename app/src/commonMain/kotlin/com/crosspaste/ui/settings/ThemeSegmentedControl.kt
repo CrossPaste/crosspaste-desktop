@@ -24,11 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.contrastHigh
 import com.crosspaste.ui.base.contrastMedium
@@ -167,10 +163,8 @@ private fun ThemeStyle() {
                 ),
         ) {
             Text(
-                copywriter.getText("light"),
-                fontSize = 14.sp,
-                fontFamily = FontFamily.SansSerif,
-                style = TextStyle(fontWeight = FontWeight.Light),
+                text = copywriter.getText("light"),
+                style = MaterialTheme.typography.labelMedium,
             )
         }
 
@@ -194,10 +188,8 @@ private fun ThemeStyle() {
                 ),
         ) {
             Text(
-                copywriter.getText("system"),
-                fontSize = 14.sp,
-                fontFamily = FontFamily.SansSerif,
-                style = TextStyle(fontWeight = FontWeight.Light),
+                text = copywriter.getText("system"),
+                style = MaterialTheme.typography.labelMedium,
             )
         }
 
@@ -227,10 +219,8 @@ private fun ThemeStyle() {
                 ),
         ) {
             Text(
-                copywriter.getText("dark"),
-                fontSize = 14.sp,
-                fontFamily = FontFamily.SansSerif,
-                style = TextStyle(fontWeight = FontWeight.Light),
+                text = copywriter.getText("dark"),
+                style = MaterialTheme.typography.labelMedium,
             )
         }
     }
