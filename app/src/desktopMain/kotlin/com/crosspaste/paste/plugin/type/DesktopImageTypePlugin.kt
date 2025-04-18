@@ -216,6 +216,7 @@ class DesktopImageTypePlugin(
                 }
 
             if (fileList.size == 1) {
+                map[URL_FLAVOR.toPasteDataFlavor()] = fileList[0].toURI().toURL()
                 runCatching {
                     val start = System.currentTimeMillis()
                     val image: BufferedImage? = ImageIO.read(fileList[0])
@@ -226,8 +227,6 @@ class DesktopImageTypePlugin(
                     logger.error(e) { "read image fail" }
                 }
             }
-        } else {
-            map[URL_FLAVOR.toPasteDataFlavor()] = fileList[0].toURI().toURL()
         }
 
         if (getPlatform().isLinux()) {

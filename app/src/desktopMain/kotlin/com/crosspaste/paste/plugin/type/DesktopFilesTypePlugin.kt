@@ -173,8 +173,10 @@ class DesktopFilesTypePlugin(
                 )
             map[DataFlavor.stringFlavor.toPasteDataFlavor()] =
                 fileList.joinToString(separator = "\n") { it.name }
-        } else {
-            map[URL_FLAVOR.toPasteDataFlavor()] = fileList[0].toURI().toURL()
+
+            if (fileList.size == 1) {
+                map[URL_FLAVOR.toPasteDataFlavor()] = fileList[0].toURI().toURL()
+            }
         }
 
         if (getPlatform().isLinux()) {
