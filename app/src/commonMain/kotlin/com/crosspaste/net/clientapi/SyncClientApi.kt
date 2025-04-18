@@ -128,6 +128,15 @@ class SyncClientApi(
         })
     }
 
+    suspend fun hideToken(toUrl: URLBuilder.() -> Unit): ClientApiResult {
+        return request(logger, exceptionHandler, request = {
+            pasteClient.get(urlBuilder = {
+                toUrl()
+                buildUrl("sync", "hideToken")
+            })
+        }, transformData = { true })
+    }
+
     suspend fun showToken(toUrl: URLBuilder.() -> Unit): ClientApiResult {
         return request(logger, exceptionHandler, request = {
             pasteClient.get(urlBuilder = {

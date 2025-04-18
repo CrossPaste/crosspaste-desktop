@@ -14,7 +14,7 @@ interface AppTokenApi {
 
     fun toShowToken()
 
-    fun toHideToken()
+    fun toHideToken(hideWindow: Boolean = false)
 
     fun startRefreshToken()
 
