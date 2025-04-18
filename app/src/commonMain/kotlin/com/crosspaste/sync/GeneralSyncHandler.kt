@@ -145,9 +145,7 @@ class GeneralSyncHandler(
     }
 
     override suspend fun getConnectHostAddress(): String? {
-        syncRuntimeInfo.connectHostAddress?.let {
-            return it
-        } ?: run {
+        return syncRuntimeInfo.connectHostAddress ?: run {
             mutex.withLock {
                 // getConnectionHostAddress may be called by multiple threads
                 // only one thread enters to solve the connection problem
@@ -160,7 +158,7 @@ class GeneralSyncHandler(
                     doForceResolve()
                 }
             }
-            return syncRuntimeInfo.connectHostAddress
+            syncRuntimeInfo.connectHostAddress
         }
     }
 
@@ -201,12 +199,10 @@ class GeneralSyncHandler(
 
     override suspend fun update(doUpdate: (SyncRuntimeInfo) -> SyncRuntimeInfo): SyncRuntimeInfo? {
         val newSyncRuntimeInfo = doUpdate(syncRuntimeInfo)
-        syncRuntimeInfoDao.update(newSyncRuntimeInfo) {
+        return syncRuntimeInfoDao.update(newSyncRuntimeInfo) {
             syncRuntimeInfo = newSyncRuntimeInfo
         }?.let {
-            return newSyncRuntimeInfo
-        } ?: run {
-            return null
+            newSyncRuntimeInfo
         }
     }
 
@@ -343,7 +339,7 @@ class GeneralSyncHandler(
 
         when (result) {
             is SuccessResult -> {
-                this.versionRelation = result.getResult<VersionRelation>()
+                this.versionRelation = result.getResult()
                 return if (this.versionRelation == VersionRelation.EQUAL_TO) {
                     SyncState.CONNECTED
                 } else {

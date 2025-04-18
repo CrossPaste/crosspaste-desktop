@@ -54,11 +54,8 @@ abstract class AbstractFaviconLoader(
         value: String,
         result: Path,
     ) {
-        saveIco(getDefaultIcoUrl(key), result)?.let {
-            return
-        } ?: run {
-            saveIco(getGoogleIconUrl(key), result)
-        }
+        saveIco(getDefaultIcoUrl(key), result)
+            ?: saveIco(getGoogleIconUrl(key), result)
     }
 
     override fun convertToKey(value: String): String {

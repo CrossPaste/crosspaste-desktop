@@ -46,11 +46,7 @@ class TaskExecutor(
     }
 
     private fun getExecutorImpl(taskType: Int): SingleTypeTaskExecutor {
-        singleTypeTaskExecutorMap[taskType]?.let {
-            return it
-        } ?: run {
-            throw IllegalArgumentException("Unknown task type: $taskType")
-        }
+        return singleTypeTaskExecutorMap[taskType] ?: throw IllegalArgumentException("Unknown task type: $taskType")
     }
 
     private suspend fun executeTask(taskId: Long) {
