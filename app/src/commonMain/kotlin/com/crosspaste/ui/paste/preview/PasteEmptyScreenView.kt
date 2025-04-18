@@ -35,7 +35,7 @@ fun PasteEmptyScreenView() {
                 text = copywriter.getText("no_pasteboard_activity_detected_yet"),
                 maxLines = 3,
                 color = MaterialTheme.colorScheme.onBackground,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.titleLarge,
             )
         }
     }

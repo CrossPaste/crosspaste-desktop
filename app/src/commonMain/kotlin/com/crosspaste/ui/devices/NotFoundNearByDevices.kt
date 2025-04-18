@@ -35,7 +35,7 @@ fun NotFoundNearByDevices() {
                 text = copywriter.getText("no_nearby_devices_found_with_crosspaste_enabled"),
                 maxLines = 3,
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.titleLarge,
             )
         }
     }

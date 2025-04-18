@@ -42,14 +42,11 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.app.DesktopAppWindowManager
@@ -155,13 +152,7 @@ fun SearchInputView(requestFocus: () -> Unit) {
                         disabledPlaceholderColor = Color.Transparent,
                         errorPlaceholderColor = MaterialTheme.colorScheme.error.copy(alpha = 0.5f),
                     ),
-                textStyle =
-                    TextStyle(
-                        fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 15.sp,
-                        lineHeight = 5.sp,
-                    ),
+                textStyle = MaterialTheme.typography.bodyLarge,
             )
 
             val textStyle =
