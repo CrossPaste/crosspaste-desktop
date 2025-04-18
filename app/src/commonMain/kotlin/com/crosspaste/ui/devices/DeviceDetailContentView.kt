@@ -71,13 +71,18 @@ fun DeviceDetailContentView() {
         versionRelation = syncHandler?.versionRelation
     }
 
-    Column {
+    Column(
+        modifier =
+            Modifier.fillMaxSize()
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+    ) {
         deviceViewProvider.DeviceConnectView(syncRuntimeInfo, false) { }
 
         Column(
             modifier =
                 Modifier.fillMaxSize()
-                    .padding(16.dp)
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 16.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(MaterialTheme.colorScheme.surfaceContainerLowest)
                     .verticalScroll(rememberScrollState())

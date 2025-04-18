@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -219,6 +220,7 @@ fun SingleTabView(
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 style =
                     MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
                         lineHeight = TextUnit.Unspecified,
                     ),
             )
