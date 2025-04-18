@@ -85,12 +85,6 @@ fun Routing.syncRouting(
         }
     }
 
-    get("/sync/hideToken") {
-        appTokenApi.toHideToken(true)
-        logger.debug { "hide token" }
-        successResponse(call)
-    }
-
     get("/sync/showToken") {
         appTokenApi.toShowToken()
         logger.debug { "show token" }

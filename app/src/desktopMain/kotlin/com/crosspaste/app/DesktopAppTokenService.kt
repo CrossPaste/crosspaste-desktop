@@ -4,15 +4,7 @@ class DesktopAppTokenService(
     private val appWindowManager: DesktopAppWindowManager,
 ) : AppTokenService() {
 
-    override fun toShowToken() {
+    override fun preShowToken() {
         appWindowManager.setShowMainWindow(true)
-        super.toShowToken()
-    }
-
-    override fun toHideToken(hideWindow: Boolean) {
-        if (hideWindow) {
-            appWindowManager.setShowMainWindow(false)
-        }
-        super.toHideToken(hideWindow)
     }
 }

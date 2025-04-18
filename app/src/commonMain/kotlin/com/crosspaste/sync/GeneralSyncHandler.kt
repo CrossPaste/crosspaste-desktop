@@ -283,7 +283,6 @@ class GeneralSyncHandler(
                                 modifyTime = nowEpochMilliseconds(),
                             )
                         }
-                        hideToken(syncRuntimeInfo)
                         return@resolveConnecting
                     }
                     SyncState.UNMATCHED -> {
@@ -392,7 +391,6 @@ class GeneralSyncHandler(
                     modifyTime = nowEpochMilliseconds(),
                 )
             }
-            hideToken(syncRuntimeInfo)
         } else {
             syncRuntimeInfo.connectHostAddress?.let {
                 telnetHelper.telnet(it, syncRuntimeInfo.port)?.let { versionRelation ->
@@ -452,16 +450,6 @@ class GeneralSyncHandler(
             }
         }
         return false
-    }
-
-    private suspend fun hideToken(syncRuntimeInfo: SyncRuntimeInfo) {
-        if (syncRuntimeInfo.connectState == SyncState.CONNECTED) {
-            syncRuntimeInfo.connectHostAddress?.let { host ->
-                syncClientApi.hideToken {
-                    buildUrl(host, syncRuntimeInfo.port)
-                }
-            }
-        }
     }
 
     override suspend fun showToken(syncRuntimeInfo: SyncRuntimeInfo) {
