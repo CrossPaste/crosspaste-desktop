@@ -33,19 +33,15 @@ open class AppTokenService : AppTokenApi {
 
     override val token: StateFlow<CharArray> = _token.asStateFlow()
 
-    open fun preShowToken() {
-    }
-
     override fun sameToken(token: Int): Boolean {
         return token == this.token.value.concatToString().toInt()
     }
 
     override fun toShowToken() {
-        preShowToken()
         _showToken.value = true
     }
 
-    override fun toHideToken() {
+    override fun toHideToken(hideWindow: Boolean) {
         _showToken.value = false
     }
 
