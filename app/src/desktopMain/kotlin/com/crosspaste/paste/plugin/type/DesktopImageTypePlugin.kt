@@ -8,6 +8,7 @@ import com.crosspaste.paste.DesktopPasteDataFlavor
 import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteDataFlavors
+import com.crosspaste.paste.PasteDataFlavors.URL_FLAVOR
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteCoordinate
@@ -225,6 +226,8 @@ class DesktopImageTypePlugin(
                     logger.error(e) { "read image fail" }
                 }
             }
+        } else {
+            map[URL_FLAVOR.toPasteDataFlavor()] = fileList[0].toURI().toURL()
         }
 
         if (getPlatform().isLinux()) {
