@@ -15,7 +15,7 @@ class OfficeHtmlPlugin {
 
         fun isOfficeApp(source: String?): Boolean {
             return source?.let {
-                return it == WORD || it == EXCEL || it == POWERPOINT
+                it == WORD || it == EXCEL || it == POWERPOINT
             } ?: false
         }
     }

@@ -57,7 +57,7 @@ class PullFileTaskExecutor(
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         val pullExtraInfo: PullExtraInfo = TaskUtils.getExtraInfo(pasteTask, PullExtraInfo::class)
 
-        pasteDao.getNoDeletePasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
+        return pasteDao.getNoDeletePasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
             val fileItems = pasteData.getPasteAppearItems().filter { it is PasteFiles }
             check(fileItems.isNotEmpty() && fileItems.size == 1)
             val fileItem = fileItems.first()
@@ -80,7 +80,7 @@ class PullFileTaskExecutor(
             val filesIndex = filesIndexBuilder.build()
 
             if (filesIndex.getChunkCount() == 0) {
-                return SuccessPasteTaskResult()
+                return@doExecuteTask SuccessPasteTaskResult()
             }
 
             if (pullExtraInfo.pullChunks.isEmpty()) {
@@ -93,9 +93,9 @@ class PullFileTaskExecutor(
                 val port = it.syncRuntimeInfo.port
 
                 it.getConnectHostAddress()?.let { host ->
-                    return pullFiles(pasteData, host, port, filesIndex, pullExtraInfo)
+                    pullFiles(pasteData, host, port, filesIndex, pullExtraInfo)
                 } ?: run {
-                    return doFailure(
+                    doFailure(
                         pasteData, pullExtraInfo,
                         listOf(
                             createFailureResult(
@@ -107,7 +107,7 @@ class PullFileTaskExecutor(
                     )
                 }
             } ?: run {
-                return doFailure(
+                doFailure(
                     pasteData, pullExtraInfo,
                     listOf(
                         createFailureResult(
@@ -119,7 +119,7 @@ class PullFileTaskExecutor(
                 )
             }
         } ?: run {
-            return SuccessPasteTaskResult()
+            SuccessPasteTaskResult()
         }
     }
 

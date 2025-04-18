@@ -197,7 +197,7 @@ class DesktopHtmlRenderingService(
 
     @Suppress("UNCHECKED_CAST")
     private fun html2Image(html: String): ByteArray? {
-        chromeDriver?.let { driver ->
+        return chromeDriver?.let { driver ->
             driver.get(htmlUtils.dataUrl(html))
             val windowDimension =
                 renderingHelper.dimension.let {
@@ -208,9 +208,7 @@ class DesktopHtmlRenderingService(
             val pageWidth = max(dimensions[0].toInt(), windowDimension.width)
             val pageHeight = max(dimensions[1].toInt(), windowDimension.height)
             driver.manage().window().size = Dimension(pageWidth, pageHeight)
-            return driver.getScreenshotAs(OutputType.BYTES)
-        } ?: run {
-            return null
+            driver.getScreenshotAs(OutputType.BYTES)
         }
     }
 }

@@ -192,7 +192,7 @@ data class PasteData(
                     -> {
                     getPasteAppearItems().firstOrNull { it is PasteText }?.let {
                         val pasteText = it as PasteText
-                        return pasteText.text.trim()
+                        pasteText.text.trim()
                     } ?: run {
                         pasteAppearItem?.getTitle() ?: unknown
                     }

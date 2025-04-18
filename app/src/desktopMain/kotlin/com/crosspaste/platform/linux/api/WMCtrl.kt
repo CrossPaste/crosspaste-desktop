@@ -230,7 +230,7 @@ object WMCtrl {
 
     fun getActiveWindowId(display: X11.Display): Long {
         return getActiveWindow(display)?.let {
-            return getWindowId(it)
+            getWindowId(it)
         } ?: -1
     }
 
@@ -240,7 +240,7 @@ object WMCtrl {
 
     fun getActiveWindowPid(display: X11.Display): Int {
         return getActiveWindow(display)?.let {
-            return getWindowPid(display, it)
+            getWindowPid(display, it)
         } ?: -1
     }
 
