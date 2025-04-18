@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -74,6 +75,7 @@ fun ToastView(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Icon(
+                    modifier = Modifier.size(20.dp),
                     painter = getMessagePainter(messageStyle),
                     contentDescription = "toast icon",
                     tint = tint,
@@ -91,7 +93,9 @@ fun ToastView(
                 )
                 Spacer(Modifier.width(12.dp))
                 Icon(
-                    modifier = Modifier.clickable(onClick = onCancelTapped),
+                    modifier =
+                        Modifier.size(20.dp)
+                            .clickable(onClick = onCancelTapped),
                     painter = close(),
                     contentDescription = "Cancel",
                     tint = tint,
