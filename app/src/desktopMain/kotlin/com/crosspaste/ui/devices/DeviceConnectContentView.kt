@@ -82,7 +82,7 @@ fun DeviceConnectContentView(
     val connectIcon = AllowSendAndReceiveImage(syncRuntimeInfo)
 
     var hover by remember { mutableStateOf(false) }
-    val backgroundColor =
+    val background =
         if (hover) {
             MaterialTheme.colorScheme.secondaryContainer
         } else {
@@ -91,17 +91,17 @@ fun DeviceConnectContentView(
 
     val (connectColor, connectText) =
         getConnectStateColorAndText(
-            syncRuntimeInfo,
-            syncHandler?.versionRelation,
-            refresh,
-            backgroundColor,
+            syncRuntimeInfo = syncRuntimeInfo,
+            versionRelation = syncHandler?.versionRelation,
+            refresh = refresh,
+            background = background,
         )
 
     var modifier =
         Modifier
             .fillMaxWidth()
             .height(60.dp)
-            .background(backgroundColor)
+            .background(background)
 
     if (deviceInteractionEnabled) {
         modifier =
@@ -126,7 +126,7 @@ fun DeviceConnectContentView(
 
     DeviceBarView(
         modifier = modifier,
-        background = backgroundColor,
+        background = background,
         syncRuntimeInfo = syncRuntimeInfo,
     ) {
         Row(
@@ -215,7 +215,7 @@ fun DeviceConnectContentView(
                         painter = moreVertical(),
                         contentDescription = "info",
                         modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.contentColorFor(backgroundColor),
+                        tint = MaterialTheme.colorScheme.contentColorFor(background),
                     )
                 }
 
