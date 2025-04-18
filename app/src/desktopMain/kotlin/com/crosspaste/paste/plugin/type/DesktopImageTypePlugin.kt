@@ -8,6 +8,7 @@ import com.crosspaste.paste.DesktopPasteDataFlavor
 import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteDataFlavors
+import com.crosspaste.paste.PasteDataFlavors.URL_FLAVOR
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteCoordinate
@@ -215,6 +216,7 @@ class DesktopImageTypePlugin(
                 }
 
             if (fileList.size == 1) {
+                map[URL_FLAVOR.toPasteDataFlavor()] = fileList[0].toURI().toURL()
                 runCatching {
                     val start = System.currentTimeMillis()
                     val image: BufferedImage? = ImageIO.read(fileList[0])

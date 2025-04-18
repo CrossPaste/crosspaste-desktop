@@ -7,6 +7,7 @@ import com.crosspaste.db.paste.PasteType
 import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteDataFlavors
+import com.crosspaste.paste.PasteDataFlavors.URL_FLAVOR
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.PasteCoordinate
@@ -172,7 +173,12 @@ class DesktopFilesTypePlugin(
                 )
             map[DataFlavor.stringFlavor.toPasteDataFlavor()] =
                 fileList.joinToString(separator = "\n") { it.name }
+
+            if (fileList.size == 1) {
+                map[URL_FLAVOR.toPasteDataFlavor()] = fileList[0].toURI().toURL()
+            }
         }
+
         if (getPlatform().isLinux()) {
             val content =
                 fileList.joinToString(
