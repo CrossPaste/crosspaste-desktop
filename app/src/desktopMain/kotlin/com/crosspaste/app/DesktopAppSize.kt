@@ -2,6 +2,7 @@ package com.crosspaste.app
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 
@@ -15,6 +16,8 @@ object DesktopAppSize : AppSize {
     override val searchWindowSize: DpSize = DpSize(width = 800.dp, height = 540.dp)
 
     override val searchWindowDetailViewDpSize: DpSize = DpSize(width = 500.dp, height = 240.dp)
+
+    override val toastViewWidth: Dp = 280.dp
 
     val appRoundedCornerShape = RoundedCornerShape(10.dp)
 

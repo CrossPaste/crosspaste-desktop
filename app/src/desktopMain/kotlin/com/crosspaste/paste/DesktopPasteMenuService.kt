@@ -47,10 +47,10 @@ class DesktopPasteMenuService(
                     messageType = MessageType.Success,
                 )
             },
-            fail = {
+            fail = { e ->
                 notificationManager.sendNotification(
                     title = { it.getText("copy_failed") },
-                    message = it.message?.let { message -> { it -> message } },
+                    message = e.message?.let { message -> { it -> message } },
                     messageType = MessageType.Error,
                 )
             },
@@ -72,10 +72,10 @@ class DesktopPasteMenuService(
                     messageType = MessageType.Success,
                 )
             },
-            fail = {
+            fail = { e ->
                 notificationManager.sendNotification(
                     title = { it.getText("copy_failed") },
-                    message = it.message?.let { message -> { it -> message } },
+                    message = e.message?.let { message -> { it -> message } },
                     messageType = MessageType.Error,
                 )
             },

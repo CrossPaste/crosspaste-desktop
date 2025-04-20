@@ -1,5 +1,6 @@
 package com.crosspaste.app
 
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 
 interface AppSize {
@@ -13,4 +14,6 @@ interface AppSize {
     val searchWindowSize: DpSize
 
     val searchWindowDetailViewDpSize: DpSize
+
+    val toastViewWidth: Dp
 }
