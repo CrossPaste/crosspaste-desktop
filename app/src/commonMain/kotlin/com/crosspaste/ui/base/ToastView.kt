@@ -29,16 +29,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import com.crosspaste.app.AppSize
 import com.crosspaste.notification.Message
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.getMessagePainter
 import com.crosspaste.utils.ColorUtils
+import org.koin.compose.koinInject
 
 @Composable
 fun ToastView(
     toast: Message,
     onCancelTapped: () -> Unit,
 ) {
+    val appSize = koinInject<AppSize>()
+
     val messageStyle by remember {
         mutableStateOf(toast.messageType.getMessageStyle())
     }
@@ -66,12 +70,12 @@ fun ToastView(
             modifier =
                 Modifier.background(background, shape = RoundedCornerShape(8.dp))
                     .padding(all = 8.dp)
-                    .width(280.dp),
+                    .width(appSize.toastViewWidth),
         ) {
             Row(
                 modifier =
                     Modifier
-                        .width(280.dp)
+                        .fillMaxWidth()
                         .padding(horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -85,7 +89,7 @@ fun ToastView(
                 Spacer(Modifier.width(12.dp))
                 Column(
                     modifier =
-                        Modifier.width(192.dp)
+                        Modifier.width(appSize.toastViewWidth - 88.dp)
                             .wrapContentHeight(),
                     verticalArrangement = Arrangement.Center,
                 ) {
