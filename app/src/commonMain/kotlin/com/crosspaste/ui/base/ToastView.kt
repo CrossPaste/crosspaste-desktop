@@ -7,9 +7,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -81,16 +83,44 @@ fun ToastView(
                     tint = tint,
                 )
                 Spacer(Modifier.width(12.dp))
-                Text(
-                    modifier = Modifier.weight(1f, fill = false),
-                    text = toast.title,
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.contentColorFor(background),
-                    style =
-                        MaterialTheme.typography.titleMedium.copy(
-                            lineHeight = TextUnit.Unspecified,
-                        ),
-                )
+                Column(
+                    modifier =
+                        Modifier.width(192.dp)
+                            .wrapContentHeight(),
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Row(
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .wrapContentHeight(),
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Text(
+                            modifier = Modifier.weight(1f, fill = false),
+                            text = toast.title,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.contentColorFor(background),
+                            style =
+                                MaterialTheme.typography.titleMedium.copy(
+                                    lineHeight = TextUnit.Unspecified,
+                                ),
+                        )
+                    }
+                    toast.message?.let { message ->
+                        Row(
+                            modifier =
+                                Modifier
+                                    .padding(top = 12.dp, bottom = 4.dp),
+                        ) {
+                            Text(
+                                modifier = Modifier.weight(1f, fill = false),
+                                text = message,
+                                textAlign = TextAlign.Start,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                    }
+                }
                 Spacer(Modifier.width(12.dp))
                 Icon(
                     modifier =
@@ -100,22 +130,6 @@ fun ToastView(
                     contentDescription = "Cancel",
                     tint = tint,
                 )
-            }
-
-            toast.message?.let { message ->
-                Row(
-                    modifier =
-                        Modifier.width(280.dp)
-                            .padding(top = 12.dp, bottom = 4.dp)
-                            .padding(horizontal = 12.dp),
-                ) {
-                    Text(
-                        modifier = Modifier.weight(1f, fill = false),
-                        text = message,
-                        textAlign = TextAlign.Start,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
             }
         }
     }
