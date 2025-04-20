@@ -97,11 +97,13 @@ import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.DefaultPasteSyncProcessManager
 import com.crosspaste.paste.DesktopCacheManager
 import com.crosspaste.paste.DesktopCurrentPaste
+import com.crosspaste.paste.DesktopInitPasteDataService
 import com.crosspaste.paste.DesktopPasteExportParamFactory
 import com.crosspaste.paste.DesktopPasteImportParamFactory
 import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.DesktopTransferableConsumer
 import com.crosspaste.paste.DesktopTransferableProducer
+import com.crosspaste.paste.InitPasteDataService
 import com.crosspaste.paste.PasteExportParamFactory
 import com.crosspaste.paste.PasteExportService
 import com.crosspaste.paste.PasteImportParamFactory
@@ -365,6 +367,7 @@ class DesktopCrossPasteModule(
             }
             single<DesktopPasteMenuService> { DesktopPasteMenuService(get(), get(), get(), get(), get(), get()) }
             single<GenerateImageService> { GenerateImageService() }
+            single<InitPasteDataService> { DesktopInitPasteDataService(get(), get(), get(), get()) }
             single<PasteboardService> {
                 getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get(), get())
             }

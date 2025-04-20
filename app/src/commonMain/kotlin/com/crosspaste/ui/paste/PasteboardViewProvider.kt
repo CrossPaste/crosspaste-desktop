@@ -16,7 +16,7 @@ interface PasteboardViewProvider {
                 fontFamily = FontFamily.SansSerif,
                 fontWeight = FontWeight.Normal,
                 fontSize = 16.sp,
-                lineHeight = 20.sp,
+                lineHeight = 19.8.sp,
             )
 
         val previewUrlStyle =
@@ -24,7 +24,7 @@ interface PasteboardViewProvider {
                 fontFamily = FontFamily.SansSerif,
                 fontWeight = FontWeight.Normal,
                 fontSize = 16.sp,
-                lineHeight = 20.sp,
+                lineHeight = 19.8.sp,
                 textDecoration = TextDecoration.Underline,
             )
     }

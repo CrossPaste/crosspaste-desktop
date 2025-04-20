@@ -29,6 +29,7 @@ import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.net.PasteClient
 import com.crosspaste.net.Server
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.paste.InitPasteDataService
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.path.UserDataPathProvider
@@ -129,6 +130,7 @@ class CrossPaste {
                     koin.get<AppUpdateService>().start()
                     koin.get<RenderingService<String>>(named("htmlRendering")).start()
                     koin.get<RenderingService<String>>(named("rtfRendering")).start()
+                    koin.get<InitPasteDataService>().initData()
                 } else {
                     exitProcess(0)
                 }
