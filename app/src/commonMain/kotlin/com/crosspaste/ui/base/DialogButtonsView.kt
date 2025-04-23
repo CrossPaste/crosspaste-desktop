@@ -12,6 +12,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.crosspaste.i18n.GlobalCopywriter
 import org.koin.compose.koinInject
@@ -35,7 +36,10 @@ fun DialogButtonsView(
             onClick = cancelAction,
             modifier = Modifier.weight(1f).padding(end = 8.dp),
         ) {
-            Text(copywriter.getText(cancelTitle))
+            Text(
+                text = copywriter.getText(cancelTitle),
+                textAlign = TextAlign.Center,
+            )
         }
 
         Button(
@@ -46,7 +50,10 @@ fun DialogButtonsView(
                     containerColor = MaterialTheme.colorScheme.primary,
                 ),
         ) {
-            Text(copywriter.getText(confirmTitle))
+            Text(
+                text = copywriter.getText(confirmTitle),
+                textAlign = TextAlign.Center,
+            )
         }
     }
 }
