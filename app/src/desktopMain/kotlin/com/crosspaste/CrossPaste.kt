@@ -120,6 +120,7 @@ class CrossPaste {
                         koin.get<PasteboardService>().start()
                     }
                     koin.get<QRCodeGenerator>()
+                    koin.get<SyncManager>().start()
                     koin.get<Server>().start()
                     koin.get<PasteClient>()
                     // bonjour service should be registered after paste server started
@@ -189,7 +190,7 @@ class CrossPaste {
                         async { stopService<PasteboardService>("PasteboardService") { it.stop() } },
                         async { stopService<PasteBonjourService>("PasteBonjourService") { it.unregisterService() } },
                         async { stopService<Server>("PasteServer") { it.stop() } },
-                        async { stopService<SyncManager>("SyncManager") { it.notifyExit() } },
+                        async { stopService<SyncManager>("SyncManager") { it.stop() } },
                         async { stopService<CleanScheduler>("CleanPasteScheduler") { it.stop() } },
                         async { stopService<GlobalListener>("GlobalListener") { it.stop() } },
                         async { stopService<UserDataPathProvider>("UserDataPathProvider") { it.cleanTemp() } },

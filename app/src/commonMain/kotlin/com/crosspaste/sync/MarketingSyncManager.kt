@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 class MarketingSyncManager : SyncManager {
 
     private val syncRuntimeInfos =
-        listOf<SyncRuntimeInfo>(
+        listOf(
             SyncRuntimeInfo(
                 appInstanceId = "2",
                 appVersion = "1.1.1",
@@ -52,19 +52,22 @@ class MarketingSyncManager : SyncManager {
         )
 
     override val realTimeSyncRuntimeInfos: StateFlow<List<SyncRuntimeInfo>> =
-        MutableStateFlow<List<SyncRuntimeInfo>>(syncRuntimeInfos)
+        MutableStateFlow(syncRuntimeInfos)
 
-    private var internalSyncHandlers: MutableMap<String, SyncHandler> = ConcurrentMap()
-
-    override val realTimeSyncScope = CoroutineScope(ioDispatcher + SupervisorJob())
-
-    init {
+    override fun start() {
         internalSyncHandlers.putAll(
             syncRuntimeInfos.map { syncRuntimeInfo ->
                 syncRuntimeInfo.appInstanceId to createSyncHandler(syncRuntimeInfo)
             },
         )
     }
+
+    override fun stop() {
+    }
+
+    private var internalSyncHandlers: MutableMap<String, SyncHandler> = ConcurrentMap()
+
+    override val realTimeSyncScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
     override fun createSyncHandler(syncRuntimeInfo: SyncRuntimeInfo): SyncHandler {
         return MarketingSyncHandler(syncRuntimeInfo)
