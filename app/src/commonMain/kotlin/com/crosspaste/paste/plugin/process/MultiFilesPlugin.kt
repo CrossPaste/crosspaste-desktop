@@ -13,8 +13,8 @@ class MultiFilesPlugin(private val userDataPathProvider: UserDataPathProvider) :
         pasteItems: List<PasteItem>,
         source: String?,
     ): List<PasteItem> {
-        if (pasteItems.size <= 1) {
-            return pasteItems
+        return if (pasteItems.size <= 1) {
+            pasteItems
         } else {
             val relativePathList =
                 pasteItems.map { it as FilesPasteItem }.flatMap { it.relativePathList }
@@ -26,7 +26,7 @@ class MultiFilesPlugin(private val userDataPathProvider: UserDataPathProvider) :
                 pasteItems.map { it as FilesPasteItem }.map { it.hash }
                     .toTypedArray().let { codecsUtils.hashByArray(it) }
             pasteItems.forEach { it.clear(userDataPathProvider, clearResource = false) }
-            return FilesPasteItem(
+            FilesPasteItem(
                 identifiers = pasteItems.flatMap { it.identifiers },
                 count = fileInfoMap.values.sumOf { it.getCount() },
                 hash = hash,

@@ -26,6 +26,7 @@ import java.awt.datatransfer.DataFlavor
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.InputStream
 import java.net.URL
 import java.nio.charset.StandardCharsets
 import javax.imageio.ImageIO
@@ -37,7 +38,10 @@ class DesktopImageTypePlugin(
 ) : ImageTypePlugin {
 
     companion object {
-        const val IMAGE_ID = "image/x-java-image"
+        const val X_JAVA_IMAGE = "image/x-java-image"
+        const val IMAGE_PNG = "image/png"
+        const val IMAGE_JPEG = "image/jpeg"
+        const val IMAGE = "image"
     }
 
     private val logger = KotlinLogging.logger {}
@@ -49,7 +53,7 @@ class DesktopImageTypePlugin(
     }
 
     override fun getIdentifiers(): List<String> {
-        return listOf(IMAGE_ID)
+        return listOf(X_JAVA_IMAGE, IMAGE_PNG, IMAGE_JPEG, IMAGE)
     }
 
     override fun createPrePasteItem(
@@ -59,7 +63,7 @@ class DesktopImageTypePlugin(
         pasteCollector: PasteCollector,
     ) {
         ImagesPasteItem(
-            identifiers = listOf(IMAGE_ID),
+            identifiers = listOf(identifier),
             count = 0,
             hash = "",
             size = 0,
@@ -85,8 +89,16 @@ class DesktopImageTypePlugin(
         if (dataFlavorMap.keys.contains(FILE_LIST_ID)) {
             return
         }
+
+        var image: BufferedImage? = null
+
         if (transferData is Image) {
-            val image: BufferedImage = toBufferedImage(transferData)
+            image = toBufferedImage(img = transferData)
+        } else if (transferData is InputStream) {
+            image = ImageIO.read(transferData)
+        }
+
+        image?.let {
             var name =
                 tryGetImageName(dataFlavorMap, pasteTransferable)
                     ?: fileUtils.createRandomFileName(ext = "png")
