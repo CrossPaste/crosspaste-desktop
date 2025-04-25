@@ -15,7 +15,7 @@ class DesktopAppControl(private val configManager: ConfigManager) : AppControl {
         return true
     }
 
-    override fun isDeviceConnectionEnabled(num: Int): Boolean {
+    override fun isDeviceConnectionEnabled(deviceCount: Int): Boolean {
         return true
     }
 
