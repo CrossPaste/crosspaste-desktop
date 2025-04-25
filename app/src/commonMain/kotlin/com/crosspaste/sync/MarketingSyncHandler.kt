@@ -16,7 +16,7 @@ class MarketingSyncHandler(
     override suspend fun forceResolve() {
     }
 
-    override suspend fun update(block: (SyncRuntimeInfo) -> SyncRuntimeInfo): SyncRuntimeInfo? {
+    override suspend fun update(doUpdate: (SyncRuntimeInfo) -> SyncRuntimeInfo): SyncRuntimeInfo? {
         return syncRuntimeInfo
     }
 
