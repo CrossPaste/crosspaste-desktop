@@ -8,12 +8,14 @@ import com.crosspaste.utils.getHtmlUtils
 import com.crosspaste.utils.getJsonUtils
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
 import kotlinx.serialization.json.put
 import okio.Path
+import okio.Path.Companion.toPath
 
 @Serializable
 @SerialName("html")
@@ -21,6 +23,8 @@ class HtmlPasteItem(
     override val identifiers: List<String>,
     override val hash: String,
     override val size: Long,
+    @Transient
+    override val basePath: String? = null,
     override val relativePath: String,
     override val html: String,
 ) : PasteItem, PasteHtml {
@@ -39,12 +43,13 @@ class HtmlPasteItem(
         identifiers = jsonObject["identifiers"]!!.jsonPrimitive.content.split(","),
         hash = jsonObject["hash"]!!.jsonPrimitive.content,
         size = jsonObject["size"]!!.jsonPrimitive.long,
+        basePath = jsonObject["basePath"]?.jsonPrimitive?.content,
         relativePath = jsonObject["relativePath"]!!.jsonPrimitive.content,
         html = jsonObject["html"]!!.jsonPrimitive.content,
     )
 
     override fun getHtmlImagePath(userDataPathProvider: UserDataPathProvider): Path {
-        val basePath = userDataPathProvider.resolve(appFileType = AppFileType.HTML)
+        val basePath = basePath?.toPath() ?: userDataPathProvider.resolve(appFileType = AppFileType.HTML)
         return userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
     }
 
@@ -53,6 +58,7 @@ class HtmlPasteItem(
             identifiers = identifiers,
             hash = hash,
             size = size,
+            basePath = basePath,
             relativePath =
                 fileUtils.createPasteRelativePath(
                     pasteCoordinate = pasteCoordinate,
@@ -79,14 +85,35 @@ class HtmlPasteItem(
         hash: String,
     ): PasteItem {
         return (data as? String)?.let { html ->
+            // todo update html image
             HtmlPasteItem(
                 identifiers = identifiers,
                 hash = hash,
                 size = html.encodeToByteArray().size.toLong(),
+                basePath = basePath,
                 relativePath = relativePath,
                 html = html,
             )
         } ?: this
+    }
+
+    override fun clear(
+        userDataPathProvider: UserDataPathProvider,
+        clearResource: Boolean,
+    ) {
+        if (clearResource) {
+            if (basePath == null) {
+                val basePath = userDataPathProvider.resolve(appFileType = AppFileType.HTML)
+                val htmlFile =
+                    userDataPathProvider.resolve(
+                        basePath,
+                        relativePath,
+                        autoCreate = false,
+                        isFile = true,
+                    )
+                fileUtils.deleteFile(htmlFile)
+            }
+        }
     }
 
     override fun isValid(): Boolean {
@@ -102,6 +129,7 @@ class HtmlPasteItem(
             put("identifiers", identifiers.joinToString(","))
             put("hash", hash)
             put("size", size)
+            basePath?.let { put("basePath", it) }
             put("relativePath", relativePath)
             put("html", html)
         }.toString()

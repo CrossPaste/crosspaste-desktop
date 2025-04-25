@@ -182,7 +182,10 @@ import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.devices.DesktopDeviceViewProvider
 import com.crosspaste.ui.devices.DeviceViewProvider
 import com.crosspaste.ui.model.GeneralPasteDataViewModel
+import com.crosspaste.ui.model.GeneralPasteSearchViewModel
+import com.crosspaste.ui.model.MarketingPasteData
 import com.crosspaste.ui.model.MarketingPasteDataViewModel
+import com.crosspaste.ui.model.MarketingPasteSearchViewModel
 import com.crosspaste.ui.model.PasteDataViewModel
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
@@ -474,14 +477,21 @@ class DesktopCrossPasteModule(
     // ViewModelModule.kt
     override fun viewModelModule() =
         module {
+            single<MarketingPasteData> { MarketingPasteData(get(), get()) }
             single<PasteDataViewModel> {
                 if (marketingMode) {
-                    MarketingPasteDataViewModel(get(), get())
+                    MarketingPasteDataViewModel(get())
                 } else {
                     GeneralPasteDataViewModel(get())
                 }
             }
-            single<PasteSearchViewModel> { PasteSearchViewModel(get()) }
+            single<PasteSearchViewModel> {
+                if (marketingMode) {
+                    MarketingPasteSearchViewModel(get())
+                } else {
+                    GeneralPasteSearchViewModel(get())
+                }
+            }
             single<PasteSelectionViewModel> { PasteSelectionViewModel(get(), get(), get()) }
         }
 

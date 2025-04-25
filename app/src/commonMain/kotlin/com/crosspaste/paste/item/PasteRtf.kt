@@ -8,6 +8,8 @@ interface PasteRtf : PasteCoordinateBinder {
 
     val rtf: String
 
+    val basePath: String?
+
     val relativePath: String
 
     fun getText(): String {
