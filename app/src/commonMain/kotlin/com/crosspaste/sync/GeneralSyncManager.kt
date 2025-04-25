@@ -20,6 +20,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.collections.*
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -63,7 +64,15 @@ class GeneralSyncManager(
 
     private val nearbyDeviceManager: NearbyDeviceManager by lazyNearbyDeviceManager
 
-    init {
+    private var started = false
+
+    private var syncRuntimeInfosJob: Job? = null
+    private var pasteDialogJob: Job? = null
+
+    override fun start() {
+        if (started) return
+        started = true
+
         realTimeSyncScope.launch {
             val syncRuntimeInfos = syncRuntimeInfoDao.getAllSyncRuntimeInfos()
             internalSyncHandlers.putAll(
@@ -78,70 +87,87 @@ class GeneralSyncManager(
             withContext(ioDispatcher) {
                 resolveSyncs()
             }
-            collectSyncRuntimeInfosFlow()
+            startCollectingSyncRuntimeInfosFlow()
         }
-        collectPasteDialog()
+        startCollectingPasteDialog()
     }
 
-    private suspend fun collectSyncRuntimeInfosFlow() {
-        syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow().collect { list ->
-            val currentAppInstanceIdSet = list.map { it.appInstanceId }.toSet()
-            val previousAppInstanceIdSet = realTimeSyncRuntimeInfos.value.map { it.appInstanceId }.toSet()
-            val deleteSet = previousAppInstanceIdSet - currentAppInstanceIdSet
-            val newSet = currentAppInstanceIdSet - previousAppInstanceIdSet
+    override fun stop() {
+        if (!started) return
+        started = false
 
-            deleteSet.forEach { appInstanceId ->
-                internalSyncHandlers.remove(appInstanceId)?.clearContext()
-            }
+        notifyExit()
 
-            newSet.forEach { appInstanceId ->
-                internalSyncHandlers[appInstanceId] = createSyncHandler(list.first { it.appInstanceId == appInstanceId })
-            }
+        syncRuntimeInfosJob?.cancel()
+        syncRuntimeInfosJob = null
 
-            withContext(mainDispatcher) {
-                _realTimeSyncRuntimeInfos.value = list
-                _ignoreVerifySet.update { set ->
-                    set.filter {
-                        it in currentAppInstanceIdSet
-                    }.toSet()
-                }
-                if (newSet.isNotEmpty() || deleteSet.isNotEmpty()) {
-                    nearbyDeviceManager.refresh()
-                }
-            }
-
-            _realTimeSyncRuntimeInfos.value = list
-        }
+        pasteDialogJob?.cancel()
+        pasteDialogJob = null
     }
 
-    private fun collectPasteDialog() {
-        combine(
-            realTimeSyncRuntimeInfos,
-            ignoreVerifySet,
-        ) { syncInfos, ignoreSet ->
-            syncInfos to ignoreSet
-        }
-            .map { (syncInfos, ignoreSet) ->
-                syncInfos
-                    .filter { !ignoreSet.contains(it.appInstanceId) }
-                    .firstOrNull { it.connectState == SyncState.UNVERIFIED }
-            }
-            .filterNotNull()
-            .onEach { info ->
-                val dialog =
-                    pasteDialogFactory.createDialog(
-                        key = info.deviceId,
-                        title = "do_you_trust_this_device?",
-                        onDismissRequest = { dialogService.popDialog() },
-                    ) {
-                        DeviceVerifyView(
-                            syncRuntimeInfo = info,
-                            background = Color.Transparent,
-                        )
+    private fun startCollectingSyncRuntimeInfosFlow() {
+        syncRuntimeInfosJob =
+            realTimeSyncScope.launch {
+                syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow().collect { list ->
+                    val currentAppInstanceIdSet = list.map { it.appInstanceId }.toSet()
+                    val previousAppInstanceIdSet = realTimeSyncRuntimeInfos.value.map { it.appInstanceId }.toSet()
+                    val deleteSet = previousAppInstanceIdSet - currentAppInstanceIdSet
+                    val newSet = currentAppInstanceIdSet - previousAppInstanceIdSet
+
+                    deleteSet.forEach { appInstanceId ->
+                        internalSyncHandlers.remove(appInstanceId)?.clearContext()
                     }
-                dialogService.pushDialog(dialog)
+
+                    newSet.forEach { appInstanceId ->
+                        internalSyncHandlers[appInstanceId] = createSyncHandler(list.first { it.appInstanceId == appInstanceId })
+                    }
+
+                    withContext(mainDispatcher) {
+                        _realTimeSyncRuntimeInfos.value = list
+                        _ignoreVerifySet.update { set ->
+                            set.filter {
+                                it in currentAppInstanceIdSet
+                            }.toSet()
+                        }
+                        if (newSet.isNotEmpty() || deleteSet.isNotEmpty()) {
+                            nearbyDeviceManager.refresh()
+                        }
+                    }
+
+                    _realTimeSyncRuntimeInfos.value = list
+                }
             }
-            .launchIn(realTimeSyncScope)
+    }
+
+    private fun startCollectingPasteDialog() {
+        pasteDialogJob =
+            combine(
+                realTimeSyncRuntimeInfos,
+                ignoreVerifySet,
+            ) { syncInfos, ignoreSet ->
+                syncInfos to ignoreSet
+            }
+                .map { (syncInfos, ignoreSet) ->
+                    syncInfos
+                        .filter { !ignoreSet.contains(it.appInstanceId) }
+                        .firstOrNull { it.connectState == SyncState.UNVERIFIED }
+                }
+                .filterNotNull()
+                .onEach { info ->
+                    val dialog =
+                        pasteDialogFactory.createDialog(
+                            key = info.deviceId,
+                            title = "do_you_trust_this_device?",
+                            onDismissRequest = { dialogService.popDialog() },
+                        ) {
+                            DeviceVerifyView(
+                                syncRuntimeInfo = info,
+                                background = Color.Transparent,
+                            )
+                        }
+                    dialogService.pushDialog(dialog)
+                }
+                .launchIn(realTimeSyncScope)
     }
 
     override fun createSyncHandler(syncRuntimeInfo: SyncRuntimeInfo): SyncHandler {
