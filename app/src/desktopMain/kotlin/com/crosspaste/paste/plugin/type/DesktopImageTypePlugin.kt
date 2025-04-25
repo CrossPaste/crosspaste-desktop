@@ -40,7 +40,7 @@ class DesktopImageTypePlugin(
     companion object {
         const val X_JAVA_IMAGE = "image/x-java-image"
         const val IMAGE_PNG = "image/png"
-        const val IMAGE_JPG = "image/jpg"
+        const val IMAGE_JPEG = "image/jpeg"
         const val IMAGE = "image"
     }
 
@@ -53,7 +53,7 @@ class DesktopImageTypePlugin(
     }
 
     override fun getIdentifiers(): List<String> {
-        return listOf(X_JAVA_IMAGE, IMAGE, IMAGE_PNG, IMAGE_JPG)
+        return listOf(X_JAVA_IMAGE, IMAGE_PNG, IMAGE_JPEG, IMAGE)
     }
 
     override fun createPrePasteItem(
