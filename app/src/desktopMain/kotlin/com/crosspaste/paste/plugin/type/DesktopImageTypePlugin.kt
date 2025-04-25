@@ -39,9 +39,9 @@ class DesktopImageTypePlugin(
 
     companion object {
         const val X_JAVA_IMAGE = "image/x-java-image"
-        const val IMAGE = "image"
         const val IMAGE_PNG = "image/png"
         const val IMAGE_JPG = "image/jpg"
+        const val IMAGE = "image"
     }
 
     private val logger = KotlinLogging.logger {}
@@ -63,7 +63,7 @@ class DesktopImageTypePlugin(
         pasteCollector: PasteCollector,
     ) {
         ImagesPasteItem(
-            identifiers = listOf(X_JAVA_IMAGE),
+            identifiers = listOf(identifier),
             count = 0,
             hash = "",
             size = 0,
