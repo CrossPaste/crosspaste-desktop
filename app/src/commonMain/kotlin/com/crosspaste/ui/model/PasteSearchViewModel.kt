@@ -1,42 +1,30 @@
 package com.crosspaste.ui.model
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteData
-import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 
-class PasteSearchViewModel(private val pasteDao: PasteDao) : ViewModel() {
+abstract class PasteSearchViewModel() : ViewModel() {
 
     companion object {
         const val QUERY_BATCH_SIZE = 50
     }
 
-    private val logger = KotlinLogging.logger {}
-
     private val _inputSearch = MutableStateFlow("")
-    val inputSearch = _inputSearch.asStateFlow()
+    val inputSearch = _inputSearch
 
     private val _searchFavorite = MutableStateFlow(false)
-    val searchFavorite = _searchFavorite.asStateFlow()
+    val searchFavorite = _searchFavorite
 
     private val _searchSort = MutableStateFlow(true)
-    val searchSort = _searchSort.asStateFlow()
+    val searchSort = _searchSort
 
     private val _searchPasteType = MutableStateFlow<Int?>(null)
-    val searchPasteType = _searchPasteType.asStateFlow()
+    val searchPasteType = _searchPasteType
 
     private val _searchLimit = MutableStateFlow(QUERY_BATCH_SIZE)
 
@@ -66,27 +54,7 @@ class PasteSearchViewModel(private val pasteDao: PasteDao) : ViewModel() {
             )
         }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val searchResults: StateFlow<List<PasteData>> =
-        searchParams
-            .distinctUntilChanged()
-            .flatMapLatest { params ->
-                logger.info { "to searchPasteDataFlow" }
-                pasteDao.searchPasteDataFlow(
-                    searchTerms = params.searchTerms,
-                    favorite = if (params.favorite) true else null,
-                    sort = params.sort,
-                    pasteType = params.pasteType,
-                    limit = params.limit,
-                ).map { pasteDataList ->
-                    pasteDataList.filter { it.isValid() }
-                }
-            }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000),
-                initialValue = listOf(),
-            )
+    abstract val searchResults: StateFlow<List<PasteData>>
 
     fun updateInputSearch(input: String) {
         _inputSearch.value = input

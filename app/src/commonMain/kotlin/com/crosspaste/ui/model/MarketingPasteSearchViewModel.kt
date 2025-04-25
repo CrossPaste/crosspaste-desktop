@@ -4,22 +4,10 @@ import com.crosspaste.db.paste.PasteData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-class MarketingPasteDataViewModel(
+class MarketingPasteSearchViewModel(
     marketingPasteData: MarketingPasteData,
-) : PasteDataViewModel() {
+) : PasteSearchViewModel() {
 
-    override val pasteDataList: StateFlow<List<PasteData>> =
+    override val searchResults: StateFlow<List<PasteData>> =
         MutableStateFlow(marketingPasteData.getPasteDataList())
-
-    override fun loadMore() {
-    }
-
-    override fun pause() {
-    }
-
-    override fun resume() {
-    }
-
-    override fun cleanup() {
-    }
 }

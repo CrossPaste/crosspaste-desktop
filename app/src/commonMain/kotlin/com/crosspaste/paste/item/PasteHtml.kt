@@ -8,6 +8,8 @@ interface PasteHtml {
 
     val html: String
 
+    val basePath: String?
+
     val relativePath: String
 
     fun getText(): String {
