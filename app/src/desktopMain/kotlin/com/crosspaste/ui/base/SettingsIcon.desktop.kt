@@ -10,7 +10,6 @@ import com.crosspaste.app.generated.resources.hashtag
 import com.crosspaste.app.generated.resources.language
 import com.crosspaste.app.generated.resources.network
 import com.crosspaste.app.generated.resources.palette
-import com.crosspaste.app.generated.resources.rocket
 import com.crosspaste.app.generated.resources.shield
 import com.crosspaste.app.generated.resources.trash
 import com.crosspaste.app.generated.resources.wifi
@@ -69,11 +68,6 @@ actual fun network(): Painter {
 @Composable
 actual fun palette(): Painter {
     return painterResource(Res.drawable.palette)
-}
-
-@Composable
-actual fun rocket(): Painter {
-    return painterResource(Res.drawable.rocket)
 }
 
 @Composable

@@ -37,9 +37,6 @@ expect fun network(): Painter
 expect fun palette(): Painter
 
 @Composable
-expect fun rocket(): Painter
-
-@Composable
 expect fun shield(): Painter
 
 @Composable

@@ -7,9 +7,7 @@ import com.crosspaste.app.generated.resources.allow_receive
 import com.crosspaste.app.generated.resources.allow_send
 import com.crosspaste.app.generated.resources.block
 import com.crosspaste.app.generated.resources.devices
-import com.crosspaste.app.generated.resources.qr_code
 import com.crosspaste.app.generated.resources.sync
-import com.crosspaste.app.generated.resources.token
 import com.crosspaste.app.generated.resources.unverified
 import org.jetbrains.compose.resources.painterResource
 
@@ -34,18 +32,8 @@ actual fun devices(): Painter {
 }
 
 @Composable
-actual fun qrCode(): Painter {
-    return painterResource(Res.drawable.qr_code)
-}
-
-@Composable
 actual fun sync(): Painter {
     return painterResource(Res.drawable.sync)
-}
-
-@Composable
-actual fun token(): Painter {
-    return painterResource(Res.drawable.token)
 }
 
 @Composable

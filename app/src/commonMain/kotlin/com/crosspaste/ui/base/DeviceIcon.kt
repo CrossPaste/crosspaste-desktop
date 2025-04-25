@@ -16,13 +16,7 @@ expect fun block(): Painter
 expect fun devices(): Painter
 
 @Composable
-expect fun qrCode(): Painter
-
-@Composable
 expect fun sync(): Painter
-
-@Composable
-expect fun token(): Painter
 
 @Composable
 expect fun unverified(): Painter
