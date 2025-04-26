@@ -20,14 +20,14 @@ object DesktopCodecsUtils : CodecsUtils {
         if (array.isEmpty()) {
             throw IllegalArgumentException("Array is empty")
         }
-        if (array.size == 1) {
-            return hashByString(array[0])
+        return if (array.size == 1) {
+            hashByString(array[0])
         } else {
             val outputStream = ByteArrayOutputStream()
             array.forEach {
                 outputStream.write(it.toByteArray())
             }
-            return hash(outputStream.toByteArray())
+            hash(outputStream.toByteArray())
         }
     }
 }

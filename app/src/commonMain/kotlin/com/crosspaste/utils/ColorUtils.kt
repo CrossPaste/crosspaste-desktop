@@ -140,15 +140,15 @@ object ColorUtils {
             return p
         }
 
-        if (s1 == 0f) {
-            return Color(l1, l1, l1)
+        return if (s1 == 0f) {
+            Color(l1, l1, l1)
         } else {
             val q = if (l1 < 0.5f) l1 * (1 + s1) else l1 + s1 - l1 * s1
             val p = 2 * l1 - q
             val r = hueToRgb(p, q, h1 + 1f / 3f)
             val g = hueToRgb(p, q, h1)
             val b = hueToRgb(p, q, h1 - 1f / 3f)
-            return Color(r, g, b)
+            Color(r, g, b)
         }
     }
 

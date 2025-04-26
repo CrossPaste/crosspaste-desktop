@@ -59,20 +59,21 @@ suspend inline fun <T> request(
     request: () -> HttpResponse,
     transformData: (HttpResponse) -> T,
 ): ClientApiResult {
-    try {
+    return try {
         val response = request()
         logger.info { "response status: ${response.call.request.url} ${response.status}" }
         if (response.status.value == 404) {
-            return createFailureResult(StandardErrorCode.NOT_FOUND_API, "Not found Api")
+            createFailureResult(StandardErrorCode.NOT_FOUND_API, "Not found Api")
         } else if (response.status.value != 200) {
             val failResponse = response.body<FailResponse>()
             logger.error { "request error: $failResponse" }
-            return createFailureResult(failResponse)
+            createFailureResult(failResponse)
+        } else {
+            SuccessResult(transformData(response))
         }
-        return SuccessResult(transformData(response))
     } catch (e: Exception) {
         logger.error(e) { "request error" }
-        return if (exceptionHandler.isConnectionRefused(e)) {
+        if (exceptionHandler.isConnectionRefused(e)) {
             ConnectionRefused
         } else if (exceptionHandler.isEncryptFail(e)) {
             EncryptFail

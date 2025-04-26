@@ -44,7 +44,7 @@ class CleanTaskTaskExecutor(
             logger.error(e) { "Error while cleaning task" }
         }.getOrElse {
             val baseExtraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class)
-            return TaskUtils.createFailurePasteTaskResult(
+            TaskUtils.createFailurePasteTaskResult(
                 logger = logger,
                 retryHandler = { baseExtraInfo.executionHistories.size < 2 },
                 startTime = pasteTask.modifyTime,

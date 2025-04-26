@@ -13,7 +13,7 @@ class MarketingNearbyDeviceManager : NearbyDeviceManager {
     override val searching: StateFlow<Boolean> = MutableStateFlow<Boolean>(false)
 
     override val syncInfos: StateFlow<List<SyncInfo>> =
-        MutableStateFlow<List<SyncInfo>>(
+        MutableStateFlow(
             listOf(
                 SyncInfo(
                     appInfo =

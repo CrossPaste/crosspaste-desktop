@@ -44,9 +44,9 @@ class PullIconTaskExecutor(
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         val baseExtraInfo: BaseExtraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class)
 
-        pasteDao.getNoDeletePasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
+        return pasteDao.getNoDeletePasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
             pasteData.source?.let { source ->
-                return@doExecuteTask lock.withLock(source) {
+                lock.withLock(source) {
                     runCatching {
                         val appInstanceId = pasteData.appInstanceId
 
@@ -82,8 +82,7 @@ class PullIconTaskExecutor(
                     }
                 }
             }
-        }
-        return SuccessPasteTaskResult()
+        } ?: SuccessPasteTaskResult()
     }
 
     private suspend fun pullIcon(

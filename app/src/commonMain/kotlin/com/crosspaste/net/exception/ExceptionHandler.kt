@@ -38,12 +38,18 @@ abstract class ExceptionHandler {
     }
 
     fun isDecryptFail(e: Throwable): Boolean {
-        return if (e is PasteException) {
-            e.getErrorCode() == StandardErrorCode.DECRYPT_FAIL.toErrorCode()
-        } else if (e is CannotTransformContentToTypeException) {
-            true
-        } else {
-            false
+        return when (e) {
+            is PasteException -> {
+                e.getErrorCode() == StandardErrorCode.DECRYPT_FAIL.toErrorCode()
+            }
+
+            is CannotTransformContentToTypeException -> {
+                true
+            }
+
+            else -> {
+                false
+            }
         }
     }
 }

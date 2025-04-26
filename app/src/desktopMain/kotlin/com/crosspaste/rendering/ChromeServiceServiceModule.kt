@@ -30,8 +30,8 @@ class ChromeServiceServiceModule(
     private val hosts = listOf(DEFAULT_HOST, MIRROR_HOST)
 
     override fun getModuleLoaderConfig(): ModuleLoaderConfig? {
-        if (platform.isWindows() && platform.is64bit()) {
-            return ModuleLoaderConfig(
+        return if (platform.isWindows() && platform.is64bit()) {
+            ModuleLoaderConfig(
                 installPath = CHROME_SERVICE_DIR,
                 moduleName = CHROME_SERVICE_MODULE_NAME,
                 moduleItems =
@@ -53,7 +53,7 @@ class ChromeServiceServiceModule(
                     ),
             )
         } else if (platform.isMacos()) {
-            return if (platform.arch.contains("x86_64")) {
+            if (platform.arch.contains("x86_64")) {
                 ModuleLoaderConfig(
                     installPath = CHROME_SERVICE_DIR,
                     moduleName = CHROME_SERVICE_MODULE_NAME,
@@ -76,7 +76,7 @@ class ChromeServiceServiceModule(
                         ),
                 )
             } else {
-                return ModuleLoaderConfig(
+                ModuleLoaderConfig(
                     installPath = CHROME_SERVICE_DIR,
                     moduleName = CHROME_SERVICE_MODULE_NAME,
                     moduleItems =
@@ -99,7 +99,7 @@ class ChromeServiceServiceModule(
                 )
             }
         } else if (platform.isLinux() && platform.is64bit()) {
-            return ModuleLoaderConfig(
+            ModuleLoaderConfig(
                 installPath = CHROME_SERVICE_DIR,
                 moduleName = CHROME_SERVICE_MODULE_NAME,
                 moduleItems =
@@ -121,7 +121,7 @@ class ChromeServiceServiceModule(
                     ),
             )
         } else {
-            return null
+            null
         }
     }
 }

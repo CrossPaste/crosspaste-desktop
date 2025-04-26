@@ -81,25 +81,26 @@ class PasteCollector(
         return logSuspendExecutionTime(logger, "createPrePasteData") {
             val collector = preCollectors.filter { it.isNotEmpty() }
             if (collector.isEmpty()) {
-                return@logSuspendExecutionTime null
+                null
+            } else {
+                val pasteItems: List<PasteItem> = preCollectors.flatMap { it.values }
+
+                val pasteCollection = PasteCollection(pasteItems)
+
+                val pasteData =
+                    PasteData(
+                        appInstanceId = appInfo.appInstanceId,
+                        pasteCollection = pasteCollection,
+                        pasteType = PasteType.INVALID_TYPE.type,
+                        source = source,
+                        size = 0L,
+                        hash = "",
+                        pasteState = PasteState.LOADING,
+                        remote = remote,
+                    )
+
+                pasteDao.createPasteData(pasteData)
             }
-            val pasteItems: List<PasteItem> = preCollectors.flatMap { it.values }
-
-            val pasteCollection = PasteCollection(pasteItems)
-
-            val pasteData =
-                PasteData(
-                    appInstanceId = appInfo.appInstanceId,
-                    pasteCollection = pasteCollection,
-                    pasteType = PasteType.INVALID_TYPE.type,
-                    source = source,
-                    size = 0L,
-                    hash = "",
-                    pasteState = PasteState.LOADING,
-                    remote = remote,
-                )
-
-            return@logSuspendExecutionTime pasteDao.createPasteData(pasteData)
         }
     }
 

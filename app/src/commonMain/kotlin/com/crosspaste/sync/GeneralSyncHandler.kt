@@ -110,14 +110,14 @@ class GeneralSyncHandler(
             } ?: NoFilter
 
         val currentSyncInfo = syncInfoFactory.createSyncInfo(hostInfoFilter)
-        if (syncInfo == null) {
+        return if (syncInfo == null) {
             syncInfo = currentSyncInfo
-            return currentSyncInfo
+            currentSyncInfo
         } else if (syncInfo != currentSyncInfo) {
             syncInfo = currentSyncInfo
-            return currentSyncInfo
+            currentSyncInfo
         } else {
-            return null
+            null
         }
     }
 
@@ -337,10 +337,10 @@ class GeneralSyncHandler(
                 buildUrl(host, port)
             }
 
-        when (result) {
+        return when (result) {
             is SuccessResult -> {
                 this.versionRelation = result.getResult()
-                return if (this.versionRelation == VersionRelation.EQUAL_TO) {
+                if (this.versionRelation == VersionRelation.EQUAL_TO) {
                     SyncState.CONNECTED
                 } else {
                     SyncState.INCOMPATIBLE
@@ -349,32 +349,34 @@ class GeneralSyncHandler(
 
             is FailureResult -> {
                 val failErrorCode = result.exception.getErrorCode().code
-                if (failErrorCode ==
-                    StandardErrorCode.NOT_MATCH_APP_INSTANCE_ID.getCode()
-                ) {
-                    logger.info { "heartbeat return fail state to disconnect $host $port" }
-                    return SyncState.DISCONNECTED
-                } else if (failErrorCode == StandardErrorCode.DECRYPT_FAIL.getCode()) {
-                    logger.info { "exchangeSyncInfo return fail state to unmatched $host $port $failErrorCode" }
-                    return SyncState.UNMATCHED
-                } else {
-                    logger.info { "failErrorCode $failErrorCode $host $port" }
-                    return SyncState.DISCONNECTED
+                when (failErrorCode) {
+                    StandardErrorCode.NOT_MATCH_APP_INSTANCE_ID.getCode() -> {
+                        logger.info { "heartbeat return fail state to disconnect $host $port" }
+                        SyncState.DISCONNECTED
+                    }
+                    StandardErrorCode.DECRYPT_FAIL.getCode() -> {
+                        logger.info { "exchangeSyncInfo return fail state to unmatched $host $port $failErrorCode" }
+                        SyncState.UNMATCHED
+                    }
+                    else -> {
+                        logger.info { "failErrorCode $failErrorCode $host $port" }
+                        SyncState.DISCONNECTED
+                    }
                 }
             }
 
             is EncryptFail -> {
                 logger.info { "exchangeSyncInfo encrypt fail $host $port" }
-                return SyncState.UNMATCHED
+                SyncState.UNMATCHED
             }
             is DecryptFail -> {
                 logger.info { "exchangeSyncInfo decrypt fail $host $port" }
-                return SyncState.UNMATCHED
+                SyncState.UNMATCHED
             }
 
             else -> {
                 logger.info { "exchangeSyncInfo connect fail state to disconnected $host $port" }
-                return SyncState.DISCONNECTED
+                SyncState.DISCONNECTED
             }
         }
     }
