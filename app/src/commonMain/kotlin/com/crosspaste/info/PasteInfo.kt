@@ -35,20 +35,3 @@ fun createPasteInfoWithoutConverter(
 ): PasteInfo {
     return PasteInfo(key, value) { it, _ -> it }
 }
-
-fun createPasteInfo(
-    key: String,
-    value: String,
-): PasteInfo {
-    return PasteInfo(key, value) { textKey, copywriter ->
-        copywriter.getText(textKey)
-    }
-}
-
-fun createPasteInfoCustomConverter(
-    name: String,
-    value: String,
-    converter: (String, copywriter: GlobalCopywriter) -> String,
-): PasteInfo {
-    return PasteInfo(name, value, converter)
-}

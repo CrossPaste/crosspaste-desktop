@@ -74,12 +74,12 @@ abstract class QRCodeGenerator(
 
     private fun ByteArray.rotate(offset: Int): ByteArray {
         val effectiveOffset = offset % size
-        if (effectiveOffset == 0 || isEmpty()) {
-            return copyOf()
-        }
-
-        return ByteArray(size) { i ->
-            this[(i - effectiveOffset + size) % size]
+        return if (effectiveOffset == 0 || isEmpty()) {
+            copyOf()
+        } else {
+            ByteArray(size) { i ->
+                this[(i - effectiveOffset + size) % size]
+            }
         }
     }
 

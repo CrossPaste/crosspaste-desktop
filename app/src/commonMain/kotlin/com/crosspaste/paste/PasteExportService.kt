@@ -41,7 +41,7 @@ class PasteExportService(
             val basePath = tempDir.resolve("export-$epochMilliseconds", true)
             exportTempPath = basePath
             userDataPathProvider.autoCreateDir(basePath)
-            var pasteDataFile = basePath.resolve("paste.data")
+            val pasteDataFile = basePath.resolve("paste.data")
             var count = 1L
             fileUtils.writeFile(pasteDataFile) { sink ->
                 runCatching {

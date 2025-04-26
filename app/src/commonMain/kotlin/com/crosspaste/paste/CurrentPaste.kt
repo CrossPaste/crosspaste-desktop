@@ -20,9 +20,7 @@ abstract class CurrentPaste {
     fun getCurrentPaste(): PasteData? {
         return getPasteId()?.let { id ->
             logger.info { "Getting current paste with id $id" }
-            return pasteDao.getNoDeletePasteData(id)?.let { pasteData ->
-                return pasteData
-            }
+            pasteDao.getNoDeletePasteData(id)
         }
     }
 }

@@ -306,7 +306,7 @@ object WMCtrl {
                     offset += bytesPerPixel
                 }
             }
-            return buffer
+            buffer
         }
     }
 
@@ -355,7 +355,7 @@ object WMCtrl {
         )?.let { pointer ->
             val result = convertTo(pointer)
             free(pointer)
-            return result
+            result
         }
     }
 
@@ -462,15 +462,15 @@ object WMCtrl {
         val event = XEvent()
         event.setTypedValue(xclient)
 
-        if (INSTANCE.XSendEvent(
+        return if (INSTANCE.XSendEvent(
                 display, INSTANCE.XDefaultRootWindow(display), FALSE, mask,
                 event,
             ) != FALSE
         ) {
-            return true
+            true
         } else {
             logger.error { "Cannot send $msg event." }
-            return false
+            false
         }
     }
 

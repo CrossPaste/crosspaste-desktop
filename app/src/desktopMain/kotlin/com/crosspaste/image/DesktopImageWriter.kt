@@ -20,7 +20,7 @@ object DesktopImageWriter : ImageWriter<BufferedImage> {
             return it.writeImage(image, formatName, imagePath)
         }
 
-        if (!ImageIO.write(image, formatName, imagePath.toFile())) {
+        return if (!ImageIO.write(image, formatName, imagePath.toFile())) {
             val convertedImage =
                 BufferedImage(image.width, image.height, BufferedImage.TYPE_INT_RGB)
 
@@ -28,9 +28,9 @@ object DesktopImageWriter : ImageWriter<BufferedImage> {
             g2d.drawImage(image, 0, 0, null)
             g2d.dispose()
 
-            return ImageIO.write(convertedImage, formatName, imagePath.toFile())
+            ImageIO.write(convertedImage, formatName, imagePath.toFile())
         } else {
-            return true
+            true
         }
     }
 }
