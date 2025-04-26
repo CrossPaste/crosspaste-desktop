@@ -13,7 +13,6 @@ import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
-import kotlin.apply
 
 class DesktopSimpleConfig(
     private val oneFilePersist: OneFilePersist,
