@@ -1,6 +1,6 @@
 package com.crosspaste.i18n
 
-import com.crosspaste.config.DefaultConfigManager
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriterImpl.Companion.EN
 import com.crosspaste.presist.OneFilePersist
 import com.crosspaste.utils.DesktopDeviceUtils
@@ -20,7 +20,7 @@ class GlobalCopywriterTest {
         val configPath = configDirPath.resolve("appConfig.json")
 
         val configManager =
-            DefaultConfigManager(
+            DesktopConfigManager(
                 OneFilePersist(configPath),
                 DesktopDeviceUtils,
                 DesktopLocaleUtils,
