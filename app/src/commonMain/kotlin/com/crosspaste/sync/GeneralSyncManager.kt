@@ -1,6 +1,7 @@
 package com.crosspaste.sync
 
 import androidx.compose.ui.graphics.Color
+import com.crosspaste.app.RatingPromptManager
 import com.crosspaste.db.sync.ChangeType
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfo.Companion.createSyncRuntimeInfo
@@ -39,11 +40,12 @@ import kotlinx.coroutines.withContext
 class GeneralSyncManager(
     private val dialogService: DialogService,
     private val pasteDialogFactory: PasteDialogFactory,
-    private val telnetHelper: TelnetHelper,
-    private val syncInfoFactory: SyncInfoFactory,
-    private val syncClientApi: SyncClientApi,
+    private val ratingPromptManager: RatingPromptManager,
     private val secureStore: SecureStore,
+    private val syncClientApi: SyncClientApi,
+    private val syncInfoFactory: SyncInfoFactory,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
+    private val telnetHelper: TelnetHelper,
     private val tokenCache: TokenCache,
     lazyNearbyDeviceManager: Lazy<NearbyDeviceManager>,
 ) : SyncManager {
@@ -173,11 +175,12 @@ class GeneralSyncManager(
     override fun createSyncHandler(syncRuntimeInfo: SyncRuntimeInfo): SyncHandler {
         return GeneralSyncHandler(
             syncRuntimeInfo,
-            telnetHelper,
-            syncInfoFactory,
-            syncClientApi,
+            ratingPromptManager,
             secureStore,
+            syncClientApi,
+            syncInfoFactory,
             syncRuntimeInfoDao,
+            telnetHelper,
             tokenCache,
         )
     }

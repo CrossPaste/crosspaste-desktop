@@ -28,13 +28,17 @@ import com.crosspaste.app.DesktopAppTokenService
 import com.crosspaste.app.DesktopAppUpdateService
 import com.crosspaste.app.DesktopAppUrls
 import com.crosspaste.app.DesktopAppWindowManager
+import com.crosspaste.app.DesktopRatingPromptManager
 import com.crosspaste.app.EndpointInfoFactory
+import com.crosspaste.app.RatingPromptManager
 import com.crosspaste.app.getDesktopAppWindowManager
 import com.crosspaste.clean.CleanScheduler
 import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.DesktopSimpleConfigFactory
 import com.crosspaste.config.DevConfig
 import com.crosspaste.config.ReadWriteConfig
 import com.crosspaste.config.ReadWritePort
+import com.crosspaste.config.SimpleConfigFactory
 import com.crosspaste.db.DesktopDriverFactory
 import com.crosspaste.db.DriverFactory
 import com.crosspaste.db.createDatabase
@@ -247,6 +251,7 @@ class DesktopCrossPasteModule(
             single<LocaleUtils> { DesktopLocaleUtils }
             single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
             single<ReadWriteConfig<Int>>(named("readWritePort")) { ReadWritePort(get()) }
+            single<SimpleConfigFactory> { DesktopSimpleConfigFactory() }
             single<SyncInfoFactory> { SyncInfoFactory(get(), get()) }
             single<ThumbnailLoader> { DesktopThumbnailLoader(get()) }
             single<UserDataPathProvider> { UserDataPathProvider(get(), getPlatformPathProvider()) }
@@ -290,7 +295,7 @@ class DesktopCrossPasteModule(
                 if (marketingMode) {
                     MarketingNearbyDeviceManager()
                 } else {
-                    GeneralNearbyDeviceManager(get(), get(), get(), get())
+                    GeneralNearbyDeviceManager(get(), get(), get(), get(), get())
                 }
             }
             single<ExceptionHandler> { DesktopExceptionHandler() }
@@ -324,7 +329,7 @@ class DesktopCrossPasteModule(
                 } else {
                     GeneralSyncManager(
                         get(), get(), get(), get(), get(), get(), get(),
-                        get(), lazy { get() },
+                        get(), get(), lazy { get() },
                     )
                 }
             }
@@ -459,6 +464,7 @@ class DesktopCrossPasteModule(
             single<PasteboardViewProvider> { DesktopPasteboardViewProvider() }
             single<PasteDialogFactory> { DesktopPasteDialogFactory() }
             single<PlatformContext> { PlatformContext.INSTANCE }
+            single<RatingPromptManager> { DesktopRatingPromptManager() }
             single<ScreenProvider> { DesktopScreenProvider(get()) }
             single<SettingsViewProvider> { DesktopSettingsViewProvider(get(), get()) }
             single<ShortcutKeys> { DesktopShortcutKeys(get()) }

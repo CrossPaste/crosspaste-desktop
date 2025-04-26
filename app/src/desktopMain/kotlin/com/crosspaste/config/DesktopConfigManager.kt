@@ -8,7 +8,7 @@ import com.crosspaste.utils.LocaleUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-class DefaultConfigManager(
+class DesktopConfigManager(
     private val configFilePersist: OneFilePersist,
     override val deviceUtils: DeviceUtils,
     private val localeUtils: LocaleUtils,

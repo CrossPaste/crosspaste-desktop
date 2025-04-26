@@ -22,7 +22,7 @@ import com.crosspaste.app.generated.resources.crosspaste
 import com.crosspaste.app.generated.resources.crosspaste_mac
 import com.crosspaste.clean.CleanScheduler
 import com.crosspaste.config.ConfigManager
-import com.crosspaste.config.DefaultConfigManager
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.GlobalListener
 import com.crosspaste.log.DesktopCrossPasteLogger
 import com.crosspaste.net.PasteBonjourService
@@ -80,7 +80,7 @@ class CrossPaste {
         private val localeUtils = DesktopLocaleUtils
 
         private val configManager =
-            DefaultConfigManager(
+            DesktopConfigManager(
                 FilePersist.createOneFilePersist(
                     appPathProvider.resolve("appConfig.json", AppFileType.USER),
                 ),

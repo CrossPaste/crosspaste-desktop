@@ -1,6 +1,7 @@
 package com.crosspaste.sync
 
 import com.crosspaste.app.AppInfo
+import com.crosspaste.app.RatingPromptManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.db.sync.SyncRuntimeInfo.Companion.createSyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.update
 class GeneralNearbyDeviceManager(
     private val appInfo: AppInfo,
     private val configManager: ConfigManager,
+    private val ratingPromptManager: RatingPromptManager,
     private val syncManager: SyncManager,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
 ) : NearbyDeviceManager {
@@ -85,6 +87,7 @@ class GeneralNearbyDeviceManager(
                 current + (appInstanceId to syncInfo)
             }
             refresh()
+            ratingPromptManager.trackSignificantAction()
         }
     }
 
@@ -95,5 +98,6 @@ class GeneralNearbyDeviceManager(
             current - appInstanceId
         }
         refresh()
+        ratingPromptManager.trackSignificantAction()
     }
 }

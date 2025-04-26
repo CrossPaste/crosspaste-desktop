@@ -1,5 +1,6 @@
 package com.crosspaste.sync
 
+import com.crosspaste.app.RatingPromptManager
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
@@ -34,11 +35,12 @@ import kotlin.math.min
 
 class GeneralSyncHandler(
     override var syncRuntimeInfo: SyncRuntimeInfo,
-    private val telnetHelper: TelnetHelper,
-    private val syncInfoFactory: SyncInfoFactory,
-    private val syncClientApi: SyncClientApi,
+    private val ratingPromptManager: RatingPromptManager,
     private val secureStore: SecureStore,
+    private val syncClientApi: SyncClientApi,
+    private val syncInfoFactory: SyncInfoFactory,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
+    private val telnetHelper: TelnetHelper,
     private val tokenCache: TokenCache,
 ) : SyncHandler {
 
@@ -283,6 +285,8 @@ class GeneralSyncHandler(
                                 modifyTime = nowEpochMilliseconds(),
                             )
                         }
+                        // track significant action
+                        ratingPromptManager.trackSignificantAction()
                         return@resolveConnecting
                     }
                     SyncState.UNMATCHED -> {
@@ -393,6 +397,7 @@ class GeneralSyncHandler(
                     modifyTime = nowEpochMilliseconds(),
                 )
             }
+            ratingPromptManager.trackSignificantAction()
         } else {
             syncRuntimeInfo.connectHostAddress?.let {
                 telnetHelper.telnet(it, syncRuntimeInfo.port)?.let { versionRelation ->
