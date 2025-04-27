@@ -9,6 +9,8 @@
        ·
       <a href="https://crosspaste.com/en/" target="_blank">Official Website</a>
        ·
+      <a href="https://deepwiki.com/CrossPaste/crosspaste-desktop" target="_blank">Wiki</a>
+       ·
       <a href="https://crosspaste.com/download" target="_blank">Download</a>
       <br />
       <br />
@@ -23,6 +25,7 @@
    ![OS](https://img.shields.io/badge/OS-Windows%20%7C%20macOS%20%7C%20Linux-2cbe4e)
    [![Download](https://img.shields.io/badge/Download-v1.1.0-2cbe4e?logo=download&link=https://crosspaste.com/download)](https://crosspaste.com/download)
    [![AGPL-3.0](https://img.shields.io/badge/License-AGPL%20v3-2cbe4e.svg)](https://github.com/CrossPaste/crosspaste-desktop/blob/main/LICENSE)
+   [![DeepWiki](https://img.shields.io/badge/DeepWiki-Wiki-2cbe4e.svg)](https://deepwiki.com/CrossPaste/crosspaste-desktop)
 </div>
 
 ## ✨ 特性
