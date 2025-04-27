@@ -9,6 +9,8 @@
        ·
       <a href="https://crosspaste.com/en/" target="_blank">Official Website</a>
        ·
+      <a href="https://deepwiki.com/CrossPaste/crosspaste-desktop" target="_blank">Wiki</a>
+       ·
       <a href="https://crosspaste.com/en/download" target="_blank">Download</a>
       <br />
       <br />
