@@ -26,4 +26,24 @@ object RetryUtils {
         }
         return null
     }
+
+    suspend fun <T> suspendRetry(
+        maxRetries: Int,
+        block: suspend (Int) -> T,
+    ): T? {
+        repeat(maxRetries) { attempt ->
+            try {
+                val result = block(attempt)
+                if (result != null) {
+                    return result
+                }
+            } catch (e: Exception) {
+                logger.error(e) { "Attempt ${attempt + 1}/$maxRetries failed" }
+                if (attempt == maxRetries - 1) {
+                    return null
+                }
+            }
+        }
+        return null
+    }
 }
