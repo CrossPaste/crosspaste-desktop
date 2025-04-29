@@ -140,6 +140,7 @@ import com.crosspaste.paste.plugin.type.RtfTypePlugin
 import com.crosspaste.paste.plugin.type.TextTypePlugin
 import com.crosspaste.paste.plugin.type.UrlTypePlugin
 import com.crosspaste.path.AppPathProvider
+import com.crosspaste.path.DesktopMigration
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.path.getPlatformPathProvider
 import com.crosspaste.presist.FilePersist
@@ -249,6 +250,7 @@ class DesktopCrossPasteModule(
             single<ImageWriter<BufferedImage>> { DesktopImageWriter }
             single<KLogger> { klogger }
             single<LocaleUtils> { DesktopLocaleUtils }
+            single<DesktopMigration> { DesktopMigration(get(), get(), get(), get()) }
             single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
             single<ReadWriteConfig<Int>>(named("readWritePort")) { ReadWritePort(get()) }
             single<SimpleConfigFactory> { DesktopSimpleConfigFactory() }

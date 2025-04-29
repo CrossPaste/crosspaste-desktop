@@ -42,6 +42,7 @@ import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.path.DesktopMigration
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.LocalExitApplication
 import com.crosspaste.ui.base.CustomSwitch
@@ -194,7 +195,7 @@ fun SetStoragePathView() {
 fun SetStoragePathDialogView(path: Path) {
     val exitApplication = LocalExitApplication.current
     val dialogService = koinInject<DialogService>()
-    val userDataPathProvider = koinInject<UserDataPathProvider>()
+    val desktopMigration = koinInject<DesktopMigration>()
     val appExitService = koinInject<AppExitService>()
     val appRestartService = koinInject<AppRestartService>()
     var isMigration by remember { mutableStateOf(false) }
@@ -217,7 +218,7 @@ fun SetStoragePathDialogView(path: Path) {
 
         appExitService.beforeReleaseLockList.add {
             runCatching {
-                userDataPathProvider.migration(path)
+                desktopMigration.migration(path)
                 coroutineScope.launch {
                     progress = 1f
                     delay(500)
