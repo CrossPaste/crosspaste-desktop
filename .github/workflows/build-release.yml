@@ -176,7 +176,7 @@ jobs:
 
       - name: Check Dylib Files
         run: |
-          BUILD_DIR=$(./gradlew properties | grep "buildDir:" | awk '{print $2}')
+          BUILD_DIR=$(./gradlew app:properties | grep "buildDir:" | awk '{print $2}')
           
           DYLIB_PATH="$BUILD_DIR/classes/kotlin/desktop/main"
           
