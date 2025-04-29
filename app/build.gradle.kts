@@ -260,6 +260,9 @@ compose.desktop {
                     from("dylib/")
                     into(layout.buildDirectory.file("classes/kotlin/desktop/main"))
                 }
+                tasks.named("copyDylibs") {
+                    dependsOn("desktopMainClasses")
+                }
                 tasks.named("desktopJar") {
                     dependsOn("copyDylibs")
                 }

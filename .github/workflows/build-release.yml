@@ -174,6 +174,24 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build
 
+      - name: Check Dylib Files
+        run: |
+          BUILD_DIR=$(./gradlew properties | grep "buildDir:" | awk '{print $2}')
+          
+          DYLIB_PATH="$BUILD_DIR/classes/kotlin/desktop/main"
+          
+          echo "Looking for files in: $DYLIB_PATH"
+          
+          if [ -d "$DYLIB_PATH" ]; then
+            echo "Directory exists, contents:"
+            ls -la "$DYLIB_PATH"
+          
+            echo "Searching for .dylib files:"
+            find "$DYLIB_PATH" -name "*.dylib" -type f
+          else
+            echo "Directory does not exist!"
+          fi
+
       - name: Prepare Conveyor
         run: |
           echo "${{ secrets.DEVELOPER_ID_APPLICATION }}" | base64 --decode > developerID_application.p12
