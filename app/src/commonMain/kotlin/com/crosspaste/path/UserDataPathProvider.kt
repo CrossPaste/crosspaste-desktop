@@ -20,21 +20,6 @@ class UserDataPathProvider(
 
     override val fileUtils: FileUtils = getFileUtils()
 
-    private val types: List<AppFileType> =
-        listOf(
-            AppFileType.FILE,
-            AppFileType.IMAGE,
-            AppFileType.DATA,
-            AppFileType.HTML,
-            AppFileType.RTF,
-            AppFileType.ICON,
-            AppFileType.FAVICON,
-            AppFileType.FILE_EXT_ICON,
-            AppFileType.VIDEO,
-            AppFileType.TEMP,
-            AppFileType.MARKETING,
-        )
-
     override fun resolve(
         fileName: String?,
         appFileType: AppFileType,
@@ -44,7 +29,7 @@ class UserDataPathProvider(
         }
     }
 
-    private fun resolve(
+    fun resolve(
         fileName: String?,
         appFileType: AppFileType,
         getBasePath: () -> Path,
@@ -71,41 +56,6 @@ class UserDataPathProvider(
         return fileName?.let {
             path.resolve(fileName)
         } ?: path
-    }
-
-    fun migration(migrationPath: Path) {
-        runCatching {
-            for (type in types) {
-                val originTypePath = resolve(appFileType = type)
-                val migrationTypePath =
-                    resolve(fileName = null, appFileType = type) {
-                        migrationPath
-                    }
-                fileUtils.copyPath(originTypePath, migrationTypePath)
-            }
-            runCatching {
-                for (type in types) {
-                    val originTypePath = resolve(appFileType = type)
-                    fileUtils.fileSystem.deleteRecursively(originTypePath)
-                }
-            }
-            configManager.updateConfig(
-                listOf("storagePath", "useDefaultStoragePath"),
-                listOf(migrationPath.toString(), false),
-            )
-        }.onFailure {
-            runCatching {
-                val fileSystem = fileUtils.fileSystem
-                fileSystem.list(migrationPath).forEach { subPath ->
-                    if (fileSystem.metadata(subPath).isDirectory) {
-                        fileSystem.deleteRecursively(subPath)
-                    } else {
-                        fileSystem.delete(subPath)
-                    }
-                }
-            }
-            throw it
-        }
     }
 
     fun cleanTemp() {
