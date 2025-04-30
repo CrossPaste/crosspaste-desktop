@@ -79,6 +79,9 @@ class WindowsAppRestartService : AppRestartService {
         val appPath = DesktopAppPathProvider.pasteAppJarPath
         val restartLogPath = DesktopAppPathProvider.resolve("restart.log", AppFileType.LOG)
         val scriptPath = appPath.resolve("bin").resolve(SCRIPT)
+        val exeFilePath =
+            DesktopAppPathProvider.pasteAppExePath
+                .resolve("CrossPaste.exe")
 
         logger.info { "Restarting app script: $scriptPath\nwith args: $pid" }
         val command =
@@ -86,6 +89,7 @@ class WindowsAppRestartService : AppRestartService {
                 "cmd",
                 "/c",
                 scriptPath.toString(),
+                exeFilePath.toString(),
                 pid.toString(),
             )
         runCatching {
