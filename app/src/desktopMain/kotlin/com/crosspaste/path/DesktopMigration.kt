@@ -67,12 +67,6 @@ class DesktopMigration(
                     fileUtils.copyPath(originTypePath, migrationTypePath)
                     logger.info { "Migrated $originTypePath to $migrationPath" }
                 }
-
-                configManager.updateConfig(
-                    listOf("storagePath", "useDefaultStoragePath"),
-                    listOf(migrationPath.toString(), false),
-                )
-
                 runCatching {
                     fileUtils.deleteFile(originDataPath)
                     logger.info { "Delete Data" }
@@ -84,6 +78,10 @@ class DesktopMigration(
                 }.onFailure { e ->
                     logger.error(e) { "Delete originPath fail" }
                 }
+                configManager.updateConfig(
+                    listOf("storagePath", "useDefaultStoragePath"),
+                    listOf(migrationPath.toString(), false),
+                )
             }.onFailure { e ->
                 logger.error(e) { "Migrated fail" }
                 runCatching {
