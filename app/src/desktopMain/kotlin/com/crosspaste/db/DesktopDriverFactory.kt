@@ -11,10 +11,18 @@ class DesktopDriverFactory(
 ): DriverFactory {
     override val dbName: String = "crosspaste.db"
 
+    override var sqlDriver: SqlDriver? = null
+
     override fun createDriver(): SqlDriver {
         val path = userDataPathProvider.resolve(dbName, appFileType = AppFileType.DATA)
         val driver: SqlDriver = JdbcSqliteDriver("jdbc:sqlite:$path")
         Database.Schema.create(driver)
+        sqlDriver = driver
         return driver
+    }
+
+    override fun closeDriver() {
+        sqlDriver?.close()
+        sqlDriver = null
     }
 }

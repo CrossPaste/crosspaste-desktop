@@ -23,6 +23,7 @@ import com.crosspaste.app.generated.resources.crosspaste_mac
 import com.crosspaste.clean.CleanScheduler
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.config.DesktopConfigManager
+import com.crosspaste.db.DriverFactory
 import com.crosspaste.listener.GlobalListener
 import com.crosspaste.log.DesktopCrossPasteLogger
 import com.crosspaste.net.PasteBonjourService
@@ -197,6 +198,8 @@ class CrossPaste {
                     )
 
                 jobs.awaitAll()
+
+                stopService<DriverFactory>("DriverFactory") { it.closeDriver() }
             }
         }
 
