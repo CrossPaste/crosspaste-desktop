@@ -486,7 +486,7 @@ class PasteDao(
                     )
                 }
                 if (pasteType.isFile() || pasteType.isImage()) {
-                    if ((firstItem as PasteFiles).basePath == null) {
+                    if ((firstItem as PasteFiles).isRefFiles()) {
                         tasks.addAll(markDeleteSameHash(id, pasteType.type, hash))
                     }
                 } else {

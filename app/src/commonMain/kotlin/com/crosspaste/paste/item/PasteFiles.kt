@@ -20,4 +20,8 @@ interface PasteFiles {
     fun getAppFileType(): AppFileType
 
     fun getFilePaths(userDataPathProvider: UserDataPathProvider): List<Path>
+
+    fun isRefFiles(): Boolean {
+        return basePath != null
+    }
 }
