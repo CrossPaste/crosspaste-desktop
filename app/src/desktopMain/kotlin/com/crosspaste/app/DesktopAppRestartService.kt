@@ -79,6 +79,7 @@ class WindowsAppRestartService : AppRestartService {
         val appPath = DesktopAppPathProvider.pasteAppJarPath
         val restartLogPath = DesktopAppPathProvider.resolve("restart.log", AppFileType.LOG)
         val scriptPath = appPath.resolve("bin").resolve(SCRIPT)
+        // Path to the application's executable file, passed to the restart script
         val exeFilePath =
             DesktopAppPathProvider.pasteAppExePath
                 .resolve("CrossPaste.exe")
