@@ -7,9 +7,10 @@ import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.getFileUtils
-import com.crosspaste.utils.isDirectory
+import com.crosspaste.utils.safeIsDirectory
 import io.github.oshai.kotlinlogging.KotlinLogging
 import okio.Path
+import okio.Path.Companion.DIRECTORY_SEPARATOR
 
 class DesktopMigration(
     private val configManager: ConfigManager,
@@ -36,7 +37,13 @@ class DesktopMigration(
         )
 
     fun migration(migrationPath: Path) {
-        if (checkMigrationPath(migrationPath)) {
+        checkMigrationPath(migrationPath)?.let { errorMessage ->
+            notificationManager.sendNotification(
+                title = { it.getText(errorMessage) },
+                messageType = MessageType.Error,
+                duration = null,
+            )
+        } ?: run {
             runCatching {
                 logger.info { "Migrating Data" }
                 val originDataPath =
@@ -94,41 +101,49 @@ class DesktopMigration(
         }
     }
 
-    private fun checkMigrationPath(path: Path): Boolean {
+    fun checkMigrationPath(migrationPath: Path): String? {
         val fileSystem = fileUtils.fileSystem
+        val currentStoragePath = userDataPathProvider.getUserDataPath()
 
-        if (!fileUtils.existFile(path)) {
-            notificationManager.sendNotification(
-                title = { it.getText("directory_not_exist") },
-                messageType = MessageType.Error,
-                duration = null,
-            )
-            return false
+        if (!fileUtils.existFile(migrationPath)) {
+            return "directory_not_exist"
         }
 
-        if (!path.isDirectory) {
-            notificationManager.sendNotification(
-                title = { it.getText("not_a_directory") },
-                messageType = MessageType.Error,
-                duration = null,
-            )
-            return false
+        if (!migrationPath.safeIsDirectory) {
+            return "not_a_directory"
         }
 
-        val testFile = path / "permission_test_${System.currentTimeMillis()}.tmp"
-        return try {
-            fileSystem.write(testFile) {
-                writeUtf8("permission_test")
+        var migrationPathString = migrationPath.toString()
+        if (!migrationPathString.endsWith(DIRECTORY_SEPARATOR)) {
+            migrationPathString = migrationPathString + DIRECTORY_SEPARATOR
+        }
+        val currentStoragePathString =
+            currentStoragePath.toString()
+
+        return if (currentStoragePathString
+                .startsWith(migrationPathString)
+        ) {
+            "cant_select_child_directory"
+        } else if (migrationPathString
+                .startsWith(currentStoragePathString)
+        ) {
+            "cant_select_parent_directory"
+        } else if (fileUtils.listFiles(migrationPath) { it ->
+                !it.name.startsWith(".")
+            }.isNotEmpty()
+        ) {
+            "directory_not_empty"
+        } else {
+            val testFile = migrationPath / "permission_test_${System.currentTimeMillis()}.tmp"
+            try {
+                fileSystem.write(testFile) {
+                    writeUtf8("permission_test")
+                }
+                fileUtils.deleteFile(testFile)
+                null
+            } catch (_: Exception) {
+                "no_write_permission"
             }
-            fileUtils.deleteFile(testFile)
-            true
-        } catch (_: Exception) {
-            notificationManager.sendNotification(
-                title = { it.getText("no_write_permission") },
-                messageType = MessageType.Error,
-                duration = null,
-            )
-            false
         }
     }
 }
