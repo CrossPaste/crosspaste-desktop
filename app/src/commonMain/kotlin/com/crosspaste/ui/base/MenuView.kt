@@ -86,7 +86,7 @@ fun MenuItem(
 fun getMenWidth(
     array: Array<String>,
     textStyle: TextStyle = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Light),
-    paddingValues: PaddingValues = PaddingValues(16.dp, 8.dp, 16.dp, 8.dp),
+    paddingValues: PaddingValues = PaddingValues(16.dp, 0.dp, 16.dp, 0.dp),
     extendFunction: (Int) -> Dp = { 0.dp },
 ): Dp {
     var maxWidth = 0.dp

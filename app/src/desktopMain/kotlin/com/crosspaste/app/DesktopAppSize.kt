@@ -40,7 +40,7 @@ object DesktopAppSize : AppSize {
         )
 
     // Windows OS start
-    val menuWindowDpSize = DpSize(170.dp, 256.dp)
+    val menuWindowDpSize = DpSize(170.dp, 267.dp)
 
     val menuRoundedCornerShape = RoundedCornerShape(5.dp)
 
