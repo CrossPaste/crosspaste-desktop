@@ -7,7 +7,11 @@ interface DriverFactory {
 
     val dbName: String
 
+    var sqlDriver: SqlDriver?
+
     fun createDriver(): SqlDriver
+
+    fun closeDriver()
 }
 
 fun createDatabase(driverFactory: DriverFactory): Database {
