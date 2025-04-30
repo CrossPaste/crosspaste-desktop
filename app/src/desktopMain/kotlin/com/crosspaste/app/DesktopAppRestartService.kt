@@ -84,7 +84,7 @@ class WindowsAppRestartService : AppRestartService {
             DesktopAppPathProvider.pasteAppExePath
                 .resolve("CrossPaste.exe")
 
-        logger.info { "Restarting app script: $scriptPath\nwith args: $pid" }
+        logger.info { "Restarting app script: $scriptPath\n$exeFilePath\nwith args: $pid" }
         val command =
             listOf(
                 "cmd",

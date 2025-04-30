@@ -51,7 +51,6 @@ import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.PasteDialogFactory
 import com.crosspaste.ui.base.archive
-import com.crosspaste.utils.getFileUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okio.Path
@@ -63,11 +62,10 @@ fun SetStoragePathView() {
     val configManager = koinInject<ConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val dialogService = koinInject<DialogService>()
+    val desktopMigration = koinInject<DesktopMigration>()
     val notificationManager = koinInject<NotificationManager>()
     val pasteDialogFactory = koinInject<PasteDialogFactory>()
     val userDataPathProvider = koinInject<UserDataPathProvider>()
-
-    val fileUtils = getFileUtils()
 
     val config by configManager.config.collectAsState()
 
@@ -136,6 +134,7 @@ fun SetStoragePathView() {
                                 notificationManager.sendNotification(
                                     title = { it.getText(message) },
                                     messageType = MessageType.Error,
+                                    duration = null,
                                 )
                             }
                             val chooseText = copywriter.getText("selecting_storage_directory")
@@ -144,19 +143,10 @@ fun SetStoragePathView() {
                                 chooseText,
                                 currentStoragePath,
                             ) { path ->
-                                path as Path
-                                if (path.toString()
-                                        .startsWith(currentStoragePath.normalized().toString())
-                                ) {
-                                    errorAction("cant_select_child_directory")
-                                } else if (!fileUtils.existFile(path)) {
-                                    errorAction("directory_not_exist")
-                                } else if (fileUtils.listFiles(path) { it ->
-                                        !it.name.startsWith(".")
-                                    }.isNotEmpty()
-                                ) {
-                                    errorAction("directory_not_empty")
-                                } else {
+
+                                desktopMigration.checkMigrationPath(path as Path)?.let { errorMessage ->
+                                    errorAction(errorMessage)
+                                } ?: run {
                                     action(path)
                                 }
                             }
@@ -211,7 +201,7 @@ fun SetStoragePathDialogView(path: Path) {
             coroutineScope.launch {
                 while (progress < 0.99f && isMigration) {
                     progress += 0.01f
-                    delay(100)
+                    delay(200)
                 }
             }
         }
