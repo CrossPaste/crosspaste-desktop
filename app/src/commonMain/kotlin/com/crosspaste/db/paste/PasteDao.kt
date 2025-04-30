@@ -485,7 +485,13 @@ class PasteDao(
                         )
                     )
                 }
-                tasks.addAll(markDeleteSameHash(id, pasteType.type, hash))
+                if (pasteType.isFile() || pasteType.isImage()) {
+                    if ((firstItem as PasteFiles).isRefFiles()) {
+                        tasks.addAll(markDeleteSameHash(id, pasteType.type, hash))
+                    }
+                } else {
+                    tasks.addAll(markDeleteSameHash(id, pasteType.type, hash))
+                }
                 currentPaste.setPasteId(id)
                 taskExecutor.submitTasks(tasks)
             }
