@@ -1,13 +1,19 @@
 @echo off
-:: Determine the application path relative to this script
-set "APP_PATH=%~dp0CrossPaste.exe"
-
-:: Check if a PID is provided
+:: Check if at least 2 parameters are provided (exe path and PID)
 if "%~1" == "" (
+    echo Error: Missing executable path parameter.
+    exit /b 1
+)
+
+:: Set APP_PATH from the first parameter
+set "APP_PATH=%~1"
+
+:: Check if a PID is provided as the second parameter
+if "%~2" == "" (
     goto START_APP
 )
 
-set "PID=%1"
+set "PID=%~2"
 
 :: Validate if PID is a number
 echo %PID% | findstr /R /X "[0-9][0-9]*" >nul
