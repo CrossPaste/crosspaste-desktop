@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.TextUnit
@@ -68,6 +69,12 @@ fun TabsView() {
             )
         }
 
+    val textStyle =
+        MaterialTheme.typography.titleMedium.copy(
+            fontWeight = FontWeight.Bold,
+            lineHeight = TextUnit.Unspecified,
+        )
+
     Column(modifier = Modifier.fillMaxSize()) {
         Box {
             Column(
@@ -87,7 +94,7 @@ fun TabsView() {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     tabs.forEach { pair ->
-                        TabView(pair.first, copywriter.getText(pair.second))
+                        TabView(pair.first, copywriter.getText(pair.second), textStyle)
                     }
                     Spacer(modifier = Modifier.weight(1f))
                     if (screen.screenType == PastePreview) {
@@ -119,7 +126,7 @@ fun TabsView() {
                     tabs.map {
                         textMeasurer.measure(
                             text = copywriter.getText(it.second),
-                            style = MaterialTheme.typography.titleMedium,
+                            style = textStyle,
                         ).size.width
                     }
 
@@ -178,10 +185,12 @@ fun TabsView() {
 fun TabView(
     screenTypes: List<ScreenType>,
     title: String,
+    textStyle: TextStyle,
 ) {
     val appWindowManager = koinInject<AppWindowManager>()
     SingleTabView(
         title,
+        textStyle,
     ) {
         appWindowManager.setScreen(ScreenContext(screenTypes[0]))
     }
@@ -191,6 +200,7 @@ fun TabView(
 @Composable
 fun SingleTabView(
     title: String,
+    textStyle: TextStyle,
     onClick: () -> Unit,
 ) {
     Box(
@@ -218,11 +228,7 @@ fun SingleTabView(
             Text(
                 text = title,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
-                style =
-                    MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        lineHeight = TextUnit.Unspecified,
-                    ),
+                style = textStyle,
             )
         }
     }
