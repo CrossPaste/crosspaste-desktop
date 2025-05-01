@@ -501,7 +501,7 @@ class DesktopCrossPasteModule(
                 if (marketingMode) {
                     MarketingPasteSearchViewModel(get())
                 } else {
-                    GeneralPasteSearchViewModel(get())
+                    GeneralPasteSearchViewModel(get(), get())
                 }
             }
             single<PasteSelectionViewModel> { PasteSelectionViewModel(get(), get(), get()) }
