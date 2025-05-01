@@ -16,20 +16,33 @@ class DesktopSearchContentService : SearchContentService {
         }
 
         pasteItemSearchContent?.let {
-            val breaker = BreakIterator.getWordInstance(Locale.ROOT)
-            breaker.setText(it)
-            var start = breaker.first()
-            var end = breaker.next()
-            while (end != BreakIterator.DONE) {
-                val word = it.substring(start, end).trim()
-                if (word.isNotEmpty() && word.any { char -> char.isLetterOrDigit() }) {
-                    tokens.add(word)
-                }
-                start = end
-                end = breaker.next()
-            }
+            setTokens(it, tokens)
         }
 
-        return tokens.joinToString(" ")
+        return tokens.distinct().joinToString(" ")
+    }
+
+    override fun createSearchTerms(queryString: String): List<String> {
+        val tokens = mutableListOf<String>()
+        setTokens(queryString, tokens)
+        return tokens
+    }
+
+    private fun setTokens(
+        string: String,
+        tokens: MutableList<String>,
+    ) {
+        val breaker = BreakIterator.getWordInstance(Locale.ROOT)
+        breaker.setText(string)
+        var start = breaker.first()
+        var end = breaker.next()
+        while (end != BreakIterator.DONE) {
+            val word = string.substring(start, end).trim()
+            if (word.isNotEmpty() && word.any { char -> char.isLetterOrDigit() }) {
+                tokens.add(word)
+            }
+            start = end
+            end = breaker.next()
+        }
     }
 }

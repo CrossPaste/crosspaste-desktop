@@ -6,4 +6,6 @@ interface SearchContentService {
         source: String?,
         pasteItemSearchContent: String?,
     ): String
+
+    fun createSearchTerms(queryString: String): List<String>
 }
