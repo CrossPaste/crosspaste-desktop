@@ -2,16 +2,13 @@ package com.crosspaste.ui.model
 
 import androidx.lifecycle.ViewModel
 import com.crosspaste.db.paste.PasteData
-import com.crosspaste.paste.SearchContentService
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 
-abstract class PasteSearchViewModel(
-    private val searchContentService: SearchContentService,
-) : ViewModel() {
+abstract class PasteSearchViewModel() : ViewModel() {
 
     companion object {
         const val QUERY_BATCH_SIZE = 50
@@ -31,6 +28,8 @@ abstract class PasteSearchViewModel(
 
     private val _searchLimit = MutableStateFlow(QUERY_BATCH_SIZE)
 
+    abstract val convertTerm: (String) -> List<String>
+
     @OptIn(FlowPreview::class)
     val searchParams =
         combine(
@@ -40,11 +39,7 @@ abstract class PasteSearchViewModel(
             _searchPasteType,
             _searchLimit,
         ) { inputSearch, favorite, sort, pasteType, limit ->
-            val searchTerms =
-                searchContentService.createSearchTerms(
-                    inputSearch.trim().lowercase(),
-                ).filterNot { it.isEmpty() }
-                    .distinct()
+            val searchTerms = convertTerm(inputSearch)
 
             SearchParams(
                 searchTerms = searchTerms,

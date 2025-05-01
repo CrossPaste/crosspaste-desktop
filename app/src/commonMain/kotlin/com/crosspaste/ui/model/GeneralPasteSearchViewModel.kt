@@ -3,6 +3,7 @@ package com.crosspaste.ui.model
 import androidx.lifecycle.viewModelScope
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteData
+import com.crosspaste.paste.SearchContentService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
@@ -14,9 +15,12 @@ import kotlinx.coroutines.flow.stateIn
 
 class GeneralPasteSearchViewModel(
     private val pasteDao: PasteDao,
+    private val searchContentService: SearchContentService,
 ) : PasteSearchViewModel() {
 
     private val logger = KotlinLogging.logger {}
+
+    override val convertTerm: (String) -> List<String> = searchContentService::createSearchTerms
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val searchResults: StateFlow<List<PasteData>> =
