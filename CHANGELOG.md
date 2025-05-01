@@ -2,6 +2,199 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.1.2] - 2025-5-1
+## Highlights 🌟
+
+- 🔄 **Migrated from Realm to SQLite (SQLDelight) — Breaking Change:**  
+  We've officially transitioned from Realm to SQLDelight for data persistence. Since Realm is no longer actively maintained, this change was essential for long-term project sustainability, better multiplatform support, and open tooling integration.  
+  ⚠️ **Important:** Due to differences in storage structure, this is a **non-backward-compatible** migration. Pasteboard data from previous versions will **not be visible** in the new version. However, your old data has **not been deleted** — it's still safely stored in the previous Realm database files.
+
+- 📱 **Android Version Under Review:**
+  The Android version of CrossPaste is currently under review on Google Play. A corresponding changelog will be released when it's officially available.
+
+- 📤📥 **Import & Export Support for Pasteboard:**  
+  You can now import and export your pasteboard data, making backups, transfers, and marketing scenarios much more flexible and powerful.
+
+- 🔁 **Fully Shared `commonMain` Logic with Mobile Platforms:**  
+  Core logic is now truly multiplatform. We've refactored platform-specific code to maximize reuse across desktop and mobile environments, simplifying future feature rollouts and bug fixes.
+
+- 🎨 **Refreshed Logo and Branding:**  
+  The app now features a modernized logo and consistent branding across platforms, including SVG-based rendering to ensure crisp display at any resolution.
+
+- 🧩 **Multiple Fixes to Data Migration Logic:**  
+  We've resolved several issues related to migration paths, including path resolution, cleanup logic, and data consistency across updates.
+
+
+## Bug Fixes 🐛
+- :bug: Fix iOS build failure due to missing encodeToString import (#2413)
+- :bug: Remove remaining realm information from the project (#2432)
+- :bug: Fix mobile build failure due to missing encodeToString import (#2439)
+- :bug: Fix the issue of failing to clean up pasteboard files (#2443)
+- :bug: Single device sync failure triggers unnecessary re-sync of all connected devices (#2448)
+- :bug: Fix ErrorCode code style warnings (#2450)
+- :bug: Fix missing verification code on first device connection (#2462)
+- :bug: Enhance pasteboard search functionality (#2464)
+- :bug: Fix internationalization text translation (#2466)
+- :bug: Fix toast animation issue on Android platform (#2497)
+- :bug: Fix the issue where the pasteboard favorites interface doesn't respond in a timely manner (#2483)
+- :bug: Storage settings interface cannot view saved pasteboard storage details (#2490)
+- :bug: Fix the issue where selecting paste type in the export interface doesn't respond (#2540)
+- :bug: Fix the bug caused by concurrent access to state variables (#2535)
+- :bug: Fix the issue of incorrect colors in multiple view contents (#2536)
+- :bug: Fix the issue where MutableMap doesn't support computeIfAbsent on iOS (#2538)
+- :bug: Fix X11 connection leaks (#2594)
+- :bug: Fix inconsistent icon sizes in ToastView (#2634)
+- :bug: Fix image file clipboard transfer to web applications (#2638)
+- :bug: Fix inconsistent font in color palette compared to other views (#2589)
+- :bug: Fix HTML and RTF pasteboard view rendering issues (#2592)
+- :bug: Fix all compilation warnings (#2658)
+- :bug: Fix missing dylib files in build output (#2679)
+- :bug: Fix incorrect dylib verification path (#2681)
+- :bug: Fix the storage path cannot be modified (#2682)
+- :bug: Fix Windows application restart service (#2683)
+- :bug: Fix logical errors in data migration checks (#2685)
+- :bug: Fix process termination waiting issue in Windows startup script (#2688)
+- :bug: Close database driver before data migration (#2690)
+- :bug: Fix the issue of incomplete Windows right-click menu display (#2691)
+- :bug: Fix file deletion issue in storage directory copying caused by identical hash values (#2693)
+- :bug: Fix the issue where the selected underline in TabsView does not match the text length (#2695)
+- :bug: Fix issue where Window right-click menu height doesn't account for padding (#2697)
+
+## New Features ✨
+- :sparkles: Support pasteboard import and export (#2453)
+- :sparkles: Add specific callbacks for key actions to support flow control (#2475)
+- :sparkles: Notification bar supports displaying multiple messages (#2479)
+- :sparkles: Toast view now supports displaying body content (#2491)
+- :sparkles: Add method to PasteText for reading first 256 characters for preview (#2504)
+- :sparkles: Support searching based on source and filename (#2527)
+- :sparkles: Periodically clean up executed task information in the database (#2532)
+- :sparkles: Automatically close token and hide interface after successful connection (#2631)
+- :sparkles: First launch, automatically add tutorial pasteboard examples (#2641)
+- :sparkles: Add marketing definition support to search interface (#2655)
+- :sparkles: Create RatingPromptManager for callbacks on important operations (#2669)
+- :sparkles: Add suspendRetry function for handling suspending retry operations (#2673)
+
+## UI Improvements 💄
+- :lipstick: Create DialogView and TokenView to make the overall interface composition clearer (#2481)
+- :lipstick: Optimized Dialog UI effects (#2555)
+- :lipstick: Improve font styles for empty screen prompts and paste type selection area (#2630)
+- :lipstick: Enhanced date picker UI (#2563)
+- :lipstick: Add text alignment and line height to ToastView title (#2602)
+- :lipstick: use new version of logo (#2608)
+- :lipstick: Remove icons, render all project logos using SVG (#2610)
+- :lipstick: Improve pasteboard display effects (#2587)
+- :lipstick: Center align button text in dialog buttons (#2649)
+- :lipstick: Text and icons in the device bar should adapt to background color changes (#2557)
+
+## Multiplatform & Refactor & Code Style 🔨
+- :hammer: Change AppLockState to interface to allow extension by other platforms (#2411)
+- :hammer: Migrate from Realm to SQLDelight for data persistence (#2425)
+- :hammer: Move writeFile function to interface for multiplatform support (#2460)
+- :hammer: Support null duration in sendNotification API (#2469)
+- :hammer: Replace ScreenType enum with sealed interface pattern (#2499)
+- :hammer: Move DesktopToastManager implementation to commonMain (#2488)
+- :hammer: Refactor import/export implementation to facilitate mobile reuse (#2547)
+- :hammer: Refactor pasteboard type icons (#2552)
+- :hammer: Convert verbose if-else returns to expression form (#2668)
+- :hammer: Change SyncManager to explicit lifecycle control (#2660)
+- :hammer: Remove unused resource files (#2662)
+- :hammer: Move MainSettingsContentView to desktop implementation (#2622)
+- :hammer: Abstract PasteDialog to allow different implementations for desktop and mobile (#2566)
+- :hammer: Enhance device sync control with improved conditional checks (#2514)
+- :hammer: Extract nowInstant() method to improve testability (#2452)
+- :hammer: Replace try catch blocks with runCatching style (#2525)
+- :hammer: Enhance device detail page and tab styling (#2636)
+- :hammer: Align Koin and Koin-compose versions for consistent dependency management (#2582)
+- :hammer: Optimize Kotlin code using scope functions and null-safety operators (#2628)
+- :hammer: Add name property to ScreenType (#2559)
+
+## Dependencies ⬆️
+- ⬆️ Bump compose from 1.7.6 → 1.7.7 → 1.7.8 → 1.8.0
+- ⬆️ Bump com.valentinilk.shimmer:compose-shimmer from 1.3.1 to 1.3.2
+- ⬆️ Bump coil from 3.0.4 to 3.1.0
+- ⬆️ Bump io.github.oshai:kotlin-logging from 7.0.3 → 7.0.4 → 7.0.5 → 7.0.6 → 7.0.7
+- ⬆️ Bump ktor from 3.0.3 → 3.1.0 → 3.1.1 → 3.1.2
+- ⬆️ Bump org.yaml:snakeyaml from 2.3 to 2.4
+- ⬆️ Bump org.jetbrains.kotlinx:kotlinx-datetime from 0.6.1 to 0.6.2
+- ⬆️ Bump kotlin from 2.0.21 → 2.1.10 → 2.1.20
+- ⬆️ Bump org.jlleitschuh.gradle.ktlint from 12.1.2 to 12.2.0
+- ⬆️ Bump ch.qos.logback:logback-classic from 1.5.16 → 1.5.17 → 1.5.18
+- ⬆️ Bump io.mockk:mockk from 1.13.16 → 1.13.17 → 1.14.0
+- ⬆️ Bump org.jsoup:jsoup from 1.18.3 to 1.19.1
+- ⬆️ Bump jna from 5.16.0 to 5.17.0
+- ⬆️ Bump org.jmdns:jmdns from 3.6.0 to 3.6.1
+- ⬆️ Bump com.google.guava:guava from 33.4.0 → 33.4.5 → 33.4.6 → 33.4.7 → 33.4.8
+- ⬆️ Bump io.github.z4kn4fein:semver from 2.0.0 to 3.0.0
+- ⬆️ Bump androidx.compose.material3:material3 from 1.3.1 to 1.3.2
+- ⬆️ Bump com.squareup.okio:okio from 3.10.2 to 3.11.0
+- ⬆️ Bump org.jetbrains.kotlinx:kotlinx-serialization-json from 1.8.0 to 1.8.1
+- ⬆️ Bump kotlinx-coroutines from 1.10.1 to 1.10.2
+- ⬆️ Bump koin from 4.0.2 → 4.0.3 → 4.0.4
+- ⬆️ Bump io.insert-koin:koin-compose from 4.0.2 to 4.0.4
+
+## Documentation 📝
+- :memo: Add DeepWiki link to README (#2671)
+- :bookmark: Update version to 1.1.2 (#2675)
+
+# [1.1.1] - 2025-1-30
+## Bug Fixes 🐛
+- :bug: Fix switch component with label text (#2310)
+- :bug: Support automatic type conversion in config copying (#2321)
+- :bug: Incorrect background color of contrast button (#2325)
+- :bug: Fix color copy failure issue (#2341)
+- :bug: The log files can sometimes be very large (#2342)
+- :bug: Ensure UI updates correctly when Realm object state changes (#2348)
+- :bug: Catch exceptions thrown by existFile (#2355)
+
+## New Features ✨
+- :sparkles: Add dynamic theme support (#2312)
+- :sparkles: Make logo adapt to app theme (#2329)
+- :sparkles: Add dynamic parameter formatting support for i18n API (#2387)
+- :sparkles: Support direct access to the web URL path with i18n support (#2383)
+
+## UI Improvements 💄
+- :lipstick: Increase touch targets size according to Google Play report (#2306)
+- :lipstick: Improve UI contrast ratios based on Google Play report (#2308)
+- :lipstick: Add three contrast levels for theme settings (#2323)
+- 💄 Adaptive status colors based on background (#2334)
+- :lipstick: Adaptive notification colors based on background (#2339)
+- :lipstick: Improve Counter component contrast ratio (#2344)
+- :bug: Standardize preview image sizes using default screen density (#2388)
+
+## Multiplatform & Refactor & Code Style 🔨
+- :hammer: Move logo view to expect implementation in commonMain (#2331)
+- :hammer: Add openTopBar parameter to PasteboardScreen (#2346)
+- :hammer: Remove unused commented code (#2357)
+- :hammer: Refactor RealmManagerFactory (#2360)
+- :hammer: Implement dependency injection by modules (#2362)
+- :hammer: Add utility method to get current timestamp (#2368)
+- :hammer: Extract common signature logic in CryptographyUtils (#2370)
+- :hammer: Restructure UI implementation for better multiplatform reusability (#2372)
+- :hammer: Convert interface to actual/expect implementation (#2374)
+- :hammer: Refactor settings UI for mobile customization (#2376)
+- :hammer: Refactor AppLaunch to improve mobile usability (#2385)
+
+## Dependencies ⬆️
+- ⬆️ Bump ktor from 3.0.2 to 3.0.3
+- ⬆️ Bump kotlinx-coroutines from 1.9.0 to 1.10.1
+- ⬆️ Bump jna from 5.15.0 to 5.16.0
+- ⬆️ Bump guava from 33.3.1-jre to 33.4.0-jre
+- ⬆️ Bump compose-plugin from 1.7.1 to 1.7.3
+- ⬆️ Bump webp-imageio from 0.8.0 to 0.9.0
+- ⬆️ Bump koin from 4.0.0 to 4.0.1
+- ⬆️ Bump logback-classic from 1.5.12 to 1.5.15
+- ⬆️ Bump koin-compose from 4.0.0 to 4.0.1
+- ⬆️ Bump mockk from 1.13.13 to 1.13.14
+- ⬆️ Bump logback-classic from 1.5.15 to 1.5.16
+- ⬆️ Bump okio from 3.9.1 to 3.10.2
+- ⬆️ Bump kotlinx-serialization-json from 1.7.3 to 1.8.0
+- ⬆️ Bump mockk from 1.13.14 to 1.13.16
+- ⬆️ Bump koin from 4.0.1 to 4.0.2
+- ⬆️ Bump koin-compose from 4.0.1 to 4.0.2
+
+## Documentation 📝
+- :bookmark: Update version to 1.1.1 (#2400)
+
 # [1.1.0] - 2024-12-20
 ## Bug Fixes
 - :bug: Resolve custom encryption related bugs
