@@ -21,6 +21,7 @@ import okio.Path
 class PasteImportService(
     private val notificationManager: NotificationManager,
     private val pasteDao: PasteDao,
+    private val searchContentService: SearchContentService,
     private val userDataPathProvider: UserDataPathProvider,
 ) {
     private val logger = KotlinLogging.logger { }
@@ -115,7 +116,7 @@ class PasteImportService(
                     pasteAppearItem = newPasteAppearItem,
                     pasteCollection = newPasteCollection,
                     pasteSearchContent =
-                        PasteData.createSearchContent(
+                        searchContentService.createSearchContent(
                             pasteData.source,
                             newPasteAppearItem?.getSearchContent(),
                         ),

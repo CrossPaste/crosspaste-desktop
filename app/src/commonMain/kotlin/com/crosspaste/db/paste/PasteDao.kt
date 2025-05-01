@@ -12,6 +12,7 @@ import com.crosspaste.db.task.TaskDao
 import com.crosspaste.db.task.TaskType
 import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.PasteExportParam
+import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
@@ -32,6 +33,7 @@ class PasteDao(
     private val database: Database,
     private val lazyTaskExecutor: Lazy<TaskExecutor>,
     private val pasteProcessPlugins: List<PasteProcessPlugin>,
+    private val searchContentService: SearchContentService,
     private val taskDao: TaskDao,
     private val userDataPathProvider: UserDataPathProvider,
 ) {
@@ -99,7 +101,10 @@ class PasteDao(
                 pasteData.size,
                 pasteData.hash,
                 pasteData.createTime,
-                pasteData.pasteSearchContent,
+                searchContentService.createSearchContent(
+                    pasteData.source,
+                    pasteData.pasteAppearItem?.getSearchContent(),
+                ),
                 (pasteState ?: pasteData.pasteState).toLong(),
                 pasteData.remote,
             )
@@ -111,7 +116,10 @@ class PasteDao(
         pasteDatabaseQueries.updateRemotePasteDataWithFile(
             pasteData.pasteAppearItem?.toJson(),
             pasteData.pasteCollection.toJson(),
-            pasteData.pasteSearchContent,
+            searchContentService.createSearchContent(
+                pasteData.source,
+                pasteData.pasteAppearItem?.getSearchContent(),
+            ),
             pasteData.id,
         )
     }
@@ -242,6 +250,8 @@ class PasteDao(
     ): Query<PasteData> {
         val appInstanceId: String? = local?.let { appInfo.appInstanceId }
         val searchQuery = "pasteSearchContent:(${searchTerms.joinToString(" AND ") { "$it*" }})"
+
+        logger.info { "Creating paste query: $searchQuery" }
 
         return if (searchTerms.isNotEmpty()) {
             pasteDatabaseQueries.complexSearch(
@@ -458,7 +468,7 @@ class PasteDao(
                     pasteAppearItem = firstItem.toJson(),
                     pasteCollection = PasteCollection(remainingItems).toJson(),
                     pasteType = pasteType.type.toLong(),
-                    pasteSearchContent = PasteData.createSearchContent(
+                    pasteSearchContent = searchContentService.createSearchContent(
                         pasteData.source,
                         firstItem.getSearchContent(),
                     ),

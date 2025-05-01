@@ -28,6 +28,8 @@ abstract class PasteSearchViewModel() : ViewModel() {
 
     private val _searchLimit = MutableStateFlow(QUERY_BATCH_SIZE)
 
+    abstract val convertTerm: (String) -> List<String>
+
     @OptIn(FlowPreview::class)
     val searchParams =
         combine(
@@ -37,13 +39,7 @@ abstract class PasteSearchViewModel() : ViewModel() {
             _searchPasteType,
             _searchLimit,
         ) { inputSearch, favorite, sort, pasteType, limit ->
-            val searchTerms =
-                inputSearch
-                    .trim()
-                    .lowercase()
-                    .split("\\s+".toRegex())
-                    .filterNot { it.isEmpty() }
-                    .distinct()
+            val searchTerms = convertTerm(inputSearch)
 
             SearchParams(
                 searchTerms = searchTerms,

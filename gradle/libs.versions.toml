@@ -9,6 +9,7 @@ cryptography = "0.4.0"
 download = "5.6.0"
 guava = "33.4.8-jre"
 imageio = "3.12.0"
+icu4j = "77.1"
 jmdns = "3.6.1"
 jna = "5.17.0"
 jnativehook = "2.2.2"
@@ -46,6 +47,7 @@ compose-shimmer = { module = "com.valentinilk.shimmer:compose-shimmer", version.
 cryptography-core = { module = "dev.whyoleg.cryptography:cryptography-core", version.ref = "cryptography" }
 cryptography-provider = { module = "dev.whyoleg.cryptography:cryptography-provider-jdk", version.ref = "cryptography" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
+icu4j = { module = "com.ibm.icu:icu4j", version.ref = "icu4j" }
 imageio-core = { module = "com.twelvemonkeys.imageio:imageio-core", version.ref = "imageio" }
 imageio-jpeg = { module = "com.twelvemonkeys.imageio:imageio-jpeg", version.ref = "imageio" }
 jmdns = { module = "org.jmdns:jmdns", version.ref = "jmdns" }

@@ -105,6 +105,7 @@ import com.crosspaste.paste.DesktopInitPasteDataService
 import com.crosspaste.paste.DesktopPasteExportParamFactory
 import com.crosspaste.paste.DesktopPasteImportParamFactory
 import com.crosspaste.paste.DesktopPasteMenuService
+import com.crosspaste.paste.DesktopSearchContentService
 import com.crosspaste.paste.DesktopTransferableConsumer
 import com.crosspaste.paste.DesktopTransferableProducer
 import com.crosspaste.paste.InitPasteDataService
@@ -114,6 +115,7 @@ import com.crosspaste.paste.PasteImportParamFactory
 import com.crosspaste.paste.PasteImportService
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.paste.PasteboardService
+import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.TransferableConsumer
 import com.crosspaste.paste.TransferableProducer
 import com.crosspaste.paste.getDesktopPasteboardService
@@ -283,6 +285,7 @@ class DesktopCrossPasteModule(
                     ),
                     get(),
                     get(),
+                    get(),
                 )
             }
             single<SecureIO> { SecureDao(get()) }
@@ -384,8 +387,9 @@ class DesktopCrossPasteModule(
             single<PasteExportParamFactory> { DesktopPasteExportParamFactory() }
             single<PasteExportService> { PasteExportService(get(), get(), get()) }
             single<PasteImportParamFactory> { DesktopPasteImportParamFactory() }
-            single<PasteImportService> { PasteImportService(get(), get(), get()) }
+            single<PasteImportService> { PasteImportService(get(), get(), get(), get()) }
             single<PasteSyncProcessManager<Long>> { DefaultPasteSyncProcessManager() }
+            single<SearchContentService> { DesktopSearchContentService() }
             single<TaskExecutor> {
                 TaskExecutor(
                     listOf(
@@ -497,7 +501,7 @@ class DesktopCrossPasteModule(
                 if (marketingMode) {
                     MarketingPasteSearchViewModel(get())
                 } else {
-                    GeneralPasteSearchViewModel(get())
+                    GeneralPasteSearchViewModel(get(), get())
                 }
             }
             single<PasteSelectionViewModel> { PasteSelectionViewModel(get(), get(), get()) }
