@@ -19,13 +19,13 @@ class DesktopSearchContentService : SearchContentService {
             setTokens(it, tokens)
         }
 
-        return tokens.distinct().joinToString(" ")
+        return tokens.distinct().filterNot { it.isEmpty() }.joinToString(" ")
     }
 
     override fun createSearchTerms(queryString: String): List<String> {
         val tokens = mutableListOf<String>()
         setTokens(queryString, tokens)
-        return tokens
+        return tokens.distinct().filterNot { it.isEmpty() }
     }
 
     private fun setTokens(
