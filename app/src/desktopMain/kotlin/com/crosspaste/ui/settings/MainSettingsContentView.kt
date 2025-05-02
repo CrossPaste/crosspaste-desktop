@@ -1,7 +1,5 @@
 package com.crosspaste.ui.settings
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,12 +9,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppControl
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.log.CrossPasteLogger
 import com.crosspaste.paste.PasteboardService
+import com.crosspaste.ui.base.HighlightedCard
 import com.crosspaste.ui.base.bell
 import com.crosspaste.ui.base.bolt
 import com.crosspaste.ui.base.clipboard
@@ -35,12 +33,12 @@ fun MainSettingsContentView() {
 
     val config by configManager.config.collectAsState()
 
-    Column(
+    HighlightedCard(
         modifier =
             Modifier.wrapContentSize()
-                .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(8.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
     ) {
         LanguageSettingItemView()
 

@@ -37,7 +37,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
@@ -87,14 +86,14 @@ actual fun ExpandView(
         animationSpec = tween(200),
     )
 
-    Column(
+    HighlightedCard(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
-                .padding(horizontal = horizontalPadding)
-                .clip(RoundedCornerShape(8.dp))
-                .background(backgroundColor),
+                .padding(horizontal = horizontalPadding),
+        shape = RoundedCornerShape(8.dp),
+        containerColor = backgroundColor,
     ) {
         Row(
             modifier =
@@ -190,7 +189,8 @@ actual fun ExpandView(
             Box(
                 modifier =
                     Modifier
-                        .wrapContentSize(),
+                        .wrapContentSize()
+                        .background(MaterialTheme.colorScheme.surfaceContainerLowest),
             ) {
                 Column {
                     content()
