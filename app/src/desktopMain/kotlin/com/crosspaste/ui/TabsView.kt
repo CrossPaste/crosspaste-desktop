@@ -44,6 +44,7 @@ import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.ui.base.HighlightedCard
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.trash
 import com.crosspaste.utils.getAppEnvUtils
@@ -77,14 +78,15 @@ fun TabsView() {
 
     Column(modifier = Modifier.fillMaxSize()) {
         Box {
-            Column(
+            HighlightedCard(
                 modifier =
                     Modifier.padding(horizontal = 8.dp)
                         .fillMaxWidth()
-                        .height(40.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer),
-            ) {}
+                        .height(40.dp),
+                shape = RoundedCornerShape(8.dp),
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+            ) {
+            }
 
             Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
                 Row(

@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -28,7 +27,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
@@ -171,7 +169,6 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
         Row(
@@ -281,7 +278,6 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
         SettingSwitchItemView(
@@ -441,7 +437,6 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
         SettingSwitchItemView(

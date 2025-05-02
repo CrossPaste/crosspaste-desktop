@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -26,7 +25,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dto.sync.SyncInfo
@@ -74,7 +72,6 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
         SettingItemView(
@@ -116,7 +113,6 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
         SettingItemView(
@@ -148,7 +144,6 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
         Row(
