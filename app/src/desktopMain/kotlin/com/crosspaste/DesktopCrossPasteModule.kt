@@ -321,10 +321,7 @@ class DesktopCrossPasteModule(
                 DesktopServerFactory()
             }
             single<ServerModule> {
-                DesktopServerModule(
-                    get(), get(), get(), get(), get(), get(), get(), get(),
-                    get(), get(), get(), get(), get(), get(),
-                )
+                DesktopServerModule(get(), get(), get())
             }
             single<SyncApi> { SyncApi }
             single<SyncClientApi> { SyncClientApi(get(), get(), get(), get(), get()) }

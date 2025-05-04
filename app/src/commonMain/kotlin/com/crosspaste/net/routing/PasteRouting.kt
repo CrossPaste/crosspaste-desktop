@@ -14,13 +14,14 @@ import io.ktor.server.routing.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import org.koin.ktor.ext.inject
 
-fun Routing.pasteRouting(
-    appControl: AppControl,
-    pasteboardService: PasteboardService,
-    syncRoutingApi: SyncRoutingApi,
-) {
+fun Routing.pasteRouting() {
     val logger = KotlinLogging.logger {}
+
+    val appControl by inject<AppControl>()
+    val pasteboardService by inject<PasteboardService>()
+    val syncRoutingApi by inject<SyncRoutingApi>()
 
     val scope = CoroutineScope(ioDispatcher + SupervisorJob())
 

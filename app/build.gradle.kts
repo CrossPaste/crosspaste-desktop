@@ -129,6 +129,7 @@ kotlin {
             implementation(libs.cryptography.provider)
             implementation(libs.koin.compose)
             implementation(libs.koin.core)
+            implementation(libs.koin.ktor)
             implementation(libs.koin.viewmodel)
             implementation(libs.kotlin.logging)
             implementation(libs.kotlinx.coroutines.core)

@@ -20,18 +20,18 @@ import com.crosspaste.utils.successResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
+import org.koin.ktor.ext.inject
 
-fun Routing.syncRouting(
-    appInfo: AppInfo,
-    appTokenApi: AppTokenApi,
-    endpointInfoFactory: EndpointInfoFactory,
-    exceptionHandler: ExceptionHandler,
-    secureKeyPairSerializer: SecureKeyPairSerializer,
-    secureStore: SecureStore,
-    syncApi: SyncApi,
-    syncRoutingApi: SyncRoutingApi,
-) {
+fun Routing.syncRouting() {
     val logger = KotlinLogging.logger {}
+    val appInfo by inject<AppInfo>()
+    val appTokenApi by inject<AppTokenApi>()
+    val endpointInfoFactory by inject<EndpointInfoFactory>()
+    val exceptionHandler by inject<ExceptionHandler>()
+    val secureKeyPairSerializer by inject<SecureKeyPairSerializer>()
+    val secureStore by inject<SecureStore>()
+    val syncApi by inject<SyncApi>()
+    val syncRoutingApi by inject<SyncRoutingApi>()
 
     get("/sync/heartbeat") {
         getAppInstanceId(call)?.let { appInstanceId ->

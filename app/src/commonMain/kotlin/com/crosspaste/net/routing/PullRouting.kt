@@ -14,14 +14,15 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.utils.io.*
+import org.koin.ktor.ext.inject
+import kotlin.getValue
 
-fun Routing.pullRouting(
-    appInfo: AppInfo,
-    cacheManager: CacheManager,
-    syncRoutingApi: SyncRoutingApi,
-    userDataPathProvider: UserDataPathProvider,
-) {
+fun Routing.pullRouting() {
     val logger = KotlinLogging.logger {}
+    val appInfo by inject<AppInfo>()
+    val cacheManager by inject<CacheManager>()
+    val syncRoutingApi by inject<SyncRoutingApi>()
+    val userDataPathProvider by inject<UserDataPathProvider>()
 
     val fileUtils = getFileUtils()
 
