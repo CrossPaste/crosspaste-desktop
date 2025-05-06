@@ -4,7 +4,7 @@ import com.crosspaste.config.ReadWriteConfig
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.server.netty.*
+import io.ktor.server.netty.NettyApplicationEngine
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.runBlocking
 import kotlin.coroutines.CoroutineContext
