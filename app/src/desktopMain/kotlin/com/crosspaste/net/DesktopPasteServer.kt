@@ -2,9 +2,12 @@ package com.crosspaste.net
 
 import com.crosspaste.config.ReadWriteConfig
 import com.crosspaste.net.exception.ExceptionHandler
+import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.netty.*
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.runBlocking
+import kotlin.coroutines.CoroutineContext
 
 class DesktopPasteServer(
     private val readWritePort: ReadWriteConfig<Int>,
@@ -45,4 +48,16 @@ class DesktopPasteServer(
         server?.stop()
         server = null
     }
+
+    private val coroutineExceptionHandler =
+        CoroutineExceptionHandler { _, throwable ->
+            if (exceptionHandler.isPortAlreadyInUse(throwable)) {
+                logger.warn { "Port already in use exception caught in coroutine: ${throwable.message}" }
+            } else {
+                logger.error(throwable) { "Uncaught exception in server coroutine: ${throwable.message}" }
+            }
+        }
+
+    override val parentCoroutineContext: CoroutineContext
+        get() = ioDispatcher + coroutineExceptionHandler
 }
