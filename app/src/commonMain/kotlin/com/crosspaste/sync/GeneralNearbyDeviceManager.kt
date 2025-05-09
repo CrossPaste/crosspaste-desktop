@@ -4,28 +4,28 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.app.RatingPromptManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.db.sync.SyncRuntimeInfo.Companion.createSyncRuntimeInfo
-import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.utils.getJsonUtils
+import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withContext
 
 class GeneralNearbyDeviceManager(
     private val appInfo: AppInfo,
     private val configManager: ConfigManager,
     private val ratingPromptManager: RatingPromptManager,
     private val syncManager: SyncManager,
-    private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
 ) : NearbyDeviceManager {
 
     private val logger = KotlinLogging.logger {}
 
     private val jsonUtils = getJsonUtils()
 
-    private val _searching = MutableStateFlow<Boolean>(false)
+    private val _searching = MutableStateFlow(false)
 
     override val searching: StateFlow<Boolean> = _searching.asStateFlow()
 
@@ -51,7 +51,7 @@ class GeneralNearbyDeviceManager(
             .contains(appInstanceId)
     }
 
-    override fun refresh() {
+    override suspend fun refresh() {
         _searching.value = true
         runCatching {
             val currentAllSyncInfos = _allSyncInfos.value
@@ -63,7 +63,16 @@ class GeneralNearbyDeviceManager(
                     .map { createSyncRuntimeInfo(it.value) }
 
             if (existSyncRuntimeInfos.isNotEmpty()) {
-                syncManager.refresh(syncRuntimeInfoDao.updateList(existSyncRuntimeInfos))
+                for (syncRuntimeInfo in existSyncRuntimeInfos) {
+                    withContext(ioDispatcher) {
+                        syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]?.let { syncHandler ->
+                            syncHandler.updateSyncRuntimeInfo {
+                                syncRuntimeInfo
+                            }
+                        }
+                    }
+                }
+                syncManager.refresh(existSyncRuntimeInfos.map { it.appInstanceId })
             }
 
             // Update syncInfos with new, non-blacklisted devices
@@ -79,7 +88,7 @@ class GeneralNearbyDeviceManager(
         }
     }
 
-    override fun addDevice(syncInfo: SyncInfo) {
+    override suspend fun addDevice(syncInfo: SyncInfo) {
         val appInstanceId = syncInfo.appInfo.appInstanceId
         logger.debug { "Service resolved: $syncInfo" }
         if (!isSelf(appInstanceId)) {
@@ -91,7 +100,7 @@ class GeneralNearbyDeviceManager(
         }
     }
 
-    override fun removeDevice(syncInfo: SyncInfo) {
+    override suspend fun removeDevice(syncInfo: SyncInfo) {
         val appInstanceId = syncInfo.appInfo.appInstanceId
         logger.debug { "Service removed: $syncInfo" }
         _allSyncInfos.update { current ->

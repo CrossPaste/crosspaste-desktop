@@ -165,7 +165,7 @@ fun DeviceDetailContentView() {
                             runBlocking {
                                 if (appControl.isSyncControlEnabled()) {
                                     syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
-                                        ?.update { syncRuntimeInfo ->
+                                        ?.updateSyncRuntimeInfo { syncRuntimeInfo ->
                                             syncRuntimeInfo.copy(allowSend = allowSend)
                                         }?.let {
                                             syncRuntimeInfo = it
@@ -200,7 +200,7 @@ fun DeviceDetailContentView() {
                             runBlocking {
                                 if (appControl.isSyncControlEnabled()) {
                                     syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
-                                        ?.update { syncRuntimeInfo ->
+                                        ?.updateSyncRuntimeInfo { syncRuntimeInfo ->
                                             syncRuntimeInfo.copy(allowReceive = allowReceive)
                                         }?.let {
                                             syncRuntimeInfo = it

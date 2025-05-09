@@ -300,7 +300,7 @@ class DesktopCrossPasteModule(
                 if (marketingMode) {
                     MarketingNearbyDeviceManager()
                 } else {
-                    GeneralNearbyDeviceManager(get(), get(), get(), get(), get())
+                    GeneralNearbyDeviceManager(get(), get(), get(), get())
                 }
             }
             single<ExceptionHandler> { DesktopExceptionHandler() }
