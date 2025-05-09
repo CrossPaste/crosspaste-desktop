@@ -199,7 +199,13 @@ class GeneralSyncHandler(
         }
     }
 
-    override suspend fun update(doUpdate: (SyncRuntimeInfo) -> SyncRuntimeInfo): SyncRuntimeInfo? {
+    override suspend fun updateSyncRuntimeInfo(doUpdate: (SyncRuntimeInfo) -> SyncRuntimeInfo): SyncRuntimeInfo? {
+        return mutex.withLock {
+            update { doUpdate(it) }
+        }
+    }
+
+    private fun update(doUpdate: (SyncRuntimeInfo) -> SyncRuntimeInfo): SyncRuntimeInfo? {
         val newSyncRuntimeInfo = doUpdate(syncRuntimeInfo)
         return syncRuntimeInfoDao.update(newSyncRuntimeInfo) {
             syncRuntimeInfo = newSyncRuntimeInfo

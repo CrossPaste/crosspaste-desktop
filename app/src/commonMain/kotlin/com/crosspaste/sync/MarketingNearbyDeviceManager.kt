@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 class MarketingNearbyDeviceManager : NearbyDeviceManager {
 
-    override val searching: StateFlow<Boolean> = MutableStateFlow<Boolean>(false)
+    override val searching: StateFlow<Boolean> = MutableStateFlow(false)
 
     override val syncInfos: StateFlow<List<SyncInfo>> =
         MutableStateFlow(
@@ -41,12 +41,12 @@ class MarketingNearbyDeviceManager : NearbyDeviceManager {
             ),
         )
 
-    override fun addDevice(syncInfo: SyncInfo) {
+    override suspend fun addDevice(syncInfo: SyncInfo) {
     }
 
-    override fun removeDevice(syncInfo: SyncInfo) {
+    override suspend fun removeDevice(syncInfo: SyncInfo) {
     }
 
-    override fun refresh() {
+    override suspend fun refresh() {
     }
 }
