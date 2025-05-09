@@ -6,11 +6,13 @@ import com.crosspaste.config.ConfigManager
 import com.crosspaste.db.sync.SyncRuntimeInfo.Companion.createSyncRuntimeInfo
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.utils.getJsonUtils
+import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withContext
 
 class GeneralNearbyDeviceManager(
     private val appInfo: AppInfo,
@@ -62,9 +64,11 @@ class GeneralNearbyDeviceManager(
 
             if (existSyncRuntimeInfos.isNotEmpty()) {
                 for (syncRuntimeInfo in existSyncRuntimeInfos) {
-                    syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]?.let { syncHandler ->
-                        syncHandler.updateSyncRuntimeInfo {
-                            syncRuntimeInfo
+                    withContext(ioDispatcher) {
+                        syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]?.let { syncHandler ->
+                            syncHandler.updateSyncRuntimeInfo {
+                                syncRuntimeInfo
+                            }
                         }
                     }
                 }
