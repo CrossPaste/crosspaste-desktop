@@ -62,7 +62,7 @@ fun CrossPasteSearchWindowContent() {
 
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
 
-    val requestFocus = {
+    val requestFocus: () -> Unit = {
         appWindowManager.searchFocusRequester.requestFocus()
     }
 

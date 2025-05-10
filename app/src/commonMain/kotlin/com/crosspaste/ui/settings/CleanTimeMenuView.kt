@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -23,6 +21,7 @@ import com.crosspaste.clean.CleanTime
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.BaseColor
 import com.crosspaste.ui.base.MenuItem
+import com.crosspaste.ui.base.check
 import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.utils.ColorUtils
 import org.koin.compose.koinInject
@@ -68,7 +67,7 @@ fun CleanTimeMenuView(
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Icon(
                                     modifier = Modifier.size(20.dp),
-                                    imageVector = Icons.Outlined.Check,
+                                    painter = check(),
                                     contentDescription = "selected",
                                     tint =
                                         ColorUtils.getAdaptiveColor(

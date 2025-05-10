@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
@@ -26,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.base.check
 import com.crosspaste.ui.base.contrastHigh
 import com.crosspaste.ui.base.contrastMedium
 import com.crosspaste.ui.base.contrastStandard
@@ -250,7 +249,7 @@ private fun ThemeColor() {
         ) {
             if (themeColor == CoralColor) {
                 Icon(
-                    imageVector = Icons.Outlined.Check,
+                    painter = check(),
                     contentDescription = null,
                     tint = Color.White,
                 )
@@ -274,7 +273,7 @@ private fun ThemeColor() {
         ) {
             if (themeColor == GrassColor) {
                 Icon(
-                    imageVector = Icons.Outlined.Check,
+                    painter = check(),
                     contentDescription = null,
                     tint = Color.White,
                 )
@@ -298,7 +297,7 @@ private fun ThemeColor() {
         ) {
             if (themeColor == SeaColor) {
                 Icon(
-                    imageVector = Icons.Outlined.Check,
+                    painter = check(),
                     contentDescription = null,
                     tint = Color.White,
                 )
@@ -322,7 +321,7 @@ private fun ThemeColor() {
         ) {
             if (themeColor == HoneyColor) {
                 Icon(
-                    imageVector = Icons.Outlined.Check,
+                    painter = check(),
                     contentDescription = null,
                     tint = Color.White,
                 )
