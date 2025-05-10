@@ -25,6 +25,9 @@ expect fun autoRenew(): Painter
 expect fun bell(): Painter
 
 @Composable
+expect fun check(): Painter
+
+@Composable
 expect fun circle(): Painter
 
 @Composable

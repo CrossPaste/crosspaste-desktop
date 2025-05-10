@@ -9,6 +9,7 @@ import com.crosspaste.app.generated.resources.archive
 import com.crosspaste.app.generated.resources.arrow_back
 import com.crosspaste.app.generated.resources.autorenew
 import com.crosspaste.app.generated.resources.bell
+import com.crosspaste.app.generated.resources.check
 import com.crosspaste.app.generated.resources.circle
 import com.crosspaste.app.generated.resources.clipboard
 import com.crosspaste.app.generated.resources.close
@@ -71,6 +72,11 @@ actual fun autoRenew(): Painter {
 @Composable
 actual fun bell(): Painter {
     return painterResource(Res.drawable.bell)
+}
+
+@Composable
+actual fun check(): Painter {
+    return painterResource(Res.drawable.check)
 }
 
 @Composable
