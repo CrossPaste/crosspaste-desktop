@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -60,6 +61,7 @@ import com.crosspaste.ui.base.descSort
 import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.noFavorite
+import com.crosspaste.ui.base.search
 import com.crosspaste.ui.model.PasteSearchViewModel
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.delay
@@ -68,7 +70,6 @@ import org.koin.compose.koinInject
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun SearchInputView(requestFocus: () -> Unit) {
-    val density = LocalDensity.current
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val logger = koinInject<KLogger>()
@@ -76,12 +77,6 @@ fun SearchInputView(requestFocus: () -> Unit) {
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
 
     val inputSearch by pasteSearchViewModel.inputSearch.collectAsState()
-
-    val searchSort by pasteSearchViewModel.searchSort.collectAsState()
-
-    val searchFavorite by pasteSearchViewModel.searchFavorite.collectAsState()
-
-    val searchPasteType by pasteSearchViewModel.searchPasteType.collectAsState()
 
     val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
 
@@ -100,198 +95,216 @@ fun SearchInputView(requestFocus: () -> Unit) {
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.CenterStart,
-        ) {
-            TextField(
-                modifier =
-                    Modifier.focusTarget()
-                        .focusRequester(focusRequester)
-                        .onFocusEvent {
-                            logger.debug { "onFocusEvent $it" }
-                        }
-                        .onFocusChanged {
-                            logger.debug { "onFocusChanged $it" }
-                        }
-                        .fillMaxSize(),
-                value = inputSearch,
-                onValueChange = { pasteSearchViewModel.updateInputSearch(it) },
-                keyboardOptions = KeyboardOptions.Default.copy(autoCorrectEnabled = true),
-                visualTransformation = VisualTransformation.None,
-                placeholder = {
-                    Text(
-                        modifier = Modifier.wrapContentSize(),
-                        text = copywriter.getText("search_pasteboard"),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                        style = MaterialTheme.typography.bodyLarge,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                },
-                isError = false,
-                singleLine = true,
-                colors =
-                    TextFieldDefaults.colors(
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        disabledTextColor = Color.Transparent,
-                        errorTextColor = MaterialTheme.colorScheme.error,
-                        cursorColor = MaterialTheme.colorScheme.primary,
-                        errorCursorColor = Color.Red,
-                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                        unfocusedIndicatorColor = MaterialTheme.colorScheme.secondary,
-                        disabledIndicatorColor = Color.Transparent,
-                        errorIndicatorColor = MaterialTheme.colorScheme.error,
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        disabledContainerColor = Color.Transparent,
-                        errorContainerColor = Color.Transparent,
-                        focusedPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                        unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                        disabledPlaceholderColor = Color.Transparent,
-                        errorPlaceholderColor = MaterialTheme.colorScheme.error.copy(alpha = 0.5f),
-                    ),
-                textStyle = MaterialTheme.typography.bodyLarge,
-            )
-
-            val textStyle =
-                MaterialTheme.typography.labelLarge.copy(
-                    lineHeight = TextUnit.Unspecified,
+        TextField(
+            modifier =
+                Modifier.focusTarget()
+                    .focusRequester(focusRequester)
+                    .onFocusEvent {
+                        logger.debug { "onFocusEvent $it" }
+                    }
+                    .onFocusChanged {
+                        logger.debug { "onFocusChanged $it" }
+                    }
+                    .fillMaxSize(),
+            value = inputSearch,
+            leadingIcon = {
+                Icon(
+                    painter = search(),
+                    contentDescription = "search",
                 )
+            },
+            trailingIcon = {
+                searchTrailingIcon()
+            },
+            onValueChange = { pasteSearchViewModel.updateInputSearch(it) },
+            keyboardOptions = KeyboardOptions.Default.copy(autoCorrectEnabled = true),
+            visualTransformation = VisualTransformation.None,
+            placeholder = {
+                Text(
+                    modifier = Modifier.wrapContentSize(),
+                    text = copywriter.getText("search_pasteboard"),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    style = MaterialTheme.typography.bodyLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            },
+            isError = false,
+            singleLine = true,
+            colors =
+                TextFieldDefaults.colors(
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    disabledTextColor = Color.Transparent,
+                    errorTextColor = MaterialTheme.colorScheme.error,
+                    cursorColor = MaterialTheme.colorScheme.primary,
+                    errorCursorColor = Color.Red,
+                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                    unfocusedIndicatorColor = MaterialTheme.colorScheme.secondary,
+                    disabledIndicatorColor = Color.Transparent,
+                    errorIndicatorColor = MaterialTheme.colorScheme.error,
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    errorContainerColor = Color.Transparent,
+                    focusedPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    disabledPlaceholderColor = Color.Transparent,
+                    errorPlaceholderColor = MaterialTheme.colorScheme.error.copy(alpha = 0.5f),
+                ),
+            textStyle = MaterialTheme.typography.bodyLarge,
+        )
+    }
+}
 
-            var showTypes by remember { mutableStateOf(false) }
+@Composable
+fun searchTrailingIcon() {
+    val appWindowManager = koinInject<DesktopAppWindowManager>()
 
-            var currentType by remember { mutableStateOf<PasteType?>(null) }
+    val copywriter = koinInject<GlobalCopywriter>()
 
-            val menuTexts =
-                PasteType.TYPES
-                    .map { copywriter.getText(it.name) }
-                    .plus(copywriter.getText(ALL_TYPES))
-                    .toTypedArray()
+    val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
 
-            val paddingValues = PaddingValues(10.dp, 5.dp, 10.dp, 5.dp)
+    val searchSort by pasteSearchViewModel.searchSort.collectAsState()
 
-            val maxWidth = getMenWidth(menuTexts, textStyle, paddingValues)
+    val searchFavorite by pasteSearchViewModel.searchFavorite.collectAsState()
 
-            Row(
-                modifier = Modifier.fillMaxSize(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Spacer(modifier = Modifier.weight(1f))
-                Row(
-                    modifier = Modifier.width(94.dp + maxWidth).height(50.dp).padding(10.dp),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    PasteTooltipIconView(
-                        painter = if (searchSort) descSort() else ascSort(),
-                        contentDescription = "Sort by creation time",
-                        tint = MaterialTheme.colorScheme.primary,
-                        text = copywriter.getText("sort_by_creation_time"),
-                    ) {
-                        pasteSearchViewModel.switchSort()
+    val searchPasteType by pasteSearchViewModel.searchPasteType.collectAsState()
+
+    val density = LocalDensity.current
+
+    var showTypes by remember { mutableStateOf(false) }
+
+    var currentType by remember { mutableStateOf<PasteType?>(null) }
+
+    val focusRequester = appWindowManager.searchFocusRequester
+
+    val textStyle =
+        MaterialTheme.typography.labelLarge.copy(
+            lineHeight = TextUnit.Unspecified,
+        )
+
+    val menuTexts =
+        PasteType.TYPES
+            .map { copywriter.getText(it.name) }
+            .plus(copywriter.getText(ALL_TYPES))
+            .toTypedArray()
+
+    val paddingValues = PaddingValues(10.dp, 5.dp, 10.dp, 5.dp)
+
+    val maxWidth = getMenWidth(menuTexts, textStyle, paddingValues)
+
+    Row(
+        modifier = Modifier.width(100.dp + maxWidth).height(50.dp).padding(10.dp),
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        PasteTooltipIconView(
+            painter = if (searchSort) descSort() else ascSort(),
+            contentDescription = "Sort by creation time",
+            tint = MaterialTheme.colorScheme.primary,
+            text = copywriter.getText("sort_by_creation_time"),
+        ) {
+            pasteSearchViewModel.switchSort()
+            focusRequester.requestFocus() // keep textField focus
+        }
+
+        PasteTooltipIconView(
+            painter = if (searchFavorite) favorite() else noFavorite(),
+            contentDescription = "Favorite",
+            tint = MaterialTheme.colorScheme.primary,
+            text = copywriter.getText("whether_to_search_only_favorites"),
+        ) {
+            pasteSearchViewModel.switchFavorite()
+            focusRequester.requestFocus() // keep textField focus
+        }
+
+        Spacer(modifier = Modifier.width(6.dp))
+
+        Row(
+            modifier =
+                Modifier.fillMaxWidth().height(32.dp)
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                        RoundedCornerShape(5.dp),
+                    )
+                    .clickable {
+                        showTypes = true
                         focusRequester.requestFocus() // keep textField focus
                     }
+                    .padding(10.dp, 5.dp, 10.dp, 5.dp),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = currentType?.let { copywriter.getText(it.name) } ?: copywriter.getText(ALL_TYPES),
+                color = MaterialTheme.colorScheme.primary,
+                style = textStyle,
+            )
+        }
 
-                    PasteTooltipIconView(
-                        painter = if (searchFavorite) favorite() else noFavorite(),
-                        contentDescription = "Favorite",
-                        tint = MaterialTheme.colorScheme.primary,
-                        text = copywriter.getText("whether_to_search_only_favorites"),
-                    ) {
-                        pasteSearchViewModel.switchFavorite()
-                        focusRequester.requestFocus() // keep textField focus
-                    }
-
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Row(
-                        modifier =
-                            Modifier.fillMaxWidth().height(32.dp)
-                                .border(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                                    RoundedCornerShape(5.dp),
-                                )
-                                .clickable {
-                                    showTypes = true
-                                    focusRequester.requestFocus() // keep textField focus
-                                }
-                                .padding(10.dp, 5.dp, 10.dp, 5.dp),
-                        horizontalArrangement = Arrangement.Start,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = currentType?.let { copywriter.getText(it.name) } ?: copywriter.getText(ALL_TYPES),
-                            color = MaterialTheme.colorScheme.primary,
-                            style = textStyle,
-                        )
-                    }
-
+        if (showTypes) {
+            Popup(
+                alignment = Alignment.TopEnd,
+                offset =
+                    IntOffset(
+                        with(density) { (0.dp).roundToPx() },
+                        with(density) { (40.dp).roundToPx() },
+                    ),
+                onDismissRequest = {
                     if (showTypes) {
-                        Popup(
-                            alignment = Alignment.TopEnd,
-                            offset =
-                                IntOffset(
-                                    with(density) { (0.dp).roundToPx() },
-                                    with(density) { (40.dp).roundToPx() },
-                                ),
-                            onDismissRequest = {
-                                if (showTypes) {
-                                    showTypes = false
-                                }
-                            },
-                            properties =
-                                PopupProperties(
-                                    focusable = true,
-                                    dismissOnBackPress = true,
-                                    dismissOnClickOutside = true,
-                                ),
-                        ) {
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .wrapContentSize()
-                                        .background(Color.Transparent)
-                                        .shadow(15.dp),
+                        showTypes = false
+                    }
+                },
+                properties =
+                    PopupProperties(
+                        focusable = true,
+                        dismissOnBackPress = true,
+                        dismissOnClickOutside = true,
+                    ),
+            ) {
+                Box(
+                    modifier =
+                        Modifier
+                            .wrapContentSize()
+                            .background(Color.Transparent)
+                            .shadow(15.dp),
+                ) {
+                    Column(
+                        modifier =
+                            Modifier
+                                .width(maxWidth)
+                                .wrapContentHeight()
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(MaterialTheme.colorScheme.surfaceBright),
+                    ) {
+                        if (searchPasteType != null) {
+                            MenuItem(
+                                text = copywriter.getText("all_types"),
+                                textStyle = textStyle,
+                                paddingValues = paddingValues,
                             ) {
-                                Column(
-                                    modifier =
-                                        Modifier
-                                            .width(maxWidth)
-                                            .wrapContentHeight()
-                                            .clip(RoundedCornerShape(5.dp))
-                                            .background(MaterialTheme.colorScheme.surfaceBright),
-                                ) {
-                                    if (searchPasteType != null) {
-                                        MenuItem(
-                                            text = copywriter.getText("all_types"),
-                                            textStyle = textStyle,
-                                            paddingValues = paddingValues,
-                                        ) {
-                                            pasteSearchViewModel.setPasteType(null)
-                                            currentType = null
-                                            showTypes = false
-                                            focusRequester.requestFocus()
-                                        }
-                                        HorizontalDivider()
-                                    }
+                                pasteSearchViewModel.setPasteType(null)
+                                currentType = null
+                                showTypes = false
+                                focusRequester.requestFocus()
+                            }
+                            HorizontalDivider()
+                        }
 
-                                    PasteType.TYPES.forEach { pasteType ->
-                                        if (currentType != pasteType) {
-                                            MenuItem(
-                                                text = copywriter.getText(pasteType.name),
-                                                textStyle = textStyle,
-                                                paddingValues = paddingValues,
-                                                background = MaterialTheme.colorScheme.surfaceBright,
-                                            ) {
-                                                pasteSearchViewModel.setPasteType(pasteType.type)
-                                                currentType = pasteType
-                                                showTypes = false
-                                                focusRequester.requestFocus()
-                                            }
-                                        }
-                                    }
+                        PasteType.TYPES.forEach { pasteType ->
+                            if (currentType != pasteType) {
+                                MenuItem(
+                                    text = copywriter.getText(pasteType.name),
+                                    textStyle = textStyle,
+                                    paddingValues = paddingValues,
+                                    background = MaterialTheme.colorScheme.surfaceBright,
+                                ) {
+                                    pasteSearchViewModel.setPasteType(pasteType.type)
+                                    currentType = pasteType
+                                    showTypes = false
+                                    focusRequester.requestFocus()
                                 }
                             }
                         }
