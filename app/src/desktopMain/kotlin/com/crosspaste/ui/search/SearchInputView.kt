@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -60,6 +61,7 @@ import com.crosspaste.ui.base.descSort
 import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.noFavorite
+import com.crosspaste.ui.base.search
 import com.crosspaste.ui.model.PasteSearchViewModel
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.delay
@@ -116,6 +118,12 @@ fun SearchInputView(requestFocus: () -> Unit) {
                         }
                         .fillMaxSize(),
                 value = inputSearch,
+                leadingIcon = {
+                    Icon(
+                        painter = search(),
+                        contentDescription = "search",
+                    )
+                },
                 onValueChange = { pasteSearchViewModel.updateInputSearch(it) },
                 keyboardOptions = KeyboardOptions.Default.copy(autoCorrectEnabled = true),
                 visualTransformation = VisualTransformation.None,
