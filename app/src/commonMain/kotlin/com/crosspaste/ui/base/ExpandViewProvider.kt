@@ -23,8 +23,8 @@ interface ExpandViewProvider {
         titleBackgroundColor: Color = MaterialTheme.colorScheme.secondary,
         onTitleBackgroundColor: Color = MaterialTheme.colorScheme.onSecondary,
         backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.72f),
-        barContent: @Composable RowScope.(Float) -> Unit = {
-            ExpandBarView(title, it, titleBackgroundColor, onTitleBackgroundColor, icon)
+        barContent: @Composable RowScope.(Float) -> Unit = { iconScale ->
+            ExpandBarView(title, iconScale, titleBackgroundColor, onTitleBackgroundColor, icon)
         },
         content: @Composable ColumnScope.() -> Unit,
     )
