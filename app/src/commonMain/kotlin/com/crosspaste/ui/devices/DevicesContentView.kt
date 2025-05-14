@@ -40,9 +40,14 @@ fun DevicesContentView() {
 
             if (syncRuntimeInfos.isNotEmpty()) {
                 expandViewProvider.ExpandView(
-                    title = "my_devices",
                     horizontalPadding = 0.dp,
                     defaultExpand = true,
+                    barContent = { iconScale ->
+                        expandViewProvider.ExpandBarView(
+                            title = "my_devices",
+                            iconScale = iconScale,
+                        )
+                    },
                 ) {
                     Spacer(modifier = Modifier.height(3.dp))
                     MyDevicesView(syncRuntimeInfos)
@@ -51,18 +56,28 @@ fun DevicesContentView() {
             }
 
             expandViewProvider.ExpandView(
-                title = "add_device_manually",
                 horizontalPadding = 0.dp,
                 defaultExpand = false,
+                barContent = { iconScale ->
+                    expandViewProvider.ExpandBarView(
+                        title = "add_device_manually",
+                        iconScale = iconScale,
+                    )
+                },
             ) {
                 Spacer(modifier = Modifier.height(3.dp))
                 AddDeviceManuallyView()
             }
             Spacer(modifier = Modifier.height(10.dp))
             expandViewProvider.ExpandView(
-                title = "nearby_devices",
                 horizontalPadding = 0.dp,
                 defaultExpand = true,
+                barContent = { iconScale ->
+                    expandViewProvider.ExpandBarView(
+                        title = "nearby_devices",
+                        iconScale = iconScale,
+                    )
+                },
             ) {
                 Spacer(modifier = Modifier.height(3.dp))
                 NearbyDevicesView()

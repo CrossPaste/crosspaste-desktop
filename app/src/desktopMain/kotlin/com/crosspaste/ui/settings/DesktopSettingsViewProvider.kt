@@ -55,8 +55,13 @@ class DesktopSettingsViewProvider(
     @Composable
     override fun NetSettingsView() {
         expandViewProvider.ExpandView(
-            title = "network",
-            icon = { network() },
+            barContent = { iconScale ->
+                expandViewProvider.ExpandBarView(
+                    title = "network",
+                    icon = { network() },
+                    iconScale = iconScale,
+                )
+            },
         ) {
             NetSettingsContentView()
         }
@@ -65,8 +70,13 @@ class DesktopSettingsViewProvider(
     @Composable
     override fun PasteboardSettingsView() {
         expandViewProvider.ExpandView(
-            title = "pasteboard",
-            icon = { clipboard() },
+            barContent = { iconScale ->
+                expandViewProvider.ExpandBarView(
+                    title = "pasteboard",
+                    icon = { clipboard() },
+                    iconScale = iconScale,
+                )
+            },
         ) {
             PasteboardSettingsContentView()
         }
@@ -75,8 +85,13 @@ class DesktopSettingsViewProvider(
     @Composable
     override fun StoreSettingsView() {
         expandViewProvider.ExpandView(
-            title = "store",
-            icon = { database() },
+            barContent = { iconScale ->
+                expandViewProvider.ExpandBarView(
+                    title = "store",
+                    icon = { database() },
+                    iconScale = iconScale,
+                )
+            },
         ) {
             StoreSettingsContentView {
                 SetStoragePathView()

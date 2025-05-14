@@ -16,16 +16,12 @@ interface ExpandViewProvider {
 
     @Composable
     fun ExpandView(
-        title: String,
-        icon: @Composable () -> Painter? = { null },
         defaultExpand: Boolean = false,
         horizontalPadding: Dp = 16.dp,
-        titleBackgroundColor: Color = MaterialTheme.colorScheme.secondary,
-        onTitleBackgroundColor: Color = MaterialTheme.colorScheme.onSecondary,
+        barBackgroundColor: Color = MaterialTheme.colorScheme.secondary,
+        onBarBackgroundColor: Color = MaterialTheme.colorScheme.onSecondary,
         backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.72f),
-        barContent: @Composable RowScope.(Float) -> Unit = { iconScale ->
-            ExpandBarView(title, iconScale, titleBackgroundColor, onTitleBackgroundColor, icon)
-        },
+        barContent: @Composable RowScope.(Float) -> Unit,
         content: @Composable ColumnScope.() -> Unit,
     )
 
@@ -33,8 +29,7 @@ interface ExpandViewProvider {
     fun ExpandBarView(
         title: String,
         iconScale: Float,
-        titleBackgroundColor: Color = MaterialTheme.colorScheme.secondary,
-        onTitleBackgroundColor: Color = MaterialTheme.colorScheme.onSecondary,
+        onBarBackgroundColor: Color = MaterialTheme.colorScheme.onSecondary,
         icon: @Composable () -> Painter? = { null },
     )
 }

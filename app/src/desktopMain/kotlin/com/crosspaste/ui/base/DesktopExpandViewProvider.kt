@@ -56,12 +56,10 @@ class DesktopExpandViewProvider(
     @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
     @Composable
     override fun ExpandView(
-        title: String,
-        icon: @Composable () -> Painter?,
         defaultExpand: Boolean,
         horizontalPadding: Dp,
-        titleBackgroundColor: Color,
-        onTitleBackgroundColor: Color,
+        barBackgroundColor: Color,
+        onBarBackgroundColor: Color,
         backgroundColor: Color,
         barContent: @Composable (RowScope.(Float) -> Unit),
         content: @Composable (ColumnScope.() -> Unit),
@@ -117,7 +115,7 @@ class DesktopExpandViewProvider(
                             spotShadowColor = MaterialTheme.colorScheme.onSecondary,
                         )
                         .background(
-                            titleBackgroundColor,
+                            barBackgroundColor,
                             RoundedCornerShape(8.dp),
                         )
                         .padding(horizontal = 16.dp, vertical = 12.dp),
@@ -143,7 +141,7 @@ class DesktopExpandViewProvider(
                             Modifier
                                 .matchParentSize()
                                 .rotate(arrowRotation),
-                        tint = onTitleBackgroundColor,
+                        tint = onBarBackgroundColor,
                     )
                 }
             }
@@ -165,7 +163,7 @@ class DesktopExpandViewProvider(
                     modifier =
                         Modifier
                             .wrapContentSize()
-                            .background(MaterialTheme.colorScheme.surfaceContainerLowest),
+                            .background(backgroundColor),
                 ) {
                     Column {
                         content()
@@ -179,8 +177,7 @@ class DesktopExpandViewProvider(
     override fun ExpandBarView(
         title: String,
         iconScale: Float,
-        titleBackgroundColor: Color,
-        onTitleBackgroundColor: Color,
+        onBarBackgroundColor: Color,
         icon: @Composable () -> Painter?,
     ) {
         Row {
@@ -199,7 +196,7 @@ class DesktopExpandViewProvider(
                         painter = it,
                         contentDescription = null,
                         modifier = Modifier.matchParentSize(),
-                        tint = onTitleBackgroundColor,
+                        tint = onBarBackgroundColor,
                     )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
@@ -207,11 +204,11 @@ class DesktopExpandViewProvider(
 
             Text(
                 text = copywriter.getText(title),
-                color = onTitleBackgroundColor,
                 style =
                     MaterialTheme.typography.labelLarge.copy(
                         lineHeight = TextUnit.Unspecified,
                     ),
+                color = onBarBackgroundColor,
             )
         }
     }
