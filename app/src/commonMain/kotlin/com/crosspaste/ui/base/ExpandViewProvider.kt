@@ -1,7 +1,5 @@
 package com.crosspaste.ui.base
 
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -21,8 +19,8 @@ interface ExpandViewProvider {
         barBackgroundColor: Color = MaterialTheme.colorScheme.secondary,
         onBarBackgroundColor: Color = MaterialTheme.colorScheme.onSecondary,
         backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.72f),
-        barContent: @Composable RowScope.(Float) -> Unit,
-        content: @Composable ColumnScope.() -> Unit,
+        barContent: @Composable (Float) -> Unit,
+        content: @Composable () -> Unit,
     )
 
     @Composable
