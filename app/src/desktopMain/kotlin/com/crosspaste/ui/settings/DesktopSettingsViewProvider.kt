@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.ui.About
-import com.crosspaste.ui.base.ExpandView
+import com.crosspaste.ui.base.ExpandViewProvider
 import com.crosspaste.ui.base.clipboard
 import com.crosspaste.ui.base.database
 import com.crosspaste.ui.base.info
@@ -22,6 +22,7 @@ import com.crosspaste.ui.base.network
 class DesktopSettingsViewProvider(
     private val appInfo: AppInfo,
     private val appWindowManager: AppWindowManager,
+    private val expandViewProvider: ExpandViewProvider,
 ) : SettingsViewProvider {
 
     @Composable
@@ -53,9 +54,14 @@ class DesktopSettingsViewProvider(
 
     @Composable
     override fun NetSettingsView() {
-        ExpandView(
-            title = "network",
-            icon = { network() },
+        expandViewProvider.ExpandView(
+            barContent = { iconScale ->
+                expandViewProvider.ExpandBarView(
+                    title = "network",
+                    icon = { network() },
+                    iconScale = iconScale,
+                )
+            },
         ) {
             NetSettingsContentView()
         }
@@ -63,9 +69,14 @@ class DesktopSettingsViewProvider(
 
     @Composable
     override fun PasteboardSettingsView() {
-        ExpandView(
-            title = "pasteboard",
-            icon = { clipboard() },
+        expandViewProvider.ExpandView(
+            barContent = { iconScale ->
+                expandViewProvider.ExpandBarView(
+                    title = "pasteboard",
+                    icon = { clipboard() },
+                    iconScale = iconScale,
+                )
+            },
         ) {
             PasteboardSettingsContentView()
         }
@@ -73,9 +84,14 @@ class DesktopSettingsViewProvider(
 
     @Composable
     override fun StoreSettingsView() {
-        ExpandView(
-            title = "store",
-            icon = { database() },
+        expandViewProvider.ExpandView(
+            barContent = { iconScale ->
+                expandViewProvider.ExpandBarView(
+                    title = "store",
+                    icon = { database() },
+                    iconScale = iconScale,
+                )
+            },
         ) {
             StoreSettingsContentView {
                 SetStoragePathView()

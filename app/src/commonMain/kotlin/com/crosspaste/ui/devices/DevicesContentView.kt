@@ -16,11 +16,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.crosspaste.sync.SyncManager
-import com.crosspaste.ui.base.ExpandView
+import com.crosspaste.ui.base.ExpandViewProvider
 import org.koin.compose.koinInject
 
 @Composable
 fun DevicesContentView() {
+    val expandViewProvider = koinInject<ExpandViewProvider>()
     val syncManager = koinInject<SyncManager>()
 
     LaunchedEffect(Unit) {
@@ -38,10 +39,15 @@ fun DevicesContentView() {
             val syncRuntimeInfos by syncManager.realTimeSyncRuntimeInfos.collectAsState()
 
             if (syncRuntimeInfos.isNotEmpty()) {
-                ExpandView(
-                    title = "my_devices",
+                expandViewProvider.ExpandView(
                     horizontalPadding = 0.dp,
                     defaultExpand = true,
+                    barContent = { iconScale ->
+                        expandViewProvider.ExpandBarView(
+                            title = "my_devices",
+                            iconScale = iconScale,
+                        )
+                    },
                 ) {
                     Spacer(modifier = Modifier.height(3.dp))
                     MyDevicesView(syncRuntimeInfos)
@@ -49,19 +55,29 @@ fun DevicesContentView() {
                 Spacer(modifier = Modifier.height(10.dp))
             }
 
-            ExpandView(
-                title = "add_device_manually",
+            expandViewProvider.ExpandView(
                 horizontalPadding = 0.dp,
                 defaultExpand = false,
+                barContent = { iconScale ->
+                    expandViewProvider.ExpandBarView(
+                        title = "add_device_manually",
+                        iconScale = iconScale,
+                    )
+                },
             ) {
                 Spacer(modifier = Modifier.height(3.dp))
                 AddDeviceManuallyView()
             }
             Spacer(modifier = Modifier.height(10.dp))
-            ExpandView(
-                title = "nearby_devices",
+            expandViewProvider.ExpandView(
                 horizontalPadding = 0.dp,
                 defaultExpand = true,
+                barContent = { iconScale ->
+                    expandViewProvider.ExpandBarView(
+                        title = "nearby_devices",
+                        iconScale = iconScale,
+                    )
+                },
             ) {
                 Spacer(modifier = Modifier.height(3.dp))
                 NearbyDevicesView()

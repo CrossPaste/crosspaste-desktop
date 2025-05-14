@@ -178,11 +178,13 @@ import com.crosspaste.task.TaskExecutor
 import com.crosspaste.ui.DesktopScreenProvider
 import com.crosspaste.ui.DesktopThemeDetector
 import com.crosspaste.ui.ScreenProvider
+import com.crosspaste.ui.base.DesktopExpandViewProvider
 import com.crosspaste.ui.base.DesktopIconStyle
 import com.crosspaste.ui.base.DesktopNotificationManager
 import com.crosspaste.ui.base.DesktopPasteDialogFactory
 import com.crosspaste.ui.base.DesktopUISupport
 import com.crosspaste.ui.base.DialogService
+import com.crosspaste.ui.base.ExpandViewProvider
 import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.base.PasteDialogFactory
 import com.crosspaste.ui.base.UISupport
@@ -461,6 +463,7 @@ class DesktopCrossPasteModule(
             single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get()) }
             single<DeviceViewProvider> { DesktopDeviceViewProvider() }
             single<DialogService> { DialogService }
+            single<ExpandViewProvider> { DesktopExpandViewProvider(get()) }
             single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
             single<GlobalListener> { DesktopGlobalListener(get(), get(), get(), get()) }
             single<IconStyle> { DesktopIconStyle(get()) }
@@ -472,7 +475,7 @@ class DesktopCrossPasteModule(
             single<PlatformContext> { PlatformContext.INSTANCE }
             single<RatingPromptManager> { DesktopRatingPromptManager() }
             single<ScreenProvider> { DesktopScreenProvider(get()) }
-            single<SettingsViewProvider> { DesktopSettingsViewProvider(get(), get()) }
+            single<SettingsViewProvider> { DesktopSettingsViewProvider(get(), get(), get()) }
             single<ShortcutKeys> { DesktopShortcutKeys(get()) }
             single<ShortcutKeysAction> {
                 DesktopShortKeysAction(get(), get(), get(), get(), get(), get(), get())
