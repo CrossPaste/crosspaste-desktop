@@ -1,26 +1,27 @@
 package com.crosspaste.app
 
-import com.crosspaste.path.DesktopAppPathProvider
-import com.crosspaste.platform.getPlatform
+import com.crosspaste.path.AppPathProvider
+import com.crosspaste.platform.Platform
 import com.crosspaste.utils.getAppEnvUtils
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 
-object DesktopAppRestartService : AppRestartService {
+class DesktopAppRestartService(
+    platform: Platform,
+    appPathProvider: AppPathProvider,
+) : AppRestartService {
 
     private val appEnvUtils = getAppEnvUtils()
 
-    private val currentPlatform = getPlatform()
-
     private val appRestartService: AppRestartService =
-        if (currentPlatform.isMacos()) {
-            MacAppRestartService()
-        } else if (currentPlatform.isWindows()) {
-            WindowsAppRestartService()
-        } else if (currentPlatform.isLinux()) {
-            LinuxAppRestartService()
+        if (platform.isMacos()) {
+            MacAppRestartService(appPathProvider)
+        } else if (platform.isWindows()) {
+            WindowsAppRestartService(appPathProvider)
+        } else if (platform.isLinux()) {
+            LinuxAppRestartService(appPathProvider)
         } else {
-            throw IllegalStateException("Unsupported platform: $currentPlatform")
+            throw IllegalStateException("Unsupported platform: $platform")
         }
 
     override fun restart(exitApplication: () -> Unit) {
@@ -32,7 +33,9 @@ object DesktopAppRestartService : AppRestartService {
     }
 }
 
-class MacAppRestartService : AppRestartService {
+class MacAppRestartService(
+    private val appPathProvider: AppPathProvider,
+) : AppRestartService {
 
     companion object {
         private const val SCRIPT = "start.sh"
@@ -42,8 +45,8 @@ class MacAppRestartService : AppRestartService {
 
     override fun restart(exitApplication: () -> Unit) {
         val pid = ProcessHandle.current().pid()
-        val appPath = DesktopAppPathProvider.pasteAppPath
-        val restartLogPath = DesktopAppPathProvider.resolve("restart.log", AppFileType.LOG)
+        val appPath = appPathProvider.pasteAppPath
+        val restartLogPath = appPathProvider.resolve("restart.log", AppFileType.LOG)
         val scriptPath = appPath.resolve("Contents").resolve("bin").resolve(SCRIPT)
         logger.info { "Restarting app script: $scriptPath\nwith args: $pid" }
         val command =
@@ -66,7 +69,9 @@ class MacAppRestartService : AppRestartService {
     }
 }
 
-class WindowsAppRestartService : AppRestartService {
+class WindowsAppRestartService(
+    private val appPathProvider: AppPathProvider,
+) : AppRestartService {
 
     companion object {
         private const val SCRIPT = "start.bat"
@@ -76,12 +81,12 @@ class WindowsAppRestartService : AppRestartService {
 
     override fun restart(exitApplication: () -> Unit) {
         val pid = ProcessHandle.current().pid()
-        val appPath = DesktopAppPathProvider.pasteAppJarPath
-        val restartLogPath = DesktopAppPathProvider.resolve("restart.log", AppFileType.LOG)
+        val appPath = appPathProvider.pasteAppJarPath
+        val restartLogPath = appPathProvider.resolve("restart.log", AppFileType.LOG)
         val scriptPath = appPath.resolve("bin").resolve(SCRIPT)
         // Path to the application's executable file, passed to the restart script
         val exeFilePath =
-            DesktopAppPathProvider.pasteAppExePath
+            appPathProvider.pasteAppExePath
                 .resolve("CrossPaste.exe")
 
         logger.info { "Restarting app script: $scriptPath\n$exeFilePath\nwith args: $pid" }
@@ -107,7 +112,9 @@ class WindowsAppRestartService : AppRestartService {
     }
 }
 
-class LinuxAppRestartService : AppRestartService {
+class LinuxAppRestartService(
+    private val appPathProvider: AppPathProvider,
+) : AppRestartService {
 
     companion object {
         private const val SCRIPT = "start.sh"
@@ -117,8 +124,8 @@ class LinuxAppRestartService : AppRestartService {
 
     override fun restart(exitApplication: () -> Unit) {
         val pid = ProcessHandle.current().pid()
-        val appPath = DesktopAppPathProvider.pasteAppPath
-        val restartLogPath = DesktopAppPathProvider.resolve("restart.log", AppFileType.LOG)
+        val appPath = appPathProvider.pasteAppPath
+        val restartLogPath = appPathProvider.resolve("restart.log", AppFileType.LOG)
         val scriptPath = appPath.resolve("bin").resolve(SCRIPT)
         logger.info { "Restarting app script: $scriptPath\nwith args: $pid" }
         val command =

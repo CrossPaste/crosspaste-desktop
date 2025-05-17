@@ -1,8 +1,9 @@
 package com.crosspaste.rendering
 
 import com.crosspaste.module.ModuleLoaderConfig
+import com.crosspaste.path.AppPathProvider
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.Platform
 import com.crosspaste.platform.windows.WinProcessUtils
 import com.crosspaste.platform.windows.WinProcessUtils.killProcessSet
 import com.crosspaste.presist.FilePersist
@@ -27,14 +28,14 @@ import org.openqa.selenium.chrome.ChromeOptions
 import kotlin.math.max
 
 class DesktopHtmlRenderingService(
+    private val appPathProvider: AppPathProvider,
     private val filePersist: FilePersist,
     private val renderingHelper: RenderingHelper,
+    private val platform: Platform,
     private val userDataPathProvider: UserDataPathProvider,
 ) : RenderingService<String> {
 
     private val logger = KotlinLogging.logger {}
-
-    private val currentPlatform = getPlatform()
 
     private val htmlUtils = getHtmlUtils()
 
@@ -57,7 +58,12 @@ class DesktopHtmlRenderingService(
 
     override fun start() {
         val chromeModuleLoader = ChromeModuleLoader(userDataPathProvider)
-        val chromeServiceModule = ChromeServiceServiceModule(chromeDriverProperties)
+        val chromeServiceModule =
+            ChromeServiceServiceModule(
+                appPathProvider,
+                platform,
+                chromeDriverProperties,
+            )
 
         val optLoaderConfig = chromeServiceModule.getModuleLoaderConfig()
 
@@ -77,7 +83,7 @@ class DesktopHtmlRenderingService(
     }
 
     private fun buildOptions(): ChromeOptions {
-        return if (currentPlatform.isWindows()) {
+        return if (platform.isWindows()) {
             val scale = renderingHelper.scale
             baseOptions
                 .addArguments("--force-device-scale-factor=$scale")
@@ -135,7 +141,7 @@ class DesktopHtmlRenderingService(
 
     override fun stop() {
         chromeDriver?.let { driver ->
-            if (currentPlatform.isWindows()) {
+            if (platform.isWindows()) {
                 val shellPids = collectChromeHeadlessShellProcessIds()
 
                 val deferred =

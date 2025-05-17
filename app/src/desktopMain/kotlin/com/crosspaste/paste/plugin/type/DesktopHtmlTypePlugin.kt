@@ -9,7 +9,7 @@ import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.toPasteDataFlavor
-import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.Platform
 import com.crosspaste.platform.windows.html.HTMLCodec
 import com.crosspaste.plugin.office.OfficeHtmlPlugin
 import com.crosspaste.utils.getCodecsUtils
@@ -18,6 +18,7 @@ import java.awt.datatransfer.DataFlavor
 
 class DesktopHtmlTypePlugin(
     private val appInfo: AppInfo,
+    private val platform: Platform,
 ) : HtmlTypePlugin {
 
     companion object {
@@ -99,7 +100,7 @@ class DesktopHtmlTypePlugin(
     ) {
         pasteItem as HtmlPasteItem
         var currentHtml = pasteItem.html
-        if (getPlatform().isWindows()) {
+        if (platform.isWindows()) {
             currentHtml = String(HTMLCodec.convertToHTMLFormat(currentHtml))
         }
         map[DataFlavor.selectionHtmlFlavor.toPasteDataFlavor()] = currentHtml

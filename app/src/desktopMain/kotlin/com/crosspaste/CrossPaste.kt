@@ -34,7 +34,8 @@ import com.crosspaste.paste.InitPasteDataService
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.DesktopPlatformProvider
+import com.crosspaste.platform.Platform
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.rendering.RenderingService
 import com.crosspaste.sync.QRCodeGenerator
@@ -74,9 +75,11 @@ class CrossPaste {
 
         private val appEnv = appEnvUtils.getCurrentAppEnv()
 
-        private val appPathProvider = DesktopAppPathProvider
+        private val platform = DesktopPlatformProvider().getPlatform()
 
-        private val deviceUtils = DesktopDeviceUtils
+        private val appPathProvider = DesktopAppPathProvider(platform)
+
+        private val deviceUtils = DesktopDeviceUtils(platform)
 
         private val localeUtils = DesktopLocaleUtils
 
@@ -103,7 +106,9 @@ class CrossPaste {
                 appPathProvider,
                 configManager,
                 crossPasteLogger,
+                deviceUtils,
                 logger,
+                platform,
             )
 
         val koinApplication: KoinApplication = module.initKoinApplication()
@@ -230,7 +235,7 @@ class CrossPaste {
 
             val appLaunchState = koinApplication.koin.get<DesktopAppLaunchState>()
             val appWindowManager = koinApplication.koin.get<DesktopAppWindowManager>()
-            val platform = getPlatform()
+            val platform = koinApplication.koin.get<Platform>()
 
             val isMacos = platform.isMacos()
             val isWindows = platform.isWindows()

@@ -19,7 +19,7 @@ import com.crosspaste.paste.item.PasteRtf
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.paste.plugin.type.ColorTypePlugin
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.Platform
 import com.crosspaste.ui.PasteTextEdit
 import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
@@ -42,6 +42,7 @@ class DesktopUISupport(
     private val copywriter: GlobalCopywriter,
     private val notificationManager: NotificationManager,
     private val pasteDao: PasteDao,
+    private val platform: Platform,
     private val userDataPathProvider: UserDataPathProvider,
 ) : UISupport {
 
@@ -114,7 +115,7 @@ class DesktopUISupport(
                 val desktop = Desktop.getDesktop()
                 desktop.browseFileDirectory(filePath.toFile())
             } else {
-                if (getPlatform().isWindows() && openFileInExplorer(filePath.toFile())) {
+                if (platform.isWindows() && openFileInExplorer(filePath.toFile())) {
                     return
                 }
                 notificationManager.sendNotification(

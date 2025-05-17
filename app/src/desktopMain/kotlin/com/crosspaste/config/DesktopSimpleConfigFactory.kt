@@ -1,12 +1,12 @@
 package com.crosspaste.config
 
 import com.crosspaste.app.AppFileType
-import com.crosspaste.path.DesktopAppPathProvider
+import com.crosspaste.path.AppPathProvider
 import com.crosspaste.presist.FilePersist
 
-class DesktopSimpleConfigFactory : SimpleConfigFactory {
-
-    private val appPathProvider = DesktopAppPathProvider
+class DesktopSimpleConfigFactory(
+    private val appPathProvider: AppPathProvider,
+) : SimpleConfigFactory {
 
     override fun createConfig(configName: String): SimpleConfig {
         val oneFilePersist =

@@ -2,7 +2,6 @@ package com.crosspaste.platform.windows.api
 
 import com.crosspaste.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.crosspaste.app.WinAppInfo
-import com.crosspaste.path.DesktopAppPathProvider
 import com.sun.jna.Memory
 import com.sun.jna.Native
 import com.sun.jna.Pointer
@@ -510,9 +509,9 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             }
         }
 
-        fun isInstalledFromMicrosoftStore(): Boolean {
+        fun isInstalledFromMicrosoftStore(path: Path): Boolean {
             val windowsAppsPath: Path = Paths.get("C:\\Program Files\\WindowsApps").toAbsolutePath()
-            return DesktopAppPathProvider.pasteAppPath.toNioPath().startsWith(windowsAppsPath)
+            return path.startsWith(windowsAppsPath)
         }
     }
 }

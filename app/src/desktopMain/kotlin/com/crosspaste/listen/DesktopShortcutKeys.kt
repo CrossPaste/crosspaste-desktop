@@ -4,8 +4,8 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.listener.KeyboardKey
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysCore
-import com.crosspaste.path.DesktopAppPathProvider
-import com.crosspaste.platform.getPlatform
+import com.crosspaste.path.AppPathProvider
+import com.crosspaste.platform.Platform
 import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KLogger
@@ -22,6 +22,8 @@ import java.util.Date
 import java.util.Properties
 
 class DesktopShortcutKeys(
+    private val appPathProvider: AppPathProvider,
+    private val platform: Platform,
     private val shortcutKeysLoader: ShortcutKeysLoader,
 ) : ShortcutKeys {
 
@@ -39,8 +41,6 @@ class DesktopShortcutKeys(
     }
 
     private val logger: KLogger = KotlinLogging.logger {}
-
-    private val platform = getPlatform()
 
     private val fileUtils = getFileUtils()
 
@@ -66,7 +66,7 @@ class DesktopShortcutKeys(
     private fun loadKeysCore(): ShortcutKeysCore? {
         return runCatching {
             val shortcutKeysPropertiesPath =
-                DesktopAppPathProvider
+                appPathProvider
                     .resolve("shortcut-keys.properties", AppFileType.USER)
 
             val platformProperties =
@@ -113,7 +113,7 @@ class DesktopShortcutKeys(
     ) {
         runCatching {
             val shortcutKeysPropertiesPath =
-                DesktopAppPathProvider
+                appPathProvider
                     .resolve("shortcut-keys.properties", AppFileType.USER)
 
             val properties = Properties()

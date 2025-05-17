@@ -1,7 +1,7 @@
 package com.crosspaste.path
 
 import com.crosspaste.config.DevConfig
-import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.Platform
 import com.crosspaste.utils.getAppEnvUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getSystemProperty
@@ -10,7 +10,7 @@ import okio.Path.Companion.toOkioPath
 import okio.Path.Companion.toPath
 import kotlin.io.path.createTempDirectory
 
-fun getPlatformPathProvider(): PlatformUserDataPathProvider {
+fun getPlatformPathProvider(platform: Platform): PlatformUserDataPathProvider {
     val appEnvUtils = getAppEnvUtils()
     return if (appEnvUtils.isDevelopment()) {
         DevelopmentPlatformUserDataPathProvider()
@@ -18,7 +18,6 @@ fun getPlatformPathProvider(): PlatformUserDataPathProvider {
         // In the test environment, DesktopPathProvider will be mocked
         TestPlatformUserDataPathProvider()
     } else {
-        val platform = getPlatform()
         if (platform.isWindows()) {
             WindowsPlatformUserDataPathProvider()
         } else if (platform.isMacos()) {
@@ -26,7 +25,7 @@ fun getPlatformPathProvider(): PlatformUserDataPathProvider {
         } else if (platform.isLinux()) {
             LinuxPlatformUserDataPathProvider()
         } else {
-            throw IllegalStateException("Unknown platform: ${getPlatform().name}")
+            throw IllegalStateException("Unknown platform: ${platform.name}")
         }
     }
 }

@@ -2,7 +2,7 @@ package com.crosspaste.path
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.config.DevConfig
-import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.Platform
 import com.crosspaste.utils.getAppEnvUtils
 import com.crosspaste.utils.getSystemProperty
 import com.crosspaste.utils.noOptionParent
@@ -12,7 +12,7 @@ import okio.Path.Companion.toPath
 import java.nio.file.Files
 import java.nio.file.Paths
 
-interface AppPathProvider {
+interface AppPathProvider : PathProvider {
 
     val userHome: Path
 
@@ -25,21 +25,10 @@ interface AppPathProvider {
     val pasteUserPath: Path
 }
 
-object DesktopAppPathProvider : AppPathProvider, PathProvider {
-
-    private val appEnvUtils = getAppEnvUtils()
-
-    private val appPathProvider = getAppPathProvider()
-
-    override val userHome: Path = appPathProvider.userHome
-
-    override val pasteAppPath: Path = appPathProvider.pasteAppPath
-
-    override val pasteAppJarPath: Path = appPathProvider.pasteAppJarPath
-
-    override val pasteAppExePath: Path = appPathProvider.pasteAppExePath
-
-    override val pasteUserPath: Path = appPathProvider.pasteUserPath
+class DesktopPathProvider(
+    private val pasteAppPath: Path,
+    private val pasteUserPath: Path,
+) : PathProvider {
 
     override fun resolve(
         fileName: String?,
@@ -61,15 +50,40 @@ object DesktopAppPathProvider : AppPathProvider, PathProvider {
             path.resolve(fileName)
         } ?: path
     }
+}
+
+class DesktopAppPathProvider(
+    private val platform: Platform,
+) : AppPathProvider {
+
+    private val appEnvUtils = getAppEnvUtils()
+
+    private val appPathProvider = getAppPathProvider()
+
+    override val userHome: Path = appPathProvider.userHome
+
+    override val pasteAppPath: Path = appPathProvider.pasteAppPath
+
+    override val pasteAppJarPath: Path = appPathProvider.pasteAppJarPath
+
+    override val pasteAppExePath: Path = appPathProvider.pasteAppExePath
+
+    override val pasteUserPath: Path = appPathProvider.pasteUserPath
+
+    override fun resolve(
+        fileName: String?,
+        appFileType: AppFileType,
+    ): Path {
+        return appPathProvider.resolve(fileName, appFileType)
+    }
 
     private fun getAppPathProvider(): AppPathProvider {
         return if (appEnvUtils.isDevelopment()) {
-            DevelopmentAppPathProvider()
+            DevelopmentAppPathProvider(platform)
         } else if (appEnvUtils.isTest()) {
             // In the test environment, DesktopAppPathProvider will be mocked
             this
         } else {
-            val platform = getPlatform()
             if (platform.isWindows()) {
                 WindowsAppPathProvider()
             } else if (platform.isMacos()) {
@@ -83,7 +97,9 @@ object DesktopAppPathProvider : AppPathProvider, PathProvider {
     }
 }
 
-class DevelopmentAppPathProvider : AppPathProvider {
+class DevelopmentAppPathProvider(
+    private val platform: Platform,
+) : AppPathProvider {
 
     private val systemProperty = getSystemProperty()
 
@@ -98,6 +114,8 @@ class DevelopmentAppPathProvider : AppPathProvider {
     override val pasteAppExePath: Path = getResources()
 
     override val pasteUserPath: Path = getUserPath()
+
+    private val pathProvider: PathProvider = DesktopPathProvider(pasteAppPath, pasteUserPath)
 
     private fun getAppPath(): Path {
         return DevConfig.pasteAppPath?.let {
@@ -123,7 +141,6 @@ class DevelopmentAppPathProvider : AppPathProvider {
 
     private fun getResources(): Path {
         val resources = composeAppDir.toPath().resolve("resources")
-        val platform = getPlatform()
         val platformAndArch =
             if (platform.isWindows() && platform.is64bit()) {
                 "windows-x64"
@@ -139,6 +156,13 @@ class DevelopmentAppPathProvider : AppPathProvider {
                 throw IllegalStateException("Unknown platform: ${platform.name}")
             }
         return resources.resolve(platformAndArch)
+    }
+
+    override fun resolve(
+        fileName: String?,
+        appFileType: AppFileType,
+    ): Path {
+        return pathProvider.resolve(fileName, appFileType)
     }
 }
 
@@ -156,6 +180,8 @@ class WindowsAppPathProvider : AppPathProvider {
 
     override val pasteUserPath: Path = getUserPath()
 
+    private val pathProvider: PathProvider = DesktopPathProvider(pasteAppPath, pasteUserPath)
+
     private fun getAppJarPath(): Path {
         systemProperty.getOption("compose.application.resources.dir")?.let {
             return it.toPath()
@@ -172,6 +198,13 @@ class WindowsAppPathProvider : AppPathProvider {
 
     private fun getUserPath(): Path {
         return userHome.resolve(".crosspaste")
+    }
+
+    override fun resolve(
+        fileName: String?,
+        appFileType: AppFileType,
+    ): Path {
+        return pathProvider.resolve(fileName, appFileType)
     }
 }
 
@@ -198,6 +231,8 @@ class MacosAppPathProvider : AppPathProvider {
     override val pasteAppExePath: Path = getAppExePath()
 
     override val pasteUserPath: Path = getUserPath()
+
+    private val pathProvider: PathProvider = DesktopPathProvider(pasteAppPath, pasteUserPath)
 
     private fun getAppJarPath(): Path {
         systemProperty.getOption("compose.application.resources.dir")?.let {
@@ -230,6 +265,13 @@ class MacosAppPathProvider : AppPathProvider {
 
         return appSupportPath
     }
+
+    override fun resolve(
+        fileName: String?,
+        appFileType: AppFileType,
+    ): Path {
+        return pathProvider.resolve(fileName, appFileType)
+    }
 }
 
 class LinuxAppPathProvider : AppPathProvider {
@@ -245,6 +287,8 @@ class LinuxAppPathProvider : AppPathProvider {
     override val pasteAppExePath: Path = getAppExePath()
 
     override val pasteUserPath: Path = getUserPath()
+
+    private val pathProvider: PathProvider = DesktopPathProvider(pasteAppPath, pasteUserPath)
 
     private fun getAppJarPath(): Path {
         systemProperty.getOption("compose.application.resources.dir")?.let {
@@ -262,5 +306,12 @@ class LinuxAppPathProvider : AppPathProvider {
 
     private fun getUserPath(): Path {
         return userHome.resolve(".local").resolve("shard").resolve(".crosspaste")
+    }
+
+    override fun resolve(
+        fileName: String?,
+        appFileType: AppFileType,
+    ): Path {
+        return pathProvider.resolve(fileName, appFileType)
     }
 }

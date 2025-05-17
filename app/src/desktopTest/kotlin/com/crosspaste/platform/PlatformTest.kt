@@ -13,7 +13,7 @@ class PlatformTest {
 
     @Test
     fun testPlatform() {
-        val platform = getPlatform()
+        val platform = DesktopPlatformProvider().getPlatform()
         assertTrue(platform.name != "Unknown")
     }
 
@@ -25,7 +25,7 @@ class PlatformTest {
             every { DesktopSystemProperty.get("os.version") } returns "10.0"
             every { DesktopSystemProperty.get("os.arch") } returns "amd64"
 
-            val platform = getPlatform()
+            val platform = DesktopPlatformProvider().getPlatform()
             assertEquals("Windows", platform.name)
             assertEquals("amd64", platform.arch)
             assertEquals(64, platform.bitMode)
@@ -43,7 +43,7 @@ class PlatformTest {
             every { DesktopSystemProperty.get("os.version") } returns "10.15.7"
             every { DesktopSystemProperty.get("os.arch") } returns "x86_64"
 
-            val platform = getPlatform()
+            val platform = DesktopPlatformProvider().getPlatform()
             assertEquals("Macos", platform.name)
             assertEquals("x86_64", platform.arch)
             assertEquals(64, platform.bitMode)
@@ -61,7 +61,7 @@ class PlatformTest {
             every { DesktopSystemProperty.get("os.version") } returns "11.2"
             every { DesktopSystemProperty.get("os.arch") } returns "arm64"
 
-            val platform = getPlatform()
+            val platform = DesktopPlatformProvider().getPlatform()
             assertEquals("Macos", platform.name)
             assertEquals("arm64", platform.arch)
             assertEquals(64, platform.bitMode)
@@ -79,7 +79,7 @@ class PlatformTest {
             every { DesktopSystemProperty.get("os.version") } returns "6.5.0-35-generic"
             every { DesktopSystemProperty.get("os.arch") } returns "x86_64"
 
-            val platform = getPlatform()
+            val platform = DesktopPlatformProvider().getPlatform()
             assertEquals("Linux", platform.name)
             assertEquals("x86_64", platform.arch)
             assertEquals(64, platform.bitMode)

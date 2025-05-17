@@ -5,7 +5,7 @@ import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.createPasteInfoWithoutConverter
 import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.Platform
 import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.utils.LoggerExtension.logExecutionTime
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -19,12 +19,11 @@ import kotlin.io.path.readBytes
 import kotlin.io.path.writeBytes
 
 class DesktopThumbnailLoader(
+    private val platform: Platform,
     userDataPathProvider: UserDataPathProvider,
 ) : AbstractThumbnailLoader(userDataPathProvider) {
 
     override val logger = KotlinLogging.logger {}
-
-    private val platform = getPlatform()
 
     override val thumbnailSize = 200
 

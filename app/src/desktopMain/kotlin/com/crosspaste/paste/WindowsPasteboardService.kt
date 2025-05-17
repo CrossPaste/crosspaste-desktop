@@ -4,7 +4,7 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.notification.NotificationManager
-import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.Platform
 import com.crosspaste.platform.windows.api.User32
 import com.crosspaste.sound.SoundService
 import com.crosspaste.utils.DesktopControlUtils
@@ -35,6 +35,7 @@ class WindowsPasteboardService(
     override val pasteConsumer: TransferableConsumer,
     override val pasteProducer: TransferableProducer,
     override val pasteDao: PasteDao,
+    private val platform: Platform,
     override val soundService: SoundService,
 ) : AbstractPasteboardService(), User32.WNDPROC {
     override val logger: KLogger = KotlinLogging.logger {}
@@ -78,8 +79,7 @@ class WindowsPasteboardService(
                 null, 0, 0, null,
             )
         nextViewer = User32.INSTANCE.SetClipboardViewer(viewer)
-        val currentPlatform = getPlatform()
-        if (currentPlatform.is64bit()) {
+        if (platform.is64bit()) {
             User32.INSTANCE.SetWindowLongPtr(
                 viewer,
                 User32.GWL_WNDPROC,

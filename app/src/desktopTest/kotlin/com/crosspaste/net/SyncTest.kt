@@ -19,6 +19,8 @@ import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
 import com.crosspaste.net.plugin.ServerEncryptPluginFactory
 import com.crosspaste.net.routing.SyncRoutingApi
 import com.crosspaste.net.routing.TestSyncRoutingApi
+import com.crosspaste.platform.DesktopPlatformProvider
+import com.crosspaste.platform.Platform
 import com.crosspaste.secure.GeneralSecureStore
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
@@ -79,18 +81,21 @@ class SyncTest : KoinTest {
 
         private val clientSecureKeyPair = generateSecureKeyPair()
 
+        private val platform = DesktopPlatformProvider().getPlatform()
+
         private val testModule =
             module {
                 // simple component
                 single<AppInfo>(named("serverAppInfo")) { serverAppInfo }
                 single<AppInfo>(named("clientAppInfo")) { clientAppInfo }
-                single<DeviceUtils> { DesktopDeviceUtils }
-                single<EndpointInfoFactory> { EndpointInfoFactory(get(), lazy { get<Server>() }) }
+                single<DeviceUtils> { DesktopDeviceUtils(platform) }
+                single<EndpointInfoFactory> { EndpointInfoFactory(get(), lazy { get<Server>() }, get()) }
                 single<ReadWriteConfig<Int>>(named("readWritePort")) { TestReadWritePort() }
 
                 // net component
                 single<ExceptionHandler> { DesktopExceptionHandler() }
                 single<PasteClient> { PasteClient(get(named("clientAppInfo")), get(), get()) }
+                single<Platform> { platform }
                 single<Server> {
                     DesktopPasteServer(
                         get(named("readWritePort")),

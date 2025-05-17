@@ -2,22 +2,6 @@ package com.crosspaste.platform
 
 import kotlinx.serialization.Serializable
 
-expect fun getPlatform(): Platform
-
-const val WINDOWS = "Windows"
-
-const val MACOS = "Macos"
-
-const val LINUX = "Linux"
-
-const val IPHONE = "iPhone"
-
-const val IPAD = "iPad"
-
-const val ANDROID = "Android"
-
-const val UNKNOWN_OS = "Unknown"
-
 @Serializable
 data class Platform(
     val name: String,
@@ -25,6 +9,22 @@ data class Platform(
     val bitMode: Int,
     val version: String,
 ) {
+
+    companion object {
+        const val WINDOWS = "Windows"
+
+        const val MACOS = "Macos"
+
+        const val LINUX = "Linux"
+
+        const val IPHONE = "iPhone"
+
+        const val IPAD = "iPad"
+
+        const val ANDROID = "Android"
+
+        const val UNKNOWN_OS = "Unknown"
+    }
 
     fun isWindows(): Boolean {
         return name == WINDOWS

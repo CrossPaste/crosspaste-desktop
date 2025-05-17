@@ -7,20 +7,19 @@ import com.crosspaste.notification.Message
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.notification.ToastManager
-import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.Platform
 import com.crosspaste.sound.SoundService
 import java.util.concurrent.atomic.AtomicInteger
 
 class DesktopNotificationManager(
     private val appWindowManager: DesktopAppWindowManager,
     copywriter: GlobalCopywriter,
+    private val platform: Platform,
     private val soundService: SoundService,
     private val toastManager: ToastManager,
 ) : NotificationManager(copywriter) {
 
     val idGenerator = AtomicInteger(0)
-
-    val platform = getPlatform()
 
     val trayState = CrossPasteTrayState()
 

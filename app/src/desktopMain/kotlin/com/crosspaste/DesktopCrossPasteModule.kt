@@ -145,6 +145,7 @@ import com.crosspaste.path.AppPathProvider
 import com.crosspaste.path.DesktopMigration
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.path.getPlatformPathProvider
+import com.crosspaste.platform.Platform
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.rendering.DesktopHtmlRenderingService
 import com.crosspaste.rendering.DesktopRenderingHelper
@@ -203,7 +204,6 @@ import com.crosspaste.ui.paste.PasteboardViewProvider
 import com.crosspaste.ui.settings.DesktopSettingsViewProvider
 import com.crosspaste.ui.settings.SettingsViewProvider
 import com.crosspaste.ui.theme.ThemeDetector
-import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DesktopLocaleUtils
 import com.crosspaste.utils.DeviceUtils
 import com.crosspaste.utils.LocaleUtils
@@ -224,7 +224,9 @@ class DesktopCrossPasteModule(
     private val appPathProvider: AppPathProvider,
     private val configManager: ConfigManager,
     private val crossPasteLogger: CrossPasteLogger,
+    private val deviceUtils: DeviceUtils,
     private val klogger: KLogger,
+    private val platform: Platform,
 ) : CrossPasteModule {
 
     val marketingMode = getAppEnvUtils().isDevelopment() && DevConfig.marketingMode
@@ -236,19 +238,20 @@ class DesktopCrossPasteModule(
             single<AppExitService> { DesktopAppExitService }
             single<AppInfo> { get<AppInfoFactory>().createAppInfo() }
             single<AppInfoFactory> { DesktopAppInfoFactory(get()) }
-            single<AppLock> { DesktopAppLaunch }
+            single<AppLock> { get<DesktopAppLaunch>() }
             single<AppPathProvider> { appPathProvider }
-            single<AppRestartService> { DesktopAppRestartService }
-            single<AppStartUpService> { DesktopAppStartUpService(get(), get()) }
+            single<AppRestartService> { DesktopAppRestartService(get(), get()) }
+            single<AppStartUpService> { DesktopAppStartUpService(get(), get(), get(), get()) }
             single<AppUpdateService> { DesktopAppUpdateService(get(), get(), get(), get()) }
             single<AppUrls> { DesktopAppUrls }
             single<CacheManager> { DesktopCacheManager(get(), get()) }
             single<ConfigManager> { configManager }
             single<CrossPasteLogger> { crossPasteLogger }
-            single<DesktopAppLaunchState> { runBlocking { DesktopAppLaunch.launch() } }
-            single<DeviceUtils> { DesktopDeviceUtils }
-            single<EndpointInfoFactory> { EndpointInfoFactory(get(), lazy { get<Server>() }) }
-            single<FileExtImageLoader> { DesktopFileExtLoader(get(), get()) }
+            single<DesktopAppLaunch> { DesktopAppLaunch(get(), get()) }
+            single<DesktopAppLaunchState> { runBlocking { get<DesktopAppLaunch>().launch() } }
+            single<DeviceUtils> { deviceUtils }
+            single<EndpointInfoFactory> { EndpointInfoFactory(get(), lazy { get<Server>() }, get()) }
+            single<FileExtImageLoader> { DesktopFileExtLoader(get(), get(), get()) }
             single<FilePersist> { FilePersist }
             single<ImageLoaders> { ImageLoaders(get(), get(), get(), get(), get(), get(), get()) }
             single<ImageWriter<BufferedImage>> { DesktopImageWriter }
@@ -257,10 +260,11 @@ class DesktopCrossPasteModule(
             single<DesktopMigration> { DesktopMigration(get(), get(), get(), get()) }
             single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
             single<ReadWriteConfig<Int>>(named("readWritePort")) { ReadWritePort(get()) }
-            single<SimpleConfigFactory> { DesktopSimpleConfigFactory() }
+            single<Platform> { platform }
+            single<SimpleConfigFactory> { DesktopSimpleConfigFactory(get()) }
             single<SyncInfoFactory> { SyncInfoFactory(get(), get()) }
-            single<ThumbnailLoader> { DesktopThumbnailLoader(get()) }
-            single<UserDataPathProvider> { UserDataPathProvider(get(), getPlatformPathProvider()) }
+            single<ThumbnailLoader> { DesktopThumbnailLoader(get(), get()) }
+            single<UserDataPathProvider> { UserDataPathProvider(get(), getPlatformPathProvider(get())) }
         }
 
     // SqlDelight
@@ -351,7 +355,7 @@ class DesktopCrossPasteModule(
             single<ClientEncryptPlugin> { ClientEncryptPlugin(get()) }
             single<SecureKeyPairSerializer> { SecureKeyPairSerializer() }
             single<SecureStore> { get<SecureStoreFactory>().createSecureStore() }
-            single<SecureStoreFactory> { DesktopSecureStoreFactory(get(), get(), get()) }
+            single<SecureStoreFactory> { DesktopSecureStoreFactory(get(), get(), get(), get(), get()) }
             single<ServerDecryptionPluginFactory> { ServerDecryptionPluginFactory(get()) }
             single<ServerEncryptPluginFactory> { ServerEncryptPluginFactory(get()) }
         }
@@ -360,12 +364,12 @@ class DesktopCrossPasteModule(
     override fun pasteTypePluginModule() =
         module {
             single<ColorTypePlugin> { DesktopColorTypePlugin() }
-            single<FilesTypePlugin> { DesktopFilesTypePlugin(get(), get(), get()) }
-            single<HtmlTypePlugin> { DesktopHtmlTypePlugin(get()) }
-            single<ImageTypePlugin> { DesktopImageTypePlugin(get(), get(), get()) }
+            single<FilesTypePlugin> { DesktopFilesTypePlugin(get(), get(), get(), get()) }
+            single<HtmlTypePlugin> { DesktopHtmlTypePlugin(get(), get()) }
+            single<ImageTypePlugin> { DesktopImageTypePlugin(get(), get(), get(), get()) }
             single<RtfTypePlugin> { DesktopRtfTypePlugin(get()) }
             single<TextTypePlugin> { DesktopTextTypePlugin() }
-            single<UrlTypePlugin> { DesktopUrlTypePlugin() }
+            single<UrlTypePlugin> { DesktopUrlTypePlugin(get()) }
         }
 
     // PasteComponentModule.kt
@@ -375,7 +379,7 @@ class DesktopCrossPasteModule(
             single<CurrentPaste> { DesktopCurrentPaste(lazy { get() }) }
             single<RenderingHelper> { DesktopRenderingHelper(get()) }
             single<RenderingService<String>>(named("htmlRendering")) {
-                DesktopHtmlRenderingService(get(), get(), get())
+                DesktopHtmlRenderingService(get(), get(), get(), get(), get())
             }
             single<RenderingService<String>>(named("rtfRendering")) {
                 DesktopRtfRenderingService(get(), get())
@@ -384,7 +388,7 @@ class DesktopCrossPasteModule(
             single<GenerateImageService> { GenerateImageService() }
             single<InitPasteDataService> { DesktopInitPasteDataService(get(), get(), get(), get()) }
             single<PasteboardService> {
-                getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get(), get())
+                getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get(), get(), get())
             }
             single<PasteExportParamFactory> { DesktopPasteExportParamFactory() }
             single<PasteExportService> { PasteExportService(get(), get(), get()) }
@@ -457,10 +461,10 @@ class DesktopCrossPasteModule(
             single<AppWindowManager> { get<DesktopAppWindowManager>() }
             single<DesktopAppSize> { DesktopAppSize }
             single<DesktopAppWindowManager> {
-                getDesktopAppWindowManager(get(), lazy { get() }, get(), get())
+                getDesktopAppWindowManager(get(), get(), lazy { get() }, get(), get())
             }
             single<DesktopMouseListener> { DesktopMouseListener }
-            single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get()) }
+            single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get(), get()) }
             single<DeviceViewProvider> { DesktopDeviceViewProvider() }
             single<DialogService> { DialogService }
             single<ExpandViewProvider> { DesktopExpandViewProvider(get()) }
@@ -469,24 +473,24 @@ class DesktopCrossPasteModule(
             single<IconStyle> { DesktopIconStyle(get()) }
             single<NativeKeyListener> { get<DesktopShortcutKeysListener>() }
             single<NativeMouseListener> { get<DesktopMouseListener>() }
-            single<NotificationManager> { DesktopNotificationManager(get(), get(), get(), get()) }
+            single<NotificationManager> { DesktopNotificationManager(get(), get(), get(), get(), get()) }
             single<PasteboardViewProvider> { DesktopPasteboardViewProvider() }
             single<PasteDialogFactory> { DesktopPasteDialogFactory() }
             single<PlatformContext> { PlatformContext.INSTANCE }
             single<RatingPromptManager> { DesktopRatingPromptManager() }
             single<ScreenProvider> { DesktopScreenProvider(get()) }
             single<SettingsViewProvider> { DesktopSettingsViewProvider(get(), get(), get()) }
-            single<ShortcutKeys> { DesktopShortcutKeys(get()) }
+            single<ShortcutKeys> { DesktopShortcutKeys(get(), get(), get()) }
             single<ShortcutKeysAction> {
                 DesktopShortKeysAction(get(), get(), get(), get(), get(), get(), get())
             }
             single<ShortcutKeysListener> { get<DesktopShortcutKeysListener>() }
-            single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get()) }
+            single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get(), get()) }
             single<SoundService> { DesktopSoundService(get()) }
             single<ThemeDetector> { DesktopThemeDetector(get()) }
             single<ToastManager> { ToastManager() }
             single<TokenCache> { TokenCache }
-            single<UISupport> { DesktopUISupport(get(), get(), get(), get(), get(), get(), get()) }
+            single<UISupport> { DesktopUISupport(get(), get(), get(), get(), get(), get(), get(), get()) }
         }
 
     // ViewModelModule.kt
