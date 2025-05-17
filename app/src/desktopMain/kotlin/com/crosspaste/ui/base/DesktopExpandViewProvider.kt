@@ -16,6 +16,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -59,7 +60,7 @@ class DesktopExpandViewProvider(
         barBackgroundColor: Color,
         onBarBackgroundColor: Color,
         backgroundColor: Color,
-        barContent: @Composable (Float) -> Unit,
+        barContent: @Composable RowScope.(Float) -> Unit,
         content: @Composable () -> Unit,
     ) {
         var expand by remember { mutableStateOf(defaultExpand) }
@@ -178,7 +179,7 @@ class DesktopExpandViewProvider(
         onBarBackgroundColor: Color,
         icon: @Composable () -> Painter?,
     ) {
-        Row {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             icon()?.let {
                 Box(
                     modifier =
