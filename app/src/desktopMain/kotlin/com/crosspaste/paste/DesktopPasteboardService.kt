@@ -4,7 +4,7 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.notification.NotificationManager
-import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.Platform
 import com.crosspaste.sound.SoundService
 
 fun getDesktopPasteboardService(
@@ -15,10 +15,10 @@ fun getDesktopPasteboardService(
     pasteConsumer: TransferableConsumer,
     pasteProducer: TransferableProducer,
     pasteDao: PasteDao,
+    platform: Platform,
     soundService: SoundService,
 ): AbstractPasteboardService {
-    val currentPlatform = getPlatform()
-    return if (currentPlatform.isMacos()) {
+    return if (platform.isMacos()) {
         MacosPasteboardService(
             appWindowManager,
             configManager,
@@ -29,7 +29,7 @@ fun getDesktopPasteboardService(
             pasteDao,
             soundService,
         )
-    } else if (currentPlatform.isWindows()) {
+    } else if (platform.isWindows()) {
         WindowsPasteboardService(
             appWindowManager,
             configManager,
@@ -38,9 +38,10 @@ fun getDesktopPasteboardService(
             pasteConsumer,
             pasteProducer,
             pasteDao,
+            platform,
             soundService,
         )
-    } else if (currentPlatform.isLinux()) {
+    } else if (platform.isLinux()) {
         LinuxPasteboardService(
             appWindowManager,
             configManager,
@@ -52,6 +53,6 @@ fun getDesktopPasteboardService(
             soundService,
         )
     } else {
-        throw Exception("Unsupported platform: ${currentPlatform.name}")
+        throw IllegalStateException("Unsupported platform: ${platform.name}")
     }
 }

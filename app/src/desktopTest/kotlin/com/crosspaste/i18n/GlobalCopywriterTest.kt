@@ -2,6 +2,7 @@ package com.crosspaste.i18n
 
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriterImpl.Companion.EN
+import com.crosspaste.platform.DesktopPlatformProvider
 import com.crosspaste.presist.OneFilePersist
 import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DesktopLocaleUtils
@@ -19,10 +20,12 @@ class GlobalCopywriterTest {
         configDirPath.toFile().deleteOnExit()
         val configPath = configDirPath.resolve("appConfig.json")
 
+        val platform = DesktopPlatformProvider().getPlatform()
+
         val configManager =
             DesktopConfigManager(
                 OneFilePersist(configPath),
-                DesktopDeviceUtils,
+                DesktopDeviceUtils(platform),
                 DesktopLocaleUtils,
             )
 

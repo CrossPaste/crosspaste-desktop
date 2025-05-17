@@ -1,7 +1,7 @@
 package com.crosspaste.app
 
-import com.crosspaste.path.DesktopAppPathProvider
-import com.crosspaste.platform.getPlatform
+import com.crosspaste.path.AppPathProvider
+import com.crosspaste.platform.Platform
 import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.platform.windows.api.User32.Companion.isInstalledFromMicrosoftStore
 import io.github.oshai.kotlinlogging.KLogger
@@ -13,11 +13,12 @@ import java.nio.channels.FileLock
 import java.nio.channels.OverlappingFileLockException
 import java.nio.file.StandardOpenOption
 
-object DesktopAppLaunch : AppLaunch, AppLock {
+class DesktopAppLaunch(
+    private val platform: Platform,
+    private val appPathProvider: AppPathProvider,
+) : AppLaunch, AppLock {
 
     private val logger: KLogger = KotlinLogging.logger {}
-
-    private val pathProvider = DesktopAppPathProvider
 
     private val _appLaunchState =
         MutableStateFlow<AppLaunchState>(
@@ -31,7 +32,7 @@ object DesktopAppLaunch : AppLaunch, AppLock {
     private var resetLock = false
 
     override fun acquireLock(): AppLockState {
-        val appLock = pathProvider.pasteUserPath.resolve("app.lock").toFile()
+        val appLock = appPathProvider.pasteUserPath.resolve("app.lock").toFile()
         val firstLaunch = !appLock.exists()
         return runCatching {
             channel = FileChannel.open(appLock.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE)
@@ -64,7 +65,7 @@ object DesktopAppLaunch : AppLaunch, AppLock {
             lock?.release()
             channel?.close()
             if (resetLock) {
-                pathProvider.pasteUserPath.resolve("app.lock").toFile().delete()
+                appPathProvider.pasteUserPath.resolve("app.lock").toFile().delete()
                 logger.info { "Application lock released and reset." }
             } else {
                 logger.info { "Application lock released." }
@@ -80,7 +81,6 @@ object DesktopAppLaunch : AppLaunch, AppLock {
 
     override suspend fun launch(): DesktopAppLaunchState {
         val appLockState = acquireLock()
-        val platform = getPlatform()
         val pid = ProcessHandle.current().pid()
         val acquiredLock = appLockState.acquiredLock
         val firstLaunch = appLockState.firstLaunch
@@ -95,8 +95,9 @@ object DesktopAppLaunch : AppLaunch, AppLock {
                     null,
                 )
             } else if (platform.isWindows()) {
+                val path = appPathProvider.pasteAppPath.toNioPath()
                 val installFrom =
-                    if (isInstalledFromMicrosoftStore()) {
+                    if (isInstalledFromMicrosoftStore(path)) {
                         MICROSOFT_STORE
                     } else {
                         null

@@ -16,8 +16,9 @@
 // under the License.
 package org.openqa.selenium.manager
 
+import com.crosspaste.CrossPaste
 import com.crosspaste.net.DesktopProxy
-import com.crosspaste.path.DesktopAppPathProvider
+import com.crosspaste.path.AppPathProvider
 import com.crosspaste.utils.getJsonUtils
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -51,7 +52,9 @@ class SeleniumManager private constructor() {
 
     private val fileName = "selenium-manager"
 
-    private var binary = DesktopAppPathProvider.pasteAppJarPath.resolve(fileName).normalized().toNioPath()
+    private var binary =
+        CrossPaste.koinApplication.koin.get<AppPathProvider>()
+            .pasteAppJarPath.resolve(fileName).normalized().toNioPath()
 
     private val seleniumManagerVersion: String
     private var binaryInTemporalFolder = false

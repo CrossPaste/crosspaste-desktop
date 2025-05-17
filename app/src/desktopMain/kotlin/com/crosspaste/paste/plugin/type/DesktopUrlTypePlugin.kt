@@ -8,20 +8,20 @@ import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.paste.toPasteDataFlavor
-import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.Platform
 import com.crosspaste.utils.getCodecsUtils
 import java.net.MalformedURLException
 import java.net.URL
 
-class DesktopUrlTypePlugin : UrlTypePlugin {
+class DesktopUrlTypePlugin(
+    private val platform: Platform,
+) : UrlTypePlugin {
 
     companion object {
         const val URL = "application/x-java-url"
 
         private val codecsUtils = getCodecsUtils()
     }
-
-    private val platform = getPlatform()
 
     override fun getPasteType(): PasteType {
         return PasteType.URL_TYPE

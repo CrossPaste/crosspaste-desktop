@@ -3,9 +3,9 @@ package com.crosspaste.sync
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.dto.sync.SyncInfo
-import com.crosspaste.platform.MACOS
 import com.crosspaste.platform.Platform
-import com.crosspaste.platform.WINDOWS
+import com.crosspaste.platform.Platform.Companion.MACOS
+import com.crosspaste.platform.Platform.Companion.WINDOWS
 import com.crosspaste.utils.ioDispatcher
 import io.ktor.util.collections.*
 import kotlinx.coroutines.CoroutineScope

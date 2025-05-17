@@ -3,7 +3,7 @@ package com.crosspaste.secure
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
 import com.crosspaste.db.secure.SecureIO
-import com.crosspaste.path.DesktopAppPathProvider
+import com.crosspaste.path.AppPathProvider
 import com.crosspaste.platform.macos.MacosKeychainHelper
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.utils.CryptographyUtils
@@ -13,6 +13,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 
 class MacosSecureStoreFactory(
     private val appInfo: AppInfo,
+    appPathProvider: AppPathProvider,
     private val secureKeyPairSerializer: SecureKeyPairSerializer,
     private val secureIO: SecureIO,
 ) : SecureStoreFactory {
@@ -23,7 +24,7 @@ class MacosSecureStoreFactory(
 
     private val filePersist =
         FilePersist.createOneFilePersist(
-            DesktopAppPathProvider.resolve("secure.data", AppFileType.ENCRYPT),
+            appPathProvider.resolve("secure.data", AppFileType.ENCRYPT),
         )
 
     override fun createSecureStore(): SecureStore {

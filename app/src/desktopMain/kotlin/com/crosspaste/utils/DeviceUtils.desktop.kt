@@ -1,6 +1,6 @@
 package com.crosspaste.utils
 
-import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.Platform
 import com.crosspaste.platform.macos.MacDeviceUtils
 import com.sun.jna.platform.win32.Kernel32Util
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -9,17 +9,19 @@ import java.io.File
 import java.io.InputStreamReader
 import java.util.UUID
 
-object DesktopDeviceUtils : DeviceUtils {
+class DesktopDeviceUtils(
+    platform: Platform,
+) : DeviceUtils {
 
     private val deviceUtils =
-        if (getPlatform().isWindows()) {
+        if (platform.isWindows()) {
             WindowsDeviceUtils
-        } else if (getPlatform().isMacos()) {
+        } else if (platform.isMacos()) {
             MacosDeviceUtils
-        } else if (getPlatform().isLinux()) {
+        } else if (platform.isLinux()) {
             LinuxDeviceUtils
         } else {
-            throw IllegalStateException("Unknown platform: ${getPlatform().name}")
+            throw IllegalStateException("Unknown platform: ${platform.name}")
         }
 
     override fun createAppInstanceId(): String {

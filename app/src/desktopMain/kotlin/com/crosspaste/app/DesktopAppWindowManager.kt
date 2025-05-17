@@ -10,7 +10,7 @@ import androidx.compose.ui.window.WindowState
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.Platform
 import com.crosspaste.ui.PastePreview
 import com.crosspaste.ui.ScreenContext
 import com.crosspaste.ui.ScreenType
@@ -29,11 +29,11 @@ import java.awt.Rectangle
 
 fun getDesktopAppWindowManager(
     appSize: AppSize,
-    lazyShortcutKeys: Lazy<ShortcutKeys>,
     activeGraphicsDevice: ActiveGraphicsDevice,
+    lazyShortcutKeys: Lazy<ShortcutKeys>,
+    platform: Platform,
     userDataPathProvider: UserDataPathProvider,
 ): DesktopAppWindowManager {
-    val platform = getPlatform()
     return if (platform.isMacos()) {
         MacAppWindowManager(
             appSize,

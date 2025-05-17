@@ -1,7 +1,7 @@
 package com.crosspaste.image
 
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.Platform
 import com.crosspaste.platform.linux.FreedesktopUtils.saveExtIcon
 import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.platform.windows.JIconExtract
@@ -10,10 +10,9 @@ import java.awt.image.BufferedImage
 
 class DesktopFileExtLoader(
     imageWriter: ImageWriter<BufferedImage>,
+    platform: Platform,
     userDataPathProvider: UserDataPathProvider,
 ) : AbstractFileExtImageLoader(userDataPathProvider) {
-
-    private val platform = getPlatform()
 
     private val toSave: (String, Path, Path) -> Unit =
         if (platform.isMacos()) {

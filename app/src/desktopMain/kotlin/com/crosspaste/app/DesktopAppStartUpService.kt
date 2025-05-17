@@ -1,8 +1,8 @@
 package com.crosspaste.app
 
 import com.crosspaste.config.ConfigManager
-import com.crosspaste.path.DesktopAppPathProvider
-import com.crosspaste.platform.getPlatform
+import com.crosspaste.path.AppPathProvider
+import com.crosspaste.platform.Platform
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.utils.getAppEnvUtils
 import com.crosspaste.utils.getSystemProperty
@@ -13,24 +13,24 @@ import java.io.InputStreamReader
 
 class DesktopAppStartUpService(
     appLaunchState: DesktopAppLaunchState,
+    appPathProvider: AppPathProvider,
     configManager: ConfigManager,
+    platform: Platform,
 ) : AppStartUpService {
 
     private val appEnvUtils = getAppEnvUtils()
 
-    private val currentPlatform = getPlatform()
-
     private val isProduction = appEnvUtils.isProduction()
 
     private val appStartUpService: AppStartUpService =
-        if (currentPlatform.isMacos()) {
-            MacAppStartUpService(configManager)
-        } else if (currentPlatform.isWindows()) {
-            WindowsAppStartUpService(appLaunchState, configManager)
-        } else if (currentPlatform.isLinux()) {
-            LinuxAppStartUpService(configManager)
+        if (platform.isMacos()) {
+            MacAppStartUpService(configManager, appPathProvider)
+        } else if (platform.isWindows()) {
+            WindowsAppStartUpService(appLaunchState, appPathProvider, configManager)
+        } else if (platform.isLinux()) {
+            LinuxAppStartUpService(appPathProvider, configManager)
         } else {
-            throw IllegalStateException("Unsupported platform: $currentPlatform")
+            throw IllegalStateException("Unsupported platform: $platform")
         }
 
     override fun followConfig() {
@@ -60,15 +60,16 @@ class DesktopAppStartUpService(
     }
 }
 
-class MacAppStartUpService(private val configManager: ConfigManager) : AppStartUpService {
+class MacAppStartUpService(
+    private val configManager: ConfigManager,
+    private val appPathProvider: AppPathProvider,
+) : AppStartUpService {
 
     private val logger: KLogger = KotlinLogging.logger {}
 
     private val crosspasteBundleID = getSystemProperty().get("mac.bundleID")
 
     private val plist = "$crosspasteBundleID.plist"
-
-    private val pathProvider = DesktopAppPathProvider
 
     private val filePersist = FilePersist
 
@@ -81,14 +82,14 @@ class MacAppStartUpService(private val configManager: ConfigManager) : AppStartU
     }
 
     override fun isAutoStartUp(): Boolean {
-        return pathProvider.userHome.resolve("Library/LaunchAgents/$plist").toFile().exists()
+        return appPathProvider.userHome.resolve("Library/LaunchAgents/$plist").toFile().exists()
     }
 
     override fun makeAutoStartUp() {
         runCatching {
             if (!isAutoStartUp()) {
                 logger.info { "Make auto startup" }
-                val plistPath = pathProvider.userHome.resolve("Library/LaunchAgents/$plist")
+                val plistPath = appPathProvider.userHome.resolve("Library/LaunchAgents/$plist")
                 filePersist.createOneFilePersist(plistPath)
                     .saveBytes(
                         """
@@ -101,7 +102,7 @@ class MacAppStartUpService(private val configManager: ConfigManager) : AppStartU
                             <key>ProgramArguments</key>
                             <array>
                                 <string>${
-                            pathProvider.pasteAppPath.resolve("Contents/MacOS/CrossPaste")
+                            appPathProvider.pasteAppPath.resolve("Contents/MacOS/CrossPaste")
                         }</string>
                                 <string>--minimize</string>
                             </array>
@@ -121,7 +122,7 @@ class MacAppStartUpService(private val configManager: ConfigManager) : AppStartU
         runCatching {
             if (isAutoStartUp()) {
                 logger.info { "Remove auto startup" }
-                pathProvider.userHome.resolve("Library/LaunchAgents/$plist").toFile().delete()
+                appPathProvider.userHome.resolve("Library/LaunchAgents/$plist").toFile().delete()
             }
         }.onFailure { e ->
             logger.error(e) { "Failed to remove auto startup" }
@@ -131,6 +132,7 @@ class MacAppStartUpService(private val configManager: ConfigManager) : AppStartU
 
 class WindowsAppStartUpService(
     appLaunchState: DesktopAppLaunchState,
+    appPathProvider: AppPathProvider,
     private val configManager: ConfigManager,
 ) : AppStartUpService {
 
@@ -143,7 +145,7 @@ class WindowsAppStartUpService(
     private val isMicrosoftStore = appLaunchState.installFrom == MICROSOFT_STORE
 
     private val appExePath =
-        DesktopAppPathProvider.pasteAppPath
+        appPathProvider.pasteAppPath
             .resolve("bin")
             .resolve("CrossPaste.exe")
 
@@ -220,18 +222,19 @@ class WindowsAppStartUpService(
     }
 }
 
-class LinuxAppStartUpService(private val configManager: ConfigManager) : AppStartUpService {
+class LinuxAppStartUpService(
+    private val appPathProvider: AppPathProvider,
+    private val configManager: ConfigManager,
+) : AppStartUpService {
 
     private val logger: KLogger = KotlinLogging.logger {}
 
     private val desktopFile = "crosspaste.desktop"
 
-    private val pathProvider = DesktopAppPathProvider
-
     private val filePersist = FilePersist
 
     private val appExePath =
-        pathProvider.pasteAppPath
+        appPathProvider.pasteAppPath
             .resolve("bin")
             .resolve("crosspaste")
 
@@ -244,14 +247,14 @@ class LinuxAppStartUpService(private val configManager: ConfigManager) : AppStar
     }
 
     override fun isAutoStartUp(): Boolean {
-        return pathProvider.userHome.resolve(".config/autostart/$desktopFile").toFile().exists()
+        return appPathProvider.userHome.resolve(".config/autostart/$desktopFile").toFile().exists()
     }
 
     override fun makeAutoStartUp() {
         runCatching {
             if (!isAutoStartUp()) {
                 logger.info { "Make auto startup" }
-                val desktopFilePath = pathProvider.userHome.resolve(".config/autostart/$desktopFile")
+                val desktopFilePath = appPathProvider.userHome.resolve(".config/autostart/$desktopFile")
                 filePersist.createOneFilePersist(desktopFilePath)
                     .saveBytes(
                         """
@@ -277,7 +280,7 @@ class LinuxAppStartUpService(private val configManager: ConfigManager) : AppStar
         try {
             if (isAutoStartUp()) {
                 logger.info { "Remove auto startup" }
-                pathProvider.userHome.resolve(".config/autostart/$desktopFile").toFile().delete()
+                appPathProvider.userHome.resolve(".config/autostart/$desktopFile").toFile().delete()
             }
         } catch (e: Exception) {
             logger.error(e) { "Failed to remove auto startup" }

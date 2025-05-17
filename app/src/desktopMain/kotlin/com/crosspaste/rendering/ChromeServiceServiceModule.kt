@@ -4,11 +4,13 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.module.ModuleItem
 import com.crosspaste.module.ModuleLoaderConfig
 import com.crosspaste.module.ServiceModule
-import com.crosspaste.path.DesktopAppPathProvider
-import com.crosspaste.platform.getPlatform
+import com.crosspaste.path.AppPathProvider
+import com.crosspaste.platform.Platform
 import java.util.Properties
 
 class ChromeServiceServiceModule(
+    appPathProvider: AppPathProvider,
+    private val platform: Platform,
     private val properties: Properties,
 ) : ServiceModule {
 
@@ -19,20 +21,18 @@ class ChromeServiceServiceModule(
 
         const val DEFAULT_HOST = "https://storage.googleapis.com/chrome-for-testing-public"
         const val MIRROR_HOST = "https://cdn.npmmirror.com/binaries/chrome-for-testing"
-
-        val CHROME_SERVICE_DIR =
-            DesktopAppPathProvider.resolve(appFileType = AppFileType.MODULE)
-                .resolve(CHROME_SERVICE_MODULE_NAME)
     }
 
-    private val platform = getPlatform()
+    val chromeServiceDir =
+        appPathProvider.resolve(appFileType = AppFileType.MODULE)
+            .resolve(CHROME_SERVICE_MODULE_NAME)
 
     private val hosts = listOf(DEFAULT_HOST, MIRROR_HOST)
 
     override fun getModuleLoaderConfig(): ModuleLoaderConfig? {
         return if (platform.isWindows() && platform.is64bit()) {
             ModuleLoaderConfig(
-                installPath = CHROME_SERVICE_DIR,
+                installPath = chromeServiceDir,
                 moduleName = CHROME_SERVICE_MODULE_NAME,
                 moduleItems =
                     listOf(
@@ -55,7 +55,7 @@ class ChromeServiceServiceModule(
         } else if (platform.isMacos()) {
             if (platform.arch.contains("x86_64")) {
                 ModuleLoaderConfig(
-                    installPath = CHROME_SERVICE_DIR,
+                    installPath = chromeServiceDir,
                     moduleName = CHROME_SERVICE_MODULE_NAME,
                     moduleItems =
                         listOf(
@@ -77,7 +77,7 @@ class ChromeServiceServiceModule(
                 )
             } else {
                 ModuleLoaderConfig(
-                    installPath = CHROME_SERVICE_DIR,
+                    installPath = chromeServiceDir,
                     moduleName = CHROME_SERVICE_MODULE_NAME,
                     moduleItems =
                         listOf(
@@ -100,7 +100,7 @@ class ChromeServiceServiceModule(
             }
         } else if (platform.isLinux() && platform.is64bit()) {
             ModuleLoaderConfig(
-                installPath = CHROME_SERVICE_DIR,
+                installPath = chromeServiceDir,
                 moduleName = CHROME_SERVICE_MODULE_NAME,
                 moduleItems =
                     listOf(

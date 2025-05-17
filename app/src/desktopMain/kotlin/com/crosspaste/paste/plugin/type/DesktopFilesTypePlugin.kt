@@ -14,7 +14,7 @@ import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.Platform
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getFileUtils
@@ -27,6 +27,7 @@ import java.io.File
 class DesktopFilesTypePlugin(
     private val appInfo: AppInfo,
     private val configManager: ConfigManager,
+    private val platform: Platform,
     private val userDataPathProvider: UserDataPathProvider,
 ) : FilesTypePlugin {
 
@@ -179,7 +180,7 @@ class DesktopFilesTypePlugin(
             }
         }
 
-        if (getPlatform().isLinux()) {
+        if (platform.isLinux()) {
             val content =
                 fileList.joinToString(
                     separator = "\n",

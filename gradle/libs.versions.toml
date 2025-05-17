@@ -96,6 +96,7 @@ zxing-javase = { module = "com.google.zxing:javase", version.ref = "zxing" }
 # test libs
 koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 io-mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 
 [plugins]

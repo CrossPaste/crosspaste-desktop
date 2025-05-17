@@ -4,14 +4,16 @@ import androidx.compose.runtime.mutableStateListOf
 import com.crosspaste.listener.KeyboardKey
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysListener
+import com.crosspaste.platform.Platform
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
 
 class DesktopShortcutKeysListener(
+    platform: Platform,
     private val shortcutKeys: ShortcutKeys,
 ) : ShortcutKeysListener, NativeKeyListener {
 
-    private val keyboardKeys = getDesktopKeyboardKeys()
+    private val keyboardKeys = getDesktopKeyboardKeys(platform)
 
     private val comparator = keyboardKeys.getComparator()
 

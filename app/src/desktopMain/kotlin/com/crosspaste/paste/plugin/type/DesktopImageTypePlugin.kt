@@ -17,7 +17,7 @@ import com.crosspaste.paste.plugin.type.DesktopFilesTypePlugin.Companion.FILE_LI
 import com.crosspaste.paste.plugin.type.DesktopHtmlTypePlugin.Companion.HTML_ID
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.platform.getPlatform
+import com.crosspaste.platform.Platform
 import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jsoup.Jsoup
@@ -34,6 +34,7 @@ import javax.imageio.ImageIO
 class DesktopImageTypePlugin(
     private val appInfo: AppInfo,
     private val imageWriter: ImageWriter<BufferedImage>,
+    private val platform: Platform,
     private val userDataPathProvider: UserDataPathProvider,
 ) : ImageTypePlugin {
 
@@ -241,7 +242,7 @@ class DesktopImageTypePlugin(
             }
         }
 
-        if (getPlatform().isLinux()) {
+        if (platform.isLinux()) {
             val content =
                 fileList.joinToString(
                     separator = "\n",

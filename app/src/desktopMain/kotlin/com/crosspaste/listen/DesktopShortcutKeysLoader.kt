@@ -5,6 +5,7 @@ import com.crosspaste.listener.EventConsumer
 import com.crosspaste.listener.KeyboardKey
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.listener.ShortcutKeysCore
+import com.crosspaste.platform.Platform
 import com.crosspaste.utils.DesktopResourceUtils
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
 import okio.Path
@@ -14,9 +15,10 @@ import java.util.Properties
 import java.util.TreeMap
 
 class DesktopShortcutKeysLoader(
+    platform: Platform,
     private val shortcutKeysAction: ShortcutKeysAction,
 ) : ShortcutKeysLoader {
-    private val keyboardKeys = getDesktopKeyboardKeys()
+    private val keyboardKeys = getDesktopKeyboardKeys(platform)
 
     private val comparator = keyboardKeys.getComparator()
 

@@ -3,8 +3,8 @@ package com.crosspaste.sync
 import com.crosspaste.app.AppInfo
 import com.crosspaste.dto.sync.EndpointInfo
 import com.crosspaste.dto.sync.SyncInfo
-import com.crosspaste.platform.LINUX
 import com.crosspaste.platform.Platform
+import com.crosspaste.platform.Platform.Companion.LINUX
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
