@@ -338,6 +338,48 @@ private fun ContrastColor() {
 
     val colorContrast by themeDetector.colorContrast.collectAsState()
 
+    val leftContainerColor =
+        if (colorContrast == ColorContrast.Standard) {
+            themeColor.lightColorScheme.primary
+        } else {
+            themeColor.darkColorScheme.primary
+        }
+
+    val onLeftContainerColor =
+        if (colorContrast == ColorContrast.Standard) {
+            themeColor.lightColorScheme.onPrimary
+        } else {
+            themeColor.darkColorScheme.onPrimary
+        }
+
+    val mediumContainerColor =
+        if (colorContrast == ColorContrast.Medium) {
+            themeColor.lightMediumContrastColorScheme.primary
+        } else {
+            themeColor.darkMediumContrastColorScheme.primary
+        }
+
+    val onMediumContainerColor =
+        if (colorContrast == ColorContrast.Medium) {
+            themeColor.lightMediumContrastColorScheme.onPrimary
+        } else {
+            themeColor.darkMediumContrastColorScheme.onPrimary
+        }
+
+    val rightContainerColor =
+        if (colorContrast == ColorContrast.High) {
+            themeColor.lightHighContrastColorScheme.primary
+        } else {
+            themeColor.darkHighContrastColorScheme.primary
+        }
+
+    val onRightContainerColor =
+        if (colorContrast == ColorContrast.High) {
+            themeColor.lightHighContrastColorScheme.onPrimary
+        } else {
+            themeColor.darkHighContrastColorScheme.onPrimary
+        }
+
     Row(verticalAlignment = Alignment.CenterVertically) {
         LeftThemeButton(
             onClick = {
@@ -345,31 +387,13 @@ private fun ContrastColor() {
             },
             buttonColors =
                 ButtonDefaults.buttonColors(
-                    containerColor =
-                        if (colorContrast == ColorContrast.Standard) {
-                            themeColor.lightColorScheme.primary
-                        } else {
-                            themeColor.darkColorScheme.primary
-                        },
+                    containerColor = leftContainerColor,
                 ),
         ) {
             Icon(
                 painter = contrastStandard(),
                 contentDescription = null,
-                tint =
-                    if (colorContrast == ColorContrast.Standard) {
-                        if (themeDetector.isCurrentThemeDark()) {
-                            Color.White
-                        } else {
-                            Color.Black
-                        }
-                    } else {
-                        if (themeDetector.isCurrentThemeDark()) {
-                            Color.Black
-                        } else {
-                            Color.White
-                        }
-                    },
+                tint = onLeftContainerColor,
             )
         }
 
@@ -379,31 +403,13 @@ private fun ContrastColor() {
             },
             buttonColors =
                 ButtonDefaults.buttonColors(
-                    containerColor =
-                        if (colorContrast == ColorContrast.Medium) {
-                            themeColor.lightColorScheme.primary
-                        } else {
-                            themeColor.darkColorScheme.primary
-                        },
+                    containerColor = mediumContainerColor,
                 ),
         ) {
             Icon(
                 painter = contrastMedium(),
                 contentDescription = null,
-                tint =
-                    if (colorContrast == ColorContrast.Medium) {
-                        if (themeDetector.isCurrentThemeDark()) {
-                            Color.White
-                        } else {
-                            Color.Black
-                        }
-                    } else {
-                        if (themeDetector.isCurrentThemeDark()) {
-                            Color.Black
-                        } else {
-                            Color.White
-                        }
-                    },
+                tint = onMediumContainerColor,
             )
         }
 
@@ -413,31 +419,13 @@ private fun ContrastColor() {
             },
             buttonColors =
                 ButtonDefaults.buttonColors(
-                    containerColor =
-                        if (colorContrast == ColorContrast.High) {
-                            themeColor.lightColorScheme.primary
-                        } else {
-                            themeColor.darkColorScheme.primary
-                        },
+                    containerColor = rightContainerColor,
                 ),
         ) {
             Icon(
                 painter = contrastHigh(),
                 contentDescription = null,
-                tint =
-                    if (colorContrast == ColorContrast.High) {
-                        if (themeDetector.isCurrentThemeDark()) {
-                            Color.White
-                        } else {
-                            Color.Black
-                        }
-                    } else {
-                        if (themeDetector.isCurrentThemeDark()) {
-                            Color.Black
-                        } else {
-                            Color.White
-                        }
-                    },
+                tint = onRightContainerColor,
             )
         }
     }
