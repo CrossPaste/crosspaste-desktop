@@ -249,11 +249,11 @@ class PasteDao(
         limit: Int,
     ): Query<PasteData> {
         val appInstanceId: String? = local?.let { appInfo.appInstanceId }
-        val searchQuery = "pasteSearchContent:(${searchTerms.joinToString(" AND ") { "$it*" }})"
-
-        logger.info { "Creating paste query: $searchQuery" }
 
         return if (searchTerms.isNotEmpty()) {
+            val searchQuery = "pasteSearchContent:(${searchTerms.joinToString(" AND ") { "$it*" }})"
+            logger.info { "Creating paste query: $searchQuery" }
+
             pasteDatabaseQueries.complexSearch(
                 local = local == true,
                 appInstanceId = appInstanceId,
