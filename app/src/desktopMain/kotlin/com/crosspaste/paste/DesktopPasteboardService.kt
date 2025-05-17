@@ -53,6 +53,6 @@ fun getDesktopPasteboardService(
             soundService,
         )
     } else {
-        throw Exception("Unsupported platform: ${platform.name}")
+        throw IllegalStateException("Unsupported platform: ${platform.name}")
     }
 }
