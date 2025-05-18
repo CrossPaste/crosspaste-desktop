@@ -119,7 +119,7 @@ fun ToastView(
                             Text(
                                 modifier = Modifier.weight(1f, fill = false),
                                 text = message,
-                                textAlign = TextAlign.Start,
+                                textAlign = TextAlign.Justify,
                                 color = MaterialTheme.colorScheme.contentColorFor(background),
                                 style = MaterialTheme.typography.bodyMedium,
                             )
