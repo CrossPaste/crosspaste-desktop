@@ -8,7 +8,6 @@ import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.Constructor
 import java.io.FileReader
 import java.util.Properties
-import java.util.zip.ZipFile
 
 val versionProperties = Properties()
 versionProperties.load(
@@ -427,60 +426,29 @@ fun getJbrReleases(
 ) {
     val jbrDetails = jbrReleases.jbr[arch]!!
     val fileName = jbrDetails.url.substringAfterLast("/")
-    downJbrReleases(jbrDetails.url, downDir) {
-        !downDir.resolve(fileName).exists()
-    }
+    downJbrReleases(jbrDetails.url, jbrDetails.sha512, fileName, downDir)
 }
 
 fun downJbrReleases(
     url: String,
+    sha512: String,
+    fileName: String,
     downDir: File,
-    checkExist: () -> Boolean,
 ) {
-    if (checkExist()) {
+    val file = downDir.resolve(fileName)
+
+    if (!file.exists()) {
         download.run {
             src { url }
             dest { downDir }
             overwrite(true)
             tempAndMove(true)
         }
-    }
-}
-
-fun getChromeDriver(
-    arch: String,
-    properties: Properties,
-    downDir: Directory,
-) {
-    val chromeDriver = "chromedriver-$arch"
-    val chromeHeadlessShell = "chrome-headless-shell-$arch"
-
-    downloadChromeDriver(chromeDriver, properties.getProperty(chromeDriver)!!, downDir) {
-        downDir.dir(chromeDriver).asFileTree.isEmpty
-    }
-    downloadChromeDriver(chromeHeadlessShell, properties.getProperty(chromeHeadlessShell)!!, downDir) {
-        downDir.dir(chromeHeadlessShell).asFileTree.isEmpty
-    }
-}
-
-fun downloadChromeDriver(
-    name: String,
-    url: String,
-    downDir: Directory,
-    checkExist: () -> Boolean,
-) {
-    if (checkExist()) {
-        download.run {
-            src { url }
-            dest { downDir }
-            overwrite(true)
-            tempAndMove(true)
+        verifyChecksum.run {
+            src { file }
+            algorithm("SHA-512")
+            checksum(sha512)
         }
-        copy {
-            from(zipTree(downDir.file("$name.zip")))
-            into(downDir)
-        }
-        delete(downDir.file("$name.zip"))
     }
 }
 
@@ -490,23 +458,6 @@ fun loadJbrReleases(file: File): JbrReleases {
         val jbrReleases = yaml.load<JbrReleases>(it)
         return jbrReleases
     }
-}
-
-fun extractFile(
-    zip: ZipFile,
-    entry: java.util.zip.ZipEntry,
-    targetDir: Directory,
-) {
-    val targetFile = targetDir.file(entry.name.substringAfterLast("/"))
-    targetFile.asFile.parentFile.mkdirs()
-    zip.getInputStream(entry).use { input ->
-        targetFile.asFile.outputStream().use { output ->
-            input.copyTo(output)
-        }
-    }
-    // Make the file executable
-    targetFile.asFile.setExecutable(true, false)
-    println("Extracted: ${targetFile.asFile.absolutePath}")
 }
 
 data class JbrReleases(
