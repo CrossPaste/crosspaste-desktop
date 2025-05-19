@@ -474,7 +474,7 @@ class PasteDao(
                     size = size,
                     hash = hash,
                     id = id,
-                ).executeAsOneOrNull()?.let { true } == true
+                ).executeAsOneOrNull() != null
             }
 
             if (change) {
