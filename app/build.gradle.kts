@@ -49,7 +49,7 @@ sqldelight {
     databases {
         create("Database") {
             packageName = "com.crosspaste"
-            dialect("app.cash.sqldelight:sqlite-3-25-dialect:2.0.2")
+            dialect("app.cash.sqldelight:sqlite-3-35-dialect:2.1.0")
         }
     }
 }

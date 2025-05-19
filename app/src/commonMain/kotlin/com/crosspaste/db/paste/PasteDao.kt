@@ -107,8 +107,7 @@ class PasteDao(
                 ),
                 (pasteState ?: pasteData.pasteState).toLong(),
                 pasteData.remote,
-            )
-            pasteDatabaseQueries.getLastId().executeAsOne()
+            ).executeAsOne()
         }
     }
 
@@ -475,8 +474,7 @@ class PasteDao(
                     size = size,
                     hash = hash,
                     id = id,
-                )
-                pasteDatabaseQueries.change().executeAsOne() > 0
+                ).executeAsOneOrNull()?.let { true } == true
             }
 
             if (change) {
