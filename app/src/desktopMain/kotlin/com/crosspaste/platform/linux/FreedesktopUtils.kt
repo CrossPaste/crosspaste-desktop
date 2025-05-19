@@ -26,7 +26,7 @@ object FreedesktopUtils {
         }
     }
 
-    fun getCurrentTheme(): String {
+    private fun getCurrentTheme(): String {
         val commands =
             listOf(
                 // GNOME
