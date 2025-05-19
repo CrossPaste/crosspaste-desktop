@@ -26,24 +26,34 @@ object FreedesktopUtils {
         }
     }
 
-    private fun getCurrentTheme(): String {
+    fun getCurrentTheme(): String {
         val commands =
             listOf(
                 // GNOME
-                "gsettings get org.gnome.desktop.interface icon-theme",
+                listOf("gsettings", "get", "org.gnome.desktop.interface", "icon-theme"),
                 // KDE
-                "kreadconfig5 --group Icons --key Theme",
+                listOf("kreadconfig5", "--group", "Icons", "--key", "Theme"),
                 // Xfce
-                "xfconf-query -c xsettings -p /Net/IconThemeName",
+                listOf("xfconf-query", "-c", "xsettings", "-p", "/Net/IconThemeName"),
                 // MATE
-                "gsettings get org.mate.interface icon-theme",
+                listOf("gsettings", "get", "org.mate.interface", "icon-theme"),
             )
 
         for (command in commands) {
             runCatching {
+                val process =
+                    ProcessBuilder()
+                        .command(command)
+                        .redirectErrorStream(true)
+                        .start()
+
                 val result =
-                    Runtime.getRuntime().exec(command)
-                        .inputStream.bufferedReader().readText().trim().removeSurrounding("'")
+                    process.inputStream.bufferedReader()
+                        .readText()
+                        .trim()
+                        .removeSurrounding("'")
+                process.waitFor()
+
                 if (result.isNotEmpty()) {
                     return result
                 }

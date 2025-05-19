@@ -28,7 +28,7 @@ import org.openqa.selenium.WebDriverException
 import org.openqa.selenium.json.JsonException
 import org.openqa.selenium.os.ExternalProcess
 import java.io.IOException
-import java.net.URL
+import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -102,7 +102,7 @@ class SeleniumManager private constructor() {
     private fun getBinaryByDefault(arguments: List<String>): SeleniumManagerOutput.Result {
         val args: MutableList<String> = mutableListOf()
         args.addAll(arguments)
-        val uri = URL("https://storage.googleapis.com").toURI()
+        val uri = URI("https://storage.googleapis.com")
         val proxy = DesktopProxy.getProxy(uri)
         DesktopProxy.proxyToCommandLine(proxy)?.let {
             args.add("--proxy")

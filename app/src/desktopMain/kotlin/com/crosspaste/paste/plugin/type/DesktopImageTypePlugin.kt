@@ -27,7 +27,7 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.InputStream
-import java.net.URL
+import java.net.URI
 import java.nio.charset.StandardCharsets
 import javax.imageio.ImageIO
 
@@ -174,13 +174,19 @@ class DesktopImageTypePlugin(
 
     private fun getLastPathSegment(urlString: String): String? {
         return runCatching {
-            val url = URL(urlString)
-            var path: String = url.path
+            val uri = URI(urlString)
+            val path = uri.path ?: return@runCatching null
+
             // Remove trailing slash from the path (if it exists)
-            path = if (path.endsWith("/")) path.substring(0, path.length - 1) else path
+            val normalizedPath = path.removeSuffix("/")
+
+            // Handle empty path or root path
+            if (normalizedPath.isEmpty() || normalizedPath == "/") {
+                return@runCatching null
+            }
+
             // Get the last path segment
-            val lastSegment = path.substring(path.lastIndexOf('/') + 1)
-            return lastSegment
+            normalizedPath.substringAfterLast('/')
         }.getOrNull()
     }
 

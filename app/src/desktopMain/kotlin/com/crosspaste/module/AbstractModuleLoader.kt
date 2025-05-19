@@ -8,7 +8,7 @@ import io.github.oshai.kotlinlogging.KLogger
 import okio.Path
 import java.net.InetSocketAddress
 import java.net.ProxySelector
-import java.net.URL
+import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
@@ -34,8 +34,7 @@ abstract class AbstractModuleLoader : ModuleLoader {
 
             logger.info { "Downloading: $url" }
 
-            val httpsUrl = URL(url)
-            val uri = httpsUrl.toURI()
+            val uri = URI(url)
             val proxy = DesktopProxy.getProxy(uri)
 
             val clientBuilder =

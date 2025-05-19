@@ -36,7 +36,7 @@ object LinuxPlatform {
     }
 
     private fun getLsbReleaseInfo(): String {
-        val process = Runtime.getRuntime().exec("lsb_release -ds")
+        val process = ProcessBuilder("lsb_release", "-ds").start()
         val output = process.inputStream.bufferedReader().readText().trim()
         return parseOsInfo(output)
     }
