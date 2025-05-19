@@ -62,7 +62,7 @@ class SyncRuntimeInfoDao(private val database: Database) {
                 syncRuntimeInfo.allowReceive,
                 nowEpochMilliseconds(),
                 syncRuntimeInfo.appInstanceId,
-            ).executeAsOneOrNull()?.let { true } == true
+            ).executeAsOneOrNull() != null
 
             if (change) {
                 todo()
