@@ -7,7 +7,7 @@ import okio.Path
 import java.io.FileOutputStream
 import java.net.InetSocketAddress
 import java.net.ProxySelector
-import java.net.URL
+import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
@@ -23,9 +23,7 @@ class DesktopFaviconLoader(
         url: String,
         path: Path,
     ): Path? {
-        val httpsUrl = URL(url)
-
-        val uri = httpsUrl.toURI()
+        val uri = URI(url)
 
         val proxy = DesktopProxy.getProxy(uri)
 

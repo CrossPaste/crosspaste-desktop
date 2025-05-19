@@ -4,12 +4,13 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 
 object WinProcessUtils {
 
-    private const val GET_CHILD_PROCESS_IDS = "wmic process where (ParentProcessId=%d) get Name, ProcessId"
+    private val GET_CHILD_PROCESS_IDS = arrayOf("wmic", "process", "where", "(ParentProcessId=%d)", "get", "Name,", "ProcessId")
 
     private val logger = KotlinLogging.logger {}
 
     fun getChildProcessIds(parentProcessId: Long): List<Pair<String, Long>> {
-        val process = Runtime.getRuntime().exec(GET_CHILD_PROCESS_IDS.format(parentProcessId))
+        val command = GET_CHILD_PROCESS_IDS.map { it.format(parentProcessId) }
+        val process = ProcessBuilder(command).start()
         val reader = process.inputStream.bufferedReader()
         val lines = reader.readLines()
         val processIds = mutableListOf<Pair<String, Long>>()
@@ -30,8 +31,8 @@ object WinProcessUtils {
         for (pid in pids) {
             runCatching {
                 // Build the taskkill command to forcefully terminate the specified PID
-                val command = "taskkill /F /PID $pid"
-                val process = Runtime.getRuntime().exec(command)
+                val command = listOf("taskkill", "/F", "/PID", pid.toString())
+                val process = ProcessBuilder(command).start()
                 val exitValue = process.waitFor()
                 if (exitValue == 0) {
                     logger.info { "Successfully terminated process PID: $pid" }

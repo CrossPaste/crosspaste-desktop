@@ -88,6 +88,7 @@ class DesktopUrlTypePlugin(
         map: MutableMap<PasteDataFlavor, Any>,
     ) {
         pasteItem as UrlPasteItem
+        @Suppress("DEPRECATION")
         map[URL_FLAVOR.toPasteDataFlavor()] = URL(pasteItem.url)
     }
 }

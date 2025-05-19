@@ -43,8 +43,8 @@ object WindowsDeviceUtils : DeviceUtils {
 
     private fun getProductUUID(): String? {
         runCatching {
-            val command = "wmic csproduct get UUID"
-            val process = Runtime.getRuntime().exec(command)
+            val command = listOf("wmic", "csproduct", "get", "UUID")
+            val process = ProcessBuilder(command).start()
             val reader = BufferedReader(InputStreamReader(process.inputStream))
             var line: String
             while (reader.readLine().also { line = it } != null) {
@@ -106,7 +106,7 @@ object LinuxDeviceUtils : DeviceUtils {
     }
 
     override fun getDeviceName(): String {
-        val process = Runtime.getRuntime().exec("hostname")
+        val process = ProcessBuilder("hostname").start()
         val reader = BufferedReader(InputStreamReader(process.inputStream))
         val hostName = reader.readLine()
         reader.close()

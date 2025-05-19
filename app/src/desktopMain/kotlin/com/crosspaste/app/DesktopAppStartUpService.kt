@@ -168,9 +168,21 @@ class WindowsAppStartUpService(
     }
 
     override fun isAutoStartUp(): Boolean {
-        val command = "reg query \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v \"$AppName\""
+        val command =
+            listOf(
+                "reg",
+                "query",
+                "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+                "/v",
+                AppName,
+            )
+
         runCatching {
-            val process = Runtime.getRuntime().exec(command)
+            val process =
+                ProcessBuilder()
+                    .command(command)
+                    .start()
+
             val reader = BufferedReader(InputStreamReader(process.inputStream))
             var line: String?
             while (reader.readLine().also { line = it } != null) {
@@ -195,13 +207,29 @@ class WindowsAppStartUpService(
     override fun makeAutoStartUp() {
         runCatching {
             if (!isAutoStartUp()) {
-                val command = (
-                    "reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v " +
-                        "\"$AppName\" /d \"${getRegValue()}\" /f"
-                )
-                val process = Runtime.getRuntime().exec(command)
-                process.waitFor()
-                logger.info { "Command executed successfully: $command" }
+                val command =
+                    listOf(
+                        "reg",
+                        "add",
+                        "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+                        "/v",
+                        AppName,
+                        "/d",
+                        getRegValue(),
+                        "/f",
+                    )
+                val process =
+                    ProcessBuilder()
+                        .command(command)
+                        .start()
+
+                val exitCode = process.waitFor()
+
+                if (exitCode == 0) {
+                    logger.info { "Command executed successfully: $command" }
+                } else {
+                    logger.warn { "Command exited with code $exitCode: ${command.joinToString(" ")}" }
+                }
             }
         }.onFailure { e ->
             logger.error(e) { "Failed to make auto startup" }
@@ -211,10 +239,28 @@ class WindowsAppStartUpService(
     override fun removeAutoStartUp() {
         runCatching {
             if (isAutoStartUp()) {
-                val command = "reg delete \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v \"$AppName\" /f"
-                val process = Runtime.getRuntime().exec(command)
-                process.waitFor()
-                logger.info { "Command executed successfully: $command" }
+                val command =
+                    listOf(
+                        "reg",
+                        "delete",
+                        "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+                        "/v",
+                        AppName,
+                        "/f",
+                    )
+
+                val process =
+                    ProcessBuilder()
+                        .command(command)
+                        .start()
+
+                val exitCode = process.waitFor()
+
+                if (exitCode == 0) {
+                    logger.info { "Auto startup removed successfully for $AppName" }
+                } else {
+                    logger.warn { "Command exited with code $exitCode: ${command.joinToString(" ")}" }
+                }
             }
         }.onFailure { e ->
             logger.error(e) { "Failed to remove auto startup" }

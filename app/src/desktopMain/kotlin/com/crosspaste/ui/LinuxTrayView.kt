@@ -26,7 +26,7 @@ import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.koin.compose.koinInject
 import java.awt.GraphicsEnvironment
 import java.awt.Toolkit
-import java.net.URL
+import java.net.URI
 
 object LinuxTrayView {
 
@@ -56,7 +56,7 @@ object LinuxTrayView {
         val firstLaunchCompleted by appWindowManager.firstLaunchCompleted.collectAsState()
 
         LaunchedEffect(Unit) {
-            tray?.setImage(URL(Res.getUri("drawable/crosspaste.png")).openStream())
+            tray?.setImage(URI(Res.getUri("drawable/crosspaste.png")).toURL().openStream())
             tray?.setTooltip("CrossPaste")
             tray?.menu?.add(
                 MenuItem("Open CrossPaste") {

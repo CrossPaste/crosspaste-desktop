@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
 import java.io.ByteArrayInputStream
 import java.net.InetSocketAddress
 import java.net.ProxySelector
-import java.net.URL
+import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
@@ -95,9 +95,7 @@ class DesktopAppUpdateService(
     }
 
     private fun readLastVersion(): Version? {
-        val httpsUrl = URL(appUrls.checkMetadataUrl)
-
-        val uri = httpsUrl.toURI()
+        val uri = URI(appUrls.checkMetadataUrl)
 
         val proxy = desktopProxy.getProxy(uri)
 

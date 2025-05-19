@@ -170,8 +170,8 @@ class DesktopUISupport(
     private fun openFileInExplorer(file: File): Boolean {
         return runCatching {
             val filePath = file.absolutePath
-            val command = "explorer.exe /select,\"$filePath\""
-            Runtime.getRuntime().exec(command)
+            val command = listOf("explorer.exe", "/select,\"$filePath\"")
+            ProcessBuilder(command).start()
             true
         }.onFailure { e ->
             logger.error(e) { "Failed to open file in explorer" }
