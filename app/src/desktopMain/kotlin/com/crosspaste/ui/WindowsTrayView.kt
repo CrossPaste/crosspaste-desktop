@@ -30,6 +30,7 @@ import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.rememberWindowState
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.AppSize
+import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.WinAppWindowManager
@@ -60,6 +61,7 @@ object WindowsTrayView {
 
     @Composable
     fun Tray() {
+        val appLaunch = koinInject<DesktopAppLaunch>()
         val appSize = koinInject<AppSize>() as DesktopAppSize
         val appLaunchState = koinInject<AppLaunchState>()
         val appWindowManager = koinInject<DesktopAppWindowManager>()
@@ -69,7 +71,7 @@ object WindowsTrayView {
 
         var showMenu by remember { mutableStateOf(false) }
 
-        val firstLaunchCompleted by appWindowManager.firstLaunchCompleted.collectAsState()
+        val firstLaunchCompleted by appLaunch.firstLaunchCompleted.collectAsState()
 
         val menuWindowState =
             rememberWindowState(
@@ -82,7 +84,7 @@ object WindowsTrayView {
             refreshWindowPosition(appWindowManager, null) { _, _, _ -> }
             if (appLaunchState.firstLaunch && !firstLaunchCompleted) {
                 appWindowManager.setShowMainWindow(true)
-                appWindowManager.setFirstLaunchCompleted(true)
+                appLaunch.setFirstLaunchCompleted(true)
             }
         }
 

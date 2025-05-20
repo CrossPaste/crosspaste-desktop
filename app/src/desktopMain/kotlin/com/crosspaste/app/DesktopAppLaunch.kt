@@ -20,6 +20,9 @@ class DesktopAppLaunch(
 
     private val logger: KLogger = KotlinLogging.logger {}
 
+    private val _firstLaunchCompleted = MutableStateFlow(false)
+    val firstLaunchCompleted: StateFlow<Boolean> = _firstLaunchCompleted
+
     private val _appLaunchState =
         MutableStateFlow<AppLaunchState>(
             DesktopAppLaunchState(
@@ -114,5 +117,9 @@ class DesktopAppLaunch(
             }
         _appLaunchState.value = appLaunchState
         return appLaunchState
+    }
+
+    fun setFirstLaunchCompleted(firstLaunchCompleted: Boolean) {
+        _firstLaunchCompleted.value = firstLaunchCompleted
     }
 }
