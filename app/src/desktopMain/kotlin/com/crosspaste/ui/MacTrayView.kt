@@ -13,7 +13,6 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppLaunchState
-import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
 import com.crosspaste.app.generated.resources.Res
@@ -210,7 +209,7 @@ object MacTrayView {
         appWindowManager: DesktopAppWindowManager,
         windowInfo: WindowInfo,
     ) {
-        val appSize = appWindowManager.appSize as DesktopAppSize
+        val appSize = appWindowManager.appSize
         val windowPosition =
             WindowPosition.Absolute(
                 x = windowInfo.x.dp + (windowInfo.width.dp / 2) - (appSize.mainWindowSize.width / 2),

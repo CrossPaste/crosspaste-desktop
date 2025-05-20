@@ -20,7 +20,6 @@ import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import com.crosspaste.app.AppSize
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.ui.base.DialogView
@@ -40,7 +39,7 @@ fun hideWindow(appWindowManager: DesktopAppWindowManager) {
 
 @Composable
 fun CrossPasteMainWindowContent() {
-    val appSize = koinInject<AppSize>() as DesktopAppSize
+    val appSize = koinInject<DesktopAppSize>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val screenProvider = koinInject<ScreenProvider>()
 
