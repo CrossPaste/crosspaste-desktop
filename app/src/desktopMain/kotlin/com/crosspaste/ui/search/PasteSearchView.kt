@@ -36,7 +36,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppInfo
-import com.crosspaste.app.AppSize
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
@@ -55,7 +54,7 @@ import org.koin.compose.koinInject
 @Composable
 fun CrossPasteSearchWindowContent() {
     val appInfo = koinInject<AppInfo>()
-    val appSize = koinInject<AppSize>() as DesktopAppSize
+    val appSize = koinInject<DesktopAppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val appUpdateService = koinInject<AppUpdateService>()

@@ -12,7 +12,6 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.DesktopAppLaunch
-import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
 import com.crosspaste.app.generated.resources.Res
@@ -95,7 +94,7 @@ object LinuxTrayView {
         val bounds = gd.defaultConfiguration.bounds
         val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
 
-        val appSize = appWindowManager.appSize as DesktopAppSize
+        val appSize = appWindowManager.appSize
 
         val windowWidth = appSize.mainWindowSize.width
 

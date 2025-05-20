@@ -28,7 +28,7 @@ import java.awt.Cursor
 import java.awt.Rectangle
 
 fun getDesktopAppWindowManager(
-    appSize: AppSize,
+    appSize: DesktopAppSize,
     activeGraphicsDevice: ActiveGraphicsDevice,
     lazyShortcutKeys: Lazy<ShortcutKeys>,
     platform: Platform,
@@ -61,7 +61,7 @@ fun getDesktopAppWindowManager(
 }
 
 abstract class DesktopAppWindowManager(
-    val appSize: AppSize,
+    val appSize: DesktopAppSize,
 ) : AppWindowManager {
 
     companion object {

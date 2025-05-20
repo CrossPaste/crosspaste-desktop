@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class MacAppWindowManager(
-    appSize: AppSize,
+    appSize: DesktopAppSize,
     lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val activeGraphicsDevice: ActiveGraphicsDevice,
     private val userDataPathProvider: UserDataPathProvider,

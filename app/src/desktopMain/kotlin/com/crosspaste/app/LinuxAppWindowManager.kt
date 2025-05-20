@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class LinuxAppWindowManager(
-    appSize: AppSize,
+    appSize: DesktopAppSize,
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val activeGraphicsDevice: ActiveGraphicsDevice,
     private val userDataPathProvider: UserDataPathProvider,

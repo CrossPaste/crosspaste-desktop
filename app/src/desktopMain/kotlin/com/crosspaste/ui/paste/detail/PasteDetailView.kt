@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.crosspaste.app.AppSize
 import com.crosspaste.app.DesktopAppSize
 import org.koin.compose.koinInject
 
@@ -19,7 +18,7 @@ fun PasteDetailView(
     detailView: @Composable () -> Unit,
     detailInfoView: @Composable () -> Unit,
 ) {
-    val appSize = koinInject<AppSize>() as DesktopAppSize
+    val appSize = koinInject<DesktopAppSize>()
 
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
