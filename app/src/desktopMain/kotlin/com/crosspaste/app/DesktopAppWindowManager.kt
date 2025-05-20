@@ -80,9 +80,6 @@ abstract class DesktopAppWindowManager(
     private val _screenContext = MutableStateFlow(ScreenContext(PastePreview))
     override val screenContext: StateFlow<ScreenContext> = _screenContext.asStateFlow()
 
-    private val _firstLaunchCompleted = MutableStateFlow(false)
-    override val firstLaunchCompleted: StateFlow<Boolean> = _firstLaunchCompleted
-
     private val _showMainWindow = MutableStateFlow(false)
     val showMainWindow: StateFlow<Boolean> = _showMainWindow
 
@@ -128,10 +125,6 @@ abstract class DesktopAppWindowManager(
                 y = (bounds.y.dp + ((bounds.height.dp - windowSize.height) / 2)),
             )
         }
-
-    fun setFirstLaunchCompleted(firstLaunchCompleted: Boolean) {
-        _firstLaunchCompleted.value = firstLaunchCompleted
-    }
 
     fun setShowMainWindow(showMainWindow: Boolean) {
         _showMainWindow.value = showMainWindow

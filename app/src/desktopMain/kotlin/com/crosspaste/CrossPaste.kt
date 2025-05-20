@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.window.application
 import com.crosspaste.app.AppExitService
 import com.crosspaste.app.AppFileType
+import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.AppLock
 import com.crosspaste.app.AppStartUpService
 import com.crosspaste.app.AppUpdateService
@@ -117,7 +118,7 @@ class CrossPaste {
         private fun startApplication() {
             runCatching {
                 val koin = koinApplication.koin
-                val appLaunchState = koin.get<DesktopAppLaunchState>()
+                val appLaunchState = koin.get<AppLaunchState>()
                 if (appLaunchState.acquireLock) {
                     val configManager = koin.get<ConfigManager>()
                     val notificationManager = koin.get<NotificationManager>()

@@ -12,8 +12,6 @@ interface AppWindowManager {
 
     val screenContext: StateFlow<ScreenContext>
 
-    val firstLaunchCompleted: StateFlow<Boolean>
-
     val showMainDialog: StateFlow<Boolean>
 
     fun doLongTaskInMain(

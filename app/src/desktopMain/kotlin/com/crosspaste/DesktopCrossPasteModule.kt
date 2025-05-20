@@ -7,6 +7,7 @@ import com.crosspaste.app.AppExitService
 import com.crosspaste.app.AppFileChooser
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppInfoFactory
+import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.AppLock
 import com.crosspaste.app.AppRestartService
 import com.crosspaste.app.AppSize
@@ -238,6 +239,7 @@ class DesktopCrossPasteModule(
             single<AppExitService> { DesktopAppExitService }
             single<AppInfo> { get<AppInfoFactory>().createAppInfo() }
             single<AppInfoFactory> { DesktopAppInfoFactory(get()) }
+            single<AppLaunchState> { get<DesktopAppLaunchState>() }
             single<AppLock> { get<DesktopAppLaunch>() }
             single<AppPathProvider> { appPathProvider }
             single<AppRestartService> { DesktopAppRestartService(get(), get()) }

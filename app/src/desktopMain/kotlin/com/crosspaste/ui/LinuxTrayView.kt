@@ -10,7 +10,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
-import com.crosspaste.app.DesktopAppLaunchState
+import com.crosspaste.app.AppLaunchState
+import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
@@ -36,7 +37,8 @@ object LinuxTrayView {
     @Composable
     fun Tray() {
         val applicationExit = LocalExitApplication.current
-        val appLaunchState = koinInject<DesktopAppLaunchState>()
+        val appLaunchState = koinInject<AppLaunchState>()
+        val appLaunch = koinInject<DesktopAppLaunch>()
         val appWindowManager = koinInject<DesktopAppWindowManager>()
         val tray by remember {
             val trayType = getTrayType()
@@ -53,7 +55,7 @@ object LinuxTrayView {
             mutableStateOf(innerTray)
         }
 
-        val firstLaunchCompleted by appWindowManager.firstLaunchCompleted.collectAsState()
+        val firstLaunchCompleted by appLaunch.firstLaunchCompleted.collectAsState()
 
         LaunchedEffect(Unit) {
             tray?.setImage(URI(Res.getUri("drawable/crosspaste.png")).toURL().openStream())
@@ -77,7 +79,7 @@ object LinuxTrayView {
 
             if (appLaunchState.firstLaunch && !firstLaunchCompleted) {
                 appWindowManager.setShowMainWindow(true)
-                appWindowManager.setFirstLaunchCompleted(true)
+                appLaunch.setFirstLaunchCompleted(true)
             }
         }
 
