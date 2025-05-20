@@ -22,7 +22,13 @@ class DesktopAppLaunch(
 
     private val _appLaunchState =
         MutableStateFlow<AppLaunchState>(
-            DesktopAppLaunchState(-1, false, false, false, null),
+            DesktopAppLaunchState(
+                -1,
+                acquireLock = false,
+                firstLaunch = false,
+                accessibilityPermissions = false,
+                installFrom = null,
+            ),
         )
 
     override val appLaunchState: StateFlow<AppLaunchState> = _appLaunchState

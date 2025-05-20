@@ -39,8 +39,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.AppUpdateService
-import com.crosspaste.app.DesktopAppLaunchState
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
@@ -58,7 +58,7 @@ import org.koin.compose.koinInject
 @Preview
 @Composable
 fun HomeWindowDecoration() {
-    val appLaunchState = koinInject<DesktopAppLaunchState>()
+    val appLaunchState = koinInject<AppLaunchState>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val appUpdateService = koinInject<AppUpdateService>()
     val configManager = koinInject<ConfigManager>()
