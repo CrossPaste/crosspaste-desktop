@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class TestWindowManager(
-    appSize: AppSize,
+    appSize: DesktopAppSize,
     private val mockOS: MockOS,
 ) : DesktopAppWindowManager(appSize) {
 
