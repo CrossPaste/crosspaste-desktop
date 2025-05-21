@@ -13,7 +13,6 @@
        ·
       <a href="https://crosspaste.com/en/download" target="_blank">Download</a>
       <br />
-      <br />
    </p>
 
    [![Main CI Test](https://github.com/CrossPaste/crosspaste-desktop/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/CrossPaste/crosspaste-desktop/actions/workflows/ci.yml)
