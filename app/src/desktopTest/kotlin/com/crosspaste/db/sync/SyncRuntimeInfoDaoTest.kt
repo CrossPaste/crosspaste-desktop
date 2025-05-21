@@ -133,5 +133,6 @@ class SyncRuntimeInfoDaoTest {
 
             // Cancel the test
             cancelAndIgnoreRemainingEvents()
+        }
     }
 }
