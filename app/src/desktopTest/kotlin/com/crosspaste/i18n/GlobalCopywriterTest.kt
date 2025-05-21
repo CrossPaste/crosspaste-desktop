@@ -1,9 +1,13 @@
 package com.crosspaste.i18n
 
 import com.crosspaste.config.DesktopConfigManager
+import com.crosspaste.db.TestDriverFactory
+import com.crosspaste.db.createDatabase
+import com.crosspaste.db.task.TaskDao
 import com.crosspaste.i18n.GlobalCopywriterImpl.Companion.EN
 import com.crosspaste.platform.DesktopPlatformProvider
 import com.crosspaste.presist.OneFilePersist
+import com.crosspaste.task.TaskExecutor
 import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DesktopLocaleUtils
 import okio.Path.Companion.toOkioPath
@@ -31,13 +35,17 @@ class GlobalCopywriterTest {
 
         configManager.updateConfig("language", "")
 
-        val copywriter = GlobalCopywriterImpl(configManager)
+        val database = createDatabase(TestDriverFactory())
+
+        val taskDao = TaskDao(database)
+
+        val copywriter = GlobalCopywriterImpl(configManager, lazy { TaskExecutor(listOf(), taskDao) }, taskDao)
         assertEquals(EN, copywriter.language())
     }
 
     @Test
     fun testI18nKeys() {
-        val languageList = GlobalCopywriterImpl.languageList
+        val languageList = GlobalCopywriterImpl.LANGUAGE_LIST
         val copywriterMap: Map<String, Copywriter> =
             languageList.associateWith { language ->
                 CopywriterImpl(language)

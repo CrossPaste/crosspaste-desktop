@@ -170,6 +170,13 @@ SELECT PasteDataEntity.*
     ORDER BY CASE WHEN :sort THEN createTime ELSE -createTime END DESC
     LIMIT :number;
 
+searchBySource:
+SELECT PasteDataEntity.*
+FROM PasteDataEntity
+WHERE
+    pasteState != -1 AND
+    source = :source;
+
 searchByAllMatch:
 SELECT PasteDataEntity.*
 FROM PasteDataEntity

@@ -4,10 +4,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.crosspaste.config.ConfigManager
+import com.crosspaste.db.task.SwitchLanguageInfo
+import com.crosspaste.db.task.TaskDao
+import com.crosspaste.db.task.TaskType
 import com.crosspaste.i18n.GlobalCopywriterImpl.Companion.EN
+import com.crosspaste.task.TaskExecutor
 import com.crosspaste.utils.DateTimeFormatOptions
+import com.crosspaste.utils.GlobalCoroutineScope.cpuCoroutineDispatcher
 import com.crosspaste.utils.getDateUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDateTime
 import java.io.FileNotFoundException
 import java.io.InputStreamReader
@@ -15,10 +21,13 @@ import java.nio.charset.StandardCharsets
 import java.util.Properties
 import java.util.concurrent.ConcurrentHashMap
 
-class GlobalCopywriterImpl(private val configManager: ConfigManager) : GlobalCopywriter {
+class GlobalCopywriterImpl(
+    private val configManager: ConfigManager,
+    private val lazyTaskExecutor: Lazy<TaskExecutor>,
+    private val taskDao: TaskDao,
+) : GlobalCopywriter {
 
     companion object {
-        val logger = KotlinLogging.logger {}
 
         const val EN = "en"
 
@@ -30,38 +39,52 @@ class GlobalCopywriterImpl(private val configManager: ConfigManager) : GlobalCop
 
         const val ZH = "zh"
 
-        val languageList = listOf(EN, ES, FA, JA, ZH)
+        val LANGUAGE_LIST = listOf(EN, ES, FA, JA, ZH)
 
-        val languageMap = ConcurrentHashMap<String, Copywriter>()
+        val LANGUAGE_MAP = ConcurrentHashMap<String, Copywriter>()
     }
 
-    init {
-        val language = configManager.getCurrentConfig().language
-        if (!languageList.contains(language)) {
-            configManager.updateConfig("language", EN)
+    private val logger = KotlinLogging.logger {}
+
+    private var language: String =
+        run {
+            val language = configManager.getCurrentConfig().language
+            if (!LANGUAGE_LIST.contains(language)) {
+                configManager.updateConfig("language", EN)
+                EN
+            } else {
+                language
+            }
         }
-    }
 
     private var copywriter: Copywriter by mutableStateOf(
-        languageMap
-            .computeIfAbsent(configManager.getCurrentConfig().language) {
-                CopywriterImpl(configManager.getCurrentConfig().language)
+        LANGUAGE_MAP
+            .computeIfAbsent(language) {
+                CopywriterImpl(language)
             },
     )
+
+    private val taskExecutor by lazy { lazyTaskExecutor.value }
 
     override fun language(): String {
         return copywriter.language()
     }
 
     override fun switchLanguage(language: String) {
-        copywriter = languageMap.computeIfAbsent(language) { CopywriterImpl(language) }
+        logger.info { "Switching language $language" }
+        copywriter = LANGUAGE_MAP.computeIfAbsent(language) { CopywriterImpl(language) }
         configManager.updateConfig("language", language)
+        cpuCoroutineDispatcher.launch {
+            taskExecutor.submitTask(
+                taskDao.createTask(null, TaskType.SWITCH_LANGUAGE_TASK, SwitchLanguageInfo(language)),
+            )
+        }
     }
 
     override fun getAllLanguages(): List<Language> {
-        return languageList
+        return LANGUAGE_LIST
             .map { it ->
-                val copywriter = languageMap.computeIfAbsent(it) { CopywriterImpl(it) }
+                val copywriter = LANGUAGE_MAP.computeIfAbsent(it) { CopywriterImpl(it) }
                 val abridge = copywriter.getAbridge()
                 val name = copywriter.getText("current_language")
                 Language(abridge, name)
@@ -155,7 +178,7 @@ class CopywriterImpl(private val language: String) : Copywriter {
         date: LocalDateTime,
         options: DateTimeFormatOptions,
     ): String {
-        return dateUtils.getDateDesc(date, options, language.toString())
+        return dateUtils.getDateDesc(date, options, language)
     }
 
     override fun getAbridge(): String {

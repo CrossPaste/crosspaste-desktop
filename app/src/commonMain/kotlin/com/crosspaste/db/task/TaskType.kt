@@ -11,4 +11,5 @@ object TaskType {
     const val PULL_ICON_TASK = 5
     const val RTF_TO_IMAGE_TASK = 6
     const val CLEAN_TASK_TASK = 7
+    const val SWITCH_LANGUAGE_TASK = 8
 }

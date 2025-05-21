@@ -31,6 +31,8 @@ sealed interface PasteItem {
         }
     }
 
+    val extraInfo: String?
+
     val identifiers: List<String>
 
     val hash: String

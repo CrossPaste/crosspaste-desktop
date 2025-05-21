@@ -87,6 +87,7 @@ class DesktopHtmlTypePlugin(
                     size = size,
                     html = html,
                     relativePath = relativePath,
+                    extraInfo = pasteItem.extraInfo,
                 )
             }
             pasteCollector.updateCollectItem(itemIndex, this::class, update)

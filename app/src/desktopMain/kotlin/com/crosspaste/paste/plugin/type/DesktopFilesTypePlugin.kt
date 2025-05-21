@@ -152,6 +152,7 @@ class DesktopFilesTypePlugin(
                     basePath = if (useRefCopyFiles) parentPath.toString() else null,
                     relativePathList = relativePathList,
                     fileInfoTreeMap = fileInfoTrees,
+                    extraInfo = pasteItem.extraInfo,
                 )
             }
             pasteCollector.updateCollectItem(itemIndex, this::class, update)

@@ -27,6 +27,7 @@ data class RtfPasteItem(
     override val basePath: String? = null,
     override val relativePath: String,
     override val rtf: String,
+    override val extraInfo: String? = null,
 ) : PasteItem, PasteRtf {
 
     companion object {
@@ -46,6 +47,7 @@ data class RtfPasteItem(
         basePath = jsonObject["basePath"]?.jsonPrimitive?.content,
         relativePath = jsonObject["relativePath"]!!.jsonPrimitive.content,
         rtf = jsonObject["rtf"]!!.jsonPrimitive.content,
+        extraInfo = jsonObject["extraInfo"]?.jsonPrimitive?.content,
     )
 
     override fun getRtfImagePath(userDataPathProvider: UserDataPathProvider): Path {
@@ -132,6 +134,7 @@ data class RtfPasteItem(
             basePath?.let { put("basePath", it) }
             put("relativePath", relativePath)
             put("rtf", rtf)
+            extraInfo?.let { put("extraInfo", it) }
         }.toString()
     }
 }

@@ -16,6 +16,7 @@ class UrlPasteItem(
     override val hash: String,
     override val size: Long,
     override val url: String,
+    override val extraInfo: String? = null,
 ) : PasteItem, PasteUrl {
 
     constructor(jsonObject: JsonObject) : this(
@@ -23,6 +24,7 @@ class UrlPasteItem(
         hash = jsonObject["hash"]!!.jsonPrimitive.content,
         size = jsonObject["size"]!!.jsonPrimitive.long,
         url = jsonObject["url"]!!.jsonPrimitive.content,
+        extraInfo = jsonObject["extraInfo"]?.jsonPrimitive?.content,
     )
 
     override fun getPasteType(): PasteType {
@@ -64,6 +66,7 @@ class UrlPasteItem(
             put("hash", hash)
             put("size", size)
             put("url", url)
+            extraInfo?.let { put("extraInfo", it) }
         }.toString()
     }
 }

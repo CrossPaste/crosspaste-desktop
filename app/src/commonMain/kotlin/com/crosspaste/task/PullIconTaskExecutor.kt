@@ -31,11 +31,9 @@ class PullIconTaskExecutor(
     private val syncManager: SyncManager,
 ) : SingleTypeTaskExecutor {
 
-    companion object PullIconTaskExecutor {
-        private val logger = KotlinLogging.logger {}
+    private val logger = KotlinLogging.logger {}
 
-        private val fileUtils: FileUtils = getFileUtils()
-    }
+    private val fileUtils: FileUtils = getFileUtils()
 
     override val taskType: Int = TaskType.PULL_ICON_TASK
 
