@@ -22,6 +22,10 @@ open class MarketingPasteData(
     private val userDataPathProvider: UserDataPathProvider,
 ) {
 
+    companion object {
+        const val CROSSPASTE_MARKETING = "CrossPaste Marketing"
+    }
+
     private val codecsUtils = getCodecsUtils()
 
     private val fileUtils = getFileUtils()
@@ -44,7 +48,7 @@ open class MarketingPasteData(
                     ),
                 pasteCollection = PasteCollection(listOf()),
                 pasteType = PasteType.URL_TYPE.type,
-                source = null,
+                source = CROSSPASTE_MARKETING,
                 size = urlBytes.size.toLong(),
                 hash = codecsUtils.hash(urlBytes),
                 pasteState = PasteState.LOADED,
@@ -74,7 +78,7 @@ open class MarketingPasteData(
                     ),
                 pasteCollection = PasteCollection(listOf()),
                 pasteType = PasteType.FILE_TYPE.type,
-                source = null,
+                source = CROSSPASTE_MARKETING,
                 size = size,
                 hash = hash,
                 pasteState = PasteState.LOADED,
@@ -110,7 +114,7 @@ open class MarketingPasteData(
                     ),
                 pasteCollection = PasteCollection(listOf()),
                 pasteType = PasteType.IMAGE_TYPE.type,
-                source = null,
+                source = CROSSPASTE_MARKETING,
                 size = size,
                 hash = hash,
                 pasteState = PasteState.LOADED,
@@ -145,7 +149,7 @@ open class MarketingPasteData(
                     ),
                 pasteCollection = PasteCollection(listOf()),
                 pasteType = PasteType.TEXT_TYPE.type,
-                source = null,
+                source = CROSSPASTE_MARKETING,
                 size = size,
                 hash = hash,
                 pasteState = PasteState.LOADED,
@@ -181,7 +185,7 @@ open class MarketingPasteData(
                     ),
                 pasteCollection = PasteCollection(listOf()),
                 pasteType = PasteType.HTML_TYPE.type,
-                source = null,
+                source = CROSSPASTE_MARKETING,
                 size = size,
                 hash = hash,
                 pasteState = PasteState.LOADED,

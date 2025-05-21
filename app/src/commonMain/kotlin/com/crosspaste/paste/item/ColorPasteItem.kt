@@ -16,6 +16,7 @@ class ColorPasteItem(
     override val hash: String,
     override val size: Long,
     override val color: Long,
+    override val extraInfo: String? = null,
 ) : PasteItem, PasteColor {
 
     constructor(jsonObject: JsonObject) : this(
@@ -23,6 +24,7 @@ class ColorPasteItem(
         hash = jsonObject["hash"]!!.jsonPrimitive.content,
         size = jsonObject["size"]!!.jsonPrimitive.long,
         color = jsonObject["color"]!!.jsonPrimitive.content.toLong(),
+        extraInfo = jsonObject["extraInfo"]?.jsonPrimitive?.content,
     )
 
     override fun getPasteType(): PasteType {
@@ -62,6 +64,7 @@ class ColorPasteItem(
             put("hash", hash)
             put("size", size)
             put("color", color)
+            extraInfo?.let { put("extraInfo", it) }
         }.toString()
     }
 }

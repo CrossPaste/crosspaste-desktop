@@ -342,6 +342,11 @@ class PasteDao(
         )
     }
 
+    fun searchBySource(source: String): List<PasteData> {
+        return pasteDatabaseQueries.searchBySource(source, mapper = PasteData::mapper)
+            .executeAsList()
+    }
+
     fun searchByAllMatch(
         pasteType: Long,
         pasteSearchContent: String

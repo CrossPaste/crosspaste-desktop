@@ -76,6 +76,7 @@ class DesktopTextTypePlugin : TextTypePlugin {
             hash = hash,
             size = size,
             text = newText,
+            extraInfo = pasteItem.extraInfo,
         )
     }
 

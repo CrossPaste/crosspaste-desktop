@@ -16,6 +16,7 @@ class TextPasteItem(
     override val hash: String,
     override val size: Long,
     override val text: String,
+    override val extraInfo: String? = null,
 ) : PasteItem, PasteText {
 
     constructor(jsonObject: JsonObject) : this(
@@ -23,6 +24,7 @@ class TextPasteItem(
         hash = jsonObject["hash"]!!.jsonPrimitive.content,
         size = jsonObject["size"]!!.jsonPrimitive.long,
         text = jsonObject["text"]!!.jsonPrimitive.content,
+        extraInfo = jsonObject["extraInfo"]?.jsonPrimitive?.content,
     )
 
     override fun getPasteType(): PasteType {
@@ -64,6 +66,7 @@ class TextPasteItem(
             put("hash", hash)
             put("size", size)
             put("text", text)
+            extraInfo?.let { put("extraInfo", it) }
         }.toString()
     }
 }

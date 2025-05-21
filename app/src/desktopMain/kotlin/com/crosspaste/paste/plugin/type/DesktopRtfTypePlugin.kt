@@ -87,6 +87,7 @@ class DesktopRtfTypePlugin(
                     size = size,
                     rtf = rtf,
                     relativePath = relativePath,
+                    extraInfo = pasteItem.extraInfo,
                 )
             }
             pasteCollector.updateCollectItem(itemIndex, this::class, update)

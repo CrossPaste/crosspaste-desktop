@@ -138,6 +138,7 @@ class DesktopImageTypePlugin(
                         size = size,
                         fileInfoTreeMap = mapOf(name to fileTree),
                         relativePathList = listOf(relativePath),
+                        extraInfo = pasteItem.extraInfo,
                     )
                 }
                 pasteCollector.updateCollectItem(itemIndex, this::class, update)

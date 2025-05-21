@@ -65,6 +65,7 @@ class DesktopUrlTypePlugin(
                     hash = hash,
                     size = urlBytes.size.toLong(),
                     url = transferData,
+                    extraInfo = pasteItem.extraInfo,
                 )
             }
             pasteCollector.updateCollectItem(itemIndex, this::class, update)

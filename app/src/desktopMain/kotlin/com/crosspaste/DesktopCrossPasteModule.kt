@@ -102,14 +102,14 @@ import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.DefaultPasteSyncProcessManager
 import com.crosspaste.paste.DesktopCacheManager
 import com.crosspaste.paste.DesktopCurrentPaste
-import com.crosspaste.paste.DesktopInitPasteDataService
+import com.crosspaste.paste.DesktopGuidePasteDataService
 import com.crosspaste.paste.DesktopPasteExportParamFactory
 import com.crosspaste.paste.DesktopPasteImportParamFactory
 import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.DesktopSearchContentService
 import com.crosspaste.paste.DesktopTransferableConsumer
 import com.crosspaste.paste.DesktopTransferableProducer
-import com.crosspaste.paste.InitPasteDataService
+import com.crosspaste.paste.GuidePasteDataService
 import com.crosspaste.paste.PasteExportParamFactory
 import com.crosspaste.paste.PasteExportService
 import com.crosspaste.paste.PasteImportParamFactory
@@ -175,6 +175,7 @@ import com.crosspaste.task.Html2ImageTaskExecutor
 import com.crosspaste.task.PullFileTaskExecutor
 import com.crosspaste.task.PullIconTaskExecutor
 import com.crosspaste.task.Rtf2ImageTaskExecutor
+import com.crosspaste.task.SwitchLanguageTaskExecutor
 import com.crosspaste.task.SyncPasteTaskExecutor
 import com.crosspaste.task.TaskExecutor
 import com.crosspaste.ui.DesktopScreenProvider
@@ -388,7 +389,7 @@ class DesktopCrossPasteModule(
             }
             single<DesktopPasteMenuService> { DesktopPasteMenuService(get(), get(), get(), get(), get(), get()) }
             single<GenerateImageService> { GenerateImageService() }
-            single<InitPasteDataService> { DesktopInitPasteDataService(get(), get(), get(), get()) }
+            single<GuidePasteDataService> { DesktopGuidePasteDataService(get(), get(), get(), get()) }
             single<PasteboardService> {
                 getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get(), get(), get())
             }
@@ -419,6 +420,7 @@ class DesktopCrossPasteModule(
                             get(),
                             get(),
                         ),
+                        SwitchLanguageTaskExecutor(get(), get()),
                         SyncPasteTaskExecutor(get(), get(), get(), get()),
                     ),
                     get(),
@@ -470,7 +472,7 @@ class DesktopCrossPasteModule(
             single<DeviceViewProvider> { DesktopDeviceViewProvider() }
             single<DialogService> { DialogService }
             single<ExpandViewProvider> { DesktopExpandViewProvider(get()) }
-            single<GlobalCopywriter> { GlobalCopywriterImpl(get()) }
+            single<GlobalCopywriter> { GlobalCopywriterImpl(get(), lazy { get() }, get()) }
             single<GlobalListener> { DesktopGlobalListener(get(), get(), get(), get()) }
             single<IconStyle> { DesktopIconStyle(get()) }
             single<NativeKeyListener> { get<DesktopShortcutKeysListener>() }

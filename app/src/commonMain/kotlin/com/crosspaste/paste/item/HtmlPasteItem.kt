@@ -27,6 +27,7 @@ class HtmlPasteItem(
     override val basePath: String? = null,
     override val relativePath: String,
     override val html: String,
+    override val extraInfo: String? = null,
 ) : PasteItem, PasteHtml {
 
     companion object {
@@ -46,6 +47,7 @@ class HtmlPasteItem(
         basePath = jsonObject["basePath"]?.jsonPrimitive?.content,
         relativePath = jsonObject["relativePath"]!!.jsonPrimitive.content,
         html = jsonObject["html"]!!.jsonPrimitive.content,
+        extraInfo = jsonObject["extraInfo"]?.jsonPrimitive?.content,
     )
 
     override fun getHtmlImagePath(userDataPathProvider: UserDataPathProvider): Path {
@@ -65,6 +67,7 @@ class HtmlPasteItem(
                     fileName = "html2Image.png",
                 ),
             html = html,
+            extraInfo = extraInfo,
         )
     }
 
@@ -132,6 +135,7 @@ class HtmlPasteItem(
             basePath?.let { put("basePath", it) }
             put("relativePath", relativePath)
             put("html", html)
+            extraInfo?.let { put("extraInfo", it) }
         }.toString()
     }
 }

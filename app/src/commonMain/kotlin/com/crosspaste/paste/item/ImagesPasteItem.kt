@@ -32,6 +32,7 @@ data class ImagesPasteItem(
     override val basePath: String? = null,
     override val fileInfoTreeMap: Map<String, FileInfoTree>,
     override val relativePathList: List<String>,
+    override val extraInfo: String? = null,
 ) : PasteItem, PasteImages {
 
     companion object {
@@ -61,6 +62,7 @@ data class ImagesPasteItem(
                 it.jsonPrimitive.content
             },
         fileInfoTreeMap = fileInfoTreeMap,
+        extraInfo = jsonObject["extraInfo"]?.jsonPrimitive?.content,
     )
 
     override fun getAppFileType(): AppFileType {
@@ -109,6 +111,7 @@ data class ImagesPasteItem(
             basePath = basePath,
             relativePathList = newRelativePathList,
             fileInfoTreeMap = fileInfoTreeMap,
+            extraInfo = extraInfo,
         )
     }
 
@@ -139,6 +142,7 @@ data class ImagesPasteItem(
             basePath?.let { put("basePath", it) }
             put("relativePathList", FilesPasteItem.Companion.jsonUtils.JSON.encodeToJsonElement(relativePathList))
             put("fileInfoTreeMap", FilesPasteItem.Companion.jsonUtils.JSON.encodeToJsonElement(fileInfoTreeMap))
+            extraInfo?.let { put("extraInfo", it) }
         }.toString()
     }
 }
