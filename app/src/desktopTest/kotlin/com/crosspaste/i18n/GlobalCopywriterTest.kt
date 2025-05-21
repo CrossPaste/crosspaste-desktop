@@ -4,7 +4,7 @@ import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.TestDriverFactory
 import com.crosspaste.db.createDatabase
 import com.crosspaste.db.task.TaskDao
-import com.crosspaste.i18n.GlobalCopywriterImpl.Companion.EN
+import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.EN
 import com.crosspaste.platform.DesktopPlatformProvider
 import com.crosspaste.presist.OneFilePersist
 import com.crosspaste.task.TaskExecutor
@@ -39,16 +39,16 @@ class GlobalCopywriterTest {
 
         val taskDao = TaskDao(database)
 
-        val copywriter = GlobalCopywriterImpl(configManager, lazy { TaskExecutor(listOf(), taskDao) }, taskDao)
+        val copywriter = DesktopGlobalCopywriter(configManager, lazy { TaskExecutor(listOf(), taskDao) }, taskDao)
         assertEquals(EN, copywriter.language())
     }
 
     @Test
     fun testI18nKeys() {
-        val languageList = GlobalCopywriterImpl.LANGUAGE_LIST
+        val languageList = DesktopGlobalCopywriter.LANGUAGE_LIST
         val copywriterMap: Map<String, Copywriter> =
             languageList.associateWith { language ->
-                CopywriterImpl(language)
+                DesktopCopywriter(language)
             }
 
         // Verify that all keys are the same

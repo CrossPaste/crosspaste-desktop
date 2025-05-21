@@ -48,8 +48,8 @@ import com.crosspaste.db.secure.SecureDao
 import com.crosspaste.db.secure.SecureIO
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.task.TaskDao
+import com.crosspaste.i18n.DesktopGlobalCopywriter
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.i18n.GlobalCopywriterImpl
 import com.crosspaste.image.DesktopFaviconLoader
 import com.crosspaste.image.DesktopFileExtLoader
 import com.crosspaste.image.DesktopImageWriter
@@ -472,7 +472,7 @@ class DesktopCrossPasteModule(
             single<DeviceViewProvider> { DesktopDeviceViewProvider() }
             single<DialogService> { DialogService }
             single<ExpandViewProvider> { DesktopExpandViewProvider(get()) }
-            single<GlobalCopywriter> { GlobalCopywriterImpl(get(), lazy { get() }, get()) }
+            single<GlobalCopywriter> { DesktopGlobalCopywriter(get(), lazy { get() }, get()) }
             single<GlobalListener> { DesktopGlobalListener(get(), get(), get(), get()) }
             single<IconStyle> { DesktopIconStyle(get()) }
             single<NativeKeyListener> { get<DesktopShortcutKeysListener>() }
