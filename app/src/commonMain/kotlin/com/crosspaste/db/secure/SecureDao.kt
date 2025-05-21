@@ -22,7 +22,7 @@ class SecureDao(private val database: Database): SecureIO {
     }
 
     override fun deleteCryptPublicKey(appInstanceId: String) {
-        secureDatabaseQueries.deleteCryptPublicKey(appInstanceId)
+        return secureDatabaseQueries.deleteCryptPublicKey(appInstanceId)
     }
 
     override fun serializedPublicKey(appInstanceId: String): ByteArray? {

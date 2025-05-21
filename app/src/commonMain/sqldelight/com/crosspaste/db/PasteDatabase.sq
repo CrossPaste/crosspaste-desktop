@@ -47,8 +47,10 @@ CREATE INDEX IF NOT EXISTS IdxPasteDataType ON PasteDataEntity(pasteType) WHERE 
 
 createPasteDataEntity:
 INSERT INTO PasteDataEntity(appInstanceId, favorite, pasteAppearItem, pasteCollection, pasteType, source, size, hash, createTime, pasteSearchContent, pasteState, remote)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-RETURNING id;
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+getLastId:
+SELECT last_insert_rowid();
 
 getBatchPasteData:
 SELECT * FROM PasteDataEntity
@@ -209,8 +211,7 @@ SET pasteAppearItem = :pasteAppearItem,
     pasteSearchContent = :pasteSearchContent,
     size = :size,
     hash = :hash
-WHERE id = :id
-RETURNING id;
+WHERE id = :id;
 
 updateRemotePasteDataWithFile:
 UPDATE PasteDataEntity
@@ -218,3 +219,6 @@ SET pasteAppearItem = :pasteAppearItem,
     pasteCollection = :pasteCollection,
     pasteSearchContent = :pasteSearchContent
 WHERE id = :id;
+
+change:
+SELECT changes() AS changes;
