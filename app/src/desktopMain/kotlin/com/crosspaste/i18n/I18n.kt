@@ -7,7 +7,7 @@ import com.crosspaste.config.ConfigManager
 import com.crosspaste.db.task.SwitchLanguageInfo
 import com.crosspaste.db.task.TaskDao
 import com.crosspaste.db.task.TaskType
-import com.crosspaste.i18n.GlobalCopywriterImpl.Companion.EN
+import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.EN
 import com.crosspaste.task.TaskExecutor
 import com.crosspaste.utils.DateTimeFormatOptions
 import com.crosspaste.utils.GlobalCoroutineScope.cpuCoroutineDispatcher
@@ -21,7 +21,7 @@ import java.nio.charset.StandardCharsets
 import java.util.Properties
 import java.util.concurrent.ConcurrentHashMap
 
-class GlobalCopywriterImpl(
+class DesktopGlobalCopywriter(
     private val configManager: ConfigManager,
     private val lazyTaskExecutor: Lazy<TaskExecutor>,
     private val taskDao: TaskDao,
@@ -60,7 +60,7 @@ class GlobalCopywriterImpl(
     private var copywriter: Copywriter by mutableStateOf(
         LANGUAGE_MAP
             .computeIfAbsent(language) {
-                CopywriterImpl(language)
+                DesktopCopywriter(language)
             },
     )
 
@@ -72,7 +72,7 @@ class GlobalCopywriterImpl(
 
     override fun switchLanguage(language: String) {
         logger.info { "Switching language $language" }
-        copywriter = LANGUAGE_MAP.computeIfAbsent(language) { CopywriterImpl(language) }
+        copywriter = LANGUAGE_MAP.computeIfAbsent(language) { DesktopCopywriter(language) }
         configManager.updateConfig("language", language)
         cpuCoroutineDispatcher.launch {
             taskExecutor.submitTask(
@@ -84,7 +84,7 @@ class GlobalCopywriterImpl(
     override fun getAllLanguages(): List<Language> {
         return LANGUAGE_LIST
             .map { it ->
-                val copywriter = LANGUAGE_MAP.computeIfAbsent(it) { CopywriterImpl(it) }
+                val copywriter = LANGUAGE_MAP.computeIfAbsent(it) { DesktopCopywriter(it) }
                 val abridge = copywriter.getAbridge()
                 val name = copywriter.getText("current_language")
                 Language(abridge, name)
@@ -114,7 +114,7 @@ class GlobalCopywriterImpl(
     }
 }
 
-class CopywriterImpl(private val language: String) : Copywriter {
+class DesktopCopywriter(private val language: String) : Copywriter {
 
     val logger = KotlinLogging.logger {}
 
@@ -129,7 +129,7 @@ class CopywriterImpl(private val language: String) : Copywriter {
         language: String,
     ) {
         properties.load(
-            CopywriterImpl::class.java.getResourceAsStream("/i18n/$language.properties")
+            DesktopCopywriter::class.java.getResourceAsStream("/i18n/$language.properties")
                 ?.let {
                     InputStreamReader(
                         it,

@@ -7,8 +7,8 @@ import com.crosspaste.app.AppWindowManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.db.paste.PasteType
+import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.ZH
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.i18n.GlobalCopywriterImpl.Companion.ZH
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.item.ColorPasteItem
