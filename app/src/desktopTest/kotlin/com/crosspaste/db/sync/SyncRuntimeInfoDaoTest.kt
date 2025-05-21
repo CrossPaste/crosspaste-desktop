@@ -128,8 +128,10 @@ class SyncRuntimeInfoDaoTest {
             assertEquals(1, updatedList.size)
             assertEquals(updatedSyncRuntimeInfo.noteName, updatedList[0].noteName)
 
+            // Verify no further emissions
+            expectNoEvents()
+
             // Cancel the test
             cancelAndIgnoreRemainingEvents()
-        }
     }
 }
