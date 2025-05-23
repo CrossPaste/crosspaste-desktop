@@ -47,12 +47,15 @@ fun RecommendContentView() {
                 .padding(16.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-        contentAlignment = Alignment.Center,
     ) {
         Column(
-            modifier = Modifier.padding(40.dp),
+            modifier =
+                Modifier.fillMaxSize()
+                    .padding(40.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            Spacer(modifier = Modifier.weight(0.3f))
+
             Text(
                 modifier = Modifier.padding(bottom = 32.dp),
                 text = copywriter.getText("recommend_to_friends"),
@@ -102,6 +105,8 @@ fun RecommendContentView() {
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.weight(0.7f))
         }
     }
 }
