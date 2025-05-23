@@ -9,7 +9,7 @@ class DesktopCurrentPaste(private val lazyPasteDao: Lazy<PasteDao>) : CurrentPas
 
     override val pasteDao: PasteDao by lazy { lazyPasteDao.value }
 
-    override suspend fun setPasteId(
+    override fun setPasteId(
         id: Long,
         updateCreateTime: Boolean,
     ) {

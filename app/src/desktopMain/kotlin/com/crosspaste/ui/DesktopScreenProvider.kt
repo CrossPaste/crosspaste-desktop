@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.crosspaste.app.AppWindowManager
+import com.crosspaste.ui.base.RecommendContentView
 import com.crosspaste.ui.devices.DeviceDetailContentView
 import com.crosspaste.ui.devices.DevicesContentView
 import com.crosspaste.ui.devices.QRContentView
@@ -65,6 +66,10 @@ class DesktopScreenProvider(
                 PasteTextEditScreen()
             }
 
+            Recommend -> {
+                RecommendScreen()
+            }
+
             else -> {}
         }
     }
@@ -124,5 +129,11 @@ class DesktopScreenProvider(
     override fun SettingsScreen() {
         WindowDecoration("settings")
         SettingsContentView()
+    }
+
+    @Composable
+    override fun RecommendScreen() {
+        WindowDecoration("recommend")
+        RecommendContentView()
     }
 }

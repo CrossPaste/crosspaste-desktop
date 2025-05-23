@@ -47,15 +47,15 @@ interface PasteboardService : PasteboardMonitor {
         }
     }
 
-    suspend fun tryWritePasteboard(
-        id: Long,
+    fun tryWritePasteboard(
+        id: Long? = null,
         pasteItem: PasteItem,
         localOnly: Boolean = false,
         filterFile: Boolean = false,
         updateCreateTime: Boolean = false,
     ): Result<Unit?>
 
-    suspend fun tryWritePasteboard(
+    fun tryWritePasteboard(
         pasteData: PasteData,
         localOnly: Boolean = false,
         filterFile: Boolean = false,

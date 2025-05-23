@@ -102,7 +102,7 @@ class CrossPaste {
         private val logger: KLogger = KotlinLogging.logger {}
 
         private val module =
-            DesktopCrossPasteModule(
+            DesktopModule(
                 appEnv,
                 appPathProvider,
                 configManager,

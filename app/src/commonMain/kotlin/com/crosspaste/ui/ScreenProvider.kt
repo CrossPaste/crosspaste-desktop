@@ -38,4 +38,7 @@ interface ScreenProvider {
 
     @Composable
     fun SettingsScreen()
+
+    @Composable
+    fun RecommendScreen()
 }
