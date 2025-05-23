@@ -33,6 +33,7 @@ import com.crosspaste.app.generated.resources.save
 import com.crosspaste.app.generated.resources.scan
 import com.crosspaste.app.generated.resources.search
 import com.crosspaste.app.generated.resources.settings
+import com.crosspaste.app.generated.resources.share
 import com.crosspaste.app.generated.resources.skip_forward
 import com.crosspaste.app.generated.resources.sort_asc
 import com.crosspaste.app.generated.resources.sort_desc
@@ -197,6 +198,11 @@ actual fun search(): Painter {
 @Composable
 actual fun settings(): Painter {
     return painterResource(Res.drawable.settings)
+}
+
+@Composable
+actual fun share(): Painter {
+    return painterResource(Res.drawable.share)
 }
 
 @Composable

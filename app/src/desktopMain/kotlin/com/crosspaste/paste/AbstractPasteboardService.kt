@@ -48,8 +48,8 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
         }.getOrNull()
     }
 
-    override suspend fun tryWritePasteboard(
-        id: Long,
+    override fun tryWritePasteboard(
+        id: Long?,
         pasteItem: PasteItem,
         localOnly: Boolean,
         filterFile: Boolean,
@@ -61,14 +61,16 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
                 systemClipboard.setContents(it, this)
                 ownerTransferable = it
                 owner = true
-                currentPaste.setPasteId(id, updateCreateTime)
+                id?.let {
+                    currentPaste.setPasteId(id, updateCreateTime)
+                }
             }
         }.onFailure { e ->
             logger.error(e) { "tryWritePasteboard error" }
         }
     }
 
-    override suspend fun tryWritePasteboard(
+    override fun tryWritePasteboard(
         pasteData: PasteData,
         localOnly: Boolean,
         filterFile: Boolean,
@@ -94,7 +96,7 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
                 tryWritePasteboard(storePasteData, localOnly = true, filterFile = filterFile)
                     .onFailure {
                         notificationManager.sendNotification(
-                            title = { it.getText("copy_failed") },
+                            title = { copyWriter -> copyWriter.getText("copy_failed") },
                             message = it.message?.let { message -> { it -> message } },
                             messageType = MessageType.Error,
                         )
@@ -109,7 +111,7 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
                 tryWritePasteboard(storePasteData, localOnly = true, filterFile = false)
                     .onFailure {
                         notificationManager.sendNotification(
-                            title = { it.getText("copy_failed") },
+                            title = { copyWriter -> copyWriter.getText("copy_failed") },
                             message = it.message?.let { message -> { it -> message } },
                             messageType = MessageType.Error,
                         )

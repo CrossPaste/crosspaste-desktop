@@ -13,7 +13,7 @@ interface UISupport {
         openUrlInBrowser(getCrossPasteWebUrl(path))
     }
 
-    fun openEmailClient(email: String)
+    fun openEmailClient(email: String?)
 
     fun openHtml(
         id: Long,

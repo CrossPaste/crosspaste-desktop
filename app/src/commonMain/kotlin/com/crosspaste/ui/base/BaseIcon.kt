@@ -100,6 +100,9 @@ expect fun search(): Painter
 expect fun settings(): Painter
 
 @Composable
+expect fun share(): Painter
+
+@Composable
 expect fun skipForward(): Painter
 
 @Composable

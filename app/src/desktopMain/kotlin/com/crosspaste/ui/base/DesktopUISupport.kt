@@ -74,16 +74,19 @@ class DesktopUISupport(
         return "${appUrls.homeUrl}/$webPath"
     }
 
-    override fun openEmailClient(email: String) {
-        val uriText = "mailto:$email"
-        val mailURI = URI(uriText)
-
+    override fun openEmailClient(email: String?) {
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.MAIL)) {
-            Desktop.getDesktop().mail(mailURI)
+            email?.let {
+                val uriText = "mailto:$email"
+                val mailURI = URI(uriText)
+                Desktop.getDesktop().mail(mailURI)
+            } ?: run {
+                Desktop.getDesktop().mail()
+            }
         } else {
             notificationManager.sendNotification(
                 title = { it.getText("cant_open_email_client") },
-                message = { email },
+                message = email?.let { email -> { it -> email } },
                 messageType = MessageType.Error,
             )
         }

@@ -40,6 +40,10 @@ object QrCode : ScreenType {
     override val name: String = "QrCode"
 }
 
+object Recommend : ScreenType {
+    override val name: String = "recommend"
+}
+
 object Settings : ScreenType {
     override val name: String = "Settings"
 }

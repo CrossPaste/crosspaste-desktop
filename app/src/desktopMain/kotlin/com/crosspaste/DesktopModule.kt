@@ -148,6 +148,8 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.path.getPlatformPathProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.presist.FilePersist
+import com.crosspaste.recommend.DesktopRecommendationService
+import com.crosspaste.recommend.RecommendationService
 import com.crosspaste.rendering.DesktopHtmlRenderingService
 import com.crosspaste.rendering.DesktopRenderingHelper
 import com.crosspaste.rendering.DesktopRtfRenderingService
@@ -221,7 +223,7 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import java.awt.image.BufferedImage
 
-class DesktopCrossPasteModule(
+class DesktopModule(
     private val appEnv: AppEnv,
     private val appPathProvider: AppPathProvider,
     private val configManager: ConfigManager,
@@ -263,6 +265,7 @@ class DesktopCrossPasteModule(
             single<DesktopMigration> { DesktopMigration(get(), get(), get(), get()) }
             single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
             single<ReadWriteConfig<Int>>(named("readWritePort")) { ReadWritePort(get()) }
+            single<RecommendationService> { DesktopRecommendationService(get(), get(), get(), get()) }
             single<Platform> { platform }
             single<SimpleConfigFactory> { DesktopSimpleConfigFactory(get()) }
             single<SyncInfoFactory> { SyncInfoFactory(get(), get()) }

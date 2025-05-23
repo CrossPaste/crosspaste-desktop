@@ -51,6 +51,7 @@ import com.crosspaste.ui.base.TutorialButton
 import com.crosspaste.ui.base.robotoFontFamily
 import com.crosspaste.ui.base.search
 import com.crosspaste.ui.base.settings
+import com.crosspaste.ui.base.share
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -143,6 +144,14 @@ fun HomeWindowDecoration() {
                     TutorialButton()
                 }
                 Spacer(modifier = Modifier.width(5.dp))
+
+                PasteTooltipIconView(
+                    painter = share(),
+                    text = copywriter.getText("recommend"),
+                    contentDescription = "recommend",
+                ) {
+                    appWindowManager.toScreen(Recommend)
+                }
 
                 PasteTooltipIconView(
                     painter = search(),
