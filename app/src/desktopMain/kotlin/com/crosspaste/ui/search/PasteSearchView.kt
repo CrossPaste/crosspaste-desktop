@@ -131,7 +131,7 @@ fun CrossPasteSearchWindowContent() {
                             pasteSelectionViewModel.setSelectedIndex(it)
                             requestFocus()
                         }
-                        VerticalDivider(thickness = 2.dp)
+                        VerticalDivider(thickness = 1.dp)
                         DetailPasteDataView()
                     }
 

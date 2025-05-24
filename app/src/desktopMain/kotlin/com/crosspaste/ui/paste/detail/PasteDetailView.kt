@@ -30,7 +30,7 @@ fun PasteDetailView(
             detailView()
         }
 
-        HorizontalDivider(thickness = 2.dp)
+        HorizontalDivider(thickness = 1.dp)
 
         Column(
             modifier =

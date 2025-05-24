@@ -177,7 +177,7 @@ fun PasteDetailInfoView(
                     )
                 }
                 if (index != items.size - 1) {
-                    HorizontalDivider(thickness = 1.5.dp)
+                    HorizontalDivider(thickness = 1.dp)
                 }
             }
         }
