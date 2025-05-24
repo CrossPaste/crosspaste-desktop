@@ -1,7 +1,7 @@
 package com.crosspaste.config
 
 import com.crosspaste.ui.theme.ColorContrast
-import com.crosspaste.ui.theme.GrassColor
+import com.crosspaste.ui.theme.SeaColor
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -12,7 +12,7 @@ data class AppConfig(
     val enableDebugMode: Boolean = false,
     val isFollowSystemTheme: Boolean = true,
     val isDarkTheme: Boolean = false,
-    val themeColor: String = GrassColor.name,
+    val themeColor: String = SeaColor.name,
     val colorContrast: String = ColorContrast.Standard.name,
     val port: Int = 13129,
     val enableEncryptSync: Boolean = false,
