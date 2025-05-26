@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.theme.AppUIColors
 import org.koin.compose.koinInject
 
 @Composable
@@ -21,7 +22,7 @@ fun NotFoundNearByDevices() {
         contentAlignment = Alignment.Center,
         modifier =
             Modifier.fillMaxSize()
-                .background(MaterialTheme.colorScheme.surfaceContainerLowest),
+                .background(AppUIColors.deviceBackground),
     ) {
         Box(
             modifier = Modifier.wrapContentSize().align(Alignment.Center),

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -34,6 +35,7 @@ import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.link
 import com.crosspaste.ui.base.network
 import com.crosspaste.ui.base.wifi
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.getNetUtils
 import kotlinx.coroutines.launch
@@ -60,24 +62,27 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
         port = if (currentPort == 0) "N/A" else currentPort.toString()
     }
 
-    Text(
-        modifier =
-            Modifier.wrapContentSize()
-                .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
-        text = copywriter.getText("network_info"),
-        color = MaterialTheme.colorScheme.onSurface,
-        style = MaterialTheme.typography.titleSmall,
-    )
-
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                .background(AppUIColors.settingsBackground),
     ) {
+        Row(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .wrapContentHeight()
+                    .background(AppUIColors.settingsTitleBackground)
+                    .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
+        ) {
+            Text(
+                text = copywriter.getText("network_info"),
+                style = MaterialTheme.typography.titleSmall,
+            )
+        }
+
         SettingItemView(
             painter = network(),
             text = "ip_address",
-            tint = MaterialTheme.colorScheme.onSurface,
         ) {
             ip?.let {
                 SettingsText(text = it)
@@ -91,7 +96,6 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
         SettingItemView(
             painter = link(),
             text = "port",
-            tint = MaterialTheme.colorScheme.onSurface,
         ) {
             port?.let {
                 SettingsText(text = it)
@@ -101,24 +105,27 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
         }
     }
 
-    Text(
-        modifier =
-            Modifier.wrapContentSize()
-                .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
-        text = copywriter.getText("service_discovery"),
-        color = MaterialTheme.colorScheme.onSurface,
-        style = MaterialTheme.typography.titleSmall,
-    )
-
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                .background(AppUIColors.settingsBackground),
     ) {
+        Row(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .wrapContentHeight()
+                    .background(AppUIColors.settingsTitleBackground)
+                    .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
+        ) {
+            Text(
+                text = copywriter.getText("service_discovery"),
+                style = MaterialTheme.typography.titleSmall,
+            )
+        }
+
         SettingItemView(
             painter = wifi(),
             text = "allow_discovery_by_new_devices",
-            tint = MaterialTheme.colorScheme.onSurface,
         ) {
             CustomSwitch(
                 modifier =
@@ -132,25 +139,28 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
         }
     }
 
-    Text(
-        modifier =
-            Modifier.wrapContentSize()
-                .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
-        text = copywriter.getText("blacklist"),
-        color = MaterialTheme.colorScheme.onSurface,
-        style = MaterialTheme.typography.titleSmall,
-    )
-
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                .background(AppUIColors.settingsBackground),
     ) {
         Row(
             modifier =
                 Modifier.fillMaxWidth()
-                    .height(70.dp)
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
+                    .wrapContentHeight()
+                    .background(AppUIColors.settingsTitleBackground)
+                    .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
+        ) {
+            Text(
+                text = copywriter.getText("blacklist"),
+                style = MaterialTheme.typography.titleSmall,
+            )
+        }
+
+        Row(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .wrapContentHeight(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             val blacklist =

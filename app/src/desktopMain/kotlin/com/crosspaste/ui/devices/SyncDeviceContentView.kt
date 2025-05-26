@@ -16,7 +16,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.dp
@@ -27,7 +26,7 @@ import com.crosspaste.dto.sync.SyncInfo
 @Composable
 fun SyncDeviceContentView(
     syncInfo: SyncInfo,
-    action: @Composable (Color) -> Unit,
+    action: @Composable () -> Unit,
 ) {
     val syncRuntimeInfo = SyncRuntimeInfo.createSyncRuntimeInfo(syncInfo)
 
@@ -36,7 +35,7 @@ fun SyncDeviceContentView(
         if (hover) {
             MaterialTheme.colorScheme.secondaryContainer
         } else {
-            MaterialTheme.colorScheme.surfaceContainerHigh
+            MaterialTheme.colorScheme.surfaceContainerHighest
         }
 
     DeviceBarView(
@@ -66,7 +65,7 @@ fun SyncDeviceContentView(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.End,
         ) {
-            action(backgroundColor)
+            action()
         }
     }
 }

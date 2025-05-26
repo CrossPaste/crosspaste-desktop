@@ -28,10 +28,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
@@ -47,6 +50,7 @@ import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.base.HighlightedCard
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.trash
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.utils.getAppEnvUtils
 import org.koin.compose.koinInject
 
@@ -63,16 +67,16 @@ fun TabsView() {
     val tabs =
         remember {
             listOfNotNull(
-                Pair(listOf(PastePreview), "pasteboard"),
-                Pair(listOf(Devices), "devices"),
-                Pair(listOf(QrCode), "scan"),
-                if (getAppEnvUtils().isDevelopment()) Pair(listOf(Debug), "debug") else null,
+                TabInfo(PastePreview, "pasteboard"),
+                TabInfo(Devices, "devices"),
+                TabInfo(QrCode, "scan"),
+                if (getAppEnvUtils().isDevelopment()) TabInfo(Debug, "debug") else null,
             )
         }
 
     val textStyle =
-        MaterialTheme.typography.titleMedium.copy(
-            fontWeight = FontWeight.Bold,
+        MaterialTheme.typography.titleSmall.copy(
+            fontWeight = FontWeight.Medium,
             lineHeight = TextUnit.Unspecified,
         )
 
@@ -84,20 +88,32 @@ fun TabsView() {
                         .fillMaxWidth()
                         .height(40.dp),
                 shape = RoundedCornerShape(8.dp),
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                containerColor = AppUIColors.tabsBackground,
             ) {
             }
 
             Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
+                val selectedIndex by remember(screen.screenType) {
+                    mutableStateOf(
+                        tabs.indexOfFirst { it.screenType == screen.screenType },
+                    )
+                }
+
                 Row(
                     modifier =
                         Modifier.padding(12.dp, 0.dp, 15.dp, 0.dp)
                             .wrapContentWidth().height(40.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    tabs.forEach { pair ->
-                        TabView(pair.first, copywriter.getText(pair.second), textStyle)
+                    tabs.forEachIndexed { index, tabInfo ->
+                        TabView(
+                            screenType = tabInfo.screenType,
+                            title = copywriter.getText(tabInfo.title),
+                            textStyle = textStyle,
+                            selected = index == selectedIndex,
+                        )
                     }
+
                     Spacer(modifier = Modifier.weight(1f))
                     if (screen.screenType == PastePreview) {
                         val notificationManager = koinInject<NotificationManager>()
@@ -127,16 +143,10 @@ fun TabsView() {
                 val widthArray =
                     tabs.map {
                         textMeasurer.measure(
-                            text = copywriter.getText(it.second),
+                            text = copywriter.getText(it.title),
                             style = textStyle,
                         ).size.width
                     }
-
-                val selectedIndex by remember(screen.screenType) {
-                    mutableStateOf(
-                        tabs.indexOfFirst { it.first.contains(screen.screenType) },
-                    )
-                }
 
                 val selectedIndexTransition =
                     updateTransition(targetState = selectedIndex, label = "selectedIndexTransition")
@@ -185,16 +195,18 @@ fun TabsView() {
 
 @Composable
 fun TabView(
-    screenTypes: List<ScreenType>,
+    screenType: ScreenType,
     title: String,
     textStyle: TextStyle,
+    selected: Boolean,
 ) {
     val appWindowManager = koinInject<AppWindowManager>()
     SingleTabView(
         title,
         textStyle,
+        selected,
     ) {
-        appWindowManager.setScreen(ScreenContext(screenTypes[0]))
+        appWindowManager.setScreen(ScreenContext(screenType))
     }
 }
 
@@ -203,13 +215,28 @@ fun TabView(
 fun SingleTabView(
     title: String,
     textStyle: TextStyle,
+    selected: Boolean,
     onClick: () -> Unit,
 ) {
+    var hover by remember { mutableStateOf(false) }
+
     Box(
         modifier =
             Modifier
                 .height(30.dp)
                 .wrapContentWidth()
+                .onPointerEvent(
+                    eventType = PointerEventType.Enter,
+                    onEvent = {
+                        hover = true
+                    },
+                )
+                .onPointerEvent(
+                    eventType = PointerEventType.Exit,
+                    onEvent = {
+                        hover = false
+                    },
+                )
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onTap = {
@@ -229,9 +256,19 @@ fun SingleTabView(
         ) {
             Text(
                 text = title,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                color =
+                    if (selected || hover) {
+                        AppUIColors.tabSelectedTextColor
+                    } else {
+                        AppUIColors.tabUnselectedTextColor
+                    },
                 style = textStyle,
             )
         }
     }
 }
+
+data class TabInfo(
+    val screenType: ScreenType,
+    val title: String,
+)

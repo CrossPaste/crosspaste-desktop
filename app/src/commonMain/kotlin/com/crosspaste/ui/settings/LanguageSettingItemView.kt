@@ -24,16 +24,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
-import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Popup
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.MenuItem
@@ -57,8 +53,6 @@ fun LanguageSettingItemView() {
     var hasBeenClicked by remember { mutableStateOf(false) }
     var showMoreLanguage by remember { mutableStateOf(false) }
 
-    var languagePosition by remember { mutableStateOf(Offset.Zero) }
-    var languageSize by remember { mutableStateOf(Size(0.0f, 0.0f)) }
     var languageOnDismissTime by remember { mutableStateOf(0L) }
 
     var animationPhase by remember { mutableStateOf(0) }
@@ -97,10 +91,7 @@ fun LanguageSettingItemView() {
                                 hasBeenClicked = true
                             }
                         },
-                    ).onGloballyPositioned { coordinates ->
-                        languagePosition = coordinates.localToWindow(Offset.Zero)
-                        languageSize = coordinates.size.toSize()
-                    },
+                    ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             SettingsText(text = copywriter.getText("current_language"))

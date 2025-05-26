@@ -41,6 +41,7 @@ import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.base.DefaultTextField
 import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.base.textFieldStyle
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.CrossPasteTheme.connectedColor
 import com.crosspaste.utils.buildUrl
 import kotlinx.coroutines.runBlocking
@@ -70,7 +71,7 @@ fun AddDeviceManuallyForm() {
         modifier =
             Modifier.fillMaxWidth()
                 .height(40.dp)
-                .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                .background(AppUIColors.deviceBackground)
                 .padding(horizontal = 12.dp, vertical = 5.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -83,7 +84,6 @@ fun AddDeviceManuallyForm() {
 
         Text(
             text = "IP",
-            color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.labelMedium,
         )
 

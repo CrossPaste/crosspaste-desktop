@@ -5,13 +5,16 @@ import com.crosspaste.app.RatingPromptManager
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.db.sync.SyncRuntimeInfo.Companion.createSyncRuntimeInfo
 import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class GeneralNearbyDeviceManager(
@@ -84,7 +87,10 @@ class GeneralNearbyDeviceManager(
 
             _syncInfos.value = newSyncInfos
         }.apply {
-            _searching.value = false
+            mainCoroutineDispatcher.launch {
+                delay(1500)
+                _searching.value = false
+            }
         }
     }
 

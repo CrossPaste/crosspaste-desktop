@@ -85,10 +85,10 @@ fun PasteTooltipIconView(
                 contentDescription = contentDescription,
                 modifier = Modifier.size(20.dp),
                 tint =
-                    tint ?: if (hoverIcon) {
+                    if (hoverIcon) {
                         MaterialTheme.colorScheme.contentColorFor(hover)
                     } else {
-                        MaterialTheme.colorScheme.contentColorFor(background)
+                        tint ?: MaterialTheme.colorScheme.contentColorFor(background)
                     },
             )
         }

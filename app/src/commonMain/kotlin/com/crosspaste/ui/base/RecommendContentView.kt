@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.recommend.RecommendationService
+import com.crosspaste.ui.theme.AppUIColors
 import org.koin.compose.koinInject
 
 @Composable
@@ -46,7 +47,7 @@ fun RecommendContentView() {
             Modifier.fillMaxSize()
                 .padding(16.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                .background(AppUIColors.recommendedBackground),
     ) {
         Column(
             modifier =
@@ -64,7 +65,6 @@ fun RecommendContentView() {
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
                         lineHeight = 40.sp,
-                        color = MaterialTheme.colorScheme.onSurface,
                     ),
             )
 

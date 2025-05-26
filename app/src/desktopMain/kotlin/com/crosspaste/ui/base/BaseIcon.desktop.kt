@@ -22,7 +22,6 @@ import com.crosspaste.app.generated.resources.edit
 import com.crosspaste.app.generated.resources.favorite
 import com.crosspaste.app.generated.resources.image_compress
 import com.crosspaste.app.generated.resources.image_expand
-import com.crosspaste.app.generated.resources.magnifying
 import com.crosspaste.app.generated.resources.more_vertical
 import com.crosspaste.app.generated.resources.no_favorite
 import com.crosspaste.app.generated.resources.percent
@@ -143,11 +142,6 @@ actual fun imageCompress(): Painter {
 @Composable
 actual fun imageExpand(): Painter {
     return painterResource(Res.drawable.image_expand)
-}
-
-@Composable
-actual fun magnifying(): Painter {
-    return painterResource(Res.drawable.magnifying)
 }
 
 @Composable

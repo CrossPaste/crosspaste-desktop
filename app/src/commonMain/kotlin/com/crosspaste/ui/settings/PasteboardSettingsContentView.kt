@@ -4,9 +4,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.HorizontalDivider
@@ -25,6 +27,7 @@ import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.file
 import com.crosspaste.ui.base.skipForward
 import com.crosspaste.ui.base.sync
+import com.crosspaste.ui.theme.AppUIColors
 import org.koin.compose.koinInject
 
 @Composable
@@ -34,20 +37,24 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
 
     val config by configManager.config.collectAsState()
 
-    Text(
-        modifier =
-            Modifier.wrapContentSize()
-                .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
-        text = copywriter.getText("paste_control"),
-        color = MaterialTheme.colorScheme.onBackground,
-        style = MaterialTheme.typography.titleSmall,
-    )
-
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                .background(AppUIColors.settingsBackground),
     ) {
+        Row(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .wrapContentHeight()
+                    .background(AppUIColors.settingsTitleBackground)
+                    .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
+        ) {
+            Text(
+                text = copywriter.getText("paste_control"),
+                style = MaterialTheme.typography.titleSmall,
+            )
+        }
+
         SettingItemView(
             painter = skipForward(),
             text = "skip_pre_launch_pasteboard_content",

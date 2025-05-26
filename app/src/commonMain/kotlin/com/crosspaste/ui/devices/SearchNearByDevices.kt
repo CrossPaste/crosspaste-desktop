@@ -2,6 +2,7 @@ package com.crosspaste.ui.devices
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -24,7 +25,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.NearbyDeviceManager
-import com.crosspaste.ui.base.magnifying
+import com.crosspaste.ui.base.search
+import com.crosspaste.ui.theme.AppUIColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -64,7 +66,9 @@ fun SearchNearByDevices() {
 
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier.fillMaxSize(),
+        modifier =
+            Modifier.fillMaxSize()
+                .background(AppUIColors.deviceBackground),
     ) {
         Box(
             modifier =
@@ -73,7 +77,7 @@ fun SearchNearByDevices() {
                     .offset(x = offsetX.value.dp, y = offsetY.value.dp - 48.dp),
         ) {
             Icon(
-                painter = magnifying(),
+                painter = search(),
                 contentDescription = "Searching",
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(70.dp),
@@ -93,7 +97,7 @@ fun SearchNearByDevices() {
                 text = copywriter.getText("searching_for_nearby_devices"),
                 maxLines = 3,
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.titleLarge,
             )
         }
     }

@@ -45,6 +45,7 @@ import com.crosspaste.ui.base.KeyboardView
 import com.crosspaste.ui.base.NewVersionButton
 import com.crosspaste.ui.base.enter
 import com.crosspaste.ui.model.PasteSelectionViewModel
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import com.crosspaste.utils.mainDispatcher
 import kotlinx.coroutines.launch
@@ -119,7 +120,7 @@ fun CrossPasteSearchWindowContent() {
                     Modifier
                         .shadow(5.dp, RoundedCornerShape(10.dp))
                         .size(appSize.searchWindowContentSize)
-                        .background(MaterialTheme.colorScheme.surface)
+                        .background(AppUIColors.searchBackground)
                         .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center,
             ) {
@@ -139,7 +140,7 @@ fun CrossPasteSearchWindowContent() {
                         modifier =
                             Modifier.height(40.dp)
                                 .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                                .background(AppUIColors.searchFootBackground)
                                 .padding(horizontal = 10.dp),
                         horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically,
@@ -155,7 +156,6 @@ fun CrossPasteSearchWindowContent() {
 
                         Text(
                             text = "CrossPaste ${appInfo.appVersion}",
-                            color = MaterialTheme.colorScheme.onSurface,
                             style =
                                 MaterialTheme.typography.bodyMedium.copy(
                                     lineHeight = TextUnit.Unspecified,
@@ -174,7 +174,6 @@ fun CrossPasteSearchWindowContent() {
                         prevAppName?.let {
                             Text(
                                 text = "${copywriter.getText("paste_to")} $it",
-                                color = MaterialTheme.colorScheme.onSurface,
                                 style =
                                     MaterialTheme.typography.bodyMedium.copy(
                                         fontWeight = FontWeight.Bold,

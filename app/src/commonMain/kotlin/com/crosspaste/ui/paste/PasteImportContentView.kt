@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -29,6 +28,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteImportParamFactory
 import com.crosspaste.paste.PasteImportService
 import com.crosspaste.ui.settings.SettingsText
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
 import kotlinx.coroutines.launch
@@ -53,7 +53,7 @@ fun PasteImportContentView() {
             Modifier.fillMaxSize()
                 .padding(16.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                .background(AppUIColors.importOrExportBackground),
         contentAlignment = Alignment.Center,
     ) {
         Column(

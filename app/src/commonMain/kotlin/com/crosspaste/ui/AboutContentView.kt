@@ -33,6 +33,7 @@ import com.crosspaste.ui.base.CrossPasteLogoView
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.chevronRight
 import com.crosspaste.ui.base.robotoFontFamily
+import com.crosspaste.ui.theme.AppUIColors
 import org.koin.compose.koinInject
 
 @Composable
@@ -46,7 +47,7 @@ fun AboutContentView() {
             Modifier.fillMaxSize()
                 .padding(16.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                .background(AppUIColors.aboutBackground),
         contentAlignment = Alignment.Center,
     ) {
         Box(
@@ -156,7 +157,6 @@ fun AboutInfoItem(
             modifier = Modifier.wrapContentSize().padding(start = 5.dp),
             text = copywriter.getText(title),
             style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
         )
 
         Spacer(modifier = Modifier.weight(1f))
@@ -164,7 +164,6 @@ fun AboutInfoItem(
         Icon(
             painter = chevronRight(),
             contentDescription = "chevron right",
-            tint = MaterialTheme.colorScheme.onBackground,
         )
     }
 }

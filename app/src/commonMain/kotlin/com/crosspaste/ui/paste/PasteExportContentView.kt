@@ -56,6 +56,7 @@ import com.crosspaste.ui.base.image
 import com.crosspaste.ui.base.link
 import com.crosspaste.ui.base.text
 import com.crosspaste.ui.settings.SettingsText
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.MB
 import com.crosspaste.utils.getFileUtils
@@ -103,7 +104,7 @@ fun PasteExportContentView() {
                 .fillMaxSize()
                 .padding(16.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                .background(AppUIColors.importOrExportBackground),
         contentAlignment = Alignment.Center,
     ) {
         Column(

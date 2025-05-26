@@ -67,9 +67,6 @@ expect fun imageCompress(): Painter
 expect fun imageExpand(): Painter
 
 @Composable
-expect fun magnifying(): Painter
-
-@Composable
 expect fun moreVertical(): Painter
 
 @Composable
