@@ -24,7 +24,7 @@
    ![OS](https://img.shields.io/badge/OS-Windows%20%7C%20macOS%20%7C%20Linux-2cbe4e)
    [![Download](https://img.shields.io/badge/Download-v1.1.2-2cbe4e?logo=download&link=https://crosspaste.com/download)](https://crosspaste.com/download)
    [![AGPL-3.0](https://img.shields.io/badge/License-AGPL%20v3-2cbe4e.svg)](https://github.com/CrossPaste/crosspaste-desktop/blob/main/LICENSE)
-   [![DeepWiki](https://img.shields.io/badge/DeepWiki-Wiki-2cbe4e.svg)](https://deepwiki.com/CrossPaste/crosspaste-desktop)
+   [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/CrossPaste/crosspaste-desktop)
 
    <a href="https://github.com/sponsors/CrossPaste"><img src="https://img.shields.io/badge/sponsor-30363D?style=social&logo=GitHub-Sponsors&logoColor=#white" height="30px"></a>
    <img src="https://img.shields.io/github/stars/CrossPaste/crosspaste-desktop?style=social" height="30px">
