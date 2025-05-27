@@ -15,5 +15,7 @@ interface AppSize {
 
     val searchWindowDetailViewDpSize: DpSize
 
+    val deviceHeight: Dp
+
     val toastViewWidth: Dp
 }

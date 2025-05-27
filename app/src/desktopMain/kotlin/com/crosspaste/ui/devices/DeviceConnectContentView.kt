@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import com.crosspaste.app.AppSize
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncState
@@ -66,6 +67,7 @@ fun DeviceConnectContentView(
     onEdit: (SyncRuntimeInfo) -> Unit,
 ) {
     val density = LocalDensity.current
+    val appSize = koinInject<AppSize>()
     val appWindowManager = koinInject<AppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val notificationManager = koinInject<NotificationManager>()
@@ -100,7 +102,7 @@ fun DeviceConnectContentView(
     var modifier =
         Modifier
             .fillMaxWidth()
-            .height(60.dp)
+            .height(appSize.deviceHeight)
             .background(background)
 
     if (deviceInteractionEnabled) {

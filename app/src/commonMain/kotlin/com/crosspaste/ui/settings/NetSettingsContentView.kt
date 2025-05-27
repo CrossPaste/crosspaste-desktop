@@ -1,16 +1,19 @@
 package com.crosspaste.ui.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
@@ -25,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.crosspaste.app.AppSize
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
@@ -42,6 +46,7 @@ import org.koin.compose.koinInject
 
 @Composable
 fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
+    val appSize = koinInject<AppSize>()
     val configManager = koinInject<ConfigManager>()
     val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
     val copywriter = koinInject<GlobalCopywriter>()
@@ -135,10 +140,24 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
                 }
 
             if (blacklist.isEmpty()) {
-                SettingsText(text = copywriter.getText("empty"))
+                Column(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(appSize.deviceHeight)
+                            .padding(start = 12.dp),
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    SettingsText(text = copywriter.getText("empty"))
+                }
             } else {
-                Column(modifier = Modifier.fillMaxSize()) {
-                    for ((index, syncInfo) in blacklist.withIndex()) {
+                LazyColumn(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = appSize.deviceHeight * 3),
+                    verticalArrangement = Arrangement.Top,
+                ) {
+                    itemsIndexed(blacklist) { index, syncInfo ->
                         BlackListDeviceView(syncInfo) {
                             val blackSyncInfos: List<SyncInfo> =
                                 jsonUtils.JSON.decodeFromString<List<SyncInfo>>(
@@ -152,6 +171,7 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
                                 nearbyDeviceManager.refresh()
                             }
                         }
+
                         if (index != blacklist.size - 1) {
                             HorizontalDivider(modifier = Modifier.fillMaxWidth())
                         }

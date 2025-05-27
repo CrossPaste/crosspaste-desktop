@@ -19,8 +19,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.dp
+import com.crosspaste.app.AppSize
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.dto.sync.SyncInfo
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -28,6 +30,7 @@ fun SyncDeviceContentView(
     syncInfo: SyncInfo,
     action: @Composable () -> Unit,
 ) {
+    val appSize = koinInject<AppSize>()
     val syncRuntimeInfo = SyncRuntimeInfo.createSyncRuntimeInfo(syncInfo)
 
     var hover by remember { mutableStateOf(false) }
@@ -42,7 +45,7 @@ fun SyncDeviceContentView(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(60.dp)
+                .height(appSize.deviceHeight)
                 .background(background)
                 .onPointerEvent(
                     eventType = PointerEventType.Enter,
