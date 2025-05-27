@@ -24,6 +24,7 @@ import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.SyncManager
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.CrossPasteTheme.connectedColor
 import com.crosspaste.ui.theme.CrossPasteTheme.disconnectedColor
 import com.crosspaste.utils.getJsonUtils
@@ -44,7 +45,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
 
     val config by configManager.config.collectAsState()
 
-    deviceViewProvider.SyncDeviceView(syncInfo = syncInfo) { background ->
+    deviceViewProvider.SyncDeviceView(syncInfo = syncInfo) {
         Button(
             modifier = Modifier.height(28.dp),
             onClick = {
@@ -54,7 +55,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
                 }
             },
             shape = RoundedCornerShape(4.dp),
-            border = BorderStroke(1.dp, connectedColor(background)),
+            border = BorderStroke(1.dp, connectedColor(AppUIColors.deviceBackground)),
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background),
             elevation =
@@ -67,7 +68,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
         ) {
             Text(
                 text = copywriter.getText("add"),
-                color = connectedColor(background),
+                color = connectedColor(AppUIColors.deviceBackground),
                 style = MaterialTheme.typography.labelMedium,
             )
         }
@@ -94,7 +95,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
                 }
             },
             shape = RoundedCornerShape(4.dp),
-            border = BorderStroke(1.dp, disconnectedColor(background)),
+            border = BorderStroke(1.dp, disconnectedColor(AppUIColors.deviceBackground)),
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background),
             elevation =
@@ -107,7 +108,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
         ) {
             Text(
                 text = copywriter.getText("block"),
-                color = disconnectedColor(background),
+                color = disconnectedColor(AppUIColors.deviceBackground),
                 style = MaterialTheme.typography.labelMedium,
             )
         }

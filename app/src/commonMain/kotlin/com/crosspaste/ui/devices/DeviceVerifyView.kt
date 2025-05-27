@@ -21,6 +21,7 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -50,15 +51,13 @@ import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
+import com.crosspaste.ui.theme.AppUIColors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
-fun DeviceVerifyView(
-    syncRuntimeInfo: SyncRuntimeInfo,
-    background: Color = MaterialTheme.colorScheme.background,
-) {
+fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
     val syncManager = koinInject<SyncManager>()
     val dialogService = koinInject<DialogService>()
 
@@ -92,7 +91,7 @@ fun DeviceVerifyView(
     Box(
         Modifier.fillMaxWidth()
             .wrapContentHeight()
-            .background(background),
+            .background(AppUIColors.dialogBackground),
         contentAlignment = Alignment.Center,
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -101,7 +100,6 @@ fun DeviceVerifyView(
                 tokens,
                 isError,
                 focusRequesters,
-                background,
                 confirmAction,
                 cancelAction,
             )
@@ -120,7 +118,6 @@ fun VerificationContent(
     tokens: MutableList<String>,
     isError: Boolean,
     focusRequesters: List<FocusRequester>,
-    background: Color,
     confirmAction: () -> Unit,
     cancelAction: () -> Unit,
 ) {
@@ -129,27 +126,24 @@ fun VerificationContent(
             Modifier.fillMaxWidth()
                 .wrapContentHeight(),
     ) {
-        DeviceInfoHeader(syncRuntimeInfo, background)
+        DeviceInfoHeader(syncRuntimeInfo)
         Spacer(modifier = Modifier.size(24.dp))
         TokenInputRow(tokens, isError, focusRequesters, confirmAction, cancelAction)
     }
 }
 
 @Composable
-fun DeviceInfoHeader(
-    syncRuntimeInfo: SyncRuntimeInfo,
-    background: Color,
-) {
+fun DeviceInfoHeader(syncRuntimeInfo: SyncRuntimeInfo) {
     DeviceBarView(
         modifier = Modifier,
-        background = background,
+        background = AppUIColors.dialogBackground,
         syncRuntimeInfo = syncRuntimeInfo,
-    ) {
+    ) { currentBackground ->
         Row(horizontalArrangement = Arrangement.End) {
             Text(
                 text = syncRuntimeInfo.connectHostAddress ?: "unknown",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onBackground,
+                color = MaterialTheme.colorScheme.contentColorFor(currentBackground),
             )
             Spacer(modifier = Modifier.width(12.dp))
         }

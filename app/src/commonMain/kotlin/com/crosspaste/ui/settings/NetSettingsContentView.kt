@@ -1,19 +1,21 @@
 package com.crosspaste.ui.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -26,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.crosspaste.app.AppSize
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
@@ -34,6 +37,7 @@ import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.link
 import com.crosspaste.ui.base.network
 import com.crosspaste.ui.base.wifi
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.getNetUtils
 import kotlinx.coroutines.launch
@@ -42,6 +46,7 @@ import org.koin.compose.koinInject
 
 @Composable
 fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
+    val appSize = koinInject<AppSize>()
     val configManager = koinInject<ConfigManager>()
     val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
     val copywriter = koinInject<GlobalCopywriter>()
@@ -60,24 +65,16 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
         port = if (currentPort == 0) "N/A" else currentPort.toString()
     }
 
-    Text(
-        modifier =
-            Modifier.wrapContentSize()
-                .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
-        text = copywriter.getText("network_info"),
-        color = MaterialTheme.colorScheme.onSurface,
-        style = MaterialTheme.typography.titleSmall,
-    )
-
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                .background(AppUIColors.settingsBackground),
     ) {
+        SettingItemsTitleView("network_info")
+
         SettingItemView(
             painter = network(),
             text = "ip_address",
-            tint = MaterialTheme.colorScheme.onSurface,
         ) {
             ip?.let {
                 SettingsText(text = it)
@@ -91,7 +88,6 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
         SettingItemView(
             painter = link(),
             text = "port",
-            tint = MaterialTheme.colorScheme.onSurface,
         ) {
             port?.let {
                 SettingsText(text = it)
@@ -101,24 +97,16 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
         }
     }
 
-    Text(
-        modifier =
-            Modifier.wrapContentSize()
-                .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
-        text = copywriter.getText("service_discovery"),
-        color = MaterialTheme.colorScheme.onSurface,
-        style = MaterialTheme.typography.titleSmall,
-    )
-
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                .background(AppUIColors.settingsBackground),
     ) {
+        SettingItemsTitleView("service_discovery")
+
         SettingItemView(
             painter = wifi(),
             text = "allow_discovery_by_new_devices",
-            tint = MaterialTheme.colorScheme.onSurface,
         ) {
             CustomSwitch(
                 modifier =
@@ -132,25 +120,17 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
         }
     }
 
-    Text(
-        modifier =
-            Modifier.wrapContentSize()
-                .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
-        text = copywriter.getText("blacklist"),
-        color = MaterialTheme.colorScheme.onSurface,
-        style = MaterialTheme.typography.titleSmall,
-    )
-
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                .background(AppUIColors.settingsBackground),
     ) {
+        SettingItemsTitleView("blacklist")
+
         Row(
             modifier =
                 Modifier.fillMaxWidth()
-                    .height(70.dp)
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
+                    .wrapContentHeight(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             val blacklist =
@@ -160,10 +140,24 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
                 }
 
             if (blacklist.isEmpty()) {
-                SettingsText(text = copywriter.getText("empty"))
+                Column(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(appSize.deviceHeight)
+                            .padding(start = 12.dp),
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    SettingsText(text = copywriter.getText("empty"))
+                }
             } else {
-                Column(modifier = Modifier.fillMaxSize()) {
-                    for ((index, syncInfo) in blacklist.withIndex()) {
+                LazyColumn(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = appSize.deviceHeight * 3),
+                    verticalArrangement = Arrangement.Top,
+                ) {
+                    itemsIndexed(blacklist) { index, syncInfo ->
                         BlackListDeviceView(syncInfo) {
                             val blackSyncInfos: List<SyncInfo> =
                                 jsonUtils.JSON.decodeFromString<List<SyncInfo>>(
@@ -177,6 +171,7 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
                                 nearbyDeviceManager.refresh()
                             }
                         }
+
                         if (index != blacklist.size - 1) {
                             HorizontalDivider(modifier = Modifier.fillMaxWidth())
                         }

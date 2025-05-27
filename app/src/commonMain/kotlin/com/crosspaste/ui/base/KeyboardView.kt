@@ -25,7 +25,7 @@ const val enter: String = "↵"
 fun KeyboardView(
     textStyle: TextStyle = MaterialTheme.typography.labelMedium,
     keyboardValue: String,
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
+    background: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
 ) {
     val textMeasurer = rememberTextMeasurer()
     val size = textMeasurer.measure(keyboardValue, textStyle).size
@@ -38,14 +38,14 @@ fun KeyboardView(
         modifier =
             Modifier.size(dpSize.plus(DpSize(10.dp, 10.dp)))
                 .clip(RoundedCornerShape(2.dp))
-                .background(backgroundColor),
+                .background(background),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = keyboardValue,
             style = textStyle,
-            color = MaterialTheme.colorScheme.contentColorFor(backgroundColor),
+            color = MaterialTheme.colorScheme.contentColorFor(background),
         )
     }
 }

@@ -49,7 +49,6 @@ fun DevicesContentView() {
                         )
                     },
                 ) {
-                    Spacer(modifier = Modifier.height(3.dp))
                     MyDevicesView(syncRuntimeInfos)
                 }
                 Spacer(modifier = Modifier.height(10.dp))
@@ -65,7 +64,6 @@ fun DevicesContentView() {
                     )
                 },
             ) {
-                Spacer(modifier = Modifier.height(3.dp))
                 AddDeviceManuallyView()
             }
             Spacer(modifier = Modifier.height(10.dp))
@@ -79,7 +77,6 @@ fun DevicesContentView() {
                     )
                 },
             ) {
-                Spacer(modifier = Modifier.height(3.dp))
                 NearbyDevicesView()
             }
         }

@@ -20,6 +20,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,6 +42,7 @@ import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.base.DefaultTextField
 import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.base.textFieldStyle
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.CrossPasteTheme.connectedColor
 import com.crosspaste.utils.buildUrl
 import kotlinx.coroutines.runBlocking
@@ -70,7 +72,7 @@ fun AddDeviceManuallyForm() {
         modifier =
             Modifier.fillMaxWidth()
                 .height(40.dp)
-                .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                .background(AppUIColors.deviceBackground)
                 .padding(horizontal = 12.dp, vertical = 5.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -83,7 +85,7 @@ fun AddDeviceManuallyForm() {
 
         Text(
             text = "IP",
-            color = MaterialTheme.colorScheme.onSurface,
+            color = MaterialTheme.colorScheme.contentColorFor(AppUIColors.deviceBackground),
             style = MaterialTheme.typography.labelMedium,
         )
 

@@ -202,7 +202,7 @@ fun searchTrailingIcon() {
         PasteTooltipIconView(
             painter = if (searchSort) descSort() else ascSort(),
             contentDescription = "Sort by creation time",
-            tint = MaterialTheme.colorScheme.primary,
+            tint = MaterialTheme.colorScheme.primaryContainer,
             text = copywriter.getText("sort_by_creation_time"),
         ) {
             pasteSearchViewModel.switchSort()
@@ -212,7 +212,7 @@ fun searchTrailingIcon() {
         PasteTooltipIconView(
             painter = if (searchFavorite) favorite() else noFavorite(),
             contentDescription = "Favorite",
-            tint = MaterialTheme.colorScheme.primary,
+            tint = MaterialTheme.colorScheme.primaryContainer,
             text = copywriter.getText("whether_to_search_only_favorites"),
         ) {
             pasteSearchViewModel.switchFavorite()

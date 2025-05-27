@@ -53,6 +53,7 @@ import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.KeyboardView
 import com.crosspaste.ui.base.PasteDialogFactory
 import com.crosspaste.ui.base.edit
+import com.crosspaste.ui.theme.AppUIColors
 import org.koin.compose.koinInject
 
 @Composable
@@ -74,7 +75,7 @@ fun ShortcutKeysContentView() {
                     Modifier.fillMaxSize()
                         .padding(horizontal = 16.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                        .background(AppUIColors.shortcutBackground),
             ) {
                 ShortcutKeyRow(PASTE)
             }
@@ -86,7 +87,7 @@ fun ShortcutKeysContentView() {
                     Modifier.fillMaxSize()
                         .padding(horizontal = 16.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                        .background(AppUIColors.shortcutBackground),
             ) {
                 ShortcutKeyRow(PASTE_PLAIN_TEXT)
 
@@ -110,7 +111,7 @@ fun ShortcutKeysContentView() {
                     Modifier.fillMaxSize()
                         .padding(horizontal = 16.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                        .background(AppUIColors.shortcutBackground),
             ) {
                 ShortcutKeyRow(SHOW_MAIN)
 
@@ -126,7 +127,7 @@ fun ShortcutKeysContentView() {
                     Modifier.fillMaxSize()
                         .padding(horizontal = 16.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                        .background(AppUIColors.shortcutBackground),
             ) {
                 ShortcutKeyRow(TOGGLE_PASTEBOARD_MONITORING)
 
@@ -264,7 +265,7 @@ fun ShortcutKeyItemView(keys: List<KeyboardKey>) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         keys.forEachIndexed { index, info ->
-            KeyboardView(keyboardValue = info.name, backgroundColor = MaterialTheme.colorScheme.primaryContainer)
+            KeyboardView(keyboardValue = info.name, background = MaterialTheme.colorScheme.primary)
             if (index != keys.size - 1) {
                 Spacer(modifier = Modifier.width(5.dp))
                 Text(

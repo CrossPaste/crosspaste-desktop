@@ -86,12 +86,24 @@ class DesktopExpandViewProvider(
             animationSpec = tween(200),
         )
 
+        val bottomCornerRadius by animateDpAsState(
+            targetValue = if (expand) 0.dp else 8.dp,
+            animationSpec = tween(300, easing = FastOutSlowInEasing),
+        )
+
+        val animatedShape =
+            RoundedCornerShape(
+                topStart = 8.dp,
+                topEnd = 8.dp,
+                bottomStart = bottomCornerRadius,
+                bottomEnd = bottomCornerRadius,
+            )
+
         HighlightedCard(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .wrapContentHeight()
-                    .padding(horizontal = horizontalPadding),
+                    .wrapContentHeight(),
             shape = RoundedCornerShape(8.dp),
             containerColor = backgroundColor,
         ) {
@@ -109,14 +121,11 @@ class DesktopExpandViewProvider(
                         .onPointerEvent(PointerEventType.Exit) { hover = false }
                         .graphicsLayer(
                             shadowElevation = elevation.value,
-                            shape = RoundedCornerShape(8.dp),
+                            shape = animatedShape,
                             ambientShadowColor = MaterialTheme.colorScheme.onSecondary,
                             spotShadowColor = MaterialTheme.colorScheme.onSecondary,
                         )
-                        .background(
-                            barBackgroundColor,
-                            RoundedCornerShape(8.dp),
-                        )
+                        .background(barBackgroundColor, animatedShape)
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {

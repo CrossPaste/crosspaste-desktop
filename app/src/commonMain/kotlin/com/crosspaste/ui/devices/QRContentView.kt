@@ -49,6 +49,7 @@ import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.ui.base.BaseColor
 import com.crosspaste.ui.base.autoRenew
 import com.crosspaste.ui.base.scan
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.utils.ColorUtils
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.withContext
@@ -91,7 +92,7 @@ fun QRContentView() {
             Modifier.fillMaxSize()
                 .padding(8.dp)
                 .clip(RoundedCornerShape(5.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                .background(AppUIColors.qrBackground),
         contentAlignment = Alignment.Center,
     ) {
         Box(

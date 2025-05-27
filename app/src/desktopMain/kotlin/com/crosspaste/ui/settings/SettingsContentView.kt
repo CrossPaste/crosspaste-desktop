@@ -64,7 +64,7 @@ fun SettingsContentView() {
             modifier =
                 Modifier.verticalScroll(scrollState)
                     .fillMaxSize()
-                    .padding(vertical = 16.dp),
+                    .padding(16.dp),
         ) {
             settingsViewProvider.SettingsCoreView()
         }

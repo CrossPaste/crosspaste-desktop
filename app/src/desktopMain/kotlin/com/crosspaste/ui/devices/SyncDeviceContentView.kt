@@ -16,35 +16,37 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.dp
+import com.crosspaste.app.AppSize
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.dto.sync.SyncInfo
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun SyncDeviceContentView(
     syncInfo: SyncInfo,
-    action: @Composable (Color) -> Unit,
+    action: @Composable () -> Unit,
 ) {
+    val appSize = koinInject<AppSize>()
     val syncRuntimeInfo = SyncRuntimeInfo.createSyncRuntimeInfo(syncInfo)
 
     var hover by remember { mutableStateOf(false) }
-    val backgroundColor =
+    val background =
         if (hover) {
             MaterialTheme.colorScheme.secondaryContainer
         } else {
-            MaterialTheme.colorScheme.surfaceContainerHigh
+            MaterialTheme.colorScheme.surfaceContainerHighest
         }
 
     DeviceBarView(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(60.dp)
-                .background(backgroundColor)
+                .height(appSize.deviceHeight)
+                .background(background)
                 .onPointerEvent(
                     eventType = PointerEventType.Enter,
                     onEvent = {
@@ -56,7 +58,7 @@ fun SyncDeviceContentView(
                         hover = false
                     },
                 ),
-        background = backgroundColor,
+        background = background,
         syncRuntimeInfo = syncRuntimeInfo,
     ) {
         Row(
@@ -66,7 +68,7 @@ fun SyncDeviceContentView(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.End,
         ) {
-            action(backgroundColor)
+            action()
         }
     }
 }

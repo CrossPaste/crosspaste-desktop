@@ -18,6 +18,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -55,6 +56,7 @@ import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.base.percent
 import com.crosspaste.ui.base.text
 import com.crosspaste.ui.base.trash
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.utils.Quadruple
 import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
@@ -132,15 +134,6 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
         refresh(allOrFavorite)
     }
 
-    Text(
-        modifier =
-            Modifier.wrapContentSize()
-                .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
-        text = copywriter.getText("store_info"),
-        color = MaterialTheme.colorScheme.onSurface,
-        style = MaterialTheme.typography.titleSmall,
-    )
-
     var nameMaxWidth by remember { mutableStateOf(96.dp) }
 
     val pasteTypes: Array<Quadruple<String, Painter, Long?, String?>> =
@@ -169,8 +162,10 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                .background(AppUIColors.settingsBackground),
     ) {
+        SettingItemsTitleView("store_info")
+
         Row(
             modifier =
                 Modifier.fillMaxWidth()
@@ -224,7 +219,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
                     modifier = Modifier.size(15.dp),
                     painter = quadruple.second,
                     contentDescription = "pasteboard",
-                    tint = MaterialTheme.colorScheme.onSurface,
+                    tint = MaterialTheme.colorScheme.contentColorFor(AppUIColors.settingsBackground),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
 
@@ -264,22 +259,15 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
 
     extContent()
 
-    Text(
-        modifier =
-            Modifier.wrapContentSize()
-                .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
-        text = copywriter.getText("auto_cleanup_settings"),
-        color = MaterialTheme.colorScheme.onSurface,
-        style = MaterialTheme.typography.titleSmall,
-    )
-
     val config by configManager.config.collectAsState()
 
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                .background(AppUIColors.settingsBackground),
     ) {
+        SettingItemsTitleView("auto_cleanup_settings")
+
         SettingSwitchItemView(
             text = "expiration_cleanup",
             painter = trash(),
@@ -293,7 +281,6 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
         SettingItemView(
             painter = clock(),
             text = "image_retention_period",
-            tint = MaterialTheme.colorScheme.onSurface,
         ) {
             val selectImageCleanTimeIndex = config.imageCleanTimeIndex
 
@@ -324,7 +311,6 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
                     modifier = Modifier.size(15.dp),
                     painter = anglesUpDown(),
                     contentDescription = "Image expiration time",
-                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
 
@@ -364,7 +350,6 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
         SettingItemView(
             painter = file(),
             text = "file_retention_period",
-            tint = MaterialTheme.colorScheme.onSurface,
         ) {
             val selectFileCleanTimeIndex = config.fileCleanTimeIndex
 
@@ -437,7 +422,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                .background(AppUIColors.settingsBackground),
     ) {
         SettingSwitchItemView(
             text = "threshold_cleanup",

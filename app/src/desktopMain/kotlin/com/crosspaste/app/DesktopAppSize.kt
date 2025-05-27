@@ -17,6 +17,8 @@ object DesktopAppSize : AppSize {
 
     override val searchWindowDetailViewDpSize: DpSize = DpSize(width = 500.dp, height = 240.dp)
 
+    override val deviceHeight: Dp = 60.dp
+
     override val toastViewWidth: Dp = 280.dp
 
     val appRoundedCornerShape = RoundedCornerShape(10.dp)

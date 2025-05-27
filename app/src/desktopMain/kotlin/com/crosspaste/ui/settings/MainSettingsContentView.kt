@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -21,6 +20,7 @@ import com.crosspaste.ui.base.clipboard
 import com.crosspaste.ui.base.debug
 import com.crosspaste.ui.base.palette
 import com.crosspaste.ui.base.shield
+import com.crosspaste.ui.theme.AppUIColors
 import org.koin.compose.koinInject
 
 @Composable
@@ -35,10 +35,9 @@ fun MainSettingsContentView() {
 
     HighlightedCard(
         modifier =
-            Modifier.wrapContentSize()
-                .padding(horizontal = 16.dp),
+            Modifier.wrapContentSize(),
         shape = RoundedCornerShape(8.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+        containerColor = AppUIColors.settingsBackground,
     ) {
         LanguageSettingItemView()
 

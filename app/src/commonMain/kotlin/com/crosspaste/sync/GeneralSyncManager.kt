@@ -1,6 +1,5 @@
 package com.crosspaste.sync
 
-import androidx.compose.ui.graphics.Color
 import com.crosspaste.app.RatingPromptManager
 import com.crosspaste.db.sync.ChangeType
 import com.crosspaste.db.sync.SyncRuntimeInfo
@@ -162,10 +161,7 @@ class GeneralSyncManager(
                             title = "do_you_trust_this_device?",
                             onDismissRequest = { dialogService.popDialog() },
                         ) {
-                            DeviceVerifyView(
-                                syncRuntimeInfo = info,
-                                background = Color.Transparent,
-                            )
+                            DeviceVerifyView(syncRuntimeInfo = info)
                         }
                     dialogService.pushDialog(dialog)
                 }

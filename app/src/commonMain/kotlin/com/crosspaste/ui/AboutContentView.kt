@@ -18,10 +18,12 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -33,6 +35,7 @@ import com.crosspaste.ui.base.CrossPasteLogoView
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.chevronRight
 import com.crosspaste.ui.base.robotoFontFamily
+import com.crosspaste.ui.theme.AppUIColors
 import org.koin.compose.koinInject
 
 @Composable
@@ -46,7 +49,7 @@ fun AboutContentView() {
             Modifier.fillMaxSize()
                 .padding(16.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                .background(AppUIColors.aboutBackground),
         contentAlignment = Alignment.Center,
     ) {
         Box(
@@ -54,6 +57,8 @@ fun AboutContentView() {
                 Modifier.align(Alignment.Center)
                     .offset(y = (-30).dp),
         ) {
+            val onBackground = MaterialTheme.colorScheme.contentColorFor(AppUIColors.aboutBackground)
+
             Column(
                 modifier = Modifier.align(Alignment.Center),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -73,7 +78,7 @@ fun AboutContentView() {
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
                         ),
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = onBackground,
                 )
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -85,51 +90,51 @@ fun AboutContentView() {
                             fontWeight = FontWeight.Normal,
                             fontSize = 15.sp,
                         ),
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = onBackground,
                 )
                 Spacer(modifier = Modifier.height(30.dp))
 
-                AboutInfoItem("official_website") {
+                AboutInfoItem("official_website", onBackground) {
                     uiSupport.openCrossPasteWebInBrowser()
                 }
 
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 80.dp),
                     thickness = 1.5.dp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.36f),
+                    color = onBackground.copy(alpha = 0.36f),
                 )
 
-                AboutInfoItem("newbie_tutorial") {
+                AboutInfoItem("newbie_tutorial", onBackground) {
                     uiSupport.openCrossPasteWebInBrowser("tutorial/pasteboard")
                 }
 
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 80.dp),
                     thickness = 1.5.dp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.36f),
+                    color = onBackground.copy(alpha = 0.36f),
                 )
 
-                AboutInfoItem("change_log") {
+                AboutInfoItem("change_log", onBackground) {
                     uiSupport.openUrlInBrowser(appUrls.changeLogUrl)
                 }
 
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 80.dp),
                     thickness = 1.5.dp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.36f),
+                    color = onBackground.copy(alpha = 0.36f),
                 )
 
-                AboutInfoItem("feedback") {
+                AboutInfoItem("feedback", onBackground) {
                     uiSupport.openUrlInBrowser(appUrls.issueTrackerUrl)
                 }
 
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 80.dp),
                     thickness = 1.5.dp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.36f),
+                    color = onBackground.copy(alpha = 0.36f),
                 )
 
-                AboutInfoItem("contact_us") {
+                AboutInfoItem("contact_us", onBackground) {
                     uiSupport.openEmailClient("compile.future@gmail.com")
                 }
             }
@@ -140,6 +145,7 @@ fun AboutContentView() {
 @Composable
 fun AboutInfoItem(
     title: String,
+    onBackground: Color,
     onClick: () -> Unit,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
@@ -155,8 +161,8 @@ fun AboutInfoItem(
         Text(
             modifier = Modifier.wrapContentSize().padding(start = 5.dp),
             text = copywriter.getText(title),
+            color = onBackground,
             style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
         )
 
         Spacer(modifier = Modifier.weight(1f))
@@ -164,7 +170,7 @@ fun AboutInfoItem(
         Icon(
             painter = chevronRight(),
             contentDescription = "chevron right",
-            tint = MaterialTheme.colorScheme.onBackground,
+            tint = onBackground,
         )
     }
 }

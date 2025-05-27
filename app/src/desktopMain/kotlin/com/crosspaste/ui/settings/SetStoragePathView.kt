@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -67,20 +66,13 @@ fun SetStoragePathView() {
 
     val config by configManager.config.collectAsState()
 
-    Text(
-        modifier =
-            Modifier.wrapContentSize()
-                .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
-        text = copywriter.getText("storage_directory"),
-        color = MaterialTheme.colorScheme.onBackground,
-        style = MaterialTheme.typography.titleSmall,
-    )
-
     Column(
         modifier =
             Modifier.wrapContentSize()
                 .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
+        SettingItemsTitleView("storage_directory")
+
         var useDefaultStoragePath by remember { mutableStateOf(config.useDefaultStoragePath) }
 
         val currentStoragePath by remember(config) {
