@@ -20,6 +20,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -84,6 +85,7 @@ fun AddDeviceManuallyForm() {
 
         Text(
             text = "IP",
+            color = MaterialTheme.colorScheme.contentColorFor(AppUIColors.deviceBackground),
             style = MaterialTheme.typography.labelMedium,
         )
 

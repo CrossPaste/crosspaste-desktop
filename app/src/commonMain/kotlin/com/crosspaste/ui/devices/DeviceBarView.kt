@@ -60,6 +60,8 @@ fun DeviceBarView(
     syncRuntimeInfo: SyncRuntimeInfo,
     deviceViewProvider: @Composable (Color) -> Unit,
 ) {
+    val onBackground = MaterialTheme.colorScheme.contentColorFor(background)
+
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -74,7 +76,7 @@ fun DeviceBarView(
                 modifier = Modifier.padding(horizontal = 12.dp).size(36.dp),
                 painter = PlatformPainter(syncRuntimeInfo),
                 contentDescription = "OS Icon",
-                tint = MaterialTheme.colorScheme.contentColorFor(background),
+                tint = onBackground,
             )
 
             Column(
@@ -92,10 +94,7 @@ fun DeviceBarView(
                         modifier = Modifier.wrapContentSize(),
                         text = syncRuntimeInfo.platform.name,
                         maxLines = 1,
-                        color =
-                            MaterialTheme.colorScheme.contentColorFor(
-                                background,
-                            ),
+                        color = onBackground,
                         style =
                             MaterialTheme.typography.titleSmall.copy(
                                 fontWeight = FontWeight.Bold,
@@ -107,10 +106,7 @@ fun DeviceBarView(
                         modifier = Modifier.wrapContentSize(),
                         text = syncRuntimeInfo.platform.version,
                         maxLines = 1,
-                        color =
-                            MaterialTheme.colorScheme.contentColorFor(
-                                background,
-                            ),
+                        color = onBackground,
                         style =
                             MaterialTheme.typography.labelMedium.copy(
                                 fontWeight = FontWeight.Light,
@@ -123,7 +119,7 @@ fun DeviceBarView(
                     modifier = Modifier.wrapContentSize(),
                     text = syncRuntimeInfo.getDeviceDisplayName(),
                     maxLines = 1,
-                    color = MaterialTheme.colorScheme.contentColorFor(background).copy(alpha = 0.8f),
+                    color = onBackground.copy(alpha = 0.8f),
                     style =
                         MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Light,

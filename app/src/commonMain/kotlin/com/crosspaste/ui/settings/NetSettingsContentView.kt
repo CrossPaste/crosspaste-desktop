@@ -13,8 +13,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -67,18 +65,7 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
             Modifier.wrapContentSize()
                 .background(AppUIColors.settingsBackground),
     ) {
-        Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .wrapContentHeight()
-                    .background(AppUIColors.settingsTitleBackground)
-                    .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
-        ) {
-            Text(
-                text = copywriter.getText("network_info"),
-                style = MaterialTheme.typography.titleSmall,
-            )
-        }
+        SettingItemsTitleView("network_info")
 
         SettingItemView(
             painter = network(),
@@ -110,18 +97,7 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
             Modifier.wrapContentSize()
                 .background(AppUIColors.settingsBackground),
     ) {
-        Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .wrapContentHeight()
-                    .background(AppUIColors.settingsTitleBackground)
-                    .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
-        ) {
-            Text(
-                text = copywriter.getText("service_discovery"),
-                style = MaterialTheme.typography.titleSmall,
-            )
-        }
+        SettingItemsTitleView("service_discovery")
 
         SettingItemView(
             painter = wifi(),
@@ -144,18 +120,7 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
             Modifier.wrapContentSize()
                 .background(AppUIColors.settingsBackground),
     ) {
-        Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .wrapContentHeight()
-                    .background(AppUIColors.settingsTitleBackground)
-                    .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
-        ) {
-            Text(
-                text = copywriter.getText("blacklist"),
-                style = MaterialTheme.typography.titleSmall,
-            )
-        }
+        SettingItemsTitleView("blacklist")
 
         Row(
             modifier =

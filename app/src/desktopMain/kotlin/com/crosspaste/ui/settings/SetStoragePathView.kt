@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -49,7 +48,6 @@ import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.PasteDialogFactory
 import com.crosspaste.ui.base.archive
-import com.crosspaste.ui.theme.AppUIColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okio.Path
@@ -73,18 +71,7 @@ fun SetStoragePathView() {
             Modifier.wrapContentSize()
                 .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
-        Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .wrapContentHeight()
-                    .background(AppUIColors.settingsTitleBackground)
-                    .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
-        ) {
-            Text(
-                text = copywriter.getText("storage_directory"),
-                style = MaterialTheme.typography.titleSmall,
-            )
-        }
+        SettingItemsTitleView("storage_directory")
 
         var useDefaultStoragePath by remember { mutableStateOf(config.useDefaultStoragePath) }
 

@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.CircularProgressIndicator
@@ -19,6 +18,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -164,18 +164,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
             Modifier.wrapContentSize()
                 .background(AppUIColors.settingsBackground),
     ) {
-        Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .wrapContentHeight()
-                    .background(AppUIColors.settingsTitleBackground)
-                    .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
-        ) {
-            Text(
-                text = copywriter.getText("store_info"),
-                style = MaterialTheme.typography.titleSmall,
-            )
-        }
+        SettingItemsTitleView("store_info")
 
         Row(
             modifier =
@@ -230,6 +219,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
                     modifier = Modifier.size(15.dp),
                     painter = quadruple.second,
                     contentDescription = "pasteboard",
+                    tint = MaterialTheme.colorScheme.contentColorFor(AppUIColors.settingsBackground),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
 
@@ -276,18 +266,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
             Modifier.wrapContentSize()
                 .background(AppUIColors.settingsBackground),
     ) {
-        Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .wrapContentHeight()
-                    .background(AppUIColors.settingsTitleBackground)
-                    .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
-        ) {
-            Text(
-                text = copywriter.getText("auto_cleanup_settings"),
-                style = MaterialTheme.typography.titleSmall,
-            )
-        }
+        SettingItemsTitleView("auto_cleanup_settings")
 
         SettingSwitchItemView(
             text = "expiration_cleanup",

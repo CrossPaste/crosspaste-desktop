@@ -19,6 +19,10 @@ object AppUIColors {
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.colorScheme.surfaceContainerHighest
 
+    val dialogBackground: Color
+        @Composable @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme.surfaceContainerHighest
+
     val importOrExportBackground: Color
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.colorScheme.surfaceContainerHighest

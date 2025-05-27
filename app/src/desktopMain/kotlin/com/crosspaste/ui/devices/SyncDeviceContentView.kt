@@ -31,7 +31,7 @@ fun SyncDeviceContentView(
     val syncRuntimeInfo = SyncRuntimeInfo.createSyncRuntimeInfo(syncInfo)
 
     var hover by remember { mutableStateOf(false) }
-    val backgroundColor =
+    val background =
         if (hover) {
             MaterialTheme.colorScheme.secondaryContainer
         } else {
@@ -43,7 +43,7 @@ fun SyncDeviceContentView(
             Modifier
                 .fillMaxWidth()
                 .height(60.dp)
-                .background(backgroundColor)
+                .background(background)
                 .onPointerEvent(
                     eventType = PointerEventType.Enter,
                     onEvent = {
@@ -55,7 +55,7 @@ fun SyncDeviceContentView(
                         hover = false
                     },
                 ),
-        background = backgroundColor,
+        background = background,
         syncRuntimeInfo = syncRuntimeInfo,
     ) {
         Row(

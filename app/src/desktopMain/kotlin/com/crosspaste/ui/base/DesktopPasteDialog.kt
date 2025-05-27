@@ -1,5 +1,6 @@
 package com.crosspaste.ui.base
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -15,6 +16,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.theme.AppUIColors
 import org.koin.compose.koinInject
 
 class DesktopPasteDialog(
@@ -33,7 +35,8 @@ class DesktopPasteDialog(
                 modifier =
                     Modifier.fillMaxWidth()
                         .padding(32.dp)
-                        .clip(RoundedCornerShape(16.dp)),
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(AppUIColors.dialogBackground),
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),

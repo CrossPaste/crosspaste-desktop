@@ -4,16 +4,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -21,7 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.crosspaste.config.ConfigManager
-import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.Counter
 import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.file
@@ -33,7 +28,6 @@ import org.koin.compose.koinInject
 @Composable
 fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
     val configManager = koinInject<ConfigManager>()
-    val copywriter = koinInject<GlobalCopywriter>()
 
     val config by configManager.config.collectAsState()
 
@@ -42,18 +36,7 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
             Modifier.wrapContentSize()
                 .background(AppUIColors.settingsBackground),
     ) {
-        Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .wrapContentHeight()
-                    .background(AppUIColors.settingsTitleBackground)
-                    .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
-        ) {
-            Text(
-                text = copywriter.getText("paste_control"),
-                style = MaterialTheme.typography.titleSmall,
-            )
-        }
+        SettingItemsTitleView("paste_control")
 
         SettingItemView(
             painter = skipForward(),
