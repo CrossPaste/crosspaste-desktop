@@ -23,7 +23,7 @@ object DesktopAppSize : AppSize {
 
     override val toastViewWidth: Dp = 280.dp
 
-    override val windowDecorationHeight: Dp = 60.dp
+    val windowDecorationHeight: Dp = 60.dp
 
     val appRoundedCornerShape = RoundedCornerShape(10.dp)
 
