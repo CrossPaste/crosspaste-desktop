@@ -140,9 +140,7 @@ class DesktopExpandViewProvider(
                         .combinedClickable(
                             interactionSource = MutableInteractionSource(),
                             indication = null,
-                            onClick = {
-                                expand = !expand
-                            },
+                            onClick = { expand = !expand },
                         )
                         .onPointerEvent(PointerEventType.Enter) { hover = true }
                         .onPointerEvent(PointerEventType.Exit) { hover = false }
@@ -185,10 +183,14 @@ class DesktopExpandViewProvider(
                 visible = expand,
                 enter =
                     fadeIn(animationSpec = tween(300)) +
-                        expandVertically(animationSpec = tween(300, easing = FastOutSlowInEasing)),
+                        expandVertically(
+                            animationSpec = tween(300, easing = FastOutSlowInEasing),
+                        ),
                 exit =
                     fadeOut(animationSpec = tween(300)) +
-                        shrinkVertically(animationSpec = tween(300, easing = FastOutSlowInEasing)),
+                        shrinkVertically(
+                            animationSpec = tween(300, easing = FastOutSlowInEasing),
+                        ),
             ) {
                 Box(
                     modifier =
