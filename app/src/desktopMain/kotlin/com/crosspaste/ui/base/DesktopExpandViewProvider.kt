@@ -29,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,10 +44,13 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.layout.boundsInParent
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.settings.LocalSettingsScrollState
 
 class DesktopExpandViewProvider(
     override val copywriter: GlobalCopywriter,
@@ -65,6 +69,8 @@ class DesktopExpandViewProvider(
     ) {
         var expand by remember { mutableStateOf(defaultExpand) }
         var hover by remember { mutableStateOf(false) }
+        val scrollState = LocalSettingsScrollState.current
+        var cardBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
 
         val arrowRotation by animateFloatAsState(
             targetValue = if (expand) 90f else 0f,
@@ -99,11 +105,30 @@ class DesktopExpandViewProvider(
                 bottomEnd = bottomCornerRadius,
             )
 
+        LaunchedEffect(expand) {
+            if (expand && scrollState != null && cardBounds != null) {
+                val bounds = cardBounds!!
+
+                // calculate the top position of the card in the scrollable content
+                val cardTopInContent = bounds.top
+
+                val targetScroll = (cardTopInContent).coerceAtLeast(0f).toInt()
+                scrollState.animateScrollTo(
+                    targetScroll,
+                    animationSpec = tween(300, easing = FastOutSlowInEasing),
+                )
+            }
+        }
+
         HighlightedCard(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .wrapContentHeight(),
+                    .wrapContentHeight()
+                    .onGloballyPositioned { coordinates ->
+                        // Save the bounds of the card for scrolling
+                        cardBounds = coordinates.boundsInParent()
+                    },
             shape = RoundedCornerShape(8.dp),
             containerColor = backgroundColor,
         ) {

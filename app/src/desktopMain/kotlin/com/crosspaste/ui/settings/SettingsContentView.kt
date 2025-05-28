@@ -1,5 +1,6 @@
 package com.crosspaste.ui.settings
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.ScrollbarStyle
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
@@ -18,7 +19,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,6 +37,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+
+val LocalSettingsScrollState = compositionLocalOf<ScrollState?> { null }
 
 @Composable
 fun SettingsContentView() {
@@ -56,47 +61,49 @@ fun SettingsContentView() {
         }
     }
 
-    Box(
-        modifier =
-            Modifier.fillMaxSize(),
-    ) {
-        Column(
+    CompositionLocalProvider(LocalSettingsScrollState provides scrollState) {
+        Box(
             modifier =
-                Modifier.verticalScroll(scrollState)
-                    .fillMaxSize()
-                    .padding(16.dp),
+                Modifier.fillMaxSize(),
         ) {
-            settingsViewProvider.SettingsCoreView()
-        }
+            Column(
+                modifier =
+                    Modifier.verticalScroll(scrollState)
+                        .fillMaxSize()
+                        .padding(16.dp),
+            ) {
+                settingsViewProvider.SettingsCoreView()
+            }
 
-        VerticalScrollbar(
-            modifier =
-                Modifier.background(color = Color.Transparent)
-                    .fillMaxHeight().align(Alignment.CenterEnd)
-                    .draggable(
-                        orientation = Orientation.Vertical,
-                        state =
-                            rememberDraggableState { delta ->
-                                coroutineScope.launch(CoroutineName("ScrollPaste")) {
-                                    scrollState.scrollBy(-delta)
-                                }
+            VerticalScrollbar(
+                modifier =
+                    Modifier.background(color = Color.Transparent)
+                        .fillMaxHeight().align(Alignment.CenterEnd)
+                        .draggable(
+                            orientation = Orientation.Vertical,
+                            state =
+                                rememberDraggableState { delta ->
+                                    coroutineScope.launch(CoroutineName("ScrollPaste")) {
+                                        scrollState.scrollBy(-delta)
+                                    }
+                                },
+                        ),
+                adapter = rememberScrollbarAdapter(scrollState),
+                style =
+                    ScrollbarStyle(
+                        minimalHeight = 16.dp,
+                        thickness = 8.dp,
+                        shape = RoundedCornerShape(4.dp),
+                        hoverDurationMillis = 300,
+                        unhoverColor =
+                            if (isScrolling) {
+                                MaterialTheme.colorScheme.onBackground.copy(alpha = 0.48f)
+                            } else {
+                                Color.Transparent
                             },
+                        hoverColor = MaterialTheme.colorScheme.onBackground,
                     ),
-            adapter = rememberScrollbarAdapter(scrollState),
-            style =
-                ScrollbarStyle(
-                    minimalHeight = 16.dp,
-                    thickness = 8.dp,
-                    shape = RoundedCornerShape(4.dp),
-                    hoverDurationMillis = 300,
-                    unhoverColor =
-                        if (isScrolling) {
-                            MaterialTheme.colorScheme.onBackground.copy(alpha = 0.48f)
-                        } else {
-                            Color.Transparent
-                        },
-                    hoverColor = MaterialTheme.colorScheme.onBackground,
-                ),
-        )
+            )
+        }
     }
 }
