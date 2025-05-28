@@ -33,8 +33,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import com.crosspaste.app.AppSize
 import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.arrowBack
 import org.koin.compose.koinInject
@@ -42,7 +42,7 @@ import org.koin.compose.koinInject
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun WindowDecoration(title: String) {
-    val appSize = koinInject<AppSize>()
+    val appSize = koinInject<DesktopAppSize>()
     val appWindowManager = koinInject<AppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
 
