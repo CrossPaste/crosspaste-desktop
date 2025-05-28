@@ -51,6 +51,13 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.settings.LocalSettingsScrollState
+import com.crosspaste.ui.theme.AppUISize.large
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.zero
 
 class DesktopExpandViewProvider(
     override val copywriter: GlobalCopywriter,
@@ -78,7 +85,7 @@ class DesktopExpandViewProvider(
         )
 
         val elevation by animateDpAsState(
-            targetValue = if (hover) 4.dp else 0.dp,
+            targetValue = if (hover) tiny3X else zero,
             animationSpec = tween(200),
         )
 
@@ -93,14 +100,14 @@ class DesktopExpandViewProvider(
         )
 
         val bottomCornerRadius by animateDpAsState(
-            targetValue = if (expand) 0.dp else 8.dp,
+            targetValue = if (expand) zero else tiny,
             animationSpec = tween(300, easing = FastOutSlowInEasing),
         )
 
         val animatedShape =
             RoundedCornerShape(
-                topStart = 8.dp,
-                topEnd = 8.dp,
+                topStart = tiny,
+                topEnd = tiny,
                 bottomStart = bottomCornerRadius,
                 bottomEnd = bottomCornerRadius,
             )
@@ -129,7 +136,7 @@ class DesktopExpandViewProvider(
                         // Save the bounds of the card for scrolling
                         cardBounds = coordinates.boundsInParent()
                     },
-            shape = RoundedCornerShape(8.dp),
+            shape = tinyRoundedCornerShape,
             containerColor = backgroundColor,
         ) {
             Row(
@@ -151,7 +158,7 @@ class DesktopExpandViewProvider(
                             spotShadowColor = MaterialTheme.colorScheme.onSecondary,
                         )
                         .background(barBackgroundColor, animatedShape)
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = medium, vertical = small2X),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 barContent(iconScale)
@@ -161,7 +168,7 @@ class DesktopExpandViewProvider(
                 Box(
                     modifier =
                         Modifier
-                            .size(18.dp)
+                            .size(large)
                             .graphicsLayer(
                                 translationX = arrowOffset,
                                 transformOrigin = TransformOrigin(1f, 0.5f),
@@ -232,7 +239,7 @@ class DesktopExpandViewProvider(
                         tint = onBarBackgroundColor,
                     )
                 }
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(tiny))
             }
 
             Text(

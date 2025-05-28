@@ -37,6 +37,8 @@ import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.PasteDialogFactory
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.zero
 import org.koin.compose.koinInject
 
 @Composable
@@ -147,7 +149,7 @@ fun MyDevicesView(syncRuntimeInfos: List<SyncRuntimeInfo>) {
                                         fontSize = 15.sp,
                                         lineHeight = 5.sp,
                                     ),
-                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+                                contentPadding = PaddingValues(horizontal = medium, vertical = zero),
                             )
                         }
 

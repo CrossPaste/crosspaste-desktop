@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.notification.ToastManager
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.zero
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -49,7 +51,7 @@ fun ToastListView() {
         alignment = Alignment.TopCenter,
         offset =
             IntOffset(
-                with(density) { (0.dp).roundToPx() },
+                with(density) { (zero).roundToPx() },
                 with(density) { (50.dp).roundToPx() },
             ),
         properties = PopupProperties(clippingEnabled = false),
@@ -137,7 +139,7 @@ fun ToastListView() {
                     }
 
                     if (index < toastList.size - 1) {
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(tiny))
                     }
 
                     // Cleanup

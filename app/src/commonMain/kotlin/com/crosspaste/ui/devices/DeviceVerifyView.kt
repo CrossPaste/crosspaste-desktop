@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
@@ -52,6 +51,12 @@ import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny5X
+import com.crosspaste.ui.theme.AppUISize.xLarge
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -103,7 +108,7 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
                 confirmAction,
                 cancelAction,
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(small2X))
             DialogButtonsView(
                 cancelAction = cancelAction,
                 confirmAction = confirmAction,
@@ -127,7 +132,7 @@ fun VerificationContent(
                 .wrapContentHeight(),
     ) {
         DeviceInfoHeader(syncRuntimeInfo)
-        Spacer(modifier = Modifier.size(24.dp))
+        Spacer(modifier = Modifier.size(xLarge))
         TokenInputRow(tokens, isError, focusRequesters, confirmAction, cancelAction)
     }
 }
@@ -145,7 +150,7 @@ fun DeviceInfoHeader(syncRuntimeInfo: SyncRuntimeInfo) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.contentColorFor(currentBackground),
             )
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(small2X))
         }
     }
 }
@@ -162,7 +167,7 @@ fun TokenInputRow(
         modifier =
             Modifier.fillMaxWidth()
                 .wrapContentHeight()
-                .padding(horizontal = 12.dp),
+                .padding(horizontal = small2X),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         tokens.forEachIndexed { index, token ->
@@ -202,11 +207,15 @@ fun TokenInputBox(
             Modifier
                 .width(40.dp)
                 .height(50.dp)
-                .background(MaterialTheme.colorScheme.background, RoundedCornerShape(4.dp))
+                .background(MaterialTheme.colorScheme.background, tiny3XRoundedCornerShape)
                 .border(
-                    1.dp,
-                    if (isError && token.length != 1) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                    RoundedCornerShape(4.dp),
+                    tiny5X,
+                    if (isError && token.length != 1) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
+                    tiny3XRoundedCornerShape,
                 ),
     ) {
         CustomTextField(
@@ -232,7 +241,7 @@ fun TokenInputBox(
                     .focusRequester(focusRequesters[index])
                     .onKeyEvent { handleKeyEvent(it, token, index, focusRequesters, confirmAction, cancelAction) },
             colors = textFieldColors(),
-            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 10.dp),
+            contentPadding = PaddingValues(horizontal = tiny3X, vertical = small3X),
         )
 
         if (index == 0) {

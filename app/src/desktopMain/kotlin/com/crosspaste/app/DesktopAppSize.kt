@@ -1,10 +1,19 @@
 package com.crosspaste.app
 
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import com.crosspaste.ui.theme.AppUISize.huge
+import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.small3XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny5X
+import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.zero
 
 object DesktopAppSize : AppSize {
     override val mainWindowSize: DpSize = DpSize(width = 480.dp, height = 740.dp)
@@ -17,25 +26,25 @@ object DesktopAppSize : AppSize {
 
     override val searchWindowDetailViewDpSize: DpSize = DpSize(width = 500.dp, height = 240.dp)
 
-    override val deviceHeight: Dp = 60.dp
+    override val deviceHeight: Dp = huge
 
     override val settingsItemHeight: Dp = 40.dp
 
     override val toastViewWidth: Dp = 280.dp
 
-    val windowDecorationHeight: Dp = 60.dp
+    val windowDecorationHeight: Dp = huge
 
-    val appRoundedCornerShape = RoundedCornerShape(10.dp)
+    val appRoundedCornerShape = small3XRoundedCornerShape
 
-    val appBorderSize = 1.dp
+    val appBorderSize = tiny5X
 
-    val mainShadowSize = 10.dp
+    val mainShadowSize = small3X
 
-    val mainHorizontalShadowPadding = 20.dp
+    val mainHorizontalShadowPadding = large2X
 
-    val mainTopShadowPadding = 0.dp
+    val mainTopShadowPadding = zero
 
-    val mainBottomShadowPadding = 30.dp
+    val mainBottomShadowPadding = xxLarge
 
     val mainShadowPaddingValues =
         PaddingValues(
@@ -48,32 +57,32 @@ object DesktopAppSize : AppSize {
     // Windows OS start
     val menuWindowDpSize = DpSize(170.dp, 267.dp)
 
-    val menuRoundedCornerShape = RoundedCornerShape(5.dp)
+    val menuRoundedCornerShape = tiny2XRoundedCornerShape
 
-    val menuShadowSize = 5.dp
+    val menuShadowSize = tiny2X
 
-    val menuShadowPaddingValues = PaddingValues(10.dp, 0.dp, 10.dp, 10.dp)
+    val menuShadowPaddingValues = PaddingValues(small3X, zero, small3X, small3X)
 
-    val edgePadding = 12.dp
+    val edgePadding = small2X
 
     val menuWindowXOffset = 32.dp
     // Windows OS end
 
     // Mac OS start
-    val mainWindowTopMargin = 30.dp
+    val mainWindowTopMargin = xxLarge
     // Mac OS end
 
-    private val searchPaddingDpSize = DpSize(20.dp, 20.dp)
+    private val searchPaddingDpSize = DpSize(large2X, large2X)
 
-    private val searchCorePaddingDpSize = DpSize(20.dp, 120.dp)
+    private val searchCorePaddingDpSize = DpSize(large2X, 120.dp)
 
     val searchWindowContentSize = searchWindowSize.minus(searchPaddingDpSize)
 
     val searchCoreContentSize = searchWindowSize.minus(searchCorePaddingDpSize)
 
-    val searchDetailRoundedCornerShape = RoundedCornerShape(5.dp)
+    val searchDetailRoundedCornerShape = tiny2XRoundedCornerShape
 
-    val searchDetailPaddingValues = PaddingValues(10.dp)
+    val searchDetailPaddingValues = PaddingValues(small3X)
 
-    val searchInfoPaddingValues = PaddingValues(10.dp)
+    val searchInfoPaddingValues = PaddingValues(small3X)
 }

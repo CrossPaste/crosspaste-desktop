@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -37,6 +36,9 @@ import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.arrowBack
+import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -59,7 +61,7 @@ fun WindowDecoration(title: String) {
             Column(
                 modifier =
                     Modifier.wrapContentSize()
-                        .padding(start = 10.dp, end = 20.dp),
+                        .padding(start = small3X, end = large2X),
             ) {
                 Row(
                     modifier = Modifier.fillMaxSize(),
@@ -75,7 +77,7 @@ fun WindowDecoration(title: String) {
                     Row(
                         modifier =
                             Modifier.wrapContentSize()
-                                .clip(RoundedCornerShape(6.dp))
+                                .clip(tiny2XRoundedCornerShape)
                                 .background(returnBackground)
                                 .onPointerEvent(
                                     eventType = PointerEventType.Enter,
@@ -98,11 +100,11 @@ fun WindowDecoration(title: String) {
                                 },
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Spacer(modifier = Modifier.width(10.dp).height(40.dp))
+                        Spacer(modifier = Modifier.width(small3X).height(40.dp))
                         Icon(
                             painter = arrowBack(),
                             contentDescription = "return",
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(large2X),
                             tint = MaterialTheme.colorScheme.contentColorFor(returnBackground),
                         )
 
@@ -116,7 +118,7 @@ fun WindowDecoration(title: String) {
                                     lineHeight = TextUnit.Unspecified,
                                 ),
                         )
-                        Spacer(modifier = Modifier.width(10.dp).height(40.dp))
+                        Spacer(modifier = Modifier.width(small3X).height(40.dp))
                     }
 
                     Spacer(modifier = Modifier.weight(1f))

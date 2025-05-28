@@ -11,9 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -26,7 +24,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppUrls
@@ -36,6 +33,15 @@ import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.chevronRight
 import com.crosspaste.ui.base.robotoFontFamily
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.giant
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small
+import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny5X
+import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import org.koin.compose.koinInject
 
 @Composable
@@ -47,15 +53,15 @@ fun AboutContentView() {
     Box(
         modifier =
             Modifier.fillMaxSize()
-                .padding(16.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .padding(medium)
+                .clip(tinyRoundedCornerShape)
                 .background(AppUIColors.aboutBackground),
         contentAlignment = Alignment.Center,
     ) {
         Box(
             modifier =
                 Modifier.align(Alignment.Center)
-                    .offset(y = (-30).dp),
+                    .offset(y = -xxLarge),
         ) {
             val onBackground = MaterialTheme.colorScheme.contentColorFor(AppUIColors.aboutBackground)
 
@@ -64,12 +70,10 @@ fun AboutContentView() {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 CrossPasteLogoView(
-                    modifier =
-                        Modifier.clip(RoundedCornerShape(18.dp))
-                            .background(MaterialTheme.colorScheme.primary)
-                            .size(72.dp),
+                    size = giant,
+                    color = MaterialTheme.colorScheme.primary,
                 )
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(small))
                 Text(
                     text = "CrossPaste",
                     style =
@@ -80,7 +84,7 @@ fun AboutContentView() {
                         ),
                     color = onBackground,
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(small2X))
 
                 Text(
                     text = "version: ${appInfo.displayVersion()}",
@@ -92,15 +96,15 @@ fun AboutContentView() {
                         ),
                     color = onBackground,
                 )
-                Spacer(modifier = Modifier.height(30.dp))
+                Spacer(modifier = Modifier.height(xxLarge))
 
                 AboutInfoItem("official_website", onBackground) {
                     uiSupport.openCrossPasteWebInBrowser()
                 }
 
                 HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 80.dp),
-                    thickness = 1.5.dp,
+                    modifier = Modifier.padding(horizontal = giant),
+                    thickness = tiny5X,
                     color = onBackground.copy(alpha = 0.36f),
                 )
 
@@ -109,8 +113,8 @@ fun AboutContentView() {
                 }
 
                 HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 80.dp),
-                    thickness = 1.5.dp,
+                    modifier = Modifier.padding(horizontal = giant),
+                    thickness = tiny5X,
                     color = onBackground.copy(alpha = 0.36f),
                 )
 
@@ -119,8 +123,8 @@ fun AboutContentView() {
                 }
 
                 HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 80.dp),
-                    thickness = 1.5.dp,
+                    modifier = Modifier.padding(horizontal = giant),
+                    thickness = tiny5X,
                     color = onBackground.copy(alpha = 0.36f),
                 )
 
@@ -129,8 +133,8 @@ fun AboutContentView() {
                 }
 
                 HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 80.dp),
-                    thickness = 1.5.dp,
+                    modifier = Modifier.padding(horizontal = giant),
+                    thickness = tiny5X,
                     color = onBackground.copy(alpha = 0.36f),
                 )
 
@@ -152,14 +156,16 @@ fun AboutInfoItem(
     Row(
         modifier =
             Modifier.fillMaxWidth()
-                .height(48.dp)
-                .padding(horizontal = 80.dp, vertical = 5.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .height(xxxxLarge)
+                .padding(horizontal = giant, vertical = tiny2X)
+                .clip(tinyRoundedCornerShape)
                 .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            modifier = Modifier.wrapContentSize().padding(start = 5.dp),
+            modifier =
+                Modifier.wrapContentSize()
+                    .padding(start = tiny2X),
             text = copywriter.getText(title),
             color = onBackground,
             style = MaterialTheme.typography.titleMedium,

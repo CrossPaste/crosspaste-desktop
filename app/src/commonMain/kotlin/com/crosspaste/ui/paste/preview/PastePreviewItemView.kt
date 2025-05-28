@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.ui.base.HighlightedCard
+import com.crosspaste.ui.theme.AppUISize.tiny2X
 
 @Composable
 fun PastePreviewItemView(
@@ -25,7 +26,7 @@ fun PastePreviewItemView(
     ) {
         HighlightedCard(
             modifier = Modifier.fillMaxSize(),
-            shape = RoundedCornerShape(5.dp),
+            shape = RoundedCornerShape(tiny2X),
             containerColor = MaterialTheme.colorScheme.background,
         ) {
             pasteData.pasteContent()

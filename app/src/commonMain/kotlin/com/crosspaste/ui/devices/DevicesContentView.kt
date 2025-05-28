@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -14,9 +13,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.dp
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.ExpandViewProvider
+import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.zero
 import org.koin.compose.koinInject
 
 @Composable
@@ -31,8 +33,8 @@ fun DevicesContentView() {
     Box(
         modifier =
             Modifier.fillMaxSize()
-                .padding(8.dp)
-                .clip(RoundedCornerShape(5.dp)),
+                .padding(tiny)
+                .clip(tiny3XRoundedCornerShape),
         contentAlignment = Alignment.TopCenter,
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -40,7 +42,7 @@ fun DevicesContentView() {
 
             if (syncRuntimeInfos.isNotEmpty()) {
                 expandViewProvider.ExpandView(
-                    horizontalPadding = 0.dp,
+                    horizontalPadding = zero,
                     defaultExpand = true,
                     barContent = { iconScale ->
                         expandViewProvider.ExpandBarView(
@@ -51,11 +53,11 @@ fun DevicesContentView() {
                 ) {
                     MyDevicesView(syncRuntimeInfos)
                 }
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(small3X))
             }
 
             expandViewProvider.ExpandView(
-                horizontalPadding = 0.dp,
+                horizontalPadding = zero,
                 defaultExpand = false,
                 barContent = { iconScale ->
                     expandViewProvider.ExpandBarView(
@@ -66,9 +68,9 @@ fun DevicesContentView() {
             ) {
                 AddDeviceManuallyView()
             }
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(small3X))
             expandViewProvider.ExpandView(
-                horizontalPadding = 0.dp,
+                horizontalPadding = zero,
                 defaultExpand = true,
                 barContent = { iconScale ->
                     expandViewProvider.ExpandBarView(

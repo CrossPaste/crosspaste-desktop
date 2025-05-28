@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -63,6 +62,13 @@ import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.noFavorite
 import com.crosspaste.ui.base.search
 import com.crosspaste.ui.model.PasteSearchViewModel
+import com.crosspaste.ui.theme.AppUISize.huge
+import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.tiny5X
+import com.crosspaste.ui.theme.AppUISize.zero
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
@@ -91,7 +97,7 @@ fun SearchInputView(requestFocus: () -> Unit) {
     }
 
     Row(
-        modifier = Modifier.height(60.dp).fillMaxWidth(),
+        modifier = Modifier.height(huge).fillMaxWidth(),
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -190,12 +196,12 @@ fun searchTrailingIcon() {
             .plus(copywriter.getText(ALL_TYPES))
             .toTypedArray()
 
-    val paddingValues = PaddingValues(10.dp, 5.dp, 10.dp, 5.dp)
+    val paddingValues = PaddingValues(horizontal = small3X, vertical = tiny3X)
 
     val maxWidth = getMenWidth(menuTexts, textStyle, paddingValues)
 
     Row(
-        modifier = Modifier.width(100.dp + maxWidth).height(50.dp).padding(10.dp),
+        modifier = Modifier.width(100.dp + maxWidth).height(50.dp).padding(small3X),
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -219,21 +225,21 @@ fun searchTrailingIcon() {
             focusRequester.requestFocus() // keep textField focus
         }
 
-        Spacer(modifier = Modifier.width(6.dp))
+        Spacer(modifier = Modifier.width(tiny2X))
 
         Row(
             modifier =
                 Modifier.fillMaxWidth().height(32.dp)
                     .border(
-                        1.dp,
+                        tiny5X,
                         MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                        RoundedCornerShape(5.dp),
+                        tiny2XRoundedCornerShape,
                     )
                     .clickable {
                         showTypes = true
                         focusRequester.requestFocus() // keep textField focus
                     }
-                    .padding(10.dp, 5.dp, 10.dp, 5.dp),
+                    .padding(horizontal = small3X, vertical = small3X / 2),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -249,7 +255,7 @@ fun searchTrailingIcon() {
                 alignment = Alignment.TopEnd,
                 offset =
                     IntOffset(
-                        with(density) { (0.dp).roundToPx() },
+                        with(density) { (zero).roundToPx() },
                         with(density) { (40.dp).roundToPx() },
                     ),
                 onDismissRequest = {
@@ -276,7 +282,7 @@ fun searchTrailingIcon() {
                             Modifier
                                 .width(maxWidth)
                                 .wrapContentHeight()
-                                .clip(RoundedCornerShape(5.dp))
+                                .clip(tiny2XRoundedCornerShape)
                                 .background(MaterialTheme.colorScheme.surfaceBright),
                     ) {
                         if (searchPasteType != null) {

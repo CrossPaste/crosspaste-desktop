@@ -33,6 +33,9 @@ import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppSize
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.xLarge
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.koin.compose.koinInject
 
@@ -52,7 +55,7 @@ fun SettingItemView(
         modifier =
             Modifier.fillMaxWidth()
                 .height(height ?: appSize.settingsItemHeight)
-                .padding(horizontal = 12.dp),
+                .padding(horizontal = small2X),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Icon - fixed size, will not be compressed
@@ -63,7 +66,7 @@ fun SettingItemView(
             tint = tint,
         )
 
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(tiny))
 
         // Text with scroll and gradient
         val scrollState = rememberScrollState()
@@ -110,7 +113,7 @@ fun SettingItemView(
                     modifier =
                         Modifier
                             .align(Alignment.CenterStart)
-                            .width(24.dp)
+                            .width(xLarge)
                             .fillMaxHeight()
                             .background(
                                 Brush.horizontalGradient(
@@ -132,7 +135,7 @@ fun SettingItemView(
                     modifier =
                         Modifier
                             .align(Alignment.CenterEnd)
-                            .width(24.dp)
+                            .width(xLarge)
                             .fillMaxHeight()
                             .background(
                                 Brush.horizontalGradient(
@@ -150,7 +153,7 @@ fun SettingItemView(
         }
 
         // Minimum spacing to ensure a gap between text and content
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(tiny))
 
         // Content - use wrapContentWidth() to ensure full visibility
         Row(

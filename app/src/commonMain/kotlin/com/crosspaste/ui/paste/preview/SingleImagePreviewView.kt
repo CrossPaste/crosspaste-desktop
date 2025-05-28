@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -48,6 +47,9 @@ import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.ui.base.TransparentBackground
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.imageSlash
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
 
@@ -76,7 +78,7 @@ fun SingleImagePreviewView(
         modifier =
             Modifier.width(width)
                 .wrapContentHeight()
-                .clip(RoundedCornerShape(5.dp))
+                .clip(tiny2XRoundedCornerShape)
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onDoubleTap = {
@@ -101,7 +103,7 @@ fun SingleImagePreviewView(
                     Box(
                         modifier =
                             Modifier.size(100.dp)
-                                .clip(RoundedCornerShape(5.dp)),
+                                .clip(tiny2XRoundedCornerShape),
                     ) {
                         TransparentBackground(
                             modifier = Modifier.size(100.dp),
@@ -139,8 +141,8 @@ fun SingleImagePreviewView(
                     Column(
                         modifier =
                             Modifier.fillMaxHeight()
-                                .padding(horizontal = 8.dp)
-                                .padding(bottom = 8.dp),
+                                .padding(horizontal = tiny)
+                                .padding(bottom = tiny),
                         verticalArrangement = Arrangement.Bottom,
                     ) {
                         // Filename property
@@ -157,7 +159,7 @@ fun SingleImagePreviewView(
                             thumbnailLoader.readOriginMeta(pasteFileCoordinate, builder)
                             val imageInfo = builder.build()
                             imageInfo.map[DIMENSIONS]?.let {
-                                Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(tiny3X))
                                 Text(
                                     text = it.getTextByCopyWriter(copywriter),
                                     maxLines = 1,
@@ -168,7 +170,7 @@ fun SingleImagePreviewView(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(tiny3X))
 
                         if (existFile) {
                             val imageSize =

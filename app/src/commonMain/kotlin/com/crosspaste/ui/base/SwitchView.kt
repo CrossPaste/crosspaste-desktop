@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwitchColors
 import androidx.compose.material3.SwitchDefaults
@@ -29,6 +28,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.small
+import com.crosspaste.ui.theme.AppUISize.smallRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.tiny4X
 
 @Composable
 fun CustomSwitch(
@@ -64,7 +68,7 @@ fun CustomSwitch(
         // Draw the knob
         drawCircle(
             color = thumbColor,
-            radius = size.height / 2 - 2.dp.toPx(),
+            radius = size.height / 2 - tiny4X.toPx(),
             center = Offset(knobOffset + size.height / 2, size.height / 2),
         )
     }
@@ -84,8 +88,8 @@ fun CustomTextSwitch(
     checkedThumbColor: Color = MaterialTheme.colorScheme.primary,
     uncheckedThumbColor: Color = MaterialTheme.colorScheme.secondary,
 ) {
-    val switchPadding = 4.dp
-    val thumbSize = 20.dp
+    val switchPadding = tiny3X
+    val thumbSize = large2X
 
     val maxText = if (checked) checkedText else uncheckedText
     val maxTextWidth = measureTextWidth(maxText, textStyle)
@@ -100,8 +104,8 @@ fun CustomTextSwitch(
             modifier =
                 Modifier
                     .width(maxTextWidth + thumbSize + switchPadding * 4)
-                    .height(28.dp)
-                    .clip(RoundedCornerShape(14.dp))
+                    .height(small * 2)
+                    .clip(smallRoundedCornerShape)
                     .background(
                         if (checked) {
                             checkedThumbColor

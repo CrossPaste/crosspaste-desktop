@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.window.rememberPopupPositionProviderAtPosition
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 
 class PasteContextMenuRepresentation : ContextMenuRepresentation {
     @OptIn(ExperimentalComposeUiApi::class)
@@ -91,7 +91,7 @@ class PasteContextMenuRepresentation : ContextMenuRepresentation {
                         modifier =
                             Modifier
                                 .width(IntrinsicSize.Max)
-                                .clip(RoundedCornerShape(5.dp))
+                                .clip(tiny2XRoundedCornerShape)
                                 .background(MaterialTheme.colorScheme.surface),
                     ) {
                         items().forEach { item ->

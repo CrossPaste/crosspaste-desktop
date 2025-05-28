@@ -28,6 +28,12 @@ import com.crosspaste.ui.base.check
 import com.crosspaste.ui.base.contrastHigh
 import com.crosspaste.ui.base.contrastMedium
 import com.crosspaste.ui.base.contrastStandard
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.tiny5X
+import com.crosspaste.ui.theme.AppUISize.zero
+import com.crosspaste.ui.theme.AppUISize.zeroRoundedCornerShape
 import com.crosspaste.ui.theme.ColorContrast
 import com.crosspaste.ui.theme.CoralColor
 import com.crosspaste.ui.theme.GrassColor
@@ -40,7 +46,7 @@ import org.koin.compose.koinInject
 fun ThemeSegmentedControl() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(tiny2X),
     ) {
         ThemeStyle()
         ContrastColor()
@@ -62,14 +68,14 @@ private fun ThemeButton(
         // Apply the shape only to the left side for the first button
         shape = shape,
         colors = buttonColors,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceDim),
-        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+        border = BorderStroke(tiny5X, MaterialTheme.colorScheme.surfaceDim),
+        contentPadding = PaddingValues(horizontal = tiny, vertical = zero),
         elevation =
             ButtonDefaults.elevatedButtonElevation(
-                defaultElevation = 0.dp,
-                pressedElevation = 0.dp,
-                hoveredElevation = 0.dp,
-                focusedElevation = 0.dp,
+                defaultElevation = zero,
+                pressedElevation = zero,
+                hoveredElevation = zero,
+                focusedElevation = zero,
             ),
     ) {
         content()
@@ -86,10 +92,10 @@ private fun LeftThemeButton(
         onClick = onClick,
         shape =
             RoundedCornerShape(
-                topStart = 4.dp,
-                bottomStart = 4.dp,
-                topEnd = 0.dp,
-                bottomEnd = 0.dp,
+                topStart = tiny3X,
+                bottomStart = tiny3X,
+                topEnd = zero,
+                bottomEnd = zero,
             ),
         buttonColors = buttonColors,
         content = content,
@@ -104,7 +110,7 @@ private fun MiddleThemeButton(
 ) {
     ThemeButton(
         onClick = onClick,
-        shape = RoundedCornerShape(0.dp),
+        shape = zeroRoundedCornerShape,
         buttonColors = buttonColors,
         content = content,
     )
@@ -120,10 +126,10 @@ private fun RightThemeButton(
         onClick = onClick,
         shape =
             RoundedCornerShape(
-                topStart = 0.dp,
-                bottomStart = 0.dp,
-                topEnd = 4.dp,
-                bottomEnd = 4.dp,
+                topStart = zero,
+                bottomStart = zero,
+                topEnd = tiny3X,
+                bottomEnd = tiny3X,
             ),
         buttonColors = buttonColors,
         content = content,

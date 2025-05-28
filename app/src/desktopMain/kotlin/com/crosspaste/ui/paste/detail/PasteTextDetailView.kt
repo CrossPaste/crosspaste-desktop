@@ -11,7 +11,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.info.PasteInfos.DATE
@@ -21,6 +20,7 @@ import com.crosspaste.info.PasteInfos.TYPE
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.ui.paste.PasteboardViewProvider.Companion.previewTextStyle
+import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
@@ -48,7 +48,7 @@ fun PasteTextDetailView(
                                 },
                             )
                         }
-                        .padding(10.dp),
+                        .padding(small3X),
             ) {
                 Text(
                     text = text,

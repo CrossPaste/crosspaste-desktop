@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -59,6 +58,10 @@ import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.base.moreVertical
 import com.crosspaste.ui.base.noFavorite
+import com.crosspaste.ui.theme.AppUISize.large
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.utils.DateUtils
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -129,7 +132,7 @@ fun PasteMenuView(
                 .onPointerEvent(PointerEventType.Exit) {
                     hideIfNotHovered(parentBounds.topLeft + it.position)
                 }
-                .clip(RoundedCornerShape(5.dp))
+                .clip(tiny2XRoundedCornerShape)
                 .background(if (showMenu) MaterialTheme.colorScheme.surfaceContainerHighest else Color.Transparent),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
@@ -201,7 +204,7 @@ fun PasteMenuView(
             offset =
                 IntOffset(
                     with(density) { ((-40).dp).roundToPx() },
-                    with(density) { (5.dp).roundToPx() },
+                    with(density) { tiny2X.roundToPx() },
                 ),
             onDismissRequest = {
                 if (showPopup) {
@@ -244,7 +247,7 @@ fun MoreMenuItem(
             TooltipPlacement.ComponentRect(
                 anchor = Alignment.BottomStart,
                 alignment = Alignment.BottomEnd,
-                offset = DpOffset(-textWidth - 16.dp, (-20).dp),
+                offset = DpOffset(-textWidth - medium, (-20).dp),
             )
         },
     ) {
@@ -268,7 +271,7 @@ fun MoreMenuItem(
             Box(
                 modifier =
                     Modifier.fillMaxSize()
-                        .clip(RoundedCornerShape(5.dp))
+                        .clip(tiny2XRoundedCornerShape)
                         .background(background),
                 contentAlignment = Alignment.Center,
             ) {
@@ -276,7 +279,7 @@ fun MoreMenuItem(
                     painter = moreVertical(),
                     contentDescription = "info",
                     modifier =
-                        Modifier.size(18.dp)
+                        Modifier.size(large)
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onTap = {
@@ -310,7 +313,7 @@ fun CopyMenuItem(
             TooltipPlacement.ComponentRect(
                 anchor = Alignment.BottomStart,
                 alignment = Alignment.BottomEnd,
-                offset = DpOffset(-textWidth - 16.dp, (-20).dp),
+                offset = DpOffset(-textWidth - medium, (-20).dp),
             )
         },
     ) {
@@ -334,13 +337,13 @@ fun CopyMenuItem(
             Box(
                 modifier =
                     Modifier.fillMaxSize()
-                        .clip(RoundedCornerShape(5.dp))
+                        .clip(tiny2XRoundedCornerShape)
                         .background(background),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     modifier =
-                        Modifier.size(16.dp)
+                        Modifier.size(medium)
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onTap = {
@@ -377,7 +380,7 @@ fun FavoriteMenuItem(
             TooltipPlacement.ComponentRect(
                 anchor = Alignment.BottomStart,
                 alignment = Alignment.BottomEnd,
-                offset = DpOffset(-textWidth - 16.dp, (-20).dp),
+                offset = DpOffset(-textWidth - medium, (-20).dp),
             )
         },
     ) {
@@ -401,13 +404,13 @@ fun FavoriteMenuItem(
             Box(
                 modifier =
                     Modifier.fillMaxSize()
-                        .clip(RoundedCornerShape(5.dp))
+                        .clip(tiny2XRoundedCornerShape)
                         .background(background),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     modifier =
-                        Modifier.size(16.dp)
+                        Modifier.size(medium)
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onTap = {
@@ -442,7 +445,7 @@ fun DetailMenuItem(
             TooltipPlacement.ComponentRect(
                 anchor = Alignment.BottomStart,
                 alignment = Alignment.BottomEnd,
-                offset = DpOffset(-textWidth - 16.dp, (-30).dp),
+                offset = DpOffset(-textWidth - medium, (-30).dp),
             )
         },
     ) {
@@ -466,7 +469,7 @@ fun DetailMenuItem(
             Box(
                 modifier =
                     Modifier.fillMaxSize()
-                        .clip(RoundedCornerShape(5.dp))
+                        .clip(tiny2XRoundedCornerShape)
                         .background(background),
                 contentAlignment = Alignment.Center,
             ) {
@@ -474,7 +477,7 @@ fun DetailMenuItem(
                     pasteData = pasteData,
                     tint = tint,
                     background = background,
-                    size = 16.dp,
+                    size = medium,
                 )
             }
         }
@@ -510,7 +513,7 @@ fun MoreMenuItems(
                 Modifier
                     .width(maxWidth)
                     .wrapContentHeight()
-                    .clip(RoundedCornerShape(5.dp))
+                    .clip(tiny2XRoundedCornerShape)
                     .background(MaterialTheme.colorScheme.inverseOnSurface),
         ) {
             MenuItem(copywriter.getText("open")) {

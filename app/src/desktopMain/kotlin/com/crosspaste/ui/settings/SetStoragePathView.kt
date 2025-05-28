@@ -48,6 +48,11 @@ import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.PasteDialogFactory
 import com.crosspaste.ui.base.archive
+import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny3X
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okio.Path
@@ -89,7 +94,7 @@ fun SetStoragePathView() {
                 CustomSwitch(
                     modifier =
                         Modifier.width(32.dp)
-                            .height(20.dp),
+                            .height(large2X),
                     checked = useDefaultStoragePath,
                     onCheckedChange = {
                         useDefaultStoragePath = !useDefaultStoragePath
@@ -102,7 +107,7 @@ fun SetStoragePathView() {
             modifier =
                 Modifier.fillMaxWidth()
                     .height(40.dp)
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
+                    .padding(horizontal = small2X, vertical = tiny2X),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             CustomTextField(
@@ -164,7 +169,7 @@ fun SetStoragePathView() {
                         focusedIndicatorColor = MaterialTheme.colorScheme.primary,
                         unfocusedIndicatorColor = Color.Transparent,
                     ),
-                contentPadding = PaddingValues(horizontal = 8.dp),
+                contentPadding = PaddingValues(horizontal = tiny),
             )
         }
     }
@@ -240,14 +245,14 @@ fun SetStoragePathDialogView(path: Path) {
                         focusedIndicatorColor = MaterialTheme.colorScheme.primary,
                         unfocusedIndicatorColor = Color.Transparent,
                     ),
-                contentPadding = PaddingValues(horizontal = 8.dp),
+                contentPadding = PaddingValues(horizontal = tiny),
             )
         }
 
         Row(modifier = Modifier.fillMaxWidth()) {
             if (isMigration) {
                 LinearProgressIndicator(
-                    modifier = Modifier.fillMaxWidth().height(5.dp),
+                    modifier = Modifier.fillMaxWidth().height(tiny3X),
                     progress = { progress },
                 )
             } else {

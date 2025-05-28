@@ -5,11 +5,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.ui.About
@@ -18,6 +16,9 @@ import com.crosspaste.ui.base.clipboard
 import com.crosspaste.ui.base.database
 import com.crosspaste.ui.base.info
 import com.crosspaste.ui.base.network
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 
 class DesktopSettingsViewProvider(
     private val appInfo: AppInfo,
@@ -34,11 +35,11 @@ class DesktopSettingsViewProvider(
             Row(
                 modifier =
                     Modifier
-                        .clip(RoundedCornerShape(5.dp))
+                        .clip(tiny2XRoundedCornerShape)
                         .clickable(onClick = {
                             appWindowManager.toScreen(About)
                         })
-                        .padding(horizontal = 5.dp, vertical = 5.dp),
+                        .padding(tiny2X),
             ) {
                 SettingsText(
                     text = "CrossPaste ${appInfo.displayVersion()}",
@@ -103,15 +104,15 @@ class DesktopSettingsViewProvider(
     override fun SettingsCoreView() {
         MainSettingsView()
 
-        Spacer(modifier = Modifier.height(25.dp))
+        Spacer(modifier = Modifier.height(medium))
 
         NetSettingsView()
 
-        Spacer(modifier = Modifier.height(25.dp))
+        Spacer(modifier = Modifier.height(medium))
 
         StoreSettingsView()
 
-        Spacer(modifier = Modifier.height(25.dp))
+        Spacer(modifier = Modifier.height(medium))
 
         PasteboardSettingsView()
     }

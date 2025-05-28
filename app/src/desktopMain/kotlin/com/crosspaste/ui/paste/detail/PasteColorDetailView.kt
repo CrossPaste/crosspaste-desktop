@@ -5,7 +5,6 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,6 +21,8 @@ import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
 import com.crosspaste.paste.item.PasteColor
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
@@ -53,7 +54,7 @@ fun PasteColorDetailView(
                     modifier =
                         Modifier
                             .size(150.dp)
-                            .clip(RoundedCornerShape(5.dp))
+                            .clip(tiny2XRoundedCornerShape)
                             .background(Color(pasteColor.color).copy(alpha = 0.3f)),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -62,11 +63,11 @@ fun PasteColorDetailView(
                             Modifier
                                 .size(120.dp)
                                 .shadow(
-                                    elevation = 1.dp,
-                                    shape = RoundedCornerShape(5.dp),
+                                    elevation = tiny5X,
+                                    shape = tiny2XRoundedCornerShape,
                                     spotColor = Color.Black.copy(alpha = 0.1f),
                                 )
-                                .clip(RoundedCornerShape(5.dp))
+                                .clip(tiny2XRoundedCornerShape)
                                 .background(Color(pasteColor.color)),
                     )
                 }

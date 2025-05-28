@@ -27,6 +27,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.ui.base.search
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -74,7 +75,7 @@ fun SearchNearByDevices() {
             modifier =
                 Modifier
                     .align(Alignment.Center)
-                    .offset(x = offsetX.value.dp, y = offsetY.value.dp - 48.dp),
+                    .offset(x = offsetX.value.dp, y = offsetY.value.dp - xxxxLarge),
         ) {
             Icon(
                 painter = search(),

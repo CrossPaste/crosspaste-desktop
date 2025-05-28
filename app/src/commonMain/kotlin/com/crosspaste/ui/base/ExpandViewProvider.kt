@@ -6,8 +6,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.theme.AppUISize.medium
 
 interface ExpandViewProvider {
 
@@ -16,7 +16,7 @@ interface ExpandViewProvider {
     @Composable
     fun ExpandView(
         defaultExpand: Boolean = false,
-        horizontalPadding: Dp = 16.dp,
+        horizontalPadding: Dp = medium,
         barBackgroundColor: Color = MaterialTheme.colorScheme.secondary,
         onBarBackgroundColor: Color = MaterialTheme.colorScheme.onSecondary,
         backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.72f),

@@ -38,6 +38,8 @@ import com.crosspaste.ui.base.link
 import com.crosspaste.ui.base.network
 import com.crosspaste.ui.base.wifi
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.getNetUtils
 import kotlinx.coroutines.launch
@@ -111,7 +113,7 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
             CustomSwitch(
                 modifier =
                     Modifier.width(32.dp)
-                        .height(20.dp),
+                        .height(large2X),
                 checked = config.enableDiscovery,
                 onCheckedChange = { newIsAllowDiscovery ->
                     configManager.updateConfig("enableDiscovery", newIsAllowDiscovery)
@@ -144,7 +146,7 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
                     modifier =
                         Modifier.fillMaxWidth()
                             .height(appSize.deviceHeight)
-                            .padding(start = 12.dp),
+                            .padding(start = small2X),
                     verticalArrangement = Arrangement.Center,
                 ) {
                     SettingsText(text = copywriter.getText("empty"))

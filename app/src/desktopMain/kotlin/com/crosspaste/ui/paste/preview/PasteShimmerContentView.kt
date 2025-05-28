@@ -24,6 +24,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.paste.PasteSingleProcess
+import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.valentinilk.shimmer.shimmer
 
 @Composable
@@ -42,7 +45,7 @@ fun PasteShimmerContentView(singleProcess: PasteSingleProcess?) {
             modifier =
                 Modifier
                     .size(100.dp)
-                    .padding(10.dp)
+                    .padding(small3X)
                     .background(MaterialTheme.colorScheme.secondaryContainer),
             contentAlignment = Alignment.Center,
         ) {
@@ -65,7 +68,7 @@ fun PasteShimmerContentView(singleProcess: PasteSingleProcess?) {
                 Modifier.height(100.dp)
                     .width(290.dp)
                     .background(Color.Transparent)
-                    .padding(10.dp),
+                    .padding(small3X),
             verticalArrangement = Arrangement.Center,
         ) {
             Box(
@@ -85,7 +88,7 @@ fun PasteShimmerContentView(singleProcess: PasteSingleProcess?) {
                             .padding(vertical = 5.dp)
                             .background(MaterialTheme.colorScheme.secondaryContainer),
                 )
-                Spacer(modifier = Modifier.width(20.dp))
+                Spacer(modifier = Modifier.width(large2X))
                 Box(
                     modifier =
                         Modifier
@@ -99,7 +102,7 @@ fun PasteShimmerContentView(singleProcess: PasteSingleProcess?) {
                 modifier =
                     Modifier
                         .height(26.dp)
-                        .width(290.dp).padding(top = 6.dp)
+                        .width(290.dp).padding(top = tiny2X)
                         .background(MaterialTheme.colorScheme.secondaryContainer),
             )
         }

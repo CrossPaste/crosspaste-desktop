@@ -9,10 +9,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.ui.paste.PasteboardViewProvider.Companion.previewTextStyle
+import com.crosspaste.ui.theme.AppUISize.small3X
 
 @Composable
 fun TextPreviewView(pasteData: PasteData) {
@@ -21,7 +21,7 @@ fun TextPreviewView(pasteData: PasteData) {
             Row(
                 modifier =
                     Modifier.fillMaxSize()
-                        .padding(10.dp),
+                        .padding(small3X),
             ) {
                 Text(
                     modifier = Modifier.fillMaxSize(),

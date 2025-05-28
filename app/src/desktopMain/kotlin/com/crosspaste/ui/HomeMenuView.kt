@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -28,6 +27,10 @@ import com.crosspaste.ui.base.NewVersionButton
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.measureTextWidth
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.zero
 import org.koin.compose.koinInject
 
 @Composable
@@ -72,9 +75,9 @@ fun HomeMenuView(
         val maxWidth =
             getMenWidth(menuTexts, extendFunction = {
                 if (existNewVersion && it == 0) {
-                    16.dp + newWidth
+                    medium + newWidth
                 } else {
-                    0.dp
+                    zero
                 }
             })
 
@@ -83,7 +86,7 @@ fun HomeMenuView(
                 Modifier
                     .width(maxWidth)
                     .wrapContentHeight()
-                    .clip(RoundedCornerShape(5.dp))
+                    .clip(tiny2XRoundedCornerShape)
                     .background(MaterialTheme.colorScheme.surfaceBright),
         ) {
             MenuItem(
@@ -108,7 +111,7 @@ fun HomeMenuView(
                 extendContent =
                     if (existNewVersion) {
                         {
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(tiny))
                             NewVersionButton()
                         }
                     } else {

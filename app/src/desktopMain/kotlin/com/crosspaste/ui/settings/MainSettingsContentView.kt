@@ -2,7 +2,6 @@ package com.crosspaste.ui.settings
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -21,6 +20,7 @@ import com.crosspaste.ui.base.debug
 import com.crosspaste.ui.base.palette
 import com.crosspaste.ui.base.shield
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import org.koin.compose.koinInject
 
 @Composable
@@ -36,7 +36,7 @@ fun MainSettingsContentView() {
     HighlightedCard(
         modifier =
             Modifier.wrapContentSize(),
-        shape = RoundedCornerShape(8.dp),
+        shape = tinyRoundedCornerShape,
         containerColor = AppUIColors.settingsBackground,
     ) {
         LanguageSettingItemView()

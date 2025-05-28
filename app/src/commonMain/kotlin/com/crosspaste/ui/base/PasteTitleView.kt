@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
@@ -29,6 +28,9 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import org.koin.compose.koinInject
 
 @Composable
@@ -62,15 +64,15 @@ fun PasteTitleView(
             modifier =
                 Modifier.fillMaxWidth()
                     .fillMaxHeight()
-                    .padding(horizontal = 10.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .padding(horizontal = small3X)
+                    .clip(tinyRoundedCornerShape)
                     .background(background)
                     .clickable(onClick = onClick),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 5.dp),
+                modifier = Modifier.padding(horizontal = tiny3X),
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -81,7 +83,7 @@ fun PasteTitleView(
                 )
 
                 Text(
-                    modifier = Modifier.padding(start = 10.dp),
+                    modifier = Modifier.padding(start = small3X),
                     text = title,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

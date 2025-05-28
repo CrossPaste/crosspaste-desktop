@@ -7,13 +7,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppSize
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.PasteFileInfoTreeCoordinate
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
@@ -63,7 +63,7 @@ fun FilesPreviewView(pasteData: PasteData) {
                     }
                 }
                 if (index != pasteFilePaths.size - 1) {
-                    Spacer(modifier = Modifier.size(8.dp))
+                    Spacer(modifier = Modifier.size(tiny))
                 }
             }
         }

@@ -23,6 +23,7 @@ import com.crosspaste.ui.base.file
 import com.crosspaste.ui.base.skipForward
 import com.crosspaste.ui.base.sync
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.large2X
 import org.koin.compose.koinInject
 
 @Composable
@@ -45,7 +46,7 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
             CustomSwitch(
                 modifier =
                     Modifier.width(32.dp)
-                        .height(20.dp),
+                        .height(large2X),
                 checked = config.enableSkipPreLaunchPasteboardContent,
                 onCheckedChange = { newEnableSkipPreLaunchPasteboardContent ->
                     configManager.updateConfig(
@@ -84,7 +85,7 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
             CustomSwitch(
                 modifier =
                     Modifier.width(32.dp)
-                        .height(20.dp),
+                        .height(large2X),
                 checked = config.enabledSyncFileSizeLimit,
                 onCheckedChange = { newEnabledSyncFileSizeLimit ->
                     configManager.updateConfig("enabledSyncFileSizeLimit", newEnabledSyncFileSizeLimit)

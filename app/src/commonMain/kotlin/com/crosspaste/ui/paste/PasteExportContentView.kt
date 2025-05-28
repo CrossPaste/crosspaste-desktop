@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
@@ -57,6 +56,16 @@ import com.crosspaste.ui.base.link
 import com.crosspaste.ui.base.text
 import com.crosspaste.ui.settings.SettingsText
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small
+import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.tiny4XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.xLarge
+import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.MB
 import com.crosspaste.utils.getFileUtils
@@ -102,19 +111,19 @@ fun PasteExportContentView() {
         modifier =
             Modifier
                 .fillMaxSize()
-                .padding(16.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .padding(medium)
+                .clip(tinyRoundedCornerShape)
                 .background(AppUIColors.importOrExportBackground),
         contentAlignment = Alignment.Center,
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxSize().padding(medium),
+            verticalArrangement = Arrangement.spacedBy(tiny),
         ) {
             // Top section with checkboxes
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(small2X),
             ) {
                 // Type filters section
                 TypeFiltersSection(
@@ -290,7 +299,7 @@ private fun PasteTypeWithIconCheckbox(
         type = type,
         icon = icon,
         selected = selected,
-        startPadding = 48.dp,
+        startPadding = xxxxLarge,
         onSelectedChange = onSelectedChange,
     )
 }
@@ -348,8 +357,8 @@ private fun ProgressSection(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .height(5.dp)
-                    .clip(RoundedCornerShape(1.5.dp)),
+                    .height(tiny3X)
+                    .clip(tiny4XRoundedCornerShape),
             progress = { progress },
         )
     } else {
@@ -370,7 +379,7 @@ private fun ExportButtonSection(
     val copywriter = koinInject<GlobalCopywriter>()
 
     Row(
-        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = medium),
         horizontalArrangement = Arrangement.End,
     ) {
         Button(
@@ -476,8 +485,8 @@ fun PasteTypeCheckbox(
     type: String,
     icon: Painter? = null,
     selected: Boolean,
-    height: Dp = 30.dp,
-    startPadding: Dp = 16.dp,
+    height: Dp = xxLarge,
+    startPadding: Dp = medium,
     onSelectedChange: (Boolean) -> Unit,
     content: (@Composable () -> Unit)? = null,
 ) {
@@ -497,7 +506,7 @@ fun PasteTypeCheckbox(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Checkbox(
-            modifier = Modifier.size(14.dp),
+            modifier = Modifier.size(small),
             checked = selected,
             onCheckedChange = onSelectedChange,
             colors =
@@ -506,7 +515,7 @@ fun PasteTypeCheckbox(
                     checkmarkColor = Color.White,
                 ),
         )
-        val padding = icon?.let { 16.dp } ?: 24.dp
+        val padding = icon?.let { medium } ?: xLarge
         Spacer(modifier = Modifier.width(padding))
         icon?.let {
             Icon(
@@ -515,14 +524,14 @@ fun PasteTypeCheckbox(
                 contentDescription = type,
                 tint = color,
             )
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(small2X))
         }
         SettingsText(
             text = copywriter.getText(type),
             color = color,
         )
         content?.let {
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(small2X))
             it()
         }
     }

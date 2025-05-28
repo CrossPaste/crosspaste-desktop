@@ -4,13 +4,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppSize
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.ui.theme.AppUISize.tiny
 import org.koin.compose.koinInject
 
 @Composable
@@ -37,7 +37,7 @@ fun ImagesPreviewView(pasteData: PasteData) {
                     SingleImagePreviewView(pasteFileCoordinate, itemWidthSize)
                 }
                 if (index != imagePaths.size - 1) {
-                    Spacer(modifier = Modifier.size(8.dp))
+                    Spacer(modifier = Modifier.size(tiny))
                 }
             }
         }
