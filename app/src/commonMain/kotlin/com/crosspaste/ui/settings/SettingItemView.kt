@@ -1,44 +1,61 @@
 package com.crosspaste.ui.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.crosspaste.app.AppSize
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.theme.AppUIColors
+import kotlinx.coroutines.flow.distinctUntilChanged
 import org.koin.compose.koinInject
 
 @Composable
 fun SettingItemView(
     painter: Painter,
     text: String,
-    height: Dp = 40.dp,
+    height: Dp? = null,
     tint: Color = MaterialTheme.colorScheme.onSurface,
     content: @Composable () -> Unit,
 ) {
+    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
+    val backgroundColor = AppUIColors.settingsBackground
+
     Row(
         modifier =
             Modifier.fillMaxWidth()
-                .height(height)
+                .height(height ?: appSize.settingsItemHeight)
                 .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        // Icon - fixed size, will not be compressed
         Icon(
             modifier = Modifier.size(15.dp),
             painter = painter,
@@ -48,15 +65,99 @@ fun SettingItemView(
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        Row(
-            modifier =
-                Modifier.wrapContentWidth()
-                    .horizontalScroll(rememberScrollState()),
-        ) {
-            SettingsText(text = copywriter.getText(text))
-        }
-        Spacer(modifier = Modifier.weight(1f).widthIn(min = 8.dp))
+        // Text with scroll and gradient
+        val scrollState = rememberScrollState()
+        var showStartGradient by remember { mutableStateOf(false) }
+        var showEndGradient by remember { mutableStateOf(false) }
 
-        content()
+        // Monitor scroll state changes
+        LaunchedEffect(scrollState) {
+            snapshotFlow {
+                Triple(scrollState.value, scrollState.maxValue, scrollState.viewportSize)
+            }
+                .distinctUntilChanged()
+                .collect { (value, maxValue, _) ->
+                    // If scroll is possible, the content overflows the container
+                    val canScroll = maxValue > 0
+
+                    // More precise judgment logic
+                    showStartGradient = canScroll && value > 0
+                    showEndGradient = canScroll && value < maxValue
+                }
+        }
+
+        Box(
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .clipToBounds(),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            // Text content
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(scrollState),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SettingsText(text = copywriter.getText(text))
+            }
+
+            // Left gradient overlay
+            if (showStartGradient) {
+                Box(
+                    modifier =
+                        Modifier
+                            .align(Alignment.CenterStart)
+                            .width(24.dp)
+                            .fillMaxHeight()
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors =
+                                        listOf(
+                                            backgroundColor,
+                                            backgroundColor.copy(alpha = 0.9f),
+                                            backgroundColor.copy(alpha = 0.5f),
+                                            backgroundColor.copy(alpha = 0f),
+                                        ),
+                                ),
+                            ),
+                )
+            }
+
+            // Right gradient overlay
+            if (showEndGradient) {
+                Box(
+                    modifier =
+                        Modifier
+                            .align(Alignment.CenterEnd)
+                            .width(24.dp)
+                            .fillMaxHeight()
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors =
+                                        listOf(
+                                            backgroundColor.copy(alpha = 0f),
+                                            backgroundColor.copy(alpha = 0.5f),
+                                            backgroundColor.copy(alpha = 0.9f),
+                                            backgroundColor,
+                                        ),
+                                ),
+                            ),
+                )
+            }
+        }
+
+        // Minimum spacing to ensure a gap between text and content
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Content - use wrapContentWidth() to ensure full visibility
+        Row(
+            modifier = Modifier.wrapContentWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            content()
+        }
     }
 }
