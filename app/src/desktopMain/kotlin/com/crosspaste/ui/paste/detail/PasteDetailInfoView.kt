@@ -88,7 +88,7 @@ fun PasteDetailInfoView(
         PasteTooltipIconView(
             painter = if (favorite) favorite() else noFavorite(),
             contentDescription = "Favorite",
-            tint = MaterialTheme.colorScheme.primaryContainer,
+            tint = MaterialTheme.colorScheme.primary,
             text = copywriter.getText("whether_to_search_only_favorites"),
         ) {
             if (appControl.isFavoriteEnabled()) {
