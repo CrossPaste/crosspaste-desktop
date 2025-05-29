@@ -12,7 +12,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.FixedScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
@@ -23,6 +22,7 @@ import com.crosspaste.image.coil.GenerateImageItem
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.rendering.RenderingHelper
 import com.crosspaste.ui.paste.PasteboardViewProvider.Companion.previewTextStyle
+import com.crosspaste.ui.theme.AppUISize.small3X
 import okio.Path
 import org.koin.compose.koinInject
 
@@ -59,7 +59,7 @@ fun GenerateImageView(
                     Row(
                         modifier =
                             Modifier.fillMaxSize()
-                                .padding(10.dp),
+                                .padding(small3X),
                     ) {
                         Text(
                             text = text,

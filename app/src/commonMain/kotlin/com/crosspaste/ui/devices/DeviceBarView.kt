@@ -22,7 +22,6 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.ui.base.android
 import com.crosspaste.ui.base.ipad
@@ -31,6 +30,10 @@ import com.crosspaste.ui.base.linux
 import com.crosspaste.ui.base.macos
 import com.crosspaste.ui.base.question
 import com.crosspaste.ui.base.windows
+import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny4X
+import com.crosspaste.ui.theme.AppUISize.xxxLarge
 
 @Composable
 fun PlatformPainter(syncRuntimeInfo: SyncRuntimeInfo): Painter {
@@ -73,7 +76,7 @@ fun DeviceBarView(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                modifier = Modifier.padding(horizontal = 12.dp).size(36.dp),
+                modifier = Modifier.padding(horizontal = small2X).size(xxxLarge),
                 painter = PlatformPainter(syncRuntimeInfo),
                 contentDescription = "OS Icon",
                 tint = onBackground,
@@ -81,9 +84,9 @@ fun DeviceBarView(
 
             Column(
                 modifier =
-                    Modifier.height(36.dp)
+                    Modifier.height(xxxLarge)
                         .align(Alignment.CenterVertically)
-                        .padding(bottom = 2.dp),
+                        .padding(bottom = tiny4X),
                 verticalArrangement = Arrangement.SpaceBetween,
             ) {
                 Row(
@@ -101,7 +104,7 @@ fun DeviceBarView(
                                 lineHeight = TextUnit.Unspecified,
                             ),
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(tiny))
                     Text(
                         modifier = Modifier.wrapContentSize(),
                         text = syncRuntimeInfo.platform.version,

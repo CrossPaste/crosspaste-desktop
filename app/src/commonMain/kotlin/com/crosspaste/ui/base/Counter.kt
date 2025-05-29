@@ -26,8 +26,12 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.zero
 
 val countTextStyle =
     TextStyle(
@@ -54,9 +58,9 @@ fun Counter(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Button(
-            modifier = Modifier.size(30.dp),
+            modifier = Modifier.size(xxLarge),
             shape = RectangleShape,
-            contentPadding = PaddingValues(0.dp),
+            contentPadding = PaddingValues(zero),
             onClick = {
                 val newCount = count - 1
                 if (rule(newCount)) {
@@ -71,7 +75,7 @@ fun Counter(
                 style = countTextStyle,
             )
         }
-        Spacer(modifier = Modifier.width(4.dp))
+        Spacer(modifier = Modifier.width(tiny3X))
 
         val width =
             measureTextWidth(
@@ -81,10 +85,10 @@ fun Counter(
 
         DefaultTextField(
             modifier =
-                Modifier.width(width + 16.dp)
-                    .height(30.dp),
+                Modifier.width(width + medium)
+                    .height(xxLarge),
             value = "$count",
-            contentPadding = PaddingValues(horizontal = 8.dp),
+            contentPadding = PaddingValues(horizontal = tiny),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             onValueChange = {
                 if (it.matches(Regex("^\\d+$"))) {
@@ -96,17 +100,17 @@ fun Counter(
                 }
             },
         )
-        Spacer(modifier = Modifier.width(4.dp))
+        Spacer(modifier = Modifier.width(tiny3X))
         Text(
             text = unit,
             color = MaterialTheme.colorScheme.primary,
             style = countTextStyle,
         )
-        Spacer(modifier = Modifier.width(4.dp))
+        Spacer(modifier = Modifier.width(tiny3X))
         Button(
-            modifier = Modifier.size(30.dp),
+            modifier = Modifier.size(xxLarge),
             shape = RectangleShape,
-            contentPadding = PaddingValues(0.dp),
+            contentPadding = PaddingValues(zero),
             onClick = {
                 val newCount = count + 1
                 if (rule(newCount)) {

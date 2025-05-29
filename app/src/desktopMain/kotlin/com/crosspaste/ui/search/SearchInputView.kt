@@ -17,7 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -47,7 +47,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.app.DesktopAppWindowManager
@@ -63,6 +62,16 @@ import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.noFavorite
 import com.crosspaste.ui.base.search
 import com.crosspaste.ui.model.PasteSearchViewModel
+import com.crosspaste.ui.theme.AppUISize.huge
+import com.crosspaste.ui.theme.AppUISize.small
+import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.tiny5X
+import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.xxxLarge
+import com.crosspaste.ui.theme.AppUISize.zero
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
@@ -91,7 +100,7 @@ fun SearchInputView(requestFocus: () -> Unit) {
     }
 
     Row(
-        modifier = Modifier.height(60.dp).fillMaxWidth(),
+        modifier = Modifier.height(huge).fillMaxWidth(),
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -190,12 +199,15 @@ fun searchTrailingIcon() {
             .plus(copywriter.getText(ALL_TYPES))
             .toTypedArray()
 
-    val paddingValues = PaddingValues(10.dp, 5.dp, 10.dp, 5.dp)
+    val paddingValues = PaddingValues(horizontal = small3X, vertical = tiny3X)
 
     val maxWidth = getMenWidth(menuTexts, textStyle, paddingValues)
 
     Row(
-        modifier = Modifier.width(100.dp + maxWidth).height(50.dp).padding(10.dp),
+        modifier =
+            Modifier.padding(horizontal = small3X)
+                .wrapContentWidth()
+                .height(huge),
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -219,21 +231,22 @@ fun searchTrailingIcon() {
             focusRequester.requestFocus() // keep textField focus
         }
 
-        Spacer(modifier = Modifier.width(6.dp))
+        Spacer(modifier = Modifier.width(tiny2X))
 
         Row(
             modifier =
-                Modifier.fillMaxWidth().height(32.dp)
+                Modifier.width(maxWidth)
+                    .height(xxLarge)
                     .border(
-                        1.dp,
+                        tiny5X,
                         MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                        RoundedCornerShape(5.dp),
+                        tiny2XRoundedCornerShape,
                     )
                     .clickable {
                         showTypes = true
                         focusRequester.requestFocus() // keep textField focus
                     }
-                    .padding(10.dp, 5.dp, 10.dp, 5.dp),
+                    .padding(horizontal = small3X, vertical = small3X / 2),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -249,8 +262,8 @@ fun searchTrailingIcon() {
                 alignment = Alignment.TopEnd,
                 offset =
                     IntOffset(
-                        with(density) { (0.dp).roundToPx() },
-                        with(density) { (40.dp).roundToPx() },
+                        with(density) { zero.roundToPx() },
+                        with(density) { xxxLarge.roundToPx() },
                     ),
                 onDismissRequest = {
                     if (showTypes) {
@@ -269,14 +282,14 @@ fun searchTrailingIcon() {
                         Modifier
                             .wrapContentSize()
                             .background(Color.Transparent)
-                            .shadow(15.dp),
+                            .shadow(small),
                 ) {
                     Column(
                         modifier =
                             Modifier
                                 .width(maxWidth)
                                 .wrapContentHeight()
-                                .clip(RoundedCornerShape(5.dp))
+                                .clip(tiny2XRoundedCornerShape)
                                 .background(MaterialTheme.colorScheme.surfaceBright),
                     ) {
                         if (searchPasteType != null) {

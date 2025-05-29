@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -28,11 +27,16 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppSize
 import com.crosspaste.notification.Message
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.getMessagePainter
+import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.small
+import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.utils.ColorUtils
 import org.koin.compose.koinInject
 
@@ -52,7 +56,7 @@ fun ToastView(
             Modifier
                 .wrapContentSize()
                 .background(Color.Transparent)
-                .shadow(15.dp),
+                .shadow(small),
     ) {
         val background =
             if (toast.messageType == MessageType.Error) {
@@ -68,28 +72,28 @@ fun ToastView(
             )
         Column(
             modifier =
-                Modifier.background(background, shape = RoundedCornerShape(8.dp))
-                    .padding(all = 8.dp)
+                Modifier.background(background, shape = tinyRoundedCornerShape)
+                    .padding(tiny)
                     .width(appSize.toastViewWidth),
         ) {
             Row(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp),
+                        .padding(horizontal = small2X),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Icon(
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(large2X),
                     painter = getMessagePainter(messageStyle),
                     contentDescription = "toast icon",
                     tint = tint,
                 )
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(small2X))
                 Column(
                     modifier =
-                        Modifier.width(appSize.toastViewWidth - 88.dp)
+                        Modifier.width(appSize.toastViewWidth - (small2X * 4 + large2X * 2))
                             .wrapContentHeight(),
                     verticalArrangement = Arrangement.Center,
                 ) {
@@ -114,7 +118,7 @@ fun ToastView(
                         Row(
                             modifier =
                                 Modifier
-                                    .padding(top = 12.dp, bottom = 4.dp),
+                                    .padding(top = small2X, bottom = tiny3X),
                         ) {
                             Text(
                                 modifier = Modifier.weight(1f, fill = false),
@@ -126,10 +130,10 @@ fun ToastView(
                         }
                     }
                 }
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(small2X))
                 Icon(
                     modifier =
-                        Modifier.size(20.dp)
+                        Modifier.size(large2X)
                             .clickable(onClick = onCancelTapped),
                     painter = close(),
                     contentDescription = "Cancel",

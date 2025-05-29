@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -35,13 +34,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.ui.model.PasteDataViewModel
 import com.crosspaste.ui.paste.preview.PasteEmptyScreenView
 import com.crosspaste.ui.paste.preview.PastePreviewItemView
 import com.crosspaste.ui.paste.preview.PasteSpecificPreviewView
 import com.crosspaste.ui.paste.preview.PasteToTopView
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -122,14 +126,14 @@ fun PasteboardContentView(openTopBar: () -> Unit) {
     Box(
         modifier =
             Modifier.fillMaxWidth()
-                .padding(start = 8.dp)
-                .padding(vertical = 8.dp),
+                .padding(start = tiny)
+                .padding(vertical = tiny),
     ) {
         Box(
             modifier =
                 Modifier.fillMaxSize()
-                    .padding(end = 8.dp)
-                    .clip(RoundedCornerShape(5.dp)),
+                    .padding(end = tiny)
+                    .clip(tiny2XRoundedCornerShape),
         ) {
             LazyColumn(
                 state = listState,
@@ -143,7 +147,7 @@ fun PasteboardContentView(openTopBar: () -> Unit) {
                         PasteSpecificPreviewView(this)
                     }
                     if (index < rememberPasteDataList.size - 1) {
-                        Spacer(modifier = Modifier.height(5.dp))
+                        Spacer(modifier = Modifier.height(small3X / 2))
                     }
                 }
             }
@@ -171,9 +175,9 @@ fun PasteboardContentView(openTopBar: () -> Unit) {
             adapter = rememberScrollbarAdapter(scrollState = listState),
             style =
                 ScrollbarStyle(
-                    minimalHeight = 16.dp,
-                    thickness = 6.dp,
-                    shape = RoundedCornerShape(4.dp),
+                    minimalHeight = medium,
+                    thickness = tiny2X,
+                    shape = tiny3XRoundedCornerShape,
                     hoverDurationMillis = 300,
                     unhoverColor =
                         if (isScrolling) {

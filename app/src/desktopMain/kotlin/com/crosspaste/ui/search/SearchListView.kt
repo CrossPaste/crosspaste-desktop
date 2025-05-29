@@ -13,12 +13,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,11 +32,15 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
+import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.ui.base.PasteTitleView
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
@@ -50,6 +53,7 @@ import org.koin.compose.koinInject
 @OptIn(FlowPreview::class)
 @Composable
 fun SearchListView(setSelectedIndex: (Int) -> Unit) {
+    val appSize = koinInject<DesktopAppSize>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
@@ -128,12 +132,12 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
         }
     }
 
-    Box(modifier = Modifier.width(280.dp).height(420.dp)) {
+    Box(modifier = Modifier.size(appSize.searchListViewSize)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(small3X))
             LazyColumn(
                 state = searchListState,
-                modifier = Modifier.width(280.dp).height(400.dp),
+                modifier = Modifier.fillMaxSize(),
             ) {
                 itemsIndexed(
                     searchResult,
@@ -144,7 +148,7 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(small3X))
         }
 
         VerticalScrollbar(
@@ -164,9 +168,9 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
             adapter = adapter,
             style =
                 ScrollbarStyle(
-                    minimalHeight = 16.dp,
-                    thickness = 8.dp,
-                    shape = RoundedCornerShape(4.dp),
+                    minimalHeight = medium,
+                    thickness = tiny,
+                    shape = tiny3XRoundedCornerShape,
                     hoverDurationMillis = 300,
                     unhoverColor =
                         if (showScrollbar) {

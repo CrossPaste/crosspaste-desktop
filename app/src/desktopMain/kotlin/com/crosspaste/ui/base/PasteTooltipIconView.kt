@@ -6,7 +6,6 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.contentColorFor
@@ -24,7 +23,9 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.dp
+import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.xxLarge
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -40,12 +41,12 @@ fun PasteTooltipIconView(
     var hoverIcon by remember { mutableStateOf(false) }
 
     PasteTooltipAreaView(
-        modifier = Modifier.size(32.dp),
+        modifier = Modifier.size(xxLarge),
         text = text,
     ) {
         Box(
             modifier =
-                Modifier.size(32.dp)
+                Modifier.size(xxLarge)
                     .onPointerEvent(
                         eventType = PointerEventType.Enter,
                         onEvent = {
@@ -63,7 +64,7 @@ fun PasteTooltipIconView(
             Box(
                 modifier =
                     Modifier.fillMaxSize()
-                        .clip(RoundedCornerShape(6.dp))
+                        .clip(tiny2XRoundedCornerShape)
                         .background(
                             if (hoverIcon) {
                                 hover
@@ -83,7 +84,7 @@ fun PasteTooltipIconView(
             Icon(
                 painter = painter,
                 contentDescription = contentDescription,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(large2X),
                 tint =
                     if (hoverIcon) {
                         MaterialTheme.colorScheme.contentColorFor(hover)

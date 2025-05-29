@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.db.paste.PasteDao
@@ -26,6 +25,7 @@ import com.crosspaste.paste.plugin.type.TextTypePlugin
 import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.save
+import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.utils.getCodecsUtils
 import io.ktor.utils.io.core.*
 import org.koin.compose.koinInject
@@ -42,7 +42,7 @@ fun PasteTextEditContentView() {
     val codecsUtils = getCodecsUtils()
 
     Box(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(medium),
         contentAlignment = Alignment.TopStart,
     ) {
         pasteData.getPasteItem(TextPasteItem::class)?.let { pasteText ->

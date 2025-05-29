@@ -29,7 +29,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.dp
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
@@ -54,6 +53,10 @@ import com.crosspaste.ui.base.FolderIcon
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.chevronLeft
 import com.crosspaste.ui.base.chevronRight
+import com.crosspaste.ui.theme.AppUISize.gigantic
+import com.crosspaste.ui.theme.AppUISize.large
+import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getFileUtils
 import kotlinx.coroutines.delay
@@ -148,7 +151,7 @@ fun PasteFilesDetailView(
                         contentAlignment = Alignment.Center,
                     ) {
                         SubcomposeAsyncImage(
-                            modifier = Modifier.size(150.dp),
+                            modifier = Modifier.size(gigantic),
                             model =
                                 ImageRequest.Builder(platformContext)
                                     .data(FileExtItem(filePath))
@@ -161,7 +164,7 @@ fun PasteFilesDetailView(
                                     is AsyncImagePainter.State.Loading,
                                     is AsyncImagePainter.State.Error,
                                     -> {
-                                        val modifier = Modifier.size(150.dp)
+                                        val modifier = Modifier.size(gigantic)
                                         if (existFile) {
                                             if (isFile) {
                                                 FileIcon(modifier)
@@ -180,9 +183,9 @@ fun PasteFilesDetailView(
                         )
 
                         if (showFileCount > 1 && hover) {
-                            Row(modifier = Modifier.fillMaxWidth().height(30.dp).padding(horizontal = 10.dp)) {
+                            Row(modifier = Modifier.fillMaxWidth().height(xxLarge).padding(horizontal = small3X)) {
                                 PasteIconButton(
-                                    size = 18.dp,
+                                    size = large,
                                     onClick = {
                                         coroutineScope.launch {
                                             mutex.withLock {
@@ -201,7 +204,7 @@ fun PasteFilesDetailView(
                                             .background(Color.Transparent, CircleShape),
                                 ) {
                                     Icon(
-                                        modifier = Modifier.size(18.dp),
+                                        modifier = Modifier.size(large),
                                         painter = chevronLeft(),
                                         contentDescription = "chevronLeft",
                                         tint = MaterialTheme.colorScheme.onBackground,
@@ -209,7 +212,7 @@ fun PasteFilesDetailView(
                                 }
                                 Spacer(modifier = Modifier.weight(1f))
                                 PasteIconButton(
-                                    size = 18.dp,
+                                    size = large,
                                     onClick = {
                                         coroutineScope.launch {
                                             mutex.withLock {
@@ -228,7 +231,7 @@ fun PasteFilesDetailView(
                                             .background(Color.Transparent, CircleShape),
                                 ) {
                                     Icon(
-                                        modifier = Modifier.size(18.dp),
+                                        modifier = Modifier.size(large),
                                         painter = chevronRight(),
                                         contentDescription = "chevronRight",
                                         tint = MaterialTheme.colorScheme.onBackground,

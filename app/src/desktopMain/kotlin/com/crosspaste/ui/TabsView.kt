@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,8 +40,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
@@ -51,11 +50,22 @@ import com.crosspaste.ui.base.HighlightedCard
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.trash
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny4X
+import com.crosspaste.ui.theme.AppUISize.tiny4XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.zero
 import com.crosspaste.utils.getAppEnvUtils
 import org.koin.compose.koinInject
 
 @Composable
 fun TabsView() {
+    val appSize = koinInject<DesktopAppSize>()
     val appWindowManager = koinInject<AppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val screenProvider = koinInject<ScreenProvider>()
@@ -84,10 +94,10 @@ fun TabsView() {
         Box {
             HighlightedCard(
                 modifier =
-                    Modifier.padding(horizontal = 8.dp)
+                    Modifier.padding(horizontal = tiny)
                         .fillMaxWidth()
-                        .height(40.dp),
-                shape = RoundedCornerShape(8.dp),
+                        .height(appSize.tabsViewHeight),
+                shape = tinyRoundedCornerShape,
                 containerColor = AppUIColors.tabsBackground,
             ) {
             }
@@ -101,8 +111,9 @@ fun TabsView() {
 
                 Row(
                     modifier =
-                        Modifier.padding(12.dp, 0.dp, 15.dp, 0.dp)
-                            .wrapContentWidth().height(40.dp),
+                        Modifier.padding(small2X, zero, medium, zero)
+                            .wrapContentWidth()
+                            .height(appSize.tabsViewHeight),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     tabs.forEachIndexed { index, tabInfo ->
@@ -154,29 +165,29 @@ fun TabsView() {
                     transitionSpec = { tween(durationMillis = 250, easing = LinearEasing) },
                     label = "width",
                 ) { tabIndex ->
-                    with(LocalDensity.current) { widthArray[tabIndex].toDp() + 8.dp }
+                    with(LocalDensity.current) { widthArray[tabIndex].toDp() + tiny }
                 }
 
                 val offset by selectedIndexTransition.animateDp(
                     transitionSpec = { tween(durationMillis = 250, easing = LinearEasing) },
                     label = "offset",
                 ) { tabIndex ->
-                    var sum = 0.dp
+                    var sum = zero
                     for (i in 0 until tabIndex) {
                         sum += with(LocalDensity.current) { widthArray[i].toDp() }
                     }
                     sum
                 }
                 Row(modifier = Modifier.fillMaxWidth()) {
-                    Spacer(modifier = Modifier.width(8.dp + (10.dp * ((selectedIndex * 2) + 1)) + offset))
+                    Spacer(modifier = Modifier.width(tiny + (tiny * ((selectedIndex * 2) + 1)) + offset))
 
                     Box(
                         modifier =
                             Modifier
-                                .offset(y = (-2.5).dp)
+                                .offset(y = -tiny4X)
                                 .width(width)
-                                .height(5.dp)
-                                .clip(RoundedCornerShape(2.dp))
+                                .height(tiny3X)
+                                .clip(tiny4XRoundedCornerShape)
                                 .background(MaterialTheme.colorScheme.primary),
                     )
                 }
@@ -223,7 +234,7 @@ fun SingleTabView(
     Box(
         modifier =
             Modifier
-                .height(30.dp)
+                .height(xxLarge)
                 .wrapContentWidth()
                 .onPointerEvent(
                     eventType = PointerEventType.Enter,
@@ -249,9 +260,9 @@ fun SingleTabView(
         Row(
             modifier =
                 Modifier.wrapContentSize()
-                    .padding(horizontal = 5.dp)
-                    .clip(RoundedCornerShape(5.dp))
-                    .padding(horizontal = 5.dp),
+                    .padding(horizontal = tiny3X)
+                    .clip(tiny3XRoundedCornerShape)
+                    .padding(horizontal = tiny3X),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(

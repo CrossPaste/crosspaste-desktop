@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -30,7 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppWindowManager
@@ -41,6 +39,13 @@ import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.alertCircle
 import com.crosspaste.ui.base.measureTextWidth
+import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small
+import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.zero
 import kotlinx.coroutines.runBlocking
 import org.koin.compose.koinInject
 
@@ -81,24 +86,23 @@ fun DeviceDetailContentView() {
         Column(
             modifier =
                 Modifier.fillMaxSize()
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 16.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .padding(horizontal = medium)
+                    .padding(bottom = medium).clip(tinyRoundedCornerShape)
                     .background(MaterialTheme.colorScheme.surfaceContainerLowest)
                     .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
+                    .padding(medium),
         ) {
             if (versionRelation != null && versionRelation != VersionRelation.EQUAL_TO) {
                 Column(
                     modifier =
                         Modifier.wrapContentSize()
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(tinyRoundedCornerShape)
                             .background(MaterialTheme.colorScheme.errorContainer),
                 ) {
                     Row(
                         modifier =
                             Modifier.wrapContentSize()
-                                .padding(12.dp),
+                                .padding(small2X),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
@@ -108,9 +112,9 @@ fun DeviceDetailContentView() {
                                 MaterialTheme.colorScheme.contentColorFor(
                                     MaterialTheme.colorScheme.errorContainer,
                                 ),
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(large2X),
                         )
-                        Spacer(modifier = Modifier.width(16.dp))
+                        Spacer(modifier = Modifier.width(medium))
                         Text(
                             text =
                                 "${copywriter.getText("current_software_version")}: ${appInfo.appVersion}\n" +
@@ -124,7 +128,7 @@ fun DeviceDetailContentView() {
                             modifier = Modifier.weight(1f),
                         )
                     }
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(medium))
                 }
             }
 
@@ -132,7 +136,7 @@ fun DeviceDetailContentView() {
             Text(
                 modifier =
                     Modifier.wrapContentSize()
-                        .padding(start = 15.dp, bottom = 5.dp),
+                        .padding(start = medium, bottom = tiny3X),
                 text = copywriter.getText("sync_control"),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleSmall,
@@ -140,13 +144,13 @@ fun DeviceDetailContentView() {
             Column(
                 modifier =
                     Modifier.wrapContentSize()
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(tinyRoundedCornerShape)
                         .background(MaterialTheme.colorScheme.surfaceContainerHighest),
             ) {
                 Row(
                     modifier =
                         Modifier.wrapContentSize()
-                            .padding(12.dp),
+                            .padding(small2X),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
@@ -158,8 +162,8 @@ fun DeviceDetailContentView() {
                     CustomSwitch(
                         modifier =
                             Modifier.align(Alignment.CenterVertically)
-                                .width(32.dp)
-                                .height(20.dp),
+                                .width(medium * 2)
+                                .height(large2X),
                         checked = !appControl.isSyncControlEnabled(false) || syncRuntimeInfo.allowSend,
                         onCheckedChange = { allowSend ->
                             runBlocking {
@@ -176,12 +180,12 @@ fun DeviceDetailContentView() {
                     )
                 }
 
-                HorizontalDivider(modifier = Modifier.padding(start = 15.dp))
+                HorizontalDivider(modifier = Modifier.padding(start = small))
 
                 Row(
                     modifier =
                         Modifier.wrapContentSize()
-                            .padding(12.dp),
+                            .padding(small2X),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
@@ -193,8 +197,8 @@ fun DeviceDetailContentView() {
                     CustomSwitch(
                         modifier =
                             Modifier.align(Alignment.CenterVertically)
-                                .width(32.dp)
-                                .height(20.dp),
+                                .width(medium * 2)
+                                .height(large2X),
                         checked = !appControl.isSyncControlEnabled(false) || syncRuntimeInfo.allowReceive,
                         onCheckedChange = { allowReceive ->
                             runBlocking {
@@ -212,9 +216,9 @@ fun DeviceDetailContentView() {
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(medium))
 
-            var maxWidth by remember { mutableStateOf(0.dp) }
+            var maxWidth by remember { mutableStateOf(zero) }
 
             val properties =
                 remember(syncRuntimeInfo) {
@@ -241,7 +245,7 @@ fun DeviceDetailContentView() {
             Text(
                 modifier =
                     Modifier.wrapContentSize()
-                        .padding(start = 15.dp, bottom = 5.dp),
+                        .padding(start = medium, bottom = tiny3X),
                 text = copywriter.getText("base_info"),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleSmall,
@@ -250,18 +254,18 @@ fun DeviceDetailContentView() {
             Column(
                 modifier =
                     Modifier.wrapContentSize()
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(tinyRoundedCornerShape)
                         .background(MaterialTheme.colorScheme.surfaceContainerHighest),
             ) {
                 properties.forEachIndexed { index, pair ->
                     Row(
                         modifier =
                             Modifier.fillMaxWidth()
-                                .padding(12.dp),
+                                .padding(small2X),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            modifier = Modifier.width(maxWidth + 16.dp),
+                            modifier = Modifier.width(maxWidth + medium),
                             text = copywriter.getText(pair.first),
                             style = textStyle,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -273,7 +277,7 @@ fun DeviceDetailContentView() {
                         )
                     }
                     if (index < properties.size - 1) {
-                        HorizontalDivider(modifier = Modifier.padding(start = 15.dp))
+                        HorizontalDivider(modifier = Modifier.padding(start = small))
                     }
                 }
             }

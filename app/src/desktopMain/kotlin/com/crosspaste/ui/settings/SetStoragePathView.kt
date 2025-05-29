@@ -28,11 +28,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppExitService
 import com.crosspaste.app.AppFileChooser
 import com.crosspaste.app.AppRestartService
+import com.crosspaste.app.AppSize
 import com.crosspaste.app.ExitMode
 import com.crosspaste.app.FileSelectionMode
 import com.crosspaste.config.ConfigManager
@@ -48,6 +48,12 @@ import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.PasteDialogFactory
 import com.crosspaste.ui.base.archive
+import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny3X
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okio.Path
@@ -56,6 +62,7 @@ import org.koin.compose.koinInject
 @Composable
 fun SetStoragePathView() {
     val appFileChooser = koinInject<AppFileChooser>()
+    val appSize = koinInject<AppSize>()
     val configManager = koinInject<ConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val dialogService = koinInject<DialogService>()
@@ -88,8 +95,8 @@ fun SetStoragePathView() {
             ) {
                 CustomSwitch(
                     modifier =
-                        Modifier.width(32.dp)
-                            .height(20.dp),
+                        Modifier.width(medium * 2)
+                            .height(large2X),
                     checked = useDefaultStoragePath,
                     onCheckedChange = {
                         useDefaultStoragePath = !useDefaultStoragePath
@@ -101,8 +108,8 @@ fun SetStoragePathView() {
         Row(
             modifier =
                 Modifier.fillMaxWidth()
-                    .height(40.dp)
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
+                    .height(appSize.settingsItemHeight)
+                    .padding(horizontal = small2X, vertical = tiny2X),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             CustomTextField(
@@ -164,7 +171,7 @@ fun SetStoragePathView() {
                         focusedIndicatorColor = MaterialTheme.colorScheme.primary,
                         unfocusedIndicatorColor = Color.Transparent,
                     ),
-                contentPadding = PaddingValues(horizontal = 8.dp),
+                contentPadding = PaddingValues(horizontal = tiny),
             )
         }
     }
@@ -173,6 +180,8 @@ fun SetStoragePathView() {
 @Composable
 fun SetStoragePathDialogView(path: Path) {
     val exitApplication = LocalExitApplication.current
+
+    val appSize = koinInject<AppSize>()
     val dialogService = koinInject<DialogService>()
     val desktopMigration = koinInject<DesktopMigration>()
     val appExitService = koinInject<AppExitService>()
@@ -218,7 +227,11 @@ fun SetStoragePathDialogView(path: Path) {
     }
 
     Column {
-        Row(modifier = Modifier.fillMaxWidth().height(40.dp)) {
+        Row(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(appSize.settingsItemHeight),
+        ) {
             CustomTextField(
                 modifier = Modifier.fillMaxWidth().wrapContentHeight(),
                 value = path.toString(),
@@ -240,14 +253,14 @@ fun SetStoragePathDialogView(path: Path) {
                         focusedIndicatorColor = MaterialTheme.colorScheme.primary,
                         unfocusedIndicatorColor = Color.Transparent,
                     ),
-                contentPadding = PaddingValues(horizontal = 8.dp),
+                contentPadding = PaddingValues(horizontal = tiny),
             )
         }
 
         Row(modifier = Modifier.fillMaxWidth()) {
             if (isMigration) {
                 LinearProgressIndicator(
-                    modifier = Modifier.fillMaxWidth().height(5.dp),
+                    modifier = Modifier.fillMaxWidth().height(tiny3X),
                     progress = { progress },
                 )
             } else {

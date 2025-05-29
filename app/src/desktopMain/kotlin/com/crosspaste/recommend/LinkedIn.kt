@@ -4,13 +4,13 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.TextPasteItem.Companion.createTextPasteItem
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.linkedin
+import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -29,7 +29,7 @@ class LinkedIn(
             Image(
                 painter = linkedin(),
                 contentDescription = "LinkedIn",
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.size(xxLarge),
             )
         }
     }

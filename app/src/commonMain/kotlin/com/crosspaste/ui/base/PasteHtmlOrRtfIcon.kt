@@ -6,14 +6,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import com.crosspaste.db.paste.PasteData
+import com.crosspaste.ui.theme.AppUISize.large2X
 
 @Composable
 fun PasteHtmlOrRtfIcon(
     pasteData: PasteData,
     iconColor: Color,
-    size: Dp = 20.dp,
+    size: Dp = large2X,
 ) {
     pasteData.source?.let {
         AppSourceIcon(

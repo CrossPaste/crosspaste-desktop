@@ -9,8 +9,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.DesktopAppSize
+import com.crosspaste.ui.theme.AppUISize.tiny5X
 import org.koin.compose.koinInject
 
 @Composable
@@ -30,7 +30,7 @@ fun PasteDetailView(
             detailView()
         }
 
-        HorizontalDivider(thickness = 1.dp)
+        HorizontalDivider(thickness = tiny5X)
 
         Column(
             modifier =

@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -31,7 +30,9 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -70,7 +71,7 @@ fun SettingsContentView() {
                 modifier =
                     Modifier.verticalScroll(scrollState)
                         .fillMaxSize()
-                        .padding(16.dp),
+                        .padding(medium),
             ) {
                 settingsViewProvider.SettingsCoreView()
             }
@@ -91,9 +92,9 @@ fun SettingsContentView() {
                 adapter = rememberScrollbarAdapter(scrollState),
                 style =
                     ScrollbarStyle(
-                        minimalHeight = 16.dp,
-                        thickness = 8.dp,
-                        shape = RoundedCornerShape(4.dp),
+                        minimalHeight = medium,
+                        thickness = tiny,
+                        shape = tiny3XRoundedCornerShape,
                         hoverDurationMillis = 300,
                         unhoverColor =
                             if (isScrolling) {

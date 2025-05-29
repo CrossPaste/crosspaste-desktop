@@ -7,7 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -18,7 +17,11 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.zero
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -28,7 +31,7 @@ fun PasteTooltipAreaView(
     delayMillis: Int = 500,
     computeTooltipPlacement: @Composable () -> TooltipPlacement = {
         TooltipPlacement.CursorPoint(
-            offset = DpOffset(0.dp, 16.dp),
+            offset = DpOffset(zero, medium),
         )
     },
     content: @Composable () -> Unit,
@@ -43,18 +46,18 @@ fun PasteTooltipAreaView(
                     Modifier
                         .wrapContentSize()
                         .background(Color.Transparent)
-                        .shadow(5.dp),
+                        .shadow(tiny2X),
             ) {
                 Surface(
                     modifier =
                         Modifier
-                            .clip(RoundedCornerShape(5.dp)),
-                    tonalElevation = 6.dp,
-                    shadowElevation = 6.dp,
+                            .clip(tiny2XRoundedCornerShape),
+                    tonalElevation = tiny2X,
+                    shadowElevation = tiny2X,
                 ) {
                     Text(
                         text = text,
-                        modifier = Modifier.padding(4.dp),
+                        modifier = Modifier.padding(tiny3X),
                         style =
                             MaterialTheme.typography.bodySmall.copy(
                                 lineHeight = TextUnit.Unspecified,

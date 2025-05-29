@@ -38,7 +38,6 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
@@ -68,6 +67,11 @@ import com.crosspaste.ui.base.chevronRight
 import com.crosspaste.ui.base.imageCompress
 import com.crosspaste.ui.base.imageExpand
 import com.crosspaste.ui.base.imageSlash
+import com.crosspaste.ui.theme.AppUISize.gigantic
+import com.crosspaste.ui.theme.AppUISize.large
+import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.getFileUtils
@@ -182,8 +186,8 @@ fun PasteImagesDetailView(
                                                 verticalAlignment = Alignment.CenterVertically,
                                             ) {
                                                 CircularProgressIndicator(
-                                                    modifier = Modifier.size(180.dp),
-                                                    strokeWidth = 8.dp,
+                                                    modifier = Modifier.size(gigantic),
+                                                    strokeWidth = tiny,
                                                 )
                                             }
                                         }
@@ -192,7 +196,7 @@ fun PasteImagesDetailView(
                                             Icon(
                                                 painter = imageSlash(),
                                                 contentDescription = imagePath.name,
-                                                modifier = Modifier.size(180.dp),
+                                                modifier = Modifier.size(gigantic),
                                                 tint = MaterialTheme.colorScheme.onBackground,
                                             )
                                         }
@@ -240,9 +244,9 @@ fun PasteImagesDetailView(
                         }
 
                         if (pasteFiles.count > 1 && hover) {
-                            Row(modifier = Modifier.fillMaxWidth().height(30.dp)) {
+                            Row(modifier = Modifier.fillMaxWidth().height(xxLarge)) {
                                 PasteIconButton(
-                                    size = 18.dp,
+                                    size = large,
                                     onClick = {
                                         coroutineScope.launch {
                                             mutex.withLock {
@@ -261,7 +265,7 @@ fun PasteImagesDetailView(
                                             .background(Color.Transparent, CircleShape),
                                 ) {
                                     Icon(
-                                        modifier = Modifier.size(18.dp),
+                                        modifier = Modifier.size(large),
                                         painter = chevronLeft(),
                                         contentDescription = "chevronLeft",
                                         tint = MaterialTheme.colorScheme.onBackground,
@@ -269,7 +273,7 @@ fun PasteImagesDetailView(
                                 }
                                 Spacer(modifier = Modifier.weight(1f))
                                 PasteIconButton(
-                                    size = 18.dp,
+                                    size = large,
                                     onClick = {
                                         coroutineScope.launch {
                                             mutex.withLock {
@@ -288,7 +292,7 @@ fun PasteImagesDetailView(
                                             .background(Color.Transparent, CircleShape),
                                 ) {
                                     Icon(
-                                        modifier = Modifier.size(18.dp),
+                                        modifier = Modifier.size(large),
                                         painter = chevronRight(),
                                         contentDescription = "chevronRight",
                                         tint = MaterialTheme.colorScheme.onBackground,
@@ -300,18 +304,18 @@ fun PasteImagesDetailView(
                         if (hover) {
                             Row(modifier = Modifier.fillMaxSize()) {
                                 Spacer(modifier = Modifier.weight(1f))
-                                Column(modifier = Modifier.width(30.dp).fillMaxHeight()) {
+                                Column(modifier = Modifier.width(xxLarge).fillMaxHeight()) {
                                     Spacer(modifier = Modifier.weight(1f))
                                     Box(
                                         modifier =
-                                            Modifier.size(30.dp).background(
+                                            Modifier.size(xxLarge).background(
                                                 color = MaterialTheme.colorScheme.background.copy(alpha = 0.5f),
                                             ),
                                         contentAlignment = Alignment.Center,
                                     ) {
                                         Icon(
                                             modifier =
-                                                Modifier.size(20.dp).clickable {
+                                                Modifier.size(large2X).clickable {
                                                     forceMode = true
                                                     showMode = !showMode
                                                 },

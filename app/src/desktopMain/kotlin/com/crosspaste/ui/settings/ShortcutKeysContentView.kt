@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -34,7 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.unit.dp
+import com.crosspaste.app.AppSize
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_LOCAL_LAST
@@ -54,6 +53,14 @@ import com.crosspaste.ui.base.KeyboardView
 import com.crosspaste.ui.base.PasteDialogFactory
 import com.crosspaste.ui.base.edit
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small
+import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny5X
+import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import org.koin.compose.koinInject
 
 @Composable
@@ -68,70 +75,70 @@ fun ShortcutKeysContentView() {
             modifier =
                 Modifier.verticalScroll(scrollState)
                     .fillMaxSize()
-                    .padding(vertical = 16.dp),
+                    .padding(vertical = medium),
         ) {
             Column(
                 modifier =
                     Modifier.fillMaxSize()
-                        .padding(horizontal = 16.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .padding(horizontal = medium)
+                        .clip(tinyRoundedCornerShape)
                         .background(AppUIColors.shortcutBackground),
             ) {
                 ShortcutKeyRow(PASTE)
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(large2X))
 
             Column(
                 modifier =
                     Modifier.fillMaxSize()
-                        .padding(horizontal = 16.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .padding(horizontal = medium)
+                        .clip(tinyRoundedCornerShape)
                         .background(AppUIColors.shortcutBackground),
             ) {
                 ShortcutKeyRow(PASTE_PLAIN_TEXT)
 
-                HorizontalDivider(modifier = Modifier.padding(start = 15.dp))
+                HorizontalDivider(modifier = Modifier.padding(start = small))
 
                 ShortcutKeyRow(PASTE_PRIMARY_TYPE)
 
-                HorizontalDivider(modifier = Modifier.padding(start = 15.dp))
+                HorizontalDivider(modifier = Modifier.padding(start = small))
 
                 ShortcutKeyRow(PASTE_LOCAL_LAST)
 
-                HorizontalDivider(modifier = Modifier.padding(start = 15.dp))
+                HorizontalDivider(modifier = Modifier.padding(start = small))
 
                 ShortcutKeyRow(PASTE_REMOTE_LAST)
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(large2X))
 
             Column(
                 modifier =
                     Modifier.fillMaxSize()
-                        .padding(horizontal = 16.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .padding(horizontal = medium)
+                        .clip(tinyRoundedCornerShape)
                         .background(AppUIColors.shortcutBackground),
             ) {
                 ShortcutKeyRow(SHOW_MAIN)
 
-                HorizontalDivider(modifier = Modifier.padding(start = 15.dp))
+                HorizontalDivider(modifier = Modifier.padding(start = small))
 
                 ShortcutKeyRow(SHOW_SEARCH)
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(large2X))
 
             Column(
                 modifier =
                     Modifier.fillMaxSize()
-                        .padding(horizontal = 16.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .padding(horizontal = medium)
+                        .clip(tinyRoundedCornerShape)
                         .background(AppUIColors.shortcutBackground),
             ) {
                 ShortcutKeyRow(TOGGLE_PASTEBOARD_MONITORING)
 
-                HorizontalDivider(modifier = Modifier.padding(start = 15.dp))
+                HorizontalDivider(modifier = Modifier.padding(start = small))
 
                 ShortcutKeyRow(TOGGLE_ENCRYPT)
             }
@@ -142,6 +149,7 @@ fun ShortcutKeysContentView() {
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ShortcutKeyRow(name: String) {
+    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val dialogService = koinInject<DialogService>()
     val pasteDialogFactory = koinInject<PasteDialogFactory>()
@@ -152,7 +160,7 @@ fun ShortcutKeyRow(name: String) {
     Row(
         modifier =
             Modifier.fillMaxWidth()
-                .height(40.dp)
+                .height(appSize.settingsItemHeight)
                 .onPointerEvent(
                     eventType = PointerEventType.Enter,
                     onEvent = {
@@ -164,7 +172,7 @@ fun ShortcutKeyRow(name: String) {
                         hover = false
                     },
                 )
-                .padding(horizontal = 12.dp, vertical = 5.dp),
+                .padding(horizontal = small2X, vertical = tiny2X),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         SettingsText(text = copywriter.getText(name))
@@ -174,7 +182,7 @@ fun ShortcutKeyRow(name: String) {
 
         Icon(
             modifier =
-                Modifier.size(16.dp)
+                Modifier.size(medium)
                     .clickable {
                         dialogService.pushDialog(
                             pasteDialogFactory.createDialog(
@@ -197,17 +205,19 @@ fun ShortcutKeyRow(name: String) {
                                     Row(
                                         modifier =
                                             Modifier.fillMaxWidth()
-                                                .height(40.dp)
-                                                .border(1.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(5.dp)),
+                                                .height(appSize.settingsItemHeight)
+                                                .border(tiny5X, MaterialTheme.colorScheme.onSurface, tinyRoundedCornerShape),
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
                                         Row(
-                                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                                            modifier =
+                                                Modifier.fillMaxWidth()
+                                                    .padding(horizontal = medium),
                                             verticalAlignment = Alignment.CenterVertically,
                                         ) {
                                             Icon(
                                                 modifier =
-                                                    Modifier.size(16.dp),
+                                                    Modifier.size(medium),
                                                 painter = edit(),
                                                 contentDescription = "edit shortcut key",
                                                 tint = MaterialTheme.colorScheme.primary,
@@ -244,7 +254,7 @@ fun ShortcutKeyRow(name: String) {
                 },
         )
 
-        Spacer(modifier = Modifier.width(10.dp))
+        Spacer(modifier = Modifier.width(small3X))
 
         shortcutKeys.shortcutKeysCore.value.keys[name]?.let { keys ->
             ShortcutKeyItemView(keys)
@@ -267,13 +277,13 @@ fun ShortcutKeyItemView(keys: List<KeyboardKey>) {
         keys.forEachIndexed { index, info ->
             KeyboardView(keyboardValue = info.name, background = MaterialTheme.colorScheme.primary)
             if (index != keys.size - 1) {
-                Spacer(modifier = Modifier.width(5.dp))
+                Spacer(modifier = Modifier.width(tiny2X))
                 Text(
                     text = "+",
                     color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.labelMedium,
                 )
-                Spacer(modifier = Modifier.width(5.dp))
+                Spacer(modifier = Modifier.width(tiny2X))
             }
         }
     }

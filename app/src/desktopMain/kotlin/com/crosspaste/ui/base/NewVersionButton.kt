@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,8 +16,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppUpdateService
+import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
 import org.koin.compose.koinInject
 
 @Composable
@@ -28,13 +29,13 @@ fun NewVersionButton(modifier: Modifier = Modifier) {
         modifier =
             modifier
                 .wrapContentWidth()
-                .height(20.dp)
-                .clip(RoundedCornerShape(4.dp))
+                .height(large2X)
+                .clip(tiny3XRoundedCornerShape)
                 .background(Color.Red)
                 .clickable {
                     appUpdateService.jumpDownload()
                 }
-                .padding(horizontal = 4.dp),
+                .padding(horizontal = tiny3X),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {

@@ -27,7 +27,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.zero
 
 @Composable
 fun MenuItem(
@@ -38,7 +40,7 @@ fun MenuItem(
             lineHeight = TextUnit.Unspecified,
         ),
     background: Color = MaterialTheme.colorScheme.surface,
-    paddingValues: PaddingValues = PaddingValues(16.dp, 0.dp, 16.dp, 0.dp),
+    paddingValues: PaddingValues = PaddingValues(horizontal = medium, vertical = zero),
     enabledInteraction: Boolean = true,
     extendContent: (@Composable RowScope.() -> Unit)? = null,
     onClick: () -> Unit,
@@ -65,7 +67,7 @@ fun MenuItem(
 
     Row(
         modifier =
-            modifier.height(32.dp)
+            modifier.height(xxLarge)
                 .padding(paddingValues),
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,
@@ -86,10 +88,10 @@ fun MenuItem(
 fun getMenWidth(
     array: Array<String>,
     textStyle: TextStyle = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Light),
-    paddingValues: PaddingValues = PaddingValues(16.dp, 0.dp, 16.dp, 0.dp),
-    extendFunction: (Int) -> Dp = { 0.dp },
+    paddingValues: PaddingValues = PaddingValues(horizontal = medium, vertical = zero),
+    extendFunction: (Int) -> Dp = { zero },
 ): Dp {
-    var maxWidth = 0.dp
+    var maxWidth = zero
     array.forEachIndexed { index, text ->
         maxWidth = maxOf(maxWidth, measureTextWidth(text, textStyle) + extendFunction(index))
     }

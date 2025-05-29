@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -16,13 +15,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import com.crosspaste.clean.CleanTime
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.BaseColor
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.check
 import com.crosspaste.ui.base.getMenWidth
+import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.utils.ColorUtils
 import org.koin.compose.koinInject
 
@@ -38,7 +40,7 @@ fun CleanTimeMenuView(
             Modifier
                 .wrapContentSize()
                 .background(Color.Transparent)
-                .shadow(15.dp),
+                .shadow(small),
     ) {
         val cleanTimeMenuTexts =
             CleanTime.entries.map { cleanTime ->
@@ -47,7 +49,7 @@ fun CleanTimeMenuView(
 
         val maxWidth =
             getMenWidth(cleanTimeMenuTexts) {
-                28.dp
+                small * 2
             }
 
         Column(
@@ -55,7 +57,7 @@ fun CleanTimeMenuView(
                 Modifier
                     .width(maxWidth)
                     .wrapContentHeight()
-                    .clip(RoundedCornerShape(5.dp))
+                    .clip(tiny2XRoundedCornerShape)
                     .background(MaterialTheme.colorScheme.surface),
         ) {
             cleanTimeMenuTexts.forEachIndexed { index, text ->
@@ -64,9 +66,9 @@ fun CleanTimeMenuView(
                     extendContent =
                         if (index == selectIndex) {
                             {
-                                Spacer(modifier = Modifier.width(16.dp))
+                                Spacer(modifier = Modifier.width(medium))
                                 Icon(
-                                    modifier = Modifier.size(20.dp),
+                                    modifier = Modifier.size(large2X),
                                     painter = check(),
                                     contentDescription = "selected",
                                     tint =

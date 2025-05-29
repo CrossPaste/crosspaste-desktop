@@ -8,7 +8,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
+import com.crosspaste.ui.theme.AppUISize.elevation
+import com.crosspaste.ui.theme.AppUISize.tiny6X
 
 @Composable
 fun HighlightedCard(
@@ -24,15 +25,10 @@ fun HighlightedCard(
             CardDefaults.cardColors(
                 containerColor = containerColor,
             ),
-        elevation =
-            CardDefaults.cardElevation(
-                defaultElevation = 0.8.dp,
-                pressedElevation = 1.dp,
-                hoveredElevation = 3.dp,
-            ),
+        elevation = elevation,
         border =
             BorderStroke(
-                width = 0.5.dp,
+                width = tiny6X,
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
             ),
     ) {

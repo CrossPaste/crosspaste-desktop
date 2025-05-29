@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -30,7 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import com.crosspaste.db.sync.SyncRuntimeInfo.Companion.createSyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.dto.sync.SyncInfo
@@ -43,6 +41,15 @@ import com.crosspaste.ui.base.DefaultTextField
 import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.base.textFieldStyle
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny5X
+import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.xxxxLarge
+import com.crosspaste.ui.theme.AppUISize.zero
 import com.crosspaste.ui.theme.CrossPasteTheme.connectedColor
 import com.crosspaste.utils.buildUrl
 import kotlinx.coroutines.runBlocking
@@ -71,9 +78,9 @@ fun AddDeviceManuallyForm() {
     Row(
         modifier =
             Modifier.fillMaxWidth()
-                .height(40.dp)
+                .height(xxxxLarge)
                 .background(AppUIColors.deviceBackground)
-                .padding(horizontal = 12.dp, vertical = 5.dp),
+                .padding(horizontal = small2X, vertical = tiny2X),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -86,10 +93,10 @@ fun AddDeviceManuallyForm() {
         Text(
             text = "IP",
             color = MaterialTheme.colorScheme.contentColorFor(AppUIColors.deviceBackground),
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelLarge,
         )
 
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(tiny))
 
         val ipWidth =
             measureTextWidth(
@@ -101,12 +108,12 @@ fun AddDeviceManuallyForm() {
             modifier =
                 Modifier
                     .weight(0.9f)
-                    .widthIn(max = ipWidth + 16.dp),
+                    .widthIn(max = ipWidth + medium),
             isError = ipIsError,
             textAlign = TextAlign.Center,
             value = ip,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            contentPadding = PaddingValues(horizontal = 8.dp),
+            contentPadding = PaddingValues(horizontal = tiny),
         ) { newValue ->
             val filteredValue = newValue.filter { it.isDigit() || it == '.' }
             if (filteredValue.length <= 15 && filteredValue == newValue) {
@@ -127,15 +134,15 @@ fun AddDeviceManuallyForm() {
             }
         }
 
-        Spacer(modifier = Modifier.width(15.dp))
+        Spacer(modifier = Modifier.width(medium))
 
         Text(
             text = "Port",
             color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelLarge,
         )
 
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(tiny))
 
         val portWidth =
             measureTextWidth(
@@ -147,12 +154,12 @@ fun AddDeviceManuallyForm() {
             modifier =
                 Modifier
                     .weight(0.5f)
-                    .widthIn(max = portWidth + 16.dp),
+                    .widthIn(max = portWidth + medium),
             isError = portIsError,
             textAlign = TextAlign.Center,
             value = port,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            contentPadding = PaddingValues(horizontal = 8.dp),
+            contentPadding = PaddingValues(horizontal = tiny),
         ) { newValue ->
             runCatching {
                 if (newValue.isEmpty()) {
@@ -166,12 +173,12 @@ fun AddDeviceManuallyForm() {
             }
         }
 
-        Spacer(modifier = Modifier.width(15.dp))
+        Spacer(modifier = Modifier.width(medium))
 
         Button(
             modifier =
                 Modifier.wrapContentWidth()
-                    .height(28.dp)
+                    .height(xxLarge)
                     .weight(0.4f),
             onClick = {
                 // check ip and port
@@ -219,16 +226,16 @@ fun AddDeviceManuallyForm() {
                     }
                 }
             },
-            shape = RoundedCornerShape(4.dp),
-            border = BorderStroke(1.dp, connectedColor(MaterialTheme.colorScheme.surfaceContainerLowest)),
-            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+            shape = tiny3XRoundedCornerShape,
+            border = BorderStroke(tiny5X, connectedColor(MaterialTheme.colorScheme.surfaceContainerLowest)),
+            contentPadding = PaddingValues(horizontal = tiny, vertical = zero),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background),
             elevation =
                 ButtonDefaults.elevatedButtonElevation(
-                    defaultElevation = 0.dp,
-                    pressedElevation = 0.dp,
-                    hoveredElevation = 0.dp,
-                    focusedElevation = 0.dp,
+                    defaultElevation = zero,
+                    pressedElevation = zero,
+                    hoveredElevation = zero,
+                    focusedElevation = zero,
                 ),
         ) {
             Text(

@@ -10,9 +10,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.tiny3X
 import org.koin.compose.koinInject
 
 @Composable
@@ -24,7 +26,7 @@ fun SettingItemsTitleView(title: String) {
             Modifier.fillMaxWidth()
                 .wrapContentHeight()
                 .background(AppUIColors.settingsTitleBackground)
-                .padding(start = 16.dp, top = 12.dp, bottom = 5.dp),
+                .padding(start = medium, top = small2X, bottom = tiny3X),
     ) {
         Text(
             text = copywriter.getText(title),

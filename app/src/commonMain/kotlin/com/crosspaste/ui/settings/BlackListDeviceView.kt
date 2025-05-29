@@ -9,11 +9,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.remove
 import com.crosspaste.ui.devices.DeviceViewProvider
+import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.medium
 import org.koin.compose.koinInject
 
 @Composable
@@ -24,7 +25,7 @@ fun BlackListDeviceView(
     val deviceViewProvider = koinInject<DeviceViewProvider>()
     deviceViewProvider.SyncDeviceView(syncInfo = syncInfo) {
         PasteIconButton(
-            size = 20.dp,
+            size = large2X,
             onClick = clickable,
             modifier =
                 Modifier
@@ -34,9 +35,9 @@ fun BlackListDeviceView(
                 painter = remove(),
                 contentDescription = "remove blacklist",
                 tint = Color.Red,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(large2X),
             )
         }
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(medium))
     }
 }

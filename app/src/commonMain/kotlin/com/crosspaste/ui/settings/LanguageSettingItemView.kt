@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -28,7 +27,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.window.Popup
 import com.crosspaste.i18n.GlobalCopywriter
@@ -39,6 +37,11 @@ import com.crosspaste.ui.base.arrowRight
 import com.crosspaste.ui.base.arrowUp
 import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.language
+import com.crosspaste.ui.theme.AppUISize.gigantic
+import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.small
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
@@ -99,7 +102,7 @@ fun LanguageSettingItemView() {
             Icon(
                 modifier =
                     Modifier
-                        .size(20.dp),
+                        .size(large2X),
                 painter = languageArrow,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onBackground,
@@ -111,8 +114,8 @@ fun LanguageSettingItemView() {
                 alignment = Alignment.TopEnd,
                 offset =
                     IntOffset(
-                        with(density) { ((20).dp).roundToPx() },
-                        with(density) { (30.dp).roundToPx() },
+                        with(density) { (large2X).roundToPx() },
+                        with(density) { (xxLarge).roundToPx() },
                     ),
                 onDismissRequest = {
                     if (showMoreLanguage) {
@@ -126,11 +129,11 @@ fun LanguageSettingItemView() {
                         Modifier
                             .wrapContentSize()
                             .background(Color.Transparent)
-                            .shadow(15.dp),
+                            .shadow(small),
                 ) {
                     val maxWidth =
                         max(
-                            150.dp,
+                            gigantic,
                             getMenWidth(copywriter.getAllLanguages().map { it.name }.toTypedArray()),
                         )
 
@@ -139,7 +142,7 @@ fun LanguageSettingItemView() {
                             Modifier
                                 .width(maxWidth)
                                 .wrapContentHeight()
-                                .clip(RoundedCornerShape(5.dp))
+                                .clip(tiny2XRoundedCornerShape)
                                 .background(MaterialTheme.colorScheme.surface),
                     ) {
                         val allLanguages = copywriter.getAllLanguages()

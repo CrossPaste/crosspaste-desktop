@@ -20,11 +20,13 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.unit.dp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.toTop
+import com.crosspaste.ui.theme.AppUISize.xLarge
+import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
@@ -34,7 +36,7 @@ fun PasteToTopView(toTopAction: () -> Unit) {
     Row(
         modifier =
             Modifier.fillMaxSize()
-                .padding(end = 30.dp, bottom = 30.dp),
+                .padding(end = xxLarge, bottom = xxLarge),
         verticalAlignment = Alignment.Bottom,
     ) {
         var transparency by remember { mutableStateOf(0.5f) }
@@ -45,7 +47,7 @@ fun PasteToTopView(toTopAction: () -> Unit) {
             delayMillis = 1000,
         ) {
             PasteIconButton(
-                size = 40.dp,
+                size = xxxLarge,
                 onClick = {
                     toTopAction()
                 },
@@ -68,7 +70,7 @@ fun PasteToTopView(toTopAction: () -> Unit) {
                 Icon(
                     painter = toTop(),
                     contentDescription = "To Top",
-                    modifier = Modifier.size(30.dp),
+                    modifier = Modifier.size(xLarge),
                     tint = MaterialTheme.colorScheme.primary.copy(alpha = transparency),
                 )
             }

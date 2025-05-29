@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,9 +24,11 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
 import org.koin.compose.koinInject
 
 @Composable
@@ -50,8 +51,8 @@ fun TutorialButton() {
         modifier =
             Modifier
                 .wrapContentWidth()
-                .height(20.dp)
-                .clip(RoundedCornerShape(4.dp))
+                .height(large2X)
+                .clip(tiny3XRoundedCornerShape)
                 .background(MaterialTheme.colorScheme.primary)
                 .clickable {
                     uiSupport.openCrossPasteWebInBrowser("tutorial/pasteboard")
@@ -62,7 +63,7 @@ fun TutorialButton() {
     ) {
         Text(
             modifier =
-                Modifier.padding(horizontal = 6.dp)
+                Modifier.padding(horizontal = tiny2X)
                     .scale(scale),
             text = copywriter.getText("newbie_tutorial"),
             color = Color.White,

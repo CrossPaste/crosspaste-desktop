@@ -1,5 +1,6 @@
 package com.crosspaste.ui.base
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,9 +15,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.tiny6X
 import org.koin.compose.koinInject
 
 @Composable
@@ -29,10 +32,10 @@ fun DialogButtonsView(
     val copywriter = koinInject<GlobalCopywriter>()
     Row(
         modifier =
-            Modifier.padding(top = 16.dp)
+            Modifier.padding(top = medium)
                 .fillMaxWidth()
                 .wrapContentHeight(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(small2X),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Card(
@@ -43,8 +46,8 @@ fun DialogButtonsView(
                     containerColor = AppUIColors.dialogBackground,
                 ),
             border =
-                androidx.compose.foundation.BorderStroke(
-                    width = 0.5.dp,
+                BorderStroke(
+                    width = tiny6X,
                     color = MaterialTheme.colorScheme.outline.copy(alpha = 0.72f),
                 ),
         ) {
@@ -53,7 +56,7 @@ fun DialogButtonsView(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = medium, vertical = small2X),
                 textAlign = TextAlign.Center,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -75,7 +78,7 @@ fun DialogButtonsView(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = medium, vertical = small2X),
                 textAlign = TextAlign.Center,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,

@@ -21,7 +21,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -39,7 +38,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppControl
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteData
@@ -48,6 +46,14 @@ import com.crosspaste.ui.base.AppSourceIcon
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.noFavorite
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny5X
+import com.crosspaste.ui.theme.AppUISize.xLarge
+import com.crosspaste.ui.theme.AppUISize.xxLarge
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -72,7 +78,7 @@ fun PasteDetailInfoView(
     }
 
     Row(
-        modifier = Modifier.fillMaxWidth().height(30.dp),
+        modifier = Modifier.fillMaxWidth().height(xxLarge),
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -84,7 +90,7 @@ fun PasteDetailInfoView(
                     lineHeight = TextUnit.Unspecified,
                 ),
         )
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(tiny))
         PasteTooltipIconView(
             painter = if (favorite) favorite() else noFavorite(),
             contentDescription = "Favorite",
@@ -103,10 +109,10 @@ fun PasteDetailInfoView(
                 pasteData = pasteData,
                 source = source,
                 iconColor = MaterialTheme.colorScheme.primary,
-                size = 30.dp,
+                size = xxLarge,
             )
 
-            Spacer(modifier = Modifier.width(5.dp))
+            Spacer(modifier = Modifier.width(tiny2X))
 
             Text(
                 text = source,
@@ -119,7 +125,7 @@ fun PasteDetailInfoView(
             )
         }
     }
-    Spacer(modifier = Modifier.height(8.dp))
+    Spacer(modifier = Modifier.height(tiny))
 
     val listState = rememberLazyListState()
     var isScrolling by remember { mutableStateOf(false) }
@@ -151,7 +157,7 @@ fun PasteDetailInfoView(
                 key = { _, item -> item.key },
             ) { index, item ->
                 Row(
-                    modifier = Modifier.fillMaxWidth().height(24.dp),
+                    modifier = Modifier.fillMaxWidth().height(xLarge),
                     horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -177,14 +183,14 @@ fun PasteDetailInfoView(
                     )
                 }
                 if (index != items.size - 1) {
-                    HorizontalDivider(thickness = 1.dp)
+                    HorizontalDivider(thickness = tiny5X)
                 }
             }
         }
 
         VerticalScrollbar(
             modifier =
-                Modifier.offset(x = 10.dp).background(color = Color.Transparent)
+                Modifier.offset(x = small3X).background(color = Color.Transparent)
                     .fillMaxHeight().align(Alignment.CenterEnd)
                     .draggable(
                         orientation = Orientation.Vertical,
@@ -198,9 +204,9 @@ fun PasteDetailInfoView(
             adapter = rememberScrollbarAdapter(scrollState = listState),
             style =
                 ScrollbarStyle(
-                    minimalHeight = 16.dp,
-                    thickness = 8.dp,
-                    shape = RoundedCornerShape(4.dp),
+                    minimalHeight = medium,
+                    thickness = tiny2X,
+                    shape = tiny3XRoundedCornerShape,
                     hoverDurationMillis = 300,
                     unhoverColor =
                         if (isScrolling) {

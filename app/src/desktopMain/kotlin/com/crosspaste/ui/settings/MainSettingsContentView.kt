@@ -2,13 +2,11 @@ package com.crosspaste.ui.settings
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppControl
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.log.CrossPasteLogger
@@ -21,6 +19,10 @@ import com.crosspaste.ui.base.debug
 import com.crosspaste.ui.base.palette
 import com.crosspaste.ui.base.shield
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import org.koin.compose.koinInject
 
 @Composable
@@ -36,22 +38,22 @@ fun MainSettingsContentView() {
     HighlightedCard(
         modifier =
             Modifier.wrapContentSize(),
-        shape = RoundedCornerShape(8.dp),
+        shape = tinyRoundedCornerShape,
         containerColor = AppUIColors.settingsBackground,
     ) {
         LanguageSettingItemView()
 
-        HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
+        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
 
         SettingItemView(
             painter = palette(),
-            height = 110.dp,
+            height = xxLarge * 3 + tiny2X * 4,
             text = "theme",
         ) {
             ThemeSegmentedControl()
         }
 
-        HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
+        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
 
         SettingSwitchItemView(
             text = "pasteboard_listening",
@@ -61,7 +63,7 @@ fun MainSettingsContentView() {
             pasteboardService.toggle()
         }
 
-        HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
+        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
 
         SettingSwitchItemView(
             text = "encrypted_sync",
@@ -73,7 +75,7 @@ fun MainSettingsContentView() {
             }
         }
 
-        HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
+        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
 
         SettingSwitchItemView(
             text = "sound_effect",
@@ -83,7 +85,7 @@ fun MainSettingsContentView() {
             configManager.updateConfig("enableSoundEffect", it)
         }
 
-        HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
+        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
 
         SettingSwitchItemView(
             text = "launch_at_startup",
@@ -93,7 +95,7 @@ fun MainSettingsContentView() {
             configManager.updateConfig("enableAutoStartUp", it)
         }
 
-        HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
+        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
 
         SettingSwitchItemView(
             text = "debug_mode",
@@ -105,7 +107,7 @@ fun MainSettingsContentView() {
             )
         }
 
-        HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
+        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
 
         settingsViewProvider.AboutItemView()
     }

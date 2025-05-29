@@ -20,4 +20,6 @@ interface AppSize {
     val settingsItemHeight: Dp
 
     val toastViewWidth: Dp
+
+    val tokenViewWidth: Dp
 }

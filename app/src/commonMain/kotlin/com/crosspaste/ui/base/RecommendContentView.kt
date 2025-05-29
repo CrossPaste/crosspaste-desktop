@@ -27,11 +27,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.recommend.RecommendationService
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny5X
+import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import org.koin.compose.koinInject
 
 @Composable
@@ -45,20 +51,20 @@ fun RecommendContentView() {
     Box(
         modifier =
             Modifier.fillMaxSize()
-                .padding(16.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .padding(medium)
+                .clip(tinyRoundedCornerShape)
                 .background(AppUIColors.recommendedBackground),
     ) {
         Column(
             modifier =
                 Modifier.fillMaxSize()
-                    .padding(40.dp),
+                    .padding(xxxxLarge),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(modifier = Modifier.weight(0.3f))
 
             Text(
-                modifier = Modifier.padding(bottom = 32.dp),
+                modifier = Modifier.padding(bottom = xxLarge),
                 text = copywriter.getText("recommend_to_friends"),
                 style =
                     TextStyle(
@@ -74,14 +80,14 @@ fun RecommendContentView() {
                     Modifier
                         .fillMaxWidth()
                         .wrapContentHeight()
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(medium))
                         .border(
-                            width = 1.dp,
+                            width = tiny5X,
                             color = MaterialTheme.colorScheme.outline,
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(medium),
                         )
                         .background(MaterialTheme.colorScheme.surface)
-                        .padding(16.dp),
+                        .padding(medium),
                 style =
                     TextStyle(
                         fontSize = 16.sp,
@@ -91,12 +97,12 @@ fun RecommendContentView() {
                 maxLines = Int.MAX_VALUE,
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(small3X))
 
             LazyVerticalGrid(
                 columns = GridCells.Fixed(5),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(medium),
+                verticalArrangement = Arrangement.spacedBy(tiny2X),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 items(recommendationService.recommendPlatformList) { platform ->

@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
@@ -17,7 +16,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
+import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.tiny4XRoundedCornerShape
 
 const val enter: String = "↵"
 
@@ -36,8 +36,8 @@ fun KeyboardView(
 
     Row(
         modifier =
-            Modifier.size(dpSize.plus(DpSize(10.dp, 10.dp)))
-                .clip(RoundedCornerShape(2.dp))
+            Modifier.size(dpSize.plus(DpSize(small3X, small3X)))
+                .clip(tiny4XRoundedCornerShape)
                 .background(background),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,

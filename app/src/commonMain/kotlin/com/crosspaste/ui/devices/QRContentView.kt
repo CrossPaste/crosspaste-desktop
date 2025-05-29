@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -50,6 +49,12 @@ import com.crosspaste.ui.base.BaseColor
 import com.crosspaste.ui.base.autoRenew
 import com.crosspaste.ui.base.scan
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small3XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
 import com.crosspaste.utils.ColorUtils
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.withContext
@@ -90,8 +95,8 @@ fun QRContentView() {
     Box(
         modifier =
             Modifier.fillMaxSize()
-                .padding(8.dp)
-                .clip(RoundedCornerShape(5.dp))
+                .padding(tiny)
+                .clip(tiny3XRoundedCornerShape)
                 .background(AppUIColors.qrBackground),
         contentAlignment = Alignment.Center,
     ) {
@@ -109,16 +114,16 @@ fun QRContentView() {
                     modifier =
                         Modifier.align(Alignment.CenterHorizontally)
                             .width(appSize.qrCodeSize.width)
-                            .clip(RoundedCornerShape(10.dp))
+                            .clip(small3XRoundedCornerShape)
                             .background(Color.White)
-                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                            .padding(horizontal = medium, vertical = tiny2X),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         modifier =
                             Modifier.weight(1f, fill = false)
-                                .padding(vertical = 8.dp),
+                                .padding(vertical = tiny),
                         textAlign = TextAlign.Center,
                         text = copywriter.getText("please_scan_the_binding_device"),
                         maxLines = 3,
@@ -130,20 +135,20 @@ fun QRContentView() {
                                 lineBreak = LineBreak.Paragraph,
                             ),
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(tiny))
                     Icon(
                         painter = scan(),
                         contentDescription = "Scan",
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(large2X),
                         tint = ColorUtils.getAdaptiveColor(Color.White, BaseColor.Blue.targetHue),
                     )
                 }
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(large2X))
                 qrImage?.let {
                     Image(
                         modifier =
                             Modifier.size(appSize.qrCodeSize)
-                                .clip(RoundedCornerShape(10.dp)),
+                                .clip(small3XRoundedCornerShape),
                         bitmap = it,
                         contentDescription = "QR Code",
                     )

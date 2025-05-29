@@ -19,12 +19,13 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.ui.base.DialogView
 import com.crosspaste.ui.base.ToastListView
 import com.crosspaste.ui.devices.TokenView
+import com.crosspaste.ui.theme.AppUISize.small3XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
@@ -73,9 +74,9 @@ fun CrossPasteMainWindowContent() {
                         .shadow(appSize.mainShadowSize, appSize.appRoundedCornerShape)
                         .fillMaxSize()
                         .border(
-                            width = 1.dp,
+                            width = tiny5X,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                            shape = RoundedCornerShape(10.dp),
+                            shape = small3XRoundedCornerShape,
                         )
                         .pointerInput(Unit) {
                             // Avoid click-through

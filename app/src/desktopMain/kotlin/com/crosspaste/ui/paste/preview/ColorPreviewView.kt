@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,16 +21,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.dp
+import com.crosspaste.app.AppSize
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.ui.base.UISupport
+import com.crosspaste.ui.theme.AppUISize.giant
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.tiny5X
 import org.koin.compose.koinInject
 
 @Composable
 fun ColorPreviewView(pasteData: PasteData) {
     pasteData.getPasteItem(ColorPasteItem::class)?.let { pasteColor ->
         SimplePreviewContentView(pasteData) {
+            val appSize = koinInject<AppSize>()
             val uiSupport = koinInject<UISupport>()
             Row(
                 modifier =
@@ -46,21 +51,21 @@ fun ColorPreviewView(pasteData: PasteData) {
                 Box(
                     modifier =
                         Modifier
-                            .size(100.dp)
-                            .clip(RoundedCornerShape(5.dp))
+                            .size(appSize.mainPasteSize.height)
+                            .clip(tiny2XRoundedCornerShape)
                             .background(Color(pasteColor.color).copy(alpha = 0.3f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Box(
                         modifier =
                             Modifier
-                                .size(80.dp)
+                                .size(giant)
                                 .shadow(
-                                    elevation = 1.dp,
-                                    shape = RoundedCornerShape(5.dp),
+                                    elevation = tiny5X,
+                                    shape = tiny2XRoundedCornerShape,
                                     spotColor = Color.Black.copy(alpha = 0.1f),
                                 )
-                                .clip(RoundedCornerShape(5.dp))
+                                .clip(tiny2XRoundedCornerShape)
                                 .background(Color(pasteColor.color)),
                     )
                 }
@@ -69,8 +74,8 @@ fun ColorPreviewView(pasteData: PasteData) {
                     modifier =
                         Modifier.fillMaxHeight()
                             .wrapContentWidth()
-                            .padding(horizontal = 8.dp)
-                            .padding(bottom = 8.dp),
+                            .padding(horizontal = tiny)
+                            .padding(bottom = tiny),
                     verticalArrangement = Arrangement.Bottom,
                 ) {
                     Text(
@@ -79,7 +84,7 @@ fun ColorPreviewView(pasteData: PasteData) {
                         style = MaterialTheme.typography.labelMedium,
                     )
 
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(tiny3X))
 
                     Text(
                         text = pasteColor.toRGBAString(),

@@ -18,10 +18,10 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppSize
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.ui.theme.AppUISize.medium
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -64,7 +64,7 @@ fun SyncDeviceContentView(
         Row(
             modifier =
                 Modifier.wrapContentSize()
-                    .padding(start = 16.dp),
+                    .padding(start = medium),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.End,
         ) {

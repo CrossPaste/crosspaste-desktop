@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -33,12 +32,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppLock
 import com.crosspaste.app.AppRestartService
 import com.crosspaste.app.ExitMode
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.LocalExitApplication
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny5X
+import com.crosspaste.ui.theme.AppUISize.xLarge
+import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.xxxLarge
+import com.crosspaste.ui.theme.AppUISize.zero
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
@@ -75,9 +83,9 @@ fun CrossPasteGrantAccessibilityPermissions(
             modifier =
                 Modifier.fillMaxSize()
                     .background(MaterialTheme.colorScheme.surface)
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = medium, vertical = tiny),
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(xLarge))
             Row(
                 modifier =
                     Modifier.fillMaxWidth()
@@ -86,19 +94,17 @@ fun CrossPasteGrantAccessibilityPermissions(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 CrossPasteLogoView(
-                    modifier =
-                        Modifier.clip(RoundedCornerShape(9.dp))
-                            .background(MaterialTheme.colorScheme.primary)
-                            .size(36.dp),
+                    size = xxxLarge,
+                    color = MaterialTheme.colorScheme.primary,
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(tiny))
                 Text(
                     text = copywriter.getText("permission"),
                     style = MaterialTheme.typography.headlineLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(tiny))
             Row(
                 modifier =
                     Modifier.fillMaxWidth()
@@ -117,9 +123,12 @@ fun CrossPasteGrantAccessibilityPermissions(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
             }
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(tiny3X))
             Row(
-                modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(horizontal = 12.dp),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .wrapContentHeight()
+                        .padding(horizontal = small2X),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -127,12 +136,12 @@ fun CrossPasteGrantAccessibilityPermissions(
                     modifier =
                         Modifier.fillMaxWidth()
                             .wrapContentHeight()
-                            .clip(RoundedCornerShape(5.dp))
+                            .clip(tiny3XRoundedCornerShape)
                             .background(MaterialTheme.colorScheme.surface),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(tiny3X))
                     Text(
                         text = copywriter.getText("accessibility"),
                         style =
@@ -142,7 +151,7 @@ fun CrossPasteGrantAccessibilityPermissions(
                             ),
                         color = MaterialTheme.colorScheme.onSurface,
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(tiny))
                     Text(
                         text = copywriter.getText("crosspaste_needs_your_permission_to_support_global_shortcuts"),
                         textAlign = TextAlign.Center,
@@ -150,24 +159,24 @@ fun CrossPasteGrantAccessibilityPermissions(
                         color = MaterialTheme.colorScheme.onSurface,
                     )
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(small2X))
                     if (!toRestart) {
                         Button(
-                            modifier = Modifier.height(36.dp),
+                            modifier = Modifier.height(xxxLarge),
                             onClick = {
                                 setOnTop(false)
                                 uiSupport.jumpPrivacyAccessibility()
                             },
-                            shape = RoundedCornerShape(4.dp),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiaryContainer),
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                            shape = tiny3XRoundedCornerShape,
+                            border = BorderStroke(tiny5X, MaterialTheme.colorScheme.tertiaryContainer),
+                            contentPadding = PaddingValues(horizontal = tiny, vertical = zero),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
                             elevation =
                                 ButtonDefaults.elevatedButtonElevation(
-                                    defaultElevation = 0.dp,
-                                    pressedElevation = 0.dp,
-                                    hoveredElevation = 0.dp,
-                                    focusedElevation = 0.dp,
+                                    defaultElevation = zero,
+                                    pressedElevation = zero,
+                                    hoveredElevation = zero,
+                                    focusedElevation = zero,
                                 ),
                         ) {
                             Text(
@@ -179,12 +188,12 @@ fun CrossPasteGrantAccessibilityPermissions(
                     } else {
                         if (restarting) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(28.dp),
+                                modifier = Modifier.size(xxLarge),
                                 color = MaterialTheme.colorScheme.tertiaryContainer,
                             )
                         } else {
                             Button(
-                                modifier = Modifier.height(36.dp),
+                                modifier = Modifier.height(xxxLarge),
                                 onClick = {
                                     restarting = true
                                     appLock.resetFirstLaunchFlag()
@@ -192,16 +201,16 @@ fun CrossPasteGrantAccessibilityPermissions(
                                         exitApplication(ExitMode.RESTART)
                                     }
                                 },
-                                shape = RoundedCornerShape(4.dp),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                                shape = tiny3XRoundedCornerShape,
+                                border = BorderStroke(tiny5X, MaterialTheme.colorScheme.primary),
+                                contentPadding = PaddingValues(horizontal = tiny, vertical = zero),
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                                 elevation =
                                     ButtonDefaults.elevatedButtonElevation(
-                                        defaultElevation = 0.dp,
-                                        pressedElevation = 0.dp,
-                                        hoveredElevation = 0.dp,
-                                        focusedElevation = 0.dp,
+                                        defaultElevation = zero,
+                                        pressedElevation = zero,
+                                        hoveredElevation = zero,
+                                        focusedElevation = zero,
                                     ),
                             ) {
                                 Text(
@@ -212,7 +221,7 @@ fun CrossPasteGrantAccessibilityPermissions(
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(tiny))
                 }
             }
         }

@@ -11,12 +11,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,14 +26,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
@@ -52,6 +48,12 @@ import com.crosspaste.ui.base.robotoFontFamily
 import com.crosspaste.ui.base.search
 import com.crosspaste.ui.base.settings
 import com.crosspaste.ui.base.share
+import com.crosspaste.ui.theme.AppUISize.massive
+import com.crosspaste.ui.theme.AppUISize.small
+import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -83,7 +85,8 @@ fun HomeWindowDecoration() {
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .wrapContentHeight(),
+                    .wrapContentHeight()
+                    .padding(small),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -93,16 +96,13 @@ fun HomeWindowDecoration() {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 CrossPasteLogoView(
-                    modifier =
-                        Modifier.padding(start = 13.dp, top = 13.dp, end = 10.dp, bottom = 13.dp)
-                            .align(Alignment.CenterVertically)
-                            .clip(RoundedCornerShape(9.dp))
-                            .background(MaterialTheme.colorScheme.primary)
-                            .size(36.dp),
+                    size = xxxLarge,
+                    color = MaterialTheme.colorScheme.primary,
                 )
+                Spacer(modifier = Modifier.width(small3X))
                 Column(
                     Modifier.wrapContentWidth()
-                        .height(36.dp),
+                        .height(xxxLarge),
                     horizontalAlignment = Alignment.Start,
                 ) {
                     Text(
@@ -127,7 +127,7 @@ fun HomeWindowDecoration() {
                                 ),
                         )
                         if (existNewVersion) {
-                            NewVersionButton(modifier = Modifier.offset(x = 95.dp, y = (-10).dp))
+                            NewVersionButton(modifier = Modifier.offset(x = massive, y = -small3X))
                         }
                     }
                 }
@@ -143,7 +143,7 @@ fun HomeWindowDecoration() {
                 if (appLaunchState.firstLaunch && config.showTutorial) {
                     TutorialButton()
                 }
-                Spacer(modifier = Modifier.width(5.dp))
+                Spacer(modifier = Modifier.width(tiny3X))
 
                 PasteTooltipIconView(
                     painter = share(),
@@ -173,15 +173,13 @@ fun HomeWindowDecoration() {
                     showPopup = !showPopup
                 }
 
-                Spacer(modifier = Modifier.width(15.dp))
-
                 if (showPopup) {
                     Popup(
                         alignment = Alignment.TopEnd,
                         offset =
                             IntOffset(
-                                with(density) { ((-14).dp).roundToPx() },
-                                with(density) { (30.dp).roundToPx() },
+                                with(density) { (-small).roundToPx() },
+                                with(density) { (xxLarge).roundToPx() },
                             ),
                         onDismissRequest = {
                             if (showPopup) {

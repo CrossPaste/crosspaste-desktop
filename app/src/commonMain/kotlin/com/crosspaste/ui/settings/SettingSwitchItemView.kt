@@ -7,8 +7,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.unit.dp
 import com.crosspaste.ui.base.CustomSwitch
+import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.medium
 
 @Composable
 fun SettingSwitchItemView(
@@ -25,8 +26,8 @@ fun SettingSwitchItemView(
     ) {
         CustomSwitch(
             modifier =
-                Modifier.width(32.dp)
-                    .height(20.dp),
+                Modifier.width(medium * 2)
+                    .height(large2X),
             checked = getCurrentSwitchValue(),
             onCheckedChange = {
                 onChange(it)

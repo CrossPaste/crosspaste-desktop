@@ -9,10 +9,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.paste.item.PasteUrl
 import com.crosspaste.ui.paste.PasteboardViewProvider.Companion.previewUrlStyle
+import com.crosspaste.ui.theme.AppUISize.small3X
 
 @Composable
 fun UrlPreviewView(pasteData: PasteData) {
@@ -21,7 +21,7 @@ fun UrlPreviewView(pasteData: PasteData) {
             Row(
                 modifier =
                     Modifier.fillMaxSize()
-                        .padding(10.dp),
+                        .padding(small3X),
             ) {
                 Text(
                     modifier =

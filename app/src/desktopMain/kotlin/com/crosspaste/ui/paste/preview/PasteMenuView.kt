@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -45,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.app.AppControl
+import com.crosspaste.app.AppSize
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.i18n.Copywriter
@@ -59,6 +59,12 @@ import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.base.moreVertical
 import com.crosspaste.ui.base.noFavorite
+import com.crosspaste.ui.theme.AppUISize.large
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.utils.DateUtils
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -129,7 +135,7 @@ fun PasteMenuView(
                 .onPointerEvent(PointerEventType.Exit) {
                     hideIfNotHovered(parentBounds.topLeft + it.position)
                 }
-                .clip(RoundedCornerShape(5.dp))
+                .clip(tiny2XRoundedCornerShape)
                 .background(if (showMenu) MaterialTheme.colorScheme.surfaceContainerHighest else Color.Transparent),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
@@ -201,7 +207,7 @@ fun PasteMenuView(
             offset =
                 IntOffset(
                     with(density) { ((-40).dp).roundToPx() },
-                    with(density) { (5.dp).roundToPx() },
+                    with(density) { tiny2X.roundToPx() },
                 ),
             onDismissRequest = {
                 if (showPopup) {
@@ -233,18 +239,20 @@ fun MoreMenuItem(
     hoverMenu: (Boolean) -> Unit,
     switchPopup: () -> Unit,
 ) {
+    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val menuText = copywriter.getText("menu")
 
     PasteTooltipAreaView(
-        Modifier.fillMaxWidth().height(25.dp),
+        Modifier.fillMaxWidth()
+            .height(appSize.mainPasteSize.height / 4),
         text = menuText,
         computeTooltipPlacement = {
             val textWidth = measureTextWidth(menuText, MaterialTheme.typography.bodySmall)
             TooltipPlacement.ComponentRect(
                 anchor = Alignment.BottomStart,
                 alignment = Alignment.BottomEnd,
-                offset = DpOffset(-textWidth - 16.dp, (-20).dp),
+                offset = DpOffset(-textWidth - medium, (-20).dp),
             )
         },
     ) {
@@ -268,7 +276,7 @@ fun MoreMenuItem(
             Box(
                 modifier =
                     Modifier.fillMaxSize()
-                        .clip(RoundedCornerShape(5.dp))
+                        .clip(tiny2XRoundedCornerShape)
                         .background(background),
                 contentAlignment = Alignment.Center,
             ) {
@@ -276,7 +284,7 @@ fun MoreMenuItem(
                     painter = moreVertical(),
                     contentDescription = "info",
                     modifier =
-                        Modifier.size(18.dp)
+                        Modifier.size(large)
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onTap = {
@@ -299,18 +307,20 @@ fun CopyMenuItem(
     hoverCopy: (Boolean) -> Unit,
     copyPasteDataAction: () -> Unit,
 ) {
+    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val copyText = copywriter.getText("copy")
 
     PasteTooltipAreaView(
-        Modifier.fillMaxWidth().height(25.dp),
+        Modifier.fillMaxWidth()
+            .height(appSize.mainPasteSize.height / 4),
         text = copyText,
         computeTooltipPlacement = {
             val textWidth = measureTextWidth(copyText, MaterialTheme.typography.bodySmall)
             TooltipPlacement.ComponentRect(
                 anchor = Alignment.BottomStart,
                 alignment = Alignment.BottomEnd,
-                offset = DpOffset(-textWidth - 16.dp, (-20).dp),
+                offset = DpOffset(-textWidth - medium, (-20).dp),
             )
         },
     ) {
@@ -334,13 +344,13 @@ fun CopyMenuItem(
             Box(
                 modifier =
                     Modifier.fillMaxSize()
-                        .clip(RoundedCornerShape(5.dp))
+                        .clip(tiny2XRoundedCornerShape)
                         .background(background),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     modifier =
-                        Modifier.size(16.dp)
+                        Modifier.size(medium)
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onTap = {
@@ -366,18 +376,20 @@ fun FavoriteMenuItem(
     hoverFavorite: (Boolean) -> Unit,
     setFavorite: () -> Unit,
 ) {
+    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val favoriteText = copywriter.getText(if (currentFavorite) "remove_from_favorites" else "favorite")
 
     PasteTooltipAreaView(
-        Modifier.fillMaxWidth().height(25.dp),
+        Modifier.fillMaxWidth()
+            .height(appSize.mainPasteSize.height / 4),
         text = favoriteText,
         computeTooltipPlacement = {
             val textWidth = measureTextWidth(favoriteText, MaterialTheme.typography.bodySmall)
             TooltipPlacement.ComponentRect(
                 anchor = Alignment.BottomStart,
                 alignment = Alignment.BottomEnd,
-                offset = DpOffset(-textWidth - 16.dp, (-20).dp),
+                offset = DpOffset(-textWidth - medium, (-20).dp),
             )
         },
     ) {
@@ -401,13 +413,13 @@ fun FavoriteMenuItem(
             Box(
                 modifier =
                     Modifier.fillMaxSize()
-                        .clip(RoundedCornerShape(5.dp))
+                        .clip(tiny2XRoundedCornerShape)
                         .background(background),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     modifier =
-                        Modifier.size(16.dp)
+                        Modifier.size(medium)
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onTap = {
@@ -432,17 +444,19 @@ fun DetailMenuItem(
     background: Color,
     hoverSource: (Boolean) -> Unit,
 ) {
+    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val detailInfo = getDetailInfo(copywriter, pasteData)
     PasteTooltipAreaView(
-        Modifier.fillMaxWidth().height(25.dp),
+        Modifier.fillMaxWidth()
+            .height(appSize.mainPasteSize.height / 4),
         text = detailInfo,
         computeTooltipPlacement = {
             val textWidth = measureTextWidth(detailInfo, MaterialTheme.typography.bodySmall)
             TooltipPlacement.ComponentRect(
                 anchor = Alignment.BottomStart,
                 alignment = Alignment.BottomEnd,
-                offset = DpOffset(-textWidth - 16.dp, (-30).dp),
+                offset = DpOffset(-textWidth - medium, -xxLarge),
             )
         },
     ) {
@@ -466,7 +480,7 @@ fun DetailMenuItem(
             Box(
                 modifier =
                     Modifier.fillMaxSize()
-                        .clip(RoundedCornerShape(5.dp))
+                        .clip(tiny2XRoundedCornerShape)
                         .background(background),
                 contentAlignment = Alignment.Center,
             ) {
@@ -474,7 +488,7 @@ fun DetailMenuItem(
                     pasteData = pasteData,
                     tint = tint,
                     background = background,
-                    size = 16.dp,
+                    size = medium,
                 )
             }
         }
@@ -495,7 +509,7 @@ fun MoreMenuItems(
             Modifier
                 .wrapContentSize()
                 .background(Color.Transparent)
-                .shadow(15.dp),
+                .shadow(small),
     ) {
         val menuTexts =
             arrayOf(
@@ -510,7 +524,7 @@ fun MoreMenuItems(
                 Modifier
                     .width(maxWidth)
                     .wrapContentHeight()
-                    .clip(RoundedCornerShape(5.dp))
+                    .clip(tiny2XRoundedCornerShape)
                     .background(MaterialTheme.colorScheme.inverseOnSurface),
         ) {
             MenuItem(copywriter.getText("open")) {

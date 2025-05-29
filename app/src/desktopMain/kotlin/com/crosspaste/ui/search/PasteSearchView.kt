@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
@@ -34,7 +33,6 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppSize
@@ -46,6 +44,12 @@ import com.crosspaste.ui.base.NewVersionButton
 import com.crosspaste.ui.base.enter
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.small3XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny5X
+import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import com.crosspaste.utils.mainDispatcher
 import kotlinx.coroutines.launch
@@ -77,7 +81,7 @@ fun CrossPasteSearchWindowContent() {
                     .background(Color.Transparent)
                     .clip(appSize.appRoundedCornerShape)
                     .size(appSize.searchWindowSize)
-                    .padding(10.dp)
+                    .padding(small3X)
                     .onKeyEvent {
                         when (it.key) {
                             Key.Enter -> {
@@ -118,10 +122,10 @@ fun CrossPasteSearchWindowContent() {
             Box(
                 modifier =
                     Modifier
-                        .shadow(5.dp, RoundedCornerShape(10.dp))
+                        .shadow(tiny2X, small3XRoundedCornerShape)
                         .size(appSize.searchWindowContentSize)
                         .background(AppUIColors.searchBackground)
-                        .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), RoundedCornerShape(10.dp)),
+                        .border(tiny5X, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), small3XRoundedCornerShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Column {
@@ -132,27 +136,25 @@ fun CrossPasteSearchWindowContent() {
                             pasteSelectionViewModel.setSelectedIndex(it)
                             requestFocus()
                         }
-                        VerticalDivider(thickness = 1.dp)
+                        VerticalDivider(thickness = tiny5X)
                         DetailPasteDataView()
                     }
 
                     Row(
                         modifier =
-                            Modifier.height(40.dp)
+                            Modifier.height(appSize.searchFooterHeight)
                                 .fillMaxWidth()
                                 .background(AppUIColors.searchFootBackground)
-                                .padding(horizontal = 10.dp),
+                                .padding(horizontal = small3X),
                         horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         CrossPasteLogoView(
-                            modifier =
-                                Modifier.clip(RoundedCornerShape(6.dp))
-                                    .background(MaterialTheme.colorScheme.primary)
-                                    .size(24.dp),
+                            size = xLarge,
+                            color = MaterialTheme.colorScheme.primary,
                         )
 
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.width(small3X))
 
                         Text(
                             text = "CrossPaste ${appInfo.appVersion}",
@@ -163,7 +165,7 @@ fun CrossPasteSearchWindowContent() {
                         )
 
                         if (existNewVersion) {
-                            Spacer(modifier = Modifier.width(10.dp))
+                            Spacer(modifier = Modifier.width(small3X))
                             NewVersionButton()
                         }
 
@@ -180,7 +182,7 @@ fun CrossPasteSearchWindowContent() {
                                         lineHeight = TextUnit.Unspecified,
                                     ),
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(tiny))
                             Row(
                                 modifier =
                                     Modifier.clickable {

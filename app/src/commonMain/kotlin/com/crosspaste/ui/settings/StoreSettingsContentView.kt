@@ -34,10 +34,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import com.crosspaste.app.AppSize
 import com.crosspaste.clean.CleanTime
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.db.paste.PasteDao
@@ -57,6 +57,17 @@ import com.crosspaste.ui.base.percent
 import com.crosspaste.ui.base.text
 import com.crosspaste.ui.base.trash
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.massive
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.xLarge
+import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.xxxLarge
+import com.crosspaste.ui.theme.AppUISize.zero
 import com.crosspaste.utils.Quadruple
 import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
@@ -64,6 +75,7 @@ import org.koin.compose.koinInject
 @Composable
 fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
     val density = LocalDensity.current
+    val appSize = koinInject<AppSize>()
     val configManager = koinInject<ConfigManager>()
     val pasteDao = koinInject<PasteDao>()
     val copywriter = koinInject<GlobalCopywriter>()
@@ -134,7 +146,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
         refresh(allOrFavorite)
     }
 
-    var nameMaxWidth by remember { mutableStateOf(96.dp) }
+    var nameMaxWidth by remember { mutableStateOf(massive) }
 
     val pasteTypes: Array<Quadruple<String, Painter, Long?, String?>> =
         arrayOf(
@@ -169,8 +181,8 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
         Row(
             modifier =
                 Modifier.fillMaxWidth()
-                    .height(40.dp)
-                    .padding(horizontal = 12.dp, vertical = 5.dp),
+                    .height(appSize.settingsItemHeight)
+                    .padding(horizontal = small2X, vertical = tiny2X),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
@@ -179,7 +191,6 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 CustomTextSwitch(
-                    modifier = Modifier.width(nameMaxWidth + 23.dp).height(30.dp),
                     checked = allOrFavorite,
                     onCheckedChange = { newAllOrFavorite ->
                         allOrFavorite = newAllOrFavorite
@@ -205,23 +216,23 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
             }
         }
 
-        HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
+        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
 
         pasteTypes.forEachIndexed { index, quadruple ->
             Row(
                 modifier =
                     Modifier.fillMaxWidth()
-                        .height(40.dp)
-                        .padding(horizontal = 12.dp, vertical = 5.dp),
+                        .height(appSize.settingsItemHeight)
+                        .padding(horizontal = small2X, vertical = tiny2X),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
-                    modifier = Modifier.size(15.dp),
+                    modifier = Modifier.size(medium),
                     painter = quadruple.second,
                     contentDescription = "pasteboard",
                     tint = MaterialTheme.colorScheme.contentColorFor(AppUIColors.settingsBackground),
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(tiny))
 
                 SettingsText(
                     modifier = Modifier.width(nameMaxWidth),
@@ -235,7 +246,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
                     if (quadruple.third != null) {
                         SettingsText(text = "${quadruple.third}")
                     } else {
-                        CircularProgressIndicator(modifier = Modifier.size(25.dp))
+                        CircularProgressIndicator(modifier = Modifier.size(xLarge))
                     }
                 }
 
@@ -246,13 +257,13 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
                     if (quadruple.fourth != null) {
                         SettingsText(text = quadruple.fourth)
                     } else {
-                        CircularProgressIndicator(modifier = Modifier.size(25.dp))
+                        CircularProgressIndicator(modifier = Modifier.size(xLarge))
                     }
                 }
             }
 
             if (index != pasteTypes.size - 1) {
-                HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
+                HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
             }
         }
     }
@@ -276,7 +287,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
             configManager.updateConfig("enableExpirationCleanup", it)
         }
 
-        HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
+        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
 
         SettingItemView(
             painter = clock(),
@@ -306,9 +317,9 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
                     text = imageCleanTimeValue,
                 )
 
-                Spacer(modifier = Modifier.width(5.dp))
+                Spacer(modifier = Modifier.width(tiny3X))
                 Icon(
-                    modifier = Modifier.size(15.dp),
+                    modifier = Modifier.size(medium),
                     painter = anglesUpDown(),
                     contentDescription = "Image expiration time",
                 )
@@ -319,8 +330,8 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
                     alignment = Alignment.BottomEnd,
                     offset =
                         IntOffset(
-                            with(density) { (-(imageCleanTimeWidth + 30.dp)).roundToPx() },
-                            with(density) { (0.dp).roundToPx() },
+                            with(density) { (-(imageCleanTimeWidth + xxLarge)).roundToPx() },
+                            with(density) { (zero).roundToPx() },
                         ),
                     onDismissRequest = {
                         if (showImageCleanTimeMenu) {
@@ -345,7 +356,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
             }
         }
 
-        HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
+        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
 
         SettingItemView(
             painter = file(),
@@ -376,9 +387,9 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
                     style = SettingsTextStyle(),
                 )
 
-                Spacer(modifier = Modifier.width(5.dp))
+                Spacer(modifier = Modifier.width(tiny3X))
                 Icon(
-                    modifier = Modifier.size(15.dp),
+                    modifier = Modifier.size(medium),
                     painter = anglesUpDown(),
                     contentDescription = "File Expiry Period",
                     tint = MaterialTheme.colorScheme.onSurface,
@@ -390,8 +401,8 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
                     alignment = Alignment.BottomEnd,
                     offset =
                         IntOffset(
-                            with(density) { (-(fileCleanTimeWidth + 30.dp)).roundToPx() },
-                            with(density) { (0.dp).roundToPx() },
+                            with(density) { (-(fileCleanTimeWidth + xxLarge)).roundToPx() },
+                            with(density) { (zero).roundToPx() },
                         ),
                     onDismissRequest = {
                         if (showFileCleanTimeMenu) {
@@ -417,7 +428,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
         }
     }
 
-    Spacer(modifier = Modifier.height(10.dp))
+    Spacer(modifier = Modifier.height(small3X))
 
     Column(
         modifier =
@@ -432,7 +443,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
             configManager.updateConfig("enableThresholdCleanup", it)
         }
 
-        HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
+        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
 
         SettingCounterItemView(
             text = "maximum_storage",
@@ -444,7 +455,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
             configManager.updateConfig("maxStorage", it)
         }
 
-        HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
+        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
 
         SettingCounterItemView(
             text = "cleanup_percentage",

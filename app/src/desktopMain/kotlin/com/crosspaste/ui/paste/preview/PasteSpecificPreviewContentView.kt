@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -22,8 +21,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppSize
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny5X
+import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import org.koin.compose.koinInject
 
 @Composable
@@ -39,7 +41,7 @@ fun PasteSpecificPreviewContentView(
         animateDpAsState(
             targetValue =
                 if (showMenu) {
-                    appSize.mainPasteSize.width - 35.dp
+                    appSize.mainPasteSize.width - xxxLarge
                 } else {
                     appSize.mainPasteSize.width
                 },
@@ -55,8 +57,8 @@ fun PasteSpecificPreviewContentView(
                     Modifier
                         .fillMaxHeight()
                         .width(width.value)
-                        .clip(RoundedCornerShape(5.dp))
-                        .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), RoundedCornerShape(5.dp))
+                        .clip(tiny2XRoundedCornerShape)
+                        .border(tiny5X, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), tiny2XRoundedCornerShape)
                         .background(color = backgroundColor),
             ) {
                 pasteMainContent()
@@ -68,7 +70,7 @@ fun PasteSpecificPreviewContentView(
         ) {
             Spacer(modifier = Modifier.weight(1f))
             Column(
-                modifier = Modifier.width(30.dp),
+                modifier = Modifier.width(xxLarge),
                 verticalArrangement = Arrangement.Top,
             ) {
                 pasteRightInfo { showMenu = it }

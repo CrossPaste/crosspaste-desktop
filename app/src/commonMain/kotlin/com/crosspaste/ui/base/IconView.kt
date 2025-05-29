@@ -11,7 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
+import com.crosspaste.ui.theme.AppUISize.tiny3X
 
 @Composable
 fun PasteIconButton(
@@ -22,7 +22,7 @@ fun PasteIconButton(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     content: @Composable () -> Unit,
 ) {
-    val iconButtonSize = size + 4.dp
+    val iconButtonSize = size + tiny3X
 
     Box(
         modifier = modifier.size(iconButtonSize),

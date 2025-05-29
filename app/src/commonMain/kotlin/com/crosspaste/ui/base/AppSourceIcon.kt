@@ -10,7 +10,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
@@ -20,6 +19,7 @@ import coil3.request.crossfade
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.image.coil.PasteDataItem
+import com.crosspaste.ui.theme.AppUISize.large2X
 import org.koin.compose.koinInject
 
 @Composable
@@ -27,7 +27,7 @@ fun AppSourceIcon(
     pasteData: PasteData,
     source: String,
     iconColor: Color,
-    size: Dp = 20.dp,
+    size: Dp = large2X,
 ) {
     val iconStyle = koinInject<IconStyle>()
     val imageLoaders = koinInject<ImageLoaders>()

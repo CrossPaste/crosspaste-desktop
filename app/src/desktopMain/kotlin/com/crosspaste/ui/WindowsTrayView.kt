@@ -6,7 +6,6 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -37,6 +36,7 @@ import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.app.generated.resources.crosspaste
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.base.DesktopNotificationManager
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -186,7 +186,7 @@ object WindowsTrayView {
                             .border(
                                 appSize.appBorderSize,
                                 MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                                RoundedCornerShape(5.dp),
+                                tiny2XRoundedCornerShape,
                             )
                             .pointerInput(Unit) {
                                 detectTapGestures(

@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -55,6 +54,12 @@ import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.moreVertical
+import com.crosspaste.ui.theme.AppUISize.large
+import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -134,14 +139,14 @@ fun DeviceConnectContentView(
         Row(
             modifier =
                 Modifier
-                    .padding(start = 16.dp),
+                    .padding(start = medium),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.End,
         ) {
             if (deviceInteractionEnabled) {
                 if (!refresh) {
                     PasteIconButton(
-                        size = 20.dp,
+                        size = large2X,
                         onClick = {
                             if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
                                 syncManager.toVerify(syncRuntimeInfo.appInstanceId)
@@ -166,30 +171,30 @@ fun DeviceConnectContentView(
                         modifier =
                             Modifier
                                 .background(Color.Transparent, CircleShape)
-                                .padding(end = 8.dp),
+                                .padding(end = tiny),
                     ) {
                         Icon(
                             painter = com.crosspaste.ui.base.refresh(),
                             contentDescription = "refresh",
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(large),
                             tint = connectColor,
                         )
                     }
                 } else {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(large),
                         color = connectColor,
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(tiny))
                 }
             }
             Icon(
                 painter = connectIcon,
                 contentDescription = "connectState",
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(large),
                 tint = connectColor,
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(tiny))
             Text(
                 text = copywriter.getText(connectText),
                 color = connectColor,
@@ -204,19 +209,19 @@ fun DeviceConnectContentView(
                 var showPopup by remember { mutableStateOf(false) }
 
                 PasteIconButton(
-                    size = 20.dp,
+                    size = large2X,
                     onClick = {
                         showPopup = !showPopup
                     },
                     modifier =
                         Modifier
                             .background(Color.Transparent, CircleShape)
-                            .padding(horizontal = 8.dp),
+                            .padding(horizontal = tiny),
                 ) {
                     Icon(
                         painter = moreVertical(),
                         contentDescription = "info",
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(large),
                         tint = MaterialTheme.colorScheme.contentColorFor(background),
                     )
                 }
@@ -227,7 +232,7 @@ fun DeviceConnectContentView(
                         offset =
                             IntOffset(
                                 x = with(density) { ((-40).dp).roundToPx() },
-                                y = with(density) { (20.dp).roundToPx() },
+                                y = with(density) { (large2X).roundToPx() },
                             ),
                         onDismissRequest = {
                             if (showPopup) {
@@ -246,7 +251,7 @@ fun DeviceConnectContentView(
                                 Modifier
                                     .wrapContentSize()
                                     .background(Color.Transparent)
-                                    .shadow(15.dp),
+                                    .shadow(small),
                         ) {
                             val menuTexts =
                                 arrayOf(
@@ -261,7 +266,7 @@ fun DeviceConnectContentView(
                                     Modifier
                                         .width(maxWidth)
                                         .wrapContentHeight()
-                                        .clip(RoundedCornerShape(5.dp))
+                                        .clip(tiny2XRoundedCornerShape)
                                         .background(MaterialTheme.colorScheme.surfaceBright),
                             ) {
                                 MenuItem(copywriter.getText("add_note")) {
@@ -278,7 +283,7 @@ fun DeviceConnectContentView(
                     }
                 }
             } else {
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(medium))
             }
         }
     }

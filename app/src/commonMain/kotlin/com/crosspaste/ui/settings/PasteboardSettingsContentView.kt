@@ -15,7 +15,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.ui.base.Counter
 import com.crosspaste.ui.base.CustomSwitch
@@ -23,6 +22,9 @@ import com.crosspaste.ui.base.file
 import com.crosspaste.ui.base.skipForward
 import com.crosspaste.ui.base.sync
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import org.koin.compose.koinInject
 
 @Composable
@@ -44,8 +46,8 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
         ) {
             CustomSwitch(
                 modifier =
-                    Modifier.width(32.dp)
-                        .height(20.dp),
+                    Modifier.width(medium * 2)
+                        .height(large2X),
                 checked = config.enableSkipPreLaunchPasteboardContent,
                 onCheckedChange = { newEnableSkipPreLaunchPasteboardContent ->
                     configManager.updateConfig(
@@ -56,7 +58,7 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
             )
         }
 
-        HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
+        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
 
         SettingItemView(
             painter = file(),
@@ -75,7 +77,7 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
             }
         }
 
-        HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
+        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
 
         SettingItemView(
             painter = sync(),
@@ -83,8 +85,8 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
         ) {
             CustomSwitch(
                 modifier =
-                    Modifier.width(32.dp)
-                        .height(20.dp),
+                    Modifier.width(medium * 2)
+                        .height(large2X),
                 checked = config.enabledSyncFileSizeLimit,
                 onCheckedChange = { newEnabledSyncFileSizeLimit ->
                     configManager.updateConfig("enabledSyncFileSizeLimit", newEnabledSyncFileSizeLimit)
@@ -93,7 +95,7 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
         }
 
         if (config.enabledSyncFileSizeLimit) {
-            HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
+            HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
 
             SettingItemView(
                 painter = file(),

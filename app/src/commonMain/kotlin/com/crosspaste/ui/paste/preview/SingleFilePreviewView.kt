@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,13 +27,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.crosspaste.app.AppSize
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.coil.FileExtItem
 import com.crosspaste.image.coil.ImageLoaders
@@ -44,6 +43,10 @@ import com.crosspaste.ui.base.FileIcon
 import com.crosspaste.ui.base.FileSlashIcon
 import com.crosspaste.ui.base.FolderIcon
 import com.crosspaste.ui.base.UISupport
+import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
 
@@ -52,6 +55,7 @@ fun SingleFilePreviewView(
     pasteFileInfoTreeCoordinate: PasteFileInfoTreeCoordinate,
     width: Dp,
 ) {
+    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val imageLoaders = koinInject<ImageLoaders>()
     val platformContext = koinInject<PlatformContext>()
@@ -72,7 +76,7 @@ fun SingleFilePreviewView(
         modifier =
             Modifier.width(width)
                 .wrapContentHeight()
-                .clip(RoundedCornerShape(5.dp))
+                .clip(tiny2XRoundedCornerShape)
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onTap = {
@@ -81,7 +85,7 @@ fun SingleFilePreviewView(
                     )
                 },
     ) {
-        Box(modifier = Modifier.size(100.dp)) {
+        Box(modifier = Modifier.size(appSize.mainPasteSize.height)) {
             SubcomposeAsyncImage(
                 modifier = Modifier.fillMaxSize(),
                 model =
@@ -97,7 +101,9 @@ fun SingleFilePreviewView(
                         is AsyncImagePainter.State.Loading,
                         is AsyncImagePainter.State.Error,
                         -> {
-                            val modifier = Modifier.padding(10.dp).size(90.dp)
+                            val modifier =
+                                Modifier.padding(small3X)
+                                    .size(appSize.mainPasteSize.height - small3X)
                             if (existFile) {
                                 if (isFile) {
                                     FileIcon(modifier)
@@ -121,8 +127,8 @@ fun SingleFilePreviewView(
             modifier =
                 Modifier.fillMaxHeight()
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-                    .padding(bottom = 8.dp),
+                    .padding(horizontal = tiny)
+                    .padding(bottom = tiny),
             verticalArrangement = Arrangement.Bottom,
         ) {
             Text(
@@ -133,7 +139,7 @@ fun SingleFilePreviewView(
                 style = MaterialTheme.typography.labelMedium,
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(tiny3X))
 
             if (existFile) {
                 val fileSize =
