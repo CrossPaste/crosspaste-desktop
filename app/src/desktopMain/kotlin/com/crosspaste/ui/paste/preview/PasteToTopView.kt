@@ -24,6 +24,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.toTop
+import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import org.koin.compose.koinInject
@@ -69,7 +70,7 @@ fun PasteToTopView(toTopAction: () -> Unit) {
                 Icon(
                     painter = toTop(),
                     contentDescription = "To Top",
-                    modifier = Modifier.size(xxLarge),
+                    modifier = Modifier.size(xLarge),
                     tint = MaterialTheme.colorScheme.primary.copy(alpha = transparency),
                 )
             }
