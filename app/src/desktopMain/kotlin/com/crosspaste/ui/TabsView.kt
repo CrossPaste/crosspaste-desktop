@@ -40,8 +40,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
@@ -50,6 +50,7 @@ import com.crosspaste.ui.base.HighlightedCard
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.trash
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
@@ -64,6 +65,7 @@ import org.koin.compose.koinInject
 
 @Composable
 fun TabsView() {
+    val appSize = koinInject<DesktopAppSize>()
     val appWindowManager = koinInject<AppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val screenProvider = koinInject<ScreenProvider>()
@@ -94,7 +96,7 @@ fun TabsView() {
                 modifier =
                     Modifier.padding(horizontal = tiny)
                         .fillMaxWidth()
-                        .height(40.dp),
+                        .height(appSize.tabsViewHeight),
                 shape = tinyRoundedCornerShape,
                 containerColor = AppUIColors.tabsBackground,
             ) {
@@ -109,8 +111,9 @@ fun TabsView() {
 
                 Row(
                     modifier =
-                        Modifier.padding(small2X, zero, 15.dp, zero)
-                            .wrapContentWidth().height(40.dp),
+                        Modifier.padding(small2X, zero, medium, zero)
+                            .wrapContentWidth()
+                            .height(appSize.tabsViewHeight),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     tabs.forEachIndexed { index, tabInfo ->

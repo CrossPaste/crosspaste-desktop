@@ -12,7 +12,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.dp
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.info.PasteInfos.COLOR
@@ -21,6 +20,8 @@ import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
 import com.crosspaste.paste.item.PasteColor
+import com.crosspaste.ui.theme.AppUISize.colossal
+import com.crosspaste.ui.theme.AppUISize.gigantic
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.utils.DateUtils
@@ -53,7 +54,7 @@ fun PasteColorDetailView(
                 Box(
                     modifier =
                         Modifier
-                            .size(150.dp)
+                            .size(gigantic)
                             .clip(tiny2XRoundedCornerShape)
                             .background(Color(pasteColor.color).copy(alpha = 0.3f)),
                     contentAlignment = Alignment.Center,
@@ -61,7 +62,7 @@ fun PasteColorDetailView(
                     Box(
                         modifier =
                             Modifier
-                                .size(120.dp)
+                                .size(colossal)
                                 .shadow(
                                     elevation = tiny5X,
                                     shape = tiny2XRoundedCornerShape,

@@ -34,7 +34,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppFileChooser
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.db.paste.PasteType.Companion.COLOR_TYPE
@@ -519,7 +518,7 @@ fun PasteTypeCheckbox(
         Spacer(modifier = Modifier.width(padding))
         icon?.let {
             Icon(
-                modifier = Modifier.size(15.dp),
+                modifier = Modifier.size(small),
                 painter = icon,
                 contentDescription = type,
                 tint = color,

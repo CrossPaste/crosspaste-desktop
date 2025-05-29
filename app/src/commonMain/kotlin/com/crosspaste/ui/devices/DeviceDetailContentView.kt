@@ -29,7 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppWindowManager
@@ -42,6 +41,7 @@ import com.crosspaste.ui.base.alertCircle
 import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
@@ -162,7 +162,7 @@ fun DeviceDetailContentView() {
                     CustomSwitch(
                         modifier =
                             Modifier.align(Alignment.CenterVertically)
-                                .width(32.dp)
+                                .width(medium * 2)
                                 .height(large2X),
                         checked = !appControl.isSyncControlEnabled(false) || syncRuntimeInfo.allowSend,
                         onCheckedChange = { allowSend ->
@@ -180,7 +180,7 @@ fun DeviceDetailContentView() {
                     )
                 }
 
-                HorizontalDivider(modifier = Modifier.padding(start = 15.dp))
+                HorizontalDivider(modifier = Modifier.padding(start = small))
 
                 Row(
                     modifier =
@@ -197,7 +197,7 @@ fun DeviceDetailContentView() {
                     CustomSwitch(
                         modifier =
                             Modifier.align(Alignment.CenterVertically)
-                                .width(32.dp)
+                                .width(medium * 2)
                                 .height(large2X),
                         checked = !appControl.isSyncControlEnabled(false) || syncRuntimeInfo.allowReceive,
                         onCheckedChange = { allowReceive ->
@@ -277,7 +277,7 @@ fun DeviceDetailContentView() {
                         )
                     }
                     if (index < properties.size - 1) {
-                        HorizontalDivider(modifier = Modifier.padding(start = 15.dp))
+                        HorizontalDivider(modifier = Modifier.padding(start = small))
                     }
                 }
             }

@@ -22,7 +22,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.unit.dp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.check
 import com.crosspaste.ui.base.contrastHigh
@@ -32,6 +31,7 @@ import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny5X
+import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
 import com.crosspaste.ui.theme.AppUISize.zeroRoundedCornerShape
 import com.crosspaste.ui.theme.ColorContrast
@@ -63,7 +63,7 @@ private fun ThemeButton(
     content: @Composable RowScope.() -> Unit,
 ) {
     Button(
-        modifier = modifier.height(28.dp),
+        modifier = modifier.height(xxLarge),
         onClick = onClick,
         // Apply the shape only to the left side for the first button
         shape = shape,

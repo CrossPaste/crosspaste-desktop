@@ -29,7 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import com.crosspaste.db.sync.SyncRuntimeInfo.Companion.createSyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.dto.sync.SyncInfo
@@ -48,6 +47,8 @@ import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny5X
+import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
 import com.crosspaste.ui.theme.CrossPasteTheme.connectedColor
 import com.crosspaste.utils.buildUrl
@@ -77,7 +78,7 @@ fun AddDeviceManuallyForm() {
     Row(
         modifier =
             Modifier.fillMaxWidth()
-                .height(40.dp)
+                .height(xxxxLarge)
                 .background(AppUIColors.deviceBackground)
                 .padding(horizontal = small2X, vertical = tiny2X),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -92,7 +93,7 @@ fun AddDeviceManuallyForm() {
         Text(
             text = "IP",
             color = MaterialTheme.colorScheme.contentColorFor(AppUIColors.deviceBackground),
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelLarge,
         )
 
         Spacer(modifier = Modifier.width(tiny))
@@ -133,12 +134,12 @@ fun AddDeviceManuallyForm() {
             }
         }
 
-        Spacer(modifier = Modifier.width(15.dp))
+        Spacer(modifier = Modifier.width(medium))
 
         Text(
             text = "Port",
             color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelLarge,
         )
 
         Spacer(modifier = Modifier.width(tiny))
@@ -172,12 +173,12 @@ fun AddDeviceManuallyForm() {
             }
         }
 
-        Spacer(modifier = Modifier.width(15.dp))
+        Spacer(modifier = Modifier.width(medium))
 
         Button(
             modifier =
                 Modifier.wrapContentWidth()
-                    .height(28.dp)
+                    .height(xxLarge)
                     .weight(0.4f),
             onClick = {
                 // check ip and port

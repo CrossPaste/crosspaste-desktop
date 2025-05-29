@@ -8,21 +8,23 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.crosspaste.app.AppSize
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.ui.base.HighlightedCard
 import com.crosspaste.ui.theme.AppUISize.tiny2X
+import org.koin.compose.koinInject
 
 @Composable
 fun PastePreviewItemView(
     pasteData: PasteData,
     pasteContent: @Composable PasteData.() -> Unit,
 ) {
+    val appSize = koinInject<AppSize>()
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(100.dp),
+                .height(appSize.mainPasteSize.height),
     ) {
         HighlightedCard(
             modifier = Modifier.fillMaxSize(),

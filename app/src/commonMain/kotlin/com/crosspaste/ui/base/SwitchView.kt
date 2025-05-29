@@ -27,7 +27,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.smallRoundedCornerShape
@@ -78,7 +77,6 @@ fun CustomSwitch(
 fun CustomTextSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
     textStyle: TextStyle =
         MaterialTheme.typography.labelMedium.copy(
             fontWeight = FontWeight.Light,
@@ -96,8 +94,9 @@ fun CustomTextSwitch(
 
     Box(
         modifier =
-            modifier
-                .height(28.dp),
+            Modifier
+                .width(maxTextWidth + thumbSize + switchPadding * 4)
+                .height(small * 2),
         contentAlignment = Alignment.CenterStart,
     ) {
         Box(

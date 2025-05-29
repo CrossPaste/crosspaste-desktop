@@ -29,13 +29,13 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.crosspaste.app.AppSize
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.ImageInfoBuilder
 import com.crosspaste.image.ThumbnailLoader
@@ -58,6 +58,7 @@ fun SingleImagePreviewView(
     pasteFileCoordinate: PasteFileCoordinate,
     width: Dp,
 ) {
+    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val imageLoaders = koinInject<ImageLoaders>()
     val platformContext = koinInject<PlatformContext>()
@@ -102,23 +103,23 @@ fun SingleImagePreviewView(
                 Row {
                     Box(
                         modifier =
-                            Modifier.size(100.dp)
+                            Modifier.size(appSize.mainPasteSize.height)
                                 .clip(tiny2XRoundedCornerShape),
                     ) {
                         TransparentBackground(
-                            modifier = Modifier.size(100.dp),
+                            modifier = Modifier.size(appSize.mainPasteSize.height),
                         )
                         when (state) {
                             is AsyncImagePainter.State.Loading -> {
                                 CircularProgressIndicator(
-                                    modifier = Modifier.size(100.dp),
+                                    modifier = Modifier.size(appSize.mainPasteSize.height),
                                 )
                             }
 
                             is AsyncImagePainter.State.Error,
                             -> {
                                 Icon(
-                                    modifier = Modifier.size(100.dp),
+                                    modifier = Modifier.size(appSize.mainPasteSize.height),
                                     painter = imageSlash(),
                                     contentDescription = filePath.name,
                                     tint = MaterialTheme.colorScheme.onSurface,

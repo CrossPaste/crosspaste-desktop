@@ -21,16 +21,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.crosspaste.app.AppSize
 import com.crosspaste.paste.PasteSingleProcess
-import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small3X
-import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.tiny4X
+import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.valentinilk.shimmer.shimmer
+import org.koin.compose.koinInject
 
 @Composable
 fun PasteShimmerContentView(singleProcess: PasteSingleProcess?) {
+    val appSize = koinInject<AppSize>()
     val process = singleProcess?.process?.collectAsState()
 
     Row(
@@ -44,7 +47,7 @@ fun PasteShimmerContentView(singleProcess: PasteSingleProcess?) {
         Box(
             modifier =
                 Modifier
-                    .size(100.dp)
+                    .size(appSize.mainPasteSize.height)
                     .padding(small3X)
                     .background(MaterialTheme.colorScheme.secondaryContainer),
             contentAlignment = Alignment.Center,
@@ -63,46 +66,54 @@ fun PasteShimmerContentView(singleProcess: PasteSingleProcess?) {
             }
         }
 
+        val width = appSize.mainPasteSize.width - appSize.mainPasteSize.height - small3X
+
         Column(
             modifier =
-                Modifier.height(100.dp)
-                    .width(290.dp)
+                Modifier.height(appSize.mainPasteSize.height)
+                    .width(width)
                     .background(Color.Transparent)
-                    .padding(small3X),
+                    .padding(vertical = small3X)
+                    .padding(end = small3X),
             verticalArrangement = Arrangement.Center,
         ) {
             Box(
                 modifier =
                     Modifier
-                        .height(26.dp)
-                        .width(290.dp)
-                        .padding(bottom = 5.dp)
+                        .padding(bottom = tiny4X)
+                        .height(xLarge)
+                        .width(width)
                         .background(MaterialTheme.colorScheme.secondaryContainer),
             )
-            Row(modifier = Modifier.height(26.dp).width(290.dp)) {
+            Row(
+                modifier =
+                    Modifier.padding(vertical = tiny4X)
+                        .height(xLarge)
+                        .width(width),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Box(
                     modifier =
                         Modifier
-                            .height(26.dp)
-                            .width(160.dp)
-                            .padding(vertical = 5.dp)
+                            .height(xLarge)
+                            .width((width - tiny3X) * 2 / 3)
                             .background(MaterialTheme.colorScheme.secondaryContainer),
                 )
-                Spacer(modifier = Modifier.width(large2X))
+                Spacer(modifier = Modifier.width(tiny3X))
                 Box(
                     modifier =
                         Modifier
-                            .height(26.dp)
-                            .width(119.dp)
-                            .padding(vertical = 5.dp)
+                            .height(xLarge)
+                            .width((width - tiny3X) / 3)
                             .background(MaterialTheme.colorScheme.secondaryContainer),
                 )
             }
             Box(
                 modifier =
                     Modifier
-                        .height(26.dp)
-                        .width(290.dp).padding(top = tiny2X)
+                        .padding(top = tiny4X)
+                        .height(xLarge)
+                        .width(width)
                         .background(MaterialTheme.colorScheme.secondaryContainer),
             )
         }

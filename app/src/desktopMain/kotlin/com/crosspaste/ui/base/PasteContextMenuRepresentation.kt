@@ -29,10 +29,10 @@ import androidx.compose.ui.input.key.nativeKeyCode
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalInputModeManager
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.window.rememberPopupPositionProviderAtPosition
+import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 
 class PasteContextMenuRepresentation : ContextMenuRepresentation {
@@ -85,7 +85,7 @@ class PasteContextMenuRepresentation : ContextMenuRepresentation {
                     modifier =
                         Modifier.wrapContentSize()
                             .background(Color.Transparent)
-                            .shadow(15.dp),
+                            .shadow(small),
                 ) {
                     Column(
                         modifier =

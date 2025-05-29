@@ -38,7 +38,6 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
@@ -68,6 +67,7 @@ import com.crosspaste.ui.base.chevronRight
 import com.crosspaste.ui.base.imageCompress
 import com.crosspaste.ui.base.imageExpand
 import com.crosspaste.ui.base.imageSlash
+import com.crosspaste.ui.theme.AppUISize.gigantic
 import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -186,7 +186,7 @@ fun PasteImagesDetailView(
                                                 verticalAlignment = Alignment.CenterVertically,
                                             ) {
                                                 CircularProgressIndicator(
-                                                    modifier = Modifier.size(180.dp),
+                                                    modifier = Modifier.size(gigantic),
                                                     strokeWidth = tiny,
                                                 )
                                             }
@@ -196,7 +196,7 @@ fun PasteImagesDetailView(
                                             Icon(
                                                 painter = imageSlash(),
                                                 contentDescription = imagePath.name,
-                                                modifier = Modifier.size(180.dp),
+                                                modifier = Modifier.size(gigantic),
                                                 tint = MaterialTheme.colorScheme.onBackground,
                                             )
                                         }

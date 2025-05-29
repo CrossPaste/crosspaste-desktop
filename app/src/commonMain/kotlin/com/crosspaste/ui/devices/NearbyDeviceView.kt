@@ -14,7 +14,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppControl
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.db.sync.SyncRuntimeInfo.Companion.createSyncRuntimeInfo
@@ -28,6 +27,7 @@ import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny5X
+import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
 import com.crosspaste.ui.theme.CrossPasteTheme.connectedColor
 import com.crosspaste.ui.theme.CrossPasteTheme.disconnectedColor
@@ -51,7 +51,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
 
     deviceViewProvider.SyncDeviceView(syncInfo = syncInfo) {
         Button(
-            modifier = Modifier.height(28.dp),
+            modifier = Modifier.height(xxLarge),
             onClick = {
                 if (appControl.isDeviceConnectionEnabled(syncManager.getSyncHandlers().size + 1)) {
                     val newSyncRuntimeInfo = createSyncRuntimeInfo(syncInfo)
@@ -80,7 +80,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
         Spacer(modifier = Modifier.width(tiny))
 
         Button(
-            modifier = Modifier.height(28.dp),
+            modifier = Modifier.height(xxLarge),
             onClick = {
                 val blackSyncInfos: MutableList<SyncInfo> =
                     jsonUtils.JSON.decodeFromString(

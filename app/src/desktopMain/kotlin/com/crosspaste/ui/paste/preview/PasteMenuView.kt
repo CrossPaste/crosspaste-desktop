@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.app.AppControl
+import com.crosspaste.app.AppSize
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.i18n.Copywriter
@@ -60,8 +61,10 @@ import com.crosspaste.ui.base.moreVertical
 import com.crosspaste.ui.base.noFavorite
 import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.utils.DateUtils
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -236,11 +239,13 @@ fun MoreMenuItem(
     hoverMenu: (Boolean) -> Unit,
     switchPopup: () -> Unit,
 ) {
+    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val menuText = copywriter.getText("menu")
 
     PasteTooltipAreaView(
-        Modifier.fillMaxWidth().height(25.dp),
+        Modifier.fillMaxWidth()
+            .height(appSize.mainPasteSize.height / 4),
         text = menuText,
         computeTooltipPlacement = {
             val textWidth = measureTextWidth(menuText, MaterialTheme.typography.bodySmall)
@@ -302,11 +307,13 @@ fun CopyMenuItem(
     hoverCopy: (Boolean) -> Unit,
     copyPasteDataAction: () -> Unit,
 ) {
+    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val copyText = copywriter.getText("copy")
 
     PasteTooltipAreaView(
-        Modifier.fillMaxWidth().height(25.dp),
+        Modifier.fillMaxWidth()
+            .height(appSize.mainPasteSize.height / 4),
         text = copyText,
         computeTooltipPlacement = {
             val textWidth = measureTextWidth(copyText, MaterialTheme.typography.bodySmall)
@@ -369,11 +376,13 @@ fun FavoriteMenuItem(
     hoverFavorite: (Boolean) -> Unit,
     setFavorite: () -> Unit,
 ) {
+    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val favoriteText = copywriter.getText(if (currentFavorite) "remove_from_favorites" else "favorite")
 
     PasteTooltipAreaView(
-        Modifier.fillMaxWidth().height(25.dp),
+        Modifier.fillMaxWidth()
+            .height(appSize.mainPasteSize.height / 4),
         text = favoriteText,
         computeTooltipPlacement = {
             val textWidth = measureTextWidth(favoriteText, MaterialTheme.typography.bodySmall)
@@ -435,17 +444,19 @@ fun DetailMenuItem(
     background: Color,
     hoverSource: (Boolean) -> Unit,
 ) {
+    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val detailInfo = getDetailInfo(copywriter, pasteData)
     PasteTooltipAreaView(
-        Modifier.fillMaxWidth().height(25.dp),
+        Modifier.fillMaxWidth()
+            .height(appSize.mainPasteSize.height / 4),
         text = detailInfo,
         computeTooltipPlacement = {
             val textWidth = measureTextWidth(detailInfo, MaterialTheme.typography.bodySmall)
             TooltipPlacement.ComponentRect(
                 anchor = Alignment.BottomStart,
                 alignment = Alignment.BottomEnd,
-                offset = DpOffset(-textWidth - medium, (-30).dp),
+                offset = DpOffset(-textWidth - medium, -xxLarge),
             )
         },
     ) {
@@ -498,7 +509,7 @@ fun MoreMenuItems(
             Modifier
                 .wrapContentSize()
                 .background(Color.Transparent)
-                .shadow(15.dp),
+                .shadow(small),
     ) {
         val menuTexts =
             arrayOf(

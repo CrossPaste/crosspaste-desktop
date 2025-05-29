@@ -27,7 +27,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppSize
 import com.crosspaste.config.ConfigManager
 import com.crosspaste.dto.sync.SyncInfo
@@ -39,7 +38,10 @@ import com.crosspaste.ui.base.network
 import com.crosspaste.ui.base.wifi
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.xLarge
+import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.getNetUtils
 import kotlinx.coroutines.launch
@@ -81,11 +83,11 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
             ip?.let {
                 SettingsText(text = it)
             } ?: run {
-                CircularProgressIndicator(modifier = Modifier.size(25.dp))
+                CircularProgressIndicator(modifier = Modifier.size(xLarge))
             }
         }
 
-        HorizontalDivider(modifier = Modifier.padding(start = 35.dp))
+        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
 
         SettingItemView(
             painter = link(),
@@ -94,7 +96,7 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
             port?.let {
                 SettingsText(text = it)
             } ?: run {
-                CircularProgressIndicator(modifier = Modifier.size(25.dp))
+                CircularProgressIndicator(modifier = Modifier.size(xLarge))
             }
         }
     }
@@ -112,7 +114,7 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
         ) {
             CustomSwitch(
                 modifier =
-                    Modifier.width(32.dp)
+                    Modifier.width(medium * 2)
                         .height(large2X),
                 checked = config.enableDiscovery,
                 onCheckedChange = { newIsAllowDiscovery ->

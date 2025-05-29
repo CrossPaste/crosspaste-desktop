@@ -27,7 +27,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.window.Popup
 import com.crosspaste.i18n.GlobalCopywriter
@@ -38,7 +37,9 @@ import com.crosspaste.ui.base.arrowRight
 import com.crosspaste.ui.base.arrowUp
 import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.language
+import com.crosspaste.ui.theme.AppUISize.gigantic
 import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
@@ -128,11 +129,11 @@ fun LanguageSettingItemView() {
                         Modifier
                             .wrapContentSize()
                             .background(Color.Transparent)
-                            .shadow(15.dp),
+                            .shadow(small),
                 ) {
                     val maxWidth =
                         max(
-                            150.dp,
+                            gigantic,
                             getMenWidth(copywriter.getAllLanguages().map { it.name }.toTypedArray()),
                         )
 

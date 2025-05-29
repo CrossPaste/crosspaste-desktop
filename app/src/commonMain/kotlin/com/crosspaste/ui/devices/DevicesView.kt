@@ -29,7 +29,6 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
@@ -38,6 +37,7 @@ import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.PasteDialogFactory
 import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
 import org.koin.compose.koinInject
 
@@ -87,7 +87,7 @@ fun MyDevicesView(syncRuntimeInfos: List<SyncRuntimeInfo>) {
                             CustomTextField(
                                 modifier =
                                     Modifier.fillMaxWidth()
-                                        .height(40.dp)
+                                        .height(xxxLarge)
                                         .focusRequester(focusRequester)
                                         .onKeyEvent {
                                             when (it.key) {

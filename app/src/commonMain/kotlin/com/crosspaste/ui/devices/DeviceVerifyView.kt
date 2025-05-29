@@ -43,7 +43,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.sync.SyncManager
@@ -51,12 +50,14 @@ import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny5X
-import com.crosspaste.ui.theme.AppUISize.xLarge
+import com.crosspaste.ui.theme.AppUISize.xxxLarge
+import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -108,7 +109,6 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
                 confirmAction,
                 cancelAction,
             )
-            Spacer(modifier = Modifier.height(small2X))
             DialogButtonsView(
                 cancelAction = cancelAction,
                 confirmAction = confirmAction,
@@ -132,7 +132,7 @@ fun VerificationContent(
                 .wrapContentHeight(),
     ) {
         DeviceInfoHeader(syncRuntimeInfo)
-        Spacer(modifier = Modifier.size(xLarge))
+        Spacer(modifier = Modifier.size(large2X))
         TokenInputRow(tokens, isError, focusRequesters, confirmAction, cancelAction)
     }
 }
@@ -205,8 +205,8 @@ fun TokenInputBox(
         contentAlignment = Alignment.Center,
         modifier =
             Modifier
-                .width(40.dp)
-                .height(50.dp)
+                .width(xxxLarge)
+                .height(xxxxLarge)
                 .background(MaterialTheme.colorScheme.background, tiny3XRoundedCornerShape)
                 .border(
                     tiny5X,

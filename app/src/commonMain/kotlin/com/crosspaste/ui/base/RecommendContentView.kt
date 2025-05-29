@@ -27,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.recommend.RecommendationService
@@ -37,6 +36,8 @@ import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import org.koin.compose.koinInject
 
 @Composable
@@ -57,13 +58,13 @@ fun RecommendContentView() {
         Column(
             modifier =
                 Modifier.fillMaxSize()
-                    .padding(40.dp),
+                    .padding(xxxxLarge),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(modifier = Modifier.weight(0.3f))
 
             Text(
-                modifier = Modifier.padding(bottom = 32.dp),
+                modifier = Modifier.padding(bottom = xxLarge),
                 text = copywriter.getText("recommend_to_friends"),
                 style =
                     TextStyle(

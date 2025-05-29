@@ -25,7 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
+import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.theme.AppUISize.small3X
@@ -39,6 +39,7 @@ fun PasteTitleView(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
+    val appSize = koinInject<DesktopAppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val loading = copywriter.getText("loading")
     val unknown = copywriter.getText("unknown")
@@ -57,7 +58,9 @@ fun PasteTitleView(
         }
 
     Box(
-        modifier = Modifier.fillMaxWidth().height(40.dp),
+        modifier =
+            Modifier.fillMaxWidth()
+                .height(appSize.searchPasteTitleHeight),
         contentAlignment = Alignment.Center,
     ) {
         Row(

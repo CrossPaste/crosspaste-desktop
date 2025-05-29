@@ -33,7 +33,6 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppSize
@@ -143,7 +142,7 @@ fun CrossPasteSearchWindowContent() {
 
                     Row(
                         modifier =
-                            Modifier.height(40.dp)
+                            Modifier.height(appSize.searchFooterHeight)
                                 .fillMaxWidth()
                                 .background(AppUIColors.searchFootBackground)
                                 .padding(horizontal = small3X),

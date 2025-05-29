@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import com.crosspaste.clean.CleanTime
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.BaseColor
@@ -24,6 +23,7 @@ import com.crosspaste.ui.base.check
 import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.utils.ColorUtils
 import org.koin.compose.koinInject
@@ -40,7 +40,7 @@ fun CleanTimeMenuView(
             Modifier
                 .wrapContentSize()
                 .background(Color.Transparent)
-                .shadow(15.dp),
+                .shadow(small),
     ) {
         val cleanTimeMenuTexts =
             CleanTime.entries.map { cleanTime ->
@@ -49,7 +49,7 @@ fun CleanTimeMenuView(
 
         val maxWidth =
             getMenWidth(cleanTimeMenuTexts) {
-                28.dp
+                small * 2
             }
 
         Column(

@@ -29,10 +29,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppSize
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xLarge
@@ -60,7 +60,7 @@ fun SettingItemView(
     ) {
         // Icon - fixed size, will not be compressed
         Icon(
-            modifier = Modifier.size(15.dp),
+            modifier = Modifier.size(medium),
             painter = painter,
             contentDescription = text,
             tint = tint,

@@ -33,7 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.unit.dp
+import com.crosspaste.app.AppSize
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_LOCAL_LAST
@@ -149,6 +149,7 @@ fun ShortcutKeysContentView() {
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ShortcutKeyRow(name: String) {
+    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val dialogService = koinInject<DialogService>()
     val pasteDialogFactory = koinInject<PasteDialogFactory>()
@@ -159,7 +160,7 @@ fun ShortcutKeyRow(name: String) {
     Row(
         modifier =
             Modifier.fillMaxWidth()
-                .height(40.dp)
+                .height(appSize.settingsItemHeight)
                 .onPointerEvent(
                     eventType = PointerEventType.Enter,
                     onEvent = {
@@ -204,7 +205,7 @@ fun ShortcutKeyRow(name: String) {
                                     Row(
                                         modifier =
                                             Modifier.fillMaxWidth()
-                                                .height(40.dp)
+                                                .height(appSize.settingsItemHeight)
                                                 .border(tiny5X, MaterialTheme.colorScheme.onSurface, tinyRoundedCornerShape),
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {

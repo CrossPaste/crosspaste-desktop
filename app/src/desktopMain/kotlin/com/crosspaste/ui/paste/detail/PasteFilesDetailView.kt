@@ -29,7 +29,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.dp
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
@@ -54,6 +53,7 @@ import com.crosspaste.ui.base.FolderIcon
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.chevronLeft
 import com.crosspaste.ui.base.chevronRight
+import com.crosspaste.ui.theme.AppUISize.gigantic
 import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.xxLarge
@@ -151,7 +151,7 @@ fun PasteFilesDetailView(
                         contentAlignment = Alignment.Center,
                     ) {
                         SubcomposeAsyncImage(
-                            modifier = Modifier.size(150.dp),
+                            modifier = Modifier.size(gigantic),
                             model =
                                 ImageRequest.Builder(platformContext)
                                     .data(FileExtItem(filePath))
@@ -164,7 +164,7 @@ fun PasteFilesDetailView(
                                     is AsyncImagePainter.State.Loading,
                                     is AsyncImagePainter.State.Error,
                                     -> {
-                                        val modifier = Modifier.size(150.dp)
+                                        val modifier = Modifier.size(gigantic)
                                         if (existFile) {
                                             if (isFile) {
                                                 FileIcon(modifier)

@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -35,15 +34,17 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import com.crosspaste.app.AppSize
 import com.crosspaste.app.AppTokenApi
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.close
+import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.mediumRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -67,6 +68,7 @@ fun TokenView() {
 
 @Composable
 private fun RealTokenView() {
+    val appSize = koinInject<AppSize>()
     val appTokenApi = koinInject<AppTokenApi>()
     val copywriter = koinInject<GlobalCopywriter>()
 
@@ -75,7 +77,7 @@ private fun RealTokenView() {
     val offsetY =
         IntOffset(
             with(density) { (zero).roundToPx() },
-            with(density) { (50.dp).roundToPx() },
+            with(density) { (huge).roundToPx() },
         )
 
     DisposableEffect(Unit) {
@@ -94,9 +96,10 @@ private fun RealTokenView() {
         Box(
             modifier =
                 Modifier
-                    .wrapContentSize()
+                    .width(appSize.tokenViewWidth)
+                    .wrapContentHeight()
                     .background(Color.Transparent)
-                    .shadow(15.dp),
+                    .shadow(small),
         ) {
             Column(
                 modifier =
@@ -105,15 +108,17 @@ private fun RealTokenView() {
                         .clip(tiny3XRoundedCornerShape)
                         .align(Alignment.Center)
                         .background(MaterialTheme.colorScheme.surface),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Box(
                     modifier =
                         Modifier.align(Alignment.CenterHorizontally)
-                            .padding(tiny)
-                            .width(320.dp),
+                            .wrapContentHeight()
+                            .padding(horizontal = tiny)
+                            .padding(top = tiny),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        modifier = Modifier.align(Alignment.Center),
                         text = copywriter.getText("token"),
                         color = MaterialTheme.colorScheme.onBackground,
                         style =
@@ -124,13 +129,14 @@ private fun RealTokenView() {
 
                     Box(
                         modifier =
-                            Modifier.size(32.dp)
-                                .align(Alignment.TopEnd),
-                        contentAlignment = Alignment.Center,
+                            Modifier.fillMaxWidth()
+                                .wrapContentHeight()
+                                .padding(end = tiny3X),
+                        contentAlignment = Alignment.CenterEnd,
                     ) {
                         Box(
                             modifier =
-                                Modifier.fillMaxSize()
+                                Modifier.size(medium * 2)
                                     .clip(mediumRoundedCornerShape)
                                     .clickable {
                                         appTokenApi.toHideToken()
@@ -148,8 +154,10 @@ private fun RealTokenView() {
                 }
                 Row(
                     modifier =
-                        Modifier.align(Alignment.CenterHorizontally)
-                            .padding(horizontal = tiny3X, vertical = small2X),
+                        Modifier
+                            .padding(horizontal = tiny3X, vertical = small2X)
+                            .wrapContentSize(),
+                    horizontalArrangement = Arrangement.Center,
                 ) {
                     OTPCodeBox()
                 }
@@ -163,7 +171,12 @@ private fun OTPCodeBox() {
     val appTokenApi = koinInject<AppTokenApi>()
     val token by appTokenApi.token.collectAsState()
 
-    Column {
+    Column(
+        modifier =
+            Modifier.fillMaxWidth()
+                .wrapContentHeight(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
         Row(horizontalArrangement = Arrangement.spacedBy(small2X)) {
             token.forEach { char ->
                 Box(
@@ -188,7 +201,12 @@ private fun OTPCodeBox() {
             }
         }
         Spacer(modifier = Modifier.height(small3X))
-        Row(modifier = Modifier.width(300.dp).wrapContentHeight()) {
+        Row(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .wrapContentHeight()
+                    .padding(horizontal = small3X),
+        ) {
             val progress by appTokenApi.showTokenProgression.collectAsState()
             LinearProgressIndicator(
                 modifier =

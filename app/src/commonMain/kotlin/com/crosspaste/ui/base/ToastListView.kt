@@ -27,11 +27,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.notification.ToastManager
 import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -51,8 +51,8 @@ fun ToastListView() {
         alignment = Alignment.TopCenter,
         offset =
             IntOffset(
-                with(density) { (zero).roundToPx() },
-                with(density) { (50.dp).roundToPx() },
+                with(density) { zero.roundToPx() },
+                with(density) { xxxxLarge.roundToPx() },
             ),
         properties = PopupProperties(clippingEnabled = false),
     ) {

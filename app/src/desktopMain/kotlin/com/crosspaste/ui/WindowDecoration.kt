@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -31,7 +32,6 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.i18n.GlobalCopywriter
@@ -76,7 +76,8 @@ fun WindowDecoration(title: String) {
 
                     Row(
                         modifier =
-                            Modifier.wrapContentSize()
+                            Modifier.wrapContentWidth()
+                                .height(appSize.windowDecorationHeight - large2X)
                                 .clip(tiny2XRoundedCornerShape)
                                 .background(returnBackground)
                                 .onPointerEvent(
@@ -100,7 +101,7 @@ fun WindowDecoration(title: String) {
                                 },
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Spacer(modifier = Modifier.width(small3X).height(40.dp))
+                        Spacer(modifier = Modifier.width(small3X))
                         Icon(
                             painter = arrowBack(),
                             contentDescription = "return",
@@ -118,7 +119,7 @@ fun WindowDecoration(title: String) {
                                     lineHeight = TextUnit.Unspecified,
                                 ),
                         )
-                        Spacer(modifier = Modifier.width(small3X).height(40.dp))
+                        Spacer(modifier = Modifier.width(small3X))
                     }
 
                     Spacer(modifier = Modifier.weight(1f))

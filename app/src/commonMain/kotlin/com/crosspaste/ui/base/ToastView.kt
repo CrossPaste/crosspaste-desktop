@@ -27,12 +27,12 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppSize
 import com.crosspaste.notification.Message
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.getMessagePainter
 import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
@@ -56,7 +56,7 @@ fun ToastView(
             Modifier
                 .wrapContentSize()
                 .background(Color.Transparent)
-                .shadow(15.dp),
+                .shadow(small),
     ) {
         val background =
             if (toast.messageType == MessageType.Error) {
@@ -93,7 +93,7 @@ fun ToastView(
                 Spacer(Modifier.width(small2X))
                 Column(
                     modifier =
-                        Modifier.width(appSize.toastViewWidth - 88.dp)
+                        Modifier.width(appSize.toastViewWidth - (small2X * 4 + large2X * 2))
                             .wrapContentHeight(),
                     verticalArrangement = Arrangement.Center,
                 ) {

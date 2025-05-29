@@ -48,7 +48,6 @@ import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.settings.LocalSettingsScrollState
 import com.crosspaste.ui.theme.AppUISize.large
@@ -57,6 +56,7 @@ import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.zero
 
 class DesktopExpandViewProvider(
@@ -225,7 +225,7 @@ class DesktopExpandViewProvider(
                 Box(
                     modifier =
                         Modifier
-                            .size(22.dp)
+                            .size(xLarge)
                             .graphicsLayer(
                                 scaleX = iconScale,
                                 scaleY = iconScale,

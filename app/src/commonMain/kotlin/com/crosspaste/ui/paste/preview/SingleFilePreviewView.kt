@@ -27,13 +27,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.crosspaste.app.AppSize
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.coil.FileExtItem
 import com.crosspaste.image.coil.ImageLoaders
@@ -55,6 +55,7 @@ fun SingleFilePreviewView(
     pasteFileInfoTreeCoordinate: PasteFileInfoTreeCoordinate,
     width: Dp,
 ) {
+    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val imageLoaders = koinInject<ImageLoaders>()
     val platformContext = koinInject<PlatformContext>()
@@ -84,7 +85,7 @@ fun SingleFilePreviewView(
                     )
                 },
     ) {
-        Box(modifier = Modifier.size(100.dp)) {
+        Box(modifier = Modifier.size(appSize.mainPasteSize.height)) {
             SubcomposeAsyncImage(
                 modifier = Modifier.fillMaxSize(),
                 model =
@@ -100,7 +101,9 @@ fun SingleFilePreviewView(
                         is AsyncImagePainter.State.Loading,
                         is AsyncImagePainter.State.Error,
                         -> {
-                            val modifier = Modifier.padding(small3X).size(90.dp)
+                            val modifier =
+                                Modifier.padding(small3X)
+                                    .size(appSize.mainPasteSize.height - small3X)
                             if (existFile) {
                                 if (isFile) {
                                     FileIcon(modifier)

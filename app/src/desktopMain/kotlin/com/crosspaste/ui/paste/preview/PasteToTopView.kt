@@ -20,12 +20,12 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.unit.dp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.toTop
 import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
@@ -46,7 +46,7 @@ fun PasteToTopView(toTopAction: () -> Unit) {
             delayMillis = 1000,
         ) {
             PasteIconButton(
-                size = 40.dp,
+                size = xxxLarge,
                 onClick = {
                     toTopAction()
                 },

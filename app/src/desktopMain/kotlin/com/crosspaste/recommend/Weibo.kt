@@ -4,9 +4,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.weibo
+import com.crosspaste.ui.theme.AppUISize.xxLarge
 import java.net.URLEncoder
 
 class Weibo(private val uiSupport: UISupport) : RecommendationPlatform {
@@ -18,7 +18,7 @@ class Weibo(private val uiSupport: UISupport) : RecommendationPlatform {
             Image(
                 painter = weibo(),
                 contentDescription = "weibo",
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.size(xxLarge),
             )
         }
     }

@@ -23,9 +23,9 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.dp
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.xxLarge
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -41,12 +41,12 @@ fun PasteTooltipIconView(
     var hoverIcon by remember { mutableStateOf(false) }
 
     PasteTooltipAreaView(
-        modifier = Modifier.size(32.dp),
+        modifier = Modifier.size(xxLarge),
         text = text,
     ) {
         Box(
             modifier =
-                Modifier.size(32.dp)
+                Modifier.size(xxLarge)
                     .onPointerEvent(
                         eventType = PointerEventType.Enter,
                         onEvent = {

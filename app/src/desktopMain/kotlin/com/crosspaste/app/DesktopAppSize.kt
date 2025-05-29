@@ -26,11 +26,23 @@ object DesktopAppSize : AppSize {
 
     override val searchWindowDetailViewDpSize: DpSize = DpSize(width = 500.dp, height = 240.dp)
 
+    val searchListViewSize: DpSize = DpSize(width = 280.dp, height = 420.dp)
+
+    val grantAccessibilityPermissionsWindowsSize: DpSize = DpSize(width = 360.dp, height = 280.dp)
+
     override val deviceHeight: Dp = huge
 
     override val settingsItemHeight: Dp = 40.dp
 
+    val searchFooterHeight: Dp = 40.dp
+
+    val searchPasteTitleHeight = 40.dp
+
+    val tabsViewHeight: Dp = 40.dp
+
     override val toastViewWidth: Dp = 280.dp
+
+    override val tokenViewWidth: Dp = 320.dp
 
     val windowDecorationHeight: Dp = huge
 

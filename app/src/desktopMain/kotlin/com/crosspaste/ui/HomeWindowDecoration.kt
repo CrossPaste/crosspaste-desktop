@@ -32,7 +32,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
@@ -49,6 +48,7 @@ import com.crosspaste.ui.base.robotoFontFamily
 import com.crosspaste.ui.base.search
 import com.crosspaste.ui.base.settings
 import com.crosspaste.ui.base.share
+import com.crosspaste.ui.theme.AppUISize.massive
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny3X
@@ -127,7 +127,7 @@ fun HomeWindowDecoration() {
                                 ),
                         )
                         if (existNewVersion) {
-                            NewVersionButton(modifier = Modifier.offset(x = 95.dp, y = (-10).dp))
+                            NewVersionButton(modifier = Modifier.offset(x = massive, y = -small3X))
                         }
                     }
                 }

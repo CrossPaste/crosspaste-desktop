@@ -21,10 +21,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.dp
+import com.crosspaste.app.AppSize
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.ui.base.UISupport
+import com.crosspaste.ui.theme.AppUISize.giant
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny3X
@@ -35,6 +36,7 @@ import org.koin.compose.koinInject
 fun ColorPreviewView(pasteData: PasteData) {
     pasteData.getPasteItem(ColorPasteItem::class)?.let { pasteColor ->
         SimplePreviewContentView(pasteData) {
+            val appSize = koinInject<AppSize>()
             val uiSupport = koinInject<UISupport>()
             Row(
                 modifier =
@@ -49,7 +51,7 @@ fun ColorPreviewView(pasteData: PasteData) {
                 Box(
                     modifier =
                         Modifier
-                            .size(100.dp)
+                            .size(appSize.mainPasteSize.height)
                             .clip(tiny2XRoundedCornerShape)
                             .background(Color(pasteColor.color).copy(alpha = 0.3f)),
                     contentAlignment = Alignment.Center,
@@ -57,7 +59,7 @@ fun ColorPreviewView(pasteData: PasteData) {
                     Box(
                         modifier =
                             Modifier
-                                .size(80.dp)
+                                .size(giant)
                                 .shadow(
                                     elevation = tiny5X,
                                     shape = tiny2XRoundedCornerShape,

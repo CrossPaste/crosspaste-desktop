@@ -57,6 +57,7 @@ import com.crosspaste.ui.base.moreVertical
 import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import kotlinx.coroutines.delay
@@ -250,7 +251,7 @@ fun DeviceConnectContentView(
                                 Modifier
                                     .wrapContentSize()
                                     .background(Color.Transparent)
-                                    .shadow(15.dp),
+                                    .shadow(small),
                         ) {
                             val menuTexts =
                                 arrayOf(
