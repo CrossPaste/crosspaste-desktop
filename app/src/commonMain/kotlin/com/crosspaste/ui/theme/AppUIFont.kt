@@ -1,7 +1,6 @@
 package com.crosspaste.ui.theme
 
 import androidx.compose.foundation.text.TextAutoSize
-import androidx.compose.material.ContentAlpha
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
@@ -168,7 +167,7 @@ object AppUIFont {
                 if (!useDefaultStoragePath) {
                     MaterialTheme.colorScheme.primary
                 } else {
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = ContentAlpha.disabled)
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                 },
             fontSize = if (!useDefaultStoragePath) 12.sp else 14.sp,
             fontWeight = FontWeight.Bold,
