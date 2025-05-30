@@ -52,8 +52,8 @@ import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.DeviceDetail
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.PasteIconButton
-import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.moreVertical
+import com.crosspaste.ui.theme.AppUIFont.getFontWidth
 import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -259,7 +259,7 @@ fun DeviceConnectContentView(
                                     copywriter.getText("remove_device"),
                                 )
 
-                            val maxWidth = getMenWidth(menuTexts)
+                            val maxWidth = getFontWidth(menuTexts)
 
                             Column(
                                 modifier =

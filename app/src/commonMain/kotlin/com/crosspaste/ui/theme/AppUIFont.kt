@@ -1,5 +1,6 @@
 package com.crosspaste.ui.theme
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.contentColorFor
@@ -12,10 +13,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.base.robotoFontFamily
+import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.zero
 
 object AppUIFont {
 
@@ -136,6 +142,22 @@ object AppUIFont {
                 fontFamily = FontFamily.Monospace,
                 textAlign = TextAlign.Center,
             )
+
+    @Composable
+    fun getFontWidth(
+        array: Array<String>,
+        textStyle: TextStyle = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Light),
+        paddingValues: PaddingValues = PaddingValues(horizontal = medium, vertical = zero),
+        extendFunction: (Int) -> Dp = { zero },
+    ): Dp {
+        var maxWidth = zero
+        array.forEachIndexed { index, text ->
+            maxWidth = maxOf(maxWidth, measureTextWidth(text, textStyle) + extendFunction(index))
+        }
+        return maxWidth +
+            paddingValues.calculateLeftPadding(LayoutDirection.Ltr) +
+            paddingValues.calculateRightPadding(LayoutDirection.Ltr)
+    }
 
     @Composable
     fun CustomTextFieldStyle(textAlign: TextAlign = TextAlign.Start): TextStyle {

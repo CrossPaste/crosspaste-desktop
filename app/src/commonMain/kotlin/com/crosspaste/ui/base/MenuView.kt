@@ -24,8 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.xxLarge
@@ -82,20 +80,4 @@ fun MenuItem(
             it()
         }
     }
-}
-
-@Composable
-fun getMenWidth(
-    array: Array<String>,
-    textStyle: TextStyle = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Light),
-    paddingValues: PaddingValues = PaddingValues(horizontal = medium, vertical = zero),
-    extendFunction: (Int) -> Dp = { zero },
-): Dp {
-    var maxWidth = zero
-    array.forEachIndexed { index, text ->
-        maxWidth = maxOf(maxWidth, measureTextWidth(text, textStyle) + extendFunction(index))
-    }
-    return maxWidth +
-        paddingValues.calculateLeftPadding(LayoutDirection.Ltr) +
-        paddingValues.calculateRightPadding(LayoutDirection.Ltr)
 }

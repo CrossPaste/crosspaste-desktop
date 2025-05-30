@@ -35,8 +35,8 @@ import com.crosspaste.ui.base.arrowDown
 import com.crosspaste.ui.base.arrowLeft
 import com.crosspaste.ui.base.arrowRight
 import com.crosspaste.ui.base.arrowUp
-import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.language
+import com.crosspaste.ui.theme.AppUIFont.getFontWidth
 import com.crosspaste.ui.theme.AppUISize.gigantic
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small
@@ -134,7 +134,7 @@ fun LanguageSettingItemView() {
                     val maxWidth =
                         max(
                             gigantic,
-                            getMenWidth(copywriter.getAllLanguages().map { it.name }.toTypedArray()),
+                            getFontWidth(copywriter.getAllLanguages().map { it.name }.toTypedArray()),
                         )
 
                     Column(

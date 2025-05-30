@@ -20,7 +20,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.BaseColor
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.check
-import com.crosspaste.ui.base.getMenWidth
+import com.crosspaste.ui.theme.AppUIFont.getFontWidth
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small
@@ -48,7 +48,7 @@ fun CleanTimeMenuView(
             }.toTypedArray()
 
         val maxWidth =
-            getMenWidth(cleanTimeMenuTexts) {
+            getFontWidth(cleanTimeMenuTexts) {
                 small * 2
             }
 
