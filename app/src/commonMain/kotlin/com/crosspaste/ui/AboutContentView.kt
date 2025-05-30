@@ -22,17 +22,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppUrls
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.CrossPasteLogoView
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.chevronRight
-import com.crosspaste.ui.base.robotoFontFamily
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUIFont.aboutAppNameTextStyle
+import com.crosspaste.ui.theme.AppUIFont.aboutVersionTextStyle
 import com.crosspaste.ui.theme.AppUISize.giant
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small
@@ -76,24 +74,14 @@ fun AboutContentView() {
                 Spacer(modifier = Modifier.height(small))
                 Text(
                     text = "CrossPaste",
-                    style =
-                        TextStyle(
-                            fontFamily = robotoFontFamily(),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                        ),
+                    style = aboutAppNameTextStyle,
                     color = onBackground,
                 )
                 Spacer(modifier = Modifier.height(small2X))
 
                 Text(
                     text = "version: ${appInfo.displayVersion()}",
-                    style =
-                        TextStyle(
-                            fontFamily = robotoFontFamily(),
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 15.sp,
-                        ),
+                    style = aboutVersionTextStyle,
                     color = onBackground,
                 )
                 Spacer(modifier = Modifier.height(xxLarge))

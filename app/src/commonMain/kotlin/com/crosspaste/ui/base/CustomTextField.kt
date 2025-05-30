@@ -11,7 +11,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TextFieldDefaults.contentPaddingWithLabel
@@ -27,11 +26,9 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.sp
+import com.crosspaste.ui.theme.AppUIFont.CustomTextFieldStyle
 import com.crosspaste.ui.theme.AppUISize.zero
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -119,18 +116,6 @@ fun CustomTextField(
 }
 
 @Composable
-fun textFieldStyle(textAlign: TextAlign = TextAlign.Start): TextStyle {
-    return LocalTextStyle.current.copy(
-        textAlign = textAlign,
-        color = MaterialTheme.colorScheme.primary,
-        fontSize = 14.sp,
-        fontWeight = FontWeight.Bold,
-        fontFamily = FontFamily.Monospace,
-        lineHeight = 14.sp,
-    )
-}
-
-@Composable
 fun DefaultTextField(
     modifier: Modifier = Modifier,
     isError: Boolean = false,
@@ -144,7 +129,7 @@ fun DefaultTextField(
     colors: TextFieldColors = TextFieldDefaults.colors(),
     onValueChange: (String) -> Unit,
 ) {
-    val textStyle = textFieldStyle(textAlign)
+    val textStyle = CustomTextFieldStyle(textAlign)
 
     CustomTextField(
         modifier = modifier.wrapContentHeight(),

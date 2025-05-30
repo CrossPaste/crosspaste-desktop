@@ -26,16 +26,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.sp
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.PasteDialogFactory
+import com.crosspaste.ui.theme.AppUIFont.noteNameTextStyle
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
@@ -142,13 +141,7 @@ fun MyDevicesView(syncRuntimeInfos: List<SyncRuntimeInfo>) {
                                         disabledPlaceholderColor = Color.Transparent,
                                         errorPlaceholderColor = MaterialTheme.colorScheme.error.copy(alpha = 0.5f),
                                     ),
-                                textStyle =
-                                    TextStyle(
-                                        fontWeight = FontWeight.Light,
-                                        color = MaterialTheme.colorScheme.onBackground,
-                                        fontSize = 15.sp,
-                                        lineHeight = 5.sp,
-                                    ),
+                                textStyle = noteNameTextStyle,
                                 contentPadding = PaddingValues(horizontal = medium, vertical = zero),
                             )
                         }

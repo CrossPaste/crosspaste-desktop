@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -25,10 +24,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppExitService
 import com.crosspaste.app.AppFileChooser
 import com.crosspaste.app.AppRestartService
@@ -48,6 +43,7 @@ import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.PasteDialogFactory
 import com.crosspaste.ui.base.archive
+import com.crosspaste.ui.theme.AppUIFont.StorePathTextStyle
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
@@ -152,20 +148,7 @@ fun SetStoragePathView() {
                 enabled = useDefaultStoragePath,
                 readOnly = useDefaultStoragePath,
                 singleLine = true,
-                textStyle =
-                    LocalTextStyle.current.copy(
-                        textAlign = TextAlign.Start,
-                        color =
-                            if (!useDefaultStoragePath) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                Color.LightGray
-                            },
-                        fontSize = if (!useDefaultStoragePath) 12.sp else 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace,
-                        lineHeight = 14.sp,
-                    ),
+                textStyle = StorePathTextStyle(useDefaultStoragePath),
                 colors =
                     TextFieldDefaults.colors(
                         focusedIndicatorColor = MaterialTheme.colorScheme.primary,
@@ -239,15 +222,7 @@ fun SetStoragePathDialogView(path: Path) {
                 enabled = false,
                 readOnly = true,
                 singleLine = true,
-                textStyle =
-                    LocalTextStyle.current.copy(
-                        textAlign = TextAlign.Start,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace,
-                        lineHeight = 14.sp,
-                    ),
+                textStyle = StorePathTextStyle(false),
                 colors =
                     TextFieldDefaults.colors(
                         focusedIndicatorColor = MaterialTheme.colorScheme.primary,

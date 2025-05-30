@@ -39,8 +39,8 @@ import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.base.DefaultTextField
 import com.crosspaste.ui.base.measureTextWidth
-import com.crosspaste.ui.base.textFieldStyle
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUIFont.CustomTextFieldStyle
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -101,7 +101,7 @@ fun AddDeviceManuallyForm() {
         val ipWidth =
             measureTextWidth(
                 "000.000.000.000",
-                textFieldStyle(),
+                CustomTextFieldStyle(),
             )
 
         DefaultTextField(
@@ -147,7 +147,7 @@ fun AddDeviceManuallyForm() {
         val portWidth =
             measureTextWidth(
                 "10000",
-                textFieldStyle(),
+                CustomTextFieldStyle(),
             )
 
         DefaultTextField(

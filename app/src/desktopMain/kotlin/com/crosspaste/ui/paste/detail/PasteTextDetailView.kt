@@ -19,7 +19,7 @@ import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteText
-import com.crosspaste.ui.paste.PasteboardViewProvider.Companion.previewTextStyle
+import com.crosspaste.ui.theme.AppUIFont.detailPasteTextStyle
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getFileUtils
@@ -56,7 +56,7 @@ fun PasteTextDetailView(
                         Modifier.fillMaxSize()
                             .verticalScroll(rememberScrollState()),
                     overflow = TextOverflow.Ellipsis,
-                    style = previewTextStyle,
+                    style = detailPasteTextStyle,
                 )
             }
         },
