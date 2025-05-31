@@ -43,6 +43,7 @@ import com.crosspaste.ui.base.FileIcon
 import com.crosspaste.ui.base.FileSlashIcon
 import com.crosspaste.ui.base.FolderIcon
 import com.crosspaste.ui.base.UISupport
+import com.crosspaste.ui.theme.AppUIFont.propertyTextStyle
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
@@ -136,7 +137,7 @@ fun SingleFilePreviewView(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.labelMedium,
+                style = propertyTextStyle,
             )
 
             Spacer(modifier = Modifier.height(tiny3X))
@@ -151,7 +152,7 @@ fun SingleFilePreviewView(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.labelMedium,
+                    style = propertyTextStyle,
                 )
             } else {
                 Text(
@@ -159,7 +160,7 @@ fun SingleFilePreviewView(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.labelMedium,
+                    style = propertyTextStyle,
                 )
             }
         }

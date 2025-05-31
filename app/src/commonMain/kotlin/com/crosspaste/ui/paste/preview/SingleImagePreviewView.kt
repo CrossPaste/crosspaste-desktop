@@ -47,6 +47,7 @@ import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.ui.base.TransparentBackground
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.imageSlash
+import com.crosspaste.ui.theme.AppUIFont.propertyTextStyle
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny3X
@@ -152,7 +153,7 @@ fun SingleImagePreviewView(
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             color = MaterialTheme.colorScheme.onSurface,
-                            style = MaterialTheme.typography.labelMedium,
+                            style = propertyTextStyle,
                         )
 
                         if (state is AsyncImagePainter.State.Success) {
@@ -166,7 +167,7 @@ fun SingleImagePreviewView(
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     color = MaterialTheme.colorScheme.onSurface,
-                                    style = MaterialTheme.typography.labelMedium,
+                                    style = propertyTextStyle,
                                 )
                             }
                         }
@@ -183,7 +184,7 @@ fun SingleImagePreviewView(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 color = MaterialTheme.colorScheme.onSurface,
-                                style = MaterialTheme.typography.labelMedium,
+                                style = propertyTextStyle,
                             )
                         } else {
                             Text(
@@ -191,7 +192,7 @@ fun SingleImagePreviewView(
                                 maxLines = 1,
                                 overflow = TextOverflow.Visible,
                                 color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.labelMedium,
+                                style = propertyTextStyle,
                             )
                         }
                     }

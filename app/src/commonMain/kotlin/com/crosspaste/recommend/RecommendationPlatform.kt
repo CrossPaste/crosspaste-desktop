@@ -16,6 +16,7 @@ import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
+import com.crosspaste.ui.theme.AppUISize.zeroButtonElevation
 
 interface RecommendationPlatform {
     val platformName: String
@@ -45,13 +46,7 @@ interface RecommendationPlatform {
                     ),
                 border = BorderStroke(tiny5X, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)),
                 contentPadding = PaddingValues(zero),
-                elevation =
-                    ButtonDefaults.elevatedButtonElevation(
-                        defaultElevation = zero,
-                        pressedElevation = zero,
-                        hoveredElevation = zero,
-                        focusedElevation = zero,
-                    ),
+                elevation = zeroButtonElevation,
             ) {
                 iconContent()
             }

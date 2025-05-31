@@ -37,9 +37,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.LineBreak
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppSize
 import com.crosspaste.app.AppTokenApi
@@ -49,6 +46,7 @@ import com.crosspaste.ui.base.BaseColor
 import com.crosspaste.ui.base.autoRenew
 import com.crosspaste.ui.base.scan
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUIFont.qrTextStyle
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small3XRoundedCornerShape
@@ -124,16 +122,11 @@ fun QRContentView() {
                         modifier =
                             Modifier.weight(1f, fill = false)
                                 .padding(vertical = tiny),
-                        textAlign = TextAlign.Center,
                         text = copywriter.getText("please_scan_the_binding_device"),
                         maxLines = 3,
                         color = Color.Black,
                         softWrap = true,
-                        style =
-                            MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Light,
-                                lineBreak = LineBreak.Paragraph,
-                            ),
+                        style = qrTextStyle,
                     )
                     Spacer(modifier = Modifier.width(tiny))
                     Icon(

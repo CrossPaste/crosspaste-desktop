@@ -30,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
@@ -55,13 +56,16 @@ import com.crosspaste.ui.base.percent
 import com.crosspaste.ui.base.text
 import com.crosspaste.ui.base.trash
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUIColors.selectedColor
 import com.crosspaste.ui.theme.AppUIFont.SettingsTextStyle
+import com.crosspaste.ui.theme.AppUIFont.selectedTextTextStyle
 import com.crosspaste.ui.theme.AppUISize.massive
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxLarge
@@ -303,16 +307,21 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
 
             Row(
                 modifier =
-                    Modifier.wrapContentWidth()
+                    Modifier
+                        .clip(tiny2XRoundedCornerShape)
+                        .wrapContentWidth()
                         .clickable {
                             showImageCleanTimeMenu = !showImageCleanTimeMenu
-                        },
+                        }
+                        .padding(tiny2X),
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                SettingsText(
+                Text(
                     modifier = Modifier.width(imageCleanTimeWidth),
                     text = imageCleanTimeValue,
+                    style = selectedTextTextStyle,
+                    color = selectedColor,
                 )
 
                 Spacer(modifier = Modifier.width(tiny3X))
@@ -320,6 +329,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
                     modifier = Modifier.size(medium),
                     painter = anglesUpDown(),
                     contentDescription = "Image expiration time",
+                    tint = selectedColor,
                 )
             }
 
@@ -372,17 +382,21 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
 
             Row(
                 modifier =
-                    Modifier.wrapContentWidth()
+                    Modifier
+                        .clip(tiny2XRoundedCornerShape)
+                        .wrapContentWidth()
                         .clickable {
                             showFileCleanTimeMenu = !showFileCleanTimeMenu
-                        },
+                        }
+                        .padding(tiny2X),
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     modifier = Modifier.width(fileCleanTimeWidth),
                     text = fileCleanTimeValue,
-                    style = SettingsTextStyle(),
+                    style = selectedTextTextStyle,
+                    color = selectedColor,
                 )
 
                 Spacer(modifier = Modifier.width(tiny3X))
@@ -390,7 +404,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
                     modifier = Modifier.size(medium),
                     painter = anglesUpDown(),
                     contentDescription = "File Expiry Period",
-                    tint = MaterialTheme.colorScheme.onSurface,
+                    tint = selectedColor,
                 )
             }
 

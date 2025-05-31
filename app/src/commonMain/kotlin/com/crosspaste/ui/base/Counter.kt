@@ -22,7 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.input.KeyboardType
-import com.crosspaste.ui.theme.AppUIFont.countTextStyle
+import com.crosspaste.ui.theme.AppUIFont.NumberTextStyle
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
@@ -39,6 +39,8 @@ fun Counter(
     var count by remember { mutableStateOf(defaultValue) }
 
     val buttonColors = ButtonDefaults.buttonColors()
+
+    val numberTextStyle = NumberTextStyle()
 
     Row(
         modifier = Modifier.wrapContentSize(),
@@ -60,7 +62,7 @@ fun Counter(
             Text(
                 text = "-",
                 color = buttonColors.contentColor,
-                style = countTextStyle,
+                style = numberTextStyle,
             )
         }
         Spacer(modifier = Modifier.width(tiny3X))
@@ -68,7 +70,7 @@ fun Counter(
         val width =
             measureTextWidth(
                 "$count",
-                countTextStyle,
+                numberTextStyle,
             )
 
         DefaultTextField(
@@ -92,7 +94,7 @@ fun Counter(
         Text(
             text = unit,
             color = MaterialTheme.colorScheme.primary,
-            style = countTextStyle,
+            style = numberTextStyle,
         )
         Spacer(modifier = Modifier.width(tiny3X))
         Button(
@@ -110,7 +112,7 @@ fun Counter(
             Text(
                 text = "+",
                 color = buttonColors.contentColor,
-                style = countTextStyle,
+                style = numberTextStyle,
             )
         }
     }

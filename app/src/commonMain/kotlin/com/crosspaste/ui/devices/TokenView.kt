@@ -30,7 +30,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
@@ -38,6 +37,7 @@ import com.crosspaste.app.AppSize
 import com.crosspaste.app.AppTokenApi
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.close
+import com.crosspaste.ui.theme.AppUIFont.generalTitleTextStyle
 import com.crosspaste.ui.theme.AppUIFont.tokenTextStyle
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -119,10 +119,7 @@ private fun RealTokenView() {
                     Text(
                         text = copywriter.getText("token"),
                         color = MaterialTheme.colorScheme.onBackground,
-                        style =
-                            MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                            ),
+                        style = generalTitleTextStyle,
                     )
 
                     Box(

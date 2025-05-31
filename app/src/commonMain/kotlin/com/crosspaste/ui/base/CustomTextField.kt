@@ -28,7 +28,7 @@ import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import com.crosspaste.ui.theme.AppUIFont.CustomTextFieldStyle
+import com.crosspaste.ui.theme.AppUIFont.NumberTextStyle
 import com.crosspaste.ui.theme.AppUISize.zero
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -129,7 +129,7 @@ fun DefaultTextField(
     colors: TextFieldColors = TextFieldDefaults.colors(),
     onValueChange: (String) -> Unit,
 ) {
-    val textStyle = CustomTextFieldStyle(textAlign)
+    val textStyle = NumberTextStyle(textAlign)
 
     CustomTextField(
         modifier = modifier.wrapContentHeight(),

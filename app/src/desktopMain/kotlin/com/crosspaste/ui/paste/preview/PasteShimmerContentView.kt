@@ -20,7 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.crosspaste.app.AppSize
 import com.crosspaste.paste.PasteSingleProcess
-import com.crosspaste.ui.theme.AppUIFont.countTextStyle
+import com.crosspaste.ui.theme.AppUIFont.NumberTextStyle
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny4X
@@ -52,8 +52,7 @@ fun PasteShimmerContentView(singleProcess: PasteSingleProcess?) {
             process?.let {
                 Text(
                     text = "${(it.value * 100).toInt()}%",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    style = countTextStyle,
+                    style = NumberTextStyle(),
                 )
             }
         }

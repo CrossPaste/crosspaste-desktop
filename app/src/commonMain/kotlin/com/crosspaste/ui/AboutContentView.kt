@@ -21,7 +21,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppUrls
 import com.crosspaste.i18n.GlobalCopywriter
@@ -30,6 +29,7 @@ import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.chevronRight
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont.aboutAppNameTextStyle
+import com.crosspaste.ui.theme.AppUIFont.aboutInfoTextStyle
 import com.crosspaste.ui.theme.AppUIFont.aboutVersionTextStyle
 import com.crosspaste.ui.theme.AppUISize.giant
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -75,18 +75,16 @@ fun AboutContentView() {
                 Text(
                     text = "CrossPaste",
                     style = aboutAppNameTextStyle,
-                    color = onBackground,
                 )
                 Spacer(modifier = Modifier.height(small2X))
 
                 Text(
                     text = "version: ${appInfo.displayVersion()}",
                     style = aboutVersionTextStyle,
-                    color = onBackground,
                 )
                 Spacer(modifier = Modifier.height(xxLarge))
 
-                AboutInfoItem("official_website", onBackground) {
+                AboutInfoItem("official_website") {
                     uiSupport.openCrossPasteWebInBrowser()
                 }
 
@@ -96,7 +94,7 @@ fun AboutContentView() {
                     color = onBackground.copy(alpha = 0.36f),
                 )
 
-                AboutInfoItem("newbie_tutorial", onBackground) {
+                AboutInfoItem("newbie_tutorial") {
                     uiSupport.openCrossPasteWebInBrowser("tutorial/pasteboard")
                 }
 
@@ -106,7 +104,7 @@ fun AboutContentView() {
                     color = onBackground.copy(alpha = 0.36f),
                 )
 
-                AboutInfoItem("change_log", onBackground) {
+                AboutInfoItem("change_log") {
                     uiSupport.openUrlInBrowser(appUrls.changeLogUrl)
                 }
 
@@ -116,7 +114,7 @@ fun AboutContentView() {
                     color = onBackground.copy(alpha = 0.36f),
                 )
 
-                AboutInfoItem("feedback", onBackground) {
+                AboutInfoItem("feedback") {
                     uiSupport.openUrlInBrowser(appUrls.issueTrackerUrl)
                 }
 
@@ -126,7 +124,7 @@ fun AboutContentView() {
                     color = onBackground.copy(alpha = 0.36f),
                 )
 
-                AboutInfoItem("contact_us", onBackground) {
+                AboutInfoItem("contact_us") {
                     uiSupport.openEmailClient("compile.future@gmail.com")
                 }
             }
@@ -137,7 +135,6 @@ fun AboutContentView() {
 @Composable
 fun AboutInfoItem(
     title: String,
-    onBackground: Color,
     onClick: () -> Unit,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
@@ -155,8 +152,7 @@ fun AboutInfoItem(
                 Modifier.wrapContentSize()
                     .padding(start = tiny2X),
             text = copywriter.getText(title),
-            color = onBackground,
-            style = MaterialTheme.typography.titleMedium,
+            style = aboutInfoTextStyle,
         )
 
         Spacer(modifier = Modifier.weight(1f))
@@ -164,7 +160,7 @@ fun AboutInfoItem(
         Icon(
             painter = chevronRight(),
             contentDescription = "chevron right",
-            tint = onBackground,
+            tint = MaterialTheme.colorScheme.contentColorFor(AppUIColors.aboutBackground),
         )
     }
 }

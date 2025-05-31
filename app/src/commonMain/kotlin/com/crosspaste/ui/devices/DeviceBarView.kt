@@ -19,9 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.TextUnit
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.ui.base.android
 import com.crosspaste.ui.base.ipad
@@ -30,6 +28,8 @@ import com.crosspaste.ui.base.linux
 import com.crosspaste.ui.base.macos
 import com.crosspaste.ui.base.question
 import com.crosspaste.ui.base.windows
+import com.crosspaste.ui.theme.AppUIFont.platformNameTextStyle
+import com.crosspaste.ui.theme.AppUIFont.platformTextStyle
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny4X
@@ -98,11 +98,7 @@ fun DeviceBarView(
                         text = syncRuntimeInfo.platform.name,
                         maxLines = 1,
                         color = onBackground,
-                        style =
-                            MaterialTheme.typography.titleSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                lineHeight = TextUnit.Unspecified,
-                            ),
+                        style = platformNameTextStyle,
                     )
                     Spacer(modifier = Modifier.width(tiny))
                     Text(
@@ -110,11 +106,7 @@ fun DeviceBarView(
                         text = syncRuntimeInfo.platform.version,
                         maxLines = 1,
                         color = onBackground,
-                        style =
-                            MaterialTheme.typography.labelMedium.copy(
-                                fontWeight = FontWeight.Light,
-                                lineHeight = TextUnit.Unspecified,
-                            ),
+                        style = platformTextStyle,
                     )
                 }
 
@@ -123,11 +115,7 @@ fun DeviceBarView(
                     text = syncRuntimeInfo.getDeviceDisplayName(),
                     maxLines = 1,
                     color = onBackground.copy(alpha = 0.8f),
-                    style =
-                        MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = FontWeight.Light,
-                            lineHeight = TextUnit.Unspecified,
-                        ),
+                    style = platformTextStyle,
                     overflow = TextOverflow.Ellipsis,
                 )
             }

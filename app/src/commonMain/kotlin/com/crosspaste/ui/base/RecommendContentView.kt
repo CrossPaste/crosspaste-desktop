@@ -80,10 +80,9 @@ fun RecommendContentView() {
                             color = MaterialTheme.colorScheme.outline,
                             shape = RoundedCornerShape(medium),
                         )
-                        .background(MaterialTheme.colorScheme.surface)
+                        .background(AppUIColors.recommendedContentBackground)
                         .padding(medium),
                 style = recommendTextTextStyle,
-                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = Int.MAX_VALUE,
             )
 

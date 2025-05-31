@@ -45,6 +45,7 @@ import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUIFont.generalBodyTextStyle
 import com.crosspaste.ui.theme.AppUIFont.tokenTextStyle
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small2X
@@ -143,7 +144,7 @@ fun DeviceInfoHeader(syncRuntimeInfo: SyncRuntimeInfo) {
         Row(horizontalArrangement = Arrangement.End) {
             Text(
                 text = syncRuntimeInfo.connectHostAddress ?: "unknown",
-                style = MaterialTheme.typography.bodyMedium,
+                style = generalBodyTextStyle,
                 color = MaterialTheme.colorScheme.contentColorFor(currentBackground),
             )
             Spacer(modifier = Modifier.width(small2X))

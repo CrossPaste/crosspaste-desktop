@@ -8,7 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.crosspaste.ui.theme.AppUISize.elevation
+import com.crosspaste.ui.theme.AppUISize.highlightedCardElevation
 import com.crosspaste.ui.theme.AppUISize.tiny6X
 
 @Composable
@@ -25,7 +25,7 @@ fun HighlightedCard(
             CardDefaults.cardColors(
                 containerColor = containerColor,
             ),
-        elevation = elevation,
+        elevation = highlightedCardElevation,
         border =
             BorderStroke(
                 width = tiny6X,

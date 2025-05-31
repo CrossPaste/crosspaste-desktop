@@ -7,11 +7,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUIFont.emptyScreenTipsTextStyle
 import org.koin.compose.koinInject
 
 @Composable
@@ -21,7 +23,7 @@ fun PasteEmptyScreenView() {
         contentAlignment = Alignment.Center,
         modifier =
             Modifier.fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface.copy(0.64f)),
+                .background(AppUIColors.pasteEmptyScreenBackground),
     ) {
         Box(
             modifier = Modifier.wrapContentSize(),
@@ -31,11 +33,13 @@ fun PasteEmptyScreenView() {
                 modifier =
                     Modifier
                         .fillMaxWidth(0.8f),
-                textAlign = TextAlign.Center,
                 text = copywriter.getText("no_pasteboard_activity_detected_yet"),
                 maxLines = 3,
-                color = MaterialTheme.colorScheme.onBackground,
-                style = MaterialTheme.typography.titleLarge,
+                color =
+                    MaterialTheme.colorScheme.contentColorFor(
+                        AppUIColors.pasteEmptyScreenBackground,
+                    ),
+                style = emptyScreenTipsTextStyle,
             )
         }
     }

@@ -27,6 +27,22 @@ object AppUIColors {
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.colorScheme.surfaceContainerHighest
 
+    val menuBackground: Color
+        @Composable @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme.surfaceBright
+
+    val selectedMenuBackground: Color
+        @Composable @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme.primaryContainer
+
+    val pasteBackground: Color
+        @Composable @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme.background
+
+    val pasteEmptyScreenBackground: Color
+        @Composable @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme.surfaceContainerHighest
+
     val qrBackground: Color
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.colorScheme.surfaceContainerHighest
@@ -35,6 +51,10 @@ object AppUIColors {
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.colorScheme.surfaceContainerHighest
 
+    val recommendedContentBackground: Color
+        @Composable @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme.surface
+
     val searchBackground: Color
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.colorScheme.surface
@@ -42,6 +62,10 @@ object AppUIColors {
     val searchFootBackground: Color
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.colorScheme.surfaceContainerHighest
+
+    val selectedColor: Color
+        @Composable @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme.primary
 
     val settingsBackground: Color
         @Composable @ReadOnlyComposable
@@ -66,4 +90,8 @@ object AppUIColors {
     val tabUnselectedTextColor: Color
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.72f)
+
+    val urlColor: Color
+        @Composable @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme.primary
 }

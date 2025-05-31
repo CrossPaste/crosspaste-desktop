@@ -23,8 +23,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.TextUnit
+import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUIFont.menuItemTextStyle
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
@@ -32,12 +32,8 @@ import com.crosspaste.ui.theme.AppUISize.zero
 @Composable
 fun MenuItem(
     text: String,
-    textStyle: TextStyle =
-        MaterialTheme.typography.bodyMedium.copy(
-            fontWeight = FontWeight.Light,
-            lineHeight = TextUnit.Unspecified,
-        ),
-    background: Color = MaterialTheme.colorScheme.surface,
+    textStyle: TextStyle = menuItemTextStyle,
+    background: Color = AppUIColors.menuBackground,
     paddingValues: PaddingValues = PaddingValues(horizontal = medium, vertical = zero),
     enabledInteraction: Boolean = true,
     extendContent: (@Composable RowScope.() -> Unit)? = null,
@@ -47,7 +43,7 @@ fun MenuItem(
     val isHovered by interactionSource.collectIsHoveredAsState()
     val backgroundColor =
         if (enabledInteraction && isHovered) {
-            MaterialTheme.colorScheme.primaryContainer
+            AppUIColors.selectedMenuBackground
         } else {
             background
         }

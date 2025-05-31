@@ -40,7 +40,9 @@ import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.base.DefaultTextField
 import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.theme.AppUIColors
-import com.crosspaste.ui.theme.AppUIFont.CustomTextFieldStyle
+import com.crosspaste.ui.theme.AppUIFont.NumberTextStyle
+import com.crosspaste.ui.theme.AppUIFont.buttonTextStyle
+import com.crosspaste.ui.theme.AppUIFont.propertyTextStyle
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -50,6 +52,7 @@ import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
+import com.crosspaste.ui.theme.AppUISize.zeroButtonElevation
 import com.crosspaste.ui.theme.CrossPasteTheme.connectedColor
 import com.crosspaste.utils.buildUrl
 import kotlinx.coroutines.runBlocking
@@ -93,7 +96,7 @@ fun AddDeviceManuallyForm() {
         Text(
             text = "IP",
             color = MaterialTheme.colorScheme.contentColorFor(AppUIColors.deviceBackground),
-            style = MaterialTheme.typography.labelLarge,
+            style = propertyTextStyle,
         )
 
         Spacer(modifier = Modifier.width(tiny))
@@ -101,7 +104,7 @@ fun AddDeviceManuallyForm() {
         val ipWidth =
             measureTextWidth(
                 "000.000.000.000",
-                CustomTextFieldStyle(),
+                NumberTextStyle(),
             )
 
         DefaultTextField(
@@ -139,7 +142,7 @@ fun AddDeviceManuallyForm() {
         Text(
             text = "Port",
             color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.labelLarge,
+            style = propertyTextStyle,
         )
 
         Spacer(modifier = Modifier.width(tiny))
@@ -147,7 +150,7 @@ fun AddDeviceManuallyForm() {
         val portWidth =
             measureTextWidth(
                 "10000",
-                CustomTextFieldStyle(),
+                NumberTextStyle(),
             )
 
         DefaultTextField(
@@ -230,18 +233,12 @@ fun AddDeviceManuallyForm() {
             border = BorderStroke(tiny5X, connectedColor(MaterialTheme.colorScheme.surfaceContainerLowest)),
             contentPadding = PaddingValues(horizontal = tiny, vertical = zero),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background),
-            elevation =
-                ButtonDefaults.elevatedButtonElevation(
-                    defaultElevation = zero,
-                    pressedElevation = zero,
-                    hoveredElevation = zero,
-                    focusedElevation = zero,
-                ),
+            elevation = zeroButtonElevation,
         ) {
             Text(
                 text = copywriter.getText("add"),
                 color = connectedColor(MaterialTheme.colorScheme.surfaceContainerLowest),
-                style = MaterialTheme.typography.labelMedium,
+                style = buttonTextStyle,
                 maxLines = 1,
                 softWrap = false,
             )

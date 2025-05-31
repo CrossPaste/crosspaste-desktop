@@ -47,7 +47,6 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.settings.LocalSettingsScrollState
 import com.crosspaste.ui.theme.AppUISize.large
@@ -244,10 +243,7 @@ class DesktopExpandViewProvider(
 
             Text(
                 text = copywriter.getText(title),
-                style =
-                    MaterialTheme.typography.labelLarge.copy(
-                        lineHeight = TextUnit.Unspecified,
-                    ),
+                style = MaterialTheme.typography.labelLarge,
                 color = onBarBackgroundColor,
             )
         }

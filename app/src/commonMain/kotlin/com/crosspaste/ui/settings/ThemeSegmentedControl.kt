@@ -27,12 +27,14 @@ import com.crosspaste.ui.base.check
 import com.crosspaste.ui.base.contrastHigh
 import com.crosspaste.ui.base.contrastMedium
 import com.crosspaste.ui.base.contrastStandard
+import com.crosspaste.ui.theme.AppUIFont.buttonTextStyle
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
+import com.crosspaste.ui.theme.AppUISize.zeroButtonElevation
 import com.crosspaste.ui.theme.AppUISize.zeroRoundedCornerShape
 import com.crosspaste.ui.theme.ColorContrast
 import com.crosspaste.ui.theme.CoralColor
@@ -70,13 +72,7 @@ private fun ThemeButton(
         colors = buttonColors,
         border = BorderStroke(tiny5X, MaterialTheme.colorScheme.surfaceDim),
         contentPadding = PaddingValues(horizontal = tiny, vertical = zero),
-        elevation =
-            ButtonDefaults.elevatedButtonElevation(
-                defaultElevation = zero,
-                pressedElevation = zero,
-                hoveredElevation = zero,
-                focusedElevation = zero,
-            ),
+        elevation = zeroButtonElevation,
     ) {
         content()
     }
@@ -169,7 +165,7 @@ private fun ThemeStyle() {
         ) {
             Text(
                 text = copywriter.getText("light"),
-                style = MaterialTheme.typography.labelMedium,
+                style = buttonTextStyle,
             )
         }
 
@@ -194,7 +190,7 @@ private fun ThemeStyle() {
         ) {
             Text(
                 text = copywriter.getText("system"),
-                style = MaterialTheme.typography.labelMedium,
+                style = buttonTextStyle,
             )
         }
 
@@ -225,7 +221,7 @@ private fun ThemeStyle() {
         ) {
             Text(
                 text = copywriter.getText("dark"),
-                style = MaterialTheme.typography.labelMedium,
+                style = buttonTextStyle,
             )
         }
     }

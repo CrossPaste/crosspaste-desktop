@@ -25,12 +25,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.TextUnit
 import com.crosspaste.app.AppSize
 import com.crosspaste.notification.Message
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.getMessagePainter
+import com.crosspaste.ui.theme.AppUIFont.toastBodyTextStyle
+import com.crosspaste.ui.theme.AppUIFont.toastTitleTextStyle
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.small2X
@@ -106,12 +106,8 @@ fun ToastView(
                         Text(
                             modifier = Modifier.weight(1f, fill = false),
                             text = toast.title,
-                            textAlign = TextAlign.Center,
                             color = MaterialTheme.colorScheme.contentColorFor(background),
-                            style =
-                                MaterialTheme.typography.titleMedium.copy(
-                                    lineHeight = TextUnit.Unspecified,
-                                ),
+                            style = toastTitleTextStyle,
                         )
                     }
                     toast.message?.let { message ->
@@ -123,9 +119,8 @@ fun ToastView(
                             Text(
                                 modifier = Modifier.weight(1f, fill = false),
                                 text = message,
-                                textAlign = TextAlign.Justify,
                                 color = MaterialTheme.colorScheme.contentColorFor(background),
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = toastBodyTextStyle,
                             )
                         }
                     }
