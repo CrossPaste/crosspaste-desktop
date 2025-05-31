@@ -70,7 +70,7 @@ import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xxLarge
-import com.crosspaste.ui.theme.AppUISize.xxxLarge
+import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.delay
@@ -263,7 +263,7 @@ fun searchTrailingIcon() {
                 offset =
                     IntOffset(
                         with(density) { zero.roundToPx() },
-                        with(density) { xxxLarge.roundToPx() },
+                        with(density) { xxxxLarge.roundToPx() },
                     ),
                 onDismissRequest = {
                     if (showTypes) {
