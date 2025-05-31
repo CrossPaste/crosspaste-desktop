@@ -43,13 +43,13 @@ import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.PasteDialogFactory
 import com.crosspaste.ui.base.archive
-import com.crosspaste.ui.theme.AppUIFont.StorePathTextStyle
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.DesktopAppUIFont.StorePathTextStyle
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okio.Path

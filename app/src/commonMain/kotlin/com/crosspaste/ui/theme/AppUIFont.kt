@@ -61,19 +61,6 @@ object AppUIFont {
                     ),
             )
 
-    val appNameTextStyle: TextStyle
-        @Composable
-        get() =
-            TextStyle(
-                color =
-                    MaterialTheme.colorScheme.contentColorFor(
-                        AppUIColors.appBackground,
-                    ),
-                fontFamily = robotoFontFamily(),
-                fontWeight = FontWeight.Bold,
-                fontSize = 24.sp,
-            )
-
     val buttonTextStyle: TextStyle
         @Composable
         get() =
@@ -81,38 +68,10 @@ object AppUIFont {
                 textAlign = TextAlign.Center,
             )
 
-    val companyTextStyle: TextStyle
-        @Composable
-        get() =
-            TextStyle(
-                color =
-                    MaterialTheme.colorScheme.contentColorFor(
-                        AppUIColors.appBackground,
-                    ),
-                fontFamily = FontFamily.SansSerif,
-                fontWeight = FontWeight.Light,
-                fontSize = 10.sp,
-            )
-
     val dialogButtonTextStyle: TextStyle
         @Composable @ReadOnlyComposable
         get() =
             MaterialTheme.typography.labelLarge.copy(
-                textAlign = TextAlign.Center,
-            )
-
-    val detailPasteTextStyle
-        @Composable @ReadOnlyComposable
-        get() =
-            TextStyle(
-                color =
-                    MaterialTheme.colorScheme.contentColorFor(
-                        AppUIColors.searchBackground,
-                    ),
-                fontFamily = FontFamily.SansSerif,
-                fontWeight = FontWeight.Normal,
-                fontSize = 16.sp,
-                lineHeight = 1.25.em,
                 textAlign = TextAlign.Center,
             )
 
@@ -314,23 +273,6 @@ object AppUIFont {
             textAlign = TextAlign.Start,
             color = color,
             lineHeight = 1.em,
-        )
-    }
-
-    @Composable
-    fun StorePathTextStyle(useDefaultStoragePath: Boolean): TextStyle {
-        return TextStyle(
-            textAlign = TextAlign.Start,
-            color =
-                if (!useDefaultStoragePath) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                },
-            fontSize = if (!useDefaultStoragePath) 12.sp else 14.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace,
-            lineHeight = 14.sp,
         )
     }
 }

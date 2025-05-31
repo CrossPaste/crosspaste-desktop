@@ -19,8 +19,8 @@ import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteText
-import com.crosspaste.ui.theme.AppUIFont.detailPasteTextStyle
 import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.DesktopAppUIFont.detailPasteTextStyle
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject

@@ -43,14 +43,14 @@ import com.crosspaste.ui.base.TutorialButton
 import com.crosspaste.ui.base.search
 import com.crosspaste.ui.base.settings
 import com.crosspaste.ui.base.share
-import com.crosspaste.ui.theme.AppUIFont.appNameTextStyle
-import com.crosspaste.ui.theme.AppUIFont.companyTextStyle
 import com.crosspaste.ui.theme.AppUISize.massive
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxLarge
+import com.crosspaste.ui.theme.DesktopAppUIFont.appNameTextStyle
+import com.crosspaste.ui.theme.DesktopAppUIFont.companyTextStyle
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
