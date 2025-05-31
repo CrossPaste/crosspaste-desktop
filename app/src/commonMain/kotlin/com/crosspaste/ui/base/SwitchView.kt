@@ -26,7 +26,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
+import com.crosspaste.ui.theme.AppUIFont.SettingsTextStyle
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.smallRoundedCornerShape
@@ -77,10 +77,7 @@ fun CustomSwitch(
 fun CustomTextSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    textStyle: TextStyle =
-        MaterialTheme.typography.labelMedium.copy(
-            fontWeight = FontWeight.Light,
-        ),
+    textStyle: TextStyle = SettingsTextStyle(),
     checkedText: String = "ON",
     uncheckedText: String = "OFF",
     checkedThumbColor: Color = MaterialTheme.colorScheme.primary,

@@ -47,6 +47,7 @@ import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
+import com.crosspaste.ui.theme.AppUISize.zeroButtonElevation
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
@@ -171,13 +172,7 @@ fun CrossPasteGrantAccessibilityPermissions(
                             border = BorderStroke(tiny5X, MaterialTheme.colorScheme.tertiaryContainer),
                             contentPadding = PaddingValues(horizontal = tiny, vertical = zero),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
-                            elevation =
-                                ButtonDefaults.elevatedButtonElevation(
-                                    defaultElevation = zero,
-                                    pressedElevation = zero,
-                                    hoveredElevation = zero,
-                                    focusedElevation = zero,
-                                ),
+                            elevation = zeroButtonElevation,
                         ) {
                             Text(
                                 text = copywriter.getText("grant_permissions"),

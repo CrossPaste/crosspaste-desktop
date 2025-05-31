@@ -23,12 +23,14 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUIFont.buttonTextStyle
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
+import com.crosspaste.ui.theme.AppUISize.zeroButtonElevation
 import com.crosspaste.ui.theme.CrossPasteTheme.connectedColor
 import com.crosspaste.ui.theme.CrossPasteTheme.disconnectedColor
 import com.crosspaste.utils.getJsonUtils
@@ -62,18 +64,12 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
             border = BorderStroke(tiny5X, connectedColor(AppUIColors.deviceBackground)),
             contentPadding = PaddingValues(horizontal = tiny, vertical = zero),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background),
-            elevation =
-                ButtonDefaults.elevatedButtonElevation(
-                    defaultElevation = zero,
-                    pressedElevation = zero,
-                    hoveredElevation = zero,
-                    focusedElevation = zero,
-                ),
+            elevation = zeroButtonElevation,
         ) {
             Text(
                 text = copywriter.getText("add"),
                 color = connectedColor(AppUIColors.deviceBackground),
-                style = MaterialTheme.typography.labelMedium,
+                style = buttonTextStyle,
             )
         }
 
@@ -102,18 +98,12 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
             border = BorderStroke(tiny5X, disconnectedColor(AppUIColors.deviceBackground)),
             contentPadding = PaddingValues(horizontal = tiny, vertical = zero),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background),
-            elevation =
-                ButtonDefaults.elevatedButtonElevation(
-                    defaultElevation = zero,
-                    pressedElevation = zero,
-                    hoveredElevation = zero,
-                    focusedElevation = zero,
-                ),
+            elevation = zeroButtonElevation,
         ) {
             Text(
                 text = copywriter.getText("block"),
                 color = disconnectedColor(AppUIColors.deviceBackground),
-                style = MaterialTheme.typography.labelMedium,
+                style = buttonTextStyle,
             )
         }
         Spacer(modifier = Modifier.width(medium))

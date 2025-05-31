@@ -28,11 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.app.AppLaunchState
@@ -44,7 +40,6 @@ import com.crosspaste.ui.base.CrossPasteLogoView
 import com.crosspaste.ui.base.NewVersionButton
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.TutorialButton
-import com.crosspaste.ui.base.robotoFontFamily
 import com.crosspaste.ui.base.search
 import com.crosspaste.ui.base.settings
 import com.crosspaste.ui.base.share
@@ -54,6 +49,8 @@ import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxLarge
+import com.crosspaste.ui.theme.DesktopAppUIFont.appNameTextStyle
+import com.crosspaste.ui.theme.DesktopAppUIFont.companyTextStyle
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -107,24 +104,12 @@ fun HomeWindowDecoration() {
                 ) {
                     Text(
                         text = "Compile Future",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style =
-                            TextStyle(
-                                fontFamily = FontFamily.SansSerif,
-                                fontWeight = FontWeight.Light,
-                                fontSize = 10.sp,
-                            ),
+                        style = companyTextStyle,
                     )
                     Box {
                         Text(
                             text = "CrossPaste",
-                            color = MaterialTheme.colorScheme.onSurface,
-                            style =
-                                TextStyle(
-                                    fontFamily = robotoFontFamily(),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 23.sp,
-                                ),
+                            style = appNameTextStyle,
                         )
                         if (existNewVersion) {
                             NewVersionButton(modifier = Modifier.offset(x = massive, y = -small3X))

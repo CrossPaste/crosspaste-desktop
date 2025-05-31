@@ -4,7 +4,6 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -19,7 +18,7 @@ import com.crosspaste.info.PasteInfos.TYPE
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteUrl
 import com.crosspaste.ui.base.UISupport
-import com.crosspaste.ui.paste.PasteboardViewProvider.Companion.previewUrlStyle
+import com.crosspaste.ui.theme.AppUIFont.pasteUrlStyle
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getFileUtils
@@ -58,8 +57,7 @@ fun PasteUrlDetailView(
                     text = url,
                     modifier = Modifier.fillMaxSize(),
                     overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.primary,
-                    style = previewUrlStyle,
+                    style = pasteUrlStyle,
                 )
             }
         },

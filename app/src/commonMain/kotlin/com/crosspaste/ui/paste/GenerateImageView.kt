@@ -21,7 +21,7 @@ import coil3.request.crossfade
 import com.crosspaste.image.coil.GenerateImageItem
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.rendering.RenderingHelper
-import com.crosspaste.ui.paste.PasteboardViewProvider.Companion.previewTextStyle
+import com.crosspaste.ui.theme.AppUIFont.pasteTextStyle
 import com.crosspaste.ui.theme.AppUISize.small3X
 import okio.Path
 import org.koin.compose.koinInject
@@ -72,7 +72,7 @@ fun GenerateImageView(
                             softWrap = true,
                             overflow = TextOverflow.Ellipsis,
                             color = MaterialTheme.colorScheme.onSurface,
-                            style = previewTextStyle,
+                            style = pasteTextStyle,
                         )
                     }
                 }

@@ -3,7 +3,6 @@ package com.crosspaste.ui.paste.edit
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -12,10 +11,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteData
@@ -25,6 +20,7 @@ import com.crosspaste.paste.plugin.type.TextTypePlugin
 import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.save
+import com.crosspaste.ui.theme.AppUIFont.pasteTextStyle
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.utils.getCodecsUtils
 import io.ktor.utils.io.core.*
@@ -54,13 +50,7 @@ fun PasteTextEditContentView() {
                 onValueChange = {
                     text = it
                 },
-                textStyle =
-                    TextStyle(
-                        fontFamily = FontFamily.SansSerif,
-                        fontWeight = FontWeight.Normal,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontSize = 14.sp,
-                    ),
+                textStyle = pasteTextStyle,
             )
 
             Box(

@@ -18,12 +18,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppSize
 import com.crosspaste.paste.PasteSingleProcess
+import com.crosspaste.ui.theme.AppUIFont.NumberTextStyle
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny4X
@@ -55,13 +52,7 @@ fun PasteShimmerContentView(singleProcess: PasteSingleProcess?) {
             process?.let {
                 Text(
                     text = "${(it.value * 100).toInt()}%",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    style =
-                        TextStyle(
-                            fontSize = 14.sp,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Bold,
-                        ),
+                    style = NumberTextStyle(),
                 )
             }
         }

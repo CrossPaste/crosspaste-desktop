@@ -1,6 +1,8 @@
 package com.crosspaste.ui.theme
 
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ButtonElevation
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CardElevation
 import androidx.compose.runtime.Composable
@@ -40,12 +42,22 @@ object AppUISize {
     val smallRoundedCornerShape = RoundedCornerShape(small)
     val mediumRoundedCornerShape = RoundedCornerShape(medium)
 
-    val elevation: CardElevation
+    val highlightedCardElevation: CardElevation
         @Composable
         get() =
             CardDefaults.cardElevation(
                 defaultElevation = 0.8.dp,
                 pressedElevation = tiny5X,
                 hoveredElevation = 3.dp,
+            )
+
+    val zeroButtonElevation: ButtonElevation
+        @Composable
+        get() =
+            ButtonDefaults.elevatedButtonElevation(
+                defaultElevation = zero,
+                pressedElevation = zero,
+                hoveredElevation = zero,
+                focusedElevation = zero,
             )
 }

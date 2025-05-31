@@ -24,8 +24,8 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.NewVersionButton
 import com.crosspaste.ui.base.UISupport
-import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.measureTextWidth
+import com.crosspaste.ui.theme.AppUIFont.getFontWidth
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -73,7 +73,7 @@ fun HomeMenuView(
             )
 
         val maxWidth =
-            getMenWidth(menuTexts, extendFunction = {
+            getFontWidth(menuTexts, extendFunction = {
                 if (existNewVersion && it == 0) {
                     medium + newWidth
                 } else {

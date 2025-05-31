@@ -58,10 +58,10 @@ import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.ascSort
 import com.crosspaste.ui.base.descSort
 import com.crosspaste.ui.base.favorite
-import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.noFavorite
 import com.crosspaste.ui.base.search
 import com.crosspaste.ui.model.PasteSearchViewModel
+import com.crosspaste.ui.theme.AppUIFont.getFontWidth
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.small3X
@@ -70,7 +70,7 @@ import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xxLarge
-import com.crosspaste.ui.theme.AppUISize.xxxLarge
+import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.delay
@@ -201,7 +201,7 @@ fun searchTrailingIcon() {
 
     val paddingValues = PaddingValues(horizontal = small3X, vertical = tiny3X)
 
-    val maxWidth = getMenWidth(menuTexts, textStyle, paddingValues)
+    val maxWidth = getFontWidth(menuTexts, textStyle, paddingValues)
 
     Row(
         modifier =
@@ -263,7 +263,7 @@ fun searchTrailingIcon() {
                 offset =
                     IntOffset(
                         with(density) { zero.roundToPx() },
-                        with(density) { xxxLarge.roundToPx() },
+                        with(density) { xxxxLarge.roundToPx() },
                     ),
                 onDismissRequest = {
                     if (showTypes) {

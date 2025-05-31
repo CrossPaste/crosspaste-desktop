@@ -13,22 +13,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.DpSize
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny4XRoundedCornerShape
+import com.crosspaste.ui.theme.DesktopAppUIFont.keyboardCharTextStyle
 
 const val enter: String = "↵"
 
 @Composable
 fun KeyboardView(
-    textStyle: TextStyle = MaterialTheme.typography.labelMedium,
     keyboardValue: String,
     background: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
 ) {
     val textMeasurer = rememberTextMeasurer()
-    val size = textMeasurer.measure(keyboardValue, textStyle).size
+    val size = textMeasurer.measure(keyboardValue, keyboardCharTextStyle).size
     val dpSize =
         with(LocalDensity.current) {
             DpSize(size.width.toDp(), size.height.toDp())
@@ -44,7 +43,7 @@ fun KeyboardView(
     ) {
         Text(
             text = keyboardValue,
-            style = textStyle,
+            style = keyboardCharTextStyle,
             color = MaterialTheme.colorScheme.contentColorFor(background),
         )
     }

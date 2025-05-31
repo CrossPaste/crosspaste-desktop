@@ -21,18 +21,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppUrls
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.CrossPasteLogoView
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.chevronRight
-import com.crosspaste.ui.base.robotoFontFamily
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUIFont.aboutAppNameTextStyle
+import com.crosspaste.ui.theme.AppUIFont.aboutInfoTextStyle
+import com.crosspaste.ui.theme.AppUIFont.aboutVersionTextStyle
 import com.crosspaste.ui.theme.AppUISize.giant
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small
@@ -76,29 +74,17 @@ fun AboutContentView() {
                 Spacer(modifier = Modifier.height(small))
                 Text(
                     text = "CrossPaste",
-                    style =
-                        TextStyle(
-                            fontFamily = robotoFontFamily(),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                        ),
-                    color = onBackground,
+                    style = aboutAppNameTextStyle,
                 )
                 Spacer(modifier = Modifier.height(small2X))
 
                 Text(
                     text = "version: ${appInfo.displayVersion()}",
-                    style =
-                        TextStyle(
-                            fontFamily = robotoFontFamily(),
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 15.sp,
-                        ),
-                    color = onBackground,
+                    style = aboutVersionTextStyle,
                 )
                 Spacer(modifier = Modifier.height(xxLarge))
 
-                AboutInfoItem("official_website", onBackground) {
+                AboutInfoItem("official_website") {
                     uiSupport.openCrossPasteWebInBrowser()
                 }
 
@@ -108,7 +94,7 @@ fun AboutContentView() {
                     color = onBackground.copy(alpha = 0.36f),
                 )
 
-                AboutInfoItem("newbie_tutorial", onBackground) {
+                AboutInfoItem("newbie_tutorial") {
                     uiSupport.openCrossPasteWebInBrowser("tutorial/pasteboard")
                 }
 
@@ -118,7 +104,7 @@ fun AboutContentView() {
                     color = onBackground.copy(alpha = 0.36f),
                 )
 
-                AboutInfoItem("change_log", onBackground) {
+                AboutInfoItem("change_log") {
                     uiSupport.openUrlInBrowser(appUrls.changeLogUrl)
                 }
 
@@ -128,7 +114,7 @@ fun AboutContentView() {
                     color = onBackground.copy(alpha = 0.36f),
                 )
 
-                AboutInfoItem("feedback", onBackground) {
+                AboutInfoItem("feedback") {
                     uiSupport.openUrlInBrowser(appUrls.issueTrackerUrl)
                 }
 
@@ -138,7 +124,7 @@ fun AboutContentView() {
                     color = onBackground.copy(alpha = 0.36f),
                 )
 
-                AboutInfoItem("contact_us", onBackground) {
+                AboutInfoItem("contact_us") {
                     uiSupport.openEmailClient("compile.future@gmail.com")
                 }
             }
@@ -149,7 +135,6 @@ fun AboutContentView() {
 @Composable
 fun AboutInfoItem(
     title: String,
-    onBackground: Color,
     onClick: () -> Unit,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
@@ -167,8 +152,7 @@ fun AboutInfoItem(
                 Modifier.wrapContentSize()
                     .padding(start = tiny2X),
             text = copywriter.getText(title),
-            color = onBackground,
-            style = MaterialTheme.typography.titleMedium,
+            style = aboutInfoTextStyle,
         )
 
         Spacer(modifier = Modifier.weight(1f))
@@ -176,7 +160,7 @@ fun AboutInfoItem(
         Icon(
             painter = chevronRight(),
             contentDescription = "chevron right",
-            tint = onBackground,
+            tint = MaterialTheme.colorScheme.contentColorFor(AppUIColors.aboutBackground),
         )
     }
 }

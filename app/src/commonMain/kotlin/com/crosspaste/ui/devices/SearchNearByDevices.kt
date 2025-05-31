@@ -21,12 +21,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.ui.base.search
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUIFont.emptyScreenTipsTextStyle
 import com.crosspaste.ui.theme.AppUISize.giant
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import kotlinx.coroutines.delay
@@ -95,11 +95,10 @@ fun SearchNearByDevices() {
                 modifier =
                     Modifier.align(Alignment.CenterHorizontally)
                         .fillMaxWidth(0.8f),
-                textAlign = TextAlign.Center,
                 text = copywriter.getText("searching_for_nearby_devices"),
                 maxLines = 3,
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleLarge,
+                style = emptyScreenTipsTextStyle,
             )
         }
     }

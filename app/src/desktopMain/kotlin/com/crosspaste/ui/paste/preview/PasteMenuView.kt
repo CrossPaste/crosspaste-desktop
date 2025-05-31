@@ -55,10 +55,10 @@ import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.PasteTypeIconView
 import com.crosspaste.ui.base.clipboard
 import com.crosspaste.ui.base.favorite
-import com.crosspaste.ui.base.getMenWidth
 import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.base.moreVertical
 import com.crosspaste.ui.base.noFavorite
+import com.crosspaste.ui.theme.AppUIFont.getFontWidth
 import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small
@@ -517,7 +517,7 @@ fun MoreMenuItems(
                 copywriter.getText("delete"),
             )
 
-        val maxWidth = getMenWidth(menuTexts)
+        val maxWidth = getFontWidth(menuTexts)
 
         Column(
             modifier =
