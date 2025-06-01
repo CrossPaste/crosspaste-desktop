@@ -12,7 +12,7 @@ object DesktopHtmlUtils : HtmlUtils {
     private val codecsUtils = getCodecsUtils()
 
     override fun dataUrl(html: String): String {
-        val encodedContent = codecsUtils.base64Encode(html.toByteArray())
+        val encodedContent = codecsUtils.base64Encode(html.encodeToByteArray())
         return "data:text/html;charset=UTF-8;base64,$encodedContent"
     }
 

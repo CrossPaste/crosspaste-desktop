@@ -68,7 +68,7 @@ class DesktopHtmlTypePlugin(
     ) {
         if (transferData is String) {
             val html = extractHtml(transferData)
-            val htmlBytes = html.toByteArray()
+            val htmlBytes = html.encodeToByteArray()
             val hash = codecsUtils.hash(htmlBytes)
             val size = htmlBytes.size.toLong()
             val relativePath =

@@ -28,7 +28,6 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.InputStream
 import java.net.URI
-import java.nio.charset.StandardCharsets
 import javax.imageio.ImageIO
 
 class DesktopImageTypePlugin(
@@ -228,7 +227,7 @@ class DesktopImageTypePlugin(
                 ByteArrayInputStream(
                     fileList.joinToString(separator = "\n") {
                         it.absolutePath
-                    }.toByteArray(),
+                    }.encodeToByteArray(),
                 )
             map[DataFlavor.stringFlavor.toPasteDataFlavor()] =
                 fileList.joinToString(separator = "\n") {
@@ -255,7 +254,7 @@ class DesktopImageTypePlugin(
                     separator = "\n",
                     prefix = "copy\n",
                 ) { it.toURI().toString() }
-            val inputStream = ByteArrayInputStream(content.toByteArray(StandardCharsets.UTF_8))
+            val inputStream = ByteArrayInputStream(content.encodeToByteArray())
             map[PasteDataFlavors.GNOME_COPIED_FILES_FLAVOR.toPasteDataFlavor()] = inputStream
         }
     }

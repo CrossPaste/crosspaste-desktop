@@ -12,7 +12,7 @@ class DesktopQRCodeGenerator(
 
     override fun generateQRCode(token: CharArray): PlatformImage {
         return DesktopQRCodeImage(
-            data = buildQRCode(token).toByteArray(),
+            data = buildQRCode(token).encodeToByteArray(),
         )
     }
 }

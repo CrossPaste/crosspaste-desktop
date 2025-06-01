@@ -101,7 +101,7 @@ class DesktopUISupport(
             val filePath = userDataPathProvider.resolve(fileName, AppFileType.TEMP)
             val file = filePath.toFile()
             if (!file.exists()) {
-                Files.write(html.toByteArray(), file)
+                Files.write(html.encodeToByteArray(), file)
             }
             Desktop.getDesktop().browse(file.toURI())
         } else {
@@ -210,7 +210,7 @@ class DesktopUISupport(
             val file = filePath.toFile()
             if (!file.exists()) {
                 pasteData.getPasteItem(PasteRtf::class)?.let {
-                    Files.write(it.rtf.toByteArray(), file)
+                    Files.write(it.rtf.encodeToByteArray(), file)
                 }
             }
             Desktop.getDesktop().browse(file.toURI())

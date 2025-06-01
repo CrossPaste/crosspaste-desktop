@@ -57,7 +57,7 @@ class DesktopUrlTypePlugin(
         pasteCollector: PasteCollector,
     ) {
         if (transferData is String) {
-            val urlBytes = transferData.toByteArray()
+            val urlBytes = transferData.encodeToByteArray()
             val hash = codecsUtils.hash(urlBytes)
             val update: (PasteItem) -> PasteItem = { pasteItem ->
                 UrlPasteItem(

@@ -28,7 +28,7 @@ class TextPasteItem(
             text: String,
             extraInfo: String? = null,
         ): TextPasteItem {
-            val textBytes = text.toByteArray()
+            val textBytes = text.encodeToByteArray()
             val hash = codecsUtils.hash(textBytes)
             val size = textBytes.size.toLong()
             return TextPasteItem(

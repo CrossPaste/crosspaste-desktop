@@ -60,16 +60,6 @@ internal class HTMLCodec(
 
     @get:Throws(IOException::class)
     @get:Synchronized
-    val baseURL: String?
-        get() {
-            if (!descriptionParsed) {
-                parseDescription()
-            }
-            return stBaseURL
-        }
-
-    @get:Throws(IOException::class)
-    @get:Synchronized
     val version: String?
         get() {
             if (!descriptionParsed) {
@@ -386,11 +376,11 @@ internal class HTMLCodec(
                 stContext = replaceFromIndex(stContext, htmlIndex)
             }
 
-            val bytes = stContext.toByteArray()
+            val bytes = stContext.encodeToByteArray()
 
-            val searchStartFragment = kmpSearch(bytes, START_FRAGMENT_CMT.toByteArray())
+            val searchStartFragment = kmpSearch(bytes, START_FRAGMENT_CMT.encodeToByteArray())
 
-            val searchEndFragment = kmpSearch(bytes, END_FRAGMENT_CMT.toByteArray())
+            val searchEndFragment = kmpSearch(bytes, END_FRAGMENT_CMT.encodeToByteArray())
 
             val stBaseUrl = DEF_SOURCE_URL
             val nStartHTML =
@@ -457,8 +447,8 @@ internal class HTMLCodec(
             var trailerBytes: ByteArray? = null
 
             runCatching {
-                headerBytes = header.toString().toByteArray(charset(ENCODING))
-                trailerBytes = htmlSuffix.toByteArray(charset(ENCODING))
+                headerBytes = header.toString().encodeToByteArray()
+                trailerBytes = htmlSuffix.encodeToByteArray()
             }
 
             val retval =

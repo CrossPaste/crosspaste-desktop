@@ -1,6 +1,5 @@
 package com.crosspaste.utils
 
-import io.ktor.utils.io.core.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -10,7 +9,7 @@ class CodecsUtilsTest {
 
     @Test
     fun testHash() {
-        val hash = codecsUtils.hash("test".toByteArray())
+        val hash = codecsUtils.hash("test".encodeToByteArray())
         assertEquals("2e9715792ae84f8c71471d75ace36b46", hash)
         val hashStr = codecsUtils.hashByString("test")
         assertEquals("2e9715792ae84f8c71471d75ace36b46", hashStr)
