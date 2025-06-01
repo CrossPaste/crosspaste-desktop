@@ -14,7 +14,7 @@ object DesktopRtfUtils : RtfUtils {
 
     override fun getRtfText(rtf: String): String {
         val document: Document = rtfParser.createDefaultDocument()
-        rtfParser.read(ByteArrayInputStream(rtf.toByteArray()), document, 0)
+        rtfParser.read(ByteArrayInputStream(rtf.encodeToByteArray()), document, 0)
         return document.getText(0, document.length)
     }
 }

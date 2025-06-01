@@ -1,7 +1,6 @@
 package com.crosspaste.utils
 
 import dev.whyoleg.cryptography.operations.Hasher
-import io.ktor.utils.io.core.*
 import okio.Path
 import okio.buffer
 import okio.use
@@ -45,7 +44,7 @@ interface CodecsUtils {
     }
 
     fun hashByString(string: String): String {
-        return hash(string.toByteArray())
+        return hash(string.encodeToByteArray())
     }
 
     fun hashByArray(array: Array<String>): String

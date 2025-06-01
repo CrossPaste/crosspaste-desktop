@@ -23,7 +23,6 @@ import com.crosspaste.ui.base.save
 import com.crosspaste.ui.theme.AppUIFont.pasteTextStyle
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.utils.getCodecsUtils
-import io.ktor.utils.io.core.*
 import org.koin.compose.koinInject
 
 @Composable
@@ -64,7 +63,7 @@ fun PasteTextEditContentView() {
                     contentDescription = "save text",
                 ) {
                     if (text != pasteText.text && text.isNotEmpty()) {
-                        val textBytes = text.toByteArray()
+                        val textBytes = text.encodeToByteArray()
                         val hash = codecsUtils.hash(textBytes)
                         textUpdater.updateText(pasteData.id, text, textBytes.size.toLong(), hash, pasteText, pasteDao)
                     }

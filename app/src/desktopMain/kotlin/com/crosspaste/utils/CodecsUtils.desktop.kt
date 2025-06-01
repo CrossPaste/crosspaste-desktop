@@ -25,7 +25,7 @@ object DesktopCodecsUtils : CodecsUtils {
         } else {
             val outputStream = ByteArrayOutputStream()
             array.forEach {
-                outputStream.write(it.toByteArray())
+                outputStream.write(it.encodeToByteArray())
             }
             hash(outputStream.toByteArray())
         }

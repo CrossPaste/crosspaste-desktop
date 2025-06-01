@@ -187,7 +187,7 @@ class DesktopFilesTypePlugin(
                     separator = "\n",
                     prefix = "copy\n",
                 ) { it.toURI().toString() }
-            val inputStream = ByteArrayInputStream(content.toByteArray())
+            val inputStream = ByteArrayInputStream(content.encodeToByteArray())
             map[PasteDataFlavors.GNOME_COPIED_FILES_FLAVOR.toPasteDataFlavor()] = inputStream
         }
     }

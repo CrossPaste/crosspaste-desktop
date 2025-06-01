@@ -7,9 +7,9 @@ class MurmurHash3Test {
 
     @Test
     fun testHash() {
-        val hash = getCodecsUtils().hash("test".toByteArray())
+        val hash = getCodecsUtils().hash("test".encodeToByteArray())
         val streamingMurmurHash3 = StreamingMurmurHash3(seed = 13043025u)
-        streamingMurmurHash3.update("test".toByteArray())
+        streamingMurmurHash3.update("test".encodeToByteArray())
         val (hash1, hash2) = streamingMurmurHash3.finish()
         val streamHash =
             buildString(32) {

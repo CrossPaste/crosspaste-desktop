@@ -56,7 +56,7 @@ class DesktopTextTypePlugin : TextTypePlugin {
         pasteCollector: PasteCollector,
     ) {
         if (transferData is String) {
-            val textBytes = transferData.toByteArray()
+            val textBytes = transferData.encodeToByteArray()
             val hash = codecsUtils.hash(textBytes)
             val update: (PasteItem) -> PasteItem = { pasteItem ->
                 buildNewPasteItem(transferData, textBytes.size.toLong(), hash, pasteItem)

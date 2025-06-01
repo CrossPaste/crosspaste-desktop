@@ -110,7 +110,7 @@ class MacAppStartUpService(
                             <true/>
                         </dict>
                         </plist>
-                        """.trimIndent().toByteArray(),
+                        """.trimIndent().encodeToByteArray(),
                     )
             }
         }.onFailure { e ->
@@ -314,7 +314,7 @@ class LinuxAppStartUpService(
                         X-GNOME-Autostart-Delay=10
                         X-MATE-Autostart-Delay=10
                         X-KDE-autostart-after=panel
-                        """.trimIndent().toByteArray(),
+                        """.trimIndent().encodeToByteArray(),
                     )
             }
         }.onFailure { e ->

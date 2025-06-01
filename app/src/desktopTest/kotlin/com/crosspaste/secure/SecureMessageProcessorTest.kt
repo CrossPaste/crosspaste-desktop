@@ -15,7 +15,7 @@ class SecureMessageProcessorTest {
         val bSecureKeyPair = generateSecureKeyPair()
 
         // Generate a test message
-        val message = "Hello, world!".toByteArray()
+        val message = "Hello, world!".encodeToByteArray()
 
         val aProcessor =
             SecureMessageProcessor(
@@ -81,7 +81,7 @@ class SecureMessageProcessorTest {
 
         for (message in testMessages) {
             runCatching {
-                val messageBytes = message.toByteArray()
+                val messageBytes = message.encodeToByteArray()
                 val encryptedMessage = aProcessor.encrypt(messageBytes)
                 val decryptedMessage = bProcessor.decrypt(encryptedMessage)
 
@@ -125,7 +125,7 @@ class SecureMessageProcessorTest {
             )
 
         // Create a large message (1MB)
-        val largeMessage = "X".repeat(1024 * 1024).toByteArray()
+        val largeMessage = "X".repeat(1024 * 1024).encodeToByteArray()
 
         // This might throw IllegalBlockSizeException
         val encryptedMessage = aProcessor.encrypt(largeMessage)
@@ -155,7 +155,7 @@ class SecureMessageProcessorTest {
                 aSecureKeyPair.cryptKeyPair.publicKey,
             )
 
-        val message = "Test message with special chars: !@#$%^&*()".toByteArray()
+        val message = "Test message with special chars: !@#$%^&*()".encodeToByteArray()
         val encrypted = aProcessor.encrypt(message)
 
         val base64Encrypted = Base64.getEncoder().encodeToString(encrypted)
@@ -182,7 +182,7 @@ class SecureMessageProcessorTest {
                 aSecureKeyPair.cryptKeyPair.publicKey,
             )
 
-        val message = "Original message".toByteArray()
+        val message = "Original message".encodeToByteArray()
         val encrypted = aProcessor.encrypt(message)
 
         for (i in encrypted.indices step (encrypted.size / 4)) {

@@ -27,7 +27,7 @@ class SerializerTest {
             TextPasteItem(
                 identifiers = listOf(DesktopTextTypePlugin.TEXT),
                 text = "testPasteData",
-                size = "testPasteData".toByteArray().size.toLong(),
+                size = "testPasteData".encodeToByteArray().size.toLong(),
                 hash = codecsUtils.hashByString("testPasteData"),
             )
 
