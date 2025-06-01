@@ -134,11 +134,11 @@ jobs:
             exit 1
           fi
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
           check-latest: true
 
       - name: Cache Gradle dependencies
@@ -198,7 +198,7 @@ jobs:
           echo "${{ secrets.AUTH_KEY }}" | base64 --decode > AuthKey.p8
 
       - name: Conveyor build
-        uses: hydraulic-software/conveyor/actions/build@v17.0
+        uses: hydraulic-software/conveyor/actions/build@v18.1
         with:
           command: make site
           extra_flags: -f build.conveyor.conf
