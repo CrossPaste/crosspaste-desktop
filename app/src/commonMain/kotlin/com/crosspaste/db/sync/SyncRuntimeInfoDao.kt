@@ -7,7 +7,6 @@ import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.getJsonUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.encodeToString
 import kotlin.reflect.KProperty1
 
 class SyncRuntimeInfoDao(private val database: Database) {

@@ -2,7 +2,6 @@ package com.crosspaste.dto.sync
 
 import com.crosspaste.app.AppInfo
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 @Serializable

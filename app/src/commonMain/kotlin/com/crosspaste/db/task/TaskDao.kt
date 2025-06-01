@@ -3,7 +3,6 @@ package com.crosspaste.db.task
 import com.crosspaste.Database
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.getJsonUtils
-import kotlinx.serialization.encodeToString
 
 class TaskDao(private val database: Database) {
 
