@@ -28,7 +28,7 @@ fun TextPreviewView(pasteData: PasteData) {
                     text = AnnotatedString(pasteText.previewText()),
                     maxLines = 4,
                     softWrap = true,
-                    overflow = TextOverflow.Clip,
+                    overflow = TextOverflow.Ellipsis,
                     style = pasteTextStyle,
                     autoSize = previewAutoSize,
                 )
