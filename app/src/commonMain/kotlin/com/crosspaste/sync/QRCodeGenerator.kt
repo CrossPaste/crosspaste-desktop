@@ -6,7 +6,6 @@ import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.image.PlatformImage
 import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getJsonUtils
-import kotlinx.serialization.encodeToString
 
 abstract class QRCodeGenerator(
     private val appInfo: AppInfo,

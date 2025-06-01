@@ -9,7 +9,6 @@ import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getJsonUtils
-import kotlinx.serialization.encodeToString
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
