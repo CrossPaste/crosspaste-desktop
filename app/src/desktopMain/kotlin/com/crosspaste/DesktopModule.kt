@@ -122,6 +122,7 @@ import com.crosspaste.paste.TransferableProducer
 import com.crosspaste.paste.getDesktopPasteboardService
 import com.crosspaste.paste.plugin.process.DistinctPlugin
 import com.crosspaste.paste.plugin.process.FilesToImagesPlugin
+import com.crosspaste.paste.plugin.process.GenerateTextPlugin
 import com.crosspaste.paste.plugin.process.GenerateUrlPlugin
 import com.crosspaste.paste.plugin.process.RemoveFolderImagePlugin
 import com.crosspaste.paste.plugin.process.RemoveHtmlImagePlugin
@@ -288,6 +289,7 @@ class DesktopModule(
                     listOf(
                         RemoveInvalidPlugin,
                         DistinctPlugin(get()),
+                        GenerateTextPlugin,
                         GenerateUrlPlugin,
                         TextToColorPlugin,
                         FilesToImagesPlugin(get()),
