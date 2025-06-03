@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -241,7 +242,8 @@ object AppUIFont {
         @Composable
         get() =
             MaterialTheme.typography.bodyMedium.copy(
-                textAlign = TextAlign.Justify,
+                lineBreak = LineBreak.Paragraph,
+                hyphens = Hyphens.Auto,
             )
 
     val tokenTextStyle: TextStyle
