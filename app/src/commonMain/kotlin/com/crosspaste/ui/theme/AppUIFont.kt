@@ -31,7 +31,7 @@ object AppUIFont {
             TextStyle(
                 color =
                     MaterialTheme.colorScheme.contentColorFor(
-                        AppUIColors.aboutBackground,
+                        AppUIColors.generalBackground,
                     ),
                 fontFamily = robotoFontFamily(),
                 fontWeight = FontWeight.Bold,
@@ -44,7 +44,7 @@ object AppUIFont {
             TextStyle(
                 color =
                     MaterialTheme.colorScheme.contentColorFor(
-                        AppUIColors.aboutBackground,
+                        AppUIColors.generalBackground,
                     ),
                 fontFamily = robotoFontFamily(),
                 fontWeight = FontWeight.Normal,
@@ -57,7 +57,7 @@ object AppUIFont {
             MaterialTheme.typography.titleMedium.copy(
                 color =
                     MaterialTheme.colorScheme.contentColorFor(
-                        AppUIColors.aboutBackground,
+                        AppUIColors.generalBackground,
                     ),
             )
 
@@ -68,10 +68,24 @@ object AppUIFont {
                 textAlign = TextAlign.Center,
             )
 
+    val deviceConnectStateTextStyle: TextStyle
+        @Composable
+        get() =
+            MaterialTheme.typography.labelLarge.copy(
+                lineHeight = 1.em,
+            )
+
     val dialogButtonTextStyle: TextStyle
         @Composable @ReadOnlyComposable
         get() =
             MaterialTheme.typography.labelLarge.copy(
+                textAlign = TextAlign.Center,
+            )
+
+    val dialogTitleTextStyle: TextStyle
+        @Composable @ReadOnlyComposable
+        get() =
+            MaterialTheme.typography.titleLarge.copy(
                 textAlign = TextAlign.Center,
             )
 
@@ -81,6 +95,10 @@ object AppUIFont {
             MaterialTheme.typography.titleLarge.copy(
                 textAlign = TextAlign.Center,
             )
+
+    val expandTitleTextStyle: TextStyle
+        @Composable @ReadOnlyComposable
+        get() = MaterialTheme.typography.labelLarge
 
     val generalBodyTextStyle: TextStyle
         @Composable @ReadOnlyComposable
@@ -155,6 +173,10 @@ object AppUIFont {
     val previewAutoSize: TextAutoSize =
         TextAutoSize.StepBased(minFontSize = 15.sp, maxFontSize = 16.sp, stepSize = 0.2.sp)
 
+    val propertyTextStyle: TextStyle
+        @Composable
+        get() = MaterialTheme.typography.labelMedium
+
     val qrTextStyle: TextStyle
         @Composable @ReadOnlyComposable
         get() =
@@ -169,7 +191,7 @@ object AppUIFont {
             TextStyle(
                 color =
                     MaterialTheme.colorScheme.contentColorFor(
-                        AppUIColors.recommendedBackground,
+                        AppUIColors.generalBackground,
                     ),
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
@@ -182,7 +204,7 @@ object AppUIFont {
             TextStyle(
                 color =
                     MaterialTheme.colorScheme.contentColorFor(
-                        AppUIColors.recommendedContentBackground,
+                        AppUIColors.topBackground,
                     ),
                 fontSize = 16.sp,
                 lineHeight = 1.5.em,
@@ -204,13 +226,9 @@ object AppUIFont {
             MaterialTheme.typography.titleSmall.copy(
                 color =
                     MaterialTheme.colorScheme.contentColorFor(
-                        AppUIColors.settingsTitleBackground,
+                        AppUIColors.topBackground,
                     ),
             )
-
-    val propertyTextStyle: TextStyle
-        @Composable
-        get() = MaterialTheme.typography.labelMedium
 
     val toastTitleTextStyle: TextStyle
         @Composable
@@ -266,7 +284,12 @@ object AppUIFont {
     }
 
     @Composable
-    fun SettingsTextStyle(color: Color = MaterialTheme.colorScheme.contentColorFor(AppUIColors.settingsBackground)): TextStyle {
+    fun SettingsTextStyle(
+        color: Color =
+            MaterialTheme.colorScheme.contentColorFor(
+                AppUIColors.generalBackground,
+            ),
+    ): TextStyle {
         return MaterialTheme.typography.labelMedium.copy(
             fontWeight = FontWeight.Light,
             fontSize = 14.sp,

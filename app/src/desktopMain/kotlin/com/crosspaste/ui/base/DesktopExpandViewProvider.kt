@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -49,6 +48,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Dp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.settings.LocalSettingsScrollState
+import com.crosspaste.ui.theme.AppUIFont
 import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
@@ -67,8 +67,8 @@ class DesktopExpandViewProvider(
     override fun ExpandView(
         defaultExpand: Boolean,
         horizontalPadding: Dp,
-        barBackgroundColor: Color,
-        onBarBackgroundColor: Color,
+        barBackground: Color,
+        onBarBackground: Color,
         backgroundColor: Color,
         barContent: @Composable RowScope.(Float) -> Unit,
         content: @Composable () -> Unit,
@@ -85,17 +85,17 @@ class DesktopExpandViewProvider(
 
         val elevation by animateDpAsState(
             targetValue = if (hover) tiny3X else zero,
-            animationSpec = tween(200),
+            animationSpec = tween(300),
         )
 
         val iconScale by animateFloatAsState(
             targetValue = if (hover || expand) 1f else 0.8f,
-            animationSpec = tween(200),
+            animationSpec = tween(300),
         )
 
         val arrowOffset by animateFloatAsState(
             targetValue = if (hover || expand) 8f else 0f,
-            animationSpec = tween(200),
+            animationSpec = tween(300),
         )
 
         val bottomCornerRadius by animateDpAsState(
@@ -153,10 +153,10 @@ class DesktopExpandViewProvider(
                         .graphicsLayer(
                             shadowElevation = elevation.value,
                             shape = animatedShape,
-                            ambientShadowColor = MaterialTheme.colorScheme.onSecondary,
-                            spotShadowColor = MaterialTheme.colorScheme.onSecondary,
+                            ambientShadowColor = onBarBackground,
+                            spotShadowColor = onBarBackground,
                         )
-                        .background(barBackgroundColor, animatedShape)
+                        .background(barBackground, animatedShape)
                         .padding(horizontal = medium, vertical = small2X),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -180,7 +180,7 @@ class DesktopExpandViewProvider(
                             Modifier
                                 .matchParentSize()
                                 .rotate(arrowRotation),
-                        tint = onBarBackgroundColor,
+                        tint = onBarBackground,
                     )
                 }
             }
@@ -216,7 +216,7 @@ class DesktopExpandViewProvider(
     override fun ExpandBarView(
         title: String,
         iconScale: Float,
-        onBarBackgroundColor: Color,
+        onBarBackground: Color,
         icon: @Composable () -> Painter?,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -235,7 +235,7 @@ class DesktopExpandViewProvider(
                         painter = it,
                         contentDescription = null,
                         modifier = Modifier.matchParentSize(),
-                        tint = onBarBackgroundColor,
+                        tint = onBarBackground,
                     )
                 }
                 Spacer(modifier = Modifier.width(tiny))
@@ -243,8 +243,8 @@ class DesktopExpandViewProvider(
 
             Text(
                 text = copywriter.getText(title),
-                style = MaterialTheme.typography.labelLarge,
-                color = onBarBackgroundColor,
+                style = AppUIFont.expandTitleTextStyle,
+                color = onBarBackground,
             )
         }
     }

@@ -11,85 +11,65 @@ object AppUIColors {
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.colorScheme.surface
 
-    val aboutBackground: Color
+    val errorColor: Color
         @Composable @ReadOnlyComposable
-        get() = MaterialTheme.colorScheme.surfaceContainerHigh
+        get() = MaterialTheme.colorScheme.error
 
-    val deviceBackground: Color
+    val errorContainerColor: Color
+        @Composable @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme.errorContainer
+
+    val expandBarBackground: Color
+        @Composable @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme.secondary
+
+    val generalBackground: Color
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.colorScheme.surfaceContainerHighest
 
-    val dialogBackground: Color
+    val lightBorderColor: Color
         @Composable @ReadOnlyComposable
-        get() = MaterialTheme.colorScheme.surfaceContainerHighest
+        get() = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
 
-    val importOrExportBackground: Color
+    val mediumBorderColor: Color
         @Composable @ReadOnlyComposable
-        get() = MaterialTheme.colorScheme.surfaceContainerHighest
+        get() = MaterialTheme.colorScheme.outline.copy(alpha = 0.72f)
+
+    val darkBorderColor: Color
+        @Composable @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme.outline
+
+    val importantColor: Color
+        @Composable @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme.primary
 
     val menuBackground: Color
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.colorScheme.surfaceBright
 
-    val selectedMenuBackground: Color
-        @Composable @ReadOnlyComposable
-        get() = MaterialTheme.colorScheme.primaryContainer
-
     val pasteBackground: Color
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.colorScheme.background
 
-    val pasteEmptyScreenBackground: Color
+    val pasteShimmerColor: Color
         @Composable @ReadOnlyComposable
-        get() = MaterialTheme.colorScheme.surfaceContainerHighest
-
-    val qrBackground: Color
-        @Composable @ReadOnlyComposable
-        get() = MaterialTheme.colorScheme.surfaceContainerHighest
-
-    val recommendedBackground: Color
-        @Composable @ReadOnlyComposable
-        get() = MaterialTheme.colorScheme.surfaceContainerHighest
-
-    val recommendedContentBackground: Color
-        @Composable @ReadOnlyComposable
-        get() = MaterialTheme.colorScheme.surface
-
-    val searchBackground: Color
-        @Composable @ReadOnlyComposable
-        get() = MaterialTheme.colorScheme.surface
-
-    val searchFootBackground: Color
-        @Composable @ReadOnlyComposable
-        get() = MaterialTheme.colorScheme.surfaceContainerHighest
+        get() = MaterialTheme.colorScheme.secondaryContainer
 
     val selectedColor: Color
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.colorScheme.primary
 
-    val settingsBackground: Color
+    val selectedDeviceBackground: Color
         @Composable @ReadOnlyComposable
-        get() = MaterialTheme.colorScheme.surfaceContainerHighest
+        get() = MaterialTheme.colorScheme.secondaryContainer
 
-    val settingsTitleBackground: Color
-        @Composable @ReadOnlyComposable
-        get() = MaterialTheme.colorScheme.background
-
-    val shortcutBackground: Color
-        @Composable @ReadOnlyComposable
-        get() = MaterialTheme.colorScheme.surfaceContainerHighest
-
-    val tabsBackground: Color
+    val selectedMenuBackground: Color
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.colorScheme.primaryContainer
 
-    val tabSelectedTextColor: Color
+    val topBackground: Color
         @Composable @ReadOnlyComposable
-        get() = MaterialTheme.colorScheme.onPrimaryContainer
-
-    val tabUnselectedTextColor: Color
-        @Composable @ReadOnlyComposable
-        get() = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.72f)
+        get() = MaterialTheme.colorScheme.surfaceContainerLowest
 
     val urlColor: Color
         @Composable @ReadOnlyComposable

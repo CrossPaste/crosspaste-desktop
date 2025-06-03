@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,15 +42,19 @@ import org.koin.compose.koinInject
 
 @Composable
 fun SettingItemView(
-    painter: Painter,
     text: String,
+    isFinalText: Boolean = false,
     height: Dp? = null,
-    tint: Color = MaterialTheme.colorScheme.onSurface,
+    painter: Painter? = null,
+    tint: Color =
+        MaterialTheme.colorScheme.contentColorFor(
+            AppUIColors.generalBackground,
+        ),
     content: @Composable () -> Unit,
 ) {
     val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
-    val backgroundColor = AppUIColors.settingsBackground
+    val backgroundColor = AppUIColors.generalBackground
 
     Row(
         modifier =
@@ -58,15 +63,16 @@ fun SettingItemView(
                 .padding(horizontal = small2X),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Icon - fixed size, will not be compressed
-        Icon(
-            modifier = Modifier.size(medium),
-            painter = painter,
-            contentDescription = text,
-            tint = tint,
-        )
+        painter?.let {
+            Icon(
+                modifier = Modifier.size(medium),
+                painter = painter,
+                contentDescription = text,
+                tint = tint,
+            )
 
-        Spacer(modifier = Modifier.width(tiny))
+            Spacer(modifier = Modifier.width(tiny))
+        }
 
         // Text with scroll and gradient
         val scrollState = rememberScrollState()
@@ -104,7 +110,14 @@ fun SettingItemView(
                         .horizontalScroll(scrollState),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                SettingsText(text = copywriter.getText(text))
+                SettingsText(
+                    text =
+                        if (isFinalText) {
+                            text
+                        } else {
+                            copywriter.getText(text)
+                        },
+                )
             }
 
             // Left gradient overlay

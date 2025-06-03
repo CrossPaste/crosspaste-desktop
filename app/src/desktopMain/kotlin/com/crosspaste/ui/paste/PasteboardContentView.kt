@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -40,6 +41,7 @@ import com.crosspaste.ui.paste.preview.PasteEmptyScreenView
 import com.crosspaste.ui.paste.preview.PastePreviewItemView
 import com.crosspaste.ui.paste.preview.PasteSpecificPreviewView
 import com.crosspaste.ui.paste.preview.PasteToTopView
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -181,11 +183,16 @@ fun PasteboardContentView(openTopBar: () -> Unit) {
                     hoverDurationMillis = 300,
                     unhoverColor =
                         if (isScrolling) {
-                            MaterialTheme.colorScheme.onBackground.copy(alpha = 0.48f)
+                            MaterialTheme.colorScheme.contentColorFor(
+                                AppUIColors.appBackground,
+                            ).copy(alpha = 0.48f)
                         } else {
                             Color.Transparent
                         },
-                    hoverColor = MaterialTheme.colorScheme.onBackground,
+                    hoverColor =
+                        MaterialTheme.colorScheme.contentColorFor(
+                            AppUIColors.appBackground,
+                        ),
                 ),
         )
 

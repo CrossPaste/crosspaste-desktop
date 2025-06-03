@@ -49,7 +49,6 @@ import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.base.HighlightedCard
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.trash
-import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -60,6 +59,7 @@ import com.crosspaste.ui.theme.AppUISize.tiny4XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
+import com.crosspaste.ui.theme.DesktopAppUIColors
 import com.crosspaste.utils.getAppEnvUtils
 import org.koin.compose.koinInject
 
@@ -98,7 +98,7 @@ fun TabsView() {
                         .fillMaxWidth()
                         .height(appSize.tabsViewHeight),
                 shape = tinyRoundedCornerShape,
-                containerColor = AppUIColors.tabsBackground,
+                containerColor = DesktopAppUIColors.tabsBackground,
             ) {
             }
 
@@ -269,9 +269,9 @@ fun SingleTabView(
                 text = title,
                 color =
                     if (selected || hover) {
-                        AppUIColors.tabSelectedTextColor
+                        DesktopAppUIColors.tabSelectedTextColor
                     } else {
-                        AppUIColors.tabUnselectedTextColor
+                        DesktopAppUIColors.tabUnselectedTextColor
                     },
                 style = textStyle,
             )

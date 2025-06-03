@@ -82,7 +82,7 @@ fun ShortcutKeysContentView() {
                     Modifier.fillMaxSize()
                         .padding(horizontal = medium)
                         .clip(tinyRoundedCornerShape)
-                        .background(AppUIColors.shortcutBackground),
+                        .background(AppUIColors.generalBackground),
             ) {
                 ShortcutKeyRow(PASTE)
             }
@@ -94,7 +94,7 @@ fun ShortcutKeysContentView() {
                     Modifier.fillMaxSize()
                         .padding(horizontal = medium)
                         .clip(tinyRoundedCornerShape)
-                        .background(AppUIColors.shortcutBackground),
+                        .background(AppUIColors.generalBackground),
             ) {
                 ShortcutKeyRow(PASTE_PLAIN_TEXT)
 
@@ -118,7 +118,7 @@ fun ShortcutKeysContentView() {
                     Modifier.fillMaxSize()
                         .padding(horizontal = medium)
                         .clip(tinyRoundedCornerShape)
-                        .background(AppUIColors.shortcutBackground),
+                        .background(AppUIColors.generalBackground),
             ) {
                 ShortcutKeyRow(SHOW_MAIN)
 
@@ -134,7 +134,7 @@ fun ShortcutKeysContentView() {
                     Modifier.fillMaxSize()
                         .padding(horizontal = medium)
                         .clip(tinyRoundedCornerShape)
-                        .background(AppUIColors.shortcutBackground),
+                        .background(AppUIColors.generalBackground),
             ) {
                 ShortcutKeyRow(TOGGLE_PASTEBOARD_MONITORING)
 

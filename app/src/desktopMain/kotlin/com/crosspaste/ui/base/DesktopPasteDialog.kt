@@ -5,16 +5,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.Dialog
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUIFont
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small3XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxLarge
@@ -37,7 +36,7 @@ class DesktopPasteDialog(
                     Modifier.fillMaxWidth()
                         .padding(xxLarge)
                         .clip(small3XRoundedCornerShape)
-                        .background(AppUIColors.dialogBackground),
+                        .background(AppUIColors.generalBackground),
             ) {
                 Column(
                     modifier = Modifier.padding(medium),
@@ -46,8 +45,7 @@ class DesktopPasteDialog(
                     val copywriter = koinInject<GlobalCopywriter>()
                     Text(
                         text = copywriter.getText(title),
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.titleLarge,
+                        style = AppUIFont.dialogTitleTextStyle,
                         modifier = Modifier.padding(bottom = medium),
                     )
                     content.invoke()

@@ -51,6 +51,7 @@ import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
+import com.crosspaste.ui.theme.DesktopAppUIColors
 import com.crosspaste.utils.mainDispatcher
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -124,7 +125,7 @@ fun CrossPasteSearchWindowContent() {
                     Modifier
                         .shadow(tiny2X, small3XRoundedCornerShape)
                         .size(appSize.searchWindowContentSize)
-                        .background(AppUIColors.searchBackground)
+                        .background(DesktopAppUIColors.searchBackground)
                         .border(tiny5X, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), small3XRoundedCornerShape),
                 contentAlignment = Alignment.Center,
             ) {
@@ -144,7 +145,7 @@ fun CrossPasteSearchWindowContent() {
                         modifier =
                             Modifier.height(appSize.searchFooterHeight)
                                 .fillMaxWidth()
-                                .background(AppUIColors.searchFootBackground)
+                                .background(AppUIColors.generalBackground)
                                 .padding(horizontal = small3X),
                         horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically,

@@ -174,7 +174,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .background(AppUIColors.settingsBackground),
+                .background(AppUIColors.generalBackground),
     ) {
         SettingItemsTitleView("store_info")
 
@@ -232,7 +232,10 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
                     modifier = Modifier.size(medium),
                     painter = quadruple.second,
                     contentDescription = "pasteboard",
-                    tint = MaterialTheme.colorScheme.contentColorFor(AppUIColors.settingsBackground),
+                    tint =
+                        MaterialTheme.colorScheme.contentColorFor(
+                            AppUIColors.generalBackground,
+                        ),
                 )
                 Spacer(modifier = Modifier.width(tiny))
 
@@ -277,7 +280,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .background(AppUIColors.settingsBackground),
+                .background(AppUIColors.generalBackground),
     ) {
         SettingItemsTitleView("auto_cleanup_settings")
 
@@ -445,7 +448,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .background(AppUIColors.settingsBackground),
+                .background(AppUIColors.generalBackground),
     ) {
         SettingSwitchItemView(
             text = "threshold_cleanup",

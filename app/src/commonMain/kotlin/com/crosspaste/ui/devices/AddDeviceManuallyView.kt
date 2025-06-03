@@ -82,7 +82,7 @@ fun AddDeviceManuallyForm() {
         modifier =
             Modifier.fillMaxWidth()
                 .height(xxxxLarge)
-                .background(AppUIColors.deviceBackground)
+                .background(AppUIColors.generalBackground)
                 .padding(horizontal = small2X, vertical = tiny2X),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -95,7 +95,7 @@ fun AddDeviceManuallyForm() {
 
         Text(
             text = "IP",
-            color = MaterialTheme.colorScheme.contentColorFor(AppUIColors.deviceBackground),
+            color = MaterialTheme.colorScheme.contentColorFor(AppUIColors.generalBackground),
             style = propertyTextStyle,
         )
 
@@ -230,14 +230,14 @@ fun AddDeviceManuallyForm() {
                 }
             },
             shape = tiny3XRoundedCornerShape,
-            border = BorderStroke(tiny5X, connectedColor(MaterialTheme.colorScheme.surfaceContainerLowest)),
+            border = BorderStroke(tiny5X, connectedColor(AppUIColors.generalBackground)),
             contentPadding = PaddingValues(horizontal = tiny, vertical = zero),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background),
+            colors = ButtonDefaults.buttonColors(containerColor = AppUIColors.topBackground),
             elevation = zeroButtonElevation,
         ) {
             Text(
                 text = copywriter.getText("add"),
-                color = connectedColor(MaterialTheme.colorScheme.surfaceContainerLowest),
+                color = connectedColor(AppUIColors.generalBackground),
                 style = buttonTextStyle,
                 maxLines = 1,
                 softWrap = false,

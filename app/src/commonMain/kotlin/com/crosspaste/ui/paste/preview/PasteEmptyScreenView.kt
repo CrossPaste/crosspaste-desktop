@@ -23,7 +23,7 @@ fun PasteEmptyScreenView() {
         contentAlignment = Alignment.Center,
         modifier =
             Modifier.fillMaxSize()
-                .background(AppUIColors.pasteEmptyScreenBackground),
+                .background(AppUIColors.generalBackground),
     ) {
         Box(
             modifier = Modifier.wrapContentSize(),
@@ -37,7 +37,7 @@ fun PasteEmptyScreenView() {
                 maxLines = 3,
                 color =
                     MaterialTheme.colorScheme.contentColorFor(
-                        AppUIColors.pasteEmptyScreenBackground,
+                        AppUIColors.generalBackground,
                     ),
                 style = emptyScreenTipsTextStyle,
             )

@@ -39,7 +39,7 @@ fun NearbyDevicesView() {
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .background(AppUIColors.deviceBackground),
+                    .background(AppUIColors.generalBackground),
         ) {
             LazyColumn(
                 state = lazyListState,

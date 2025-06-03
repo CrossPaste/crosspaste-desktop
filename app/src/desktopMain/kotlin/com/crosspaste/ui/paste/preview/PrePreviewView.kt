@@ -1,6 +1,5 @@
 package com.crosspaste.ui.paste.preview
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -8,7 +7,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.ui.base.PasteProgressbar
@@ -38,13 +36,11 @@ fun PrePreviewView(pasteData: PasteData) {
         }
 
         PasteSpecificPreviewContentView(
-            backgroundColor = Color.Transparent,
             pasteMainContent = {
                 Box(
                     modifier =
                         Modifier
                             .fillMaxSize()
-                            .background(Color.Transparent)
                             .clip(tiny2XRoundedCornerShape),
                 ) {
                     pasteboardViewProvider.PasteShimmer(singleProcess)

@@ -94,7 +94,7 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
     Box(
         Modifier.fillMaxWidth()
             .wrapContentHeight()
-            .background(AppUIColors.dialogBackground),
+            .background(AppUIColors.generalBackground),
         contentAlignment = Alignment.Center,
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -138,7 +138,7 @@ fun VerificationContent(
 fun DeviceInfoHeader(syncRuntimeInfo: SyncRuntimeInfo) {
     DeviceBarView(
         modifier = Modifier,
-        background = AppUIColors.dialogBackground,
+        background = AppUIColors.generalBackground,
         syncRuntimeInfo = syncRuntimeInfo,
     ) { currentBackground ->
         Row(horizontalArrangement = Arrangement.End) {
@@ -208,9 +208,9 @@ fun TokenInputBox(
                 .border(
                     tiny5X,
                     if (isError && token.length != 1) {
-                        MaterialTheme.colorScheme.error
+                        AppUIColors.errorColor
                     } else {
-                        MaterialTheme.colorScheme.primary
+                        AppUIColors.importantColor
                     },
                     tiny3XRoundedCornerShape,
                 ),

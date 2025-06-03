@@ -22,7 +22,7 @@ fun NotFoundNearByDevices() {
         contentAlignment = Alignment.Center,
         modifier =
             Modifier.fillMaxSize()
-                .background(AppUIColors.deviceBackground),
+                .background(AppUIColors.generalBackground),
     ) {
         Box(
             modifier = Modifier.wrapContentSize(),
@@ -31,7 +31,10 @@ fun NotFoundNearByDevices() {
             Text(
                 text = copywriter.getText("no_nearby_devices_found_with_crosspaste_enabled"),
                 maxLines = 3,
-                color = MaterialTheme.colorScheme.contentColorFor(AppUIColors.deviceBackground),
+                color =
+                    MaterialTheme.colorScheme.contentColorFor(
+                        AppUIColors.generalBackground,
+                    ),
                 style = emptyScreenTipsTextStyle,
             )
         }

@@ -13,7 +13,7 @@ import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont.settingItemsTitleTextStyle
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
-import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.tiny2X
 import org.koin.compose.koinInject
 
 @Composable
@@ -24,8 +24,8 @@ fun SettingItemsTitleView(title: String) {
         modifier =
             Modifier.fillMaxWidth()
                 .wrapContentHeight()
-                .background(AppUIColors.settingsTitleBackground)
-                .padding(start = medium, top = small2X, bottom = tiny3X),
+                .background(AppUIColors.topBackground)
+                .padding(start = medium, top = small2X, bottom = tiny2X),
     ) {
         Text(
             text = copywriter.getText(title),
