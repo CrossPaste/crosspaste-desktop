@@ -443,7 +443,12 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
         }
     }
 
-    Spacer(modifier = Modifier.height(small3X))
+    Spacer(
+        modifier =
+            Modifier.height(small3X)
+                .fillMaxWidth()
+                .background(AppUIColors.topBackground),
+    )
 
     Column(
         modifier =

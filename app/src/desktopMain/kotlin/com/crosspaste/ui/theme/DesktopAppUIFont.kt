@@ -52,7 +52,6 @@ object DesktopAppUIFont {
                 fontWeight = FontWeight.Normal,
                 fontSize = 16.sp,
                 lineHeight = 1.25.em,
-                textAlign = TextAlign.Center,
             )
 
     val keyboardCharTextStyle
