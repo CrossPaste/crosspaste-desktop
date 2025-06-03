@@ -71,7 +71,7 @@ fun SettingItemView(
                 tint = tint,
             )
 
-            Spacer(modifier = Modifier.width(tiny))
+            Spacer(modifier = Modifier.width(small2X))
         }
 
         // Text with scroll and gradient
