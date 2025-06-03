@@ -46,7 +46,7 @@ object DesktopAppUIFont {
             TextStyle(
                 color =
                     MaterialTheme.colorScheme.contentColorFor(
-                        AppUIColors.searchBackground,
+                        DesktopAppUIColors.searchBackground,
                     ),
                 fontFamily = FontFamily.SansSerif,
                 fontWeight = FontWeight.Normal,
@@ -75,4 +75,9 @@ object DesktopAppUIFont {
             lineHeight = 14.sp,
         )
     }
+
+    val tipsTextStyle: TextStyle
+        @Composable
+        get() =
+            MaterialTheme.typography.bodySmall
 }

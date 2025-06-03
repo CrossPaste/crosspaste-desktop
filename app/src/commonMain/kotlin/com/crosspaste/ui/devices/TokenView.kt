@@ -15,11 +15,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -37,6 +37,7 @@ import com.crosspaste.app.AppSize
 import com.crosspaste.app.AppTokenApi
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.close
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont.generalTitleTextStyle
 import com.crosspaste.ui.theme.AppUIFont.tokenTextStyle
 import com.crosspaste.ui.theme.AppUISize.huge
@@ -48,7 +49,7 @@ import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
-import com.crosspaste.ui.theme.AppUISize.tiny4X
+import com.crosspaste.ui.theme.AppUISize.tiny4XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.zero
 import org.koin.compose.koinInject
@@ -105,7 +106,7 @@ private fun RealTokenView() {
                         .wrapContentSize()
                         .clip(tiny3XRoundedCornerShape)
                         .align(Alignment.Center)
-                        .background(MaterialTheme.colorScheme.surface),
+                        .background(AppUIColors.topBackground),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Box(
@@ -118,7 +119,10 @@ private fun RealTokenView() {
                 ) {
                     Text(
                         text = copywriter.getText("token"),
-                        color = MaterialTheme.colorScheme.onBackground,
+                        color =
+                            MaterialTheme.colorScheme.contentColorFor(
+                                AppUIColors.topBackground,
+                            ),
                         style = generalTitleTextStyle,
                     )
 
@@ -142,7 +146,10 @@ private fun RealTokenView() {
                                 painter = close(),
                                 contentDescription = "Close",
                                 modifier = Modifier.size(medium),
-                                tint = MaterialTheme.colorScheme.onBackground,
+                                tint =
+                                    MaterialTheme.colorScheme.contentColorFor(
+                                        AppUIColors.topBackground,
+                                    ),
                             )
                         }
                     }
@@ -179,12 +186,12 @@ private fun OTPCodeBox() {
                     modifier =
                         Modifier
                             .background(MaterialTheme.colorScheme.surfaceVariant, tiny3XRoundedCornerShape)
-                            .border(tiny5X, MaterialTheme.colorScheme.primary, tiny3XRoundedCornerShape)
+                            .border(tiny5X, AppUIColors.importantColor, tiny3XRoundedCornerShape)
                             .padding(vertical = tiny, horizontal = small2X),
                 ) {
                     Text(
                         text = char.toString(),
-                        color = MaterialTheme.colorScheme.primary,
+                        color = AppUIColors.importantColor,
                         style = tokenTextStyle,
                     )
                 }
@@ -202,7 +209,7 @@ private fun OTPCodeBox() {
                 modifier =
                     Modifier.fillMaxWidth()
                         .height(tiny3X)
-                        .clip(RoundedCornerShape(tiny4X)),
+                        .clip(tiny4XRoundedCornerShape),
                 progress = { progress },
             )
         }

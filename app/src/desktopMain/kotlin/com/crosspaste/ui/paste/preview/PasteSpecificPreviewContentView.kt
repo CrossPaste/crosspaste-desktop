@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import com.crosspaste.app.AppSize
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xxLarge
@@ -30,7 +30,7 @@ import org.koin.compose.koinInject
 
 @Composable
 fun PasteSpecificPreviewContentView(
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+    background: Color = AppUIColors.pasteBackground,
     pasteMainContent: @Composable () -> Unit,
     pasteRightInfo: @Composable ((Boolean) -> Unit) -> Unit,
 ) {
@@ -58,8 +58,8 @@ fun PasteSpecificPreviewContentView(
                         .fillMaxHeight()
                         .width(width.value)
                         .clip(tiny2XRoundedCornerShape)
-                        .border(tiny5X, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), tiny2XRoundedCornerShape)
-                        .background(color = backgroundColor),
+                        .border(tiny5X, AppUIColors.lightBorderColor, tiny2XRoundedCornerShape)
+                        .background(background),
             ) {
                 pasteMainContent()
             }

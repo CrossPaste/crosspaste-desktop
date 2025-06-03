@@ -4,14 +4,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.crosspaste.app.AppSize
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.ui.base.HighlightedCard
 import com.crosspaste.ui.theme.AppUIColors
-import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import org.koin.compose.koinInject
 
 @Composable
@@ -28,7 +27,7 @@ fun PastePreviewItemView(
     ) {
         HighlightedCard(
             modifier = Modifier.fillMaxSize(),
-            shape = RoundedCornerShape(tiny2X),
+            shape = tiny2XRoundedCornerShape,
             containerColor = AppUIColors.pasteBackground,
         ) {
             pasteData.pasteContent()

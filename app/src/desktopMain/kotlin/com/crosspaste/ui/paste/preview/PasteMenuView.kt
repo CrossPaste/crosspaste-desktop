@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,6 +57,7 @@ import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.base.moreVertical
 import com.crosspaste.ui.base.noFavorite
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont.getFontWidth
 import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -65,6 +65,7 @@ import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.DesktopAppUIFont
 import com.crosspaste.utils.DateUtils
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -136,14 +137,14 @@ fun PasteMenuView(
                     hideIfNotHovered(parentBounds.topLeft + it.position)
                 }
                 .clip(tiny2XRoundedCornerShape)
-                .background(if (showMenu) MaterialTheme.colorScheme.surfaceContainerHighest else Color.Transparent),
+                .background(if (showMenu) AppUIColors.generalBackground else Color.Transparent),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
         MoreMenuItem(
             background =
                 if (hoverMenu) {
-                    MaterialTheme.colorScheme.surfaceContainerLowest
+                    AppUIColors.topBackground
                 } else {
                     Color.Transparent
                 },
@@ -154,10 +155,10 @@ fun PasteMenuView(
 
         if (showMenu) {
             CopyMenuItem(
-                tint = MaterialTheme.colorScheme.primary,
+                tint = AppUIColors.importantColor,
                 background =
                     if (hoverCopy) {
-                        MaterialTheme.colorScheme.surfaceContainerLowest
+                        AppUIColors.topBackground
                     } else {
                         Color.Transparent
                     },
@@ -168,10 +169,10 @@ fun PasteMenuView(
 
             FavoriteMenuItem(
                 currentFavorite = currentFavorite,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = AppUIColors.importantColor,
                 background =
                     if (hoverFavorite) {
-                        MaterialTheme.colorScheme.surfaceContainerLowest
+                        AppUIColors.topBackground
                     } else {
                         Color.Transparent
                     },
@@ -188,10 +189,10 @@ fun PasteMenuView(
 
             DetailMenuItem(
                 pasteData = pasteData,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = AppUIColors.importantColor,
                 background =
                     if (hoverSource) {
-                        MaterialTheme.colorScheme.surfaceContainerLowest
+                        AppUIColors.topBackground
                     } else {
                         Color.Transparent
                     },
@@ -248,7 +249,7 @@ fun MoreMenuItem(
             .height(appSize.mainPasteSize.height / 4),
         text = menuText,
         computeTooltipPlacement = {
-            val textWidth = measureTextWidth(menuText, MaterialTheme.typography.bodySmall)
+            val textWidth = measureTextWidth(menuText, DesktopAppUIFont.tipsTextStyle)
             TooltipPlacement.ComponentRect(
                 anchor = Alignment.BottomStart,
                 alignment = Alignment.BottomEnd,
@@ -292,7 +293,7 @@ fun MoreMenuItem(
                                     },
                                 )
                             },
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = AppUIColors.importantColor,
                 )
             }
         }
@@ -316,7 +317,7 @@ fun CopyMenuItem(
             .height(appSize.mainPasteSize.height / 4),
         text = copyText,
         computeTooltipPlacement = {
-            val textWidth = measureTextWidth(copyText, MaterialTheme.typography.bodySmall)
+            val textWidth = measureTextWidth(copyText, DesktopAppUIFont.tipsTextStyle)
             TooltipPlacement.ComponentRect(
                 anchor = Alignment.BottomStart,
                 alignment = Alignment.BottomEnd,
@@ -385,7 +386,7 @@ fun FavoriteMenuItem(
             .height(appSize.mainPasteSize.height / 4),
         text = favoriteText,
         computeTooltipPlacement = {
-            val textWidth = measureTextWidth(favoriteText, MaterialTheme.typography.bodySmall)
+            val textWidth = measureTextWidth(favoriteText, DesktopAppUIFont.tipsTextStyle)
             TooltipPlacement.ComponentRect(
                 anchor = Alignment.BottomStart,
                 alignment = Alignment.BottomEnd,
@@ -452,7 +453,7 @@ fun DetailMenuItem(
             .height(appSize.mainPasteSize.height / 4),
         text = detailInfo,
         computeTooltipPlacement = {
-            val textWidth = measureTextWidth(detailInfo, MaterialTheme.typography.bodySmall)
+            val textWidth = measureTextWidth(detailInfo, DesktopAppUIFont.tipsTextStyle)
             TooltipPlacement.ComponentRect(
                 anchor = Alignment.BottomStart,
                 alignment = Alignment.BottomEnd,
@@ -525,7 +526,7 @@ fun MoreMenuItems(
                     .width(maxWidth)
                     .wrapContentHeight()
                     .clip(tiny2XRoundedCornerShape)
-                    .background(MaterialTheme.colorScheme.inverseOnSurface),
+                    .background(AppUIColors.menuBackground),
         ) {
             MenuItem(copywriter.getText("open")) {
                 pasteMenuService.openPasteData(pasteData)

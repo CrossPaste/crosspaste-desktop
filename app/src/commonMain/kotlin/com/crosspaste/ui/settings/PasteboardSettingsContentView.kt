@@ -36,7 +36,7 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .background(AppUIColors.settingsBackground),
+                .background(AppUIColors.generalBackground),
     ) {
         SettingItemsTitleView("paste_control")
 

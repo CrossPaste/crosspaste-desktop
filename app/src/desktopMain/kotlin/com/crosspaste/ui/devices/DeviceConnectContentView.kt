@@ -35,9 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
@@ -53,6 +51,8 @@ import com.crosspaste.ui.DeviceDetail
 import com.crosspaste.ui.base.MenuItem
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.moreVertical
+import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUIFont
 import com.crosspaste.ui.theme.AppUIFont.getFontWidth
 import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.large2X
@@ -91,9 +91,9 @@ fun DeviceConnectContentView(
     var hover by remember { mutableStateOf(false) }
     val background =
         if (hover) {
-            MaterialTheme.colorScheme.secondaryContainer
+            AppUIColors.selectedDeviceBackground
         } else {
-            MaterialTheme.colorScheme.surfaceContainerHighest
+            AppUIColors.generalBackground
         }
 
     val (connectColor, connectText) =
@@ -198,11 +198,7 @@ fun DeviceConnectContentView(
             Text(
                 text = copywriter.getText(connectText),
                 color = connectColor,
-                style =
-                    MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        lineHeight = TextUnit.Unspecified,
-                    ),
+                style = AppUIFont.deviceConnectStateTextStyle,
             )
 
             if (deviceInteractionEnabled) {
@@ -222,7 +218,10 @@ fun DeviceConnectContentView(
                         painter = moreVertical(),
                         contentDescription = "info",
                         modifier = Modifier.size(large),
-                        tint = MaterialTheme.colorScheme.contentColorFor(background),
+                        tint =
+                            MaterialTheme.colorScheme.contentColorFor(
+                                background,
+                            ),
                     )
                 }
 
@@ -267,7 +266,7 @@ fun DeviceConnectContentView(
                                         .width(maxWidth)
                                         .wrapContentHeight()
                                         .clip(tiny2XRoundedCornerShape)
-                                        .background(MaterialTheme.colorScheme.surfaceBright),
+                                        .background(AppUIColors.menuBackground),
                             ) {
                                 MenuItem(copywriter.getText("add_note")) {
                                     onEdit(syncRuntimeInfo)

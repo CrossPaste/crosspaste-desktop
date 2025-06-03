@@ -39,7 +39,7 @@ fun MainSettingsContentView() {
         modifier =
             Modifier.wrapContentSize(),
         shape = tinyRoundedCornerShape,
-        containerColor = AppUIColors.settingsBackground,
+        containerColor = AppUIColors.generalBackground,
     ) {
         LanguageSettingItemView()
 

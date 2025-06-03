@@ -70,7 +70,7 @@ fun SearchNearByDevices() {
         contentAlignment = Alignment.Center,
         modifier =
             Modifier.fillMaxSize()
-                .background(AppUIColors.deviceBackground),
+                .background(AppUIColors.generalBackground),
     ) {
         Box(
             modifier =

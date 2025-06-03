@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,6 +23,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.toTop
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxLarge
@@ -53,7 +53,7 @@ fun PasteToTopView(toTopAction: () -> Unit) {
                 },
                 modifier =
                     Modifier
-                        .background(MaterialTheme.colorScheme.surface.copy(alpha = transparency), CircleShape)
+                        .background(AppUIColors.appBackground.copy(alpha = transparency), CircleShape)
                         .onPointerEvent(
                             eventType = PointerEventType.Enter,
                             onEvent = {
@@ -71,7 +71,7 @@ fun PasteToTopView(toTopAction: () -> Unit) {
                     painter = toTop(),
                     contentDescription = "To Top",
                     modifier = Modifier.size(xLarge),
-                    tint = MaterialTheme.colorScheme.primary.copy(alpha = transparency),
+                    tint = AppUIColors.importantColor.copy(alpha = transparency),
                 )
             }
         }

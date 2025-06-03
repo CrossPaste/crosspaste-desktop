@@ -53,7 +53,7 @@ fun AboutContentView() {
             Modifier.fillMaxSize()
                 .padding(medium)
                 .clip(tinyRoundedCornerShape)
-                .background(AppUIColors.aboutBackground),
+                .background(AppUIColors.generalBackground),
         contentAlignment = Alignment.Center,
     ) {
         Box(
@@ -61,7 +61,10 @@ fun AboutContentView() {
                 Modifier.align(Alignment.Center)
                     .offset(y = -xxLarge),
         ) {
-            val onBackground = MaterialTheme.colorScheme.contentColorFor(AppUIColors.aboutBackground)
+            val onBackground =
+                MaterialTheme.colorScheme.contentColorFor(
+                    AppUIColors.generalBackground,
+                )
 
             Column(
                 modifier = Modifier.align(Alignment.Center),
@@ -160,7 +163,10 @@ fun AboutInfoItem(
         Icon(
             painter = chevronRight(),
             contentDescription = "chevron right",
-            tint = MaterialTheme.colorScheme.contentColorFor(AppUIColors.aboutBackground),
+            tint =
+                MaterialTheme.colorScheme.contentColorFor(
+                    AppUIColors.generalBackground,
+                ),
         )
     }
 }

@@ -14,7 +14,10 @@ import com.crosspaste.ui.theme.AppUIFont.SettingsTextStyle
 fun SettingsText(
     modifier: Modifier = Modifier,
     text: String,
-    color: Color = MaterialTheme.colorScheme.contentColorFor(AppUIColors.settingsBackground),
+    color: Color =
+        MaterialTheme.colorScheme.contentColorFor(
+            AppUIColors.generalBackground,
+        ),
 ) {
     Text(
         modifier = modifier,

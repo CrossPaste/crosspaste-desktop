@@ -71,7 +71,7 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .background(AppUIColors.settingsBackground),
+                .background(AppUIColors.generalBackground),
     ) {
         SettingItemsTitleView("network_info")
 
@@ -103,7 +103,7 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .background(AppUIColors.settingsBackground),
+                .background(AppUIColors.generalBackground),
     ) {
         SettingItemsTitleView("service_discovery")
 
@@ -126,7 +126,7 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
     Column(
         modifier =
             Modifier.wrapContentSize()
-                .background(AppUIColors.settingsBackground),
+                .background(AppUIColors.generalBackground),
     ) {
         SettingItemsTitleView("blacklist")
 

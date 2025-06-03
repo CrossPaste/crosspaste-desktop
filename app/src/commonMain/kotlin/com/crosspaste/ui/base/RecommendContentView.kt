@@ -14,8 +14,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,6 +29,7 @@ import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont.recommendTextTextStyle
 import com.crosspaste.ui.theme.AppUIFont.recommendTitleTextStyle
 import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.mediumRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny5X
@@ -52,7 +51,7 @@ fun RecommendContentView() {
             Modifier.fillMaxSize()
                 .padding(medium)
                 .clip(tinyRoundedCornerShape)
-                .background(AppUIColors.recommendedBackground),
+                .background(AppUIColors.generalBackground),
     ) {
         Column(
             modifier =
@@ -74,13 +73,13 @@ fun RecommendContentView() {
                     Modifier
                         .fillMaxWidth()
                         .wrapContentHeight()
-                        .clip(RoundedCornerShape(medium))
+                        .clip(mediumRoundedCornerShape)
                         .border(
                             width = tiny5X,
-                            color = MaterialTheme.colorScheme.outline,
-                            shape = RoundedCornerShape(medium),
+                            color = AppUIColors.darkBorderColor,
+                            shape = mediumRoundedCornerShape,
                         )
-                        .background(AppUIColors.recommendedContentBackground)
+                        .background(AppUIColors.topBackground)
                         .padding(medium),
                 style = recommendTextTextStyle,
                 maxLines = Int.MAX_VALUE,

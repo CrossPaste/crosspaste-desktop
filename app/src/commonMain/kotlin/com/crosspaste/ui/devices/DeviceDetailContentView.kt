@@ -35,16 +35,19 @@ import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.VersionRelation
 import com.crosspaste.sync.SyncManager
-import com.crosspaste.ui.base.CustomSwitch
+import com.crosspaste.ui.base.HighlightedCard
 import com.crosspaste.ui.base.alertCircle
 import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.settings.SettingItemsTitleView
+import com.crosspaste.ui.settings.SettingSwitchItemView
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont.SettingsTextStyle
 import com.crosspaste.ui.theme.AppUIFont.generalBodyTextStyle
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.tiny6X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.zero
 import kotlinx.coroutines.runBlocking
@@ -82,25 +85,29 @@ fun DeviceDetailContentView() {
     Column(
         modifier =
             Modifier.fillMaxSize()
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                .background(AppUIColors.appBackground),
     ) {
         deviceViewProvider.DeviceConnectView(syncRuntimeInfo, false) { }
+
+        HorizontalDivider(
+            thickness = tiny6X,
+            color = AppUIColors.lightBorderColor,
+        )
 
         Column(
             modifier =
                 Modifier.fillMaxSize()
-                    .padding(horizontal = medium)
-                    .padding(bottom = medium).clip(tinyRoundedCornerShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-                    .verticalScroll(rememberScrollState())
-                    .padding(medium),
+                    .padding(medium)
+                    .clip(tinyRoundedCornerShape)
+                    .background(AppUIColors.appBackground)
+                    .verticalScroll(rememberScrollState()),
         ) {
             if (versionRelation != null && versionRelation != VersionRelation.EQUAL_TO) {
                 Column(
                     modifier =
                         Modifier.wrapContentSize()
                             .clip(tinyRoundedCornerShape)
-                            .background(MaterialTheme.colorScheme.errorContainer),
+                            .background(AppUIColors.errorContainerColor),
                 ) {
                     Row(
                         modifier =
@@ -113,7 +120,7 @@ fun DeviceDetailContentView() {
                             contentDescription = "Warning",
                             tint =
                                 MaterialTheme.colorScheme.contentColorFor(
-                                    MaterialTheme.colorScheme.errorContainer,
+                                    AppUIColors.errorContainerColor,
                                 ),
                             modifier = Modifier.size(large2X),
                         )
@@ -125,7 +132,7 @@ fun DeviceDetailContentView() {
                                     copywriter.getText("incompatible_info"),
                             color =
                                 MaterialTheme.colorScheme.contentColorFor(
-                                    MaterialTheme.colorScheme.errorContainer,
+                                    AppUIColors.errorContainerColor,
                                 ),
                             style = generalBodyTextStyle,
                             modifier = Modifier.weight(1f),
@@ -135,82 +142,56 @@ fun DeviceDetailContentView() {
                 }
             }
 
-            Column(
+            HighlightedCard(
                 modifier =
-                    Modifier.wrapContentSize()
-                        .clip(tinyRoundedCornerShape),
+                    Modifier.wrapContentSize(),
+                shape = tinyRoundedCornerShape,
+                containerColor = AppUIColors.generalBackground,
             ) {
                 SettingItemsTitleView("sync_control")
 
                 Column(
                     modifier =
-                        Modifier.wrapContentSize()
-                            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                        Modifier.wrapContentSize(),
                 ) {
-                    Row(
-                        modifier =
-                            Modifier.wrapContentSize()
-                                .padding(small2X),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = "${copywriter.getText("allow_send_to")} ${syncRuntimeInfo.getDeviceDisplayName()}",
-                            style = settingsTextStyle,
-                            modifier = Modifier.weight(1f),
-                        )
-                        CustomSwitch(
-                            modifier =
-                                Modifier.align(Alignment.CenterVertically)
-                                    .width(medium * 2)
-                                    .height(large2X),
-                            checked = !appControl.isSyncControlEnabled(false) || syncRuntimeInfo.allowSend,
-                            onCheckedChange = { allowSend ->
-                                runBlocking {
-                                    if (appControl.isSyncControlEnabled()) {
-                                        syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
-                                            ?.updateSyncRuntimeInfo { syncRuntimeInfo ->
-                                                syncRuntimeInfo.copy(allowSend = allowSend)
-                                            }?.let {
-                                                syncRuntimeInfo = it
-                                            }
+                    SettingSwitchItemView(
+                        text = "${copywriter.getText("allow_send_to")} ${syncRuntimeInfo.getDeviceDisplayName()}",
+                        isFinalText = true,
+                        getCurrentSwitchValue = {
+                            !appControl.isSyncControlEnabled(false) || syncRuntimeInfo.allowSend
+                        },
+                    ) { allowSend ->
+                        runBlocking {
+                            if (appControl.isSyncControlEnabled()) {
+                                syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
+                                    ?.updateSyncRuntimeInfo { syncRuntimeInfo ->
+                                        syncRuntimeInfo.copy(allowSend = allowSend)
+                                    }?.let {
+                                        syncRuntimeInfo = it
                                     }
-                                }
-                            },
-                        )
+                            }
+                        }
                     }
 
                     HorizontalDivider(modifier = Modifier.padding(start = small))
 
-                    Row(
-                        modifier =
-                            Modifier.wrapContentSize()
-                                .padding(small2X),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = "${copywriter.getText("allow_receive_from")} ${syncRuntimeInfo.getDeviceDisplayName()}",
-                            style = settingsTextStyle,
-                            modifier = Modifier.weight(1f),
-                        )
-                        CustomSwitch(
-                            modifier =
-                                Modifier.align(Alignment.CenterVertically)
-                                    .width(medium * 2)
-                                    .height(large2X),
-                            checked = !appControl.isSyncControlEnabled(false) || syncRuntimeInfo.allowReceive,
-                            onCheckedChange = { allowReceive ->
-                                runBlocking {
-                                    if (appControl.isSyncControlEnabled()) {
-                                        syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
-                                            ?.updateSyncRuntimeInfo { syncRuntimeInfo ->
-                                                syncRuntimeInfo.copy(allowReceive = allowReceive)
-                                            }?.let {
-                                                syncRuntimeInfo = it
-                                            }
+                    SettingSwitchItemView(
+                        text = "${copywriter.getText("allow_receive_from")} ${syncRuntimeInfo.getDeviceDisplayName()}",
+                        isFinalText = true,
+                        getCurrentSwitchValue = {
+                            !appControl.isSyncControlEnabled(false) || syncRuntimeInfo.allowReceive
+                        },
+                    ) { allowReceive ->
+                        runBlocking {
+                            if (appControl.isSyncControlEnabled()) {
+                                syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
+                                    ?.updateSyncRuntimeInfo { syncRuntimeInfo ->
+                                        syncRuntimeInfo.copy(allowReceive = allowReceive)
+                                    }?.let {
+                                        syncRuntimeInfo = it
                                     }
-                                }
-                            },
-                        )
+                            }
+                        }
                     }
                 }
             }
@@ -236,17 +217,16 @@ fun DeviceDetailContentView() {
                     maxOf(maxWidth, measureTextWidth(copywriter.getText(property.first), settingsTextStyle))
             }
 
-            Column(
+            HighlightedCard(
                 modifier =
-                    Modifier.wrapContentSize()
-                        .clip(tinyRoundedCornerShape),
+                    Modifier.wrapContentSize(),
+                shape = tinyRoundedCornerShape,
+                containerColor = AppUIColors.generalBackground,
             ) {
                 SettingItemsTitleView("base_info")
 
                 Column(
-                    modifier =
-                        Modifier.wrapContentSize()
-                            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                    modifier = Modifier.wrapContentSize(),
                 ) {
                     properties.forEachIndexed { index, pair ->
                         Row(
@@ -259,12 +239,18 @@ fun DeviceDetailContentView() {
                                 modifier = Modifier.width(maxWidth + medium),
                                 text = copywriter.getText(pair.first),
                                 style = settingsTextStyle,
-                                color = MaterialTheme.colorScheme.onSurface,
+                                color =
+                                    MaterialTheme.colorScheme.contentColorFor(
+                                        AppUIColors.generalBackground,
+                                    ),
                             )
                             Text(
                                 text = pair.second,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
+                                color =
+                                    MaterialTheme.colorScheme.contentColorFor(
+                                        AppUIColors.generalBackground,
+                                    ),
                             )
                         }
                         if (index < properties.size - 1) {

@@ -56,7 +56,7 @@ fun PasteImportContentView() {
             Modifier.fillMaxSize()
                 .padding(medium)
                 .clip(tinyRoundedCornerShape)
-                .background(AppUIColors.importOrExportBackground),
+                .background(AppUIColors.generalBackground),
         contentAlignment = Alignment.Center,
     ) {
         Column(

@@ -95,7 +95,7 @@ fun QRContentView() {
             Modifier.fillMaxSize()
                 .padding(tiny)
                 .clip(tiny3XRoundedCornerShape)
-                .background(AppUIColors.qrBackground),
+                .background(AppUIColors.generalBackground),
         contentAlignment = Alignment.Center,
     ) {
         Box(

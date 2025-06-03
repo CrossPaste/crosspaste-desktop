@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -61,14 +60,14 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
                 }
             },
             shape = tiny3XRoundedCornerShape,
-            border = BorderStroke(tiny5X, connectedColor(AppUIColors.deviceBackground)),
+            border = BorderStroke(tiny5X, connectedColor(AppUIColors.generalBackground)),
             contentPadding = PaddingValues(horizontal = tiny, vertical = zero),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background),
+            colors = ButtonDefaults.buttonColors(containerColor = AppUIColors.topBackground),
             elevation = zeroButtonElevation,
         ) {
             Text(
                 text = copywriter.getText("add"),
-                color = connectedColor(AppUIColors.deviceBackground),
+                color = connectedColor(AppUIColors.generalBackground),
                 style = buttonTextStyle,
             )
         }
@@ -95,14 +94,14 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
                 }
             },
             shape = tiny3XRoundedCornerShape,
-            border = BorderStroke(tiny5X, disconnectedColor(AppUIColors.deviceBackground)),
+            border = BorderStroke(tiny5X, disconnectedColor(AppUIColors.generalBackground)),
             contentPadding = PaddingValues(horizontal = tiny, vertical = zero),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background),
+            colors = ButtonDefaults.buttonColors(containerColor = AppUIColors.topBackground),
             elevation = zeroButtonElevation,
         ) {
             Text(
                 text = copywriter.getText("block"),
-                color = disconnectedColor(AppUIColors.deviceBackground),
+                color = disconnectedColor(AppUIColors.generalBackground),
                 style = buttonTextStyle,
             )
         }

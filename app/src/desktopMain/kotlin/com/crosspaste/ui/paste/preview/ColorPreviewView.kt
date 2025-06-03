@@ -14,22 +14,23 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import com.crosspaste.app.AppSize
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.ui.base.UISupport
+import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUIFont
 import com.crosspaste.ui.theme.AppUISize.giant
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny3X
-import com.crosspaste.ui.theme.AppUISize.tiny5X
 import org.koin.compose.koinInject
 
 @Composable
@@ -60,11 +61,6 @@ fun ColorPreviewView(pasteData: PasteData) {
                         modifier =
                             Modifier
                                 .size(giant)
-                                .shadow(
-                                    elevation = tiny5X,
-                                    shape = tiny2XRoundedCornerShape,
-                                    spotColor = Color.Black.copy(alpha = 0.1f),
-                                )
                                 .clip(tiny2XRoundedCornerShape)
                                 .background(Color(pasteColor.color)),
                     )
@@ -80,16 +76,22 @@ fun ColorPreviewView(pasteData: PasteData) {
                 ) {
                     Text(
                         text = pasteColor.toHexString(),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.labelMedium,
+                        color =
+                            MaterialTheme.colorScheme.contentColorFor(
+                                AppUIColors.pasteBackground,
+                            ),
+                        style = AppUIFont.propertyTextStyle,
                     )
 
                     Spacer(modifier = Modifier.height(tiny3X))
 
                     Text(
                         text = pasteColor.toRGBAString(),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.labelMedium,
+                        color =
+                            MaterialTheme.colorScheme.contentColorFor(
+                                AppUIColors.pasteBackground,
+                            ),
+                        style = AppUIFont.propertyTextStyle,
                     )
                 }
             }
