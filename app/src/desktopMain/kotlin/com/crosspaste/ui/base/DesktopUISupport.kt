@@ -23,6 +23,7 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.ui.PasteTextEdit
 import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.getHtmlUtils
 import com.google.common.io.Files
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,6 +50,8 @@ class DesktopUISupport(
     private val logger = KotlinLogging.logger {}
 
     private val fileUtils = getFileUtils()
+
+    private val htmlUtils = getHtmlUtils()
 
     private val _showColorChooser = MutableStateFlow(false)
     val showColorChooser: StateFlow<Boolean> = _showColorChooser
@@ -101,7 +104,8 @@ class DesktopUISupport(
             val filePath = userDataPathProvider.resolve(fileName, AppFileType.TEMP)
             val file = filePath.toFile()
             if (!file.exists()) {
-                Files.write(html.encodeToByteArray(), file)
+                val utf8Html = htmlUtils.ensureHtmlCharsetUtf8(html)
+                Files.write(utf8Html.encodeToByteArray(), file)
             }
             Desktop.getDesktop().browse(file.toURI())
         } else {
