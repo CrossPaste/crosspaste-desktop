@@ -14,6 +14,7 @@ import com.crosspaste.platform.windows.html.HTMLCodec
 import com.crosspaste.plugin.office.OfficeHtmlPlugin
 import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.getHtmlUtils
 import java.awt.datatransfer.DataFlavor
 
 class DesktopHtmlTypePlugin(
@@ -28,6 +29,8 @@ class DesktopHtmlTypePlugin(
         private val codecsUtils = getCodecsUtils()
 
         private val fileUtils = getFileUtils()
+
+        private val htmlUtils = getHtmlUtils()
 
         private val officeHtmlPlugin = OfficeHtmlPlugin()
     }
@@ -121,11 +124,13 @@ class DesktopHtmlTypePlugin(
 
     private fun extractHtmlFromMicrosoftHtml(inputStr: String): String {
         val start = inputStr.indexOfFirst { it == '<' }
-        return if (start != -1) {
-            inputStr.substring(start)
-        } else {
-            inputStr
-        }
+        val html =
+            if (start != -1) {
+                inputStr.substring(start)
+            } else {
+                inputStr
+            }
+        return htmlUtils.ensureHtmlCharsetUtf8(html)
     }
 
     override fun normalizeHtml(

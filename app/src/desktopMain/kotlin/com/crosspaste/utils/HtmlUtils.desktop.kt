@@ -26,4 +26,29 @@ object DesktopHtmlUtils : HtmlUtils {
         val str = jsoupDoc.html().replace("\\\\n".toRegex(), "\n")
         return Jsoup.clean(str, "", Safelist.none(), outputSettings)
     }
+
+    override fun ensureHtmlCharsetUtf8(html: String): String {
+        return runCatching {
+            val doc = Jsoup.parse(html)
+            val head = doc.head()
+
+            head.select("meta[charset]").remove()
+            head.select("meta[http-equiv=Content-Type]").remove()
+            head.select("meta[name=viewport]").remove()
+
+            val metaTags =
+                listOf(
+                    doc.createElement("meta").attr("charset", "UTF-8"),
+                    doc.createElement("meta")
+                        .attr("http-equiv", "Content-Type")
+                        .attr("content", "text/html; charset=UTF-8"),
+                )
+
+            metaTags.reversed().forEach { meta ->
+                head.prependChild(meta)
+            }
+
+            doc.html()
+        }.getOrElse { html }
+    }
 }
