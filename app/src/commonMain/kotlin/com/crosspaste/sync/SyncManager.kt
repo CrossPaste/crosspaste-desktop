@@ -27,5 +27,9 @@ interface SyncManager : SyncRoutingApi {
         token: Int,
     )
 
-    fun refresh(ids: List<String> = listOf())
+    fun refresh(
+        ids: List<String> = listOf(),
+        startAction: () -> Unit = {},
+        endAction: () -> Unit = {},
+    )
 }
