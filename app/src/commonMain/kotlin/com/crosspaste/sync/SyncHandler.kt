@@ -5,15 +5,21 @@ import com.crosspaste.net.VersionRelation
 
 interface SyncHandler {
 
-    var syncRuntimeInfo: SyncRuntimeInfo
-
     var versionRelation: VersionRelation
+
+    fun getCurrentSyncRuntimeInfo(): SyncRuntimeInfo
+
+    suspend fun setCurrentSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo)
 
     suspend fun getConnectHostAddress(): String?
 
     suspend fun forceResolve()
 
-    suspend fun updateSyncRuntimeInfo(doUpdate: (SyncRuntimeInfo) -> SyncRuntimeInfo): SyncRuntimeInfo?
+    suspend fun updateAllowSend(allowSend: Boolean): SyncRuntimeInfo?
+
+    suspend fun updateAllowReceive(allowReceive: Boolean): SyncRuntimeInfo?
+
+    suspend fun updateNoteName(noteName: String): SyncRuntimeInfo?
 
     suspend fun tryDirectUpdateConnected()
 

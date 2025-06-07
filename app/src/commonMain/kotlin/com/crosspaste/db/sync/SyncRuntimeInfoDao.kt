@@ -3,11 +3,13 @@ package com.crosspaste.db.sync
 import app.cash.sqldelight.Query
 import app.cash.sqldelight.coroutines.asFlow
 import com.crosspaste.Database
+import com.crosspaste.db.sync.SyncRuntimeInfo.Companion.createSyncRuntimeInfo
+import com.crosspaste.db.sync.SyncRuntimeInfo.Companion.updateSyncRuntimeInfo
+import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.getJsonUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlin.reflect.KProperty1
 
 class SyncRuntimeInfoDao(private val database: Database) {
 
@@ -28,41 +30,14 @@ class SyncRuntimeInfoDao(private val database: Database) {
         return createGetAllSyncRuntimeInfosQuery().executeAsList()
     }
 
-    fun updateList(syncRuntimeInfoList: List<SyncRuntimeInfo>): List<String> {
-        return database.transactionWithResult {
-            syncRuntimeInfoList.mapNotNull {
-                update(it)
-            }
-        }
-    }
-
-    fun update(syncRuntimeInfo: SyncRuntimeInfo, todo: () -> Unit = {}): String? {
+    private fun updateTemplate(
+        syncRuntimeInfo: SyncRuntimeInfo,
+        todo: () -> Unit = {},
+        updateAction: (SyncRuntimeInfo) -> Boolean,
+    ): String? {
         var change = false
         database.transactionWithResult {
-
-            val hostInfoArrayJson = jsonUtils.JSON.encodeToString(syncRuntimeInfo.hostInfoList)
-
-            syncRuntimeInfoDatabaseQueries.updateSyncRuntimeInfo(
-                syncRuntimeInfo.appVersion,
-                syncRuntimeInfo.userName,
-                syncRuntimeInfo.deviceId,
-                syncRuntimeInfo.deviceName,
-                syncRuntimeInfo.platform.name,
-                syncRuntimeInfo.platform.arch,
-                syncRuntimeInfo.platform.bitMode.toLong(),
-                syncRuntimeInfo.platform.version,
-                hostInfoArrayJson,
-                syncRuntimeInfo.port.toLong(),
-                syncRuntimeInfo.noteName,
-                syncRuntimeInfo.connectNetworkPrefixLength?.toLong(),
-                syncRuntimeInfo.connectHostAddress,
-                syncRuntimeInfo.connectState.toLong(),
-                syncRuntimeInfo.allowSend,
-                syncRuntimeInfo.allowReceive,
-                nowEpochMilliseconds(),
-                syncRuntimeInfo.appInstanceId,
-            )
-            change = syncRuntimeInfoDatabaseQueries.change().executeAsOne() > 0
+            change = updateAction(syncRuntimeInfo)
             if (change) {
                 todo()
             }
@@ -74,119 +49,126 @@ class SyncRuntimeInfoDao(private val database: Database) {
         }
     }
 
-    fun updateNoteName(appInstanceId: String, noteName: String?) {
-        syncRuntimeInfoDatabaseQueries.updateNoteName(
-            noteName,
-            nowEpochMilliseconds(),
-            appInstanceId,
-        )
-    }
-
-    fun deleteSyncRuntimeInfo(appInstanceId: String) {
-        database.transaction {
-            syncRuntimeInfoDatabaseQueries.deleteSyncRuntimeInfo(appInstanceId)
+    fun updateConnectInfo(syncRuntimeInfo: SyncRuntimeInfo, todo: () -> Unit): String? {
+        return updateTemplate(syncRuntimeInfo, todo) {
+            syncRuntimeInfoDatabaseQueries.updateConnectInfo(
+                syncRuntimeInfo.port.toLong(),
+                syncRuntimeInfo.connectNetworkPrefixLength?.toLong(),
+                syncRuntimeInfo.connectHostAddress,
+                syncRuntimeInfo.connectState.toLong(),
+                nowEpochMilliseconds(),
+                syncRuntimeInfo.appInstanceId,
+            )
+            syncRuntimeInfoDatabaseQueries.change().executeAsOne() > 0
         }
     }
 
-    fun insertOrUpdateSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo): ChangeType {
+    fun updateAllowReceive(syncRuntimeInfo: SyncRuntimeInfo, todo: () -> Unit): String? {
+        return updateTemplate(syncRuntimeInfo, todo) {
+            syncRuntimeInfoDatabaseQueries.updateAllowReceive(
+                syncRuntimeInfo.allowReceive,
+                nowEpochMilliseconds(),
+                syncRuntimeInfo.appInstanceId,
+            )
+            syncRuntimeInfoDatabaseQueries.change().executeAsOne() > 0
+        }
+    }
+
+    fun updateAllowSend(syncRuntimeInfo: SyncRuntimeInfo, todo: () -> Unit): String? {
+        return updateTemplate(syncRuntimeInfo, todo) {
+            syncRuntimeInfoDatabaseQueries.updateAllowSend(
+                syncRuntimeInfo.allowSend,
+                nowEpochMilliseconds(),
+                syncRuntimeInfo.appInstanceId,
+            )
+            syncRuntimeInfoDatabaseQueries.change().executeAsOne() > 0
+        }
+    }
+
+    fun updateNoteName(syncRuntimeInfo: SyncRuntimeInfo, todo: () -> Unit): String? {
+        return updateTemplate(syncRuntimeInfo, todo) {
+            syncRuntimeInfoDatabaseQueries.updateNoteName(
+                syncRuntimeInfo.noteName,
+                nowEpochMilliseconds(),
+                syncRuntimeInfo.appInstanceId,
+            )
+            syncRuntimeInfoDatabaseQueries.change().executeAsOne() > 0
+        }
+    }
+
+    fun deleteSyncRuntimeInfo(appInstanceId: String) {
+        syncRuntimeInfoDatabaseQueries.deleteSyncRuntimeInfo(appInstanceId)
+    }
+
+    // only use in GeneralSyncManager，if want to insertOrUpdateSyncInfo SyncRuntimeInfo
+    // use SyncManager.updateSyncInfo，it will refresh connect state
+    fun insertOrUpdateSyncInfo(syncInfo: SyncInfo): Pair<ChangeType, SyncRuntimeInfo> {
         return database.transactionWithResult {
             val now = nowEpochMilliseconds()
-            val hostInfoArrayJson = jsonUtils.JSON.encodeToString(syncRuntimeInfo.hostInfoList)
+            val hostInfoArrayJson = jsonUtils.JSON.encodeToString(syncInfo.endpointInfo.hostInfoList)
             syncRuntimeInfoDatabaseQueries.getSyncRuntimeInfo(
-                syncRuntimeInfo.appInstanceId,
+                syncInfo.appInfo.appInstanceId,
                 SyncRuntimeInfo::mapper,
             ).executeAsOneOrNull()?.let {
-                syncRuntimeInfoDatabaseQueries.updateSyncRuntimeInfo(
-                    syncRuntimeInfo.appVersion,
-                    syncRuntimeInfo.userName,
-                    syncRuntimeInfo.deviceId,
-                    syncRuntimeInfo.deviceName,
-                    syncRuntimeInfo.platform.name,
-                    syncRuntimeInfo.platform.arch,
-                    syncRuntimeInfo.platform.bitMode.toLong(),
-                    syncRuntimeInfo.platform.version,
+                syncRuntimeInfoDatabaseQueries.updateSyncInfo(
+                    syncInfo.appInfo.appVersion,
+                    syncInfo.appInfo.userName,
+                    syncInfo.endpointInfo.deviceId,
+                    syncInfo.endpointInfo.deviceName,
+                    syncInfo.endpointInfo.platform.name,
+                    syncInfo.endpointInfo.platform.arch,
+                    syncInfo.endpointInfo.platform.bitMode.toLong(),
+                    syncInfo.endpointInfo.platform.version,
                     hostInfoArrayJson,
-                    syncRuntimeInfo.port.toLong(),
-                    syncRuntimeInfo.noteName,
-                    syncRuntimeInfo.connectNetworkPrefixLength?.toLong(),
-                    syncRuntimeInfo.connectHostAddress,
-                    syncRuntimeInfo.connectState.toLong(),
-                    syncRuntimeInfo.allowSend,
-                    syncRuntimeInfo.allowReceive,
+                    syncInfo.endpointInfo.port.toLong(),
                     now,
-                    syncRuntimeInfo.appInstanceId,
+                    syncInfo.appInfo.appInstanceId,
                 )
-                getChangeType(it, syncRuntimeInfo)
+                getChangeType(it, syncInfo)
             } ?: run {
+                val syncRuntimeInfo = createSyncRuntimeInfo(syncInfo)
                 syncRuntimeInfoDatabaseQueries.createSyncRuntimeInfo(
-                    syncRuntimeInfo.appInstanceId,
-                    syncRuntimeInfo.appVersion,
-                    syncRuntimeInfo.userName,
-                    syncRuntimeInfo.deviceId,
-                    syncRuntimeInfo.deviceName,
-                    syncRuntimeInfo.platform.name,
-                    syncRuntimeInfo.platform.arch,
-                    syncRuntimeInfo.platform.bitMode.toLong(),
-                    syncRuntimeInfo.platform.version,
+                    syncInfo.appInfo.appInstanceId,
+                    syncInfo.appInfo.appVersion,
+                    syncInfo.appInfo.userName,
+                    syncInfo.endpointInfo.deviceId,
+                    syncInfo.endpointInfo.deviceName,
+                    syncInfo.endpointInfo.platform.name,
+                    syncInfo.endpointInfo.platform.arch,
+                    syncInfo.endpointInfo.platform.bitMode.toLong(),
+                    syncInfo.endpointInfo.platform.version,
                     hostInfoArrayJson,
-                    syncRuntimeInfo.port.toLong(),
-                    syncRuntimeInfo.noteName,
-                    syncRuntimeInfo.connectNetworkPrefixLength?.toLong(),
-                    syncRuntimeInfo.connectHostAddress,
-                    syncRuntimeInfo.connectState.toLong(),
-                    syncRuntimeInfo.allowSend,
-                    syncRuntimeInfo.allowReceive,
+                    syncInfo.endpointInfo.port.toLong(),
+                    SyncState.DISCONNECTED.toLong(),
                     now,
                     now,
                 )
-                ChangeType.NEW_INSTANCE
+                Pair(ChangeType.NEW_INSTANCE, syncRuntimeInfo)
             }
         }
     }
 
     private fun getChangeType(
         syncRuntimeInfo: SyncRuntimeInfo,
-        newSyncRuntimeInfo: SyncRuntimeInfo,
-    ): ChangeType {
-        var netChange = false
-        var infoChange = false
-
-        fun <T> updateField(
-            field: KProperty1<SyncRuntimeInfo, T>,
-            isNetField: Boolean = false,
-            customEquals: ((T, T) -> Boolean)? = null,
-        ): Boolean {
-            val oldValue = field.get(syncRuntimeInfo)
-            val newValue = field.get(newSyncRuntimeInfo)
-            val areEqual = customEquals?.invoke(oldValue, newValue) ?: (oldValue == newValue)
-            return if (!areEqual) {
-                if (isNetField) {
-                    netChange = true
-                } else {
-                    infoChange = true
-                }
-                true
-            } else {
-                false
-            }
+        newSyncInfo: SyncInfo,
+    ): Pair<ChangeType, SyncRuntimeInfo> {
+        val changeType = if (
+            hostInfoListEqual(syncRuntimeInfo.hostInfoList, newSyncInfo.endpointInfo.hostInfoList) ||
+            syncRuntimeInfo.port != newSyncInfo.endpointInfo.port)
+        {
+            ChangeType.NET_CHANGE
+        } else if (syncRuntimeInfo.appVersion != newSyncInfo.appInfo.appVersion ||
+            syncRuntimeInfo.userName != newSyncInfo.appInfo.userName ||
+            syncRuntimeInfo.deviceId != newSyncInfo.endpointInfo.deviceId ||
+            syncRuntimeInfo.deviceName != newSyncInfo.endpointInfo.deviceName ||
+            syncRuntimeInfo.platform != newSyncInfo.endpointInfo.platform)
+        {
+            ChangeType.INFO_CHANGE
+        } else {
+            ChangeType.NO_CHANGE
         }
 
-        // Update network-related fields
-        updateField(SyncRuntimeInfo::hostInfoList, true, this::hostInfoListEqual)
-        updateField(SyncRuntimeInfo::port, true)
-
-        // Update info-related fields
-        updateField(SyncRuntimeInfo::appVersion)
-        updateField(SyncRuntimeInfo::userName)
-        updateField(SyncRuntimeInfo::deviceId)
-        updateField(SyncRuntimeInfo::deviceName)
-        updateField(SyncRuntimeInfo::platform)
-
-        return when {
-            netChange -> ChangeType.NET_CHANGE
-            infoChange -> ChangeType.INFO_CHANGE
-            else -> ChangeType.NO_CHANGE
-        }
+        return Pair(changeType, updateSyncRuntimeInfo(syncRuntimeInfo, newSyncInfo))
     }
 
     private fun hostInfoListEqual(

@@ -29,14 +29,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import com.crosspaste.db.sync.SyncRuntimeInfo.Companion.createSyncRuntimeInfo
-import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.DefaultTextField
 import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.theme.AppUIColors
@@ -76,7 +75,7 @@ fun AddDeviceManuallyForm() {
     val copywriter = koinInject<GlobalCopywriter>()
     val notificationManager = koinInject<NotificationManager>()
     val syncClientApi = koinInject<SyncClientApi>()
-    val syncRuntimeInfoDao = koinInject<SyncRuntimeInfoDao>()
+    val syncManager = koinInject<SyncManager>()
 
     Row(
         modifier =
@@ -209,8 +208,7 @@ fun AddDeviceManuallyForm() {
                         is SuccessResult -> {
                             // add device
                             val syncInfo = result.getResult<SyncInfo>()
-                            val newSyncRuntimeInfo = createSyncRuntimeInfo(syncInfo)
-                            syncRuntimeInfoDao.insertOrUpdateSyncRuntimeInfo(newSyncRuntimeInfo)
+                            syncManager.updateSyncInfo(syncInfo)
                             ip = ""
                             port = ""
                         }

@@ -15,8 +15,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import com.crosspaste.app.AppControl
 import com.crosspaste.config.ConfigManager
-import com.crosspaste.db.sync.SyncRuntimeInfo.Companion.createSyncRuntimeInfo
-import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.NearbyDeviceManager
@@ -42,7 +40,6 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
     val copywriter = koinInject<GlobalCopywriter>()
     val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
     val deviceViewProvider = koinInject<DeviceViewProvider>()
-    val syncRuntimeInfoDao = koinInject<SyncRuntimeInfoDao>()
     val syncManager = koinInject<SyncManager>()
     val configManager = koinInject<ConfigManager>()
     val jsonUtils = getJsonUtils()
@@ -55,8 +52,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
             modifier = Modifier.height(xxLarge),
             onClick = {
                 if (appControl.isDeviceConnectionEnabled(syncManager.getSyncHandlers().size + 1)) {
-                    val newSyncRuntimeInfo = createSyncRuntimeInfo(syncInfo)
-                    syncRuntimeInfoDao.insertOrUpdateSyncRuntimeInfo(newSyncRuntimeInfo)
+                    syncManager.updateSyncInfo(syncInfo)
                 }
             },
             shape = tiny3XRoundedCornerShape,

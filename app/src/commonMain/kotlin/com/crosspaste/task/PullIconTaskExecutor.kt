@@ -51,7 +51,7 @@ class PullIconTaskExecutor(
                         val iconPath = userDataPathProvider.resolve("$source.png", AppFileType.ICON)
                         if (!fileUtils.existFile(iconPath)) {
                             syncManager.getSyncHandlers()[appInstanceId]?.let {
-                                val port = it.syncRuntimeInfo.port
+                                val port = it.getCurrentSyncRuntimeInfo().port
                                 it.getConnectHostAddress()?.let { host ->
                                     pullIcon(source, iconPath, host, port, baseExtraInfo)
                                 } ?: run {

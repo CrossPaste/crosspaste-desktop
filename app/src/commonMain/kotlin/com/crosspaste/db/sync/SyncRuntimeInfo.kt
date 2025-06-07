@@ -88,6 +88,21 @@ data class SyncRuntimeInfo(
                 port = syncInfo.endpointInfo.port,
             )
         }
+
+        fun updateSyncRuntimeInfo(
+            syncRuntimeInfo: SyncRuntimeInfo,
+            syncInfo: SyncInfo,
+        ): SyncRuntimeInfo {
+            return syncRuntimeInfo.copy(
+                appVersion = syncInfo.appInfo.appVersion,
+                userName = syncInfo.appInfo.userName,
+                deviceId = syncInfo.endpointInfo.deviceId,
+                deviceName = syncInfo.endpointInfo.deviceName,
+                platform = syncInfo.endpointInfo.platform,
+                hostInfoList = syncInfo.endpointInfo.hostInfoList,
+                port = syncInfo.endpointInfo.port,
+            )
+        }
     }
 
     fun getDeviceDisplayName(): String {

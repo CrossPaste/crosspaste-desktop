@@ -3,7 +3,6 @@ package com.crosspaste.sync
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.RatingPromptManager
 import com.crosspaste.config.ConfigManager
-import com.crosspaste.db.sync.SyncRuntimeInfo.Companion.createSyncRuntimeInfo
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import com.crosspaste.utils.getJsonUtils
@@ -60,22 +59,17 @@ class GeneralNearbyDeviceManager(
             val currentAllSyncInfos = _allSyncInfos.value
 
             // Handle existing sync infos
-            val existSyncRuntimeInfos =
+            val existSyncInfos =
                 currentAllSyncInfos
                     .filter { !isNew(it.key) }
-                    .map { createSyncRuntimeInfo(it.value) }
+                    .map { it.value }
 
-            if (existSyncRuntimeInfos.isNotEmpty()) {
-                for (syncRuntimeInfo in existSyncRuntimeInfos) {
+            if (existSyncInfos.isNotEmpty()) {
+                for (syncInfo in existSyncInfos) {
                     withContext(ioDispatcher) {
-                        syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]?.let { syncHandler ->
-                            syncHandler.updateSyncRuntimeInfo {
-                                syncRuntimeInfo
-                            }
-                        }
+                        syncManager.updateSyncInfo(syncInfo)
                     }
                 }
-                syncManager.refresh(existSyncRuntimeInfos.map { it.appInstanceId })
             }
 
             // Update syncInfos with new, non-blacklisted devices

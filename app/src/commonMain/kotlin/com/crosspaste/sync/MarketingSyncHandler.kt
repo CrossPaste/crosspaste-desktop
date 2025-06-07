@@ -4,10 +4,18 @@ import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.net.VersionRelation
 
 class MarketingSyncHandler(
-    override var syncRuntimeInfo: SyncRuntimeInfo,
+    private var syncRuntimeInfo: SyncRuntimeInfo,
 ) : SyncHandler {
 
     override var versionRelation: VersionRelation = VersionRelation.EQUAL_TO
+
+    override fun getCurrentSyncRuntimeInfo(): SyncRuntimeInfo {
+        return syncRuntimeInfo
+    }
+
+    override suspend fun setCurrentSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo) {
+        this.syncRuntimeInfo = syncRuntimeInfo
+    }
 
     override suspend fun getConnectHostAddress(): String? {
         return syncRuntimeInfo.connectHostAddress
@@ -16,8 +24,16 @@ class MarketingSyncHandler(
     override suspend fun forceResolve() {
     }
 
-    override suspend fun updateSyncRuntimeInfo(doUpdate: (SyncRuntimeInfo) -> SyncRuntimeInfo): SyncRuntimeInfo? {
-        return syncRuntimeInfo
+    override suspend fun updateAllowSend(allowSend: Boolean): SyncRuntimeInfo? {
+        return syncRuntimeInfo.copy(allowSend = allowSend)
+    }
+
+    override suspend fun updateAllowReceive(allowReceive: Boolean): SyncRuntimeInfo? {
+        return syncRuntimeInfo.copy(allowReceive = allowReceive)
+    }
+
+    override suspend fun updateNoteName(noteName: String): SyncRuntimeInfo? {
+        return syncRuntimeInfo.copy(noteName = noteName)
     }
 
     override suspend fun tryDirectUpdateConnected() {
