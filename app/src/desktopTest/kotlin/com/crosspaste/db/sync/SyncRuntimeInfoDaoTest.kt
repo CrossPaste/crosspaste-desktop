@@ -63,7 +63,7 @@ class SyncRuntimeInfoDaoTest {
             assertEquals(testSyncRuntimeInfo.connectState, initialList[0].connectState)
 
             // Update the data using the update function
-            syncRuntimeInfoDao.updateConnectInfo(updatedSyncRuntimeInfo)
+            syncRuntimeInfoDao.updateConnectInfo(updatedSyncRuntimeInfo) {}
 
             // Verify the Flow emits the updated value
             val updatedList = awaitItem()
@@ -84,16 +84,13 @@ class SyncRuntimeInfoDaoTest {
         // Pre-insert test data
         syncRuntimeInfoDao.insertOrUpdateSyncInfo(testSyncInfo)
 
-        // Create update list
-        val updatedList = listOf(updatedSyncRuntimeInfo)
-
         syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow().test {
             // Verify initial value
             val initialList = awaitItem()
             assertEquals(1, initialList.size)
 
             // Update data using updateList
-            syncRuntimeInfoDao.updateList(updatedList)
+            syncRuntimeInfoDao.updateConnectInfo(updatedSyncRuntimeInfo) {}
 
             // Verify the Flow emits the updated value
             val updatedItems = awaitItem()

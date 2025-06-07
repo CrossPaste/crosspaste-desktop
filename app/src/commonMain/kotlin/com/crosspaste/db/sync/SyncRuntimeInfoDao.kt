@@ -30,26 +30,14 @@ class SyncRuntimeInfoDao(private val database: Database) {
         return createGetAllSyncRuntimeInfosQuery().executeAsList()
     }
 
-    fun updateList(syncRuntimeInfoList: List<SyncRuntimeInfo>): List<String> {
-        return database.transactionWithResult {
-            syncRuntimeInfoList.mapNotNull {
-                updateConnectInfo(it)
-            }
-        }
-    }
-
-    fun updateConnectInfo(syncRuntimeInfo: SyncRuntimeInfo, todo: () -> Unit = {}): String? {
+    private fun updateTemplate(
+        syncRuntimeInfo: SyncRuntimeInfo,
+        todo: () -> Unit = {},
+        updateAction: (SyncRuntimeInfo) -> Boolean,
+    ): String? {
         var change = false
         database.transactionWithResult {
-            syncRuntimeInfoDatabaseQueries.updateConnectInfo(
-                syncRuntimeInfo.port.toLong(),
-                syncRuntimeInfo.connectNetworkPrefixLength?.toLong(),
-                syncRuntimeInfo.connectHostAddress,
-                syncRuntimeInfo.connectState.toLong(),
-                nowEpochMilliseconds(),
-                syncRuntimeInfo.appInstanceId,
-            )
-            change = syncRuntimeInfoDatabaseQueries.change().executeAsOne() > 0
+            change = updateAction(syncRuntimeInfo)
             if (change) {
                 todo()
             }
@@ -61,12 +49,51 @@ class SyncRuntimeInfoDao(private val database: Database) {
         }
     }
 
-    fun updateNoteName(appInstanceId: String, noteName: String?) {
-        syncRuntimeInfoDatabaseQueries.updateNoteName(
-            noteName,
-            nowEpochMilliseconds(),
-            appInstanceId,
-        )
+    fun updateConnectInfo(syncRuntimeInfo: SyncRuntimeInfo, todo: () -> Unit): String? {
+        return updateTemplate(syncRuntimeInfo, todo) {
+            syncRuntimeInfoDatabaseQueries.updateConnectInfo(
+                syncRuntimeInfo.port.toLong(),
+                syncRuntimeInfo.connectNetworkPrefixLength?.toLong(),
+                syncRuntimeInfo.connectHostAddress,
+                syncRuntimeInfo.connectState.toLong(),
+                nowEpochMilliseconds(),
+                syncRuntimeInfo.appInstanceId,
+            )
+            syncRuntimeInfoDatabaseQueries.change().executeAsOne() > 0
+        }
+    }
+
+    fun updateAllowReceive(syncRuntimeInfo: SyncRuntimeInfo, todo: () -> Unit): String? {
+        return updateTemplate(syncRuntimeInfo, todo) {
+            syncRuntimeInfoDatabaseQueries.updateAllowReceive(
+                syncRuntimeInfo.allowReceive,
+                nowEpochMilliseconds(),
+                syncRuntimeInfo.appInstanceId,
+            )
+            syncRuntimeInfoDatabaseQueries.change().executeAsOne() > 0
+        }
+    }
+
+    fun updateAllowSend(syncRuntimeInfo: SyncRuntimeInfo, todo: () -> Unit): String? {
+        return updateTemplate(syncRuntimeInfo, todo) {
+            syncRuntimeInfoDatabaseQueries.updateAllowSend(
+                syncRuntimeInfo.allowSend,
+                nowEpochMilliseconds(),
+                syncRuntimeInfo.appInstanceId,
+            )
+            syncRuntimeInfoDatabaseQueries.change().executeAsOne() > 0
+        }
+    }
+
+    fun updateNoteName(syncRuntimeInfo: SyncRuntimeInfo, todo: () -> Unit): String? {
+        return updateTemplate(syncRuntimeInfo, todo) {
+            syncRuntimeInfoDatabaseQueries.updateNoteName(
+                syncRuntimeInfo.noteName,
+                nowEpochMilliseconds(),
+                syncRuntimeInfo.appInstanceId,
+            )
+            syncRuntimeInfoDatabaseQueries.change().executeAsOne() > 0
+        }
     }
 
     fun deleteSyncRuntimeInfo(appInstanceId: String) {

@@ -209,18 +209,54 @@ class GeneralSyncHandler(
         }
     }
 
-    override suspend fun updateSyncRuntimeInfo(doUpdate: (SyncRuntimeInfo) -> SyncRuntimeInfo): SyncRuntimeInfo? {
-        return mutex.withLock {
-            update(doUpdate)
-        }
-    }
-
-    private fun update(doUpdate: (SyncRuntimeInfo) -> SyncRuntimeInfo): SyncRuntimeInfo? {
+    private fun update(
+        doUpdate: (SyncRuntimeInfo) -> SyncRuntimeInfo,
+        daoUpdate: (SyncRuntimeInfo, todo: () -> Unit) -> String?,
+    ): SyncRuntimeInfo? {
         val newSyncRuntimeInfo = doUpdate(syncRuntimeInfo)
-        return syncRuntimeInfoDao.updateConnectInfo(newSyncRuntimeInfo) {
+        return daoUpdate(newSyncRuntimeInfo) {
             syncRuntimeInfo = newSyncRuntimeInfo
         }?.let {
             newSyncRuntimeInfo
+        }
+    }
+
+    override suspend fun updateAllowSend(allowSend: Boolean): SyncRuntimeInfo? {
+        val doUpdate: (SyncRuntimeInfo) -> SyncRuntimeInfo = { syncRuntimeInfo ->
+            syncRuntimeInfo.copy(allowSend = allowSend)
+        }
+        return mutex.withLock {
+            update(doUpdate) { syncRuntimeInfo, todo ->
+                syncRuntimeInfoDao.updateAllowSend(syncRuntimeInfo, todo)
+            }
+        }
+    }
+
+    override suspend fun updateAllowReceive(allowReceive: Boolean): SyncRuntimeInfo? {
+        val doUpdate: (SyncRuntimeInfo) -> SyncRuntimeInfo = { syncRuntimeInfo ->
+            syncRuntimeInfo.copy(allowReceive = allowReceive)
+        }
+        return mutex.withLock {
+            update(doUpdate) { syncRuntimeInfo, todo ->
+                syncRuntimeInfoDao.updateAllowReceive(syncRuntimeInfo, todo)
+            }
+        }
+    }
+
+    override suspend fun updateNoteName(noteName: String): SyncRuntimeInfo? {
+        val doUpdate: (SyncRuntimeInfo) -> SyncRuntimeInfo = { syncRuntimeInfo ->
+            syncRuntimeInfo.copy(noteName = noteName)
+        }
+        return mutex.withLock {
+            update(doUpdate) { syncRuntimeInfo, todo ->
+                syncRuntimeInfoDao.updateNoteName(syncRuntimeInfo, todo)
+            }
+        }
+    }
+
+    private fun updateConnectInfo(doUpdate: (SyncRuntimeInfo) -> SyncRuntimeInfo): SyncRuntimeInfo? {
+        return update(doUpdate) { syncRuntimeInfo, todo ->
+            syncRuntimeInfoDao.updateConnectInfo(syncRuntimeInfo, todo)
         }
     }
 
@@ -230,7 +266,7 @@ class GeneralSyncHandler(
                 val (hostInfo, versionRelation) = pair
                 logger.info { "$hostInfo to connecting, versionRelation: $versionRelation" }
                 this.versionRelation = versionRelation
-                update { syncRuntimeInfo ->
+                updateConnectInfo { syncRuntimeInfo ->
                     syncRuntimeInfo.copy(
                         connectHostAddress = hostInfo.hostAddress,
                         connectNetworkPrefixLength = hostInfo.networkPrefixLength,
@@ -246,7 +282,7 @@ class GeneralSyncHandler(
                 failTime = 0
                 recommendedRefreshTime = computeRefreshTime()
             } ?: run {
-                update { syncRuntimeInfo ->
+                updateConnectInfo { syncRuntimeInfo ->
                     syncRuntimeInfo.copy(
                         connectState = SyncState.DISCONNECTED,
                         modifyTime = nowEpochMilliseconds(),
@@ -263,7 +299,7 @@ class GeneralSyncHandler(
             val (hostInfo, versionRelation) = pair
             logger.info { "$hostInfo to connecting, versionRelation: $versionRelation" }
             this.versionRelation = versionRelation
-            update { syncRuntimeInfo ->
+            updateConnectInfo { syncRuntimeInfo ->
                 syncRuntimeInfo.copy(
                     connectHostAddress = hostInfo.hostAddress,
                     connectNetworkPrefixLength = hostInfo.networkPrefixLength,
@@ -278,7 +314,7 @@ class GeneralSyncHandler(
             }
         } ?: run {
             logger.info { "${syncRuntimeInfo.appInstanceId} to disconnected" }
-            update { syncRuntimeInfo ->
+            updateConnectInfo { syncRuntimeInfo ->
                 syncRuntimeInfo.copy(
                     connectState = SyncState.DISCONNECTED,
                     modifyTime = nowEpochMilliseconds(),
@@ -295,7 +331,7 @@ class GeneralSyncHandler(
                 when (state) {
                     SyncState.CONNECTED -> {
                         logger.info { "heartbeat success $host ${syncRuntimeInfo.port}" }
-                        update { syncRuntimeInfo ->
+                        updateConnectInfo { syncRuntimeInfo ->
                             syncRuntimeInfo.copy(
                                 connectState = SyncState.CONNECTED,
                                 modifyTime = nowEpochMilliseconds(),
@@ -312,7 +348,7 @@ class GeneralSyncHandler(
                     }
                     SyncState.INCOMPATIBLE -> {
                         logger.info { "heartbeat success and connectState is incompatible $host ${syncRuntimeInfo.port}" }
-                        update { syncRuntimeInfo ->
+                        updateConnectInfo { syncRuntimeInfo ->
                             syncRuntimeInfo.copy(
                                 connectState = SyncState.INCOMPATIBLE,
                                 modifyTime = nowEpochMilliseconds(),
@@ -321,7 +357,7 @@ class GeneralSyncHandler(
                     }
 
                     else -> {
-                        update { syncRuntimeInfo ->
+                        updateConnectInfo { syncRuntimeInfo ->
                             syncRuntimeInfo.copy(
                                 connectState = SyncState.DISCONNECTED,
                                 modifyTime = nowEpochMilliseconds(),
@@ -335,7 +371,7 @@ class GeneralSyncHandler(
             }
         } ?: run {
             logger.info { "${syncRuntimeInfo.platform.name} to disconnected" }
-            update { syncRuntimeInfo ->
+            updateConnectInfo { syncRuntimeInfo ->
                 syncRuntimeInfo.copy(
                     connectState = SyncState.DISCONNECTED,
                     modifyTime = nowEpochMilliseconds(),
@@ -407,7 +443,7 @@ class GeneralSyncHandler(
     ) {
         if (trustByTokenCache()) {
             logger.info { "trustByTokenCache success $host $port" }
-            update { syncRuntimeInfo ->
+            updateConnectInfo { syncRuntimeInfo ->
                 syncRuntimeInfo.copy(
                     connectState = SyncState.CONNECTED,
                     modifyTime = nowEpochMilliseconds(),
@@ -420,7 +456,7 @@ class GeneralSyncHandler(
                     this.versionRelation = versionRelation
                     if (versionRelation == VersionRelation.EQUAL_TO) {
                         logger.info { "telnet success $host $port" }
-                        update { syncRuntimeInfo ->
+                        updateConnectInfo { syncRuntimeInfo ->
                             syncRuntimeInfo.copy(
                                 connectState = SyncState.UNVERIFIED,
                                 modifyTime = nowEpochMilliseconds(),
@@ -428,7 +464,7 @@ class GeneralSyncHandler(
                         }
                     } else {
                         logger.info { "telnet fail $host $port" }
-                        update { syncRuntimeInfo ->
+                        updateConnectInfo { syncRuntimeInfo ->
                             syncRuntimeInfo.copy(
                                 connectState = SyncState.INCOMPATIBLE,
                                 modifyTime = nowEpochMilliseconds(),
@@ -438,7 +474,7 @@ class GeneralSyncHandler(
                     return@tryUseTokenCache
                 }
             }
-            update { syncRuntimeInfo ->
+            updateConnectInfo { syncRuntimeInfo ->
                 syncRuntimeInfo.copy(
                     connectState = SyncState.DISCONNECTED,
                     modifyTime = nowEpochMilliseconds(),
@@ -483,7 +519,7 @@ class GeneralSyncHandler(
                         buildUrl(host, syncRuntimeInfo.port)
                     }
                 if (result !is SuccessResult) {
-                    update { syncRuntimeInfo ->
+                    updateConnectInfo { syncRuntimeInfo ->
                         syncRuntimeInfo.copy(
                             connectState = SyncState.DISCONNECTED,
                             modifyTime = nowEpochMilliseconds(),
@@ -507,7 +543,7 @@ class GeneralSyncHandler(
 
     override suspend fun markExit() {
         logger.info { "markExit ${syncRuntimeInfo.appInstanceId}" }
-        update { syncRuntimeInfo ->
+        updateConnectInfo { syncRuntimeInfo ->
             syncRuntimeInfo.copy(
                 connectState = SyncState.DISCONNECTED,
                 modifyTime = nowEpochMilliseconds(),
