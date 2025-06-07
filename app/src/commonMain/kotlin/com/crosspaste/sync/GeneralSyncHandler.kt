@@ -34,7 +34,7 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.min
 
 class GeneralSyncHandler(
-    override var syncRuntimeInfo: SyncRuntimeInfo,
+    private var syncRuntimeInfo: SyncRuntimeInfo,
     private val ratingPromptManager: RatingPromptManager,
     private val secureStore: SecureStore,
     private val syncClientApi: SyncClientApi,
@@ -73,6 +73,16 @@ class GeneralSyncHandler(
                     }
                 }
             }
+    }
+
+    override fun getCurrentSyncRuntimeInfo(): SyncRuntimeInfo {
+        return syncRuntimeInfo
+    }
+
+    override suspend fun setCurrentSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo) {
+        return mutex.withLock {
+            this.syncRuntimeInfo = syncRuntimeInfo
+        }
     }
 
     private suspend fun pollingResolve() {
@@ -201,13 +211,13 @@ class GeneralSyncHandler(
 
     override suspend fun updateSyncRuntimeInfo(doUpdate: (SyncRuntimeInfo) -> SyncRuntimeInfo): SyncRuntimeInfo? {
         return mutex.withLock {
-            update { doUpdate(it) }
+            update(doUpdate)
         }
     }
 
     private fun update(doUpdate: (SyncRuntimeInfo) -> SyncRuntimeInfo): SyncRuntimeInfo? {
         val newSyncRuntimeInfo = doUpdate(syncRuntimeInfo)
-        return syncRuntimeInfoDao.update(newSyncRuntimeInfo) {
+        return syncRuntimeInfoDao.updateConnectInfo(newSyncRuntimeInfo) {
             syncRuntimeInfo = newSyncRuntimeInfo
         }?.let {
             newSyncRuntimeInfo

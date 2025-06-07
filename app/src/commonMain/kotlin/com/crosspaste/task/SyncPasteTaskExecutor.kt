@@ -72,7 +72,7 @@ class SyncPasteTaskExecutor(
 
     private fun getEligibleSyncHandlers(syncExtraInfo: SyncExtraInfo): Map<String, SyncHandler> {
         return syncManager.getSyncHandlers().filter { (key, handler) ->
-            handler.syncRuntimeInfo.allowSend &&
+            handler.getCurrentSyncRuntimeInfo().allowSend &&
                 handler.versionRelation == VersionRelation.EQUAL_TO &&
                 (syncExtraInfo.syncFails.isEmpty() || syncExtraInfo.syncFails.contains(key))
         }
@@ -129,8 +129,9 @@ class SyncPasteTaskExecutor(
         pasteData: PasteData,
         hostAddress: String,
     ): ClientApiResult {
-        val port = handler.syncRuntimeInfo.port
-        val targetAppInstanceId = handler.syncRuntimeInfo.appInstanceId
+        val syncRuntimeInfo = handler.getCurrentSyncRuntimeInfo()
+        val port = syncRuntimeInfo.port
+        val targetAppInstanceId = syncRuntimeInfo.appInstanceId
 
         return if (appControl.isSendEnabled()) {
             pasteClientApi.sendPaste(

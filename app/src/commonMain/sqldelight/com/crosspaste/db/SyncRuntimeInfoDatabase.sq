@@ -35,16 +35,11 @@ INSERT INTO SyncRuntimeInfoEntity(
   platformVersion,
   hostInfo,
   port,
-  noteName,
-  connectNetworkPrefixLength,
-  connectHostAddress,
   connectState,
-  allowSend,
-  allowReceive,
   createTime,
   modifyTime
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 getAllSyncRuntimeInfos:
 SELECT * FROM SyncRuntimeInfoEntity ORDER BY createTime DESC;
@@ -52,7 +47,7 @@ SELECT * FROM SyncRuntimeInfoEntity ORDER BY createTime DESC;
 getSyncRuntimeInfo:
 SELECT * FROM SyncRuntimeInfoEntity WHERE appInstanceId = ?;
 
-updateSyncRuntimeInfo:
+updateSyncInfo:
 UPDATE SyncRuntimeInfoEntity SET
   appVersion = ?,
   userName = ?,
@@ -64,12 +59,15 @@ UPDATE SyncRuntimeInfoEntity SET
   platformVersion = ?,
   hostInfo = ?,
   port = ?,
-  noteName = ?,
+  modifyTime = ?
+WHERE appInstanceId = ?;
+
+updateConnectInfo:
+UPDATE SyncRuntimeInfoEntity SET
+  port = ?,
   connectNetworkPrefixLength = ?,
   connectHostAddress = ?,
   connectState = ?,
-  allowSend = ?,
-  allowReceive = ?,
   modifyTime = ?
 WHERE appInstanceId = ?;
 

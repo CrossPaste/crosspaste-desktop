@@ -3,7 +3,6 @@ package com.crosspaste.sync
 import com.crosspaste.app.RatingPromptManager
 import com.crosspaste.db.sync.ChangeType
 import com.crosspaste.db.sync.SyncRuntimeInfo
-import com.crosspaste.db.sync.SyncRuntimeInfo.Companion.createSyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.dto.sync.SyncInfo
@@ -241,11 +240,21 @@ class GeneralSyncManager(
 
     override fun updateSyncInfo(syncInfo: SyncInfo) {
         realTimeSyncScope.launch(CoroutineName("UpdateSyncInfo")) {
-            val newSyncRuntimeInfo = createSyncRuntimeInfo(syncInfo)
-            if (syncRuntimeInfoDao.insertOrUpdateSyncRuntimeInfo(newSyncRuntimeInfo) ==
-                ChangeType.NO_CHANGE
+            val (changeType, syncRuntimeInfo) = syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo)
+
+            if (changeType != ChangeType.NO_CHANGE &&
+                changeType != ChangeType.NEW_INSTANCE
+            ) {
+                getSyncHandler(syncInfo.appInfo.appInstanceId)
+                    ?.setCurrentSyncRuntimeInfo(syncRuntimeInfo)
+            }
+
+            if (changeType == ChangeType.NO_CHANGE ||
+                changeType == ChangeType.INFO_CHANGE
             ) {
                 getSyncHandler(syncInfo.appInfo.appInstanceId)?.tryDirectUpdateConnected()
+            } else if (changeType == ChangeType.NET_CHANGE) {
+                refresh(listOf(syncRuntimeInfo.appInstanceId))
             }
         }
     }

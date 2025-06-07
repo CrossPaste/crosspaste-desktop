@@ -90,7 +90,7 @@ class PullFileTaskExecutor(
             }
 
             syncManager.getSyncHandlers()[appInstanceId]?.let {
-                val port = it.syncRuntimeInfo.port
+                val port = it.getCurrentSyncRuntimeInfo().port
 
                 it.getConnectHostAddress()?.let { host ->
                     pullFiles(pasteData, host, port, filesIndex, pullExtraInfo)
