@@ -29,7 +29,7 @@ class MarketingSyncHandler(
     }
 
     override suspend fun updateAllowReceive(allowReceive: Boolean): SyncRuntimeInfo? {
-        return syncRuntimeInfo.copy(allowSend = allowReceive)
+        return syncRuntimeInfo.copy(allowReceive = allowReceive)
     }
 
     override suspend fun updateNoteName(noteName: String): SyncRuntimeInfo? {
