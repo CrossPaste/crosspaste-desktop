@@ -165,10 +165,8 @@ class PasteDao(
     }
 
     fun deletePasteData(id: Long) {
-        database.transaction {
-            getDeletePasteData(id)?.clear(userDataPathProvider)
-            pasteDatabaseQueries.deletePasteData(listOf(id))
-        }
+        getDeletePasteData(id)?.clear(userDataPathProvider)
+        pasteDatabaseQueries.deletePasteData(listOf(id))
     }
 
     fun getPasteDataFlow(limit: Long): Flow<List<PasteData>> {
