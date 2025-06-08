@@ -84,9 +84,7 @@ fun CrossPasteSearchWindowContent() {
                         when (it.key) {
                             Key.Enter -> {
                                 mainCoroutineDispatcher.launch {
-                                    appWindowManager.setSearchCursorWait()
                                     pasteSelectionViewModel.toPaste()
-                                    appWindowManager.resetSearchCursor()
                                 }
                                 true
                             }
@@ -185,9 +183,7 @@ fun CrossPasteSearchWindowContent() {
                                 modifier =
                                     Modifier.clickable {
                                         mainCoroutineDispatcher.launch {
-                                            appWindowManager.setSearchCursorWait()
                                             pasteSelectionViewModel.toPaste()
-                                            appWindowManager.resetSearchCursor()
                                         }
                                     },
                             ) {

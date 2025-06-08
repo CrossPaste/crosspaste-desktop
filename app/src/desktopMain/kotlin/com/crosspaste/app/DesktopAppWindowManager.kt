@@ -24,7 +24,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.awt.Cursor
 import java.awt.Rectangle
 
 fun getDesktopAppWindowManager(
@@ -148,22 +147,6 @@ abstract class DesktopAppWindowManager(
 
     fun getSearchWindowState(): WindowState {
         return searchWindowState.value
-    }
-
-    override fun resetMainCursor() {
-        mainComposeWindow?.cursor = Cursor.getDefaultCursor()
-    }
-
-    override fun setMainCursorWait() {
-        mainComposeWindow?.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
-    }
-
-    override fun resetSearchCursor() {
-        searchComposeWindow?.cursor = Cursor.getDefaultCursor()
-    }
-
-    override fun setSearchCursorWait() {
-        searchComposeWindow?.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
     }
 
     abstract fun getCurrentActiveAppName(): String?
