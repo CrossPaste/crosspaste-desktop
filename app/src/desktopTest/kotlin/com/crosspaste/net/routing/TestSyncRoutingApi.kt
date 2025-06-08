@@ -7,8 +7,6 @@ import kotlinx.coroutines.CoroutineScope
 
 class TestSyncRoutingApi : SyncRoutingApi {
 
-    var exitState = false
-
     var syncInfo: SyncInfo? = null
 
     val innerSyncHandlers = mutableMapOf<String, SyncHandler>()
@@ -19,7 +17,10 @@ class TestSyncRoutingApi : SyncRoutingApi {
         return innerSyncHandlers
     }
 
-    override fun updateSyncInfo(syncInfo: SyncInfo) {
+    override fun updateSyncInfo(
+        syncInfo: SyncInfo,
+        refresh: Boolean,
+    ) {
         this.syncInfo = syncInfo
     }
 
