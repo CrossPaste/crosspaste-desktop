@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,7 +18,6 @@ import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.PasteDialogFactory
-import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
@@ -37,8 +35,6 @@ fun MyDevicesView(syncRuntimeInfos: List<SyncRuntimeInfo>) {
                     var inputNoteName by remember { mutableStateOf(syncRuntimeInfo.noteName ?: "") }
                     var isError by remember { mutableStateOf(false) }
 
-                    val scope = rememberCoroutineScope()
-
                     val cancelAction = {
                         dialogService.popDialog()
                     }
@@ -47,10 +43,8 @@ fun MyDevicesView(syncRuntimeInfos: List<SyncRuntimeInfo>) {
                         if (inputNoteName == "") {
                             isError = true
                         } else {
-                            syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]?.let {
-                                scope.launch {
-                                    it.updateNoteName(inputNoteName)
-                                }
+                            syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]?.let { syncHandler ->
+                                syncHandler.updateNoteName(inputNoteName) {}
                             }
                             dialogService.popDialog()
                         }

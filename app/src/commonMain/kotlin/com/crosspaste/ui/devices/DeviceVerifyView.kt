@@ -26,7 +26,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,8 +54,6 @@ import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
@@ -68,7 +65,6 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
     val tokens = remember { mutableStateListOf(*Array(tokenCount) { "" }) }
     var isError by remember { mutableStateOf(false) }
     val focusRequesters = remember { List(tokenCount) { FocusRequester() } }
-    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]?.showToken(syncRuntimeInfo)
@@ -84,7 +80,6 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
             syncManager = syncManager,
             syncRuntimeInfo = syncRuntimeInfo,
             dialogService = dialogService,
-            coroutineScope = coroutineScope,
         )
     }
     val cancelAction = {
@@ -294,13 +289,10 @@ fun confirmToken(
     syncManager: SyncManager,
     syncRuntimeInfo: SyncRuntimeInfo,
     dialogService: DialogService,
-    coroutineScope: CoroutineScope,
 ) {
     tokens.joinToString("").let { token ->
         if (token.length == tokenCount) {
-            coroutineScope.launch {
-                syncManager.trustByToken(syncRuntimeInfo.appInstanceId, token.toInt())
-            }
+            syncManager.trustByToken(syncRuntimeInfo.appInstanceId, token.toInt())
             dialogService.popDialog()
         } else {
             setError(true)

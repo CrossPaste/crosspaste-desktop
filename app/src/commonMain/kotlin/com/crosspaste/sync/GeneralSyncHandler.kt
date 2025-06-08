@@ -25,6 +25,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -61,18 +62,21 @@ class GeneralSyncHandler(
     private var syncInfo: SyncInfo? = null
 
     init {
-        job =
-            syncHandlerScope.launch {
-                while (isActive) {
-                    runCatching {
-                        pollingResolve()
-                    }.onFailure { e ->
-                        if (e !is CancellationException) {
-                            logger.error(e) { "polling error" }
-                        }
+        job = startJob()
+    }
+
+    private fun startJob(): Job {
+        return syncHandlerScope.launch {
+            while (isActive) {
+                runCatching {
+                    pollingResolve()
+                }.onFailure { e ->
+                    if (e !is CancellationException) {
+                        logger.error(e) { "polling error" }
                     }
                 }
             }
+        }
     }
 
     override fun getCurrentSyncRuntimeInfo(): SyncRuntimeInfo {
@@ -221,36 +225,57 @@ class GeneralSyncHandler(
         }
     }
 
-    override suspend fun updateAllowSend(allowSend: Boolean): SyncRuntimeInfo? {
+    override fun updateAllowSend(
+        allowSend: Boolean,
+        callback: (SyncRuntimeInfo?) -> Unit,
+    ) {
         val doUpdate: (SyncRuntimeInfo) -> SyncRuntimeInfo = { syncRuntimeInfo ->
             syncRuntimeInfo.copy(allowSend = allowSend)
         }
-        return mutex.withLock {
-            update(doUpdate) { syncRuntimeInfo, todo ->
-                syncRuntimeInfoDao.updateAllowSend(syncRuntimeInfo, todo)
-            }
+        syncHandlerScope.launch {
+            callback(
+                mutex.withLock {
+                    update(doUpdate) { syncRuntimeInfo, todo ->
+                        syncRuntimeInfoDao.updateAllowSend(syncRuntimeInfo, todo)
+                    }
+                },
+            )
         }
     }
 
-    override suspend fun updateAllowReceive(allowReceive: Boolean): SyncRuntimeInfo? {
+    override fun updateAllowReceive(
+        allowReceive: Boolean,
+        callback: (SyncRuntimeInfo?) -> Unit,
+    ) {
         val doUpdate: (SyncRuntimeInfo) -> SyncRuntimeInfo = { syncRuntimeInfo ->
             syncRuntimeInfo.copy(allowReceive = allowReceive)
         }
-        return mutex.withLock {
-            update(doUpdate) { syncRuntimeInfo, todo ->
-                syncRuntimeInfoDao.updateAllowReceive(syncRuntimeInfo, todo)
-            }
+        syncHandlerScope.launch {
+            callback(
+                mutex.withLock {
+                    update(doUpdate) { syncRuntimeInfo, todo ->
+                        syncRuntimeInfoDao.updateAllowReceive(syncRuntimeInfo, todo)
+                    }
+                },
+            )
         }
     }
 
-    override suspend fun updateNoteName(noteName: String): SyncRuntimeInfo? {
+    override fun updateNoteName(
+        noteName: String,
+        callback: (SyncRuntimeInfo?) -> Unit,
+    ) {
         val doUpdate: (SyncRuntimeInfo) -> SyncRuntimeInfo = { syncRuntimeInfo ->
             syncRuntimeInfo.copy(noteName = noteName)
         }
-        return mutex.withLock {
-            update(doUpdate) { syncRuntimeInfo, todo ->
-                syncRuntimeInfoDao.updateNoteName(syncRuntimeInfo, todo)
-            }
+        syncHandlerScope.launch {
+            callback(
+                mutex.withLock {
+                    update(doUpdate) { syncRuntimeInfo, todo ->
+                        syncRuntimeInfoDao.updateNoteName(syncRuntimeInfo, todo)
+                    }
+                },
+            )
         }
     }
 
@@ -539,6 +564,7 @@ class GeneralSyncHandler(
             }
         }
         job.cancel()
+        syncHandlerScope.cancel()
     }
 
     override suspend fun markExit() {
@@ -559,5 +585,6 @@ class GeneralSyncHandler(
             }
         }
         job.cancel()
+        syncHandlerScope.cancel()
     }
 }

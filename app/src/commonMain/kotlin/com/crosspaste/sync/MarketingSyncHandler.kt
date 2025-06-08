@@ -24,16 +24,25 @@ class MarketingSyncHandler(
     override suspend fun forceResolve() {
     }
 
-    override suspend fun updateAllowSend(allowSend: Boolean): SyncRuntimeInfo? {
-        return syncRuntimeInfo.copy(allowSend = allowSend)
+    override fun updateAllowSend(
+        allowSend: Boolean,
+        callback: (SyncRuntimeInfo?) -> Unit,
+    ) {
+        callback(syncRuntimeInfo.copy(allowSend = allowSend))
     }
 
-    override suspend fun updateAllowReceive(allowReceive: Boolean): SyncRuntimeInfo? {
-        return syncRuntimeInfo.copy(allowReceive = allowReceive)
+    override fun updateAllowReceive(
+        allowReceive: Boolean,
+        callback: (SyncRuntimeInfo?) -> Unit,
+    ) {
+        callback(syncRuntimeInfo.copy(allowReceive = allowReceive))
     }
 
-    override suspend fun updateNoteName(noteName: String): SyncRuntimeInfo? {
-        return syncRuntimeInfo.copy(noteName = noteName)
+    override fun updateNoteName(
+        noteName: String,
+        callback: (SyncRuntimeInfo?) -> Unit,
+    ) {
+        callback(syncRuntimeInfo.copy(noteName = noteName))
     }
 
     override suspend fun tryDirectUpdateConnected() {

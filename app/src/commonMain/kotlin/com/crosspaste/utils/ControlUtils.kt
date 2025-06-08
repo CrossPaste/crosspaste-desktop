@@ -10,11 +10,14 @@ expect fun getControlUtils(): ControlUtils
 interface ControlUtils {
 
     suspend fun <T> ensureMinExecutionTime(
-        delayTime: Int = 20,
+        delayTime: Long = 20L,
         action: suspend () -> T,
-    ): T {
+    ): T? {
         val start = nowEpochMilliseconds()
-        val result = action()
+        val result =
+            runCatching {
+                action()
+            }.getOrNull()
         val end = nowEpochMilliseconds()
 
         val remainingDelay = delayTime + start - end

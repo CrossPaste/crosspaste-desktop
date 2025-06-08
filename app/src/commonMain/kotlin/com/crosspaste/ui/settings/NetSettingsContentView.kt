@@ -23,7 +23,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,7 +43,6 @@ import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.getNetUtils
-import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
@@ -58,7 +56,6 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
 
     var ip: String? by remember { mutableStateOf(null) }
     var port: String? by remember { mutableStateOf(null) }
-    val scope = rememberCoroutineScope()
 
     val config by configManager.config.collectAsState()
 
@@ -170,9 +167,7 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
                             val newBlackList = jsonUtils.JSON.encodeToString(blackSyncInfos)
                             configManager.updateConfig("blacklist", newBlackList)
                             blacklist.remove(syncInfo)
-                            scope.launch {
-                                nearbyDeviceManager.refresh()
-                            }
+                            nearbyDeviceManager.refreshSyncManager()
                         }
 
                         if (index != blacklist.size - 1) {

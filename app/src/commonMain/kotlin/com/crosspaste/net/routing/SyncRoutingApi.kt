@@ -32,7 +32,10 @@ interface SyncRoutingApi {
         return getSyncHandlers()[appInstanceId]
     }
 
-    fun updateSyncInfo(syncInfo: SyncInfo)
+    fun updateSyncInfo(
+        syncInfo: SyncInfo,
+        refresh: Boolean,
+    )
 
     fun removeSyncHandler(id: String)
 }

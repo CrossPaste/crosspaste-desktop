@@ -27,7 +27,7 @@ fun DevicesContentView() {
     val syncManager = koinInject<SyncManager>()
 
     LaunchedEffect(Unit) {
-        syncManager.resolveSyncs()
+        syncManager.refresh { }
     }
 
     Box(

@@ -11,7 +11,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import com.crosspaste.app.AppControl
 import com.crosspaste.config.ConfigManager
@@ -31,7 +30,6 @@ import com.crosspaste.ui.theme.AppUISize.zeroButtonElevation
 import com.crosspaste.ui.theme.CrossPasteTheme.connectedColor
 import com.crosspaste.ui.theme.CrossPasteTheme.disconnectedColor
 import com.crosspaste.utils.getJsonUtils
-import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
@@ -43,7 +41,6 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
     val syncManager = koinInject<SyncManager>()
     val configManager = koinInject<ConfigManager>()
     val jsonUtils = getJsonUtils()
-    val scope = rememberCoroutineScope()
 
     val config by configManager.config.collectAsState()
 
@@ -52,7 +49,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
             modifier = Modifier.height(xxLarge),
             onClick = {
                 if (appControl.isDeviceConnectionEnabled(syncManager.getSyncHandlers().size + 1)) {
-                    syncManager.updateSyncInfo(syncInfo)
+                    syncManager.updateSyncInfo(syncInfo, refresh = true)
                 }
             },
             shape = tiny3XRoundedCornerShape,
@@ -85,9 +82,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
                 blackSyncInfos.add(syncInfo)
                 val newBlackList = jsonUtils.JSON.encodeToString(blackSyncInfos)
                 configManager.updateConfig("blacklist", newBlackList)
-                scope.launch {
-                    nearbyDeviceManager.refresh()
-                }
+                nearbyDeviceManager.refreshSyncManager()
             },
             shape = tiny3XRoundedCornerShape,
             border = BorderStroke(tiny5X, disconnectedColor(AppUIColors.generalBackground)),

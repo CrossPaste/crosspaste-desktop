@@ -47,6 +47,9 @@ fun ToastListView() {
     // Track toasts that are currently animating in the UI layer
     val animatingToasts = remember { mutableStateMapOf<Int, Boolean>() }
 
+    // Create coroutine scope to handle animation and delay logic
+    val coroutineScope = rememberCoroutineScope()
+
     Popup(
         alignment = Alignment.TopCenter,
         offset =
@@ -70,9 +73,6 @@ fun ToastListView() {
                     val visibleState = remember { MutableTransitionState(false) }
                     // Capture the latest reference to the removeToast function
                     val currentRemoveToast by rememberUpdatedState(toastManager::removeToast)
-
-                    // Create coroutine scope to handle animation and delay logic
-                    val coroutineScope = rememberCoroutineScope()
 
                     // Initial display of toast
                     LaunchedEffect(Unit) {
